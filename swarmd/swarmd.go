@@ -1,29 +1,20 @@
 package main
 
 import (
+	"fmt"
+	"github.com/docker/swarmd/backends"
 	"github.com/dotcloud/docker/api/server"
 	"github.com/dotcloud/docker/engine"
-	"strings"
 	"os"
-	"fmt"
 	"time"
 )
 
 func main() {
 	eng := engine.New()
 	eng.Logging = false
-	eng.RegisterCatchall(func(job *engine.Job) engine.Status {
-		fmt.Printf("--> %s %s\n", job.Name, strings.Join(job.Args, " "))
-		for k, v := range job.Env().Map() {
-			fmt.Printf("        %s=%s\n", k, v)
-		}
-		// This helps us detect the race condition if our time.Sleep
-		// missed it. (see comment below)
-		if job.Name == "acceptconnections" {
-			panic("race condition in github.com/dotcloud/docker/api/server/ServeApi")
-		}
-		return engine.StatusOK
-	})
+	if err := backends.Debug().Install(eng); err != nil {
+		Fatalf("%v", err)
+	}
 	eng.Register(os.Args[0], server.ServeApi)
 
 	// Register the entrypoint job as the current proces command name,
