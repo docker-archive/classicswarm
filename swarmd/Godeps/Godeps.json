@@ -1,0 +1,128 @@
+{
+	"ImportPath": "github.com/docker/swarmd/swarmd",
+	"GoVersion": "go1.1.1",
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/go.net/websocket",
+			"Comment": "null-61",
+			"Rev": "64ee4bbc10fac4f8d1d56451beac771d7cae54fe"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.0.0-43-g3fa24ca",
+			"Rev": "3fa24ca4f3284911d9cac655d06b1d548653c180"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-systemd/activation",
+			"Comment": "0-4-g2fb21b3",
+			"Rev": "2fb21b34171f083d46d66195caa7ec121d941ec5"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/api",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/dockerversion",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/engine",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/nat",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/opts",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/beam",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/cgroups",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/listenbuffer",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/mflag",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/mount",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/sysinfo",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/systemd",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/term",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/user",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/version",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/registry",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/runconfig",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/utils",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/vendor/src/code.google.com/p/go/src/pkg/archive/tar",
+			"Comment": "help-99-g4b65512",
+			"Rev": "4b65512961657ab2ea347e7239268b7c803ac6ad"
+		},
+		{
+			"ImportPath": "github.com/flynn/go-shlex",
+			"Rev": "4fa131185c2e4fd376fc2662775da3bd58afb4dd"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "a8662172a384296ff59d28f837e151643c662985"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Rev": "9b36453141c35697401168b07f2c09fcff7721ce"
+		}
+	]
+}
