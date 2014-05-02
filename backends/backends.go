@@ -16,5 +16,6 @@ func New() *engine.Engine {
 	// Register all backends here
 	Debug().Install(back)
 	Simulator().Install(back)
+	Forward().Install(back)
 	return back
 }
