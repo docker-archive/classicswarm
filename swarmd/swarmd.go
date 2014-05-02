@@ -56,6 +56,9 @@ func cmdDaemon(c *cli.Context) {
 	front.Register(c.App.Name, server.ServeApi)
 	front.RegisterCatchall(func(job *engine.Job) engine.Status {
 		fw := back.Job(job.Name, job.Args...)
+		fw.Stdout.Add(job.Stdout)
+		fw.Stderr.Add(job.Stderr)
+		fw.Stdin.Add(job.Stdin)
 		fw.Run()
 		return engine.Status(fw.StatusCode())
 	})
