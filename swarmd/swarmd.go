@@ -29,7 +29,7 @@ func main() {
 	}()
 	// There is a race condition in engine.ServeApi.
 	// As a workaround we sleep to give it time to register 'acceptconnections'.
-	time.Sleep(1)
+	time.Sleep(1 * time.Second)
 	// Notify that we're ready to receive connections
 	if err := eng.Job("acceptconnections").Run(); err != nil {
 		Fatalf("%v", err)
