@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/codegangsta/cli"
 	"github.com/docker/swarmd/backends"
 	"github.com/dotcloud/docker/api/server"
 	"github.com/dotcloud/docker/engine"
 	"os"
-	"time"
-	"github.com/codegangsta/cli"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -17,6 +17,7 @@ func main() {
 	app.Usage = "Control a heterogenous distributed system with the Docker API"
 	app.Version = "0.0.1"
 	app.Flags = []cli.Flag{
+		cli.StringFlag{"backend", "debug", "load a backend"},
 	}
 	app.Action = cmdDaemon
 	app.Run(os.Args)
@@ -26,20 +27,37 @@ func cmdDaemon(c *cli.Context) {
 	if len(c.Args()) == 0 {
 		Fatalf("Usage: %s <proto>://<address> [<proto>://<address>]...\n", c.App.Name)
 	}
-	eng := engine.New()
-	eng.Logging = false
-	if err := backends.Debug().Install(eng); err != nil {
-		Fatalf("backend install: %v", err)
+
+	// Load backend
+	// FIXME: allow for multiple backends to be loaded.
+	// This could be done by instantiating 1 engine per backend,
+	// installing each backend in its respective engine,
+	// then registering a Catchall on the frontent engine which
+	// multiplexes across all backends (with routing / filtering
+	// logic along the way).
+	back := backends.New()
+	backendName := c.String("backend")
+	fmt.Printf("Loading backend '%s'\n", backendName)
+	if err := back.Job(backendName).Run(); err != nil {
+		Fatalf("%s: %v\n", backendName, err)
 	}
 
 	// Register the API entrypoint
 	// (we register it as `argv[0]` so we can print usage messages straight from the job
 	// stderr.
-	eng.Register(c.App.Name, server.ServeApi)
+	front := engine.New()
+	front.Logging = false
+	// FIXME: server should expose an engine.Installer
+	front.Register(c.App.Name, server.ServeApi)
+	front.RegisterCatchall(func(job *engine.Job) engine.Status {
+		fw := back.Job(job.Name, job.Args...)
+		fw.Run()
+		return engine.Status(fw.StatusCode())
+	})
 
 	// Call the API entrypoint
 	go func() {
-		serve := eng.Job(c.App.Name, c.Args()...)
+		serve := front.Job(c.App.Name, c.Args()...)
 		serve.Stdout.Add(os.Stdout)
 		serve.Stderr.Add(os.Stderr)
 		if err := serve.Run(); err != nil {
@@ -50,7 +68,7 @@ func cmdDaemon(c *cli.Context) {
 	// As a workaround we sleep to give it time to register 'acceptconnections'.
 	time.Sleep(1 * time.Second)
 	// Notify that we're ready to receive connections
-	if err := eng.Job("acceptconnections").Run(); err != nil {
+	if err := front.Job("acceptconnections").Run(); err != nil {
 		Fatalf("acceptconnections: %v", err)
 	}
 	// Inifinite loop
@@ -61,7 +79,6 @@ func Fatalf(msg string, args ...interface{}) {
 	if !strings.HasSuffix(msg, "\n") {
 		msg = msg + "\n"
 	}
-	panic(msg)
 	fmt.Fprintf(os.Stderr, msg, args...)
 	os.Exit(1)
 }
