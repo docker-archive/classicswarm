@@ -7,20 +7,39 @@ import (
 	"github.com/dotcloud/docker/engine"
 	"os"
 	"time"
+	"github.com/codegangsta/cli"
+	"strings"
 )
 
 func main() {
+	app := cli.NewApp()
+	app.Name = "swarmd"
+	app.Usage = "Control a heterogenous distributed system with the Docker API"
+	app.Version = "0.0.1"
+	app.Flags = []cli.Flag{
+	}
+	app.Action = cmdDaemon
+	app.Run(os.Args)
+}
+
+func cmdDaemon(c *cli.Context) {
+	if len(c.Args()) == 0 {
+		Fatalf("Usage: %s <proto>://<address> [<proto>://<address>]...\n", c.App.Name)
+	}
 	eng := engine.New()
 	eng.Logging = false
 	if err := backends.Debug().Install(eng); err != nil {
 		Fatalf("backend install: %v", err)
 	}
-	eng.Register(os.Args[0], server.ServeApi)
 
-	// Register the entrypoint job as the current proces command name,
-	// to get matching usage straight from the job.
+	// Register the API entrypoint
+	// (we register it as `argv[0]` so we can print usage messages straight from the job
+	// stderr.
+	eng.Register(c.App.Name, server.ServeApi)
+
+	// Call the API entrypoint
 	go func() {
-		serve := eng.Job(os.Args[0], os.Args[1:]...)
+		serve := eng.Job(c.App.Name, c.Args()...)
 		serve.Stdout.Add(os.Stdout)
 		serve.Stderr.Add(os.Stderr)
 		if err := serve.Run(); err != nil {
