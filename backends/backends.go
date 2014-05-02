@@ -15,5 +15,6 @@ func New() *engine.Engine {
 	back.Logging = false
 	// Register all backends here
 	Debug().Install(back)
+	Simulator().Install(back)
 	return back
 }
