@@ -13,7 +13,7 @@ func main() {
 	eng := engine.New()
 	eng.Logging = false
 	if err := backends.Debug().Install(eng); err != nil {
-		Fatalf("%v", err)
+		Fatalf("backend install: %v", err)
 	}
 	eng.Register(os.Args[0], server.ServeApi)
 
@@ -24,7 +24,7 @@ func main() {
 		serve.Stdout.Add(os.Stdout)
 		serve.Stderr.Add(os.Stderr)
 		if err := serve.Run(); err != nil {
-			Fatalf("%v", err)
+			Fatalf("serveapi: %v", err)
 		}
 	}()
 	// There is a race condition in engine.ServeApi.
@@ -32,13 +32,17 @@ func main() {
 	time.Sleep(1 * time.Second)
 	// Notify that we're ready to receive connections
 	if err := eng.Job("acceptconnections").Run(); err != nil {
-		Fatalf("%v", err)
+		Fatalf("acceptconnections: %v", err)
 	}
 	// Inifinite loop
 	<-make(chan struct{})
 }
 
 func Fatalf(msg string, args ...interface{}) {
+	if !strings.HasSuffix(msg, "\n") {
+		msg = msg + "\n"
+	}
+	panic(msg)
 	fmt.Fprintf(os.Stderr, msg, args...)
 	os.Exit(1)
 }
