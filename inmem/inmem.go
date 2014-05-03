@@ -18,7 +18,6 @@ const (
 )
 
 type Message struct {
-	Target	string
 	Name	string
 	Args	[]string
 	Data	string
