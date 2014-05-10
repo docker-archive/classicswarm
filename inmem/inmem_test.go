@@ -5,8 +5,22 @@ import (
 	"testing"
 )
 
+func TestModes(t *testing.T) {
+	if R == W {
+		t.Fatalf("0")
+	}
+	if R == 0 {
+		t.Fatalf("0")
+	}
+	if W == 0 {
+		t.Fatalf("0")
+	}
+}
+
 func TestSimpleSend(t *testing.T) {
 	r, w := Pipe()
+	defer r.Close()
+	defer w.Close()
 	testutils.Timeout(t, func() {
 		go func() {
 			msg, in, out, err := r.Receive(0)
@@ -38,6 +52,55 @@ func TestSimpleSend(t *testing.T) {
 		}
 		if out != nil {
 			t.Fatalf("%#v", out)
+		}
+	})
+}
+
+func TestSendReply(t *testing.T) {
+	r, w := Pipe()
+	defer r.Close()
+	defer w.Close()
+	testutils.Timeout(t, func() {
+		// Send
+		go func() {
+			// Send a message with mode=R
+			in, out, err := w.Send(&Message{Data: "this is the request"}, R)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if out != nil {
+				t.Fatalf("%#v", out)
+			}
+			if in == nil {
+				t.Fatalf("%#v", in)
+			}
+			// Read for a reply
+			resp, _, _, err := in.Receive(0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if resp.Data != "this is the reply" {
+				t.Fatalf("%#v", resp)
+			}
+		}()
+		// Receive a message with mode=W
+		msg, in, out, err := r.Receive(W)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if msg.Data != "this is the request" {
+			t.Fatalf("%#v", msg)
+		}
+		if out == nil {
+			t.Fatalf("%#v", out)
+		}
+		if in != nil {
+			t.Fatalf("%#v", in)
+		}
+		// Send a reply
+		_, _, err = out.Send(&Message{Data: "this is the reply"}, 0)
+		if err != nil {
+			t.Fatal(err)
 		}
 	})
 }

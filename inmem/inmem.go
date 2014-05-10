@@ -53,7 +53,7 @@ type pipeMessage struct {
 	in  *PipeReceiver
 }
 
-func (p *pipe) send(msg *Message, mode int) (in Receiver, out Sender, err error) {
+func (p *pipe) send(msg *Message, mode int) (in *PipeReceiver, out *PipeSender, err error) {
 	// Prepare the message
 	pmsg := &pipeMessage{msg: msg}
 	if mode&R != 0 {
@@ -101,7 +101,7 @@ func (p *pipe) send(msg *Message, mode int) (in Receiver, out Sender, err error)
 	return
 }
 
-func (p *pipe) receive(mode int) (msg *Message, in Receiver, out Sender, err error) {
+func (p *pipe) receive(mode int) (msg *Message, in *PipeReceiver, out *PipeSender, err error) {
 	p.rl.Lock()
 	defer p.rl.Unlock()
 
@@ -122,12 +122,16 @@ func (p *pipe) receive(mode int) (msg *Message, in Receiver, out Sender, err err
 	pmsg := p.pmsg
 	if pmsg.out != nil && mode&W == 0 {
 		pmsg.out.Close()
+		pmsg.out = nil
 	}
 	if pmsg.in != nil && mode&R == 0 {
 		pmsg.in.Close()
+		pmsg.in = nil
 	}
 	p.pmsg = nil
 	msg = pmsg.msg
+	in = pmsg.in
+	out = pmsg.out
 	p.wwait.Signal()
 	return
 }
@@ -160,7 +164,7 @@ type PipeReceiver struct {
 	p *pipe
 }
 
-func (r *PipeReceiver) Receive(mode int) (*Message, Receiver, Sender, error) {
+func (r *PipeReceiver) Receive(mode int) (*Message, *PipeReceiver, *PipeSender, error) {
 	return r.p.receive(mode)
 }
 
@@ -179,7 +183,7 @@ type PipeSender struct {
 	p *pipe
 }
 
-func (w *PipeSender) Send(msg *Message, mode int) (Receiver, Sender, error) {
+func (w *PipeSender) Send(msg *Message, mode int) (*PipeReceiver, *PipeSender, error) {
 	return w.p.send(msg, mode)
 }
 
