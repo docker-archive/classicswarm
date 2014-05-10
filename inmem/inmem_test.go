@@ -104,3 +104,52 @@ func TestSendReply(t *testing.T) {
 		}
 	})
 }
+
+func TestSendNested(t *testing.T) {
+	r, w := Pipe()
+	defer r.Close()
+	defer w.Close()
+	testutils.Timeout(t, func() {
+		// Send
+		go func() {
+			// Send a message with mode=W
+			in, out, err := w.Send(&Message{Data: "this is the request"}, W)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if out == nil {
+				t.Fatalf("%#v", out)
+			}
+			if in != nil {
+				t.Fatalf("%#v", in)
+			}
+			// Send a nested message
+			_, _, err = out.Send(&Message{Data: "this is the nested message"}, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+		// Receive a message with mode=R
+		msg, in, out, err := r.Receive(R)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if msg.Data != "this is the request" {
+			t.Fatalf("%#v", msg)
+		}
+		if out != nil {
+			t.Fatalf("%#v", out)
+		}
+		if in == nil {
+			t.Fatalf("%#v", in)
+		}
+		// Read for a nested message
+		nested, _, _, err := in.Receive(0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if nested.Data != "this is the nested message" {
+			t.Fatalf("%#v", nested)
+		}
+	})
+}
