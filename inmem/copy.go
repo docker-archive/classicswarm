@@ -24,4 +24,3 @@ func Copy(dst Sender, src Receiver) (int, error) {
 	)
 	return n, fmt.Errorf("operation not supported")
 }
-

@@ -195,7 +195,7 @@ func (w *PipeSender) Send(msg *Message, mode int) (Receiver, Sender, error) {
 func (w *PipeSender) ReceiveFrom(src Receiver) (int, error) {
 	var n int
 	for {
-		msg, msgr, msgw, err := src.Receive(R|W)
+		msg, msgr, msgw, err := src.Receive(R | W)
 		if err == io.EOF {
 			break
 		}
