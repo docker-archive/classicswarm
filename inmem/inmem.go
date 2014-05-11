@@ -1,7 +1,6 @@
 package inmem
 
 import (
-	"fmt"
 	"io"
 	"sync"
 )
@@ -106,7 +105,7 @@ func (p *pipe) send(msg *Message, mode int) (in *PipeReceiver, out *PipeSender, 
 	return
 }
 
-func (p *pipe) receive(mode int) (msg *Message, in *PipeReceiver, out *PipeSender, err error) {
+func (p *pipe) preceive() (*pipeMessage, error) {
 	p.rl.Lock()
 	defer p.rl.Unlock()
 
@@ -114,17 +113,27 @@ func (p *pipe) receive(mode int) (msg *Message, in *PipeReceiver, out *PipeSende
 	defer p.l.Unlock()
 	for {
 		if p.rerr != nil {
-			return nil, nil, nil, io.ErrClosedPipe
+			return nil, io.ErrClosedPipe
 		}
 		if p.pmsg != nil {
 			break
 		}
 		if p.werr != nil {
-			return nil, nil, nil, p.werr
+			return nil, p.werr
 		}
 		p.rwait.Wait()
 	}
 	pmsg := p.pmsg
+	p.pmsg = nil
+	p.wwait.Signal()
+	return pmsg, nil
+}
+
+func (p *pipe) receive(mode int) (*Message, *PipeReceiver, *PipeSender, error) {
+	pmsg, err := p.preceive()
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	if pmsg.out != nil && mode&W == 0 {
 		pmsg.out.Close()
 		pmsg.out = nil
@@ -133,12 +142,7 @@ func (p *pipe) receive(mode int) (msg *Message, in *PipeReceiver, out *PipeSende
 		pmsg.in.Close()
 		pmsg.in = nil
 	}
-	p.pmsg = nil
-	msg = pmsg.msg
-	in = pmsg.in
-	out = pmsg.out
-	p.wwait.Signal()
-	return
+	return pmsg.msg, pmsg.in, pmsg.out, nil
 }
 
 func (p *pipe) rclose(err error) {
@@ -187,6 +191,29 @@ func (r *PipeReceiver) Receive(mode int) (*Message, Receiver, Sender, error) {
 	return msg, in, out, err
 }
 
+func (r *PipeReceiver) SendTo(dst Sender) (int, error) {
+	var n int
+	// If the destination is a PipeSender, we can cheat
+	pdst, ok := dst.(*PipeSender)
+	if !ok {
+		return 0, ErrIncompatibleSender
+	}
+	for {
+		pmsg, err := r.p.preceive()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return n, err
+		}
+		if err := pdst.p.psend(pmsg); err != nil {
+			return n, err
+		}
+	}
+	n++
+	return n, nil
+}
+
 func (r *PipeReceiver) Close() error {
 	return r.CloseWithError(nil)
 }
@@ -219,34 +246,18 @@ func (w *PipeSender) Send(msg *Message, mode int) (Receiver, Sender, error) {
 
 func (w *PipeSender) ReceiveFrom(src Receiver) (int, error) {
 	var n int
+	// If the destination is a PipeReceiver, we can cheat
+	psrc, ok := src.(*PipeReceiver)
+	if !ok {
+		return 0, ErrIncompatibleReceiver
+	}
 	for {
-		msg, msgr, msgw, err := src.Receive(R | W)
+		pmsg, err := psrc.p.preceive()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return n, err
-		}
-		pmsg := &pipeMessage{msg: msg}
-		if msgr != nil {
-			if pmsgr, ok := msgr.(*PipeReceiver); ok {
-				pmsg.in = pmsgr
-			} else {
-				// FIXME: if we're not receiving from a PipeReceiver,
-				// we need to create a new pipe and shuttle messages through it
-				// in a new goroutine.
-				return n, fmt.Errorf("operation not supported")
-			}
-		}
-		if msgw != nil {
-			if pmsgw, ok := msgw.(*PipeSender); ok {
-				pmsg.out = pmsgw
-			} else {
-				// FIXME: if we're not sending to a PipeSender,
-				// we need to create a new pipe and shuttle messages through it
-				// in a new goroutine.
-				return n, fmt.Errorf("operation not supported")
-			}
 		}
 		if err := w.p.psend(pmsg); err != nil {
 			return n, err
