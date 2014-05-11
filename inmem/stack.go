@@ -3,6 +3,7 @@ package inmem
 import (
 	"container/list"
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -12,7 +13,6 @@ import (
 // are removed from the queue.
 type StackSender struct {
 	stack *list.List
-	front *list.Element
 	l     sync.RWMutex
 }
 
@@ -24,15 +24,16 @@ func NewStackSender() *StackSender {
 }
 
 func (s *StackSender) Send(msg *Message, mode int) (r Receiver, w Sender, err error) {
-	ok := s.walk(func(h Sender) (ok bool) {
+	completed := s.walk(func(h Sender) (ok bool) {
 		r, w, err = h.Send(msg, mode)
-		fmt.Printf("sending %v to %#v returned %v\n", msg, h, err)
+		fmt.Printf("[stacksender] sending %v to %#v returned %v\n", msg, h, err)
 		if err == nil {
 			return true
 		}
 		return false
 	})
-	if ok {
+	// If walk was completed, it means we didn't find a valid handler
+	if !completed {
 		return r, w, err
 	}
 	// Silently drop messages if no valid backend is available.
@@ -43,9 +44,10 @@ func (s *StackSender) Add(dst Sender) *StackSender {
 	s.l.Lock()
 	defer s.l.Unlock()
 	prev := &StackSender{
-		stack: s.stack,
-		front: s.stack.Front(),
+		stack: list.New(),
 	}
+	prev.stack.PushFrontList(s.stack)
+	fmt.Printf("[ADD] prev %#v\n", prev)
 	s.stack.PushFront(dst)
 	return prev
 }
@@ -59,41 +61,51 @@ func (s *StackSender) Close() error {
 	return nil
 }
 
-func (s *StackSender) walk(f func(Sender) bool) bool {
+func (s *StackSender) _walk(f func(*list.Element) bool) bool {
 	var e *list.Element
-	if s.front == nil {
-		s.l.RLock()
-		e = s.stack.Front()
-		s.l.RUnlock()
-	} else {
-		e = s.front
-	}
+	s.l.RLock()
+	e = s.stack.Front()
+	s.l.RUnlock()
 	for e != nil {
 		fmt.Printf("[StackSender.Walk] %v\n", e.Value.(Sender))
-		ok := f(e.Value.(Sender))
-		if ok {
-			fmt.Printf("[StackSender.Walk] %v -> OK\n", e.Value.(Sender))
-			return true
-		}
-		fmt.Printf("[StackSender.Walk] %v invalid: removing\n", e.Value.(Sender))
-		s.l.Lock()
+		s.l.RLock()
 		next := e.Next()
-		s.stack.Remove(e)
-		s.l.Unlock()
+		s.l.RUnlock()
+		cont := f(e)
+		if !cont {
+			return false
+		}
 		e = next
 	}
-	fmt.Printf("[STackSender.Walk] -> no valid handler\n")
-	return false
+	return true
 }
+
+func (s *StackSender) walk(f func(Sender) bool) bool {
+	return s._walk(func(e *list.Element) bool {
+		ok := f(e.Value.(Sender))
+		if ok {
+			// Found a valid handler. Stop walking.
+			return false
+		}
+		// Invalid handler: remove.
+		s.l.Lock()
+		s.stack.Remove(e)
+		s.l.Unlock()
+		return true
+	})
+}
+
 func (s *StackSender) Len() int {
 	s.l.RLock()
 	defer s.l.RUnlock()
-	if s.front == nil {
-		return s.stack.Len()
-	}
-	var len int
-	for e := s.front; e != nil; e = e.Next() {
-		len++
-	}
-	return len
+	return s.stack.Len()
+}
+
+func (s *StackSender) String() string {
+	var parts []string
+	s._walk(func(e *list.Element) bool {
+		parts = append(parts, fmt.Sprintf("%v", e.Value.(Sender)))
+		return true
+	})
+	return fmt.Sprintf("%d:[%s]", len(parts), strings.Join(parts, "->"))
 }
