@@ -27,18 +27,15 @@ func TestSimpleSend(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if string(msg.Data) != "hello world" {
-				t.Fatalf("%#v", *msg)
-			}
 			if msg.Name != "print" {
 				t.Fatalf("%#v", *msg)
 			}
-			if len(msg.Args) != 0 {
+			if msg.Args[0] != "hello world" {
 				t.Fatalf("%#v", *msg)
 			}
 			assertMode(t, in, out, 0)
 		}()
-		in, out, err := w.Send(&Message{Name: "print", Data: []byte("hello world")}, 0)
+		in, out, err := w.Send(&Message{Name: "print", Args: []string{"hello world"}}, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -94,7 +91,7 @@ func TestSendReply(t *testing.T) {
 		// Send
 		go func() {
 			// Send a message with mode=R
-			in, out, err := w.Send(&Message{Data: []byte("this is the request")}, R)
+			in, out, err := w.Send(&Message{Args: []string{"this is the request"}}, R)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -104,7 +101,7 @@ func TestSendReply(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if string(resp.Data) != "this is the reply" {
+			if resp.Args[0] != "this is the reply" {
 				t.Fatalf("%#v", resp)
 			}
 		}()
@@ -113,12 +110,12 @@ func TestSendReply(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if string(msg.Data) != "this is the request" {
+		if msg.Args[0] != "this is the request" {
 			t.Fatalf("%#v", msg)
 		}
 		assertMode(t, in, out, W)
 		// Send a reply
-		_, _, err = out.Send(&Message{Data: []byte("this is the reply")}, 0)
+		_, _, err = out.Send(&Message{Args: []string{"this is the reply"}}, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -133,13 +130,13 @@ func TestSendNested(t *testing.T) {
 		// Send
 		go func() {
 			// Send a message with mode=W
-			in, out, err := w.Send(&Message{Data: []byte("this is the request")}, W)
+			in, out, err := w.Send(&Message{Args: []string{"this is the request"}}, W)
 			if err != nil {
 				t.Fatal(err)
 			}
 			assertMode(t, in, out, W)
 			// Send a nested message
-			_, _, err = out.Send(&Message{Data: []byte("this is the nested message")}, 0)
+			_, _, err = out.Send(&Message{Args: []string{"this is the nested message"}}, 0)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -149,7 +146,7 @@ func TestSendNested(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if string(msg.Data) != "this is the request" {
+		if msg.Args[0] != "this is the request" {
 			t.Fatalf("%#v", msg)
 		}
 		assertMode(t, in, out, R)
@@ -158,7 +155,7 @@ func TestSendNested(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if string(nested.Data) != "this is the nested message" {
+		if nested.Args[0] != "this is the nested message" {
 			t.Fatalf("%#v", nested)
 		}
 	})

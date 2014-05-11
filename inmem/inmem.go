@@ -18,7 +18,6 @@ type Receiver interface {
 type Message struct {
 	Name string
 	Args []string
-	Data []byte
 }
 
 const (

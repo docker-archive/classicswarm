@@ -25,7 +25,7 @@ func TestSendStack(t *testing.T) {
 				t.Fatalf("%#v", msg)
 			}
 		}()
-		_, _, err := s.Send(&Message{"hello", []string{"wonderful", "world"}, nil}, 0)
+		_, _, err := s.Send(&Message{"hello", []string{"wonderful", "world"}}, 0)
 		if err != nil {
 			t.Fatal(err)
 		}

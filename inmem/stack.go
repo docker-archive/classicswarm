@@ -8,7 +8,7 @@ import (
 
 // StackSender forwards beam messages to a dynamic list of backend receivers.
 // New backends are stacked on top. When a message is sent, each backend is
-// tried until one succeeds. Any failing backends encountered along the way 
+// tried until one succeeds. Any failing backends encountered along the way
 // are removed from the queue.
 type StackSender struct {
 	stack *list.List
@@ -92,7 +92,7 @@ func (s *StackSender) Len() int {
 		return s.stack.Len()
 	}
 	var len int
-	for e := s.front; e != nil ; e = e.Next() {
+	for e := s.front; e != nil; e = e.Next() {
 		len++
 	}
 	return len
