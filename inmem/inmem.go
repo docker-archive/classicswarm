@@ -8,6 +8,7 @@ import (
 
 type Sender interface {
 	Send(msg *Message, mode int) (Receiver, Sender, error)
+	Close() error
 }
 
 type Receiver interface {
