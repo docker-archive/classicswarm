@@ -170,7 +170,21 @@ type PipeReceiver struct {
 }
 
 func (r *PipeReceiver) Receive(mode int) (*Message, Receiver, Sender, error) {
-	return r.p.receive(mode)
+	msg, pin, pout, err := r.p.receive(mode)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	var (
+		in  Receiver
+		out Sender
+	)
+	if pin != nil {
+		in = pin
+	}
+	if pout != nil {
+		out = pout
+	}
+	return msg, in, out, err
 }
 
 func (r *PipeReceiver) Close() error {
@@ -189,7 +203,18 @@ type PipeSender struct {
 }
 
 func (w *PipeSender) Send(msg *Message, mode int) (Receiver, Sender, error) {
-	return w.p.send(msg, mode)
+	pin, pout, err := w.p.send(msg, mode)
+	var (
+		in  Receiver
+		out Sender
+	)
+	if pin != nil {
+		in = pin
+	}
+	if pout != nil {
+		out = pout
+	}
+	return in, out, err
 }
 
 func (w *PipeSender) ReceiveFrom(src Receiver) (int, error) {

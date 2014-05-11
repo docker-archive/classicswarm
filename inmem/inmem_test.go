@@ -51,34 +51,26 @@ func TestSimpleSend(t *testing.T) {
 // If any of these conditions are not met, t.Fatal is called and the active
 // test fails.
 func assertMode(t *testing.T, r Receiver, w Sender, mode int) {
-	pr, ok := r.(*PipeReceiver)
-	if !ok {
-		t.Fatalf("%v", r)
-	}
-	pw, ok := w.(*PipeSender)
-	if !ok {
-		t.Fatalf("%v", w)
-	}
 	// If mode has the R bit set, r must be non-nil
 	if mode&R != 0 {
-		if pr == nil {
-			t.Fatalf("should be non-nil: %#v", pr)
+		if r == nil {
+			t.Fatalf("should be non-nil: %#v", r)
 		}
 		// Otherwise it must be nil.
 	} else {
-		if pr != nil {
-			t.Fatalf("should be nil: %#v", pr)
+		if r != nil {
+			t.Fatalf("should be nil: %#v", r)
 		}
 	}
 	// If mode has the W bit set, w must be non-nil
 	if mode&W != 0 {
-		if pw == nil {
-			t.Fatalf("should be non-nil: %#v", pw)
+		if w == nil {
+			t.Fatalf("should be non-nil: %#v", w)
 		}
 		// Otherwise it must be nil.
 	} else {
-		if pw != nil {
-			t.Fatalf("should be nil: %#v", pw)
+		if w != nil {
+			t.Fatalf("should be nil: %#v", w)
 		}
 	}
 }
