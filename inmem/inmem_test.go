@@ -27,7 +27,7 @@ func TestSimpleSend(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if msg.Data != "hello world" {
+			if string(msg.Data) != "hello world" {
 				t.Fatalf("%#v", *msg)
 			}
 			if msg.Name != "print" {
@@ -36,24 +36,54 @@ func TestSimpleSend(t *testing.T) {
 			if len(msg.Args) != 0 {
 				t.Fatalf("%#v", *msg)
 			}
-			if in != nil {
-				t.Fatalf("%#v", in)
-			}
-			if out != nil {
-				t.Fatalf("%#v", out)
-			}
+			assertMode(t, in, out, 0)
 		}()
-		in, out, err := w.Send(&Message{Name: "print", Data: "hello world"}, 0)
+		in, out, err := w.Send(&Message{Name: "print", Data: []byte("hello world")}, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if in != nil {
-			t.Fatalf("%#v", in)
-		}
-		if out != nil {
-			t.Fatalf("%#v", out)
-		}
+		assertMode(t, in, out, 0)
 	})
+}
+
+// assertMode verifies that the values of r and w match
+// mode.
+// If mode has the R bit set, r must be non-nil. Otherwise it must be nil.
+// If mode has the W bit set, w must be non-nil. Otherwise it must be nil.
+//
+// If any of these conditions are not met, t.Fatal is called and the active
+// test fails.
+func assertMode(t *testing.T, r Receiver, w Sender, mode int) {
+	pr, ok := r.(*PipeReceiver)
+	if !ok {
+		t.Fatalf("%v", r)
+	}
+	pw, ok := w.(*PipeSender)
+	if !ok {
+		t.Fatalf("%v", w)
+	}
+	// If mode has the R bit set, r must be non-nil
+	if mode&R != 0 {
+		if pr == nil {
+			t.Fatalf("should be non-nil: %#v", pr)
+		}
+		// Otherwise it must be nil.
+	} else {
+		if pr != nil {
+			t.Fatalf("should be nil: %#v", pr)
+		}
+	}
+	// If mode has the W bit set, w must be non-nil
+	if mode&W != 0 {
+		if pw == nil {
+			t.Fatalf("should be non-nil: %#v", pw)
+		}
+		// Otherwise it must be nil.
+	} else {
+		if pw != nil {
+			t.Fatalf("should be nil: %#v", pw)
+		}
+	}
 }
 
 func TestSendReply(t *testing.T) {
@@ -64,22 +94,17 @@ func TestSendReply(t *testing.T) {
 		// Send
 		go func() {
 			// Send a message with mode=R
-			in, out, err := w.Send(&Message{Data: "this is the request"}, R)
+			in, out, err := w.Send(&Message{Data: []byte("this is the request")}, R)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if out != nil {
-				t.Fatalf("%#v", out)
-			}
-			if in == nil {
-				t.Fatalf("%#v", in)
-			}
+			assertMode(t, in, out, R)
 			// Read for a reply
 			resp, _, _, err := in.Receive(0)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if resp.Data != "this is the reply" {
+			if string(resp.Data) != "this is the reply" {
 				t.Fatalf("%#v", resp)
 			}
 		}()
@@ -88,17 +113,12 @@ func TestSendReply(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if msg.Data != "this is the request" {
+		if string(msg.Data) != "this is the request" {
 			t.Fatalf("%#v", msg)
 		}
-		if out == nil {
-			t.Fatalf("%#v", out)
-		}
-		if in != nil {
-			t.Fatalf("%#v", in)
-		}
+		assertMode(t, in, out, W)
 		// Send a reply
-		_, _, err = out.Send(&Message{Data: "this is the reply"}, 0)
+		_, _, err = out.Send(&Message{Data: []byte("this is the reply")}, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -113,18 +133,13 @@ func TestSendNested(t *testing.T) {
 		// Send
 		go func() {
 			// Send a message with mode=W
-			in, out, err := w.Send(&Message{Data: "this is the request"}, W)
+			in, out, err := w.Send(&Message{Data: []byte("this is the request")}, W)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if out == nil {
-				t.Fatalf("%#v", out)
-			}
-			if in != nil {
-				t.Fatalf("%#v", in)
-			}
+			assertMode(t, in, out, W)
 			// Send a nested message
-			_, _, err = out.Send(&Message{Data: "this is the nested message"}, 0)
+			_, _, err = out.Send(&Message{Data: []byte("this is the nested message")}, 0)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -134,21 +149,16 @@ func TestSendNested(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if msg.Data != "this is the request" {
+		if string(msg.Data) != "this is the request" {
 			t.Fatalf("%#v", msg)
 		}
-		if out != nil {
-			t.Fatalf("%#v", out)
-		}
-		if in == nil {
-			t.Fatalf("%#v", in)
-		}
+		assertMode(t, in, out, R)
 		// Read for a nested message
 		nested, _, _, err := in.Receive(0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if nested.Data != "this is the nested message" {
+		if string(nested.Data) != "this is the nested message" {
 			t.Fatalf("%#v", nested)
 		}
 	})
