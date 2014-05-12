@@ -9,11 +9,17 @@ import (
 func TestHubSendEmpty(t *testing.T) {
 	hub := NewHub()
 	// Send to empty hub should silently drop
-	if r, w, err := hub.Send(&beam.Message{Name: "hello", Args: nil}, beam.R|beam.W); err != nil {
+	r, w, err := hub.Send(&beam.Message{Name: "hello", Args: nil}, beam.R|beam.W)
+	// Send must not return an error
+	if err != nil {
 		t.Fatal(err)
-	} else if r != nil {
+	}
+	// We set beam.R, so a valid receiver must be returned
+	if r == nil {
 		t.Fatalf("%#v", r)
-	} else if w != nil {
+	}
+	// We set beam.W, so a valid receiver must be returned
+	if w == nil {
 		t.Fatalf("%#v", w)
 	}
 }
