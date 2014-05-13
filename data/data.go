@@ -26,6 +26,8 @@ func encodeString(s string) string {
 var EncodeString = encodeString
 var DecodeString = decodeString
 
+var EncodeList = encodeList
+
 func encodeList(l []string) string {
 	values := make([]string, 0, len(l))
 	for _, s := range l {
@@ -64,6 +66,8 @@ func Decode(msg string) (map[string][]string, error) {
 	}
 	return obj, nil
 }
+
+var DecodeList = decodeList
 
 func decodeList(msg string) ([]string, int, error) {
 	blob, skip, err := decodeString(msg)
