@@ -194,10 +194,10 @@ func (w *PipeSender) Send(msg *Message, mode int) (Receiver, Sender, error) {
 	return w.p.send(msg, mode)
 }
 
-func (w *PipeSender) ReceiveFrom(src Receiver, mode int) (int, error) {
+func (w *PipeSender) ReceiveFrom(src Receiver) (int, error) {
 	var n int
 	for {
-		msg, msgr, msgw, err := src.Receive(mode)
+		msg, msgr, msgw, err := src.Receive(R|W)
 		if err == io.EOF {
 			break
 		}
