@@ -59,6 +59,9 @@ func cmdDaemon(c *cli.Context) {
 		fw.Stdout.Add(job.Stdout)
 		fw.Stderr.Add(job.Stderr)
 		fw.Stdin.Add(job.Stdin)
+		for key, val := range job.Env().Map() {
+			fw.Setenv(key, val)
+		}
 		fw.Run()
 		return engine.Status(fw.StatusCode())
 	})
