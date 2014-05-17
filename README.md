@@ -1,13 +1,57 @@
-# Swarmd
+# Libswarm
 
-## Control a distributed system with the Docker API
+## A library to orchestrate heterogeneous distributed systems
 
-`swarmd` is a simple daemon which can control all machines in your distributed
+*libswarm* is a lightweight, standardized abstraction for federating and orchestrating
+distributed systems. It can discover and communicate with all machines in your system,
+using a variety of backend adaptors, and expose them via a single, straightforward API.
+
+This is very useful if your system spans multiple locations on the Internet (your home
+network, office lan, colocated rack, cloud provider, etc.) and uses heterogeneous tools
+for deployment, clustering and service discovery (manually configured IPs on your laptop,
+zeroconf at the office, ssh tunnels + custom DNS on the rack, Mesos, Consul or Etcd/Fleet
+on your cloud provider, etc.).
+
+*libswarm* federates all these elements under a unified namespace and lets you orchestrate
+them using a lightweight and flexible API.
+
+Because the *libswarm* API is dead-simple to learn and built on standard components, there
+is a growing ecosystem of tools already compatible with it, which you can use to manage
+your swarm out of the box:
+
+* `swarmctl` is a simple command-line utility which lets you easily compose any combination
+of backends, and orchestrate them straight from the terminal.
+
+* (coming soon) *Shipyard* offers a powerful web interface to manage any swarm-compatible
+distributed system straight from the browser.
+
+* (coming soon) *Swarmlog* is a logging tool which consumes all log streams from your swarm
+and forwards them to a variety of logging backends.
+
+* (coming soon) *Deis*, the popular Docker-based application platform, supports *libswarm*
+natively, and can deploy applications to it out-of-the-box.
+
+* (coming soon) *Drone.io*, the Docker-based continuous integration platform, can spawn
+build and test workers on any swarm.
+
+* (coming soon) *Fig*, the popular development tool, supports libswarm out of the box.
+
+* (coming soon) *Docker*, the open-source container engine, has announced that they will
+adopt *libswarm* as a built-in, and recommend it as the preferred way to orchestrate
+and manage a Docker-based cluster.
+
+
+## Testing libswarm with swarmd
+
+Libswarm ships with a simple daemon which can control all machines in your distributed
 system using a variety of backend adaptors, and exposes it on a single, unified endpoint.
 
-swarmd uses the standard Docker API as its frontend, which means any tool which speaks
+Currently swarmd uses the standard Docker API as its frontend, which means any tool which speaks
 Docker can control swarmd transparently: dokku, flynn, deis, docker-ui, shipyard, fleet,
 mesos... and of course the Docker client itself.
+
+*Note: in the future swarmd will expose the Docker remote API as "just another backend", and
+expose its own native API as a frontend.*
 
 Usage example:
 
@@ -25,7 +69,7 @@ For example:
 
 ## Backends
 
-`Swarmd` supports the following backends:
+Libswarm supports the following backends:
 
 ### Debug backend
 
@@ -74,3 +118,14 @@ docker -H unix://b.sock ps
 This last command should report 1 container: `myapp`.
 
 
+## Creators
+
+**Solomon Hykes**
+
+- <http://twitter.com/solomonstre>
+- <http://github.com/shykes>
+
+## Copyright and license
+
+Code and documentation copyright 2013-2014 Docker, inc. Code released under the Apache 2.0 license.
+Docs released under Creative commons.
