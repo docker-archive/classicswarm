@@ -3,13 +3,43 @@ package utils
 import (
 	"github.com/docker/beam"
 	"github.com/docker/beam/inmem"
+	"github.com/docker/beam/unix"
 	"github.com/dotcloud/docker/pkg/testutils"
 	"strings"
 	"testing"
 )
 
-func TestSendStack(t *testing.T) {
+func TestStackWithPipe(t *testing.T) {
 	r, w := inmem.Pipe()
+	defer r.Close()
+	defer w.Close()
+	s := NewStackSender()
+	s.Add(w)
+	testutils.Timeout(t, func() {
+		go func() {
+			msg, _, _, err := r.Receive(0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if msg.Name != "hello" {
+				t.Fatalf("%#v", msg)
+			}
+			if strings.Join(msg.Args, " ") != "wonderful world" {
+				t.Fatalf("%#v", msg)
+			}
+		}()
+		_, _, err := s.Send(&beam.Message{"hello", []string{"wonderful", "world"}}, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func TestStackWithPair(t *testing.T) {
+	r, w, err := unix.Pair()
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer r.Close()
 	defer w.Close()
 	s := NewStackSender()
