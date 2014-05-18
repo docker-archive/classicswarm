@@ -1,27 +1,9 @@
 package inmem
 
 import (
+	"github.com/docker/beam"
 	"io"
 	"sync"
-)
-
-type Sender interface {
-	Send(msg *Message, mode int) (Receiver, Sender, error)
-	Close() error
-}
-
-type Receiver interface {
-	Receive(mode int) (*Message, Receiver, Sender, error)
-}
-
-type Message struct {
-	Name string
-	Args []string
-}
-
-const (
-	R = 1 << (32 - 1 - iota)
-	W
 )
 
 func Pipe() (*PipeReceiver, *PipeSender) {
@@ -46,7 +28,7 @@ type pipe struct {
 }
 
 type pipeMessage struct {
-	msg *Message
+	msg *beam.Message
 	out *PipeSender
 	in  *PipeReceiver
 }
@@ -78,10 +60,10 @@ func (p *pipe) psend(pmsg *pipeMessage) error {
 	return err
 }
 
-func (p *pipe) send(msg *Message, mode int) (in *PipeReceiver, out *PipeSender, err error) {
+func (p *pipe) send(msg *beam.Message, mode int) (in *PipeReceiver, out *PipeSender, err error) {
 	// Prepare the message
 	pmsg := &pipeMessage{msg: msg}
-	if mode&R != 0 {
+	if mode&beam.R != 0 {
 		in, pmsg.out = Pipe()
 		defer func() {
 			if err != nil {
@@ -91,7 +73,7 @@ func (p *pipe) send(msg *Message, mode int) (in *PipeReceiver, out *PipeSender, 
 			}
 		}()
 	}
-	if mode&W != 0 {
+	if mode&beam.W != 0 {
 		pmsg.in, out = Pipe()
 		defer func() {
 			if err != nil {
@@ -129,16 +111,16 @@ func (p *pipe) preceive() (*pipeMessage, error) {
 	return pmsg, nil
 }
 
-func (p *pipe) receive(mode int) (*Message, *PipeReceiver, *PipeSender, error) {
+func (p *pipe) receive(mode int) (*beam.Message, *PipeReceiver, *PipeSender, error) {
 	pmsg, err := p.preceive()
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	if pmsg.out != nil && mode&W == 0 {
+	if pmsg.out != nil && mode&beam.W == 0 {
 		pmsg.out.Close()
 		pmsg.out = nil
 	}
-	if pmsg.in != nil && mode&R == 0 {
+	if pmsg.in != nil && mode&beam.R == 0 {
 		pmsg.in.Close()
 		pmsg.in = nil
 	}
@@ -173,14 +155,14 @@ type PipeReceiver struct {
 	p *pipe
 }
 
-func (r *PipeReceiver) Receive(mode int) (*Message, Receiver, Sender, error) {
+func (r *PipeReceiver) Receive(mode int) (*beam.Message, beam.Receiver, beam.Sender, error) {
 	msg, pin, pout, err := r.p.receive(mode)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	var (
-		in  Receiver
-		out Sender
+		in  beam.Receiver
+		out beam.Sender
 	)
 	if pin != nil {
 		in = pin
@@ -191,7 +173,7 @@ func (r *PipeReceiver) Receive(mode int) (*Message, Receiver, Sender, error) {
 	return msg, in, out, err
 }
 
-func (r *PipeReceiver) SendTo(dst Sender) (int, error) {
+func (r *PipeReceiver) SendTo(dst beam.Sender) (int, error) {
 	var n int
 	// If the destination is a PipeSender, we can cheat
 	pdst, ok := dst.(*PipeSender)
@@ -229,11 +211,11 @@ type PipeSender struct {
 	p *pipe
 }
 
-func (w *PipeSender) Send(msg *Message, mode int) (Receiver, Sender, error) {
+func (w *PipeSender) Send(msg *beam.Message, mode int) (beam.Receiver, beam.Sender, error) {
 	pin, pout, err := w.p.send(msg, mode)
 	var (
-		in  Receiver
-		out Sender
+		in  beam.Receiver
+		out beam.Sender
 	)
 	if pin != nil {
 		in = pin
@@ -244,7 +226,7 @@ func (w *PipeSender) Send(msg *Message, mode int) (Receiver, Sender, error) {
 	return in, out, err
 }
 
-func (w *PipeSender) ReceiveFrom(src Receiver) (int, error) {
+func (w *PipeSender) ReceiveFrom(src beam.Receiver) (int, error) {
 	var n int
 	// If the destination is a PipeReceiver, we can cheat
 	psrc, ok := src.(*PipeReceiver)

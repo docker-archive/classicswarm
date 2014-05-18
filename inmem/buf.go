@@ -1,10 +1,12 @@
 package inmem
 
-import ()
+import (
+	"github.com/docker/beam"
+)
 
-type Buffer []*Message
+type Buffer []*beam.Message
 
-func (buf *Buffer) Send(msg *Message, mode int) (Receiver, Sender, error) {
+func (buf *Buffer) Send(msg *beam.Message, mode int) (beam.Receiver, beam.Sender, error) {
 	(*buf) = append(*buf, msg)
 	return NopReceiver{}, NopSender{}, nil
 }

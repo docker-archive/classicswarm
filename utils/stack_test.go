@@ -1,13 +1,15 @@
-package inmem
+package utils
 
 import (
+	"github.com/docker/beam"
+	"github.com/docker/beam/inmem"
 	"github.com/dotcloud/docker/pkg/testutils"
 	"strings"
 	"testing"
 )
 
 func TestSendStack(t *testing.T) {
-	r, w := Pipe()
+	r, w := inmem.Pipe()
 	defer r.Close()
 	defer w.Close()
 	s := NewStackSender()
@@ -25,7 +27,7 @@ func TestSendStack(t *testing.T) {
 				t.Fatalf("%#v", msg)
 			}
 		}()
-		_, _, err := s.Send(&Message{"hello", []string{"wonderful", "world"}}, 0)
+		_, _, err := s.Send(&beam.Message{"hello", []string{"wonderful", "world"}}, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -41,7 +43,7 @@ func TestStackLen(t *testing.T) {
 
 func TestStackAdd(t *testing.T) {
 	s := NewStackSender()
-	a := Buffer{}
+	a := inmem.Buffer{}
 	beforeA := s.Add(&a)
 	// Add on an empty StackSender should return an empty StackSender
 	if beforeA.Len() != 0 {
@@ -51,7 +53,7 @@ func TestStackAdd(t *testing.T) {
 		t.Fatalf("%#v", beforeA)
 	}
 	// Add a 2nd element
-	b := Buffer{}
+	b := inmem.Buffer{}
 	beforeB := s.Add(&b)
 	if beforeB.Len() != 1 {
 		t.Fatalf("%#v", beforeA)
@@ -59,9 +61,9 @@ func TestStackAdd(t *testing.T) {
 	if s.Len() != 2 {
 		t.Fatalf("%#v", beforeA)
 	}
-	s.Send(&Message{"for b", nil}, 0)
-	beforeB.Send(&Message{"for a", nil}, 0)
-	beforeA.Send(&Message{"for nobody", nil}, 0)
+	s.Send(&beam.Message{"for b", nil}, 0)
+	beforeB.Send(&beam.Message{"for a", nil}, 0)
+	beforeA.Send(&beam.Message{"for nobody", nil}, 0)
 	if len(a) != 1 {
 		t.Fatalf("%#v", a)
 	}
@@ -73,15 +75,15 @@ func TestStackAdd(t *testing.T) {
 // Misbehaving backends must be removed
 func TestStackAddBad(t *testing.T) {
 	s := NewStackSender()
-	buf := Buffer{}
+	buf := inmem.Buffer{}
 	s.Add(&buf)
-	r, w := Pipe()
+	r, w := inmem.Pipe()
 	s.Add(w)
 	if s.Len() != 2 {
 		t.Fatalf("%#v", s)
 	}
 	r.Close()
-	if _, _, err := s.Send(&Message{"for the buffer", nil}, 0); err != nil {
+	if _, _, err := s.Send(&beam.Message{"for the buffer", nil}, 0); err != nil {
 		t.Fatal(err)
 	}
 	if s.Len() != 1 {
