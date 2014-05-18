@@ -1,4 +1,4 @@
-package beam
+package unix
 
 import (
 	"github.com/dotcloud/docker/pkg/beam/data"

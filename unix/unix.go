@@ -1,4 +1,4 @@
-package beam
+package unix
 
 import (
 	"bufio"
