@@ -26,7 +26,15 @@ func (f *forwarder) Install(eng *engine.Engine) error {
 			return job.Errorf("%v", err)
 		}
 		job.Eng.Register("containers", func(job *engine.Job) engine.Status {
-			resp, err := client.call("GET", "/containers/json?all=1", "")
+			path := fmt.Sprintf(
+				"/containers/json?all=%s&size=%s&since=%s&before=%s&limit=%s",
+				url.QueryEscape(job.Getenv("all")),
+				url.QueryEscape(job.Getenv("size")),
+				url.QueryEscape(job.Getenv("since")),
+				url.QueryEscape(job.Getenv("before")),
+				url.QueryEscape(job.Getenv("limit")),
+			)
+			resp, err := client.call("GET", path, "")
 			if err != nil {
 				return job.Errorf("%s: get: %v", client.URL.String(), err)
 			}
