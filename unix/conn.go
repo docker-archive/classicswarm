@@ -94,7 +94,7 @@ func (c *Conn) Receive(mode int) (*beam.Message, beam.Receiver, beam.Sender, err
 	if len(parts) == 0 {
 		return nil, nil, nil, fmt.Errorf("malformed message")
 	}
-	msg := &beam.Message{parts[0], parts[1:]}
+	msg := &beam.Message{Name: parts[0], Args: parts[1:]}
 
 	// Setup nested streams
 	var (
