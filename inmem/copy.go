@@ -2,15 +2,16 @@ package inmem
 
 import (
 	"errors"
+	"github.com/docker/beam"
 	"sync"
 )
 
 type ReceiverFrom interface {
-	ReceiveFrom(Receiver) (int, error)
+	ReceiveFrom(beam.Receiver) (int, error)
 }
 
 type SenderTo interface {
-	SendTo(Sender) (int, error)
+	SendTo(beam.Sender) (int, error)
 }
 
 var (
@@ -18,7 +19,7 @@ var (
 	ErrIncompatibleReceiver = errors.New("incompatible receiver")
 )
 
-func Copy(dst Sender, src Receiver) (int, error) {
+func Copy(dst beam.Sender, src beam.Receiver) (int, error) {
 	var tasks sync.WaitGroup
 	defer tasks.Wait()
 	if senderTo, ok := src.(SenderTo); ok {
@@ -34,7 +35,7 @@ func Copy(dst Sender, src Receiver) (int, error) {
 	var (
 		n int
 	)
-	copyAndClose := func(dst Sender, src Receiver) {
+	copyAndClose := func(dst beam.Sender, src beam.Receiver) {
 		if dst == nil {
 			return
 		}
@@ -45,11 +46,11 @@ func Copy(dst Sender, src Receiver) (int, error) {
 		Copy(dst, src)
 	}
 	for {
-		msg, rcvR, rcvW, err := src.Receive(R | W)
+		msg, rcvR, rcvW, err := src.Receive(beam.R | beam.W)
 		if err != nil {
 			return n, err
 		}
-		sndR, sndW, err := dst.Send(msg, R|W)
+		sndR, sndW, err := dst.Send(msg, beam.R|beam.W)
 		if err != nil {
 			if rcvW != nil {
 				rcvW.Close()
