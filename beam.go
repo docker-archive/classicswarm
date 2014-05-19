@@ -2,6 +2,7 @@ package beam
 
 import (
 	"errors"
+	"os"
 )
 
 type Sender interface {
@@ -16,6 +17,7 @@ type Receiver interface {
 type Message struct {
 	Name string
 	Args []string
+	Att  *os.File
 }
 
 const (

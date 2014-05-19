@@ -1,8 +1,11 @@
 package inmem
 
 import (
+	"fmt"
 	"github.com/docker/beam"
 	"github.com/dotcloud/docker/pkg/testutils"
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -138,6 +141,45 @@ func TestSendNested(t *testing.T) {
 		}
 		if nested.Args[0] != "this is the nested message" {
 			t.Fatalf("%#v", nested)
+		}
+	})
+}
+
+func TestSendFile(t *testing.T) {
+	r, w := Pipe()
+	defer r.Close()
+	defer w.Close()
+	tmp, err := ioutil.TempFile("", "beam-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmp.Name())
+	fmt.Fprintf(tmp, "hello world\n")
+	tmp.Sync()
+	tmp.Seek(0, 0)
+	testutils.Timeout(t, func() {
+		go func() {
+			_, _, err := w.Send(&beam.Message{"file", []string{"path=" + tmp.Name()}, tmp}, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+		msg, _, _, err := r.Receive(0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if msg.Name != "file" {
+			t.Fatalf("%#v", msg)
+		}
+		if msg.Args[0] != "path="+tmp.Name() {
+			t.Fatalf("%#v", msg)
+		}
+		txt, err := ioutil.ReadAll(msg.Att)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(txt) != "hello world\n" {
+			t.Fatalf("%s\n", txt)
 		}
 	})
 }
