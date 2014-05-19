@@ -9,7 +9,7 @@ import (
 func TestHubSendEmpty(t *testing.T) {
 	hub := NewHub()
 	// Send to empty hub should silently drop
-	if r, w, err := hub.Send(&beam.Message{"hello", nil}, beam.R|beam.W); err != nil {
+	if r, w, err := hub.Send(&beam.Message{Name: "hello", Args: nil}, beam.R|beam.W); err != nil {
 		t.Fatal(err)
 	} else if r != nil {
 		t.Fatalf("%#v", r)
@@ -29,12 +29,12 @@ func TestHubSendOneHandler(t *testing.T) {
 	hub := NewHub()
 	defer hub.Close()
 	testutils.Timeout(t, func() {
-		in, _, err := hub.Send(&beam.Message{"register", nil}, beam.R)
+		in, _, err := hub.Send(&beam.Message{Name: "register", Args: nil}, beam.R)
 		if err != nil {
 			t.Fatal(err)
 		}
 		go func() {
-			if _, _, err := hub.Send(&beam.Message{"hello", nil}, 0); err != nil {
+			if _, _, err := hub.Send(&beam.Message{Name: "hello", Args: nil}, 0); err != nil {
 				t.Fatal(err)
 			}
 		}()
