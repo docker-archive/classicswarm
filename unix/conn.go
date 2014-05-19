@@ -51,6 +51,9 @@ func (c *Conn) Close() error {
 }
 
 func (c *Conn) Send(msg *beam.Message, mode int) (beam.Receiver, beam.Sender, error) {
+	if msg.Att != nil {
+		return nil, nil, fmt.Errorf("file attachment not yet implemented in unix transport")
+	}
 	parts := []string{msg.Name}
 	parts = append(parts, msg.Args...)
 	b := []byte(data.EncodeList(parts))
