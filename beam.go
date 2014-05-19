@@ -1,6 +1,8 @@
 package beam
 
-import ()
+import (
+	"errors"
+)
 
 type Sender interface {
 	Send(msg *Message, mode int) (Receiver, Sender, error)
@@ -19,4 +21,17 @@ type Message struct {
 const (
 	R = 1 << (32 - 1 - iota)
 	W
+)
+
+type ReceiverFrom interface {
+	ReceiveFrom(Receiver) (int, error)
+}
+
+type SenderTo interface {
+	SendTo(Sender) (int, error)
+}
+
+var (
+	ErrIncompatibleSender   = errors.New("incompatible sender")
+	ErrIncompatibleReceiver = errors.New("incompatible receiver")
 )
