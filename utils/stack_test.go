@@ -73,7 +73,7 @@ func TestStackLen(t *testing.T) {
 
 func TestStackAdd(t *testing.T) {
 	s := NewStackSender()
-	a := inmem.Buffer{}
+	a := Buffer{}
 	beforeA := s.Add(&a)
 	// Add on an empty StackSender should return an empty StackSender
 	if beforeA.Len() != 0 {
@@ -83,7 +83,7 @@ func TestStackAdd(t *testing.T) {
 		t.Fatalf("%#v", beforeA)
 	}
 	// Add a 2nd element
-	b := inmem.Buffer{}
+	b := Buffer{}
 	beforeB := s.Add(&b)
 	if beforeB.Len() != 1 {
 		t.Fatalf("%#v", beforeA)
@@ -105,7 +105,7 @@ func TestStackAdd(t *testing.T) {
 // Misbehaving backends must be removed
 func TestStackAddBad(t *testing.T) {
 	s := NewStackSender()
-	buf := inmem.Buffer{}
+	buf := Buffer{}
 	s.Add(&buf)
 	r, w := inmem.Pipe()
 	s.Add(w)

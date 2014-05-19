@@ -178,7 +178,7 @@ func (r *PipeReceiver) SendTo(dst beam.Sender) (int, error) {
 	// If the destination is a PipeSender, we can cheat
 	pdst, ok := dst.(*PipeSender)
 	if !ok {
-		return 0, ErrIncompatibleSender
+		return 0, beam.ErrIncompatibleSender
 	}
 	for {
 		pmsg, err := r.p.preceive()
@@ -231,7 +231,7 @@ func (w *PipeSender) ReceiveFrom(src beam.Receiver) (int, error) {
 	// If the destination is a PipeReceiver, we can cheat
 	psrc, ok := src.(*PipeReceiver)
 	if !ok {
-		return 0, ErrIncompatibleReceiver
+		return 0, beam.ErrIncompatibleReceiver
 	}
 	for {
 		pmsg, err := psrc.p.preceive()

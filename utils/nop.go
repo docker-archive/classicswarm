@@ -1,4 +1,4 @@
-package inmem
+package utils
 
 import (
 	"github.com/docker/beam"
