@@ -51,6 +51,9 @@ func (c *Conn) Close() error {
 }
 
 func (c *Conn) Send(msg *beam.Message, mode int) (beam.Receiver, beam.Sender, error) {
+	if msg.Att != nil {
+		return nil, nil, fmt.Errorf("file attachment not yet implemented in unix transport")
+	}
 	parts := []string{msg.Name}
 	parts = append(parts, msg.Args...)
 	b := []byte(data.EncodeList(parts))
@@ -94,7 +97,7 @@ func (c *Conn) Receive(mode int) (*beam.Message, beam.Receiver, beam.Sender, err
 	if len(parts) == 0 {
 		return nil, nil, nil, fmt.Errorf("malformed message")
 	}
-	msg := &beam.Message{parts[0], parts[1:]}
+	msg := &beam.Message{Name: parts[0], Args: parts[1:]}
 
 	// Setup nested streams
 	var (
