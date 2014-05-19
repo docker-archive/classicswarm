@@ -1,4 +1,4 @@
-package inmem
+package unix
 
 import (
 	"github.com/docker/beam"
@@ -6,8 +6,11 @@ import (
 	"testing"
 )
 
-func TestSimpleSend(t *testing.T) {
-	r, w := Pipe()
+func TestPair(t *testing.T) {
+	r, w, err := Pair()
+	if err != nil {
+		t.Fatal("Unexpected error")
+	}
 	defer r.Close()
 	defer w.Close()
 	testutils.Timeout(t, func() {
@@ -22,50 +25,22 @@ func TestSimpleSend(t *testing.T) {
 			if msg.Args[0] != "hello world" {
 				t.Fatalf("%#v", *msg)
 			}
-			assertMode(t, in, out, 0)
+			if in != nil && out != nil {
+				t.Fatal("Unexpected return value")
+			}
 		}()
-		in, out, err := w.Send(&beam.Message{Name: "print", Args: []string{"hello world"}}, 0)
+		_, _, err := w.Send(&beam.Message{Name: "print", Args: []string{"hello world"}}, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		assertMode(t, in, out, 0)
 	})
 }
 
-// assertMode verifies that the values of r and w match
-// mode.
-// If mode has the R bit set, r must be non-nil. Otherwise it must be nil.
-// If mode has the W bit set, w must be non-nil. Otherwise it must be nil.
-//
-// If any of these conditions are not met, t.Fatal is called and the active
-// test fails.
-func assertMode(t *testing.T, r beam.Receiver, w beam.Sender, mode int) {
-	// If mode has the R bit set, r must be non-nil
-	if mode&beam.R != 0 {
-		if r == nil {
-			t.Fatalf("should be non-nil: %#v", r)
-		}
-		// Otherwise it must be nil.
-	} else {
-		if r != nil {
-			t.Fatalf("should be nil: %#v", r)
-		}
-	}
-	// If mode has the W bit set, w must be non-nil
-	if mode&beam.W != 0 {
-		if w == nil {
-			t.Fatalf("should be non-nil: %#v", w)
-		}
-		// Otherwise it must be nil.
-	} else {
-		if w != nil {
-			t.Fatalf("should be nil: %#v", w)
-		}
-	}
-}
-
 func TestSendReply(t *testing.T) {
-	r, w := Pipe()
+	r, w, err := Pair()
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer r.Close()
 	defer w.Close()
 	testutils.Timeout(t, func() {
@@ -104,7 +79,10 @@ func TestSendReply(t *testing.T) {
 }
 
 func TestSendNested(t *testing.T) {
-	r, w := Pipe()
+	r, w, err := Pair()
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer r.Close()
 	defer w.Close()
 	testutils.Timeout(t, func() {
@@ -140,4 +118,37 @@ func TestSendNested(t *testing.T) {
 			t.Fatalf("%#v", nested)
 		}
 	})
+}
+
+// FIXME: duplicate from inmem/inmem_test.go
+// assertMode verifies that the values of r and w match
+// mode.
+// If mode has the R bit set, r must be non-nil. Otherwise it must be nil.
+// If mode has the W bit set, w must be non-nil. Otherwise it must be nil.
+//
+// If any of these conditions are not met, t.Fatal is called and the active
+// test fails.
+func assertMode(t *testing.T, r beam.Receiver, w beam.Sender, mode int) {
+	// If mode has the R bit set, r must be non-nil
+	if mode&beam.R != 0 {
+		if r == nil {
+			t.Fatalf("should be non-nil: %#v", r)
+		}
+		// Otherwise it must be nil.
+	} else {
+		if r != nil {
+			t.Fatalf("should be nil: %#v", r)
+		}
+	}
+	// If mode has the W bit set, w must be non-nil
+	if mode&beam.W != 0 {
+		if w == nil {
+			t.Fatalf("should be non-nil: %#v", w)
+		}
+		// Otherwise it must be nil.
+	} else {
+		if w != nil {
+			t.Fatalf("should be nil: %#v", w)
+		}
+	}
 }
