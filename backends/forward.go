@@ -25,32 +25,7 @@ func (f *forwarder) Install(eng *engine.Engine) error {
 		if err != nil {
 			return job.Errorf("%v", err)
 		}
-		job.Eng.Register("containers", func(job *engine.Job) engine.Status {
-			path := fmt.Sprintf(
-				"/containers/json?all=%s&size=%s&since=%s&before=%s&limit=%s",
-				url.QueryEscape(job.Getenv("all")),
-				url.QueryEscape(job.Getenv("size")),
-				url.QueryEscape(job.Getenv("since")),
-				url.QueryEscape(job.Getenv("before")),
-				url.QueryEscape(job.Getenv("limit")),
-			)
-			resp, err := client.call("GET", path, "")
-			if err != nil {
-				return job.Errorf("%s: get: %v", client.URL.String(), err)
-			}
-			// FIXME: check for response error
-			c := engine.NewTable("Created", 0)
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return job.Errorf("%s: read body: %v", client.URL.String(), err)
-			}
-			fmt.Printf("---> '%s'\n", body)
-			if _, err := c.ReadListFrom(body); err != nil {
-				return job.Errorf("%s: readlist: %v", client.URL.String(), err)
-			}
-			c.WriteListTo(job.Stdout)
-			return engine.StatusOK
-		})
+		job.Eng.Register("containers", client.containers)
 		return engine.StatusOK
 	})
 	return nil
@@ -92,4 +67,31 @@ func (c *client) call(method, path, body string) (*http.Response, error) {
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (c *client) containers(job *engine.Job) engine.Status {
+	path := fmt.Sprintf(
+		"/containers/json?all=%s&size=%s&since=%s&before=%s&limit=%s",
+		url.QueryEscape(job.Getenv("all")),
+		url.QueryEscape(job.Getenv("size")),
+		url.QueryEscape(job.Getenv("since")),
+		url.QueryEscape(job.Getenv("before")),
+		url.QueryEscape(job.Getenv("limit")),
+	)
+	resp, err := c.call("GET", path, "")
+	if err != nil {
+		return job.Errorf("%s: get: %v", c.URL.String(), err)
+	}
+	// FIXME: check for response error
+	t := engine.NewTable("Created", 0)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return job.Errorf("%s: read body: %v", c.URL.String(), err)
+	}
+	fmt.Printf("---> '%s'\n", body)
+	if _, err := t.ReadListFrom(body); err != nil {
+		return job.Errorf("%s: readlist: %v", c.URL.String(), err)
+	}
+	t.WriteListTo(job.Stdout)
+	return engine.StatusOK
 }
