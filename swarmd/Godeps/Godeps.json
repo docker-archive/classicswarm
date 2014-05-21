@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/docker/swarmd/swarmd",
+	"ImportPath": "github.com/docker/libswarm/swarmd",
 	"GoVersion": "go1.1.1",
 	"Deps": [
 		{
