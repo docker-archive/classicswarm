@@ -71,6 +71,21 @@ func (c *client) call(method, path, body string) (*http.Response, error) {
 	return resp, nil
 }
 
+func (c *client) callAndCopyOutput(job *engine.Job, method, path, body string) engine.Status {
+	resp, err := c.call("GET", path, "")
+	if err != nil {
+		return job.Errorf("%s: get: %v", c.URL.String(), err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		io.Copy(job.Stderr, resp.Body)
+		return engine.StatusErr
+	}
+
+	io.Copy(job.Stdout, resp.Body)
+	return engine.StatusOK
+}
+
 func (c *client) containers(job *engine.Job) engine.Status {
 	path := fmt.Sprintf(
 		"/containers/json?all=%s&size=%s&since=%s&before=%s&limit=%s",
@@ -106,16 +121,5 @@ func (c *client) inspect(job *engine.Job) engine.Status {
 		kind, name, url.QueryEscape(job.Getenv("conflict")),
 	)
 
-	resp, err := c.call("GET", path, "")
-	if err != nil {
-		return job.Errorf("%s: get: %v", c.URL.String(), err)
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		io.Copy(job.Stderr, resp.Body)
-		return engine.StatusErr
-	}
-
-	io.Copy(job.Stdout, resp.Body)
-	return engine.StatusOK
+	return c.callAndCopyOutput(job, "GET", path, "")
 }
