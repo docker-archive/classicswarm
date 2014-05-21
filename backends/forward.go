@@ -3,6 +3,7 @@ package backends
 import (
 	"fmt"
 	"github.com/dotcloud/docker/engine"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -26,6 +27,7 @@ func (f *forwarder) Install(eng *engine.Engine) error {
 			return job.Errorf("%v", err)
 		}
 		job.Eng.Register("containers", client.containers)
+		job.Eng.Register("inspect", client.inspect)
 		return engine.StatusOK
 	})
 	return nil
@@ -93,5 +95,27 @@ func (c *client) containers(job *engine.Job) engine.Status {
 		return job.Errorf("%s: readlist: %v", c.URL.String(), err)
 	}
 	t.WriteListTo(job.Stdout)
+	return engine.StatusOK
+}
+
+func (c *client) inspect(job *engine.Job) engine.Status {
+	name, kind := job.Args[0], job.Args[1]
+
+	path := fmt.Sprintf(
+		"/%ss/%s/json?conflict=%s",
+		kind, name, url.QueryEscape(job.Getenv("conflict")),
+	)
+
+	resp, err := c.call("GET", path, "")
+	if err != nil {
+		return job.Errorf("%s: get: %v", c.URL.String(), err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		io.Copy(job.Stderr, resp.Body)
+		return engine.StatusErr
+	}
+
+	io.Copy(job.Stdout, resp.Body)
 	return engine.StatusOK
 }
