@@ -118,6 +118,32 @@ docker -H unix://b.sock ps
 This last command should report 1 container: `myapp`.
 
 
+### Creating a new backend
+Create a simple my-backend.go:
+```
+func MyBackend() engine.Installer {
+	return &myBackend{}
+}
+
+func (f *computeEngineForward) Install(eng *engine.Engine) error {
+	eng.Register("mybackend", func(job *engine.Job) engine.Status {
+	job.Eng.Register("containers", func(job *engine.Job) engine.Status {
+			log.Printf("%#v", *job)
+			return engine.StatusOK
+		})
+		return engine.StatusOK
+	})
+	return nil
+}
+```
+
+Then edit backends.go, and add your backend:
+```
+...
+	MyBackend().Install(back)
+...
+```
+
 ## Creators
 
 **Solomon Hykes**
