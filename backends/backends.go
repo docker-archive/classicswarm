@@ -17,5 +17,6 @@ func New() *engine.Engine {
 	Debug().Install(back)
 	Simulator().Install(back)
 	Forward().Install(back)
+	CloudBackend().Install(back)
 	return back
 }
