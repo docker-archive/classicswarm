@@ -27,6 +27,7 @@ func (f *forwarder) Install(eng *engine.Engine) error {
 			return job.Errorf("%v", err)
 		}
 		job.Eng.Register("containers", client.containers)
+		job.Eng.Register("images", client.images)
 		job.Eng.Register("inspect", client.inspect)
 		return engine.StatusOK
 	})
@@ -111,6 +112,16 @@ func (c *client) containers(job *engine.Job) engine.Status {
 	}
 	t.WriteListTo(job.Stdout)
 	return engine.StatusOK
+}
+
+func (c *client) images(job *engine.Job) engine.Status {
+	path := fmt.Sprintf(
+		"/images/json?all=%s&filter=%s",
+		url.QueryEscape(job.Getenv("all")),
+		url.QueryEscape(job.Getenv("filter")),
+	)
+
+	return c.callAndCopyOutput(job, "GET", path, "")
 }
 
 func (c *client) inspect(job *engine.Job) engine.Status {
