@@ -83,7 +83,7 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			}
 			cloud, err = NewCloudGCE(job.Args[3])
 			if err != nil {
-				job.Errorf("Unexpected error: %#v", err)
+				return job.Errorf("Unexpected error: %#v", err)
 			}
 		default:
 			return job.Errorf("Unknown cloud provider: %s", job.Args[0])
@@ -95,7 +95,7 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			_, err = cloud.CreateInstance(instance, zone)
 		}
 		if err != nil {
-			job.Errorf("Unexpected error: %#v", err)
+			return job.Errorf("Unexpected error: %#v", err)
 		}
 		remotePort := 8000
 		localPort := 8001
@@ -110,13 +110,13 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			fmt.Printf("Creating tunnel")
 			_, err = cloud.OpenSecureTunnel(instance, zone, localPort, remotePort)
 			if err != nil {
-				job.Errorf("Failed to open tunnel: %#v", err)
+				return job.Errorf("Failed to open tunnel: %#v", err)
 			}
 		}
 		host := fmt.Sprintf("tcp://localhost:%d", localPort)
 		client, err := newClient(host, apiVersion)
 		if err != nil {
-			job.Errorf("Unexpected error: %#v", err)
+			return job.Errorf("Unexpected error: %#v", err)
 		}
 		//job.Eng.Register("inspect", func(job *engine.Job) engine.Status {
 		//	resp, err := client.call("GET", "/containers/
