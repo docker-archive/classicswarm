@@ -8,6 +8,21 @@
 			"Rev": "64ee4bbc10fac4f8d1d56451beac771d7cae54fe"
 		},
 		{
+			"ImportPath": "code.google.com/p/goauth2/oauth",
+			"Comment": "weekly-44",
+			"Rev": "696c088491246273e92442aa66b5281e5bb34faa"
+		},
+		{
+			"ImportPath": "code.google.com/p/google-api-go-client/compute/v1",
+			"Comment": "release-84",
+			"Rev": "2ba9f0995cf0215c20ebd6de43a14d70af30fea6"
+		},
+		{
+			"ImportPath": "code.google.com/p/google-api-go-client/googleapi",
+			"Comment": "release-84",
+			"Rev": "2ba9f0995cf0215c20ebd6de43a14d70af30fea6"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.0.0-43-g3fa24ca",
 			"Rev": "3fa24ca4f3284911d9cac655d06b1d548653c180"
