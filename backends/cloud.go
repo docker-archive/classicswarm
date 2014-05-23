@@ -52,19 +52,19 @@ type cloud struct {
 }
 
 type Container struct {
-	Id	string
+	Id    string
 	Image string
-	Tty bool
+	Tty   bool
 }
 
 // returns true, if the connection was successful, false otherwise
 type Tunnel struct {
-        url.URL
+	url.URL
 }
 
 func (t Tunnel) isActive() bool {
-        _, err := http.Get(t.String())
-        return err == nil
+	_, err := http.Get(t.String())
+	return err == nil
 }
 
 func (s *cloud) Install(eng *engine.Engine) error {
@@ -91,7 +91,7 @@ func (s *cloud) Install(eng *engine.Engine) error {
 		ip, err := cloud.GetPublicIPAddress(instance, zone)
 		instanceRunning := len(ip) > 0
 		if !instanceRunning {
-			log.Print("Instance doesn't exist, creating....");
+			log.Print("Instance doesn't exist, creating....")
 			_, err = cloud.CreateInstance(instance, zone)
 		}
 		if err != nil {
@@ -101,17 +101,17 @@ func (s *cloud) Install(eng *engine.Engine) error {
 		localPort := 8001
 		apiVersion := "v1.10"
 		tunnelUrl, err := url.Parse(fmt.Sprintf("http://localhost:%d/%s/containers/json", localPort, apiVersion))
-        if err != nil {
-                return job.Errorf("Unexpected error: %#v", err)
-        }
-        tunnel := Tunnel{*tunnelUrl}
+		if err != nil {
+			return job.Errorf("Unexpected error: %#v", err)
+		}
+		tunnel := Tunnel{*tunnelUrl}
 
-        if !tunnel.isActive() {
-                fmt.Printf("Creating tunnel")
-				_, err = cloud.OpenSecureTunnel(instance, zone, localPort, remotePort)
-				if err != nil {
-					job.Errorf("Failed to open tunnel: %#v", err)
-				}
+		if !tunnel.isActive() {
+			fmt.Printf("Creating tunnel")
+			_, err = cloud.OpenSecureTunnel(instance, zone, localPort, remotePort)
+			if err != nil {
+				job.Errorf("Failed to open tunnel: %#v", err)
+			}
 		}
 		host := fmt.Sprintf("tcp://localhost:%d", localPort)
 		client, err := newClient(host, apiVersion)
@@ -123,7 +123,7 @@ func (s *cloud) Install(eng *engine.Engine) error {
 		job.Eng.Register("create", func(job *engine.Job) engine.Status {
 			container := Container{
 				Image: job.Getenv("Image"),
-				Tty: job.Getenv("Tty") == "true",
+				Tty:   job.Getenv("Tty") == "true",
 			}
 			data, err := json.Marshal(container)
 			resp, err := client.call("POST", "/containers/create", string(data))
@@ -143,7 +143,7 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			log.Printf("%s", string(body))
 			return engine.StatusOK
 		})
-		
+
 		job.Eng.Register("start", func(job *engine.Job) engine.Status {
 			path := fmt.Sprintf("/containers/%s/start", job.Args[0])
 			resp, err := client.call("POST", path, "{\"Binds\":[],\"ContainerIDFile\":\"\",\"LxcConf\":[],\"Privileged\":false,\"PortBindings\":{},\"Links\":null,\"PublishAllPorts\":false,\"Dns\":null,\"DnsSearch\":[],\"VolumesFrom\":[]}")
@@ -184,11 +184,11 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			c.WriteListTo(job.Stdout)
 			return engine.StatusOK
 		})
-		
+
 		job.Eng.Register("container_delete", func(job *engine.Job) engine.Status {
 			log.Printf("%#v", job.Args)
-			path := "/containers/" + job.Args[0] 
-			
+			path := "/containers/" + job.Args[0]
+
 			resp, err := client.call("DELETE", path, "")
 			if err != nil {
 				return job.Errorf("%s: delete: %v", client.URL.String(), err)
@@ -196,11 +196,11 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			log.Printf("%#v", resp)
 			return engine.StatusOK
 		})
-		
+
 		job.Eng.Register("stop", func(job *engine.Job) engine.Status {
 			log.Printf("%#v", job.Args)
 			path := "/containers/" + job.Args[0] + "/stop"
-			
+
 			resp, err := client.call("POST", path, "")
 			if err != nil {
 				return job.Errorf("%s: delete: %v", client.URL.String(), err)
@@ -208,7 +208,7 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			log.Printf("%#v", resp)
 			return engine.StatusOK
 		})
-		
+
 		job.Eng.RegisterCatchall(func(job *engine.Job) engine.Status {
 			log.Printf("%#v %#v %#v", *job, job.Env(), job.Args)
 			return engine.StatusOK
