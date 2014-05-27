@@ -122,7 +122,10 @@ func (c *fleetClient) start(job *engine.Job) engine.Status {
 	}
 
 	job.Logf("Setting Job(%s) target state to launched", j.Name)
-	c.registry.SetJobTargetState(j.Name, fleetJob.JobStateLaunched)
+	err = c.registry.SetJobTargetState(j.Name, fleetJob.JobStateLaunched)
+	if err != nil {
+		return job.Error(err)
+	}
 
 	return engine.StatusOK
 }
