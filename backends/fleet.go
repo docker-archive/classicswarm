@@ -81,7 +81,7 @@ func (c *fleetClient) containers(job *engine.Job) engine.Status {
 
 func (c *fleetClient) create(job *engine.Job) engine.Status {
 	id := randomHexString(64)
-	command := []string{"docker", "run"}
+	command := []string{"/usr/bin/docker", "run"}
 	command = append(command, job.Getenv("Image"))
 
 	for _, component := range job.GetenvList("Cmd") {
