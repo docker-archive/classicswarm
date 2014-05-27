@@ -28,7 +28,7 @@ import (
 	"path"
 	"strings"
 	"time"
-	
+
 	"code.google.com/p/goauth2/oauth"
 	compute "code.google.com/p/google-api-go-client/compute/v1"
 )
