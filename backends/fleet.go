@@ -33,6 +33,7 @@ func (f *fleet) Install(eng *engine.Engine) error {
 		eng.Register("containers", client.containers)
 		eng.Register("create", client.create)
 		eng.Register("start", client.start)
+		eng.Register("container_delete", client.containerDelete)
 		return engine.StatusOK
 	})
 	return nil
@@ -128,6 +129,39 @@ func (c *fleetClient) start(job *engine.Job) engine.Status {
 	}
 
 	return engine.StatusOK
+}
+
+func (c *fleetClient) containerDelete(job *engine.Job) engine.Status {
+	name := job.Args[0]
+	j, err := c.getJobByPartialId(name)
+	if err != nil {
+		return job.Error(err)
+	}
+	if j == nil {
+		return job.Errorf("unable to find Job(%s)", name)
+	}
+
+	err = c.registry.DestroyJob(j.Name)
+	if err != nil {
+		return job.Error(err)
+	}
+
+	return engine.StatusOK
+}
+
+func (c *fleetClient) getJobByPartialId(name string) (*fleetJob.Job, error) {
+	jobs, err := c.registry.GetAllJobs()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, j := range jobs {
+		if j.Name[0:len(name)] == name {
+			return &j, nil
+		}
+	}
+
+	return nil, nil
 }
 
 func randomHexString(n int) string {
