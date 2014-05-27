@@ -10,7 +10,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 )
 
 func main() {
@@ -54,6 +53,7 @@ func cmdDaemon(c *cli.Context) {
 	front.Logging = false
 	// FIXME: server should expose an engine.Installer
 	front.Register(c.App.Name, server.ServeApi)
+	front.Register("acceptconnections", server.AcceptConnections)
 	front.RegisterCatchall(func(job *engine.Job) engine.Status {
 		fw := back.Job(job.Name, job.Args...)
 		fw.Stdout.Add(job.Stdout)
@@ -75,9 +75,6 @@ func cmdDaemon(c *cli.Context) {
 			Fatalf("serveapi: %v", err)
 		}
 	}()
-	// There is a race condition in engine.ServeApi.
-	// As a workaround we sleep to give it time to register 'acceptconnections'.
-	time.Sleep(1 * time.Second)
 	// Notify that we're ready to receive connections
 	if err := front.Job("acceptconnections").Run(); err != nil {
 		Fatalf("acceptconnections: %v", err)
