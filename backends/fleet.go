@@ -89,12 +89,12 @@ func (c *fleetClient) create(job *engine.Job) engine.Status {
 		command = append(command, strconv.Quote(component))
 	}
 
-	u := unit.NewUnit(fmt.Sprintf(`[Unit]
-Description=%s
-
-[Service]
-ExecStart=%s
-`, id, strings.Join(command, " ")))
+	u := new(unit.Unit)
+	u.Contents = map[string]map[string][]string{}
+	u.Contents["Unit"] = map[string][]string{}
+	u.Contents["Unit"]["Description"] = []string{id}
+	u.Contents["Service"] = map[string][]string{}
+	u.Contents["Service"]["ExecStart"] = []string{strings.Join(command, " ")}
 
 	flj := fleetJob.NewJob(fmt.Sprintf("%s.service", id), *u)
 
