@@ -95,7 +95,7 @@ Description=%s
 ExecStart=%s
 `, id, strings.Join(command, " ")))
 
-	flj := fleetJob.NewJob(id, *u)
+	flj := fleetJob.NewJob(fmt.Sprintf("%s.service", id), *u)
 
 	err := c.registry.CreateJob(flj)
 	if err != nil {
@@ -107,7 +107,7 @@ ExecStart=%s
 }
 
 func (c *fleetClient) start(job *engine.Job) engine.Status {
-	name := job.Args[0]
+	name := fmt.Sprintf("%s.service", job.Args[0])
 	j, err := c.registry.GetJob(name)
 
 	if err != nil {
