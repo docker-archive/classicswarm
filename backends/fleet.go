@@ -6,10 +6,12 @@ import (
 	"github.com/coreos/fleet/third_party/github.com/coreos/go-etcd/etcd"
 	"github.com/coreos/fleet/unit"
 	"github.com/dotcloud/docker/engine"
+	"github.com/flynn/go-shlex"
 
-	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -51,23 +53,47 @@ func (c *fleetClient) containers(job *engine.Job) engine.Status {
 	if err != nil {
 		return job.Error(err)
 	}
-	serialized, err := json.Marshal(jobs)
-	if err != nil {
-		return job.Error(err)
+
+	outs := engine.NewTable("Created", 0)
+	for _, fj := range jobs {
+		out := new(engine.Env)
+		out.Set("Id", fj.Name)
+
+		execStart := fj.Unit.Contents["Service"]["ExecStart"][0]
+		fullCommand, err := shlex.Split(execStart)
+		if err != nil {
+			fullCommand = strings.Split(execStart, " ")
+		}
+		out.Set("Image", fullCommand[2])
+		out.Set("Command", strings.Join(fullCommand[3:], " "))
+
+		if *(fj.State) == fleetJob.JobStateLaunched {
+			out.Set("Status", "Up 10 seconds")
+		} else if *(fj.State) == fleetJob.JobStateInactive {
+			out.Set("Status", "Exited (0) 10 seconds ago")
+		}
+		outs.Add(out)
 	}
-	job.Stdout.Write(serialized)
+	outs.WriteListTo(job.Stdout)
+
 	return engine.StatusOK
 }
 
 func (c *fleetClient) create(job *engine.Job) engine.Status {
 	id := randomHexString(64)
+	command := []string{"docker", "run"}
+	command = append(command, job.Getenv("Image"))
+
+	for _, component := range job.GetenvList("Cmd") {
+		command = append(command, strconv.Quote(component))
+	}
 
 	u := unit.NewUnit(fmt.Sprintf(`[Unit]
 Description=%s
 
 [Service]
-ExecStart=/bin/bash -c "while true; do echo \"Hello, world\"; sleep 1; done"
-`, id))
+ExecStart=%s
+`, id, strings.Join(command, " ")))
 
 	flj := fleetJob.NewJob(id, *u)
 
