@@ -13,6 +13,10 @@ import (
 func New() *engine.Engine {
 	back := engine.New()
 	back.Logging = false
+
+	// Install the backend handler
+	EngineBus("backends").Install(back)
+
 	// Register all backends here
 	Debug().Install(back)
 	Simulator().Install(back)
