@@ -18,5 +18,6 @@ func New() *engine.Engine {
 	Simulator().Install(back)
 	Forward().Install(back)
 	CloudBackend().Install(back)
+	Fleet().Install(back)
 	return back
 }
