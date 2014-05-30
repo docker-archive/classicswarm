@@ -18,7 +18,7 @@ func main() {
 	app.Usage = "Control a heterogenous distributed system with the Docker API"
 	app.Version = "0.0.1"
 	app.Flags = []cli.Flag{
-		cli.StringFlag{"backend", "debug", "load a backend"},
+		cli.StringFlag{"backends", "debug", "load a backend"},
 	}
 	app.Action = cmdDaemon
 	app.Run(os.Args)
@@ -29,21 +29,22 @@ func cmdDaemon(c *cli.Context) {
 		Fatalf("Usage: %s <proto>://<address> [<proto>://<address>]...\n", c.App.Name)
 	}
 
-	// Load backend
-	// FIXME: allow for multiple backends to be loaded.
-	// This could be done by instantiating 1 engine per backend,
-	// installing each backend in its respective engine,
-	// then registering a Catchall on the frontent engine which
-	// multiplexes across all backends (with routing / filtering
-	// logic along the way).
-	back := backends.New()
-	bName, bArgs, err := parseCmd(c.String("backend"))
-	if err != nil {
-		Fatalf("%v", err)
-	}
-	fmt.Printf("---> Loading backend '%s'\n", strings.Join(append([]string{bName}, bArgs...), " "))
-	if err := back.Job(bName, bArgs...).Run(); err != nil {
-		Fatalf("%s: %v\n", bName, err)
+	// Load backends
+	// Backends are defined as commands delimited by semi-colons
+	back := backends.NewMux()
+	backendCommands := strings.Split(c.String("backends"), ";")
+
+	// Backends are treated as jobs that are started up in addition to
+	// adding the backend to the engine multiplexer.
+	for _, bCmd := range backendCommands {
+		if bName, bArgs, err := parseCmd(strings.TrimSpace(bCmd)); err == nil {
+			// Enable the backend engine in the engine multiplexer
+			if err := back.Enable(bName, bArgs...); err != nil {
+				Fatalf("Failed to load %s: %v\n", bName, err)
+			}
+		} else {
+			Fatalf("Failed to parse command: %s, %v\n", bCmd, err)
+		}
 	}
 
 	// Register the API entrypoint
@@ -51,20 +52,13 @@ func cmdDaemon(c *cli.Context) {
 	// stderr.
 	front := engine.New()
 	front.Logging = false
+
 	// FIXME: server should expose an engine.Installer
 	front.Register(c.App.Name, server.ServeApi)
 	front.Register("acceptconnections", server.AcceptConnections)
-	front.RegisterCatchall(func(job *engine.Job) engine.Status {
-		fw := back.Job(job.Name, job.Args...)
-		fw.Stdout.Add(job.Stdout)
-		fw.Stderr.Add(job.Stderr)
-		fw.Stdin.Add(job.Stdin)
-		for key, val := range job.Env().Map() {
-			fw.Setenv(key, val)
-		}
-		fw.Run()
-		return engine.Status(fw.StatusCode())
-	})
+
+	// Install the backend mux into the frontend
+	back.Install(front)
 
 	// Call the API entrypoint
 	go func() {
