@@ -1,15 +1,20 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/docker/beam"
+	"github.com/docker/beam/inmem"
+	beamutils "github.com/docker/beam/utils"
 	"github.com/docker/libswarm/backends"
-	"github.com/dotcloud/docker/api/server"
+	_ "github.com/dotcloud/docker/api/server"
 	"github.com/dotcloud/docker/engine"
 	"github.com/flynn/go-shlex"
 	"io"
 	"os"
 	"strings"
+	"sync"
 )
 
 func main() {
@@ -24,63 +29,158 @@ func main() {
 	app.Run(os.Args)
 }
 
+func EngineAsSender(eng *engine.Engine) beam.Sender {
+	r, w := inmem.Pipe()
+	go func() {
+		for {
+			msg, msgr, msgw, err := r.Receive(beam.R | beam.W)
+			if err != nil {
+				return
+			}
+			go func(msg *beam.Message, in beam.Receiver, out beam.Sender) {
+				job := eng.Job(msg.Name, msg.Args...)
+				stdout, _ := job.Stdout.AddPipe() // can't fail
+				stderr, _ := job.Stderr.AddPipe() // can't fail
+				stdinR, stdinW := io.Pipe()
+				defer stdinR.Close()
+				defer stdinW.Close()
+				job.Stdin.Add(stdinR)
+				log := func(src io.Reader) {
+					scanner := bufio.NewScanner(src)
+					for scanner.Scan() {
+						if scanner.Err() != nil {
+							return
+						}
+						if _, _, err := out.Send(&beam.Message{Name: "log", Args: []string{scanner.Text()}}, 0); err != nil {
+							return
+						}
+					}
+				}
+				var tasks sync.WaitGroup
+				tasks.Add(3)
+				go func() {
+					// Read from stdout, send "log" events
+					defer tasks.Done()
+					log(stdout)
+				}()
+				go func() {
+					// Read from stderr, send "log" events
+					// FIXME: how to differentiate stderr/stdout logs?
+					defer tasks.Done()
+					log(stderr)
+				}()
+				go func() {
+					// Receive events, send "log" events to stdin
+					defer tasks.Done()
+					for {
+						m, _, _, err := in.Receive(0)
+						if err != nil {
+							return
+						}
+						if m.Name == "log" {
+							if len(m.Args) < 1 {
+								continue
+							}
+							fmt.Fprintf(stdinW, "%s\n", strings.TrimRight(m.Args[0], "\r\n"))
+						}
+					}
+				}()
+				err := job.Run()
+				if err != nil {
+					out.Send(&beam.Message{Name: "error", Args: []string{err.Error()}}, 0)
+				}
+			}(msg, msgr, msgw)
+		}
+	}()
+	return w
+}
+
+func SenderAsEngine(s beam.Sender) *engine.Engine {
+	eng := engine.New()
+	eng.RegisterCatchall(func(job *engine.Job) engine.Status {
+		msg := &beam.Message{
+			Name: job.Name,
+			Args: job.Args,
+		}
+		// FIXME: serialize job.Env into a trailing argument
+		r, w, err := s.Send(msg, beam.R|beam.W)
+		if err != nil {
+			return job.Errorf("beam send: %v", err)
+		}
+		var tasks sync.WaitGroup
+		tasks.Add(1)
+		go func() {
+			defer tasks.Done()
+			in := bufio.NewScanner(job.Stdin)
+			for in.Scan() {
+				_, _, err := w.Send(&beam.Message{Name: "log", Args: []string{in.Text()}}, 0)
+				if err != nil {
+					return
+				}
+			}
+		}()
+		tasks.Add(1)
+		var status engine.Status = engine.StatusOK
+		go func() {
+			defer tasks.Done()
+			for {
+				msg, _, _, err := r.Receive(0)
+				if err != nil {
+					return
+				}
+				if msg.Name == "log" {
+					if len(msg.Args) < 1 {
+						continue
+					}
+					fmt.Fprintf(job.Stdout, "%s\n", strings.TrimRight(msg.Args[0], "\r\n"))
+				} else if msg.Name == "error" {
+					status = engine.StatusErr
+					if len(msg.Args) < 1 {
+						continue
+					}
+					fmt.Fprintf(job.Stderr, "%s\n", strings.TrimRight(msg.Args[0], "\r\n"))
+				}
+			}
+		}()
+		tasks.Wait()
+		return status
+	})
+	return eng
+}
+
 func cmdDaemon(c *cli.Context) {
 	if len(c.Args()) == 0 {
 		Fatalf("Usage: %s <proto>://<address> [<proto>://<address>]...\n", c.App.Name)
 	}
 
-	// Load backend
-	// FIXME: allow for multiple backends to be loaded.
-	// This could be done by instantiating 1 engine per backend,
-	// installing each backend in its respective engine,
-	// then registering a Catchall on the frontent engine which
-	// multiplexes across all backends (with routing / filtering
-	// logic along the way).
-	back := backends.New()
-	bName, bArgs, err := parseCmd(c.String("backend"))
+	hub := beamutils.NewHub()
+	backends := backends.New()
+	// Load backends
+	for _, cmd := range c.Args() {
+		bName, bArgs, err := parseCmd(cmd)
+		if err != nil {
+			Fatalf("%v", err)
+		}
+		fmt.Printf("---> Loading backend '%s'\n", strings.Join(append([]string{bName}, bArgs...), " "))
+		_, backend, err := backends.Send(&beam.Message{Name: bName, Args: bArgs}, beam.W)
+		if err != nil {
+			Fatalf("%s: %v\n", bName, err)
+		}
+		if err := hub.Register(backend); err != nil {
+			Fatalf("%v", err)
+		}
+	}
+	in, _, err := hub.Send(&beam.Message{Name: "start"}, beam.R)
 	if err != nil {
 		Fatalf("%v", err)
 	}
-	fmt.Printf("---> Loading backend '%s'\n", strings.Join(append([]string{bName}, bArgs...), " "))
-	if err := back.Job(bName, bArgs...).Run(); err != nil {
-		Fatalf("%s: %v\n", bName, err)
-	}
-
-	// Register the API entrypoint
-	// (we register it as `argv[0]` so we can print usage messages straight from the job
-	// stderr.
-	front := engine.New()
-	front.Logging = false
-	// FIXME: server should expose an engine.Installer
-	front.Register(c.App.Name, server.ServeApi)
-	front.Register("acceptconnections", server.AcceptConnections)
-	front.RegisterCatchall(func(job *engine.Job) engine.Status {
-		fw := back.Job(job.Name, job.Args...)
-		fw.Stdout.Add(job.Stdout)
-		fw.Stderr.Add(job.Stderr)
-		fw.Stdin.Add(job.Stdin)
-		for key, val := range job.Env().Map() {
-			fw.Setenv(key, val)
+	for {
+		msg, _, _, err := in.Receive(0)
+		if err != nil {
+			Fatalf("%v", err)
 		}
-		fw.Run()
-		return engine.Status(fw.StatusCode())
-	})
-
-	// Call the API entrypoint
-	go func() {
-		serve := front.Job(c.App.Name, c.Args()...)
-		serve.Stdout.Add(os.Stdout)
-		serve.Stderr.Add(os.Stderr)
-		if err := serve.Run(); err != nil {
-			Fatalf("serveapi: %v", err)
-		}
-	}()
-	// Notify that we're ready to receive connections
-	if err := front.Job("acceptconnections").Run(); err != nil {
-		Fatalf("acceptconnections: %v", err)
+		fmt.Printf("--> %s %s\n", msg.Name, strings.Join(msg.Args, " "))
 	}
-	// Inifinite loop
-	<-make(chan struct{})
 }
 
 func parseCmd(txt string) (string, []string, error) {
