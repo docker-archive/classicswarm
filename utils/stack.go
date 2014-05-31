@@ -38,7 +38,7 @@ func (s *StackSender) Send(msg *beam.Message, mode int) (r beam.Receiver, w beam
 		return r, w, err
 	}
 	// Silently drop messages if no valid backend is available.
-	return nil, nil, nil
+	return NopSender{}.Send(msg, mode)
 }
 
 func (s *StackSender) Add(dst beam.Sender) *StackSender {
