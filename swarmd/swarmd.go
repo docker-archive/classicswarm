@@ -154,7 +154,7 @@ func cmdDaemon(c *cli.Context) {
 	}
 
 	hub := beamutils.NewHub()
-	backends := backends.New()
+	back := backends.New()
 	// Load backends
 	for _, cmd := range c.Args() {
 		bName, bArgs, err := parseCmd(cmd)
@@ -162,12 +162,31 @@ func cmdDaemon(c *cli.Context) {
 			Fatalf("%v", err)
 		}
 		fmt.Printf("---> Loading backend '%s'\n", strings.Join(append([]string{bName}, bArgs...), " "))
-		_, backend, err := backends.Send(&beam.Message{Name: bName, Args: bArgs}, beam.W)
+		backendr, _, err := back.Send(&beam.Message{Name: "cd", Args: []string{bName}}, beam.R)
 		if err != nil {
 			Fatalf("%s: %v\n", bName, err)
 		}
-		if err := hub.Register(backend); err != nil {
-			Fatalf("%v", err)
+		// backendr will return either 'error' or 'register'.
+		for {
+			m, mr, mw, err := backendr.Receive(beam.R|beam.W)
+			if err != nil {
+				Fatalf("%v", err)
+			}
+			if m.Name == "error" {
+				Fatalf("%v", strings.Join(m.Args, " "))
+			}
+			if m.Name == "register" {
+				// FIXME: adapt the beam interface to allow the caller to
+				// (optionally) pass their own Sender/Receiver?
+				// Would make proxying/splicing easier.
+				hubr, hubw, err := hub.Send(m, beam.R|beam.W)
+				if err != nil {
+					Fatalf("%v", err)
+				}
+				fmt.Printf("successfully registered\n")
+				go beamutils.Copy(hubw, mr)
+				go beamutils.Copy(mw, hubr)
+			}
 		}
 	}
 	in, _, err := hub.Send(&beam.Message{Name: "start"}, beam.R)
@@ -176,6 +195,9 @@ func cmdDaemon(c *cli.Context) {
 	}
 	for {
 		msg, _, _, err := in.Receive(0)
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
 			Fatalf("%v", err)
 		}

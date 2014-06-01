@@ -1,6 +1,7 @@
 package backends
 
 import (
+	"io"
 	"fmt"
 	"github.com/docker/beam"
 	beamutils "github.com/docker/beam/utils"
@@ -17,18 +18,31 @@ import (
 // Example: `New().Job("debug").Run()`
 func New() beam.Sender {
 	backends := beamutils.NewHub()
-	backends.RegisterName("debug", func(msg *beam.Message, in beam.Receiver, out beam.Sender, next beam.Sender) (bool, error) {
-		backends.RegisterTask(func(r beam.Receiver, w beam.Sender) error {
-			for {
-				msg, msgr, msgw, err := r.Receive(beam.R | beam.W)
-				if err != nil {
-					return err
-				}
-				fmt.Printf("[DEBUG] %s %s\n", msg.Name, strings.Join(msg.Args, " "))
-				// FIXME: goroutine?
-				splice(w, msg, msgr, msgw)
+	backends.RegisterName("cd", func(msg *beam.Message, in beam.Receiver, out beam.Sender, next beam.Sender) (bool, error) {
+		return false, fmt.Errorf("no such backend: %s\n", strings.Join(msg.Args, " "))
+	})
+	backends.RegisterName("cd", func(msg *beam.Message, in beam.Receiver, out beam.Sender, next beam.Sender) (bool, error) {
+		if len(msg.Args) > 0 && msg.Args[0] == "debug" {
+			debugr, debugw, err := out.Send(&beam.Message{Name: "register"}, beam.R|beam.W)
+			if err != nil {
+				return false, err
 			}
-		})
+			go func() {
+				for {
+					msg, msgr, msgw, err := debugr.Receive(beam.R | beam.W)
+					if err == io.EOF {
+						return
+					}
+					if err != nil {
+						return
+					}
+					fmt.Printf("[DEBUG] %s %s\n", msg.Name, strings.Join(msg.Args, " "))
+					// FIXME: goroutine?
+					Splice(debugw, msg, msgr, msgw)
+				}
+			}()
+			return false, nil
+		}
 		return true, nil
 	})
 	backends.RegisterName("fakeclient", func(msg *beam.Message, in beam.Receiver, out beam.Sender, next beam.Sender) (bool, error) {
@@ -43,7 +57,7 @@ func New() beam.Sender {
 				if err != nil {
 					return err
 				}
-				go beamutils.Copy(beamutils.NopSender{}, containersR)
+				go beamutils.Copy(beam.NopSender{}, containersR)
 			}
 		})
 		return true, nil
@@ -51,7 +65,7 @@ func New() beam.Sender {
 	return backends
 }
 
-func splice(dst beam.Sender, msg *beam.Message, r beam.Receiver, w beam.Sender) error {
+func Splice(dst beam.Sender, msg *beam.Message, r beam.Receiver, w beam.Sender) error {
 	dstR, dstW, err := dst.Send(msg, beam.R|beam.W)
 	if err != nil {
 		return err
