@@ -161,8 +161,13 @@ func (r *PipeReceiver) Receive(mode int) (*beam.Message, beam.Receiver, beam.Sen
 		return nil, nil, nil, err
 	}
 	var (
-		in  beam.Receiver
-		out beam.Sender
+		// Always return NopReceiver/NopSender instead of nil values,
+		// because:
+		// - if they were requested in the mode, they can safely be used
+		// - if they were not requested, they can safely be ignored (ie no leak if they
+		// aren't closed)
+		in  beam.Receiver = beam.NopReceiver{}
+		out beam.Sender   = beam.NopSender{}
 	)
 	if pin != nil {
 		in = pin
