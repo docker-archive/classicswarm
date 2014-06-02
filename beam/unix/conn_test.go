@@ -1,7 +1,7 @@
 package unix
 
 import (
-	"github.com/docker/beam"
+	"github.com/docker/libswarm/beam"
 	"github.com/dotcloud/docker/pkg/testutils"
 	"testing"
 )

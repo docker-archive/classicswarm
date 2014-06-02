@@ -3,8 +3,8 @@ package backends
 import (
 	"io"
 	"fmt"
-	"github.com/docker/beam"
-	beamutils "github.com/docker/beam/utils"
+	"github.com/docker/libswarm/beam"
+	beamutils "github.com/docker/libswarm/beam/utils"
 	"strings"
 	"sync"
 	"time"

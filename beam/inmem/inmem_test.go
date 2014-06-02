@@ -2,7 +2,7 @@ package inmem
 
 import (
 	"fmt"
-	"github.com/docker/beam"
+	"github.com/docker/libswarm/beam"
 	"github.com/dotcloud/docker/pkg/testutils"
 	"io/ioutil"
 	"os"

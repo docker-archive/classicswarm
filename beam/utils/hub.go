@@ -2,8 +2,8 @@ package utils
 
 import (
 	"fmt"
-	"github.com/docker/beam"
-	"github.com/docker/beam/inmem"
+	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm/beam/inmem"
 	"io"
 	"sync"
 )

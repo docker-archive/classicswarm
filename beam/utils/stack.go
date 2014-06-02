@@ -3,7 +3,7 @@ package utils
 import (
 	"container/list"
 	"fmt"
-	"github.com/docker/beam"
+	"github.com/docker/libswarm/beam"
 	"strings"
 	"sync"
 )

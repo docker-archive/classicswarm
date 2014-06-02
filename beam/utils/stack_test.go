@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"github.com/docker/beam"
-	"github.com/docker/beam/inmem"
-	"github.com/docker/beam/unix"
+	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm/beam/inmem"
+	"github.com/docker/libswarm/beam/unix"
 	"github.com/dotcloud/docker/pkg/testutils"
 	"strings"
 	"testing"

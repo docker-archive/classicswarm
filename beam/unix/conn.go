@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/docker/beam"
-	"github.com/docker/beam/data"
+	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm/beam/data"
 )
 
 func Pair() (*Conn, *Conn, error) {
