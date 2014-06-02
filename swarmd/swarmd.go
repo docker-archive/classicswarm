@@ -173,10 +173,10 @@ func cmdDaemon(c *cli.Context) {
 				break
 			}
 			if err != nil {
-				Fatalf("%v", err)
+				Fatalf("error reading from backend: %v", err)
 			}
 			if m.Name == "error" {
-				Fatalf("%v", strings.Join(m.Args, " "))
+				Fatalf("backend sent error: %v", strings.Join(m.Args, " "))
 			}
 			if m.Name == "register" {
 				// FIXME: adapt the beam interface to allow the caller to
@@ -184,7 +184,7 @@ func cmdDaemon(c *cli.Context) {
 				// Would make proxying/splicing easier.
 				hubr, hubw, err := hub.Send(m, beam.R|beam.W)
 				if err != nil {
-					Fatalf("%v", err)
+					Fatalf("error binding backend to hub: %v", err)
 				}
 				fmt.Printf("successfully registered\n")
 				go beamutils.Copy(hubw, mr)
