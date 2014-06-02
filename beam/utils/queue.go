@@ -2,17 +2,16 @@ package utils
 
 import (
 	"github.com/docker/libswarm/beam"
-	"github.com/docker/libswarm/beam/inmem"
 )
 
 type Queue struct {
-	*inmem.PipeSender
+	*beam.PipeSender
 	dst beam.Sender
 	ch  chan *beam.Message
 }
 
 func NewQueue(dst beam.Sender, size int) *Queue {
-	r, w := inmem.Pipe()
+	r, w := beam.Pipe()
 	q := &Queue{
 		PipeSender: w,
 		dst:        dst,

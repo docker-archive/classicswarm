@@ -2,12 +2,11 @@ package utils
 
 import (
 	"github.com/docker/libswarm/beam"
-	"github.com/docker/libswarm/beam/inmem"
 	"testing"
 )
 
 func TestSendRet(t *testing.T) {
-	r, w := inmem.Pipe()
+	r, w := beam.Pipe()
 	defer r.Close()
 	defer w.Close()
 	q := NewQueue(w, 1)

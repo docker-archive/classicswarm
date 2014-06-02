@@ -1,21 +1,20 @@
-package inmem
+package beam
 
 import (
 	"fmt"
-	"github.com/docker/libswarm/beam"
 	"github.com/dotcloud/docker/pkg/testutils"
 	"io/ioutil"
 	"os"
 	"testing"
 )
 
-func TestRetPipe(t *testing.T) {
+func TestInmemRetPipe(t *testing.T) {
 	r, w := Pipe()
 	defer r.Close()
 	defer w.Close()
 	wait := make(chan struct{})
 	go func() {
-		ret, err := w.Send(&beam.Message{Name: "hello", Ret: beam.RetPipe})
+		ret, err := w.Send(&Message{Name: "hello", Ret: RetPipe})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -28,11 +27,11 @@ func TestRetPipe(t *testing.T) {
 		}
 		close(wait)
 	}()
-	msg, err := r.Receive(beam.Ret)
+	msg, err := r.Receive(Ret)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := msg.Ret.Send(&beam.Message{Name: "this better not crash"}); err != nil {
+	if _, err := msg.Ret.Send(&Message{Name: "this better not crash"}); err != nil {
 		t.Fatal(err)
 	}
 	<-wait
@@ -55,7 +54,7 @@ func TestSimpleSend(t *testing.T) {
 				t.Fatalf("%#v", *msg)
 			}
 		}()
-		if _, err := w.Send(&beam.Message{Name: "print", Args: []string{"hello world"}}); err != nil {
+		if _, err := w.Send(&Message{Name: "print", Args: []string{"hello world"}}); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -68,7 +67,7 @@ func TestSendReply(t *testing.T) {
 	testutils.Timeout(t, func() {
 		// Send
 		go func() {
-			ret, err := w.Send(&beam.Message{Args: []string{"this is the request"}, Ret: beam.RetPipe})
+			ret, err := w.Send(&Message{Args: []string{"this is the request"}, Ret: RetPipe})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -85,7 +84,7 @@ func TestSendReply(t *testing.T) {
 			}
 		}()
 		// Receive a message with mode=Ret
-		msg, err := r.Receive(beam.Ret)
+		msg, err := r.Receive(Ret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -96,7 +95,7 @@ func TestSendReply(t *testing.T) {
 			t.Fatalf("%#v", msg)
 		}
 		// Send a reply
-		_, err = msg.Ret.Send(&beam.Message{Args: []string{"this is the reply"}})
+		_, err = msg.Ret.Send(&Message{Args: []string{"this is the reply"}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +116,7 @@ func TestSendFile(t *testing.T) {
 	tmp.Seek(0, 0)
 	testutils.Timeout(t, func() {
 		go func() {
-			_, err := w.Send(&beam.Message{Name: "file", Args: []string{"path=" + tmp.Name()}, Att: tmp})
+			_, err := w.Send(&Message{Name: "file", Args: []string{"path=" + tmp.Name()}, Att: tmp})
 			if err != nil {
 				t.Fatal(err)
 			}

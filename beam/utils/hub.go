@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 	"github.com/docker/libswarm/beam"
-	"github.com/docker/libswarm/beam/inmem"
 	"io"
 	"strings"
 	"sync"
@@ -30,7 +29,7 @@ func (hub *Hub) Send(msg *beam.Message) (ret beam.Receiver, err error) {
 		fmt.Printf("[hub] received %v\n", msg)
 		hIn := msg.Ret
 		if hIn == beam.RetPipe {
-			ret, hIn = inmem.Pipe()
+			ret, hIn = beam.Pipe()
 		}
 		// This queue guarantees that the first message received by the handler
 		// is the "register" response.
