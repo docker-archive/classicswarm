@@ -28,7 +28,7 @@ func main() {
 
 func cmdDaemon(c *cli.Context) {
 	if len(c.Args()) == 0 {
-		Fatalf("Usage: %s <proto>://<address> [<proto>://<address>]...\n", c.App.Name)
+		Fatalf("Usage: %s backend [backend...]\n", c.App.Name)
 	}
 
 	hub := beamutils.NewHub()
@@ -36,6 +36,10 @@ func cmdDaemon(c *cli.Context) {
 		log.Printf("%s\n", strings.Join(msg.Args, " "))
 		// Pass through to other logging hooks
 		return true, nil
+	})
+	hub.RegisterName("error", func(msg *beam.Message, out beam.Sender) (bool, error) {
+		Fatalf("Fatal: %v", strings.Join(msg.Args, ":: "))
+		return false, nil
 	})
 	back := backends.New()
 	// Load backends
