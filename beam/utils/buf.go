@@ -6,9 +6,9 @@ import (
 
 type Buffer []*beam.Message
 
-func (buf *Buffer) Send(msg *beam.Message, mode int) (beam.Receiver, beam.Sender, error) {
+func (buf *Buffer) Send(msg *beam.Message) (beam.Receiver, error) {
 	(*buf) = append(*buf, msg)
-	return beam.NopReceiver{}, beam.NopSender{}, nil
+	return beam.NopReceiver{}, nil
 }
 
 func (buf *Buffer) Close() error {

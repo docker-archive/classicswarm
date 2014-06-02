@@ -5,6 +5,7 @@ import (
 	"github.com/docker/libswarm/beam"
 	"github.com/docker/libswarm/beam/inmem"
 	"io"
+	"strings"
 	"sync"
 )
 
@@ -12,6 +13,7 @@ import (
 type Hub struct {
 	handlers *StackSender
 	tasks    sync.WaitGroup
+	l        sync.RWMutex
 }
 
 func NewHub() *Hub {
@@ -20,73 +22,65 @@ func NewHub() *Hub {
 	}
 }
 
-func (hub *Hub) Send(msg *beam.Message, mode int) (beam.Receiver, beam.Sender, error) {
+func (hub *Hub) Send(msg *beam.Message) (ret beam.Receiver, err error) {
 	if msg.Name == "register" {
-		if mode&beam.R == 0 {
-			return nil, nil, fmt.Errorf("register: no return channel")
+		if msg.Ret == nil {
+			return nil, fmt.Errorf("register: no return channel")
 		}
 		fmt.Printf("[hub] received %v\n", msg)
-		hYoutr, hYoutw := inmem.Pipe()
-		hYinr, hYinw := inmem.Pipe()
+		hIn := msg.Ret
+		if hIn == beam.RetPipe {
+			ret, hIn = inmem.Pipe()
+		}
+		// This queue guarantees that the first message received by the handler
+		// is the "register" response.
+		hIn = NewQueue(hIn, 1)
+		// Reply to the handler with a "register" call of our own,
+		// passing a reference to the previous handler stack.
+		// This allows the new handler to query previous handlers
+		// without creating loops.
+		hOut, err := hIn.Send(&beam.Message{Name: "register", Ret: beam.RetPipe})
+		if err != nil {
+			return nil, err
+		}
 		// Register the new handler on top of the others,
 		// and get a reference to the previous stack of handlers.
-		prevHandlers := hub.handlers.Add(hYinw)
-		// Pass requests from the new handler to the previous chain of handlers
-		// hYout -> hXin
-		hub.tasks.Add(1)
-		go func() {
-			defer hub.tasks.Done()
-			Copy(prevHandlers, hYoutr)
-			hYoutr.Close()
-		}()
-		return hYinr, hYoutw, nil
+		prevHandlers := hub.handlers.Add(hIn)
+		go beam.Copy(prevHandlers, hOut)
+		return ret, nil
 	}
 	fmt.Printf("sending %#v to %d handlers\n", msg, hub.handlers.Len())
-	return hub.handlers.Send(msg, mode)
-}
-
-func (hub *Hub) Register(dst beam.Sender) error {
-	in, _, err := hub.Send(&beam.Message{Name: "register"}, beam.R)
-	if err != nil {
-		return err
-	}
-	go Copy(dst, in)
-	return nil
+	return hub.handlers.Send(msg)
 }
 
 func (hub *Hub) RegisterTask(h func(beam.Receiver, beam.Sender) error) error {
-	in, out, err := hub.Send(&beam.Message{Name: "register"}, beam.R|beam.W)
+	ret, err := hub.Send(&beam.Message{Name: "register", Ret: beam.RetPipe})
 	if err != nil {
 		return err
 	}
+	ack, err := ret.Receive(beam.Ret)
+	if err != nil {
+		return err
+	}
+	if ack.Name == "error" {
+		return fmt.Errorf(strings.Join(ack.Args, ", "))
+	}
+	if ack.Name != "register" {
+		return fmt.Errorf("invalid response: expected verb 'register', got '%v'", ack.Name)
+	}
 	go func() {
-		h(in, out)
-		out.Close()
+		h(ret, ack.Ret)
+		ack.Ret.Close()
 	}()
 	return nil
 }
 
-type Handler func(msg *beam.Message, in beam.Receiver, out beam.Sender, next beam.Sender) (pass bool, err error)
+type Handler func(msg *beam.Message, out beam.Sender) (pass bool, err error)
 
 func (hub *Hub) RegisterName(name string, h Handler) error {
 	return hub.RegisterTask(func(in beam.Receiver, out beam.Sender) error {
-		var tasks sync.WaitGroup
-		copyTask := func(dst beam.Sender, src beam.Receiver) {
-			tasks.Add(1)
-			go func() {
-				defer tasks.Done()
-				if dst == nil {
-					return
-				}
-				defer dst.Close()
-				if src == nil {
-					return
-				}
-				Copy(dst, src)
-			}()
-		}
 		for {
-			msg, msgin, msgout, err := in.Receive(beam.R | beam.W)
+			msg, err := in.Receive(beam.Ret)
 			if err == io.EOF {
 				break
 			}
@@ -95,24 +89,19 @@ func (hub *Hub) RegisterName(name string, h Handler) error {
 			}
 			var pass = true
 			if msg.Name == name || name == "" {
-				pass, err = h(msg, msgin, msgout, out)
+				pass, err = h(msg, out)
 				if err != nil {
-					if _, _, err := msgout.Send(&beam.Message{Name: "error", Args: []string{err.Error()}}, 0); err != nil {
+					if _, err := msg.Ret.Send(&beam.Message{Name: "error", Args: []string{err.Error()}}); err != nil {
 						return err
 					}
 				}
 			}
 			if pass {
-				nextin, nextout, err := out.Send(msg, beam.R|beam.W)
-				if err != nil {
+				if _, err := out.Send(msg); err != nil {
 					return err
 				}
-				copyTask(nextout, msgin)
-				copyTask(msgout, nextin)
 			} else {
-				if msgout != nil {
-					msgout.Close()
-				}
+				msg.Ret.Close()
 			}
 		}
 		return nil

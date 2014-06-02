@@ -23,16 +23,10 @@ type pipe struct {
 	wl    sync.Mutex
 	rerr  error // if reader closed, error to give writes
 	werr  error // if writer closed, error to give reads
-	pmsg  *pipeMessage
+	msg   *beam.Message
 }
 
-type pipeMessage struct {
-	msg *beam.Message
-	out *PipeSender
-	in  *PipeReceiver
-}
-
-func (p *pipe) psend(pmsg *pipeMessage) error {
+func (p *pipe) psend(msg *beam.Message) error {
 	var err error
 	// One writer at a time.
 	p.wl.Lock()
@@ -40,10 +34,10 @@ func (p *pipe) psend(pmsg *pipeMessage) error {
 
 	p.l.Lock()
 	defer p.l.Unlock()
-	p.pmsg = pmsg
+	p.msg = msg
 	p.rwait.Signal()
 	for {
-		if p.pmsg == nil {
+		if p.msg == nil {
 			break
 		}
 		if p.rerr != nil {
@@ -55,38 +49,20 @@ func (p *pipe) psend(pmsg *pipeMessage) error {
 		}
 		p.wwait.Wait()
 	}
-	p.pmsg = nil // in case of rerr or werr
+	p.msg = nil // in case of rerr or werr
 	return err
 }
 
-func (p *pipe) send(msg *beam.Message, mode int) (in *PipeReceiver, out *PipeSender, err error) {
-	// Prepare the message
-	pmsg := &pipeMessage{msg: msg}
-	if mode&beam.R != 0 {
-		in, pmsg.out = Pipe()
-		defer func() {
-			if err != nil {
-				in.Close()
-				in = nil
-				pmsg.out.Close()
-			}
-		}()
+func (p *pipe) send(msg *beam.Message) (ret beam.Receiver, err error) {
+	// Prepare nested Receiver if requested
+	if beam.RetPipe.Equals(msg.Ret) {
+		ret, msg.Ret = Pipe()
 	}
-	if mode&beam.W != 0 {
-		pmsg.in, out = Pipe()
-		defer func() {
-			if err != nil {
-				out.Close()
-				out = nil
-				pmsg.in.Close()
-			}
-		}()
-	}
-	err = p.psend(pmsg)
+	err = p.psend(msg)
 	return
 }
 
-func (p *pipe) preceive() (*pipeMessage, error) {
+func (p *pipe) preceive() (*beam.Message, error) {
 	p.rl.Lock()
 	defer p.rl.Unlock()
 
@@ -96,7 +72,7 @@ func (p *pipe) preceive() (*pipeMessage, error) {
 		if p.rerr != nil {
 			return nil, io.ErrClosedPipe
 		}
-		if p.pmsg != nil {
+		if p.msg != nil {
 			break
 		}
 		if p.werr != nil {
@@ -104,26 +80,24 @@ func (p *pipe) preceive() (*pipeMessage, error) {
 		}
 		p.rwait.Wait()
 	}
-	pmsg := p.pmsg
-	p.pmsg = nil
+	msg := p.msg
+	p.msg = nil
 	p.wwait.Signal()
-	return pmsg, nil
+	return msg, nil
 }
 
-func (p *pipe) receive(mode int) (*beam.Message, *PipeReceiver, *PipeSender, error) {
-	pmsg, err := p.preceive()
+func (p *pipe) receive(mode int) (*beam.Message, error) {
+	msg, err := p.preceive()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
-	if pmsg.out != nil && mode&beam.W == 0 {
-		pmsg.out.Close()
-		pmsg.out = nil
+	if msg.Ret == nil {
+		msg.Ret = beam.NopSender{}
 	}
-	if pmsg.in != nil && mode&beam.R == 0 {
-		pmsg.in.Close()
-		pmsg.in = nil
+	if mode&beam.Ret == 0 {
+		msg.Ret.Close()
 	}
-	return pmsg.msg, pmsg.in, pmsg.out, nil
+	return msg, nil
 }
 
 func (p *pipe) rclose(err error) {
@@ -154,27 +128,8 @@ type PipeReceiver struct {
 	p *pipe
 }
 
-func (r *PipeReceiver) Receive(mode int) (*beam.Message, beam.Receiver, beam.Sender, error) {
-	msg, pin, pout, err := r.p.receive(mode)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	var (
-		// Always return NopReceiver/NopSender instead of nil values,
-		// because:
-		// - if they were requested in the mode, they can safely be used
-		// - if they were not requested, they can safely be ignored (ie no leak if they
-		// aren't closed)
-		in  beam.Receiver = beam.NopReceiver{}
-		out beam.Sender   = beam.NopSender{}
-	)
-	if pin != nil {
-		in = pin
-	}
-	if pout != nil {
-		out = pout
-	}
-	return msg, in, out, err
+func (r *PipeReceiver) Receive(mode int) (*beam.Message, error) {
+	return r.p.receive(mode)
 }
 
 func (r *PipeReceiver) SendTo(dst beam.Sender) (int, error) {
@@ -215,19 +170,8 @@ type PipeSender struct {
 	p *pipe
 }
 
-func (w *PipeSender) Send(msg *beam.Message, mode int) (beam.Receiver, beam.Sender, error) {
-	pin, pout, err := w.p.send(msg, mode)
-	var (
-		in  beam.Receiver
-		out beam.Sender
-	)
-	if pin != nil {
-		in = pin
-	}
-	if pout != nil {
-		out = pout
-	}
-	return in, out, err
+func (w *PipeSender) Send(msg *beam.Message) (beam.Receiver, error) {
+	return w.p.send(msg)
 }
 
 func (w *PipeSender) ReceiveFrom(src beam.Receiver) (int, error) {
