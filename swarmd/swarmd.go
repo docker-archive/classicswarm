@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"github.com/codegangsta/cli"
 	"github.com/docker/libswarm/beam"
 	"github.com/docker/libswarm/beam/inmem"
@@ -154,6 +155,11 @@ func cmdDaemon(c *cli.Context) {
 	}
 
 	hub := beamutils.NewHub()
+	hub.RegisterName("log", func(msg *beam.Message, in beam.Receiver, out, next beam.Sender) (bool, error) {
+		log.Printf("%s\n", strings.Join(msg.Args, " "))
+		// Pass through to other logging hooks
+		return true, nil
+	})
 	back := backends.New()
 	// Load backends
 	for _, cmd := range c.Args() {
