@@ -169,6 +169,9 @@ func cmdDaemon(c *cli.Context) {
 		// backendr will return either 'error' or 'register'.
 		for {
 			m, mr, mw, err := backendr.Receive(beam.R|beam.W)
+			if err == io.EOF {
+				break
+			}
 			if err != nil {
 				Fatalf("%v", err)
 			}
