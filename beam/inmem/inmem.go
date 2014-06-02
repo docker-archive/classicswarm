@@ -16,7 +16,6 @@ func Pipe() (*PipeReceiver, *PipeSender) {
 }
 
 type pipe struct {
-	ch    chan *pipeMessage
 	rwait sync.Cond
 	wwait sync.Cond
 	l     sync.Mutex
