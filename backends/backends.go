@@ -45,21 +45,30 @@ func New() beam.Sender {
 		}
 		return true, nil
 	})
-	backends.RegisterName("fakeclient", func(msg *beam.Message, in beam.Receiver, out beam.Sender, next beam.Sender) (bool, error) {
-		backends.RegisterTask(func(r beam.Receiver, w beam.Sender) error {
-			for {
-				time.Sleep(1 * time.Second)
-				_, _, err := w.Send(&beam.Message{Name: "log", Args: []string{"fake client reporting for duty"}}, 0)
-				if err != nil {
-					return err
-				}
-				containersR, _, err := w.Send(&beam.Message{Name: "containers"}, beam.R)
-				if err != nil {
-					return err
-				}
-				go beamutils.Copy(beam.NopSender{}, containersR)
+	backends.RegisterName("cd", func(msg *beam.Message, in beam.Receiver, out beam.Sender, next beam.Sender) (bool, error) {
+		if len(msg.Args) > 0 && msg.Args[0] == "fakeclient" {
+			_, fakew, err := out.Send(&beam.Message{Name: "register"}, beam.R|beam.W)
+			if err != nil {
+				return false, err
 			}
-		})
+			go func() {
+				defer fmt.Printf("[FAKECLIENT] done\n")
+				for {
+					time.Sleep(1 * time.Second)
+					fmt.Printf("[FAKECLIENT] heartbeat\n")
+					_, _, err := fakew.Send(&beam.Message{Name: "log", Args: []string{"fake client reporting for duty"}}, 0)
+					if err != nil {
+						return
+					}
+					containersR, _, err := fakew.Send(&beam.Message{Name: "containers"}, beam.R)
+					if err != nil {
+						return
+					}
+					go beamutils.Copy(beam.NopSender{}, containersR)
+				}
+			}()
+			return false, nil
+		}
 		return true, nil
 	})
 	return backends
