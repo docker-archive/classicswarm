@@ -77,6 +77,7 @@ func Splice(dst beam.Sender, msg *beam.Message, r beam.Receiver, w beam.Sender) 
 		go func() {
 			defer tasks.Done()
 			beamutils.Copy(dst, src)
+			dst.Close()
 		}()
 	}
 	_copy(dstW, r)
