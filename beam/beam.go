@@ -55,3 +55,10 @@ func (r retPipe) Equals(val Sender) bool {
 	}
 	return false
 }
+
+func Repeater(payload *Message) Sender {
+	return Handler(func(msg *Message) error {
+		msg.Ret.Send(payload)
+		return nil
+	})
+}
