@@ -50,75 +50,90 @@ func (c *Conn) Close() error {
 	return c.UnixConn.CloseWrite()
 }
 
-func (c *Conn) Send(msg *beam.Message, mode int) (beam.Receiver, beam.Sender, error) {
+func (c *Conn) Send(msg *beam.Message) (beam.Receiver, error) {
 	if msg.Att != nil {
-		return nil, nil, fmt.Errorf("file attachment not yet implemented in unix transport")
+		return nil, fmt.Errorf("file attachment not yet implemented in unix transport")
 	}
 	parts := []string{msg.Name}
 	parts = append(parts, msg.Args...)
 	b := []byte(data.EncodeList(parts))
 	// Setup nested streams
 	var (
-		fd *os.File
-		r  beam.Receiver
-		w  beam.Sender
+		fd  *os.File
+		ret beam.Receiver
+		err error
 	)
-	if mode&(beam.R|beam.W) != 0 {
+	// Caller requested a return pipe
+	if beam.RetPipe.Equals(msg.Ret) {
 		local, remote, err := sendablePair()
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		fd = remote
-		if mode&beam.R != 0 {
-			r = &Conn{local}
-		}
-		if mode&beam.W != 0 {
-			w = &Conn{local}
+		ret = &Conn{local}
+		// Caller specified its own return channel
+	} else if msg.Ret != nil {
+		// The specified return channel is a unix conn: engaging cheat mode!
+		if retConn, ok := msg.Ret.(*Conn); ok {
+			fd, err = retConn.UnixConn.File()
+			if err != nil {
+				return nil, fmt.Errorf("error passing return channel: %v", err)
+			}
+			// Close duplicate fd
+			retConn.UnixConn.Close()
+			// The specified return channel is an unknown type: proxy messages.
 		} else {
-			local.CloseWrite()
+			local, remote, err := sendablePair()
+			if err != nil {
+				return nil, fmt.Errorf("error passing return channel: %v", err)
+			}
+			fd = remote
+			// FIXME: do we need a reference no all these background tasks?
+			go func() {
+				// Copy messages from the remote return channel to the local return channel.
+				// When the remote return channel is closed, also close the local return channel.
+				localConn := &Conn{local}
+				beam.Copy(msg.Ret, localConn)
+				msg.Ret.Close()
+				localConn.Close()
+			}()
 		}
 	}
-	c.UnixConn.Send(b, fd)
-	return r, w, nil
+	if err := c.UnixConn.Send(b, fd); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
-func (c *Conn) Receive(mode int) (*beam.Message, beam.Receiver, beam.Sender, error) {
+func (c *Conn) Receive(mode int) (*beam.Message, error) {
 	b, fd, err := c.UnixConn.Receive()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	parts, n, err := data.DecodeList(string(b))
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	if n != len(b) {
-		return nil, nil, nil, fmt.Errorf("garbage data %#v", b[:n])
+		return nil, fmt.Errorf("garbage data %#v", b[:n])
 	}
 	if len(parts) == 0 {
-		return nil, nil, nil, fmt.Errorf("malformed message")
+		return nil, fmt.Errorf("malformed message")
 	}
 	msg := &beam.Message{Name: parts[0], Args: parts[1:]}
 
-	// Setup nested streams
-	var (
-		r beam.Receiver
-		w beam.Sender
-	)
 	// Apply mode mask
 	if fd != nil {
 		subconn, err := FileConn(fd)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, err
 		}
 		fd.Close()
-		if mode&beam.R != 0 {
-			r = &Conn{subconn}
-		}
-		if mode&beam.W != 0 {
-			w = &Conn{subconn}
+		if mode&beam.Ret != 0 {
+			msg.Ret = &Conn{subconn}
 		} else {
 			subconn.CloseWrite()
 		}
 	}
-	return msg, r, w, nil
+	return msg, nil
 }

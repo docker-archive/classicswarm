@@ -9,18 +9,33 @@ import (
 	"testing"
 )
 
-func TestReceiveW(t *testing.T) {
+func TestRetPipe(t *testing.T) {
 	r, w := Pipe()
+	defer r.Close()
+	defer w.Close()
+	wait := make(chan struct{})
 	go func() {
-		w.Send(&beam.Message{Name: "hello"}, 0)
+		ret, err := w.Send(&beam.Message{Name: "hello", Ret: beam.RetPipe})
+		if err != nil {
+			t.Fatal(err)
+		}
+		msg, err := ret.Receive(0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if msg.Name != "this better not crash" {
+			t.Fatalf("%#v", msg)
+		}
+		close(wait)
 	}()
-	_, _, ww, err := r.Receive(beam.W)
+	msg, err := r.Receive(beam.Ret)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := ww.Send(&beam.Message{Name: "this better not crash"}, 0); err != nil {
+	if _, err := msg.Ret.Send(&beam.Message{Name: "this better not crash"}); err != nil {
 		t.Fatal(err)
 	}
+	<-wait
 }
 
 func TestSimpleSend(t *testing.T) {
@@ -29,7 +44,7 @@ func TestSimpleSend(t *testing.T) {
 	defer w.Close()
 	testutils.Timeout(t, func() {
 		go func() {
-			msg, in, out, err := r.Receive(0)
+			msg, err := r.Receive(0)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -39,38 +54,11 @@ func TestSimpleSend(t *testing.T) {
 			if msg.Args[0] != "hello world" {
 				t.Fatalf("%#v", *msg)
 			}
-			assertMode(t, in, out, 0)
 		}()
-		in, out, err := w.Send(&beam.Message{Name: "print", Args: []string{"hello world"}}, 0)
-		if err != nil {
+		if _, err := w.Send(&beam.Message{Name: "print", Args: []string{"hello world"}}); err != nil {
 			t.Fatal(err)
 		}
-		assertMode(t, in, out, 0)
 	})
-}
-
-// assertMode verifies that the values of r and w match
-// mode.
-// If mode has the R bit set, r must be non-nil.
-// If mode has the W bit set, w must be non-nil.
-//
-// If any of these conditions are not met, t.Fatal is called and the active
-// test fails.
-func assertMode(t *testing.T, r beam.Receiver, w beam.Sender, mode int) {
-	// If mode has the R bit set, r must be non-nil
-	if mode&beam.R != 0 {
-		if r == nil {
-			t.Fatalf("should be non-nil: %#v", r)
-		}
-		// Otherwise it must be nil.
-	}
-	// If mode has the W bit set, w must be non-nil
-	if mode&beam.W != 0 {
-		if w == nil {
-			t.Fatalf("should be non-nil: %#v", w)
-		}
-		// Otherwise it must be nil.
-	}
 }
 
 func TestSendReply(t *testing.T) {
@@ -80,73 +68,37 @@ func TestSendReply(t *testing.T) {
 	testutils.Timeout(t, func() {
 		// Send
 		go func() {
-			// Send a message with mode=R
-			in, out, err := w.Send(&beam.Message{Args: []string{"this is the request"}}, beam.R)
+			ret, err := w.Send(&beam.Message{Args: []string{"this is the request"}, Ret: beam.RetPipe})
 			if err != nil {
 				t.Fatal(err)
 			}
-			assertMode(t, in, out, beam.R)
+			if ret == nil {
+				t.Fatalf("ret = nil\n")
+			}
 			// Read for a reply
-			resp, _, _, err := in.Receive(0)
+			msg, err := ret.Receive(0)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if resp.Args[0] != "this is the reply" {
-				t.Fatalf("%#v", resp)
+			if msg.Args[0] != "this is the reply" {
+				t.Fatalf("%#v", msg)
 			}
 		}()
-		// Receive a message with mode=W
-		msg, in, out, err := r.Receive(beam.W)
+		// Receive a message with mode=Ret
+		msg, err := r.Receive(beam.Ret)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if msg.Args[0] != "this is the request" {
 			t.Fatalf("%#v", msg)
 		}
-		assertMode(t, in, out, beam.W)
+		if msg.Ret == nil {
+			t.Fatalf("%#v", msg)
+		}
 		// Send a reply
-		_, _, err = out.Send(&beam.Message{Args: []string{"this is the reply"}}, 0)
+		_, err = msg.Ret.Send(&beam.Message{Args: []string{"this is the reply"}})
 		if err != nil {
 			t.Fatal(err)
-		}
-	})
-}
-
-func TestSendNested(t *testing.T) {
-	r, w := Pipe()
-	defer r.Close()
-	defer w.Close()
-	testutils.Timeout(t, func() {
-		// Send
-		go func() {
-			// Send a message with mode=W
-			in, out, err := w.Send(&beam.Message{Args: []string{"this is the request"}}, beam.W)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assertMode(t, in, out, beam.W)
-			// Send a nested message
-			_, _, err = out.Send(&beam.Message{Args: []string{"this is the nested message"}}, 0)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-		// Receive a message with mode=R
-		msg, in, out, err := r.Receive(beam.R)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if msg.Args[0] != "this is the request" {
-			t.Fatalf("%#v", msg)
-		}
-		assertMode(t, in, out, beam.R)
-		// Read for a nested message
-		nested, _, _, err := in.Receive(0)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if nested.Args[0] != "this is the nested message" {
-			t.Fatalf("%#v", nested)
 		}
 	})
 }
@@ -165,12 +117,12 @@ func TestSendFile(t *testing.T) {
 	tmp.Seek(0, 0)
 	testutils.Timeout(t, func() {
 		go func() {
-			_, _, err := w.Send(&beam.Message{"file", []string{"path=" + tmp.Name()}, tmp}, 0)
+			_, err := w.Send(&beam.Message{Name: "file", Args: []string{"path=" + tmp.Name()}, Att: tmp})
 			if err != nil {
 				t.Fatal(err)
 			}
 		}()
-		msg, _, _, err := r.Receive(0)
+		msg, err := r.Receive(0)
 		if err != nil {
 			t.Fatal(err)
 		}

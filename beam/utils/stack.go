@@ -24,9 +24,9 @@ func NewStackSender() *StackSender {
 	}
 }
 
-func (s *StackSender) Send(msg *beam.Message, mode int) (r beam.Receiver, w beam.Sender, err error) {
+func (s *StackSender) Send(msg *beam.Message) (ret beam.Receiver, err error) {
 	completed := s.walk(func(h beam.Sender) (ok bool) {
-		r, w, err = h.Send(msg, mode)
+		ret, err = h.Send(msg)
 		fmt.Printf("[stacksender] sending %v to %#v returned %v\n", msg, h, err)
 		if err == nil {
 			return true
@@ -35,10 +35,10 @@ func (s *StackSender) Send(msg *beam.Message, mode int) (r beam.Receiver, w beam
 	})
 	// If walk was completed, it means we didn't find a valid handler
 	if !completed {
-		return r, w, err
+		return ret, err
 	}
 	// Silently drop messages if no valid backend is available.
-	return beam.NopSender{}.Send(msg, mode)
+	return beam.NopSender{}.Send(msg)
 }
 
 func (s *StackSender) Add(dst beam.Sender) *StackSender {

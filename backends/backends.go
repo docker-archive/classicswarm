@@ -1,12 +1,11 @@
 package backends
 
 import (
-	"io"
 	"fmt"
 	"github.com/docker/libswarm/beam"
 	beamutils "github.com/docker/libswarm/beam/utils"
+	"io"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -18,18 +17,19 @@ import (
 // Example: `New().Job("debug").Run()`
 func New() beam.Sender {
 	backends := beamutils.NewHub()
-	backends.RegisterName("cd", func(msg *beam.Message, in beam.Receiver, out beam.Sender, next beam.Sender) (bool, error) {
+	backends.RegisterName("cd", func(msg *beam.Message, out beam.Sender) (bool, error) {
 		return false, fmt.Errorf("no such backend: %s\n", strings.Join(msg.Args, " "))
 	})
-	backends.RegisterName("cd", func(msg *beam.Message, in beam.Receiver, out beam.Sender, next beam.Sender) (bool, error) {
+	backends.RegisterName("cd", func(msg *beam.Message, out beam.Sender) (bool, error) {
 		if len(msg.Args) > 0 && msg.Args[0] == "debug" {
-			debugr, debugw, err := out.Send(&beam.Message{Name: "register"}, beam.R|beam.W)
+			debug, err := out.Send(&beam.Message{Name: "register", Ret: beam.RetPipe})
 			if err != nil {
 				return false, err
 			}
+			// Spawn the debug object
 			go func() {
 				for {
-					msg, msgr, msgw, err := debugr.Receive(beam.R | beam.W)
+					msg, err := debug.Receive(beam.Ret)
 					if err == io.EOF {
 						return
 					}
@@ -37,34 +37,35 @@ func New() beam.Sender {
 						return
 					}
 					fmt.Printf("[DEBUG] %s %s\n", msg.Name, strings.Join(msg.Args, " "))
-					// FIXME: goroutine?
-					Splice(debugw, msg, msgr, msgw)
+					if _, err := out.Send(msg); err != nil {
+						return
+					}
 				}
 			}()
 			return false, nil
 		}
 		return true, nil
 	})
-	backends.RegisterName("cd", func(msg *beam.Message, in beam.Receiver, out beam.Sender, next beam.Sender) (bool, error) {
+	backends.RegisterName("cd", func(msg *beam.Message, out beam.Sender) (bool, error) {
 		if len(msg.Args) > 0 && msg.Args[0] == "fakeclient" {
-			_, fakew, err := out.Send(&beam.Message{Name: "register"}, beam.R|beam.W)
+			_, err := out.Send(&beam.Message{Name: "register", Ret: beam.NopSender{}})
 			if err != nil {
 				return false, err
 			}
+			// Spawm the fakeclient task
+			// FIXME: only do this after started?
 			go func() {
-				defer fmt.Printf("[FAKECLIENT] done\n")
+				out.Send(&beam.Message{Name: "log", Args: []string{"fake client starting"}})
+				defer out.Send(&beam.Message{Name: "log", Args: []string{"fake client terminating"}})
 				for {
 					time.Sleep(1 * time.Second)
-					fmt.Printf("[FAKECLIENT] heartbeat\n")
-					_, _, err := fakew.Send(&beam.Message{Name: "log", Args: []string{"fake client reporting for duty"}}, 0)
+					_, err := out.Send(&beam.Message{Name: "log", Args: []string{"fake client reporting for duty"}})
 					if err != nil {
 						return
 					}
-					containersR, _, err := fakew.Send(&beam.Message{Name: "containers"}, beam.R)
-					if err != nil {
+					if _, err := out.Send(&beam.Message{Name: "children", Ret: beam.NopSender{}}); err != nil {
 						return
 					}
-					go beamutils.Copy(beam.NopSender{}, containersR)
 				}
 			}()
 			return false, nil
@@ -72,25 +73,4 @@ func New() beam.Sender {
 		return true, nil
 	})
 	return backends
-}
-
-func Splice(dst beam.Sender, msg *beam.Message, r beam.Receiver, w beam.Sender) error {
-	dstR, dstW, err := dst.Send(msg, beam.R|beam.W)
-	if err != nil {
-		return err
-	}
-	defer dstW.Close()
-	var tasks sync.WaitGroup
-	_copy := func(dst beam.Sender, src beam.Receiver) {
-		tasks.Add(1)
-		go func() {
-			defer tasks.Done()
-			beamutils.Copy(dst, src)
-			dst.Close()
-		}()
-	}
-	_copy(dstW, r)
-	_copy(w, dstR)
-	tasks.Wait()
-	return nil
 }

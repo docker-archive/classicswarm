@@ -9,42 +9,49 @@ import (
 func TestHubSendEmpty(t *testing.T) {
 	hub := NewHub()
 	// Send to empty hub should silently drop
-	r, w, err := hub.Send(&beam.Message{Name: "hello", Args: nil}, beam.R|beam.W)
+	ret, err := hub.Send(&beam.Message{Name: "hello", Args: nil, Ret: beam.RetPipe})
 	// Send must not return an error
 	if err != nil {
 		t.Fatal(err)
 	}
-	// We set beam.R, so a valid receiver must be returned
-	if r == nil {
-		t.Fatalf("%#v", r)
-	}
-	// We set beam.W, so a valid receiver must be returned
-	if w == nil {
-		t.Fatalf("%#v", w)
+	// We set beam.R, so a valid return pipe must be returned
+	if ret == nil {
+		t.Fatalf("%#v", ret)
 	}
 }
 
 type CountSender int
 
-func (s *CountSender) Send(msg *beam.Message, mode int) (beam.Receiver, beam.Sender, error) {
+func (s *CountSender) Send(msg *beam.Message) (beam.Receiver, error) {
 	(*s)++
-	return nil, nil, nil
+	return nil, nil
 }
 
 func TestHubSendOneHandler(t *testing.T) {
 	hub := NewHub()
 	defer hub.Close()
 	testutils.Timeout(t, func() {
-		in, _, err := hub.Send(&beam.Message{Name: "register", Args: nil}, beam.R)
+		handlerIn, err := hub.Send(&beam.Message{Name: "register", Args: nil, Ret: beam.RetPipe})
 		if err != nil {
 			t.Fatal(err)
 		}
+		ack, err := handlerIn.Receive(beam.Ret)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ack.Name != "register" {
+			t.Fatalf("%#v", err)
+		}
+		handlerOut := ack.Ret
+		if handlerOut == nil {
+			t.Fatalf("nil handler out")
+		}
 		go func() {
-			if _, _, err := hub.Send(&beam.Message{Name: "hello", Args: nil}, 0); err != nil {
+			if _, err := hub.Send(&beam.Message{Name: "hello", Args: nil}); err != nil {
 				t.Fatal(err)
 			}
 		}()
-		msg, _, _, err := in.Receive(0)
+		msg, err := handlerIn.Receive(0)
 		if err != nil {
 			t.Fatal(err)
 		}

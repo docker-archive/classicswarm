@@ -17,7 +17,7 @@ func TestStackWithPipe(t *testing.T) {
 	s.Add(w)
 	testutils.Timeout(t, func() {
 		go func() {
-			msg, _, _, err := r.Receive(0)
+			msg, err := r.Receive(0)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -28,7 +28,7 @@ func TestStackWithPipe(t *testing.T) {
 				t.Fatalf("%#v", msg)
 			}
 		}()
-		_, _, err := s.Send(&beam.Message{Name: "hello", Args: []string{"wonderful", "world"}}, 0)
+		_, err := s.Send(&beam.Message{Name: "hello", Args: []string{"wonderful", "world"}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -46,7 +46,7 @@ func TestStackWithPair(t *testing.T) {
 	s.Add(w)
 	testutils.Timeout(t, func() {
 		go func() {
-			msg, _, _, err := r.Receive(0)
+			msg, err := r.Receive(0)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -57,7 +57,7 @@ func TestStackWithPair(t *testing.T) {
 				t.Fatalf("%#v", msg)
 			}
 		}()
-		_, _, err := s.Send(&beam.Message{Name: "hello", Args: []string{"wonderful", "world"}}, 0)
+		_, err := s.Send(&beam.Message{Name: "hello", Args: []string{"wonderful", "world"}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -91,9 +91,9 @@ func TestStackAdd(t *testing.T) {
 	if s.Len() != 2 {
 		t.Fatalf("%#v", beforeA)
 	}
-	s.Send(&beam.Message{Name: "for b", Args: nil}, 0)
-	beforeB.Send(&beam.Message{Name: "for a", Args: nil}, 0)
-	beforeA.Send(&beam.Message{Name: "for nobody", Args: nil}, 0)
+	s.Send(&beam.Message{Name: "for b", Args: nil})
+	beforeB.Send(&beam.Message{Name: "for a", Args: nil})
+	beforeA.Send(&beam.Message{Name: "for nobody", Args: nil})
 	if len(a) != 1 {
 		t.Fatalf("%#v", a)
 	}
@@ -113,7 +113,7 @@ func TestStackAddBad(t *testing.T) {
 		t.Fatalf("%#v", s)
 	}
 	r.Close()
-	if _, _, err := s.Send(&beam.Message{Name: "for the buffer", Args: nil}, 0); err != nil {
+	if _, err := s.Send(&beam.Message{Name: "for the buffer", Args: nil}); err != nil {
 		t.Fatal(err)
 	}
 	if s.Len() != 1 {

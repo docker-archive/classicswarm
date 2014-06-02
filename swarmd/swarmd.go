@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"github.com/codegangsta/cli"
+	"github.com/docker/libswarm/backends"
 	"github.com/docker/libswarm/beam"
 	beamutils "github.com/docker/libswarm/beam/utils"
-	"github.com/docker/libswarm/backends"
 	_ "github.com/dotcloud/docker/api/server"
 	"github.com/flynn/go-shlex"
 	"io"
+	"log"
 	"os"
 	"strings"
 )
@@ -32,7 +32,7 @@ func cmdDaemon(c *cli.Context) {
 	}
 
 	hub := beamutils.NewHub()
-	hub.RegisterName("log", func(msg *beam.Message, in beam.Receiver, out, next beam.Sender) (bool, error) {
+	hub.RegisterName("log", func(msg *beam.Message, out beam.Sender) (bool, error) {
 		log.Printf("%s\n", strings.Join(msg.Args, " "))
 		// Pass through to other logging hooks
 		return true, nil
@@ -45,42 +45,31 @@ func cmdDaemon(c *cli.Context) {
 			Fatalf("%v", err)
 		}
 		fmt.Printf("---> Loading backend '%s'\n", strings.Join(append([]string{bName}, bArgs...), " "))
-		backendr, _, err := back.Send(&beam.Message{Name: "cd", Args: []string{bName}}, beam.R)
+		backend, err := back.Send(&beam.Message{Name: "cd", Args: []string{bName}, Ret: beam.RetPipe})
 		if err != nil {
 			Fatalf("%s: %v\n", bName, err)
 		}
-		// backendr will return either 'error' or 'register'.
+		// backend will return either 'error' or 'register'.
 		for {
-			m, mr, mw, err := backendr.Receive(beam.R|beam.W)
+			m, err := backend.Receive(beam.Ret)
 			if err == io.EOF {
 				break
 			}
 			if err != nil {
 				Fatalf("error reading from backend: %v", err)
 			}
-			if m.Name == "error" {
-				Fatalf("backend sent error: %v", strings.Join(m.Args, " "))
-			}
-			if m.Name == "register" {
-				// FIXME: adapt the beam interface to allow the caller to
-				// (optionally) pass their own Sender/Receiver?
-				// Would make proxying/splicing easier.
-				hubr, hubw, err := hub.Send(m, beam.R|beam.W)
-				if err != nil {
-					Fatalf("error binding backend to hub: %v", err)
-				}
-				fmt.Printf("successfully registered\n")
-				go beamutils.Copy(hubw, mr)
-				go beamutils.Copy(mw, hubr)
+			if _, err := hub.Send(m); err != nil {
+				Fatalf("error binding backend to hub: %v", err)
 			}
 		}
 	}
-	in, _, err := hub.Send(&beam.Message{Name: "start"}, beam.R)
+	fmt.Printf("backends loaded. Sending 'start' to the hub\n")
+	job, err := hub.Send(&beam.Message{Name: "start", Ret: beam.RetPipe})
 	if err != nil {
 		Fatalf("%v", err)
 	}
 	for {
-		msg, _, _, err := in.Receive(0)
+		msg, err := job.Receive(0)
 		if err == io.EOF {
 			break
 		}
