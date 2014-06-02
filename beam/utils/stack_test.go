@@ -2,7 +2,6 @@ package utils
 
 import (
 	"github.com/docker/libswarm/beam"
-	"github.com/docker/libswarm/beam/inmem"
 	"github.com/docker/libswarm/beam/unix"
 	"github.com/dotcloud/docker/pkg/testutils"
 	"strings"
@@ -10,7 +9,7 @@ import (
 )
 
 func TestStackWithPipe(t *testing.T) {
-	r, w := inmem.Pipe()
+	r, w := beam.Pipe()
 	defer r.Close()
 	defer w.Close()
 	s := NewStackSender()
@@ -107,7 +106,7 @@ func TestStackAddBad(t *testing.T) {
 	s := NewStackSender()
 	buf := Buffer{}
 	s.Add(&buf)
-	r, w := inmem.Pipe()
+	r, w := beam.Pipe()
 	s.Add(w)
 	if s.Len() != 2 {
 		t.Fatalf("%#v", s)

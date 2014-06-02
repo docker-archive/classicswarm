@@ -1,7 +1,6 @@
-package inmem
+package beam
 
 import (
-	"github.com/docker/libswarm/beam"
 	"io"
 	"sync"
 )
@@ -23,10 +22,10 @@ type pipe struct {
 	wl    sync.Mutex
 	rerr  error // if reader closed, error to give writes
 	werr  error // if writer closed, error to give reads
-	msg   *beam.Message
+	msg   *Message
 }
 
-func (p *pipe) psend(msg *beam.Message) error {
+func (p *pipe) psend(msg *Message) error {
 	var err error
 	// One writer at a time.
 	p.wl.Lock()
@@ -53,16 +52,16 @@ func (p *pipe) psend(msg *beam.Message) error {
 	return err
 }
 
-func (p *pipe) send(msg *beam.Message) (ret beam.Receiver, err error) {
+func (p *pipe) send(msg *Message) (ret Receiver, err error) {
 	// Prepare nested Receiver if requested
-	if beam.RetPipe.Equals(msg.Ret) {
+	if RetPipe.Equals(msg.Ret) {
 		ret, msg.Ret = Pipe()
 	}
 	err = p.psend(msg)
 	return
 }
 
-func (p *pipe) preceive() (*beam.Message, error) {
+func (p *pipe) preceive() (*Message, error) {
 	p.rl.Lock()
 	defer p.rl.Unlock()
 
@@ -86,15 +85,15 @@ func (p *pipe) preceive() (*beam.Message, error) {
 	return msg, nil
 }
 
-func (p *pipe) receive(mode int) (*beam.Message, error) {
+func (p *pipe) receive(mode int) (*Message, error) {
 	msg, err := p.preceive()
 	if err != nil {
 		return nil, err
 	}
 	if msg.Ret == nil {
-		msg.Ret = beam.NopSender{}
+		msg.Ret = NopSender{}
 	}
-	if mode&beam.Ret == 0 {
+	if mode&Ret == 0 {
 		msg.Ret.Close()
 	}
 	return msg, nil
@@ -128,16 +127,16 @@ type PipeReceiver struct {
 	p *pipe
 }
 
-func (r *PipeReceiver) Receive(mode int) (*beam.Message, error) {
+func (r *PipeReceiver) Receive(mode int) (*Message, error) {
 	return r.p.receive(mode)
 }
 
-func (r *PipeReceiver) SendTo(dst beam.Sender) (int, error) {
+func (r *PipeReceiver) SendTo(dst Sender) (int, error) {
 	var n int
 	// If the destination is a PipeSender, we can cheat
 	pdst, ok := dst.(*PipeSender)
 	if !ok {
-		return 0, beam.ErrIncompatibleSender
+		return 0, ErrIncompatibleSender
 	}
 	for {
 		pmsg, err := r.p.preceive()
@@ -170,16 +169,16 @@ type PipeSender struct {
 	p *pipe
 }
 
-func (w *PipeSender) Send(msg *beam.Message) (beam.Receiver, error) {
+func (w *PipeSender) Send(msg *Message) (Receiver, error) {
 	return w.p.send(msg)
 }
 
-func (w *PipeSender) ReceiveFrom(src beam.Receiver) (int, error) {
+func (w *PipeSender) ReceiveFrom(src Receiver) (int, error) {
 	var n int
 	// If the destination is a PipeReceiver, we can cheat
 	psrc, ok := src.(*PipeReceiver)
 	if !ok {
-		return 0, beam.ErrIncompatibleReceiver
+		return 0, ErrIncompatibleReceiver
 	}
 	for {
 		pmsg, err := psrc.p.preceive()
