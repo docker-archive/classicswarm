@@ -5,7 +5,6 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/libswarm/backends"
 	"github.com/docker/libswarm/beam"
-	beamutils "github.com/docker/libswarm/beam/utils"
 	_ "github.com/dotcloud/docker/api/server"
 	"github.com/flynn/go-shlex"
 	"io"
@@ -27,61 +26,44 @@ func main() {
 }
 
 func cmdDaemon(c *cli.Context) {
-	if len(c.Args()) == 0 {
-		Fatalf("Usage: %s backend [backend...]\n", c.App.Name)
-	}
-
-	hub := beamutils.NewHub()
-	hub.RegisterName("log", func(msg *beam.Message, out beam.Sender) (bool, error) {
+	app := beam.NewServer()
+	app.OnLog(beam.Handler(func(msg *beam.Message) error {
 		log.Printf("%s\n", strings.Join(msg.Args, " "))
-		// Pass through to other logging hooks
-		return true, nil
-	})
-	hub.RegisterName("error", func(msg *beam.Message, out beam.Sender) (bool, error) {
-		Fatalf("Fatal: %v", strings.Join(msg.Args, ":: "))
-		return false, nil
-	})
+		return nil
+	}))
+	app.OnError(beam.Handler(func(msg *beam.Message) error {
+		Fatalf("Fatal: %v", strings.Join(msg.Args[:1], ""))
+		return nil
+	}))
 	back := backends.New()
-	// Load backends
-	for _, cmd := range c.Args() {
-		bName, bArgs, err := parseCmd(cmd)
+	if len(c.Args()) == 0 {
+		names, err := back.Ls()
 		if err != nil {
-			Fatalf("%v", err)
+			Fatalf("ls: %v", err)
 		}
-		fmt.Printf("---> Loading backend '%s'\n", strings.Join(append([]string{bName}, bArgs...), " "))
-		backend, err := back.Send(&beam.Message{Name: "cd", Args: []string{bName}, Ret: beam.RetPipe})
-		if err != nil {
-			Fatalf("%s: %v\n", bName, err)
-		}
-		// backend will return either 'error' or 'register'.
-		for {
-			m, err := backend.Receive(beam.Ret)
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				Fatalf("error reading from backend: %v", err)
-			}
-			if _, err := hub.Send(m); err != nil {
-				Fatalf("error binding backend to hub: %v", err)
-			}
-		}
+		fmt.Println(strings.Join(names, "\n"))
+		return
 	}
-	fmt.Printf("backends loaded. Sending 'start' to the hub\n")
-	job, err := hub.Send(&beam.Message{Name: "start", Ret: beam.RetPipe})
+	bName, bArgs, err := parseCmd(c.Args()[0])
 	if err != nil {
-		Fatalf("%v", err)
+		Fatalf("parse: %v", err)
 	}
-	for {
-		msg, err := job.Receive(0)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			Fatalf("%v", err)
-		}
-		fmt.Printf("--> %s %s\n", msg.Name, strings.Join(msg.Args, " "))
+	fmt.Printf("---> Loading backend '%s'\n", strings.Join(append([]string{bName}, bArgs...), " "))
+	events, backend, err := back.Attach(bName)
+	if err != nil {
+		Fatalf("%s: %v\n", bName, err)
 	}
+	instance, err := backend.Spawn(bArgs...)
+	if err != nil {
+		Fatalf("spawn %s: %v\n", bName, err)
+	}
+	if err != nil {
+		Fatalf("attach: %v", err)
+	}
+	if err := instance.Start(); err != nil {
+		Fatalf("start: %v", err)
+	}
+	beam.Copy(app, events)
 }
 
 func parseCmd(txt string) (string, []string, error) {
