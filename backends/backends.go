@@ -15,6 +15,7 @@ import (
 // Example: `New().Job("debug").Run()`
 func New() *beam.Object {
 	backends := beam.NewTree()
+	backends.Bind("simulator", Simulator())
 	backends.Bind("debug", Debug())
 	backends.Bind("fakeclient", FakeClient())
 	return beam.Obj(backends)
