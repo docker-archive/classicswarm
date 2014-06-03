@@ -16,10 +16,9 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "swarmd"
-	app.Usage = "Control a heterogenous distributed system with the Docker API"
+	app.Usage = "Compose distributed systems from lightweight services"
 	app.Version = "0.0.1"
 	app.Flags = []cli.Flag{
-		cli.StringFlag{"backend", "debug", "load a backend"},
 	}
 	app.Action = cmdDaemon
 	app.Run(os.Args)
