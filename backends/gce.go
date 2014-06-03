@@ -244,7 +244,7 @@ func (cloud GCECloud) CreateInstance(name string, zone string) (string, error) {
 		NetworkInterfaces: []*compute.NetworkInterface{
 			{
 				AccessConfigs: []*compute.AccessConfig{
-					&compute.AccessConfig{Type: "ONE_TO_ONE_NAT"},
+					{Type: "ONE_TO_ONE_NAT"},
 				},
 				Network: prefix + "/global/networks/default",
 			},
