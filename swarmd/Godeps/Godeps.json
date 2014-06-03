@@ -145,6 +145,41 @@
 			"Rev": "9b36453141c35697401168b07f2c09fcff7721ce"
 		},
 		{
+			"ImportPath": "github.com/openshift/geard/config",
+			"Comment": "alpha3-257-gfed69a1",
+			"Rev": "fed69a1faba0d2cea7ecf2885fec28fca0adf377"
+		},
+		{
+			"ImportPath": "github.com/openshift/geard/containers",
+			"Comment": "alpha3-257-gfed69a1",
+			"Rev": "fed69a1faba0d2cea7ecf2885fec28fca0adf377"
+		},
+		{
+			"ImportPath": "github.com/openshift/geard/http/client",
+			"Comment": "alpha3-257-gfed69a1",
+			"Rev": "fed69a1faba0d2cea7ecf2885fec28fca0adf377"
+		},
+		{
+			"ImportPath": "github.com/openshift/geard/jobs",
+			"Comment": "alpha3-257-gfed69a1",
+			"Rev": "fed69a1faba0d2cea7ecf2885fec28fca0adf377"
+		},
+		{
+			"ImportPath": "github.com/openshift/geard/port",
+			"Comment": "alpha3-257-gfed69a1",
+			"Rev": "fed69a1faba0d2cea7ecf2885fec28fca0adf377"
+		},
+		{
+			"ImportPath": "github.com/openshift/geard/selinux",
+			"Comment": "alpha3-257-gfed69a1",
+			"Rev": "fed69a1faba0d2cea7ecf2885fec28fca0adf377"
+		},
+		{
+			"ImportPath": "github.com/openshift/geard/utils",
+			"Comment": "alpha3-257-gfed69a1",
+			"Rev": "fed69a1faba0d2cea7ecf2885fec28fca0adf377"
+		},
+		{
 			"ImportPath": "github.com/tutumcloud/go-tutum",
 			"Rev": "d826286d2e5882428c8163ab44261987bea85a44"
 		}
