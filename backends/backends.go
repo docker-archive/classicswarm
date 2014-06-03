@@ -18,5 +18,6 @@ func New() *engine.Engine {
 	Simulator().Install(back)
 	Forward().Install(back)
 	CloudBackend().Install(back)
+	Tutum().Install(back)
 	return back
 }
