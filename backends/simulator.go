@@ -1,32 +1,25 @@
 package backends
 
 import (
-	"github.com/dotcloud/docker/engine"
+	"github.com/docker/libswarm/beam"
 )
 
-func Simulator() engine.Installer {
-	return &simulator{}
-}
-
-type simulator struct {
-	containers []string
-}
-
-func (s *simulator) Install(eng *engine.Engine) error {
-	eng.Register("simulator", func(job *engine.Job) engine.Status {
-		s.containers = job.Args
-		job.Eng.Register("containers", func(job *engine.Job) engine.Status {
-			t := engine.NewTable("Id", len(s.containers))
-			for _, c := range s.containers {
-				e := &engine.Env{}
-				e.Set("Id", c)
-				e.Set("Image", "foobar")
-				t.Add(e)
-			}
-			t.WriteListTo(job.Stdout)
-			return engine.StatusOK
+func Simulator() beam.Sender {
+	s := beam.NewServer()
+	s.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+		containers := ctx.Args
+		instance := beam.Task(func(in beam.Receiver, out beam.Sender) {
+			beam.Obj(out).Log("[simulator] starting\n")
+			s := beam.NewServer()
+			s.OnLs(beam.Handler(func(msg *beam.Message) error {
+				beam.Obj(out).Log("[simulator] generating fake list of objects...\n")
+				beam.Obj(msg.Ret).Set(containers...)
+				return nil
+			}))
+			beam.Copy(s, in)
 		})
-		return engine.StatusOK
-	})
-	return nil
+		ctx.Ret.Send(&beam.Message{Name: "ack", Ret: instance})
+		return nil
+	}))
+	return s
 }
