@@ -2,57 +2,75 @@ package backends
 
 import (
 	"fmt"
+	"github.com/docker/libswarm/beam"
 	"github.com/dotcloud/docker/engine"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
-func Forward() engine.Installer {
-	return &forwarder{}
+func Forward() beam.Sender {
+	backend := beam.NewServer()
+	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+		if len(ctx.Args) != 1 {
+			return fmt.Errorf("forward: spawn takes exactly 1 argument, got %d", len(ctx.Args))
+		}
+		client, err := newClient(ctx.Args[0], "v0.10")
+		if err != nil {
+			return fmt.Errorf("%v", err)
+		}
+		f := &forwarder{client: client}
+		instance := beam.NewServer()
+		instance.OnAttach(beam.Handler(f.attach))
+		instance.OnStart(beam.Handler(f.start))
+		instance.OnLs(beam.Handler(f.ls))
+		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: instance})
+		return err
+	}))
+	return backend
 }
 
 type forwarder struct {
+	client *client
 }
 
-func (f *forwarder) Install(eng *engine.Engine) error {
-	eng.Register("forward", func(job *engine.Job) engine.Status {
-		if len(job.Args) != 1 {
-			return job.Errorf("usage: %s <proto>://<addr>", job.Name)
-		}
-		client, err := newClient(job.Args[0], "v0.10")
-		if err != nil {
-			return job.Errorf("%v", err)
-		}
-		job.Eng.Register("containers", func(job *engine.Job) engine.Status {
-			path := fmt.Sprintf(
-				"/containers/json?all=%s&size=%s&since=%s&before=%s&limit=%s",
-				url.QueryEscape(job.Getenv("all")),
-				url.QueryEscape(job.Getenv("size")),
-				url.QueryEscape(job.Getenv("since")),
-				url.QueryEscape(job.Getenv("before")),
-				url.QueryEscape(job.Getenv("limit")),
-			)
-			resp, err := client.call("GET", path, "")
-			if err != nil {
-				return job.Errorf("%s: get: %v", client.URL.String(), err)
-			}
-			// FIXME: check for response error
-			c := engine.NewTable("Created", 0)
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return job.Errorf("%s: read body: %v", client.URL.String(), err)
-			}
-			fmt.Printf("---> '%s'\n", body)
-			if _, err := c.ReadListFrom(body); err != nil {
-				return job.Errorf("%s: readlist: %v", client.URL.String(), err)
-			}
-			c.WriteListTo(job.Stdout)
-			return engine.StatusOK
-		})
-		return engine.StatusOK
-	})
+func (f *forwarder) attach(ctx *beam.Message) error {
+	ctx.Ret.Send(&beam.Message{Verb: beam.Ack})
+	for {
+		time.Sleep(1 * time.Second)
+		(&beam.Object{ctx.Ret}).Log("forward: heartbeat")
+	}
+	return nil
+}
+
+func (f *forwarder) start(ctx *beam.Message) error {
+	ctx.Ret.Send(&beam.Message{Verb: beam.Ack})
+	return nil
+}
+
+func (f *forwarder) ls(ctx *beam.Message) error {
+	resp, err := f.client.call("GET", "/containers/json", "")
+	if err != nil {
+		return fmt.Errorf("%s: get: %v", f.client.URL.String(), err)
+	}
+	// FIXME: check for response error
+	c := engine.NewTable("Created", 0)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("%s: read body: %v", f.client.URL.String(), err)
+	}
+	if _, err := c.ReadListFrom(body); err != nil {
+		return fmt.Errorf("%s: readlist: %v", f.client.URL.String(), err)
+	}
+	names := []string{}
+	for _, env := range c.Data {
+		names = append(names, env.GetList("Names")[0][1:])
+	}
+	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: names}); err != nil {
+		return fmt.Errorf("%s: send response: %v", f.client.URL.String(), err)
+	}
 	return nil
 }
 
