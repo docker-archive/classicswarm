@@ -13,12 +13,9 @@ func Task(f func(in Receiver, out Sender)) Sender {
 	obj := NewServer()
 	obj.OnAttach(Handler(func(msg *Message) error {
 		msg.Ret.Send(&Message{Name: "ack", Ret: inW})
-		go func() {
-			fmt.Printf("copying task output from %#v to %#v\n", outR, msg.Ret)
-			defer fmt.Printf("(DONE) copying task output from %#v to %#v\n", outR, msg.Ret)
-			Copy(msg.Ret, outR)
-			msg.Ret.Close()
-		}()
+		fmt.Printf("copying task output from %#v to %#v\n", outR, msg.Ret)
+		defer fmt.Printf("(DONE) copying task output from %#v to %#v\n", outR, msg.Ret)
+		Copy(msg.Ret, outR)
 		return nil
 	}))
 	obj.OnStart(Handler(func(msg *Message) error {
