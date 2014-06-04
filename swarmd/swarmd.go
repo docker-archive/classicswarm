@@ -49,21 +49,28 @@ func cmdDaemon(c *cli.Context) {
 		Fatalf("parse: %v", err)
 	}
 	fmt.Printf("---> Loading backend '%s'\n", strings.Join(append([]string{bName}, bArgs...), " "))
-	events, backend, err := back.Attach(bName)
+	_, backend, err := back.Attach(bName)
 	if err != nil {
 		Fatalf("%s: %v\n", bName, err)
 	}
+	fmt.Printf("---> Spawning\n")
 	instance, err := backend.Spawn(bArgs...)
 	if err != nil {
 		Fatalf("spawn %s: %v\n", bName, err)
 	}
+	fmt.Printf("---> Attaching\n")
+	instanceIn, _, err := instance.Attach("")
 	if err != nil {
 		Fatalf("attach: %v", err)
 	}
+	fmt.Printf("---> Starting\n")
 	if err := instance.Start(); err != nil {
 		Fatalf("start: %v", err)
 	}
-	beam.Copy(app, events)
+	_, err = beam.Copy(app, instanceIn)
+	if err != nil {
+		Fatalf("copy: %v", err)
+	}
 }
 
 func parseCmd(txt string) (string, []string, error) {
