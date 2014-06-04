@@ -18,6 +18,7 @@ func New() *beam.Object {
 	backends.Bind("simulator", Simulator())
 	backends.Bind("debug", Debug())
 	backends.Bind("fakeclient", FakeClient())
+	backends.Bind("forward", Forward())
 	return beam.Obj(backends)
 }
 
