@@ -18,6 +18,7 @@ func New() *engine.Engine {
 	Simulator().Install(back)
 	Forward().Install(back)
 	CloudBackend().Install(back)
+	RaxCloudBackend().Install(back)
 	Tutum().Install(back)
 	return back
 }
