@@ -125,7 +125,7 @@ func (c *container) attach(ctx *beam.Message) error {
 		return err
 	}
 
-	path := fmt.Sprintf("/containers/%s/attach?stdout=1&stderr=0&stream=1&logs=1", c.id)
+	path := fmt.Sprintf("/containers/%s/attach?stdout=1&stderr=0&stream=1", c.id)
 
 	stdoutR, stdoutW := io.Pipe()
 	_, stderrW := io.Pipe()
