@@ -2,43 +2,17 @@
 
 ## A library to orchestrate heterogeneous distributed systems
 
-*libswarm* is a lightweight, standardized abstraction for federating and orchestrating
-distributed systems. It can discover and communicate with all machines in your system,
-using a variety of backend adaptors, and expose them via a single, straightforward API.
 
-This is very useful if your system spans multiple locations on the Internet (your home
-network, office lan, colocated rack, cloud provider, etc.) and uses heterogeneous tools
-for deployment, clustering and service discovery (manually configured IPs on your laptop,
-zeroconf at the office, ssh tunnels + custom DNS on the rack, Mesos, Consul or Etcd/Fleet
-on your cloud provider, etc.).
+*libswarm* is a minimalist toolkit to compose network services.
 
-*libswarm* federates all these elements under a unified namespace and lets you orchestrate
-them using a lightweight and flexible API.
+It exposes a simple API for the following tasks:
 
-Because the *libswarm* API is dead-simple to learn and built on standard components, there
-is a growing ecosystem of tools already compatible with it, which you can use to manage
-your swarm out of the box:
-
-* `swarmctl` is a simple command-line utility which lets you easily compose any combination
-of backends, and orchestrate them straight from the terminal.
-
-* (coming soon) *Shipyard* offers a powerful web interface to manage any swarm-compatible
-distributed system straight from the browser.
-
-* (coming soon) *Swarmlog* is a logging tool which consumes all log streams from your swarm
-and forwards them to a variety of logging backends.
-
-* (coming soon) *Deis*, the popular Docker-based application platform, supports *libswarm*
-natively, and can deploy applications to it out-of-the-box.
-
-* (coming soon) *Drone.io*, the Docker-based continuous integration platform, can spawn
-build and test workers on any swarm.
-
-* (coming soon) *Fig*, the popular development tool, supports libswarm out of the box.
-
-* (coming soon) *Docker*, the open-source container engine, has announced that they will
-adopt *libswarm* as a built-in, and recommend it as the preferred way to orchestrate
-and manage a Docker-based cluster.
+	* *Clustering*: deploy services on pools of interchangeable machines
+	* *Composition*: combine multiple services into higher-level services of arbitrary complexity - it's services all the way down!
+	* *Interconnection*: services can reliably and securely communicate with each other using asynchronous message passing, request/response, or raw sockets.
+	* *Scale* services can run concurrently in the same process using goroutines and channels; in separate processes on the same machines using high-performance IPC;
+on multiple machines in a local network; or across multiple datacenters.
+	* *Integration*: incorporate your existing systems into your swarm. libswarm includes adapters to many popular infrastructure tools and services: docker, dns, mesos, etcd, fleet, deis, google compute, rackspace cloud, tutum, orchard, digital ocean, ssh, etc. It’s very easy to create your own adapter: just clone the repository at 
 
 
 ## Testing libswarm with swarmd

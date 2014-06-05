@@ -15,7 +15,7 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "swarmd"
-	app.Usage = "Compose distributed systems from lightweight services"
+	app.Usage = "a minimalist toolkit to compose network services"
 	app.Version = "0.0.1"
 	app.Flags = []cli.Flag{}
 	app.Action = cmdDaemon
