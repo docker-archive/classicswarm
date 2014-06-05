@@ -81,6 +81,36 @@ func doCmd(instance *beam.Object, args []string) error {
 		fmt.Println(strings.Join(names, "\n"))
 		return nil
 	}
+	if args[0] == "run" {
+		if len(args) < 3 {
+			return fmt.Errorf("usage: run IMAGE COMMAND...")
+		}
+		container, err := instance.Spawn(args[1:]...)
+		if err != nil {
+			return fmt.Errorf("spawn: %v", err)
+		}
+		logs, _, err := container.Attach("")
+		if err != nil {
+			return fmt.Errorf("attach: %v", err)
+		}
+		if err = container.Start(); err != nil {
+			return fmt.Errorf("start: %v", err)
+		}
+		for {
+			msg, err := logs.Receive(beam.Ret)
+			if err != nil {
+				if err.Error() == "EOF" {
+					break
+				}
+				return fmt.Errorf("error reading from container: %v", err)
+			}
+			if msg.Verb != beam.Log {
+				return fmt.Errorf("unexpected message reading from container: %v", msg)
+			}
+			fmt.Print(msg.Args[0])
+		}
+		return nil
+	}
 	return fmt.Errorf("unrecognised command: %s", args[0])
 }
 
