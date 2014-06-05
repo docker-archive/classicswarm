@@ -43,30 +43,37 @@ func cmdDaemon(c *cli.Context) {
 		fmt.Println(strings.Join(names, "\n"))
 		return
 	}
-	bName, bArgs, err := parseCmd(c.Args()[0])
-	if err != nil {
-		Fatalf("parse: %v", err)
+	var previousInstanceIn beam.Receiver
+	for _, backendArg := range c.Args() {
+		bName, bArgs, err := parseCmd(backendArg)
+		if err != nil {
+			Fatalf("parse: %v", err)
+		}
+		fmt.Printf("---> Loading backend '%s'\n", strings.Join(append([]string{bName}, bArgs...), " "))
+		_, backend, err := back.Attach(bName)
+		if err != nil {
+			Fatalf("%s: %v\n", bName, err)
+		}
+		fmt.Printf("---> Spawning\n")
+		instance, err := backend.Spawn(bArgs...)
+		if err != nil {
+			Fatalf("spawn %s: %v\n", bName, err)
+		}
+		fmt.Printf("---> Attaching\n")
+		instanceIn, instanceOut, err := instance.Attach("")
+		if err != nil {
+			Fatalf("attach: %v", err)
+		}
+		fmt.Printf("---> Starting\n")
+		if err := instance.Start(); err != nil {
+			Fatalf("start: %v", err)
+		}
+		if previousInstanceIn != nil {
+			go beam.Copy(instanceOut, previousInstanceIn)
+		}
+		previousInstanceIn = instanceIn
 	}
-	fmt.Printf("---> Loading backend '%s'\n", strings.Join(append([]string{bName}, bArgs...), " "))
-	_, backend, err := back.Attach(bName)
-	if err != nil {
-		Fatalf("%s: %v\n", bName, err)
-	}
-	fmt.Printf("---> Spawning\n")
-	instance, err := backend.Spawn(bArgs...)
-	if err != nil {
-		Fatalf("spawn %s: %v\n", bName, err)
-	}
-	fmt.Printf("---> Attaching\n")
-	instanceIn, _, err := instance.Attach("")
-	if err != nil {
-		Fatalf("attach: %v", err)
-	}
-	fmt.Printf("---> Starting\n")
-	if err := instance.Start(); err != nil {
-		Fatalf("start: %v", err)
-	}
-	_, err = beam.Copy(app, instanceIn)
+	_, err := beam.Copy(app, previousInstanceIn)
 	if err != nil {
 		Fatalf("copy: %v", err)
 	}
