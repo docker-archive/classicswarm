@@ -7,6 +7,7 @@ import (
 	"github.com/docker/libswarm/backends"
 	"github.com/docker/libswarm/beam"
 	"github.com/dotcloud/docker/runconfig"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -119,7 +120,19 @@ func doCmd(instance *beam.Object, args []string) error {
 			if msg.Verb != beam.Log {
 				return fmt.Errorf("unexpected message reading from container: %v", msg)
 			}
-			fmt.Print(msg.Args[0])
+			if len(msg.Args) != 2 {
+				return fmt.Errorf("expected exactly 2 args to log message, got %d", len(msg.Args))
+			}
+			tag, chunk := msg.Args[0], msg.Args[1]
+			var stream io.Writer
+			if tag == "stdout" {
+				stream = os.Stdout
+			} else if tag == "stderr" {
+				stream = os.Stderr
+			} else {
+				return fmt.Errorf("unrecognised tag: %s", tag)
+			}
+			fmt.Fprint(stream, chunk)
 		}
 		return nil
 	}
