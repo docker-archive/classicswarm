@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/docker/libswarm/backends"
 	"github.com/docker/libswarm/beam"
+	"github.com/dotcloud/docker/runconfig"
 	"log"
 	"os"
 	"strings"
@@ -85,7 +87,17 @@ func doCmd(instance *beam.Object, args []string) error {
 		if len(args) < 3 {
 			return fmt.Errorf("usage: run IMAGE COMMAND...")
 		}
-		container, err := instance.Spawn(args[1:]...)
+		containerJson, err := json.Marshal(&runconfig.Config{
+			Image:        args[1],
+			Cmd:          args[2:],
+			AttachStdin:  false,
+			AttachStdout: true,
+			AttachStderr: true,
+		})
+		if err != nil {
+			return err
+		}
+		container, err := instance.Spawn(string(containerJson))
 		if err != nil {
 			return fmt.Errorf("spawn: %v", err)
 		}
