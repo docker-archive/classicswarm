@@ -1,0 +1,6 @@
+# Generate AUTHORS: git log --format='%aN <%aE>' | sort -uf
+<solomon@dotcloud.com> <solomon.hykes@dotcloud.com>
+<proppy@google.com> <proppy@aminche.com>
+Aanand Prasad <aanand.prasad@gmail.com>
+Ben Firshman <ben@firshman.co.uk>
+John Hopper <john.hopper@jpserver.net>
