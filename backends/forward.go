@@ -23,7 +23,7 @@ func Forward() beam.Sender {
 		if len(ctx.Args) != 1 {
 			return fmt.Errorf("forward: spawn takes exactly 1 argument, got %d", len(ctx.Args))
 		}
-		client, err := newClient(ctx.Args[0], "v0.10")
+		client, err := newClient(ctx.Args[0], "v1.11")
 		if err != nil {
 			return fmt.Errorf("%v", err)
 		}
@@ -190,6 +190,7 @@ func newClient(peer, version string) (*client, error) {
 }
 
 func (c *client) call(method, path, body string) (*http.Response, error) {
+	path = fmt.Sprintf("/%s%s", c.version, path)
 	u, err := url.Parse(path)
 	if err != nil {
 		return nil, err
@@ -208,6 +209,7 @@ func (c *client) call(method, path, body string) (*http.Response, error) {
 }
 
 func (c *client) hijack(method, path string, in io.ReadCloser, stdout, stderr io.Writer) error {
+	path = fmt.Sprintf("/%s%s", c.version, path)
 	dial, err := net.Dial("tcp", c.URL.Host)
 	if err != nil {
 		return err
