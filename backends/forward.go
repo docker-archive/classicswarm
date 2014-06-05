@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/docker/libswarm/beam"
 	"github.com/dotcloud/docker/engine"
-	"github.com/dotcloud/docker/runconfig"
 	"github.com/dotcloud/docker/utils"
 	"io"
 	"io/ioutil"
@@ -83,20 +82,10 @@ func (f *forwarder) ls(ctx *beam.Message) error {
 }
 
 func (f *forwarder) spawn(ctx *beam.Message) error {
-	if len(ctx.Args) < 1 {
-		return fmt.Errorf("forward: spawn takes at least 1 argument, got %d", len(ctx.Args))
+	if len(ctx.Args) != 1 {
+		return fmt.Errorf("forward: spawn takes exactly 1 argument, got %d", len(ctx.Args))
 	}
-	body, err := json.Marshal(&runconfig.Config{
-		Image:        ctx.Args[0],
-		Cmd:          ctx.Args[1:],
-		AttachStdin:  false,
-		AttachStdout: true,
-		AttachStderr: true,
-	})
-	if err != nil {
-		return err
-	}
-	resp, err := f.client.call("POST", "/containers/create", string(body))
+	resp, err := f.client.call("POST", "/containers/create", ctx.Args[0])
 	if err != nil {
 		return err
 	}
