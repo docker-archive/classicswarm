@@ -20,14 +20,14 @@ func TestStackWithPipe(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if msg.Name != "hello" {
+			if msg.Verb != beam.Log {
 				t.Fatalf("%#v", msg)
 			}
 			if strings.Join(msg.Args, " ") != "wonderful world" {
 				t.Fatalf("%#v", msg)
 			}
 		}()
-		_, err := s.Send(&beam.Message{Name: "hello", Args: []string{"wonderful", "world"}})
+		_, err := s.Send(&beam.Message{Verb: beam.Log, Args: []string{"wonderful", "world"}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -49,14 +49,14 @@ func TestStackWithPair(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if msg.Name != "hello" {
+			if msg.Verb != beam.Log {
 				t.Fatalf("%#v", msg)
 			}
 			if strings.Join(msg.Args, " ") != "wonderful world" {
 				t.Fatalf("%#v", msg)
 			}
 		}()
-		_, err := s.Send(&beam.Message{Name: "hello", Args: []string{"wonderful", "world"}})
+		_, err := s.Send(&beam.Message{Verb: beam.Log, Args: []string{"wonderful", "world"}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -90,9 +90,9 @@ func TestStackAdd(t *testing.T) {
 	if s.Len() != 2 {
 		t.Fatalf("%#v", beforeA)
 	}
-	s.Send(&beam.Message{Name: "for b", Args: nil})
-	beforeB.Send(&beam.Message{Name: "for a", Args: nil})
-	beforeA.Send(&beam.Message{Name: "for nobody", Args: nil})
+	s.Send(&beam.Message{Verb: beam.Log, Args: []string{"for b"}})
+	beforeB.Send(&beam.Message{Verb: beam.Log, Args: []string{"for a"}})
+	beforeA.Send(&beam.Message{Verb: beam.Log, Args: []string{"for nobody"}})
 	if len(a) != 1 {
 		t.Fatalf("%#v", a)
 	}
@@ -112,7 +112,7 @@ func TestStackAddBad(t *testing.T) {
 		t.Fatalf("%#v", s)
 	}
 	r.Close()
-	if _, err := s.Send(&beam.Message{Name: "for the buffer", Args: nil}); err != nil {
+	if _, err := s.Send(&beam.Message{Verb: beam.Log, Args: []string{"for the buffer"}}); err != nil {
 		t.Fatal(err)
 	}
 	if s.Len() != 1 {
@@ -121,7 +121,7 @@ func TestStackAddBad(t *testing.T) {
 	if len(buf) != 1 {
 		t.Fatalf("%#v", buf)
 	}
-	if buf[0].Name != "for the buffer" {
+	if buf[0].Args[0] != "for the buffer" {
 		t.Fatalf("%#v", buf)
 	}
 }

@@ -15,7 +15,7 @@ type Receiver interface {
 }
 
 type Message struct {
-	Name string
+	Verb Verb
 	Args []string
 	Att  *os.File
 	Ret  Sender
@@ -63,4 +63,4 @@ func Repeater(payload *Message) Sender {
 	})
 }
 
-var NotImplemented = Repeater(&Message{Name: "error", Args: []string{"not implemented"}})
+var NotImplemented = Repeater(&Message{Verb: Error, Args: []string{"not implemented"}})

@@ -12,7 +12,7 @@ func Task(f func(in Receiver, out Sender)) Sender {
 	outR, outW := Pipe()
 	obj := NewServer()
 	obj.OnAttach(Handler(func(msg *Message) error {
-		msg.Ret.Send(&Message{Name: "ack", Ret: inW})
+		msg.Ret.Send(&Message{Verb: Ack, Ret: inW})
 		fmt.Printf("copying task output from %#v to %#v\n", outR, msg.Ret)
 		defer fmt.Printf("(DONE) copying task output from %#v to %#v\n", outR, msg.Ret)
 		Copy(msg.Ret, outR)
@@ -29,7 +29,7 @@ func Task(f func(in Receiver, out Sender)) Sender {
 		go f(inR, outW)
 		running = true
 		l.Unlock()
-		msg.Ret.Send(&Message{Name: "ack"})
+		msg.Ret.Send(&Message{Verb: Ack})
 		return nil
 	}))
 	return obj

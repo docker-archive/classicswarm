@@ -16,11 +16,11 @@ func NewTree() *Tree {
 	}
 	t.OnAttach(Handler(func(msg *Message) error {
 		if len(msg.Args) == 0 || msg.Args[0] == "" {
-			msg.Ret.Send(&Message{Name: "ack", Ret: t})
+			msg.Ret.Send(&Message{Verb: Ack, Ret: t})
 			return nil
 		}
 		if child, exists := t.children[msg.Args[0]]; exists {
-			msg.Ret.Send(&Message{Name: "ack", Ret: child})
+			msg.Ret.Send(&Message{Verb: Ack, Ret: child})
 			return nil
 		}
 		Obj(msg.Ret).Error("not found")
