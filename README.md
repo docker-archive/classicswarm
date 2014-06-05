@@ -1,6 +1,6 @@
 # Libswarm
 
-## A library to orchestrate heterogeneous distributed systems
+## A minimalist toolkit to compose network services
 
 
 *libswarm* is a minimalist toolkit to compose network services.
