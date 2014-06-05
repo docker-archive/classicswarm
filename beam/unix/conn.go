@@ -3,6 +3,7 @@ package unix
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/docker/libswarm/beam"
 	"github.com/docker/libswarm/beam/data"
@@ -54,7 +55,7 @@ func (c *Conn) Send(msg *beam.Message) (beam.Receiver, error) {
 	if msg.Att != nil {
 		return nil, fmt.Errorf("file attachment not yet implemented in unix transport")
 	}
-	parts := []string{msg.Name}
+	parts := []string{fmt.Sprintf("%d", msg.Verb)}
 	parts = append(parts, msg.Args...)
 	b := []byte(data.EncodeList(parts))
 	// Setup nested streams
@@ -120,7 +121,11 @@ func (c *Conn) Receive(mode int) (*beam.Message, error) {
 	if len(parts) == 0 {
 		return nil, fmt.Errorf("malformed message")
 	}
-	msg := &beam.Message{Name: parts[0], Args: parts[1:]}
+	v, err := strconv.ParseUint(parts[0], 10, 32)
+	if err != nil {
+		return nil, err
+	}
+	msg := &beam.Message{Verb: beam.Verb(v), Args: parts[1:]}
 
 	// Apply mode mask
 	if fd != nil {

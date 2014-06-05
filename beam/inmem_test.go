@@ -14,7 +14,8 @@ func TestInmemRetPipe(t *testing.T) {
 	defer w.Close()
 	wait := make(chan struct{})
 	go func() {
-		ret, err := w.Send(&Message{Name: "hello", Ret: RetPipe})
+		defer close(wait)
+		ret, err := w.Send(&Message{Verb: Log, Args: []string{"hello"}, Ret: RetPipe})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -22,16 +23,18 @@ func TestInmemRetPipe(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if msg.Name != "this better not crash" {
+		if msg.Verb != Ack {
 			t.Fatalf("%#v", msg)
 		}
-		close(wait)
+		if msg.Args[0] != "this better not crash" {
+			t.Fatalf("%#v", msg)
+		}
 	}()
 	msg, err := r.Receive(Ret)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := msg.Ret.Send(&Message{Name: "this better not crash"}); err != nil {
+	if _, err := msg.Ret.Send(&Message{Verb: Ack, Args: []string{"this better not crash"}}); err != nil {
 		t.Fatal(err)
 	}
 	<-wait
@@ -47,14 +50,14 @@ func TestSimpleSend(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if msg.Name != "print" {
+			if msg.Verb != Log {
 				t.Fatalf("%#v", *msg)
 			}
 			if msg.Args[0] != "hello world" {
 				t.Fatalf("%#v", *msg)
 			}
 		}()
-		if _, err := w.Send(&Message{Name: "print", Args: []string{"hello world"}}); err != nil {
+		if _, err := w.Send(&Message{Verb: Log, Args: []string{"hello world"}}); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -116,7 +119,7 @@ func TestSendFile(t *testing.T) {
 	tmp.Seek(0, 0)
 	testutils.Timeout(t, func() {
 		go func() {
-			_, err := w.Send(&Message{Name: "file", Args: []string{"path=" + tmp.Name()}, Att: tmp})
+			_, err := w.Send(&Message{Verb: File, Args: []string{"path=" + tmp.Name()}, Att: tmp})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -125,7 +128,7 @@ func TestSendFile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if msg.Name != "file" {
+		if msg.Verb != File {
 			t.Fatalf("%#v", msg)
 		}
 		if msg.Args[0] != "path="+tmp.Name() {

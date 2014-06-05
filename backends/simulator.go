@@ -18,7 +18,7 @@ func Simulator() beam.Sender {
 			}))
 			beam.Copy(s, in)
 		})
-		ctx.Ret.Send(&beam.Message{Name: "ack", Ret: instance})
+		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: instance})
 		return nil
 	}))
 	return s

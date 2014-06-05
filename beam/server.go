@@ -54,7 +54,7 @@ func (s *Server) OnLs(h Sender) *Server {
 }
 
 func (s *Server) Send(msg *Message) (Receiver, error) {
-	if h, exists := s.handlers[Verb(msg.Name)]; exists {
+	if h, exists := s.handlers[msg.Verb]; exists {
 		return h.Send(msg)
 	}
 	if s.catchall != nil {

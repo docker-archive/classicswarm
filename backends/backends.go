@@ -26,11 +26,11 @@ func Debug() beam.Sender {
 	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
 		instance := beam.NewServer()
 		instance.Catchall(beam.Handler(func(msg *beam.Message) error {
-			fmt.Printf("[DEBUG] %s %s\n", msg.Name, strings.Join(msg.Args, " "))
+			fmt.Printf("[DEBUG] %s %s\n", msg.Verb, strings.Join(msg.Args, " "))
 			ctx.Ret.Send(msg)
 			return nil
 		}))
-		_, err := ctx.Ret.Send(&beam.Message{Name: string(beam.Ack), Ret: instance})
+		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: instance})
 		return err
 	}))
 	return backend
@@ -51,7 +51,7 @@ func FakeClient() beam.Sender {
 				o.Log("fake client heartbeat!")
 			}
 		})
-		_, err := ctx.Ret.Send(&beam.Message{Name: string(beam.Ack), Ret: instance})
+		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: instance})
 		return err
 	}))
 	return backend

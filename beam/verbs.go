@@ -1,17 +1,19 @@
 package beam
 
-type Verb string
+type Verb uint32
 
-var (
-	Ack    Verb = "ack"
-	Log    Verb = "log"
-	Start  Verb = "start"
-	Stop   Verb = "stop"
-	Attach Verb = "attach"
-	Spawn  Verb = "spawn"
-	Set    Verb = "set"
-	Get    Verb = "get"
-	File   Verb = "file"
-	Error  Verb = "error"
-	Ls     Verb = "ls"
+const (
+	Ack Verb = iota
+	Attach
+	Connect
+	Error
+	File
+	Get
+	Log
+	Ls
+	Set
+	Spawn
+	Start
+	Stop
+	Watch
 )
