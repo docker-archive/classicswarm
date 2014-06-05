@@ -125,22 +125,23 @@ func (c *container) attach(ctx *beam.Message) error {
 		return err
 	}
 
-	path := fmt.Sprintf("/containers/%s/attach?stdout=1&stderr=0&stream=1", c.id)
+	path := fmt.Sprintf("/containers/%s/attach?stdout=1&stderr=1&stream=1", c.id)
 
 	stdoutR, stdoutW := io.Pipe()
-	_, stderrW := io.Pipe()
-	go copyOutput(ctx.Ret, stdoutR)
+	stderrR, stderrW := io.Pipe()
+	go copyOutput(ctx.Ret, stdoutR, "stdout")
+	go copyOutput(ctx.Ret, stderrR, "stderr")
 	c.forwarder.client.hijack("POST", path, nil, stdoutW, stderrW)
 
 	return nil
 }
 
-func copyOutput(sender beam.Sender, reader io.Reader) {
+func copyOutput(sender beam.Sender, reader io.Reader, tag string) {
 	chunk := make([]byte, 4096)
 	for {
 		n, err := reader.Read(chunk)
 		if n > 0 {
-			sender.Send(&beam.Message{Verb: beam.Log, Args: []string{string(chunk[0:n])}})
+			sender.Send(&beam.Message{Verb: beam.Log, Args: []string{tag, string(chunk[0:n])}})
 		}
 		if err != nil {
 			message := fmt.Sprintf("Error reading from stream: %v", err)
@@ -233,8 +234,7 @@ func (c *client) hijack(method, path string, in io.ReadCloser, stdout, stderr io
 				in.Close()
 			}
 		}()
-		// _, err = utils.StdCopy(stdout, stderr, br)
-		_, err = io.Copy(stdout, br)
+		_, err = utils.StdCopy(stdout, stderr, br)
 		log.Println("[hijack] End of stdout")
 		return err
 	})
