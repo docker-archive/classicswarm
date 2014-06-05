@@ -24,12 +24,21 @@ func New() *beam.Object {
 func Debug() beam.Sender {
 	backend := beam.NewServer()
 	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
-		instance := beam.NewServer()
-		instance.Catchall(beam.Handler(func(msg *beam.Message) error {
-			fmt.Printf("[DEBUG] %s %s\n", msg.Verb, strings.Join(msg.Args, " "))
-			ctx.Ret.Send(msg)
-			return nil
-		}))
+		instance := beam.Task(func(in beam.Receiver, out beam.Sender) {
+			fmt.Printf("debug backend!")
+			for {
+				msg, err := in.Receive(beam.Ret)
+				if err != nil {
+					fmt.Printf("debug receive: %v", err)
+					return
+				}
+				fmt.Printf("[DEBUG] %s %s\n", msg.Verb, strings.Join(msg.Args, " "))
+				if _, err := out.Send(msg); err != nil {
+					fmt.Printf("debug send: %v", err)
+					return
+				}
+			}
+		})
 		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: instance})
 		return err
 	}))
