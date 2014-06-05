@@ -62,3 +62,5 @@ func Repeater(payload *Message) Sender {
 		return nil
 	})
 }
+
+var NotImplemented = Repeater(&Message{Name: "error", Args: []string{"not implemented"}})
