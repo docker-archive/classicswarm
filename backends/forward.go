@@ -28,13 +28,15 @@ func Forward() beam.Sender {
 		if err != nil {
 			return fmt.Errorf("%v", err)
 		}
-		f := &forwarder{client: client}
-		instance := beam.NewServer()
-		instance.OnAttach(beam.Handler(f.attach))
-		instance.OnStart(beam.Handler(f.start))
-		instance.OnLs(beam.Handler(f.ls))
-		instance.OnSpawn(beam.Handler(f.spawn))
-		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: instance})
+		f := &forwarder{
+			client: client,
+			Server: beam.NewServer(),
+		}
+		f.Server.OnAttach(beam.Handler(f.attach))
+		f.Server.OnStart(beam.Handler(f.start))
+		f.Server.OnLs(beam.Handler(f.ls))
+		f.Server.OnSpawn(beam.Handler(f.spawn))
+		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: f.Server})
 		return err
 	}))
 	return backend
@@ -42,10 +44,11 @@ func Forward() beam.Sender {
 
 type forwarder struct {
 	client *client
+	*beam.Server
 }
 
 func (f *forwarder) attach(ctx *beam.Message) error {
-	ctx.Ret.Send(&beam.Message{Verb: beam.Ack})
+	ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: f.Server})
 	for {
 		time.Sleep(1 * time.Second)
 		(&beam.Object{ctx.Ret}).Log("forward: heartbeat")
