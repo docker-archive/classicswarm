@@ -3,6 +3,7 @@ package backends
 import (
 	"fmt"
 	"github.com/dotcloud/docker/engine"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -25,32 +26,9 @@ func (f *forwarder) Install(eng *engine.Engine) error {
 		if err != nil {
 			return job.Errorf("%v", err)
 		}
-		job.Eng.Register("containers", func(job *engine.Job) engine.Status {
-			path := fmt.Sprintf(
-				"/containers/json?all=%s&size=%s&since=%s&before=%s&limit=%s",
-				url.QueryEscape(job.Getenv("all")),
-				url.QueryEscape(job.Getenv("size")),
-				url.QueryEscape(job.Getenv("since")),
-				url.QueryEscape(job.Getenv("before")),
-				url.QueryEscape(job.Getenv("limit")),
-			)
-			resp, err := client.call("GET", path, "")
-			if err != nil {
-				return job.Errorf("%s: get: %v", client.URL.String(), err)
-			}
-			// FIXME: check for response error
-			c := engine.NewTable("Created", 0)
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return job.Errorf("%s: read body: %v", client.URL.String(), err)
-			}
-			fmt.Printf("---> '%s'\n", body)
-			if _, err := c.ReadListFrom(body); err != nil {
-				return job.Errorf("%s: readlist: %v", client.URL.String(), err)
-			}
-			c.WriteListTo(job.Stdout)
-			return engine.StatusOK
-		})
+		job.Eng.Register("containers", client.containers)
+		job.Eng.Register("images", client.images)
+		job.Eng.Register("inspect", client.inspect)
 		return engine.StatusOK
 	})
 	return nil
@@ -92,4 +70,67 @@ func (c *client) call(method, path, body string) (*http.Response, error) {
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (c *client) callAndCopyOutput(job *engine.Job, method, path, body string) engine.Status {
+	resp, err := c.call("GET", path, "")
+	if err != nil {
+		return job.Errorf("%s: get: %v", c.URL.String(), err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		io.Copy(job.Stderr, resp.Body)
+		return engine.StatusErr
+	}
+
+	io.Copy(job.Stdout, resp.Body)
+	return engine.StatusOK
+}
+
+func (c *client) containers(job *engine.Job) engine.Status {
+	path := fmt.Sprintf(
+		"/containers/json?all=%s&size=%s&since=%s&before=%s&limit=%s",
+		url.QueryEscape(job.Getenv("all")),
+		url.QueryEscape(job.Getenv("size")),
+		url.QueryEscape(job.Getenv("since")),
+		url.QueryEscape(job.Getenv("before")),
+		url.QueryEscape(job.Getenv("limit")),
+	)
+	resp, err := c.call("GET", path, "")
+	if err != nil {
+		return job.Errorf("%s: get: %v", c.URL.String(), err)
+	}
+	// FIXME: check for response error
+	t := engine.NewTable("Created", 0)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return job.Errorf("%s: read body: %v", c.URL.String(), err)
+	}
+	fmt.Printf("---> '%s'\n", body)
+	if _, err := t.ReadListFrom(body); err != nil {
+		return job.Errorf("%s: readlist: %v", c.URL.String(), err)
+	}
+	t.WriteListTo(job.Stdout)
+	return engine.StatusOK
+}
+
+func (c *client) images(job *engine.Job) engine.Status {
+	path := fmt.Sprintf(
+		"/images/json?all=%s&filter=%s",
+		url.QueryEscape(job.Getenv("all")),
+		url.QueryEscape(job.Getenv("filter")),
+	)
+
+	return c.callAndCopyOutput(job, "GET", path, "")
+}
+
+func (c *client) inspect(job *engine.Job) engine.Status {
+	name, kind := job.Args[0], job.Args[1]
+
+	path := fmt.Sprintf(
+		"/%ss/%s/json?conflict=%s",
+		kind, name, url.QueryEscape(job.Getenv("conflict")),
+	)
+
+	return c.callAndCopyOutput(job, "GET", path, "")
 }
