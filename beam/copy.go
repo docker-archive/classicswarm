@@ -1,6 +1,7 @@
 package beam
 
 import (
+	"io"
 	"sync"
 )
 
@@ -22,6 +23,9 @@ func Copy(dst Sender, src Receiver) (int, error) {
 	)
 	for {
 		msg, err := src.Receive(Ret)
+		if err == io.EOF {
+			return n, nil
+		}
 		if err != nil {
 			return n, err
 		}
