@@ -7,8 +7,8 @@ import (
 	"github.com/docker/libswarm/backends"
 	"github.com/docker/libswarm/beam"
 	"github.com/dotcloud/docker/runconfig"
+	"github.com/dotcloud/docker/utils"
 	"io"
-	"log"
 	"os"
 	"strings"
 )
@@ -28,7 +28,7 @@ func main() {
 func cmdDaemon(c *cli.Context) {
 	app := beam.NewServer()
 	app.OnLog(beam.Handler(func(msg *beam.Message) error {
-		log.Printf("%s\n", strings.Join(msg.Args, " "))
+		utils.Debugf("%s", strings.Join(msg.Args, " "))
 		return nil
 	}))
 	app.OnError(beam.Handler(func(msg *beam.Message) error {
@@ -43,13 +43,13 @@ func cmdDaemon(c *cli.Context) {
 		dockerHost = "unix:///var/run/docker.sock"
 	}
 
-	log.Printf("---> Spawning\n")
+	utils.Debugf("---> Spawning")
 	instance, err := backend.Spawn(dockerHost)
 	if err != nil {
 		Fatalf("spawn: %v\n", err)
 	}
 
-	log.Printf("---> Attaching\n")
+	utils.Debugf("---> Attaching")
 	instanceIn, instanceOut, err := instance.Attach("")
 	if err != nil {
 		Fatalf("attach: %v", err)
@@ -57,7 +57,7 @@ func cmdDaemon(c *cli.Context) {
 	defer instanceOut.Close()
 	go beam.Copy(app, instanceIn)
 
-	log.Printf("---> Starting\n")
+	utils.Debugf("---> Starting")
 	if err := instance.Start(); err != nil {
 		Fatalf("start: %v", err)
 	}
@@ -72,7 +72,7 @@ func doCmd(instance *beam.Object, args []string) error {
 	if len(args) == 0 {
 		return fmt.Errorf("no command supplied")
 	}
-	log.Printf("---> %s\n", args[0])
+	utils.Debugf("---> %s", args[0])
 	if args[0] == "ps" {
 		if len(args) != 1 {
 			return fmt.Errorf("usage: ps")
