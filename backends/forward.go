@@ -8,7 +8,6 @@ import (
 	"github.com/dotcloud/docker/utils"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -235,33 +234,33 @@ func (c *client) hijack(method, path string, in io.ReadCloser, stdout, stderr io
 			}
 		}()
 		_, err = utils.StdCopy(stdout, stderr, br)
-		log.Println("[hijack] End of stdout")
+		utils.Debugf("[hijack] End of stdout")
 		return err
 	})
 	sendStdin := utils.Go(func() error {
 		if in != nil {
 			io.Copy(rwc, in)
-			log.Println("[hijack] End of stdin")
+			utils.Debugf("[hijack] End of stdin")
 		}
 		if tcpc, ok := rwc.(*net.TCPConn); ok {
 			if err := tcpc.CloseWrite(); err != nil {
-				log.Printf("Couldn't send EOF: %s\n", err)
+				utils.Debugf("Couldn't send EOF: %s", err)
 			}
 		} else if unixc, ok := rwc.(*net.UnixConn); ok {
 			if err := unixc.CloseWrite(); err != nil {
-				log.Printf("Couldn't send EOF: %s\n", err)
+				utils.Debugf("Couldn't send EOF: %s", err)
 			}
 		}
 		// Discard errors due to pipe interruption
 		return nil
 	})
 	if err := <-receiveStdout; err != nil {
-		log.Printf("Error receiveStdout: %s\n", err)
+		utils.Debugf("Error receiveStdout: %s", err)
 		return err
 	}
 
 	if err := <-sendStdin; err != nil {
-		log.Printf("Error sendStdin: %s\n", err)
+		utils.Debugf("Error sendStdin: %s", err)
 		return err
 	}
 	return nil
