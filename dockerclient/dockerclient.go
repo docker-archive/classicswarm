@@ -48,12 +48,12 @@ func cmdDaemon(c *cli.Context) {
 		Fatalf("spawn: %v\n", err)
 	}
 
-	instanceIn, instanceOut, err := instance.Attach("")
+	instanceR, instanceW, err := instance.Attach("")
 	if err != nil {
 		Fatalf("attach: %v", err)
 	}
-	defer instanceOut.Close()
-	go beam.Copy(app, instanceIn)
+	defer instanceW.Close()
+	go beam.Copy(app, instanceR)
 
 	if err := instance.Start(); err != nil {
 		Fatalf("start: %v", err)
