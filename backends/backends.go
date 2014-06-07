@@ -1,7 +1,7 @@
 package backends
 
 import (
-	"github.com/dotcloud/docker/engine"
+	"github.com/docker/libswarm/beam"
 )
 
 // New returns a new engine, with all backends
@@ -10,15 +10,13 @@ import (
 // engine, named after the desired backend.
 //
 // Example: `New().Job("debug").Run()`
-func New() *engine.Engine {
-	back := engine.New()
-	back.Logging = false
-	// Register all backends here
-	Debug().Install(back)
-	Simulator().Install(back)
-	Forward().Install(back)
-	CloudBackend().Install(back)
-	Tutum().Install(back)
-	Shipyard().Install(back)
-	return back
+func New() *beam.Object {
+	backends := beam.NewTree()
+	backends.Bind("simulator", Simulator())
+	backends.Bind("debug", Debug())
+	backends.Bind("fakeclient", FakeClient())
+	backends.Bind("forward", Forward())
+	backends.Bind("exec", Exec())
+	backends.Bind("apiserver", ApiServer())
+	return beam.Obj(backends)
 }

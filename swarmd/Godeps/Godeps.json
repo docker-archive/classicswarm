@@ -33,6 +33,10 @@
 			"Rev": "2fb21b34171f083d46d66195caa7ec121d941ec5"
 		},
 		{
+			"ImportPath": "github.com/docker/spdystream",
+			"Rev": "87969a9c4b79508e63004ac17a97eb9278c08b3c"
+		},
+		{
 			"ImportPath": "github.com/dotcloud/docker/api",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
