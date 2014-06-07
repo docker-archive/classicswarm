@@ -11,7 +11,6 @@ func Debug() beam.Sender {
 	backend := beam.NewServer()
 	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
 		instance := beam.Task(func(in beam.Receiver, out beam.Sender) {
-			fmt.Printf("debug backend!")
 			for {
 				msg, err := in.Receive(beam.Ret)
 				if err != nil {
