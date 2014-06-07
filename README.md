@@ -48,7 +48,7 @@ The debug backend simply catches all messages and prints them on the terminal fo
 
 *Maintainer: Solomon Hykes*
 
-### Pipe adapter
+### Go channel adapter
 
 *Maintainer: Solomon Hykes*
 
