@@ -17,14 +17,16 @@ func main() {
 	app.Name = "swarmd"
 	app.Usage = "a minimalist toolkit to compose network services"
 	app.Version = "0.0.1"
-	app.Flags = []cli.Flag{}
+	app.Flags = []cli.Flag{
+		 cli.StringFlag{"backend", "debug", "load a backend"},
+	}
 	app.Action = cmdDaemon
 	app.Run(os.Args)
 }
 
 func cmdDaemon(c *cli.Context) {
 	if len(c.Args()) == 0 {
-		Fatalf("Usage: %s <proto>://<address> [<proto>://<address>]...\n", c.App.Name)
+		Fatalf("Usage: %s [OPTIONS] <proto>://<address> [<proto>://<address>]...\n", c.App.Name)
 	}
 
 	// Load backend
