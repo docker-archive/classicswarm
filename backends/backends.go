@@ -19,5 +19,6 @@ func New() *engine.Engine {
 	Forward().Install(back)
 	CloudBackend().Install(back)
 	Tutum().Install(back)
+	Shipyard().Install(back)
 	return back
 }
