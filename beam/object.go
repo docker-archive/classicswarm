@@ -187,3 +187,18 @@ func (o *Object) Start() error {
 	}
 	return fmt.Errorf("unexpected verb %v", msg.Verb)
 }
+
+func (o *Object) Stop() error {
+	ret, err := o.Send(&Message{Verb: Stop, Ret: RetPipe})
+	msg, err := ret.Receive(0)
+	if err == io.EOF {
+		return fmt.Errorf("unexpected EOF")
+	}
+	if msg.Verb == Ack {
+		return nil
+	}
+	if msg.Verb == Error {
+		return fmt.Errorf(strings.Join(msg.Args[:1], ""))
+	}
+	return fmt.Errorf("unexpected verb %v", msg.Verb)
+}
