@@ -7,12 +7,12 @@
 
 It exposes a simple API for the following tasks:
 
-	* *Clustering*: deploy services on pools of interchangeable machines
-	* *Composition*: combine multiple services into higher-level services of arbitrary complexity - it's services all the way down!
-	* *Interconnection*: services can reliably and securely communicate with each other using asynchronous message passing, request/response, or raw sockets.
-	* *Scale* services can run concurrently in the same process using goroutines and channels; in separate processes on the same machines using high-performance IPC;
+* *Clustering*: deploy services on pools of interchangeable machines
+* *Composition*: combine multiple services into higher-level services of arbitrary complexity - it's services all the way down!
+* *Interconnection*: services can reliably and securely communicate with each other using asynchronous message passing, request/response, or raw sockets.
+* *Scale* services can run concurrently in the same process using goroutines and channels; in separate processes on the same machines using high-performance IPC;
 on multiple machines in a local network; or across multiple datacenters.
-	* *Integration*: incorporate your existing systems into your swarm. libswarm includes adapters to many popular infrastructure tools and services: docker, dns, mesos, etcd, fleet, deis, google compute, rackspace cloud, tutum, orchard, digital ocean, ssh, etc. It’s very easy to create your own adapter: just clone the repository at 
+* *Integration*: incorporate your existing systems into your swarm. libswarm includes adapters to many popular infrastructure tools and services: docker, dns, mesos, etcd, fleet, deis, google compute, rackspace cloud, tutum, orchard, digital ocean, ssh, etc. It’s very easy to create your own adapter: just clone the repository at 
 
 
 ## Testing libswarm with swarmd
