@@ -158,6 +158,27 @@ func (o *Object) Get() (string, error) {
 	return "", fmt.Errorf("unexpected verb %v", msg.Verb)
 }
 
+func (o *Object) GetChildren() ([]string, error) {
+	ret, err := o.Send(&Message{Verb: GetChildren, Ret: RetPipe})
+	if err != nil {
+		return []string{}, err
+	}
+	msg, err := ret.Receive(0)
+	if err == io.EOF {
+		return []string{}, fmt.Errorf("unexpected EOF")
+	}
+	if msg.Verb == Set {
+		if err != nil {
+			return []string{}, err
+		}
+		return msg.Args, nil
+	}
+	if msg.Verb == Error {
+		return []string{}, fmt.Errorf(strings.Join(msg.Args[:1], ""))
+	}
+	return []string{}, fmt.Errorf("unexpected verb %v", msg.Verb)
+}
+
 func (o *Object) Watch() (Receiver, error) {
 	ret, err := o.Send(&Message{Verb: Watch, Ret: RetPipe})
 	if err != nil {

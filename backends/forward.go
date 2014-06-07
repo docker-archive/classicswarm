@@ -1,6 +1,7 @@
 package backends
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/docker/libswarm/beam"
@@ -34,6 +35,7 @@ func Forward() beam.Sender {
 		f.Server.OnStart(beam.Handler(f.start))
 		f.Server.OnLs(beam.Handler(f.ls))
 		f.Server.OnSpawn(beam.Handler(f.spawn))
+		f.Server.OnGetChildren(beam.Handler(f.getChildren))
 		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: f.Server})
 		return err
 	}))
@@ -65,18 +67,9 @@ func (f *forwarder) start(ctx *beam.Message) error {
 }
 
 func (f *forwarder) ls(ctx *beam.Message) error {
-	resp, err := f.client.call("GET", "/containers/json", "")
+	c, err := f.getChildrenList()
 	if err != nil {
-		return fmt.Errorf("%s: get: %v", f.client.URL.String(), err)
-	}
-	// FIXME: check for response error
-	c := engine.NewTable("Created", 0)
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("%s: read body: %v", f.client.URL.String(), err)
-	}
-	if _, err := c.ReadListFrom(body); err != nil {
-		return fmt.Errorf("%s: readlist: %v", f.client.URL.String(), err)
+		return err
 	}
 	names := []string{}
 	for _, env := range c.Data {
@@ -86,6 +79,40 @@ func (f *forwarder) ls(ctx *beam.Message) error {
 		return fmt.Errorf("%s: send response: %v", f.client.URL.String(), err)
 	}
 	return nil
+}
+
+func (f *forwarder) getChildren(ctx *beam.Message) error {
+	c, err := f.getChildrenList()
+	if err != nil {
+		return err
+	}
+	responses := []string{}
+	for _, env := range c.Data {
+		buffer := new(bytes.Buffer)
+		if err := env.Encode(buffer); err != nil {
+			return err
+		}
+		responses = append(responses, buffer.String())
+	}
+	_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: responses})
+	return err
+}
+
+func (f *forwarder) getChildrenList() (*engine.Table, error) {
+	resp, err := f.client.call("GET", "/containers/json", "")
+	if err != nil {
+		return nil, fmt.Errorf("%s: get: %v", f.client.URL.String(), err)
+	}
+	// FIXME: check for response error
+	c := engine.NewTable("Created", 0)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("%s: read body: %v", f.client.URL.String(), err)
+	}
+	if _, err := c.ReadListFrom(body); err != nil {
+		return nil, fmt.Errorf("%s: readlist: %v", f.client.URL.String(), err)
+	}
+	return c, nil
 }
 
 func (f *forwarder) spawn(ctx *beam.Message) error {
