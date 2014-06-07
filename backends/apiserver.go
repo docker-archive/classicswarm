@@ -61,6 +61,27 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 	return writeJSON(w, http.StatusOK, names)
 }
 
+func postContainersStart(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+
+	// TODO: r.Body
+
+	name := vars["name"]
+	_, containerOut, err := beam.Obj(out).Attach(name)
+	container := beam.Obj(containerOut)
+	if err != nil {
+		return err
+	}
+	if err := container.Start(); err != nil {
+		return err
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
 func createRouter(out beam.Sender) (*mux.Router, error) {
 	r := mux.NewRouter()
 	m := map[string]map[string]HttpApiFunc{
@@ -68,7 +89,9 @@ func createRouter(out beam.Sender) (*mux.Router, error) {
 			"/_ping":           ping,
 			"/containers/json": getContainersJSON,
 		},
-		"POST":    {},
+		"POST": {
+			"/containers/{name:.*}/start": postContainersStart,
+		},
 		"DELETE":  {},
 		"OPTIONS": {},
 	}
