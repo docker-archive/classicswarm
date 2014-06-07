@@ -119,6 +119,7 @@ func (f *forwarder) newContainer(id string) beam.Sender {
 	instance := beam.NewServer()
 	instance.OnAttach(beam.Handler(c.attach))
 	instance.OnStart(beam.Handler(c.start))
+	instance.OnStop(beam.Handler(c.stop))
 	return instance
 }
 
@@ -160,6 +161,25 @@ func copyOutput(sender beam.Sender, reader io.Reader, tag string) {
 
 func (c *container) start(ctx *beam.Message) error {
 	path := fmt.Sprintf("/containers/%s/start", c.id)
+	resp, err := c.forwarder.client.call("POST", path, "{}")
+	if err != nil {
+		return err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 204 {
+		return fmt.Errorf("expected status code 204, got %d:\n%s", resp.StatusCode, respBody)
+	}
+	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *container) stop(ctx *beam.Message) error {
+	path := fmt.Sprintf("/containers/%s/stop", c.id)
 	resp, err := c.forwarder.client.call("POST", path, "{}")
 	if err != nil {
 		return err
