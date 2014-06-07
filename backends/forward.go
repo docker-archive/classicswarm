@@ -46,10 +46,15 @@ type forwarder struct {
 }
 
 func (f *forwarder) attach(ctx *beam.Message) error {
-	ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: f.Server})
-	for {
-		time.Sleep(1 * time.Second)
-		(&beam.Object{ctx.Ret}).Log("forward: heartbeat")
+	if ctx.Args[0] == "" {
+		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: f.Server})
+		for {
+			time.Sleep(1 * time.Second)
+			(&beam.Object{ctx.Ret}).Log("forward: heartbeat")
+		}
+	} else {
+		c := f.newContainer(ctx.Args[0])
+		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c})
 	}
 	return nil
 }
