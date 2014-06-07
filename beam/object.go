@@ -134,8 +134,8 @@ func (o *Object) Set(vals ...string) error {
 	return err
 }
 
-func (o *Object) Get(key string) (string, error) {
-	ret, err := o.Send(&Message{Verb: Get, Args: []string{key}, Ret: RetPipe})
+func (o *Object) Get() (string, error) {
+	ret, err := o.Send(&Message{Verb: Get, Ret: RetPipe})
 	if err != nil {
 		return "", err
 	}
