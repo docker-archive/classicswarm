@@ -42,20 +42,11 @@ var (
 		"/zones/us-central1-a/machineTypes/n1-standard-1",
 		"The reference to the instance type to create.")
 	gceImage = flag.String("image",
-		"https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/backports-debian-7-wheezy-v20131127",
+		"https://www.googleapis.com/compute/v1/projects/google-containers/global/images/container-vm-v20140522",
 		"The GCE image to boot from.")
 	gceDiskName   = flag.String("diskname", "docker-root", "Name of the instance root disk")
 	gceDiskSizeGb = flag.Int64("disksize", 100, "Size of the root disk in GB")
 )
-
-const startup = `#!/bin/bash
-sysctl -w net.ipv4.ip_forward=1
-wget -qO- https://get.docker.io/ | sh
-until test -f /var/run/docker.pid; do sleep 1 && echo waiting; done
-grep mtu /etc/default/docker || (echo 'DOCKER_OPTS="-H :8000 -mtu 1460"' >> /etc/default/docker)
-service docker restart
-until echo 'GET /' >/dev/tcp/localhost/8000; do sleep 1 && echo waiting; done
-`
 
 // A Google Compute Engine implementation of the Cloud interface
 type GCECloud struct {
@@ -253,17 +244,9 @@ func (cloud GCECloud) CreateInstance(name string, zone string) (string, error) {
 		NetworkInterfaces: []*compute.NetworkInterface{
 			{
 				AccessConfigs: []*compute.AccessConfig{
-					&compute.AccessConfig{Type: "ONE_TO_ONE_NAT"},
+					{Type: "ONE_TO_ONE_NAT"},
 				},
 				Network: prefix + "/global/networks/default",
-			},
-		},
-		Metadata: &compute.Metadata{
-			Items: []*compute.MetadataItems{
-				{
-					Key:   "startup-script",
-					Value: startup,
-				},
 			},
 		},
 	}

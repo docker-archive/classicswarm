@@ -147,6 +147,10 @@
 		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Rev": "9b36453141c35697401168b07f2c09fcff7721ce"
+		},
+		{
+			"ImportPath": "github.com/tutumcloud/go-tutum",
+			"Rev": "d826286d2e5882428c8163ab44261987bea85a44"
 		}
 	]
 }

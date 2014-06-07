@@ -1,44 +1,132 @@
 # Libswarm
 
-## A library to orchestrate heterogeneous distributed systems
+## A minimalist toolkit to compose network services
 
-*libswarm* is a lightweight, standardized abstraction for federating and orchestrating
-distributed systems. It can discover and communicate with all machines in your system,
-using a variety of backend adaptors, and expose them via a single, straightforward API.
 
-This is very useful if your system spans multiple locations on the Internet (your home
-network, office lan, colocated rack, cloud provider, etc.) and uses heterogeneous tools
-for deployment, clustering and service discovery (manually configured IPs on your laptop,
-zeroconf at the office, ssh tunnels + custom DNS on the rack, Mesos, Consul or Etcd/Fleet
-on your cloud provider, etc.).
+*libswarm* is a minimalist toolkit to compose network services.
 
-*libswarm* federates all these elements under a unified namespace and lets you orchestrate
-them using a lightweight and flexible API.
+It exposes a simple API for the following tasks:
 
-Because the *libswarm* API is dead-simple to learn and built on standard components, there
-is a growing ecosystem of tools already compatible with it, which you can use to manage
-your swarm out of the box:
+* *Clustering*: deploy services on pools of interchangeable machines
+* *Composition*: combine multiple services into higher-level services of arbitrary complexity - it's services all the way down!
+* *Interconnection*: services can reliably and securely communicate with each other using asynchronous message passing, request/response, or raw sockets.
+* *Scale* services can run concurrently in the same process using goroutines and channels; in separate processes on the same machines using high-performance IPC;
+on multiple machines in a local network; or across multiple datacenters.
+* *Integration*: incorporate your existing systems into your swarm. libswarm includes adapters to many popular infrastructure tools and services: docker, dns, mesos, etcd, fleet, deis, google compute, rackspace cloud, tutum, orchard, digital ocean, ssh, etc. It’s very easy to create your own adapter: just clone the repository at 
 
-* `swarmctl` is a simple command-line utility which lets you easily compose any combination
-of backends, and orchestrate them straight from the terminal.
 
-* (coming soon) *Shipyard* offers a powerful web interface to manage any swarm-compatible
-distributed system straight from the browser.
+## Adapters
 
-* (coming soon) *Swarmlog* is a logging tool which consumes all log streams from your swarm
-and forwards them to a variety of logging backends.
+Libswarm supports the following adapters:
 
-* (coming soon) *Deis*, the popular Docker-based application platform, supports *libswarm*
-natively, and can deploy applications to it out-of-the-box.
+### Debug adapter
 
-* (coming soon) *Drone.io*, the Docker-based continuous integration platform, can spawn
-build and test workers on any swarm.
+The debug backend simply catches all messages and prints them on the terminal for inspection.
 
-* (coming soon) *Fig*, the popular development tool, supports libswarm out of the box.
 
-* (coming soon) *Docker*, the open-source container engine, has announced that they will
-adopt *libswarm* as a built-in, and recommend it as the preferred way to orchestrate
-and manage a Docker-based cluster.
+### Docker server adapter
+
+*Maintainer: Ben Firshman*
+
+### Docker client adapter
+
+*Maintainer: Aanand Prasad*
+
+### Pipeline adapter
+
+*Maintainer: Ben Firshman*
+
+### Filter adapter
+
+*Maintainer: Solomon Hykes*
+
+### Handler adapter
+
+*Maintainer: Solomon Hykes*
+
+### Task adapter
+
+*Maintainer: Solomon Hykes*
+
+### Go channel adapter
+
+*Maintainer: Solomon Hykes*
+
+### CLI adapter
+
+*Maintainer: Solomon Hykes*
+
+### Unix socket adapter
+
+*Maintainer: Solomon Hykes*
+
+### TCP adapter (client and server)
+
+*Help wanted!*
+
+### TLS adapter (client and server)
+
+*Help wanted!*
+
+### HTTP2/SPDY adapter (client and server)
+
+*Maintainer: Derek McGowan*
+
+### Etcd adapter
+
+*Help wanted!*
+
+### Geard adapter
+
+*Clayton Coleman*
+
+### Fork-exec adapter
+
+*Solomon Hykes*
+
+### Mesos adapter
+
+*Help wanted!*
+
+### Shipyard adapter
+
+*Brian Goff*
+
+### Fleet adapter
+
+*Help wanted!*
+
+### Google Compute adapter
+
+*Brendan Burns*
+
+### Rackspace cloud adapter
+
+*John Hopper*
+
+### EC2 adapter
+
+*Help wanted!*
+
+### Consul adapter
+
+*Help wanted!*
+
+### Openstack Nova adapter
+
+*Help wanted!*
+
+### Digital Ocean adapter
+
+*Help wanted!*
+
+### Softlayer adapter
+
+*Help wanted!*
+
+### Zerorpc adapter
+
+*Help wanted!*
 
 
 ## Testing libswarm with swarmd
@@ -46,102 +134,34 @@ and manage a Docker-based cluster.
 Libswarm ships with a simple daemon which can control all machines in your distributed
 system using a variety of backend adaptors, and exposes it on a single, unified endpoint.
 
-Currently swarmd uses the standard Docker API as its frontend, which means any tool which speaks
-Docker can control swarmd transparently: dokku, flynn, deis, docker-ui, shipyard, fleet,
-mesos... and of course the Docker client itself.
-
-*Note: in the future swarmd will expose the Docker remote API as "just another backend", and
-expose its own native API as a frontend.*
-
 Usage example:
 
-```
-./swarmd tcp://localhost:4242 &
-docker -H tcp://localhost:4242 info
-```
 
-You can listen on several frontend addresses, using any address format supported by Docker.
-For example:
+Run swarmd without arguments to list available backends:
 
 ```
-./swarmd tcp://localhost:4242 tcp://0.0.0.0:1234 unix:///var/run/docker.sock
+./swarmd
 ```
 
-## Backends
-
-Libswarm supports the following backends:
-
-### Debug backend
-
-The debug backend simply catches all commands and prints them on the terminal for inspection.
-It returns `StatusOK` for all commands, and never sends additional data. Therefore, docker
-clients which expect data will fail to parse some of the responses.
-
-Usage example:
+Pass a backend name as argument to load it:
 
 ```
-./swarmd --backend debug tcp://localhost:4242
+./swarmd fakeclient
 ```
 
-### Simulator backend
-
-The simulator backend simulates a docker daemon with fake in-memory data. 
-The state of the simulator persists across commands, so it's useful to analyse
-the side-effects of commands, or for mocking and testing.
-
-Currently the simulator only implements the `containers` command. It can be passed
-arguments at load-time, and will use these arguments as a list of containers.
-
-For example:
+You can pass arguments to the backend, like a shell command:
 
 ```
-./swarmd --backend 'simulator container1 container2 container3' tcp://localhost:4242 &
-docker -H tcp://localhost:4242 ps
+./swarmd 'dockerserver tcp://localhost:4243'
 ```
 
-In this example the docker client should report 3 containers: `container1`, `container2` and `container3`.
+You can call multiple backends. They will be executed in parallel, with the output
+of each backend connected to the input of the next, just like unix pipelines.
 
-### Forward backend
-
-The forward backend connects to a remote Docker API endpoint. It then forwards
-all commands it receives to that remote endpoint, and forwards all responses
-back to the frontend.
-
-For example:
+This allows for very powerful composition.
 
 ```
-./swarmd --backend 'simulator myapp' unix://a.sock &
-./swarmd --backend 'forward unix://a.sock' unix://b.sock
-docker -H unix://b.sock ps
-```
-
-This last command should report 1 container: `myapp`.
-
-
-### Creating a new backend
-Create a simple my-backend.go:
-```
-func MyBackend() engine.Installer {
-	return &myBackend{}
-}
-
-func (f *computeEngineForward) Install(eng *engine.Engine) error {
-	eng.Register("mybackend", func(job *engine.Job) engine.Status {
-	job.Eng.Register("containers", func(job *engine.Job) engine.Status {
-			log.Printf("%#v", *job)
-			return engine.StatusOK
-		})
-		return engine.StatusOK
-	})
-	return nil
-}
-```
-
-Then edit backends.go, and add your backend:
-```
-...
-	MyBackend().Install(back)
-...
+./swarmd 'dockerserver tcp://localhost:4243' 'debug' 'dockerclient unix:///var/run/docker.sock'
 ```
 
 ## Creators

@@ -1,16 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/docker/libswarm/backends"
 	"github.com/docker/libswarm/beam"
+	"github.com/dotcloud/docker/engine"
 	"github.com/dotcloud/docker/runconfig"
 	"github.com/dotcloud/docker/utils"
 	"io"
 	"os"
 	"strings"
+	"text/tabwriter"
 )
 
 func main() {
@@ -73,11 +76,27 @@ func doCmd(instance *beam.Object, args []string) error {
 		if len(args) != 1 {
 			return fmt.Errorf("usage: ps")
 		}
-		names, err := instance.Ls()
+		containers, err := instance.GetChildren()
 		if err != nil {
 			return err
 		}
-		fmt.Println(strings.Join(names, "\n"))
+		w := tabwriter.NewWriter(os.Stderr, 20, 1, 3, ' ', 0)
+		fmt.Fprint(w, "CONTAINER ID\tIMAGE\tCOMMAND\tSTATUS\n")
+		for _, envJson := range containers {
+			var out engine.Env
+			buffer := bytes.NewBufferString(envJson)
+			err := out.Decode(buffer)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+				utils.TruncateID(out.Get("Id")),
+				out.Get("Image"),
+				utils.Trunc(out.Get("Command"), 20),
+				out.Get("Status"),
+			)
+		}
+		w.Flush()
 		return nil
 	}
 	if args[0] == "run" {
@@ -130,6 +149,21 @@ func doCmd(instance *beam.Object, args []string) error {
 			}
 			fmt.Fprint(stream, chunk)
 		}
+		return nil
+	}
+	if args[0] == "inspect" {
+		if len(args) != 2 {
+			return fmt.Errorf("usage: inspect CONTAINER")
+		}
+		_, container, err := instance.Attach(args[1])
+		if err != nil {
+			return fmt.Errorf("attach: %v", err)
+		}
+		json, err := container.Get()
+		if err != nil {
+			return fmt.Errorf("get: %v", err)
+		}
+		fmt.Println(json)
 		return nil
 	}
 	return fmt.Errorf("unrecognised command: %s", args[0])

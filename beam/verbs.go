@@ -9,6 +9,7 @@ const (
 	Error
 	File
 	Get
+	GetChildren
 	Log
 	Ls
 	Set
@@ -32,6 +33,8 @@ func (v Verb) String() string {
 		return "File"
 	case Get:
 		return "Get"
+	case GetChildren:
+		return "GetChildren"
 	case Log:
 		return "Log"
 	case Ls:
