@@ -58,7 +58,7 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 		return err
 	}
 
-	return writeJSON(w, 200, names)
+	return writeJSON(w, http.StatusOK, names)
 }
 
 func createRouter(out beam.Sender) (*mux.Router, error) {
