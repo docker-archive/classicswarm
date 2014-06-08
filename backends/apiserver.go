@@ -7,6 +7,7 @@ import (
 	"github.com/dotcloud/docker/api"
 	"github.com/dotcloud/docker/pkg/version"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"net"
 	"net/http"
 )
@@ -61,6 +62,33 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 	return writeJSON(w, http.StatusOK, names)
 }
 
+func postContainersCreate(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if err := r.ParseForm(); err != nil {
+		return nil
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	container, err := beam.Obj(out).Spawn(string(body))
+	if err != nil {
+		return err
+	}
+
+	responseJson, err := container.Get()
+	if err != nil {
+		return err
+	}
+
+	var response struct{ Id string }
+	if err = json.Unmarshal([]byte(responseJson), &response); err != nil {
+		return err
+	}
+	return writeJSON(w, http.StatusCreated, response)
+}
+
 func postContainersStart(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
@@ -109,6 +137,7 @@ func createRouter(out beam.Sender) (*mux.Router, error) {
 			"/containers/json": getContainersJSON,
 		},
 		"POST": {
+			"/containers/create":          postContainersCreate,
 			"/containers/{name:.*}/start": postContainersStart,
 			"/containers/{name:.*}/stop":  postContainersStop,
 		},
