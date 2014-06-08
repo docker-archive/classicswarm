@@ -114,10 +114,9 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			}
 		}
 		host := fmt.Sprintf("tcp://localhost:%d", localPort)
-		client, err := newClient(host, apiVersion)
-		if err != nil {
-			return job.Errorf("Unexpected error: %#v", err)
-		}
+		client := newClient()
+		client.setURL(host)
+		client.version = apiVersion
 		//job.Eng.Register("inspect", func(job *engine.Job) engine.Status {
 		//	resp, err := client.call("GET", "/containers/
 		job.Eng.Register("create", func(job *engine.Job) engine.Status {
@@ -128,17 +127,17 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			data, err := json.Marshal(container)
 			resp, err := client.call("POST", "/containers/create", string(data))
 			if err != nil {
-				return job.Errorf("%s: post: %v", client.URL.String(), err)
+				return job.Errorf("post: %v", err)
 			}
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				return job.Errorf("%s: read body: %#v", client.URL.String(), err)
+				return job.Errorf("read body: %#v", err)
 			}
 			var containerOut Container
 			err = json.Unmarshal([]byte(body), &containerOut)
 			_, err = job.Printf("%s\n", containerOut.Id)
 			if err != nil {
-				return job.Errorf("%s: write body: %#v", client.URL.String(), err)
+				return job.Errorf("write body: %#v", err)
 			}
 			log.Printf("%s", string(body))
 			return engine.StatusOK
@@ -148,11 +147,11 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			path := fmt.Sprintf("/containers/%s/start", job.Args[0])
 			resp, err := client.call("POST", path, "{\"Binds\":[],\"ContainerIDFile\":\"\",\"LxcConf\":[],\"Privileged\":false,\"PortBindings\":{},\"Links\":null,\"PublishAllPorts\":false,\"Dns\":null,\"DnsSearch\":[],\"VolumesFrom\":[]}")
 			if err != nil {
-				return job.Errorf("%s: post: %v", client.URL.String(), err)
+				return job.Errorf("post: %v", err)
 			}
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				return job.Errorf("%s: read body: %#v", client.URL.String(), err)
+				return job.Errorf("read body: %#v", err)
 			}
 			log.Printf("%s", string(body))
 			return engine.StatusOK
@@ -169,17 +168,17 @@ func (s *cloud) Install(eng *engine.Engine) error {
 			)
 			resp, err := client.call("GET", path, "")
 			if err != nil {
-				return job.Errorf("%s: get: %v", client.URL.String(), err)
+				return job.Errorf("get: %v", err)
 			}
 			// FIXME: check for response error
 			c := engine.NewTable("Created", 0)
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				return job.Errorf("%s: read body: %v", client.URL.String(), err)
+				return job.Errorf("read body: %v", err)
 			}
 			fmt.Printf("---> '%s'\n", body)
 			if _, err := c.ReadListFrom(body); err != nil {
-				return job.Errorf("%s: readlist: %v", client.URL.String(), err)
+				return job.Errorf("readlist: %v", err)
 			}
 			c.WriteListTo(job.Stdout)
 			return engine.StatusOK
@@ -191,7 +190,7 @@ func (s *cloud) Install(eng *engine.Engine) error {
 
 			resp, err := client.call("DELETE", path, "")
 			if err != nil {
-				return job.Errorf("%s: delete: %v", client.URL.String(), err)
+				return job.Errorf("delete: %v", err)
 			}
 			log.Printf("%#v", resp)
 			return engine.StatusOK
@@ -203,7 +202,7 @@ func (s *cloud) Install(eng *engine.Engine) error {
 
 			resp, err := client.call("POST", path, "")
 			if err != nil {
-				return job.Errorf("%s: delete: %v", client.URL.String(), err)
+				return job.Errorf("delete: %v", err)
 			}
 			log.Printf("%#v", resp)
 			return engine.StatusOK
