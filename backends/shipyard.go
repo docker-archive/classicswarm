@@ -1,69 +1,100 @@
 package backends
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/dotcloud/docker/engine"
+	"github.com/docker/libswarm/beam"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
-func Shipyard() engine.Installer {
-	return &shipyard{}
+func Shipyard() beam.Sender {
+	backend := beam.NewServer()
+	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+		if len(ctx.Args) != 3 {
+			return fmt.Errorf("Shipyard: Usage <shipyard URL> <user> <pass>")
+		}
+
+		c := &shipyard{url: ctx.Args[0], user: ctx.Args[1], pass: ctx.Args[2]}
+
+		c.Server = beam.NewServer()
+		c.Server.OnAttach(beam.Handler(c.attach))
+		c.Server.OnStart(beam.Handler(c.start))
+		c.Server.OnLs(beam.Handler(c.containers))
+		c.OnGet(beam.Handler(c.containerInspect))
+		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+		return err
+	}))
+	return backend
+}
+
+func (c *shipyard) attach(ctx *beam.Message) error {
+	if ctx.Args[0] == "" {
+		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+		for {
+			time.Sleep(1 * time.Second)
+		}
+	}
+	return nil
+}
+
+func (c *shipyard) start(ctx *beam.Message) error {
+	ctx.Ret.Send(&beam.Message{Verb: beam.Ack})
+	return nil
 }
 
 type shipyard struct {
 	url, user, pass string
+	*beam.Server
 }
 
-func (s *shipyard) Install(eng *engine.Engine) error {
-	eng.Register("shipyard", func(job *engine.Job) engine.Status {
-		if len(job.Args) != 3 {
-			return job.Errorf("usage: <shipyard url> <user> <pass>")
-		}
-		s.url = job.Args[0]
-		s.user = job.Args[1]
-		s.pass = job.Args[2]
-		job.Eng.Register("containers", s.containers)
-		job.Eng.Register("container_inspect", s.container_inspect)
-		return engine.StatusOK
-	})
-
+func (c *shipyard) containers(ctx *beam.Message) error {
+	out, err := c.gateway("GET", "containers", "")
+	if err != nil {
+		return err
+	}
+	var data shipyardObjects
+	json.Unmarshal(out, &data)
+	var ids []string
+	for _, c := range data.Objects {
+		ids = append(ids, c.Id)
+	}
+	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: ids}); err != nil {
+		return err
+	}
 	return nil
 }
 
-func (c *shipyard) containers(job *engine.Job) engine.Status {
-	var args string
-	if job.Getenv("limit") != "" {
-		args = fmt.Sprintf("%s&limit=%s", args, url.QueryEscape(job.Getenv("limit")))
-	}
-	if job.Getenv("offset") != "" {
-		args = fmt.Sprintf("%s&offset=%s", args, url.QueryEscape(job.Getenv("offset")))
-	}
-
-	path := fmt.Sprintf("containers/?%s", args)
-	out, err := c.gateway("GET", path, "")
-	if err != nil {
-		return job.Errorf("%s: get: %v", path, err)
-	}
-	log.Printf("%s", out)
-	return engine.StatusOK
+type shipyardObjects struct {
+	Objects []shipyardObject `json:"objects"`
 }
 
-func (c *shipyard) container_inspect(job *engine.Job) engine.Status {
-	path := fmt.Sprintf("containers/details/%s", job.Args[0])
+type shipyardObject struct {
+	Id string `json:"container_id"`
+}
+
+func (c *shipyard) containerInspect(ctx *beam.Message) error {
+	if len(ctx.Args) != 1 {
+		return fmt.Errorf("Expected 1 container id, got %s", len(ctx.Args))
+	}
+	path := fmt.Sprintf("containers/details/%s", ctx.Args[0])
 	out, err := c.gateway("GET", path, "")
 	if err != nil {
-		return job.Errorf("%s: get: %v", path, err)
+		return err
 	}
-	log.Printf("%s", out)
-	return engine.StatusOK
+	var data shipyardObject
+	json.Unmarshal(out, &data)
+	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{"foo", "bar"}}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *shipyard) gateway(method, path, body string) ([]byte, error) {
-	apiPath := fmt.Sprintf("%s/api/v1/%s&format=json", c.url, path)
+	apiPath := fmt.Sprintf("%s/api/v1/%s/?format=json", c.url, path)
 	url, err := url.Parse(apiPath)
 	if err != nil {
 		return nil, err
