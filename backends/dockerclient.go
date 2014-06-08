@@ -14,7 +14,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
-	"time"
 )
 
 type DockerClientConfig struct {
@@ -63,10 +62,7 @@ type dockerClientBackend struct {
 func (b *dockerClientBackend) attach(ctx *beam.Message) error {
 	if ctx.Args[0] == "" {
 		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
-		for {
-			time.Sleep(1 * time.Second)
-			(&beam.Object{ctx.Ret}).Log("dockerclient: heartbeat")
-		}
+		<-make(chan struct{})
 	} else {
 		path := fmt.Sprintf("/containers/%s/json", ctx.Args[0])
 		resp, err := b.client.call("GET", path, "")
