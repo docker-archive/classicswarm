@@ -18,5 +18,6 @@ func New() *beam.Object {
 	backends.Bind("forward", Forward())
 	backends.Bind("exec", Exec())
 	backends.Bind("apiserver", ApiServer())
+	backends.Bind("aggregate", Aggregate())
 	return beam.Obj(backends)
 }
