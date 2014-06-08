@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-func ApiServer() beam.Sender {
+func DockerServer() beam.Sender {
 	backend := beam.NewServer()
 	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
 		instance := beam.Task(func(in beam.Receiver, out beam.Sender) {
@@ -29,7 +29,7 @@ func ApiServer() beam.Sender {
 type HttpApiFunc func(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error
 
 func listenAndServe(proto, addr string, out beam.Sender) error {
-	fmt.Println("Starting API server...")
+	fmt.Println("Starting Docker server...")
 	r, err := createRouter(out)
 	if err != nil {
 		return err
