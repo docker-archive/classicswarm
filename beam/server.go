@@ -53,6 +53,10 @@ func (s *Server) OnLs(h Sender) *Server {
 	return s.OnVerb(Ls, h)
 }
 
+func (s *Server) OnGet(h Sender) *Server {
+	return s.OnVerb(Get, h)
+}
+
 func (s *Server) Send(msg *Message) (Receiver, error) {
 	if h, exists := s.handlers[msg.Verb]; exists {
 		return h.Send(msg)

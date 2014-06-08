@@ -132,6 +132,21 @@ func doCmd(instance *beam.Object, args []string) error {
 		}
 		return nil
 	}
+	if args[0] == "inspect" {
+		if len(args) != 2 {
+			return fmt.Errorf("usage: inspect CONTAINER")
+		}
+		_, container, err := instance.Attach(args[1])
+		if err != nil {
+			return fmt.Errorf("attach: %v", err)
+		}
+		json, err := container.Get()
+		if err != nil {
+			return fmt.Errorf("get: %v", err)
+		}
+		fmt.Println(json)
+		return nil
+	}
 	return fmt.Errorf("unrecognised command: %s", args[0])
 }
 

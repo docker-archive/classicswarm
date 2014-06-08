@@ -120,6 +120,7 @@ func (f *forwarder) newContainer(id string) beam.Sender {
 	instance.OnAttach(beam.Handler(c.attach))
 	instance.OnStart(beam.Handler(c.start))
 	instance.OnStop(beam.Handler(c.stop))
+	instance.OnGet(beam.Handler(c.get))
 	return instance
 }
 
@@ -192,6 +193,25 @@ func (c *container) stop(ctx *beam.Message) error {
 		return fmt.Errorf("expected status code 204, got %d:\n%s", resp.StatusCode, respBody)
 	}
 	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *container) get(ctx *beam.Message) error {
+	path := fmt.Sprintf("/containers/%s/json", c.id)
+	resp, err := c.forwarder.client.call("GET", path, "")
+	if err != nil {
+		return err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("%s", respBody)
+	}
+	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{string(respBody)}}); err != nil {
 		return err
 	}
 	return nil
