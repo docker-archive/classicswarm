@@ -17,6 +17,6 @@ func New() *beam.Object {
 	backends.Bind("fakeclient", FakeClient())
 	backends.Bind("forward", Forward())
 	backends.Bind("exec", Exec())
-	backends.Bind("apiserver", ApiServer())
+	backends.Bind("dockerserver", DockerServer())
 	return beam.Obj(backends)
 }
