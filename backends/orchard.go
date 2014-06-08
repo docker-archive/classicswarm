@@ -35,7 +35,7 @@ func Orchard() beam.Sender {
 			return err
 		}
 
-		backend := ForwardWithConfig(&ForwardConfig{
+		backend := DockerClientWithConfig(&DockerClientConfig{
 			Scheme:          "https",
 			URLHost:         host.IPAddress,
 			TLSClientConfig: tlsConfig,
