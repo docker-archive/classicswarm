@@ -9,6 +9,8 @@ import (
 	"github.com/gorilla/mux"
 	"net"
 	"net/http"
+	"strings"
+	"time"
 )
 
 func DockerServer() beam.Sender {
@@ -58,7 +60,58 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 		return err
 	}
 
-	return writeJSON(w, http.StatusOK, names)
+	var responses []interface{}
+
+	for _, name := range names {
+		_, containerOut, err := o.Attach(name)
+		if err != nil {
+			return err
+		}
+		container := beam.Obj(containerOut)
+		responseJson, err := container.Get()
+		if err != nil {
+			return err
+		}
+		var response struct {
+			ID      string
+			Created string
+			Name    string
+			Config  struct {
+				Cmd   []string
+				Image string
+			}
+			State struct {
+				Running    bool
+				StartedAt  string
+				FinishedAt string
+				ExitCode   int
+			}
+		}
+		if err = json.Unmarshal([]byte(responseJson), &response); err != nil {
+			return err
+		}
+		created, err := time.Parse(time.RFC3339, response.Created)
+		if err != nil {
+			return err
+		}
+		var state string
+		if response.State.Running {
+			state = "Up"
+		} else {
+			state = fmt.Sprintf("Exited (%d)", response.State.ExitCode)
+		}
+		responses = append(responses, map[string]interface{}{
+			"Id":      response.ID,
+			"Command": strings.Join(response.Config.Cmd, " "),
+			"Created": created.Unix(),
+			"Image":   response.Config.Image,
+			"Names":   []string{response.Name},
+			"Ports":   []string{},
+			"Status":  state,
+		})
+	}
+
+	return writeJSON(w, http.StatusOK, responses)
 }
 
 func postContainersStart(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
