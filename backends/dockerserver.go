@@ -10,13 +10,18 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strings"
 )
 
 func DockerServer() beam.Sender {
 	backend := beam.NewServer()
 	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
 		instance := beam.Task(func(in beam.Receiver, out beam.Sender) {
-			err := listenAndServe("tcp", "0.0.0.0:4243", out)
+			url := "tcp://localhost:4243"
+			if len(ctx.Args) > 0 {
+				url = ctx.Args[0]
+			}
+			err := listenAndServe(url, out)
 			if err != nil {
 				fmt.Printf("listenAndServe: %v", err)
 			}
@@ -29,12 +34,15 @@ func DockerServer() beam.Sender {
 
 type HttpApiFunc func(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error
 
-func listenAndServe(proto, addr string, out beam.Sender) error {
+func listenAndServe(url string, out beam.Sender) error {
 	fmt.Println("Starting Docker server...")
 	r, err := createRouter(out)
 	if err != nil {
 		return err
 	}
+	arr := strings.Split(url, "://")
+	proto := arr[0]
+	addr := arr[1]
 	l, err := net.Listen(proto, addr)
 	if err != nil {
 		return err
