@@ -151,6 +151,10 @@
 		{
 			"ImportPath": "github.com/tutumcloud/go-tutum",
 			"Rev": "d826286d2e5882428c8163ab44261987bea85a44"
+		},
+		{
+			"ImportPath": "github.com/rackspace/gophercloud",
+			"Rev": "2285a429874c1365ef6c6d3ceb08b1d428e26aca"
 		}
 	]
 }
