@@ -35,12 +35,12 @@ func Orchard() beam.Sender {
 			return err
 		}
 
-		client := newClient()
-		client.scheme = "https"
-		client.transport.TLSClientConfig = tlsConfig
-		client.urlHost = host.IPAddress
-
-		forwardBackend := beam.Obj(ForwardWithClient(client))
+		backend := ForwardWithConfig(&ForwardConfig{
+			Scheme:          "https",
+			URLHost:         host.IPAddress,
+			TLSClientConfig: tlsConfig,
+		})
+		forwardBackend := beam.Obj(backend)
 		forwardInstance, err := forwardBackend.Spawn(url)
 		if err != nil {
 			return err
