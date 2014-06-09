@@ -1,6 +1,7 @@
 package backends
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/docker/libswarm/beam"
@@ -16,16 +17,29 @@ import (
 	"time"
 )
 
-func Forward() beam.Sender {
-	return ForwardWithClient(newClient())
+type ForwardConfig struct {
+	Scheme          string
+	URLHost         string
+	TLSClientConfig *tls.Config
 }
 
-func ForwardWithClient(client *client) beam.Sender {
+func Forward() beam.Sender {
+	return ForwardWithConfig(&ForwardConfig{
+		Scheme:  "http",
+		URLHost: "dummy.host",
+	})
+}
+
+func ForwardWithConfig(config *ForwardConfig) beam.Sender {
 	backend := beam.NewServer()
 	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
 		if len(ctx.Args) != 1 {
 			return fmt.Errorf("forward: spawn takes exactly 1 argument, got %d", len(ctx.Args))
 		}
+		client := newClient()
+		client.scheme = config.Scheme
+		client.urlHost = config.URLHost
+		client.transport.TLSClientConfig = config.TLSClientConfig
 		client.setURL(ctx.Args[0])
 		f := &forwarder{
 			client: client,
@@ -54,6 +68,18 @@ func (f *forwarder) attach(ctx *beam.Message) error {
 			(&beam.Object{ctx.Ret}).Log("forward: heartbeat")
 		}
 	} else {
+		path := fmt.Sprintf("/containers/%s/json", ctx.Args[0])
+		resp, err := f.client.call("GET", path, "")
+		if err != nil {
+			return err
+		}
+		respBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("%s", respBody)
+		}
 		c := f.newContainer(ctx.Args[0])
 		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c})
 	}
