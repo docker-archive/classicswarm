@@ -161,26 +161,11 @@ func (c *container) attach(ctx *beam.Message) error {
 
 	stdoutR, stdoutW := io.Pipe()
 	stderrR, stderrW := io.Pipe()
-	go copyOutput(ctx.Ret, stdoutR, "stdout")
-	go copyOutput(ctx.Ret, stderrR, "stderr")
+	go beam.EncodeStream(ctx.Ret, stdoutR, "stdout")
+	go beam.EncodeStream(ctx.Ret, stderrR, "stderr")
 	c.backend.client.hijack("POST", path, nil, stdoutW, stderrW)
 
 	return nil
-}
-
-func copyOutput(sender beam.Sender, reader io.Reader, tag string) {
-	chunk := make([]byte, 4096)
-	for {
-		n, err := reader.Read(chunk)
-		if n > 0 {
-			sender.Send(&beam.Message{Verb: beam.Log, Args: []string{tag, string(chunk[0:n])}})
-		}
-		if err != nil {
-			message := fmt.Sprintf("Error reading from stream: %v", err)
-			sender.Send(&beam.Message{Verb: beam.Error, Args: []string{message}})
-			break
-		}
-	}
 }
 
 func (c *container) start(ctx *beam.Message) error {
