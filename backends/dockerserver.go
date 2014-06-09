@@ -6,11 +6,14 @@ import (
 	"github.com/docker/libswarm/beam"
 	"github.com/dotcloud/docker/api"
 	"github.com/dotcloud/docker/pkg/version"
+	"github.com/dotcloud/docker/utils"
 	"github.com/gorilla/mux"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -189,6 +192,90 @@ func postContainersStop(out beam.Sender, version version.Version, w http.Respons
 	return nil
 }
 
+func hijackServer(w http.ResponseWriter) (io.ReadCloser, io.Writer, error) {
+	conn, _, err := w.(http.Hijacker).Hijack()
+	if err != nil {
+		return nil, nil, err
+	}
+	// Flush the options to make sure the client sets the raw mode
+	conn.Write([]byte{})
+	return conn, conn, nil
+}
+
+func postContainersAttach(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if err := r.ParseForm(); err != nil {
+		return err
+	}
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+
+	inStream, outStream, err := hijackServer(w)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if tcpc, ok := inStream.(*net.TCPConn); ok {
+			tcpc.CloseWrite()
+		} else {
+			inStream.Close()
+		}
+	}()
+	defer func() {
+		if tcpc, ok := outStream.(*net.TCPConn); ok {
+			tcpc.CloseWrite()
+		} else if closer, ok := outStream.(io.Closer); ok {
+			closer.Close()
+		}
+	}()
+
+	fmt.Fprintf(outStream, "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.docker.raw-stream\r\n\r\n")
+
+	// TODO: if a TTY, then no multiplexing is done
+	errStream := utils.NewStdWriter(outStream, utils.Stderr)
+	outStream = utils.NewStdWriter(outStream, utils.Stdout)
+
+	_, containerOut, err := beam.Obj(out).Attach(vars["name"])
+	if err != nil {
+		return err
+	}
+	container := beam.Obj(containerOut)
+
+	containerR, _, err := container.Attach("")
+	var tasks sync.WaitGroup
+	go func() {
+		defer tasks.Done()
+		err := beam.DecodeStream(outStream, containerR, "stdout")
+		if err != nil {
+			fmt.Printf("decodestream: %v\n", err)
+		}
+	}()
+	tasks.Add(1)
+	go func() {
+		defer tasks.Done()
+		err := beam.DecodeStream(errStream, containerR, "stderr")
+		if err != nil {
+			fmt.Printf("decodestream: %v\n", err)
+		}
+	}()
+	tasks.Add(1)
+	tasks.Wait()
+
+	return nil
+}
+
+func postContainersWait(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+
+	// TODO: this should wait for container to end out output correct
+	// exit status
+	return writeJSON(w, http.StatusOK, map[string]interface{}{
+		"StatusCode": "0",
+	})
+}
+
 func createRouter(out beam.Sender) (*mux.Router, error) {
 	r := mux.NewRouter()
 	m := map[string]map[string]HttpApiFunc{
@@ -197,9 +284,11 @@ func createRouter(out beam.Sender) (*mux.Router, error) {
 			"/containers/json": getContainersJSON,
 		},
 		"POST": {
-			"/containers/create":          postContainersCreate,
-			"/containers/{name:.*}/start": postContainersStart,
-			"/containers/{name:.*}/stop":  postContainersStop,
+			"/containers/create":           postContainersCreate,
+			"/containers/{name:.*}/attach": postContainersAttach,
+			"/containers/{name:.*}/start":  postContainersStart,
+			"/containers/{name:.*}/stop":   postContainersStop,
+			"/containers/{name:.*}/wait":   postContainersWait,
 		},
 		"DELETE":  {},
 		"OPTIONS": {},
