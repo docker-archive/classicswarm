@@ -72,7 +72,36 @@ This service can be used to control a Docker Engine from libswarm services. It t
 
 ### Rackspace Cloud
 
-*John Hopper*
+The Rackspace Cloud adapter allows users to forward commands to Docker
+instances deployed on the Rackspace Cloud.
+
+Usage of the adapter begins by setting the **--auth-user**, **--region**
+switches. In addition, the adapter expects the environment variable
+**OS_API_KEY** to be set to the API key of the user specified using the
+**--auth-user** switch.
+
+The adapter makes use of SSH to create secure tunnels to Rackspace Cloud
+hosts. Please make sure that the private key specified using the **--key**
+switch is in the hosts' ```authorized_keys``` for the user specified
+using the **--user** switch.
+
+The Rackspace Cloud adapter will attempt to build hosts as needed. Because
+of this, the **--flavor** and **--image** switches are required. The image
+specified must host a Docker daemon that auto-starts and binds to
+tcp://127.0.0.1 on the port specified using the **--tun-port** switch.
+
+#### Example
+
+The following command sets up the rax adapter to target the Rackspace DFW
+region for buildout.
+
+
+```
+export OS_API_KEY=123456789abcdef
+rax --auth-user test --region dfw --key /etc/swarmd/rax_key --user test --flavor 3 --image 4c0fd362-1083-4f0e-8b39-e17bf00a2da5
+```
+
+Maintainer: [*John Hopper*](mailto:john.hopper@jpserver.net)
 
 ### Amazon EC2
 

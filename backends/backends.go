@@ -18,6 +18,7 @@ func New() *beam.Object {
 	backends.Bind("forward", Forward())
 	backends.Bind("exec", Exec())
 	backends.Bind("dockerserver", DockerServer())
+	backends.Bind("rax", RaxCloud())
 	backends.Bind("orchard", Orchard())
 	backends.Bind("aggregate", Aggregate())
 	backends.Bind("shipyard", Shipyard())
