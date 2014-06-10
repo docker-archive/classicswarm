@@ -1,161 +1,130 @@
 # Libswarm
 
-## A minimalist toolkit to compose network services
+*libswarm* is a toolkit for composing network services.
 
+At its core, it defines a standard way for services in a distributed system to communicate with each other. This lets you:
 
-*libswarm* is a minimalist toolkit to compose network services.
+1. Use them as building blocks to compose complex architectures
+2. Avoid vendor lock-in by swapping any service out with another
 
-It exposes a simple API for the following tasks:
+An extensive library of services is included, and you can also write your own using a simple API.
 
-* *Clustering*: deploy services on pools of interchangeable machines
-* *Composition*: combine multiple services into higher-level services of arbitrary complexity - it's services all the way down!
-* *Interconnection*: services can reliably and securely communicate with each other using asynchronous message passing, request/response, or raw sockets.
-* *Scale* services can run concurrently in the same process using goroutines and channels; in separate processes on the same machines using high-performance IPC;
-on multiple machines in a local network; or across multiple datacenters.
-* *Integration*: incorporate your existing systems into your swarm. libswarm includes adapters to many popular infrastructure tools and services: docker, dns, mesos, etcd, fleet, deis, google compute, rackspace cloud, tutum, orchard, digital ocean, ssh, etc. It’s very easy to create your own adapter: just clone the repository at 
+Here are some examples of what you can do with libswarm:
 
+* Aggregate all your Docker containers across multiple hosts and infrastructure providers, as if they were running on a single host.
 
-## Adapters
+* Bridge your in-house DNS-based service discovery with that new shiny Consul deployment, without getting locked into either.
 
-Libswarm supports the following adapters:
+* Swap in a new clustering and service discovery system, without changing any application code.
 
-### Debug adapter
+* Collect logs across an in-house Mesos cluster, a Cloudfoundry deployment and individual servers staggered in 3 different datacenters, forward them to your legacy syslog deployment, then perform custom analytics on them.
 
-The debug backend simply catches all messages and prints them on the terminal for inspection.
+* Simulate your entire service topology in a single process, then scale it out simply by re-arranging adapters.
 
+* Organize your application as loosely coupled services from day 1, without over-engineering.
 
-### Docker server adapter
+## Built-in services
+
+### Docker server
 
 *Maintainer: Ben Firshman*
 
-### Docker client adapter
+This service runs a Docker remote API server, allowing the Docker client and other Docker tools to control libswarm services.
+
+
+### Docker client
 
 *Maintainer: Aanand Prasad*
 
-### Pipeline adapter
+This service can be used to control a Docker Engine from libswarm services. It takes one argument, the Docker host to connect to. For example: `dockerclient tcp://10.1.2.3:4243`
 
-*Maintainer: Ben Firshman*
-
-### Filter adapter
-
-*Maintainer: Solomon Hykes*
-
-### Handler adapter
-
-*Maintainer: Solomon Hykes*
-
-### Task adapter
-
-*Maintainer: Solomon Hykes*
-
-### Go channel adapter
-
-*Maintainer: Solomon Hykes*
-
-### CLI adapter
-
-*Maintainer: Solomon Hykes*
-
-### Unix socket adapter
-
-*Maintainer: Solomon Hykes*
-
-### TCP adapter (client and server)
+### Etcd
 
 *Help wanted!*
 
-### TLS adapter (client and server)
-
-*Help wanted!*
-
-### HTTP2/SPDY adapter (client and server)
-
-*Maintainer: Derek McGowan*
-
-### Etcd adapter
-
-*Help wanted!*
-
-### Geard adapter
+### Geard
 
 *Clayton Coleman*
 
-### Fork-exec adapter
+### Fork-exec
 
 *Solomon Hykes*
 
-### Mesos adapter
+### Mesos
 
 *Help wanted!*
 
-### Shipyard adapter
+### Shipyard
 
 *Brian Goff*
 
-### Fleet adapter
+### Fleet
 
 *Help wanted!*
 
-### Google Compute adapter
+### Google Compute
 
 *Brendan Burns*
 
-### Rackspace cloud adapter
+### Rackspace Cloud
 
 *John Hopper*
 
-### EC2 adapter
+### Amazon EC2
 
 *Help wanted!*
 
-### Consul adapter
+### Consul
 
 *Help wanted!*
 
-### Openstack Nova adapter
+### OpenStack Nova
 
 *Help wanted!*
 
-### Digital Ocean adapter
+### Digital Ocean
 
 *Help wanted!*
 
-### Softlayer adapter
+### SoftLayer
 
 *Help wanted!*
 
-### Zerorpc adapter
+### ZeroRPC
 
 *Help wanted!*
+
+### Debug
+
+The debug service simply catches all messages and prints them on the terminal for inspection.
 
 
 ## Testing libswarm with swarmd
 
-Libswarm ships with a simple daemon which can control all machines in your distributed
-system using a variety of backend adaptors, and exposes it on a single, unified endpoint.
+Libswarm ships with a simple daemon which can control services in your distributed system.
 
 Usage example:
 
 
-Run swarmd without arguments to list available backends:
+Run swarmd without arguments to list available services:
 
 ```
 ./swarmd
 ```
 
-Pass a backend name as argument to load it:
+Pass a service name as argument to load it:
 
 ```
 ./swarmd fakeclient
 ```
 
-You can pass arguments to the backend, like a shell command:
+You can pass arguments to the service, like a shell command:
 
 ```
 ./swarmd 'dockerserver tcp://localhost:4243'
 ```
 
-You can call multiple backends. They will be executed in parallel, with the output
+You can call multiple services. They will be executed in parallel, with the output
 of each backend connected to the input of the next, just like unix pipelines.
 
 This allows for very powerful composition.
