@@ -2,12 +2,12 @@
 
 *libswarm* is a toolkit for composing network services.
 
-At its core, it defines a standard way for the components of a distributed system to communicate with each other. This lets you:
+At its core, it defines a standard way for services in a distributed system to communicate with each other. This lets you:
 
 1. Use them as building blocks to compose complex architectures
-2. Avoid vendor lock-in by swapping any component out with another
+2. Avoid vendor lock-in by swapping any service out with another
 
-An extensive library of adapters is included, and you can also write your own using a simple API.
+An extensive library of services is included, and you can also write your own using a simple API.
 
 Here are some examples of what you can do with libswarm:
 
@@ -23,7 +23,7 @@ Here are some examples of what you can do with libswarm:
 
 * Organize your application as loosely coupled services from day 1, without over-engineering.
 
-## Adapters
+## Built-in services
 
 Libswarm supports the following adapters:
 
