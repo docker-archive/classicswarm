@@ -1,19 +1,27 @@
 # Libswarm
 
-## A minimalist toolkit to compose network services
+*libswarm* is a toolkit for composing network services.
 
+At its core, it defines a standard way for the components of a distributed system to communicate with each other. This lets you:
 
-*libswarm* is a minimalist toolkit to compose network services.
+1. Use them as building blocks to compose complex architectures
+2. Avoid vendor lock-in by swapping any component out with another
 
-It exposes a simple API for the following tasks:
+An extensive library of adapters is included, and you can also write your own using a simple API.
 
-* *Clustering*: deploy services on pools of interchangeable machines
-* *Composition*: combine multiple services into higher-level services of arbitrary complexity - it's services all the way down!
-* *Interconnection*: services can reliably and securely communicate with each other using asynchronous message passing, request/response, or raw sockets.
-* *Scale* services can run concurrently in the same process using goroutines and channels; in separate processes on the same machines using high-performance IPC;
-on multiple machines in a local network; or across multiple datacenters.
-* *Integration*: incorporate your existing systems into your swarm. libswarm includes adapters to many popular infrastructure tools and services: docker, dns, mesos, etcd, fleet, deis, google compute, rackspace cloud, tutum, orchard, digital ocean, ssh, etc. It’s very easy to create your own adapter: just clone the repository at 
+Here are some examples of what you can do with libswarm:
 
+* Aggregate all your Docker containers across multiple hosts and infrastructure providers, as if they were running on a single host.
+
+* Bridge your in-house DNS-based service discovery with that new shiny Consul deployment, without getting locked into either.
+
+* Swap in a new clustering and service discovery system, without changing any application code.
+
+* Collect logs across an in-house Mesos cluster, a Cloudfoundry deployment and individual servers staggered in 3 different datacenters, forward them to your legacy syslog deployment, then perform custom analytics on them.
+
+* Simulate your entire service topology in a single process, then scale it out simply by re-arranging adapters.
+
+* Organize your application as loosely coupled services from day 1, without over-engineering.
 
 ## Adapters
 
