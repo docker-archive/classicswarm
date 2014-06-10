@@ -101,31 +101,30 @@ The debug service simply catches all messages and prints them on the terminal fo
 
 ## Testing libswarm with swarmd
 
-Libswarm ships with a simple daemon which can control all machines in your distributed
-system using a variety of backend adaptors, and exposes it on a single, unified endpoint.
+Libswarm ships with a simple daemon which can control services in your distributed system.
 
 Usage example:
 
 
-Run swarmd without arguments to list available backends:
+Run swarmd without arguments to list available services:
 
 ```
 ./swarmd
 ```
 
-Pass a backend name as argument to load it:
+Pass a service name as argument to load it:
 
 ```
 ./swarmd fakeclient
 ```
 
-You can pass arguments to the backend, like a shell command:
+You can pass arguments to the service, like a shell command:
 
 ```
 ./swarmd 'dockerserver tcp://localhost:4243'
 ```
 
-You can call multiple backends. They will be executed in parallel, with the output
+You can call multiple services. They will be executed in parallel, with the output
 of each backend connected to the input of the next, just like unix pipelines.
 
 This allows for very powerful composition.
