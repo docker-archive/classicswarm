@@ -70,7 +70,7 @@ The debug backend simply catches all messages and prints them on the terminal fo
 
 *Brendan Burns*
 
-### Rackspace cloud adapter
+### Rackspace Cloud adapter
 
 *John Hopper*
 
@@ -82,7 +82,7 @@ The debug backend simply catches all messages and prints them on the terminal fo
 
 *Help wanted!*
 
-### Openstack Nova adapter
+### OpenStack Nova adapter
 
 *Help wanted!*
 
@@ -90,11 +90,11 @@ The debug backend simply catches all messages and prints them on the terminal fo
 
 *Help wanted!*
 
-### Softlayer adapter
+### SoftLayer adapter
 
 *Help wanted!*
 
-### Zerorpc adapter
+### ZeroRPC adapter
 
 *Help wanted!*
 
