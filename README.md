@@ -36,49 +36,11 @@ The debug backend simply catches all messages and prints them on the terminal fo
 
 *Maintainer: Ben Firshman*
 
-### Docker client adapter
 
-*Maintainer: Aanand Prasad*
 
-### Pipeline adapter
 
-*Maintainer: Ben Firshman*
 
-### Filter adapter
 
-*Maintainer: Solomon Hykes*
-
-### Handler adapter
-
-*Maintainer: Solomon Hykes*
-
-### Task adapter
-
-*Maintainer: Solomon Hykes*
-
-### Go channel adapter
-
-*Maintainer: Solomon Hykes*
-
-### CLI adapter
-
-*Maintainer: Solomon Hykes*
-
-### Unix socket adapter
-
-*Maintainer: Solomon Hykes*
-
-### TCP adapter (client and server)
-
-*Help wanted!*
-
-### TLS adapter (client and server)
-
-*Help wanted!*
-
-### HTTP2/SPDY adapter (client and server)
-
-*Maintainer: Derek McGowan*
 
 ### Etcd adapter
 
