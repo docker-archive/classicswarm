@@ -25,76 +25,76 @@ Here are some examples of what you can do with libswarm:
 
 ## Built-in services
 
-### Docker server adapter
+### Docker server
 
 *Maintainer: Ben Firshman*
 
 This service runs a Docker remote API server, allowing the Docker client and other Docker tools to control libswarm services.
 
 
-### Docker client adapter
+### Docker client
 
 *Maintainer: Aanand Prasad*
 
 This service can be used to control a Docker Engine from libswarm services. It takes one argument, the Docker host to connect to. For example: `dockerclient tcp://10.1.2.3:4243`
 
-### Etcd adapter
+### Etcd
 
 *Help wanted!*
 
-### Geard adapter
+### Geard
 
 *Clayton Coleman*
 
-### Fork-exec adapter
+### Fork-exec
 
 *Solomon Hykes*
 
-### Mesos adapter
+### Mesos
 
 *Help wanted!*
 
-### Shipyard adapter
+### Shipyard
 
 *Brian Goff*
 
-### Fleet adapter
+### Fleet
 
 *Help wanted!*
 
-### Google Compute adapter
+### Google Compute
 
 *Brendan Burns*
 
-### Rackspace Cloud adapter
+### Rackspace Cloud
 
 *John Hopper*
 
-### EC2 adapter
+### Amazon EC2
 
 *Help wanted!*
 
-### Consul adapter
+### Consul
 
 *Help wanted!*
 
-### OpenStack Nova adapter
+### OpenStack Nova
 
 *Help wanted!*
 
-### Digital Ocean adapter
+### Digital Ocean
 
 *Help wanted!*
 
-### SoftLayer adapter
+### SoftLayer
 
 *Help wanted!*
 
-### ZeroRPC adapter
+### ZeroRPC
 
 *Help wanted!*
 
-### Debug adapter
+### Debug
 
 The debug service simply catches all messages and prints them on the terminal for inspection.
 
