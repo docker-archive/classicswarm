@@ -25,22 +25,18 @@ Here are some examples of what you can do with libswarm:
 
 ## Built-in services
 
-Libswarm supports the following adapters:
-
-### Debug adapter
-
-The debug backend simply catches all messages and prints them on the terminal for inspection.
-
-
 ### Docker server adapter
 
 *Maintainer: Ben Firshman*
 
+This service runs a Docker remote API server, allowing the Docker client and other Docker tools to control libswarm services.
 
 
+### Docker client adapter
 
+*Maintainer: Aanand Prasad*
 
-
+This service can be used to control a Docker Engine from libswarm services. It takes one argument, the Docker host to connect to. For example: `dockerclient tcp://10.1.2.3:4243`
 
 ### Etcd adapter
 
@@ -97,6 +93,10 @@ The debug backend simply catches all messages and prints them on the terminal fo
 ### ZeroRPC adapter
 
 *Help wanted!*
+
+### Debug adapter
+
+The debug service simply catches all messages and prints them on the terminal for inspection.
 
 
 ## Testing libswarm with swarmd
