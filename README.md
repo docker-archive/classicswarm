@@ -2,9 +2,9 @@
 
 *libswarm* is a toolkit for composing network services.
 
-At its core, it defines a standard way for services in a distributed system to communicate with each other. This lets you:
+It defines a standard interface for services in a distributed system to communicate with each other. This lets you:
 
-1. Use them as building blocks to compose complex architectures
+1. Compose complex architectures from reusable building blocks
 2. Avoid vendor lock-in by swapping any service out with another
 
 An extensive library of services is included, and you can also write your own using a simple API.
@@ -37,6 +37,10 @@ This service runs a Docker remote API server, allowing the Docker client and oth
 *Maintainer: Aanand Prasad*
 
 This service can be used to control a Docker Engine from libswarm services. It takes one argument, the Docker host to connect to. For example: `dockerclient tcp://10.1.2.3:4243`
+
+### SSH tunnel
+
+*Help wanted!*
 
 ### Etcd
 
