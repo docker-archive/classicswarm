@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -35,20 +36,23 @@ func DockerServer() beam.Sender {
 
 type HttpApiFunc func(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error
 
-func listenAndServe(url string, out beam.Sender) error {
+func listenAndServe(urlStr string, out beam.Sender) error {
 	fmt.Println("Starting Docker server...")
 	r, err := createRouter(out)
 	if err != nil {
 		return err
 	}
-	arr := strings.Split(url, "://")
-	proto := arr[0]
-	addr := arr[1]
-	l, err := net.Listen(proto, addr)
+
+	parsedUrl, err := url.Parse(urlStr)
 	if err != nil {
 		return err
 	}
-	httpSrv := http.Server{Addr: addr, Handler: r}
+
+	l, err := net.Listen(parsedUrl.Scheme, parsedUrl.Host)
+	if err != nil {
+		return err
+	}
+	httpSrv := http.Server{Addr: parsedUrl.Host, Handler: r}
 	return httpSrv.Serve(l)
 }
 
