@@ -48,11 +48,19 @@ func listenAndServe(urlStr string, out beam.Sender) error {
 		return err
 	}
 
-	l, err := net.Listen(parsedUrl.Scheme, parsedUrl.Host)
+	var hostAndPath string
+	// For Unix sockets we need to capture the path as well as the host
+	if parsedUrl.Scheme == "unix" {
+		hostAndPath = "/" + parsedUrl.Host + parsedUrl.Path
+	} else {
+		hostAndPath = parsedUrl.Host
+	}
+
+	l, err := net.Listen(parsedUrl.Scheme, hostAndPath)
 	if err != nil {
 		return err
 	}
-	httpSrv := http.Server{Addr: parsedUrl.Host, Handler: r}
+	httpSrv := http.Server{Addr: hostAndPath, Handler: r}
 	return httpSrv.Serve(l)
 }
 
