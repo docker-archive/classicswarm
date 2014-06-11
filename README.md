@@ -76,7 +76,7 @@ This service can be used to control a Docker Engine from libswarm services. It t
 
 ### Amazon EC2
 
-*Help wanted!*
+*Aaron Feng*
 
 ### Consul
 
