@@ -74,6 +74,12 @@ This service can be used to control a Docker Engine from libswarm services. It t
 
 *John Hopper*
 
+### Orchard
+
+*Maintainer: Aanand Prasad*
+
+Control an [Orchard](https://www.orchardup.com/) host from libswarm. It takes two arguments, an Orchard API token and the name of the Orchard host to control.
+
 ### Amazon EC2
 
 *Aaron Feng*
