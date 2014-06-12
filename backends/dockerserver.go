@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"strconv"
 )
 
 func DockerServer() beam.Sender {
@@ -94,6 +95,9 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 				FinishedAt string
 				ExitCode   int
 			}
+			NetworkSettings struct {
+				Ports map[string][]map[string]string
+			}
 		}
 		if err = json.Unmarshal([]byte(responseJson), &response); err != nil {
 			return err
@@ -108,13 +112,49 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 		} else {
 			state = fmt.Sprintf("Exited (%d)", response.State.ExitCode)
 		}
+		type port struct {
+			IP string
+			PrivatePort int
+			PublicPort int
+			Type string
+		}
+		var ports []port
+		for p, mappings := range response.NetworkSettings.Ports {
+			var portnum int
+			var proto string
+			_, err := fmt.Sscanf(p, "%d/%s", &portnum, &proto)
+			if err != nil {
+				return err
+			}
+			if len(mappings) > 0 {
+				for _, mapping := range mappings {
+					hostPort, err := strconv.Atoi(mapping["HostPort"])
+					if err != nil {
+						return err
+					}
+					newport := port{
+						IP: mapping["HostIp"],
+						PrivatePort: portnum,
+						PublicPort: hostPort,
+						Type: proto,
+					}
+					ports = append(ports, newport)
+				}
+			} else {
+				newport := port{
+					PublicPort: portnum,
+					Type: proto,
+				}
+				ports = append(ports, newport)
+			}
+		}
 		responses = append(responses, map[string]interface{}{
 			"Id":      response.ID,
 			"Command": strings.Join(response.Config.Cmd, " "),
 			"Created": created.Unix(),
 			"Image":   response.Config.Image,
 			"Names":   []string{response.Name},
-			"Ports":   []string{},
+			"Ports":   ports,
 			"Status":  state,
 		})
 	}
