@@ -21,5 +21,6 @@ func New() *beam.Object {
 	backends.Bind("orchard", Orchard())
 	backends.Bind("aggregate", Aggregate())
 	backends.Bind("shipyard", Shipyard())
+	backends.Bind("ec2", Ec2())
 	return beam.Obj(backends)
 }
