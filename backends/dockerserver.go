@@ -157,7 +157,7 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 				}
 			} else {
 				newport := port{
-					PublicPort: portnum,
+					PrivatePort: portnum,
 					Type: proto,
 				}
 				ports = append(ports, newport)
