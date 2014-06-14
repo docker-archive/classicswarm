@@ -36,7 +36,7 @@ func (c *ec2Client) spawn(ctx *beam.Message) error {
 
 func (c *ec2Client) ls(ctx *beam.Message) error {
   fmt.Println("*** ec2 OnLs ***")
-  ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+  ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{}})
   return nil
 }
 
