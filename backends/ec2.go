@@ -1,6 +1,7 @@
 package backends
 
 import (
+  "time"
   "fmt"
   "github.com/docker/libswarm/beam"
 )
@@ -55,8 +56,14 @@ func (c *ec2Client) stop(ctx *beam.Message) error {
 func (c *ec2Client) attach(ctx *beam.Message) error {
   fmt.Println("*** ec2 OnAttach ***")
   ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+
+  for {
+     time.Sleep(1 * time.Second)
+     (&beam.Object{ctx.Ret}).Log("ec2: heartbeat")
+  }
   return nil
 }
+
 
 func Ec2() beam.Sender {
   backend := beam.NewServer()
