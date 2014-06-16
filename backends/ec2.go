@@ -5,23 +5,25 @@ import (
   "fmt"
   "strings"
   "github.com/docker/libswarm/beam"
+
+  "launchpad.net/goamz/aws"
+  "launchpad.net/goamz/ec2"
 )
 
 type ec2Config struct {
-  access_key     string
-  secret_key     string
-  security_group string
-  instance_type  string
+  securityGroup string
+  instanceType  string
   keypair        string
-  region         string
   zone           string
   ami            string
   tag            string
+  region         aws.Region
 }
 
 type ec2Client struct {
-  config *ec2Config
-  Server *beam.Server
+  config  *ec2Config
+  ec2Conn *ec2.EC2
+  Server  *beam.Server
 }
 
 func (c *ec2Client) get(ctx *beam.Message) error {
@@ -33,6 +35,12 @@ func (c *ec2Client) get(ctx *beam.Message) error {
 
 func (c *ec2Client) start(ctx *beam.Message) error {
   fmt.Println("*** ec2 OnStart ***")
+  err := c.startInstance()
+
+  if (err != nil) {
+    return err
+  }
+
   ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
   return nil
 }
@@ -78,21 +86,28 @@ func (c *ec2Client) attach(ctx *beam.Message) error {
   return nil
 }
 
+func defaultConfigValues() (config *ec2Config) {
+  config               = new(ec2Config)
+  config.region        = aws.USEast
+  config.instanceType  = "t1.micro"
+  return config
+}
+
 func newConfig(args []string) (config *ec2Config, err error) {
   // TODO (aaron): fail fast on incorrect number of args
 
   var optValPair []string
   var opt, val string
 
-  config = new(ec2Config)
+  config = defaultConfigValues()
+
   for _, value := range args {
     optValPair = strings.Split(value, "=")
-    opt = optValPair[0]
-    val = optValPair[1]
+    opt, val   = optValPair[0], optValPair[1]
 
     switch opt {
       case "--region":
-        config.region = val
+        config.region = convertToRegion(val)
       case "--zone":
         config.zone = val
       case "--tag":
@@ -102,14 +117,76 @@ func newConfig(args []string) (config *ec2Config, err error) {
       case "--keypair":
         config.keypair = val
       case "--security_group":
-        config.security_group = val
+        config.securityGroup = val
       case "--instance_type":
-        config.instance_type = val
+        config.instanceType = val
       default:
         fmt.Printf("Unrecognizable option: %s value: %s", opt, val)
     }
   }
   return config, nil
+}
+
+func convertToRegion(input string) aws.Region {
+  // TODO (aaron): fill in more regions
+  switch input {
+    case "us-east-1":
+      return  aws.USEast
+    case "us-west-1":
+      return  aws.USWest
+    case "us-west-2":
+      return  aws.USWest2
+    case "eu-west-1":
+      return  aws.EUWest
+    default:
+      fmt.Println("Unrecognizable region, default to: us-east-1")
+      return aws.USEast
+  }
+}
+
+func awsInit(config *ec2Config)  (ec2Conn *ec2.EC2, err error) {
+  auth, err := aws.EnvAuth()
+
+  if err != nil {
+    return nil, err
+  }
+
+  return ec2.New(auth, config.region), nil
+}
+
+func (c *ec2Client) tagtInstance() error {
+  return nil
+}
+
+func (c *ec2Client) startInstance() error {
+  options := ec2.RunInstances{
+    ImageId:      c.config.ami,
+    InstanceType: c.config.instanceType,
+    KeyName:      c.config.keypair,
+  }
+
+  resp, err := c.ec2Conn.RunInstances(&options)
+  if err != nil {
+    return err
+  }
+
+  i := resp.Instances[0]
+  for i.State.Name != "running" {
+    time.Sleep(3 * time.Second)
+    fmt.Printf("Waiting for instance to come up.  Current State: %s\n",
+               i.State.Name)
+
+    resp, err := c.ec2Conn.Instances([]string{i.InstanceId}, ec2.NewFilter())
+
+    if err != nil {
+      return err
+    }
+
+    i = resp.Reservations[0].Instances[0]
+  }
+
+  fmt.Printf("Instance up and running - id: %s\n", i.InstanceId)
+  return nil
 }
 
 func Ec2() beam.Sender {
@@ -123,7 +200,12 @@ func Ec2() beam.Sender {
       return err
     }
 
-    client := &ec2Client{config, beam.NewServer()}
+    ec2Conn, err := awsInit(config)
+    if (err != nil) {
+      return err
+    }
+
+    client := &ec2Client{config, ec2Conn, beam.NewServer()}
     client.Server.OnSpawn(beam.Handler(client.spawn))
     client.Server.OnStart(beam.Handler(client.start))
     client.Server.OnStop(beam.Handler(client.stop))
@@ -132,7 +214,9 @@ func Ec2() beam.Sender {
     client.Server.OnError(beam.Handler(client.error))
     client.Server.OnLs(beam.Handler(client.ls))
     client.Server.OnGet(beam.Handler(client.get))
+
     _, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: client.Server})
+
     return err
   }))
   return backend
