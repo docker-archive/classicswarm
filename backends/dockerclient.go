@@ -204,7 +204,7 @@ func (c *container) start(ctx *beam.Message) error {
 
 func (c *container) stop(ctx *beam.Message) error {
 	path := fmt.Sprintf("/containers/%s/stop", c.id)
-	resp, err := c.backend.client.call("POST", path, "{}")
+	resp, err := c.backend.client.call("POST", path, "")
 	if err != nil {
 		return err
 	}
