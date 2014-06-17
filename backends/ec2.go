@@ -21,9 +21,9 @@ type ec2Config struct {
 }
 
 type ec2Client struct {
-  config  *ec2Config
-  ec2Conn *ec2.EC2
-  Server  *beam.Server
+  config   *ec2Config
+  ec2Conn  *ec2.EC2
+  Server   *beam.Server
   instance *ec2.Instance
 }
 
@@ -36,12 +36,20 @@ func (c *ec2Client) get(ctx *beam.Message) error {
 
 func (c *ec2Client) start(ctx *beam.Message) error {
   fmt.Println("*** ec2 OnStart ***")
-  if err := c.startInstance(); err != nil {
-    return err
-  }
 
-  if err := c.tagtInstance(); err != nil {
+  if instance, err := c.findInstance(); err != nil {
     return err
+  } else if instance != nil {
+    fmt.Println("*** found existing instance ****")
+    c.instance = instance
+  } else {
+    if err := c.startInstance(); err != nil {
+      return err
+    }
+
+    if err := c.tagtInstance(); err != nil {
+      return err
+    }
   }
 
   ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
@@ -155,6 +163,17 @@ func awsInit(config *ec2Config)  (ec2Conn *ec2.EC2, err error) {
   }
 
   return ec2.New(auth, config.region), nil
+}
+
+
+func (c *ec2Client) findInstance() (instance *ec2.Instance, err error) {
+  filter := ec2.NewFilter()
+  filter.Add("tag:Name", c.config.tag)
+  if resp, err := c.ec2Conn.Instances([]string{}, filter); err != nil {
+    return nil, err
+  } else {
+    return &resp.Reservations[0].Instances[0], nil
+  }
 }
 
 func (c *ec2Client) tagtInstance() error {
