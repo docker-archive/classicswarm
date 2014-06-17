@@ -14,62 +14,58 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
-	"time"
 )
 
-type ForwardConfig struct {
+type DockerClientConfig struct {
 	Scheme          string
 	URLHost         string
 	TLSClientConfig *tls.Config
 }
 
-func Forward() beam.Sender {
-	return ForwardWithConfig(&ForwardConfig{
+func DockerClient() beam.Sender {
+	return DockerClientWithConfig(&DockerClientConfig{
 		Scheme:  "http",
 		URLHost: "dummy.host",
 	})
 }
 
-func ForwardWithConfig(config *ForwardConfig) beam.Sender {
+func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 	backend := beam.NewServer()
 	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
 		if len(ctx.Args) != 1 {
-			return fmt.Errorf("forward: spawn takes exactly 1 argument, got %d", len(ctx.Args))
+			return fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(ctx.Args))
 		}
 		client := newClient()
 		client.scheme = config.Scheme
 		client.urlHost = config.URLHost
 		client.transport.TLSClientConfig = config.TLSClientConfig
 		client.setURL(ctx.Args[0])
-		f := &forwarder{
+		b := &dockerClientBackend{
 			client: client,
 			Server: beam.NewServer(),
 		}
-		f.Server.OnAttach(beam.Handler(f.attach))
-		f.Server.OnStart(beam.Handler(f.start))
-		f.Server.OnLs(beam.Handler(f.ls))
-		f.Server.OnSpawn(beam.Handler(f.spawn))
-		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: f.Server})
+		b.Server.OnAttach(beam.Handler(b.attach))
+		b.Server.OnStart(beam.Handler(b.start))
+		b.Server.OnLs(beam.Handler(b.ls))
+		b.Server.OnSpawn(beam.Handler(b.spawn))
+		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
 		return err
 	}))
 	return backend
 }
 
-type forwarder struct {
+type dockerClientBackend struct {
 	client *client
 	*beam.Server
 }
 
-func (f *forwarder) attach(ctx *beam.Message) error {
+func (b *dockerClientBackend) attach(ctx *beam.Message) error {
 	if ctx.Args[0] == "" {
-		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: f.Server})
-		for {
-			time.Sleep(1 * time.Second)
-			(&beam.Object{ctx.Ret}).Log("forward: heartbeat")
-		}
+		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
+		<-make(chan struct{})
 	} else {
 		path := fmt.Sprintf("/containers/%s/json", ctx.Args[0])
-		resp, err := f.client.call("GET", path, "")
+		resp, err := b.client.call("GET", path, "")
 		if err != nil {
 			return err
 		}
@@ -80,19 +76,19 @@ func (f *forwarder) attach(ctx *beam.Message) error {
 		if resp.StatusCode != 200 {
 			return fmt.Errorf("%s", respBody)
 		}
-		c := f.newContainer(ctx.Args[0])
+		c := b.newContainer(ctx.Args[0])
 		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c})
 	}
 	return nil
 }
 
-func (f *forwarder) start(ctx *beam.Message) error {
+func (b *dockerClientBackend) start(ctx *beam.Message) error {
 	ctx.Ret.Send(&beam.Message{Verb: beam.Ack})
 	return nil
 }
 
-func (f *forwarder) ls(ctx *beam.Message) error {
-	resp, err := f.client.call("GET", "/containers/json", "")
+func (b *dockerClientBackend) ls(ctx *beam.Message) error {
+	resp, err := b.client.call("GET", "/containers/json", "")
 	if err != nil {
 		return fmt.Errorf("get: %v", err)
 	}
@@ -115,11 +111,11 @@ func (f *forwarder) ls(ctx *beam.Message) error {
 	return nil
 }
 
-func (f *forwarder) spawn(ctx *beam.Message) error {
+func (b *dockerClientBackend) spawn(ctx *beam.Message) error {
 	if len(ctx.Args) != 1 {
-		return fmt.Errorf("forward: spawn takes exactly 1 argument, got %d", len(ctx.Args))
+		return fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(ctx.Args))
 	}
-	resp, err := f.client.call("POST", "/containers/create", ctx.Args[0])
+	resp, err := b.client.call("POST", "/containers/create", ctx.Args[0])
 	if err != nil {
 		return err
 	}
@@ -134,15 +130,15 @@ func (f *forwarder) spawn(ctx *beam.Message) error {
 	if err = json.Unmarshal(respBody, &respJson); err != nil {
 		return err
 	}
-	c := f.newContainer(respJson.Id)
+	c := b.newContainer(respJson.Id)
 	if _, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (f *forwarder) newContainer(id string) beam.Sender {
-	c := &container{forwarder: f, id: id}
+func (b *dockerClientBackend) newContainer(id string) beam.Sender {
+	c := &container{backend: b, id: id}
 	instance := beam.NewServer()
 	instance.OnAttach(beam.Handler(c.attach))
 	instance.OnStart(beam.Handler(c.start))
@@ -152,8 +148,8 @@ func (f *forwarder) newContainer(id string) beam.Sender {
 }
 
 type container struct {
-	forwarder *forwarder
-	id        string
+	backend *dockerClientBackend
+	id      string
 }
 
 func (c *container) attach(ctx *beam.Message) error {
@@ -167,7 +163,7 @@ func (c *container) attach(ctx *beam.Message) error {
 	stderrR, stderrW := io.Pipe()
 	go copyOutput(ctx.Ret, stdoutR, "stdout")
 	go copyOutput(ctx.Ret, stderrR, "stderr")
-	c.forwarder.client.hijack("POST", path, nil, stdoutW, stderrW)
+	c.backend.client.hijack("POST", path, nil, stdoutW, stderrW)
 
 	return nil
 }
@@ -189,7 +185,7 @@ func copyOutput(sender beam.Sender, reader io.Reader, tag string) {
 
 func (c *container) start(ctx *beam.Message) error {
 	path := fmt.Sprintf("/containers/%s/start", c.id)
-	resp, err := c.forwarder.client.call("POST", path, "{}")
+	resp, err := c.backend.client.call("POST", path, "{}")
 	if err != nil {
 		return err
 	}
@@ -208,7 +204,7 @@ func (c *container) start(ctx *beam.Message) error {
 
 func (c *container) stop(ctx *beam.Message) error {
 	path := fmt.Sprintf("/containers/%s/stop", c.id)
-	resp, err := c.forwarder.client.call("POST", path, "{}")
+	resp, err := c.backend.client.call("POST", path, "")
 	if err != nil {
 		return err
 	}
@@ -227,7 +223,7 @@ func (c *container) stop(ctx *beam.Message) error {
 
 func (c *container) get(ctx *beam.Message) error {
 	path := fmt.Sprintf("/containers/%s/json", c.id)
-	resp, err := c.forwarder.client.call("GET", path, "")
+	resp, err := c.backend.client.call("GET", path, "")
 	if err != nil {
 		return err
 	}
