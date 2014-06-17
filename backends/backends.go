@@ -15,7 +15,7 @@ func New() *beam.Object {
 	backends.Bind("simulator", Simulator())
 	backends.Bind("debug", Debug())
 	backends.Bind("fakeclient", FakeClient())
-	backends.Bind("forward", Forward())
+	backends.Bind("dockerclient", DockerClient())
 	backends.Bind("exec", Exec())
 	backends.Bind("dockerserver", DockerServer())
 	backends.Bind("orchard", Orchard())
