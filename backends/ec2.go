@@ -24,6 +24,7 @@ type ec2Client struct {
   config  *ec2Config
   ec2Conn *ec2.EC2
   Server  *beam.Server
+  instance *ec2.Instance
 }
 
 func (c *ec2Client) get(ctx *beam.Message) error {
@@ -35,9 +36,11 @@ func (c *ec2Client) get(ctx *beam.Message) error {
 
 func (c *ec2Client) start(ctx *beam.Message) error {
   fmt.Println("*** ec2 OnStart ***")
-  err := c.startInstance()
+  if err := c.startInstance(); err != nil {
+    return err
+  }
 
-  if (err != nil) {
+  if err := c.tagtInstance(); err != nil {
     return err
   }
 
@@ -155,6 +158,10 @@ func awsInit(config *ec2Config)  (ec2Conn *ec2.EC2, err error) {
 }
 
 func (c *ec2Client) tagtInstance() error {
+  ec2Tags := []ec2.Tag{ec2.Tag{"Name", c.config.tag}}
+  if _, err := c.ec2Conn.CreateTags([]string{c.instance.InstanceId}, ec2Tags); err != nil {
+    return err
+  }
   return nil
 }
 
@@ -170,7 +177,9 @@ func (c *ec2Client) startInstance() error {
     return err
   }
 
+  // TODO (aaron): this really could be multiple instances, not just 1
   i := resp.Instances[0]
+
   for i.State.Name != "running" {
     time.Sleep(3 * time.Second)
     fmt.Printf("Waiting for instance to come up.  Current State: %s\n",
@@ -184,6 +193,8 @@ func (c *ec2Client) startInstance() error {
 
     i = resp.Reservations[0].Instances[0]
   }
+
+  c.instance = &i
 
   fmt.Printf("Instance up and running - id: %s\n", i.InstanceId)
   return nil
@@ -205,7 +216,7 @@ func Ec2() beam.Sender {
       return err
     }
 
-    client := &ec2Client{config, ec2Conn, beam.NewServer()}
+    client := &ec2Client{config, ec2Conn, beam.NewServer(), nil}
     client.Server.OnSpawn(beam.Handler(client.spawn))
     client.Server.OnStart(beam.Handler(client.start))
     client.Server.OnStop(beam.Handler(client.stop))
