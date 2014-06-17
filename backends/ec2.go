@@ -195,10 +195,13 @@ func (c *ec2Client) tagtInstance() error {
 }
 
 func (c *ec2Client) startInstance() error {
+  // TODO (aaron): make sure to wait for cloud-init to finish before
+  // executing docker commands
   options := ec2.RunInstances{
     ImageId:      c.config.ami,
     InstanceType: c.config.instanceType,
     KeyName:      c.config.keypair,
+    UserData:     []byte("#include https://get.docker.io"),
   }
 
   resp, err := c.ec2Conn.RunInstances(&options)
