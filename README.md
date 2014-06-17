@@ -140,7 +140,7 @@ of each backend connected to the input of the next, just like unix pipelines.
 This allows for very powerful composition.
 
 ```
-./swarmd 'dockerserver tcp://localhost:4243' 'debug' 'dockerclient unix:///var/run/docker.sock'
+./swarmd 'dockerserver tcp://localhost:4243' 'debug' 'forward unix:///var/run/docker.sock'
 ```
 
 ## Creators
