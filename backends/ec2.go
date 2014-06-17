@@ -172,6 +172,9 @@ func (c *ec2Client) findInstance() (instance *ec2.Instance, err error) {
   if resp, err := c.ec2Conn.Instances([]string{}, filter); err != nil {
     return nil, err
   } else {
+    if resp.Reservations == nil {
+      return nil, nil
+    }
     return &resp.Reservations[0].Instances[0], nil
   }
 }
