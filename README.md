@@ -42,6 +42,12 @@ This service can be used to control a Docker Engine from libswarm services. It t
 
 *Help wanted!*
 
+### Interceptor Example Adapter
+
+Developer friendly example on how to write logic that intercepts message flows.
+
+*Maintainer: John Hopper*
+
 ### Etcd
 
 *Help wanted!*
