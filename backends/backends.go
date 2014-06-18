@@ -2,6 +2,7 @@ package backends
 
 import (
 	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm/rax"
 )
 
 // New returns a new engine, with all backends
@@ -18,7 +19,7 @@ func New() *beam.Object {
 	backends.Bind("forward", Forward())
 	backends.Bind("exec", Exec())
 	backends.Bind("dockerserver", DockerServer())
-	backends.Bind("rax", RaxCloud())
+	backends.Bind("rax", rax.RaxCloud())
 	backends.Bind("orchard", Orchard())
 	backends.Bind("aggregate", Aggregate())
 	backends.Bind("shipyard", Shipyard())
