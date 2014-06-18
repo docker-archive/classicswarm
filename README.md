@@ -42,6 +42,41 @@ This service can be used to control a Docker Engine from libswarm services. It t
 
 *Help wanted!*
 
+### Auth
+
+This service can be used to autheticate or verify the identity of messages passed through libswarm. The service has several providers. One provider must be selected using the
+**--provider** swtich.
+
+Authenticators in the auth service are passed a string environment map as their argument. This map is derived from any message arguments that begin with **--auth**. Authentactors may optionally edit the environment by removing, changing or adding elements. These elements are rewritten into msg.Args after the authentactor returns. This allows for identity information to flow upstream while allowing for the removal of sensitive arguments.
+
+Common arguments that are recognized by all auth providers:
+* auth-user **string**: represents the user being authenticated.
+* auth-key **string**: represents a user key.
+* auth-password **string**: represents a user password.
+
+**Auth Example**
+```
+swarmd "dockerserver" "injector --auth-dict @authdb.json --auth-user test --auth-password password" "auth --provider inline" "debug"
+[DEBUG] Ls --test test
+```
+
+
+### Utils/Injector
+
+This service can be used to inject arugments into a libchan message mid-stream. Arguments passed to the injector will be injected as read. Any argument that begins with the '@' character is treated as a file path, resolved and then read into the message's arguments.
+
+**Injecting Arguments**
+```
+swarmd "dockerserver" "injector --test test" "debug"
+[DEBUG] Ls --test test
+```
+
+**Injecting Files as Arguments**
+```
+swarmd "dockerserver" "injector --test @test.json" "debug"
+[DEBUG] Ls --test {"test": "test"}
+```
+
 ### Etcd
 
 *Help wanted!*
