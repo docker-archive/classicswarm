@@ -6,6 +6,7 @@ import (
 	"github.com/docker/libswarm/beam"
 	"github.com/dotcloud/docker/api"
 	"github.com/dotcloud/docker/pkg/version"
+	dockerContainerConfig "github.com/dotcloud/docker/runconfig"
 	"github.com/dotcloud/docker/utils"
 	"github.com/gorilla/mux"
 	"io"
@@ -13,10 +14,10 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"strconv"
 )
 
 func DockerServer() beam.Sender {
@@ -73,6 +74,68 @@ func ping(out beam.Sender, version version.Version, w http.ResponseWriter, r *ht
 	return err
 }
 
+type containerJson struct {
+	Config          *dockerContainerConfig.Config
+	HostConfig      *dockerContainerConfig.HostConfig
+	ID              string
+	Created         string
+	Driver          string
+	ExecDriver      string
+	NetworkSettings struct {
+		Bridge      string
+		Gateway     string
+		IPAddress   string
+		IPPrefixLen int
+		Ports       map[string][]map[string]string
+	}
+	State struct {
+		Running    bool
+		StartedAt  string
+		FinishedAt string
+		ExitCode   int
+		Paused     bool
+		Pid        int
+	}
+	Name           string
+	Args           []string
+	ProcessLbael   string
+	ResolvConfPath string
+	HostnamePath   string
+	HostsPath      string
+	MountLabel     string
+	Volumes        map[string]string
+	VolumesRW      map[string]bool
+}
+
+func getContainerJson(out beam.Sender, containerID string) (containerJson, error) {
+	o := beam.Obj(out)
+
+	_, containerOut, err := o.Attach(containerID)
+	if err != nil {
+		return containerJson{}, err
+	}
+	container := beam.Obj(containerOut)
+	responseJson, err := container.Get()
+	if err != nil {
+		return containerJson{}, err
+	}
+	var response containerJson
+
+	if err = json.Unmarshal([]byte(responseJson), &response); err != nil {
+		return containerJson{}, err
+	}
+
+	return response, nil
+}
+
+func getContainerInfo(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	container, err := getContainerJson(out, vars["name"])
+	if err != nil {
+		return err
+	}
+	return writeJSON(w, http.StatusOK, container)
+}
+
 func getContainersJSON(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if err := r.ParseForm(); err != nil {
 		return err
@@ -87,34 +150,8 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 	var responses []interface{}
 
 	for _, name := range names {
-		_, containerOut, err := o.Attach(name)
+		response, err := getContainerJson(out, name)
 		if err != nil {
-			return err
-		}
-		container := beam.Obj(containerOut)
-		responseJson, err := container.Get()
-		if err != nil {
-			return err
-		}
-		var response struct {
-			ID      string
-			Created string
-			Name    string
-			Config  struct {
-				Cmd   []string
-				Image string
-			}
-			State struct {
-				Running    bool
-				StartedAt  string
-				FinishedAt string
-				ExitCode   int
-			}
-			NetworkSettings struct {
-				Ports map[string][]map[string]string
-			}
-		}
-		if err = json.Unmarshal([]byte(responseJson), &response); err != nil {
 			return err
 		}
 		created, err := time.Parse(time.RFC3339, response.Created)
@@ -128,10 +165,10 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 			state = fmt.Sprintf("Exited (%d)", response.State.ExitCode)
 		}
 		type port struct {
-			IP string
+			IP          string
 			PrivatePort int
-			PublicPort int
-			Type string
+			PublicPort  int
+			Type        string
 		}
 		var ports []port
 		for p, mappings := range response.NetworkSettings.Ports {
@@ -148,17 +185,17 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 						return err
 					}
 					newport := port{
-						IP: mapping["HostIp"],
+						IP:          mapping["HostIp"],
 						PrivatePort: portnum,
-						PublicPort: hostPort,
-						Type: proto,
+						PublicPort:  hostPort,
+						Type:        proto,
 					}
 					ports = append(ports, newport)
 				}
 			} else {
 				newport := port{
 					PublicPort: portnum,
-					Type: proto,
+					Type:       proto,
 				}
 				ports = append(ports, newport)
 			}
@@ -332,8 +369,9 @@ func createRouter(out beam.Sender) (*mux.Router, error) {
 	r := mux.NewRouter()
 	m := map[string]map[string]HttpApiFunc{
 		"GET": {
-			"/_ping":           ping,
-			"/containers/json": getContainersJSON,
+			"/_ping":                  ping,
+			"/containers/json":        getContainersJSON,
+			"/containers/{name}/json": getContainerInfo,
 		},
 		"POST": {
 			"/containers/create":           postContainersCreate,
