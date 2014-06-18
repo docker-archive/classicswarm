@@ -169,7 +169,9 @@ func awsInit(config *ec2Config)  (ec2Conn *ec2.EC2, err error) {
 func (c *ec2Client) findInstance() (instance *ec2.Instance, err error) {
   filter := ec2.NewFilter()
   filter.Add("tag:Name", c.config.tag)
-  if resp, err := c.ec2Conn.Instances([]string{}, filter); err != nil {
+  resp, err := c.ec2Conn.Instances([]string{}, filter)
+
+  if err != nil {
     return nil, err
   } else {
     if resp.Reservations == nil {
@@ -177,12 +179,13 @@ func (c *ec2Client) findInstance() (instance *ec2.Instance, err error) {
     }
 
     instance := resp.Reservations[0].Instances[0]
+    fmt.Println(instance.State.Name)
 
-    if (instance.State.Name != "running" || instance.State.Name != "pending") {
-      return nil, nil
+    if (instance.State.Name == "running" || instance.State.Name == "pending") {
+      return &instance, nil
     }
 
-    return &instance, nil
+    return nil, nil
   }
 }
 
