@@ -31,15 +31,15 @@ func DockerClient() beam.Sender {
 
 func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 	backend := beam.NewServer()
-	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
-		if len(ctx.Args) != 1 {
-			return fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(ctx.Args))
+	backend.OnSpawn(func(cmd ...string) (beam.Sender, error) {
+		if len(cmd) != 1 {
+			return nil, fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(cmd))
 		}
 		client := newClient()
 		client.scheme = config.Scheme
 		client.urlHost = config.URLHost
 		client.transport.TLSClientConfig = config.TLSClientConfig
-		client.setURL(ctx.Args[0])
+		client.setURL(cmd[0])
 		b := &dockerClientBackend{
 			client: client,
 			Server: beam.NewServer(),
@@ -47,10 +47,9 @@ func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 		b.Server.OnVerb(beam.Attach, beam.Handler(b.attach))
 		b.Server.OnVerb(beam.Start, beam.Handler(b.start))
 		b.Server.OnVerb(beam.Ls, beam.Handler(b.ls))
-		b.Server.OnVerb(beam.Spawn, beam.Handler(b.spawn))
-		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
-		return err
-	}))
+		b.Server.OnSpawn(b.spawn)
+		return b.Server, nil
+	})
 	return backend
 }
 
@@ -111,30 +110,26 @@ func (b *dockerClientBackend) ls(ctx *beam.Message) error {
 	return nil
 }
 
-func (b *dockerClientBackend) spawn(ctx *beam.Message) error {
-	if len(ctx.Args) != 1 {
-		return fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(ctx.Args))
+func (b *dockerClientBackend) spawn(cmd ...string) (beam.Sender, error) {
+	if len(cmd) != 1 {
+		return nil, fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(cmd))
 	}
-	resp, err := b.client.call("POST", "/containers/create", ctx.Args[0])
+	resp, err := b.client.call("POST", "/containers/create", cmd[0])
 	if err != nil {
-		return err
+		return nil, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if resp.StatusCode != 201 {
-		return fmt.Errorf("expected status code 201, got %d:\n%s", resp.StatusCode, respBody)
+		return nil, fmt.Errorf("expected status code 201, got %d:\n%s", resp.StatusCode, respBody)
 	}
 	var respJson struct{ Id string }
 	if err = json.Unmarshal(respBody, &respJson); err != nil {
-		return err
+		return nil, err
 	}
-	c := b.newContainer(respJson.Id)
-	if _, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c}); err != nil {
-		return err
-	}
-	return nil
+	return b.newContainer(respJson.Id), nil
 }
 
 func (b *dockerClientBackend) newContainer(id string) beam.Sender {

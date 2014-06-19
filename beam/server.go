@@ -27,6 +27,17 @@ func (s *Server) OnVerb(v Verb, h Sender) *Server {
 	return s
 }
 
+func (s *Server) OnSpawn(h func(cmd ...string) (Sender, error)) *Server {
+	return s.OnVerb(Spawn, Handler(func(msg *Message) error {
+		obj, err := h(msg.Args...)
+		if err != nil {
+			return err
+		}
+		_, err = msg.Ret.Send(&Message{Verb: Ack, Ret: obj})
+		return err
+	}))
+}
+
 func (s *Server) Send(msg *Message) (Receiver, error) {
 	if h, exists := s.handlers[msg.Verb]; exists {
 		return h.Send(msg)
