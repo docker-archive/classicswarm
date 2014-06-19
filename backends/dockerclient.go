@@ -31,7 +31,7 @@ func DockerClient() beam.Sender {
 
 func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 	backend := beam.NewServer()
-	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
 		if len(ctx.Args) != 1 {
 			return fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(ctx.Args))
 		}
@@ -44,10 +44,10 @@ func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 			client: client,
 			Server: beam.NewServer(),
 		}
-		b.Server.OnAttach(beam.Handler(b.attach))
-		b.Server.OnStart(beam.Handler(b.start))
-		b.Server.OnLs(beam.Handler(b.ls))
-		b.Server.OnSpawn(beam.Handler(b.spawn))
+		b.Server.OnVerb(beam.Attach, beam.Handler(b.attach))
+		b.Server.OnVerb(beam.Start, beam.Handler(b.start))
+		b.Server.OnVerb(beam.Ls, beam.Handler(b.ls))
+		b.Server.OnVerb(beam.Spawn, beam.Handler(b.spawn))
 		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
 		return err
 	}))
@@ -140,10 +140,10 @@ func (b *dockerClientBackend) spawn(ctx *beam.Message) error {
 func (b *dockerClientBackend) newContainer(id string) beam.Sender {
 	c := &container{backend: b, id: id}
 	instance := beam.NewServer()
-	instance.OnAttach(beam.Handler(c.attach))
-	instance.OnStart(beam.Handler(c.start))
-	instance.OnStop(beam.Handler(c.stop))
-	instance.OnGet(beam.Handler(c.get))
+	instance.OnVerb(beam.Attach, beam.Handler(c.attach))
+	instance.OnVerb(beam.Start, beam.Handler(c.start))
+	instance.OnVerb(beam.Stop, beam.Handler(c.stop))
+	instance.OnVerb(beam.Get, beam.Handler(c.get))
 	return instance
 }
 
