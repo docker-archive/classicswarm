@@ -25,12 +25,16 @@ type ec2Client struct {
   ec2Conn  *ec2.EC2
   Server   *beam.Server
   instance *ec2.Instance
+  dockerInstance *beam.Object
 }
 
 func (c *ec2Client) get(ctx *beam.Message) error {
   fmt.Println("*** ec2 Get ***")
-  body := `{}`
-  ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{body}})
+  output, err := c.dockerInstance.Get()
+  if (err != nil) {
+    return err
+  }
+  ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{output}})
   return nil
 }
 
@@ -52,6 +56,7 @@ func (c *ec2Client) start(ctx *beam.Message) error {
     }
   }
 
+  c.initDockerClientInstance(c.instance)
   ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
   return nil
 }
@@ -64,13 +69,18 @@ func (c *ec2Client) log(ctx *beam.Message) error {
 
 func (c *ec2Client) spawn(ctx *beam.Message) error {
   fmt.Println("*** ec2 OnSpawn ***")
+  c.dockerInstance.Spawn(ctx.Args...)
   ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
   return nil
 }
 
 func (c *ec2Client) ls(ctx *beam.Message) error {
   fmt.Println("*** ec2 OnLs ***")
-  ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{}})
+  output, err := c.dockerInstance.Ls()
+  if (err != nil) {
+    return err
+  }
+  ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: output})
   return nil
 }
 
@@ -88,12 +98,20 @@ func (c *ec2Client) stop(ctx *beam.Message) error {
 
 func (c *ec2Client) attach(ctx *beam.Message) error {
   fmt.Println("*** ec2 OnAttach ***")
-  ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
-
-  for {
-     time.Sleep(1 * time.Second)
-     (&beam.Object{ctx.Ret}).Log("ec2: heartbeat")
+	if ctx.Args[0] == "" {
+    ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+    for {
+      time.Sleep(1 * time.Second)
+      (&beam.Object{ctx.Ret}).Log("ec2: heartbeat")
+    }
+	} else {
+    _, out, err := c.dockerInstance.Attach(ctx.Args[0])
+    if err != nil {
+      return err
+    }
+    ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: out})
   }
+
   return nil
 }
 
@@ -179,7 +197,6 @@ func (c *ec2Client) findInstance() (instance *ec2.Instance, err error) {
     }
 
     instance := resp.Reservations[0].Instances[0]
-    fmt.Println(instance.State.Name)
 
     if (instance.State.Name == "running" || instance.State.Name == "pending") {
       return &instance, nil
@@ -235,6 +252,23 @@ func (c *ec2Client) startInstance() error {
   return nil
 }
 
+func (c *ec2Client) initDockerClientInstance(instance *ec2.Instance) error {
+  dockerClient := DockerClientWithConfig(&DockerClientConfig{
+		Scheme:          "http",
+		URLHost:         instance.IPAddress,
+	})
+
+  dockerBackend := beam.Obj(dockerClient)
+  url := fmt.Sprintf("tcp://%s:4243", instance.IPAddress)
+  dockerInstance, err := dockerBackend.Spawn(url)
+  c.dockerInstance = dockerInstance
+
+	if err != nil {
+		return err
+	}
+  return nil
+}
+
 func Ec2() beam.Sender {
   backend := beam.NewServer()
   backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
@@ -251,7 +285,7 @@ func Ec2() beam.Sender {
       return err
     }
 
-    client := &ec2Client{config, ec2Conn, beam.NewServer(), nil}
+    client := &ec2Client{config, ec2Conn, beam.NewServer(), nil, nil}
     client.Server.OnSpawn(beam.Handler(client.spawn))
     client.Server.OnStart(beam.Handler(client.start))
     client.Server.OnStop(beam.Handler(client.stop))
