@@ -46,7 +46,7 @@ func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 		}
 		b.Server.OnVerb(beam.Attach, beam.Handler(b.attach))
 		b.Server.OnVerb(beam.Start, beam.Handler(b.start))
-		b.Server.OnVerb(beam.Ls, beam.Handler(b.ls))
+		b.Server.OnLs(b.ls)
 		b.Server.OnSpawn(b.spawn)
 		return b.Server, nil
 	})
@@ -86,28 +86,25 @@ func (b *dockerClientBackend) start(ctx *beam.Message) error {
 	return nil
 }
 
-func (b *dockerClientBackend) ls(ctx *beam.Message) error {
+func (b *dockerClientBackend) ls() ([]string, error) {
 	resp, err := b.client.call("GET", "/containers/json", "")
 	if err != nil {
-		return fmt.Errorf("get: %v", err)
+		return nil, fmt.Errorf("get: %v", err)
 	}
 	// FIXME: check for response error
 	c := engine.NewTable("Created", 0)
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("read body: %v", err)
+		return nil, fmt.Errorf("read body: %v", err)
 	}
 	if _, err := c.ReadListFrom(body); err != nil {
-		return fmt.Errorf("readlist: %v", err)
+		return nil, fmt.Errorf("readlist: %v", err)
 	}
 	names := []string{}
 	for _, env := range c.Data {
 		names = append(names, env.GetList("Names")[0][1:])
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: names}); err != nil {
-		return fmt.Errorf("send response: %v", err)
-	}
-	return nil
+	return names, nil
 }
 
 func (b *dockerClientBackend) spawn(cmd ...string) (beam.Sender, error) {
