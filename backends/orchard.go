@@ -13,7 +13,7 @@ import (
 
 func Orchard() beam.Sender {
 	backend := beam.NewServer()
-	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
 		if len(ctx.Args) != 2 {
 			return fmt.Errorf("orchard: spawn expects 2 arguments: API token and name of host")
 		}
