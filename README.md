@@ -103,6 +103,12 @@ rax --auth-user test --region dfw --key /etc/swarmd/rax_key --user test --flavor
 
 Maintainer: [*John Hopper*](mailto:john.hopper@jpserver.net)
 
+### Orchard
+
+*Maintainer: Aanand Prasad*
+
+Control an [Orchard](https://www.orchardup.com/) host from libswarm. It takes two arguments, an Orchard API token and the name of the Orchard host to control.
+
 ### Amazon EC2
 
 *Help wanted!*
