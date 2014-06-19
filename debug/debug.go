@@ -15,7 +15,7 @@ func Debug() beam.Sender {
 	}
 
 	sender := beam.NewServer()
-	sender.OnSpawn(beam.Handler(dbgInstance.spawn))
+	sender.OnVerb(beam.Spawn, beam.Handler(dbgInstance.spawn))
 	return sender
 }
 
