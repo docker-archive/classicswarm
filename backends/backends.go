@@ -2,6 +2,7 @@ package backends
 
 import (
 	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm/debug"
 )
 
 // New returns a new engine, with all backends
@@ -13,7 +14,7 @@ import (
 func New() *beam.Object {
 	backends := beam.NewTree()
 	backends.Bind("simulator", Simulator())
-	backends.Bind("debug", Debug())
+	backends.Bind("debug", debug.Debug())
 	backends.Bind("fakeclient", FakeClient())
 	backends.Bind("dockerclient", DockerClient())
 	backends.Bind("exec", Exec())
