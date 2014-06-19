@@ -29,7 +29,6 @@ type ec2Client struct {
 }
 
 func (c *ec2Client) get(ctx *beam.Message) error {
-  fmt.Println("*** ec2 Get ***")
   output, err := c.dockerInstance.Get()
   if (err != nil) {
     return err
@@ -39,12 +38,10 @@ func (c *ec2Client) get(ctx *beam.Message) error {
 }
 
 func (c *ec2Client) start(ctx *beam.Message) error {
-  fmt.Println("*** ec2 OnStart ***")
-
   if instance, err := c.findInstance(); err != nil {
     return err
   } else if instance != nil {
-    fmt.Println("*** found existing instance ****")
+    fmt.Printf("Found existing instance: %s\n", instance.InstanceId)
     c.instance = instance
   } else {
     if err := c.startInstance(); err != nil {
@@ -62,20 +59,20 @@ func (c *ec2Client) start(ctx *beam.Message) error {
 }
 
 func (c *ec2Client) log(ctx *beam.Message) error {
-  fmt.Println("*** ec2 OnLog ***")
   ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
   return nil
 }
 
 func (c *ec2Client) spawn(ctx *beam.Message) error {
-  fmt.Println("*** ec2 OnSpawn ***")
-  c.dockerInstance.Spawn(ctx.Args...)
-  ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+  out, err := c.dockerInstance.Spawn(ctx.Args...)
+  if err != nil {
+    return err
+  }
+  ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: out})
   return nil
 }
 
 func (c *ec2Client) ls(ctx *beam.Message) error {
-  fmt.Println("*** ec2 OnLs ***")
   output, err := c.dockerInstance.Ls()
   if (err != nil) {
     return err
@@ -85,25 +82,19 @@ func (c *ec2Client) ls(ctx *beam.Message) error {
 }
 
 func (c *ec2Client) error(ctx *beam.Message) error {
-  fmt.Println("*** ec2 OnError ***")
   ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
   return nil
 }
 
 func (c *ec2Client) stop(ctx *beam.Message) error {
-  fmt.Println("*** ec2 OnStop ***")
   ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
   return nil
 }
 
 func (c *ec2Client) attach(ctx *beam.Message) error {
-  fmt.Println("*** ec2 OnAttach ***")
 	if ctx.Args[0] == "" {
     ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
-    for {
-      time.Sleep(1 * time.Second)
-      (&beam.Object{ctx.Ret}).Log("ec2: heartbeat")
-    }
+		<-make(chan struct{})
 	} else {
     _, out, err := c.dockerInstance.Attach(ctx.Args[0])
     if err != nil {
@@ -272,8 +263,6 @@ func (c *ec2Client) initDockerClientInstance(instance *ec2.Instance) error {
 func Ec2() beam.Sender {
   backend := beam.NewServer()
   backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
-    fmt.Println("*** init ***")
-
     var config, err = newConfig(ctx.Args)
 
     if (err != nil) {
