@@ -44,7 +44,7 @@ func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 			client: client,
 			Server: beam.NewServer(),
 		}
-		b.Server.OnVerb(beam.Attach, beam.Handler(b.attach))
+		b.Server.OnAttach(b.attach)
 		b.Server.OnStart(b.start)
 		b.Server.OnLs(b.ls)
 		b.Server.OnSpawn(b.spawn)
@@ -58,12 +58,12 @@ type dockerClientBackend struct {
 	*beam.Server
 }
 
-func (b *dockerClientBackend) attach(ctx *beam.Message) error {
-	if ctx.Args[0] == "" {
-		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
+func (b *dockerClientBackend) attach(name string, ret beam.Sender) error {
+	if name == "" {
+		ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
 		<-make(chan struct{})
 	} else {
-		path := fmt.Sprintf("/containers/%s/json", ctx.Args[0])
+		path := fmt.Sprintf("/containers/%s/json", name)
 		resp, err := b.client.call("GET", path, "")
 		if err != nil {
 			return err
@@ -75,8 +75,8 @@ func (b *dockerClientBackend) attach(ctx *beam.Message) error {
 		if resp.StatusCode != 200 {
 			return fmt.Errorf("%s", respBody)
 		}
-		c := b.newContainer(ctx.Args[0])
-		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c})
+		c := b.newContainer(name)
+		ret.Send(&beam.Message{Verb: beam.Ack, Ret: c})
 	}
 	return nil
 }
@@ -131,7 +131,7 @@ func (b *dockerClientBackend) spawn(cmd ...string) (beam.Sender, error) {
 func (b *dockerClientBackend) newContainer(id string) beam.Sender {
 	c := &container{backend: b, id: id}
 	instance := beam.NewServer()
-	instance.OnVerb(beam.Attach, beam.Handler(c.attach))
+	instance.OnAttach(c.attach)
 	instance.OnStart(c.start)
 	instance.OnStop(c.stop)
 	instance.OnGet(c.get)
@@ -143,8 +143,8 @@ type container struct {
 	id      string
 }
 
-func (c *container) attach(ctx *beam.Message) error {
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
+func (c *container) attach(name string, ret beam.Sender) error {
+	if _, err := ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
 		return err
 	}
 
@@ -152,8 +152,8 @@ func (c *container) attach(ctx *beam.Message) error {
 
 	stdoutR, stdoutW := io.Pipe()
 	stderrR, stderrW := io.Pipe()
-	go beam.EncodeStream(ctx.Ret, stdoutR, "stdout")
-	go beam.EncodeStream(ctx.Ret, stderrR, "stderr")
+	go beam.EncodeStream(ret, stdoutR, "stdout")
+	go beam.EncodeStream(ret, stderrR, "stderr")
 	c.backend.client.hijack("POST", path, nil, stdoutW, stderrW)
 
 	return nil
