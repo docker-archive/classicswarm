@@ -13,7 +13,7 @@ import (
 
 func Shipyard() beam.Sender {
 	backend := beam.NewServer()
-	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
 		if len(ctx.Args) != 3 {
 			return fmt.Errorf("Shipyard: Usage <shipyard URL> <user> <pass>")
 		}
@@ -21,10 +21,10 @@ func Shipyard() beam.Sender {
 		c := &shipyard{url: ctx.Args[0], user: ctx.Args[1], pass: ctx.Args[2]}
 
 		c.Server = beam.NewServer()
-		c.Server.OnAttach(beam.Handler(c.attach))
-		c.Server.OnStart(beam.Handler(c.start))
-		c.Server.OnLs(beam.Handler(c.containers))
-		c.OnGet(beam.Handler(c.containerInspect))
+		c.Server.OnVerb(beam.Attach, beam.Handler(c.attach))
+		c.Server.OnVerb(beam.Start, beam.Handler(c.start))
+		c.Server.OnVerb(beam.Ls, beam.Handler(c.containers))
+		c.OnVerb(beam.Get, beam.Handler(c.containerInspect))
 		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
 		return err
 	}))

@@ -14,7 +14,7 @@ import (
 
 func Exec() beam.Sender {
 	e := beam.NewServer()
-	e.OnSpawn(beam.Handler(func(msg *beam.Message) error {
+	e.OnVerb(beam.Spawn, beam.Handler(func(msg *beam.Message) error {
 		if len(msg.Args) < 1 {
 			return fmt.Errorf("usage: SPAWN exec|... <config>")
 		}
@@ -33,7 +33,7 @@ func Exec() beam.Sender {
 			Cmd:	exec.Command(config.Path, config.Args...),
 			Server: beam.NewServer(),
 		}
-		cmd.OnAttach(beam.Handler(func(msg *beam.Message) error {
+		cmd.OnVerb(beam.Attach, beam.Handler(func(msg *beam.Message) error {
 			stdout, err := cmd.StdoutPipe()
 			if err != nil {
 				return err
@@ -76,7 +76,7 @@ func Exec() beam.Sender {
 			cmd.tasks.Wait()
 			return nil
 		}))
-		cmd.OnStart(beam.Handler(func(msg *beam.Message) error {
+		cmd.OnVerb(beam.Start, beam.Handler(func(msg *beam.Message) error {
 			cmd.tasks.Add(1)
 			if err := cmd.Cmd.Start(); err != nil {
 				return err

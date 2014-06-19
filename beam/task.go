@@ -11,14 +11,14 @@ func Task(f func(in Receiver, out Sender)) Sender {
 	inR, inW := Pipe()
 	outR, outW := Pipe()
 	obj := NewServer()
-	obj.OnAttach(Handler(func(msg *Message) error {
+	obj.OnVerb(Attach, Handler(func(msg *Message) error {
 		msg.Ret.Send(&Message{Verb: Ack, Ret: inW})
 		fmt.Printf("copying task output from %#v to %#v\n", outR, msg.Ret)
 		defer fmt.Printf("(DONE) copying task output from %#v to %#v\n", outR, msg.Ret)
 		Copy(msg.Ret, outR)
 		return nil
 	}))
-	obj.OnStart(Handler(func(msg *Message) error {
+	obj.OnVerb(Start, Handler(func(msg *Message) error {
 		l.RLock()
 		r := running
 		l.RUnlock()

@@ -11,7 +11,7 @@ import (
 
 func Aggregate() beam.Sender {
 	backend := beam.NewServer()
-	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
 		allBackends := New()
 		instance := beam.NewServer()
 
@@ -20,9 +20,9 @@ func Aggregate() beam.Sender {
 			return err
 		}
 
-		instance.OnAttach(beam.Handler(a.attach))
-		instance.OnStart(beam.Handler(a.start))
-		instance.OnLs(beam.Handler(a.ls))
+		instance.OnVerb(beam.Attach, beam.Handler(a.attach))
+		instance.OnVerb(beam.Start, beam.Handler(a.start))
+		instance.OnVerb(beam.Ls, beam.Handler(a.ls))
 
 		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: instance})
 		return err

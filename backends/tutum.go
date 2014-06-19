@@ -20,7 +20,7 @@ var (
 
 func Tutum() beam.Sender {
 	backend := beam.NewServer()
-	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
 		if len(ctx.Args) == 2 {
 			tutum.User = ctx.Args[0]
 			tutum.ApiKey = ctx.Args[1]
@@ -36,10 +36,10 @@ func Tutum() beam.Sender {
 			tutumDockerConnector: tutumDockerConnector,
 			Server:               beam.NewServer(),
 		}
-		t.Server.OnAttach(beam.Handler(t.attach))
-		t.Server.OnStart(beam.Handler(t.ack))
-		t.Server.OnLs(beam.Handler(t.ls))
-		t.Server.OnSpawn(beam.Handler(t.spawn))
+		t.Server.OnVerb(beam.Attach, beam.Handler(t.attach))
+		t.Server.OnVerb(beam.Start, beam.Handler(t.ack))
+		t.Server.OnVerb(beam.Ls, beam.Handler(t.ls))
+		t.Server.OnVerb(beam.Spawn, beam.Handler(t.spawn))
 		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: t.Server})
 		return err
 	}))
@@ -121,9 +121,9 @@ func (t *tutumBackend) spawn(ctx *beam.Message) error {
 func (t *tutumBackend) newContainer(id string) beam.Sender {
 	c := &tutumContainer{tutumBackend: t, id: id}
 	instance := beam.NewServer()
-	instance.OnGet(beam.Handler(c.get))
-	instance.OnStart(beam.Handler(c.start))
-	instance.OnStop(beam.Handler(c.stop))
+	instance.OnVerb(beam.Get, beam.Handler(c.get))
+	instance.OnVerb(beam.Start, beam.Handler(c.start))
+	instance.OnVerb(beam.Stop, beam.Handler(c.stop))
 	return instance
 }
 
