@@ -27,6 +27,12 @@ func (s *Server) OnVerb(v Verb, h Sender) *Server {
 	return s
 }
 
+func (s *Server) OnLog(h func(...string) error) *Server {
+	return s.OnVerb(Log, Handler(func(msg *Message) error {
+		return h(msg.Args...)
+	}))
+}
+
 func (s *Server) OnLs(h func() ([]string, error)) *Server {
 	return s.OnVerb(Ls, Handler(func(msg *Message) error {
 		names, err := h()
@@ -52,6 +58,12 @@ func (s *Server) OnSpawn(h func(cmd ...string) (Sender, error)) *Server {
 func (s *Server) OnAttach(h func(name string, ret Sender) error) *Server {
 	return s.OnVerb(Attach, Handler(func(msg *Message) error {
 		return h(msg.Args[0], msg.Ret)
+	}))
+}
+
+func (s *Server) OnError(h func(...string) error) *Server {
+	return s.OnVerb(Error, Handler(func(msg *Message) error {
+		return h(msg.Args...)
 	}))
 }
 
