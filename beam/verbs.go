@@ -1,5 +1,9 @@
 package beam
 
+import (
+	"fmt"
+)
+
 type Verb uint32
 
 const (
@@ -17,6 +21,38 @@ const (
 	Stop
 	Watch
 )
+
+func VerbFromString(s string) (Verb, error) {
+	switch s {
+	case "Ack":
+		return Ack, nil
+	case "Attach":
+		return Attach, nil
+	case "Connect":
+		return Connect, nil
+	case "Error":
+		return Error, nil
+	case "File":
+		return File, nil
+	case "Get":
+		return Get, nil
+	case "Log":
+		return Log, nil
+	case "Ls":
+		return Ls, nil
+	case "Set":
+		return Set, nil
+	case "Spawn":
+		return Spawn, nil
+	case "Start":
+		return Start, nil
+	case "Stop":
+		return Stop, nil
+	case "Watch":
+		return Watch, nil
+	}
+	return 0, fmt.Errorf("Unrecognised verb: %s", s)
+}
 
 func (v Verb) String() string {
 	switch v {
