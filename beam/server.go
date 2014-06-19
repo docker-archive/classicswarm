@@ -49,6 +49,26 @@ func (s *Server) OnSpawn(h func(cmd ...string) (Sender, error)) *Server {
 	}))
 }
 
+func (s *Server) OnStart(h func() error) *Server {
+	return s.OnVerb(Start, Handler(func(msg *Message) error {
+		if err := h(); err != nil {
+			return err
+		}
+		_, err := msg.Ret.Send(&Message{Verb: Ack})
+		return err
+	}))
+}
+
+func (s *Server) OnStop(h func() error) *Server {
+	return s.OnVerb(Stop, Handler(func(msg *Message) error {
+		if err := h(); err != nil {
+			return err
+		}
+		_, err := msg.Ret.Send(&Message{Verb: Ack})
+		return err
+	}))
+}
+
 func (s *Server) Send(msg *Message) (Receiver, error) {
 	if h, exists := s.handlers[msg.Verb]; exists {
 		return h.Send(msg)
