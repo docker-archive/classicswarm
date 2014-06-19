@@ -45,7 +45,7 @@ func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 			Server: beam.NewServer(),
 		}
 		b.Server.OnVerb(beam.Attach, beam.Handler(b.attach))
-		b.Server.OnVerb(beam.Start, beam.Handler(b.start))
+		b.Server.OnStart(b.start)
 		b.Server.OnLs(b.ls)
 		b.Server.OnSpawn(b.spawn)
 		return b.Server, nil
@@ -81,8 +81,7 @@ func (b *dockerClientBackend) attach(ctx *beam.Message) error {
 	return nil
 }
 
-func (b *dockerClientBackend) start(ctx *beam.Message) error {
-	ctx.Ret.Send(&beam.Message{Verb: beam.Ack})
+func (b *dockerClientBackend) start() error {
 	return nil
 }
 
@@ -133,8 +132,8 @@ func (b *dockerClientBackend) newContainer(id string) beam.Sender {
 	c := &container{backend: b, id: id}
 	instance := beam.NewServer()
 	instance.OnVerb(beam.Attach, beam.Handler(c.attach))
-	instance.OnVerb(beam.Start, beam.Handler(c.start))
-	instance.OnVerb(beam.Stop, beam.Handler(c.stop))
+	instance.OnStart(c.start)
+	instance.OnStop(c.stop)
 	instance.OnVerb(beam.Get, beam.Handler(c.get))
 	return instance
 }
@@ -160,7 +159,7 @@ func (c *container) attach(ctx *beam.Message) error {
 	return nil
 }
 
-func (c *container) start(ctx *beam.Message) error {
+func (c *container) start() error {
 	path := fmt.Sprintf("/containers/%s/start", c.id)
 	resp, err := c.backend.client.call("POST", path, "{}")
 	if err != nil {
@@ -173,13 +172,10 @@ func (c *container) start(ctx *beam.Message) error {
 	if resp.StatusCode != 204 {
 		return fmt.Errorf("expected status code 204, got %d:\n%s", resp.StatusCode, respBody)
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
-		return err
-	}
 	return nil
 }
 
-func (c *container) stop(ctx *beam.Message) error {
+func (c *container) stop() error {
 	path := fmt.Sprintf("/containers/%s/stop", c.id)
 	resp, err := c.backend.client.call("POST", path, "")
 	if err != nil {
@@ -191,9 +187,6 @@ func (c *container) stop(ctx *beam.Message) error {
 	}
 	if resp.StatusCode != 204 {
 		return fmt.Errorf("expected status code 204, got %d:\n%s", resp.StatusCode, respBody)
-	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
-		return err
 	}
 	return nil
 }
