@@ -134,7 +134,7 @@ func (b *dockerClientBackend) newContainer(id string) beam.Sender {
 	instance.OnVerb(beam.Attach, beam.Handler(c.attach))
 	instance.OnStart(c.start)
 	instance.OnStop(c.stop)
-	instance.OnVerb(beam.Get, beam.Handler(c.get))
+	instance.OnGet(c.get)
 	return instance
 }
 
@@ -191,23 +191,20 @@ func (c *container) stop() error {
 	return nil
 }
 
-func (c *container) get(ctx *beam.Message) error {
+func (c *container) get() (string, error) {
 	path := fmt.Sprintf("/containers/%s/json", c.id)
 	resp, err := c.backend.client.call("GET", path, "")
 	if err != nil {
-		return err
+		return "", err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("%s", respBody)
+		return "", fmt.Errorf("%s", respBody)
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{string(respBody)}}); err != nil {
-		return err
-	}
-	return nil
+	return string(respBody), nil
 }
 
 type client struct {
