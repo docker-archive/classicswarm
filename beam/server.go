@@ -49,6 +49,12 @@ func (s *Server) OnSpawn(h func(cmd ...string) (Sender, error)) *Server {
 	}))
 }
 
+func (s *Server) OnAttach(h func(name string, ret Sender) error) *Server {
+	return s.OnVerb(Attach, Handler(func(msg *Message) error {
+		return h(msg.Args[0], msg.Ret)
+	}))
+}
+
 func (s *Server) OnGet(h func() (string, error)) *Server {
 	return s.OnVerb(Get, Handler(func(msg *Message) error {
 		content, err := h()
