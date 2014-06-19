@@ -19,6 +19,8 @@ type requestStub struct {
 
 	resStatus int
 	resBody   string
+
+	callCount int
 }
 
 func TestBackendSpawn(t *testing.T) {
@@ -90,6 +92,30 @@ func TestAttachToChild(t *testing.T) {
 	server.Check()
 }
 
+func TestGetChild(t *testing.T) {
+	name := "foo"
+	expectedContent := `{"Image": "busybox", "Command": ["/bin/true"]}`
+
+	server := makeServer(t, &requestStub{
+		reqMethod: "GET",
+		reqPath:   fmt.Sprintf("/containers/%s/json", name),
+
+		resBody: expectedContent,
+
+		callCount: 2,
+	})
+	i := instance(t, server)
+	c := child(t, server, i, name)
+	content, err := c.Get()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if content != expectedContent {
+		t.Fatalf("Expected %#v, got %#v", expectedContent, content)
+	}
+	server.Check()
+}
+
 func TestStartChild(t *testing.T) {
 	name := "foo"
 	server := makeServer(t, &requestStub{
@@ -158,6 +184,10 @@ func makeServer(t *testing.T, stubs ...*requestStub) *stubServer {
 
 	for _, stub := range stubs {
 		stub.reqPath = fmt.Sprintf("/v1.11%s", stub.reqPath)
+		if stub.callCount == 0 {
+			stub.callCount = 1
+		}
+
 		s.stubs = append(s.stubs, &stubRecord{
 			stub:      stub,
 			summary:   fmt.Sprintf("%s %s", stub.reqMethod, stub.reqPath),
@@ -170,9 +200,9 @@ func makeServer(t *testing.T, stubs ...*requestStub) *stubServer {
 
 func (s *stubServer) Check() {
 	for _, record := range s.stubs {
-		if record.callCount != 1 {
-			s.t.Fatalf("Expected %#v to be called exactly once, but was called %d times",
-				record.summary, record.callCount)
+		if record.callCount != record.stub.callCount {
+			s.t.Fatalf("Expected %#v to be called %d times, but was called %d times",
+				record.summary, record.stub.callCount, record.callCount)
 		}
 	}
 }
