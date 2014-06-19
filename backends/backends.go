@@ -2,7 +2,7 @@ package backends
 
 import (
 	"github.com/docker/libswarm/beam"
-	"github.com/docker/libswarm/rax"
+	"github.com/docker/libswarm/backends/rax"
 	"github.com/docker/libswarm/debug"
 )
 
