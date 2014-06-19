@@ -9,7 +9,7 @@ import (
 
 func FakeClient() beam.Sender {
 	backend := beam.NewServer()
-	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
 		// Instantiate a new fakeclient instance
 		instance := beam.Task(func(in beam.Receiver, out beam.Sender) {
 			fmt.Printf("fake client!\n")
