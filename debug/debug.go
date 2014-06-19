@@ -77,7 +77,7 @@ func (dbg *debug) catchall(msg *beam.Message) (err error) {
 		Args: msg.Args,
 		Att:  msg.Att,
 		Ret: &replyHandler{
-			out: msg.Ret,
+			Sender: msg.Ret,
 		},
 	}
 
@@ -93,16 +93,16 @@ func (dbg *debug) catchall(msg *beam.Message) (err error) {
 // We use a replyHandler to provide context for relaying the return channel
 // of the origin message.
 type replyHandler struct {
-	out beam.Sender
+	beam.Sender
 }
 
 // Send a message using the out channel
 func (rh *replyHandler) Send(msg *beam.Message) (receiver beam.Receiver, err error) {
 	log.Printf("[debug] <--- Downstream Message { Verb: %s, Args: %v }\n", msg.Verb, msg.Args)
-	return nil, forward(rh.out, msg)
+	return nil, forward(rh.Sender, msg)
 }
 
 func (rh *replyHandler) Close() (err error) {
 	// Since we don't allow the downstream handler to close the return channel, we do so here.
-	return rh.out.Close()
+	return rh.Sender.Close()
 }
