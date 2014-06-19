@@ -13,11 +13,11 @@ import (
 
 func Orchard() beam.Sender {
 	backend := beam.NewServer()
-	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
-		if len(ctx.Args) != 2 {
-			return fmt.Errorf("orchard: spawn expects 2 arguments: API token and name of host")
+	backend.OnSpawn(func(cmd ...string) (beam.Sender, error) {
+		if len(cmd) != 2 {
+			return nil, fmt.Errorf("orchard: spawn expects 2 arguments: API token and name of host")
 		}
-		apiToken, hostName := ctx.Args[0], ctx.Args[1]
+		apiToken, hostName := cmd[0], cmd[1]
 
 		apiClient := &api.HTTPClient{
 			BaseURL: "https://api.orchardup.com/v2",
@@ -26,13 +26,13 @@ func Orchard() beam.Sender {
 
 		host, err := apiClient.GetHost(hostName)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		url := fmt.Sprintf("tcp://%s:4243", host.IPAddress)
 		tlsConfig, err := getTLSConfig([]byte(host.ClientCert), []byte(host.ClientKey))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		backend := DockerClientWithConfig(&DockerClientConfig{
@@ -43,12 +43,11 @@ func Orchard() beam.Sender {
 		forwardBackend := beam.Obj(backend)
 		forwardInstance, err := forwardBackend.Spawn(url)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: forwardInstance})
-		return err
-	}))
+		return forwardInstance, nil
+	})
 	return backend
 }
 
