@@ -49,6 +49,17 @@ func (s *Server) OnSpawn(h func(cmd ...string) (Sender, error)) *Server {
 	}))
 }
 
+func (s *Server) OnGet(h func() (string, error)) *Server {
+	return s.OnVerb(Get, Handler(func(msg *Message) error {
+		content, err := h()
+		if err != nil {
+			return err
+		}
+		_, err = msg.Ret.Send(&Message{Verb: Set, Args: []string{content}})
+		return err
+	}))
+}
+
 func (s *Server) OnStart(h func() error) *Server {
 	return s.OnVerb(Start, Handler(func(msg *Message) error {
 		if err := h(); err != nil {
