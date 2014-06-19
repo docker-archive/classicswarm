@@ -1,0 +1,6 @@
+dockerserver.go: Ben Firshman <ben@firshman.co.uk> (github: bfirsh)
+dockerclient.go: Aanand Prasad <aanand.prasad@gmail.com> (github: aanand)
+rax.go: John Hopper <john.hopper@rackspace.com> (github: zinic)
+tutum.go: Fernando Mayo <fernando@tutum.co> (github: fermayo)
+orchard.go: Aanand Prasad <aanand.prasad@gmail.com> (github: aanand)
+cloud.go: Brendan Burns <bburns@google.com> (github: brendandburns)
