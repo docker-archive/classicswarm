@@ -27,6 +27,17 @@ func (s *Server) OnVerb(v Verb, h Sender) *Server {
 	return s
 }
 
+func (s *Server) OnLs(h func() ([]string, error)) *Server {
+	return s.OnVerb(Ls, Handler(func(msg *Message) error {
+		names, err := h()
+		if err != nil {
+			return err
+		}
+		_, err = msg.Ret.Send(&Message{Verb: Set, Args: names})
+		return err
+	}))
+}
+
 func (s *Server) OnSpawn(h func(cmd ...string) (Sender, error)) *Server {
 	return s.OnVerb(Spawn, Handler(func(msg *Message) error {
 		obj, err := h(msg.Args...)
