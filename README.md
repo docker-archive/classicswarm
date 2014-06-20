@@ -22,6 +22,41 @@ Here are some examples of what you can do with libswarm:
 * Simulate your entire service topology in a single process, then scale it out simply by re-arranging adapters.
 
 * Organize your application as loosely coupled services from day 1, without over-engineering.
+ 
+## Installation
+
+First get the go dependencies:
+
+```sh
+go get github.com/docker/libswarm/...
+```
+
+Then you can compile `swarmd` with:
+
+```sh
+go install github.com/docker/libswarm/swarmd
+```
+
+If `$GOPATH/bin` is in your `PATH`, you can invoke `swarmd` from the CLI.
+
+```sh
+$ swarmd -h
+NAME:
+   swarmd - Compose distributed systems from lightweight services
+
+USAGE:
+   swarmd [global options] command [command options] [arguments...]
+
+VERSION:
+   0.0.1
+
+COMMANDS:
+   help, h	Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --version, -v	print the version
+   --help, -h		show help
+```
 
 ## Built-in services
 
