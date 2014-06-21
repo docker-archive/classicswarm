@@ -110,6 +110,7 @@ func defaultConfigValues() (config *ec2Config) {
   config               = new(ec2Config)
   config.region        = aws.USEast
   config.instanceType  = "t1.micro"
+  config.zone          = "us-east-1a"
   return config
 }
 
@@ -209,10 +210,13 @@ func (c *ec2Client) startInstance() error {
   // TODO (aaron): make sure to wait for cloud-init to finish before
   // executing docker commands
   options := ec2.RunInstances{
-    ImageId:      c.config.ami,
-    InstanceType: c.config.instanceType,
-    KeyName:      c.config.keypair,
-    UserData:     []byte("#include https://get.docker.io"),
+    ImageId:        c.config.ami,
+    InstanceType:   c.config.instanceType,
+    KeyName:        c.config.keypair,
+    AvailZone:      c.config.zone,
+    // TODO: allow more than one sg in the future
+    SecurityGroups: []ec2.SecurityGroup{ec2.SecurityGroup{Name: c.config.securityGroup}},
+    UserData:       []byte(userdata),
   }
 
   resp, err := c.ec2Conn.RunInstances(&options)
@@ -290,3 +294,13 @@ func Ec2() beam.Sender {
   }))
   return backend
 }
+
+// TODO (aaron): load this externally
+const userdata = `
+#!/bin/bash
+yum install -y docker
+cat << EOF > /etc/sysconfig/docker
+other_args="-H tcp://127.0.0.1:4243"
+EOF
+service docker start
+`
