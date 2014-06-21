@@ -178,7 +178,6 @@ func newConfig(args []string) (config *ec2Config, err error) {
 }
 
 func convertToRegion(input string) aws.Region {
-  // TODO (aaron): fill in more regions
   switch input {
     case "us-east-1":
       return  aws.USEast
@@ -188,6 +187,14 @@ func convertToRegion(input string) aws.Region {
       return  aws.USWest2
     case "eu-west-1":
       return  aws.EUWest
+    case "sa-east-1":
+      return  aws.SAEast
+    case "ap-northeast-1":
+      return  aws.APNortheast
+    case "ap-southeast-1":
+      return  aws.APSoutheast
+    case "ap-southeast-2":
+      return  aws.APSoutheast2
     default:
       fmt.Println("Unrecognizable region, default to: us-east-1")
       return aws.USEast
