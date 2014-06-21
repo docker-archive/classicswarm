@@ -78,11 +78,6 @@ func (c *ec2Client) start(ctx *beam.Message) error {
   return nil
 }
 
-func (c *ec2Client) log(ctx *beam.Message) error {
-  ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
-  return nil
-}
-
 func (c *ec2Client) spawn(ctx *beam.Message) error {
   out, err := c.dockerInstance.Spawn(ctx.Args...)
   if err != nil {
@@ -98,11 +93,6 @@ func (c *ec2Client) ls(ctx *beam.Message) error {
     return err
   }
   ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: output})
-  return nil
-}
-
-func (c *ec2Client) error(ctx *beam.Message) error {
-  ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
   return nil
 }
 
@@ -369,8 +359,6 @@ func Ec2() beam.Sender {
     client.Server.OnStart(beam.Handler(client.start))
     client.Server.OnStop(beam.Handler(client.stop))
     client.Server.OnAttach(beam.Handler(client.attach))
-    client.Server.OnLog(beam.Handler(client.log))
-    client.Server.OnError(beam.Handler(client.error))
     client.Server.OnLs(beam.Handler(client.ls))
     client.Server.OnGet(beam.Handler(client.get))
 
