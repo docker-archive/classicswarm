@@ -1,9 +1,16 @@
 package backends
 
 import (
+  "os"
+  "os/signal"
+  "syscall"
+  "path"
+  "os/user"
   "time"
   "fmt"
   "strings"
+  "errors"
+  "os/exec"
   "github.com/docker/libswarm/beam"
 
   "launchpad.net/goamz/aws"
@@ -11,20 +18,25 @@ import (
 )
 
 type ec2Config struct {
-  securityGroup string
-  instanceType  string
-  keypair        string
+  securityGroup  string
+  instanceType   string
   zone           string
   ami            string
   tag            string
+  sshUser        string
+  sshKey         string
+  sshLocalPort   string
+  sshRemotePort  string
+  keypair        string
   region         aws.Region
 }
 
 type ec2Client struct {
-  config   *ec2Config
-  ec2Conn  *ec2.EC2
-  Server   *beam.Server
-  instance *ec2.Instance
+  config         *ec2Config
+  ec2Conn        *ec2.EC2
+  Server         *beam.Server
+  instance       *ec2.Instance
+  sshTunnel      *os.Process
   dockerInstance *beam.Object
 }
 
@@ -54,7 +66,9 @@ func (c *ec2Client) start(ctx *beam.Message) error {
   }
 
   c.initDockerClientInstance(c.instance)
+  c.startSshTunnel()
   ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+
   return nil
 }
 
@@ -106,11 +120,22 @@ func (c *ec2Client) attach(ctx *beam.Message) error {
   return nil
 }
 
+func defaultSshKeyPath() (string) {
+  usr, _ := user.Current()
+  dir := usr.HomeDir
+  return path.Join(dir, ".ssh", "id_rsa")
+}
+
 func defaultConfigValues() (config *ec2Config) {
   config               = new(ec2Config)
   config.region        = aws.USEast
+  config.ami           = "ami-7c807d14"
   config.instanceType  = "t1.micro"
   config.zone          = "us-east-1a"
+  config.sshUser       = "ec2-user"
+  config.sshLocalPort  = "4910"
+  config.sshRemotePort = "4243"
+  config.sshKey        =  defaultSshKeyPath()
   return config
 }
 
@@ -141,6 +166,10 @@ func newConfig(args []string) (config *ec2Config, err error) {
         config.securityGroup = val
       case "--instance_type":
         config.instanceType = val
+      case "--ssh_user":
+        config.sshUser = val
+      case "--ssh_key":
+        config.sshKey = val
       default:
         fmt.Printf("Unrecognizable option: %s value: %s", opt, val)
     }
@@ -250,11 +279,11 @@ func (c *ec2Client) startInstance() error {
 func (c *ec2Client) initDockerClientInstance(instance *ec2.Instance) error {
   dockerClient := DockerClientWithConfig(&DockerClientConfig{
 		Scheme:          "http",
-		URLHost:         instance.IPAddress,
+		URLHost:         "localhost",
 	})
 
   dockerBackend := beam.Obj(dockerClient)
-  url := fmt.Sprintf("tcp://%s:4243", instance.IPAddress)
+  url := fmt.Sprintf("tcp://localhost:%s", c.config.sshLocalPort)
   dockerInstance, err := dockerBackend.Spawn(url)
   c.dockerInstance = dockerInstance
 
@@ -262,6 +291,17 @@ func (c *ec2Client) initDockerClientInstance(instance *ec2.Instance) error {
 		return err
 	}
   return nil
+}
+
+func signalHandler(client *ec2Client) {
+  c := make(chan os.Signal, 1)
+  signal.Notify(c, os.Interrupt)
+  signal.Notify(c, syscall.SIGTERM)
+  go func() {
+      <-c
+      client.Close()
+      os.Exit(0)
+  }()
 }
 
 func Ec2() beam.Sender {
@@ -278,7 +318,7 @@ func Ec2() beam.Sender {
       return err
     }
 
-    client := &ec2Client{config, ec2Conn, beam.NewServer(), nil, nil}
+    client := &ec2Client{config, ec2Conn, beam.NewServer(), nil, nil, nil}
     client.Server.OnSpawn(beam.Handler(client.spawn))
     client.Server.OnStart(beam.Handler(client.start))
     client.Server.OnStop(beam.Handler(client.stop))
@@ -288,11 +328,56 @@ func Ec2() beam.Sender {
     client.Server.OnLs(beam.Handler(client.ls))
     client.Server.OnGet(beam.Handler(client.get))
 
+    signalHandler(client)
     _, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: client.Server})
 
     return err
   }))
   return backend
+}
+
+func (c *ec2Client) Close() {
+  if c.sshTunnel != nil {
+    c.sshTunnel.Kill()
+	  if state, err := c.sshTunnel.Wait(); err != nil {
+			fmt.Printf("Wait result: state:%v, err:%s\n", state, err)
+		}
+		c.sshTunnel = nil
+  }
+}
+
+// thx to the rax.go :)
+func (c *ec2Client) startSshTunnel() error {
+  if c.instance == nil {
+    return errors.New("no valid ec2 instance found.")
+  }
+
+  options := []string {
+	"-o", "PasswordAuthentication=no",
+	"-o", "LogLevel=quiet",
+	"-o", "UserKnownHostsFile=/dev/null",
+	"-o", "CheckHostIP=no",
+	"-o", "StrictHostKeyChecking=no",
+	"-i", c.config.sshKey,
+	"-A",
+	"-p", "22",
+    fmt.Sprintf("%s@%s", c.config.sshUser, c.instance.IPAddress),
+		"-N",
+	  "-f",
+	  "-L", fmt.Sprintf("%s:localhost:%s", c.config.sshLocalPort, c.config.sshRemotePort),
+  }
+
+	cmd := exec.Command("ssh", options...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+  c.sshTunnel = cmd.Process
+
+	return nil
 }
 
 // TODO (aaron): load this externally
