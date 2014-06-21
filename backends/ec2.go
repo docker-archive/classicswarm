@@ -2,6 +2,8 @@ package backends
 
 import (
   "os"
+  "net"
+  "net/http"
   "os/signal"
   "syscall"
   "path"
@@ -66,7 +68,11 @@ func (c *ec2Client) start(ctx *beam.Message) error {
   }
 
   c.initDockerClientInstance(c.instance)
+  c.waitForSsh()
   c.startSshTunnel()
+  c.waitForDockerDaemon()
+  fmt.Printf("ec2 service up and running: region: %s zone: %s\n",
+             c.config.region.Name, c.config.zone)
   ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
 
   return nil
@@ -140,8 +146,6 @@ func defaultConfigValues() (config *ec2Config) {
 }
 
 func newConfig(args []string) (config *ec2Config, err error) {
-  // TODO (aaron): fail fast on incorrect number of args
-
   var optValPair []string
   var opt, val string
 
@@ -211,7 +215,6 @@ func awsInit(config *ec2Config)  (ec2Conn *ec2.EC2, err error) {
   return ec2.New(auth, config.region), nil
 }
 
-
 func (c *ec2Client) findInstance() (instance *ec2.Instance, err error) {
   filter := ec2.NewFilter()
   filter.Add("tag:Name", c.config.tag)
@@ -243,8 +246,6 @@ func (c *ec2Client) tagtInstance() error {
 }
 
 func (c *ec2Client) startInstance() error {
-  // TODO (aaron): make sure to wait for cloud-init to finish before
-  // executing docker commands
   options := ec2.RunInstances{
     ImageId:        c.config.ami,
     InstanceType:   c.config.instanceType,
@@ -300,6 +301,44 @@ func (c *ec2Client) initDockerClientInstance(instance *ec2.Instance) error {
   return nil
 }
 
+func (c *ec2Client) waitForDockerDaemon() {
+  fmt.Println("waiting for docker daemon on remote machine to be available.")
+  for {
+    resp, _:= http.Get("http://localhost:" + c.config.sshLocalPort)
+    // wait for a response.  any response to know docker daemon is up
+    if resp != nil {
+      break
+    }
+    fmt.Print(".")
+    time.Sleep(2 * time.Second)
+  }
+    fmt.Println()
+}
+
+func (c *ec2Client) waitForSsh() {
+  fmt.Println("waiting for ssh to be available.  make sure ssh is open on port 22.")
+  conn := waitFor(c.instance.IPAddress, "22")
+  conn.Close()
+}
+
+func waitFor(ip, port string) (conn net.Conn) {
+  ipPort := fmt.Sprintf("%s:%s", ip, port)
+  var err error
+
+  for {
+    conn, err = net.DialTimeout("tcp", ipPort, time.Duration(3) * time.Second)
+    if err != nil {
+      fmt.Print(".")
+      time.Sleep(2 * time.Second)
+    } else {
+      fmt.Println()
+      break
+    }
+  }
+
+  return conn
+}
+
 func signalHandler(client *ec2Client) {
   c := make(chan os.Signal, 1)
   signal.Notify(c, os.Interrupt)
@@ -340,6 +379,7 @@ func Ec2() beam.Sender {
 
     return err
   }))
+
   return backend
 }
 
@@ -360,14 +400,14 @@ func (c *ec2Client) startSshTunnel() error {
   }
 
   options := []string {
-	"-o", "PasswordAuthentication=no",
-	"-o", "LogLevel=quiet",
-	"-o", "UserKnownHostsFile=/dev/null",
-	"-o", "CheckHostIP=no",
-	"-o", "StrictHostKeyChecking=no",
-	"-i", c.config.sshKey,
-	"-A",
-	"-p", "22",
+	  "-o", "PasswordAuthentication=no",
+	  "-o", "LogLevel=quiet",
+	  "-o", "UserKnownHostsFile=/dev/null",
+	  "-o", "CheckHostIP=no",
+	  "-o", "StrictHostKeyChecking=no",
+	  "-i", c.config.sshKey,
+	  "-A",
+	  "-p", "22",
     fmt.Sprintf("%s@%s", c.config.sshUser, c.instance.IPAddress),
 		"-N",
 	  "-f",
