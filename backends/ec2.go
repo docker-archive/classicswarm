@@ -107,7 +107,7 @@ func (c *ec2Client) error(ctx *beam.Message) error {
 }
 
 func (c *ec2Client) stop(ctx *beam.Message) error {
-  ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+  c.dockerInstance.Stop()
   return nil
 }
 
