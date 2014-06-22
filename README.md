@@ -64,7 +64,10 @@ GLOBAL OPTIONS:
 
 *Maintainer: Ben Firshman*
 
-This service runs a Docker remote API server, allowing the Docker client and other Docker tools to control libswarm services.
+This service runs a Docker remote API server, allowing the Docker client and
+other Docker tools to control libswarm services. With no arguments, it listens
+on port `4243`, but you can specify any port you like using `tcp://0.0.0.0:9999`,
+`unix:///tmp/docker` etc.
 
 
 ### Docker client
