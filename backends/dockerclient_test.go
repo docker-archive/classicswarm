@@ -247,7 +247,7 @@ func instance(t *testing.T, server *stubServer) *libswarm.Client {
 	}
 
 	backend := DockerClient()
-	instance, err := libswarm.Obj(backend).Spawn(url)
+	instance, err := libswarm.AsClient(backend).Spawn(url)
 	if err != nil {
 		t.Fatal(err)
 	}

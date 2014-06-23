@@ -25,7 +25,7 @@ func NewTree() *Tree {
 			msg.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: child})
 			return nil
 		}
-		libswarm.Obj(msg.Ret).Error("not found")
+		libswarm.AsClient(msg.Ret).Error("not found")
 		return nil
 	}))
 	t.OnVerb(libswarm.Ls, libswarm.Handler(func(msg *libswarm.Message) error {
@@ -34,7 +34,7 @@ func NewTree() *Tree {
 			names = append(names, name)
 		}
 		sort.Strings(names)
-		libswarm.Obj(msg.Ret).Set(names...)
+		libswarm.AsClient(msg.Ret).Set(names...)
 		return nil
 	}))
 	return t

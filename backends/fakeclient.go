@@ -15,7 +15,7 @@ func FakeClient() libswarm.Sender {
 		instance := utils.Task(func(in libswarm.Receiver, out libswarm.Sender) {
 			fmt.Printf("fake client!\n")
 			defer fmt.Printf("end of fake client!\n")
-			o := libswarm.Obj(out)
+			o := libswarm.AsClient(out)
 			o.Log("fake client starting")
 			defer o.Log("fake client terminating")
 			for {

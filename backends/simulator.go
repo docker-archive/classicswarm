@@ -10,11 +10,11 @@ func Simulator() libswarm.Sender {
 	s.OnVerb(libswarm.Spawn, libswarm.Handler(func(ctx *libswarm.Message) error {
 		containers := ctx.Args
 		instance := utils.Task(func(in libswarm.Receiver, out libswarm.Sender) {
-			libswarm.Obj(out).Log("[simulator] starting\n")
+			libswarm.AsClient(out).Log("[simulator] starting\n")
 			s := libswarm.NewServer()
 			s.OnVerb(libswarm.Ls, libswarm.Handler(func(msg *libswarm.Message) error {
-				libswarm.Obj(out).Log("[simulator] generating fake list of objects...\n")
-				libswarm.Obj(msg.Ret).Set(containers...)
+				libswarm.AsClient(out).Log("[simulator] generating fake list of objects...\n")
+				libswarm.AsClient(msg.Ret).Set(containers...)
 				return nil
 			}))
 			libswarm.Copy(s, in)
