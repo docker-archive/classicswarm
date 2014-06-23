@@ -240,7 +240,7 @@ func (s *stubServer) AllSummaries() []string {
 	return summaries
 }
 
-func instance(t *testing.T, server *stubServer) *libswarm.Object {
+func instance(t *testing.T, server *stubServer) *libswarm.Client {
 	url := "tcp://localhost:4243"
 	if server != nil {
 		url = strings.Replace(server.URL, "http://", "tcp://", 1)
@@ -254,7 +254,7 @@ func instance(t *testing.T, server *stubServer) *libswarm.Object {
 	return instance
 }
 
-func child(t *testing.T, server *stubServer, i *libswarm.Object, name string) *libswarm.Object {
+func child(t *testing.T, server *stubServer, i *libswarm.Client, name string) *libswarm.Client {
 	_, child, err := i.Attach(name)
 	if err != nil {
 		t.Fatal(err)

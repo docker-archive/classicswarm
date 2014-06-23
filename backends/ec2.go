@@ -39,7 +39,7 @@ type ec2Client struct {
 	Server         *libswarm.Server
 	instance       *ec2.Instance
 	sshTunnel      *os.Process
-	dockerInstance *libswarm.Object
+	dockerInstance *libswarm.Client
 }
 
 func (c *ec2Client) get(ctx *libswarm.Message) error {

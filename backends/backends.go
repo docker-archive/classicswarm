@@ -12,7 +12,7 @@ import (
 // engine, named after the desired backend.
 //
 // Example: `New().Job("debug").Run()`
-func New() *libswarm.Object {
+func New() *libswarm.Client {
 	backends := utils.NewTree()
 	backends.Bind("simulator", Simulator())
 	backends.Bind("debug", debug.Debug())

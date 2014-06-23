@@ -8,23 +8,21 @@ import (
 	"strings"
 )
 
-// FIXME: rename Object to Client
-
-type Object struct {
+type Client struct {
 	Sender
 }
 
-func Obj(dst Sender) *Object {
-	return &Object{dst}
+func Obj(dst Sender) *Client {
+	return &Client{dst}
 }
 
-func (o *Object) Log(msg string, args ...interface{}) error {
-	_, err := o.Send(&Message{Verb: Log, Args: []string{fmt.Sprintf(msg, args...)}})
+func (c *Client) Log(msg string, args ...interface{}) error {
+	_, err := c.Send(&Message{Verb: Log, Args: []string{fmt.Sprintf(msg, args...)}})
 	return err
 }
 
-func (o *Object) Ls() ([]string, error) {
-	ret, err := o.Send(&Message{Verb: Ls, Ret: RetPipe})
+func (c *Client) Ls() ([]string, error) {
+	ret, err := c.Send(&Message{Verb: Ls, Ret: RetPipe})
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +42,8 @@ func (o *Object) Ls() ([]string, error) {
 	return nil, fmt.Errorf("unexpected verb %v", msg.Verb)
 }
 
-func (o *Object) Spawn(cmd ...string) (out *Object, err error) {
-	ret, err := o.Send(&Message{Verb: Spawn, Args: cmd, Ret: RetPipe})
+func (c *Client) Spawn(cmd ...string) (out *Client, err error) {
+	ret, err := c.Send(&Message{Verb: Spawn, Args: cmd, Ret: RetPipe})
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +55,7 @@ func (o *Object) Spawn(cmd ...string) (out *Object, err error) {
 		return nil, err
 	}
 	if msg.Verb == Ack {
-		return &Object{msg.Ret}, nil
+		return &Client{msg.Ret}, nil
 	}
 	msg.Ret.Close()
 	if msg.Verb == Error {
@@ -66,8 +64,8 @@ func (o *Object) Spawn(cmd ...string) (out *Object, err error) {
 	return nil, fmt.Errorf("unexpected verb %v", msg.Verb)
 }
 
-func (o *Object) Attach(name string) (in Receiver, out *Object, err error) {
-	ret, err := o.Send(&Message{Verb: Attach, Args: []string{name}, Ret: RetPipe})
+func (c *Client) Attach(name string) (in Receiver, out *Client, err error) {
+	ret, err := c.Send(&Message{Verb: Attach, Args: []string{name}, Ret: RetPipe})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -79,7 +77,7 @@ func (o *Object) Attach(name string) (in Receiver, out *Object, err error) {
 		return nil, nil, err
 	}
 	if msg.Verb == Ack {
-		return ret, &Object{msg.Ret}, nil
+		return ret, &Client{msg.Ret}, nil
 	}
 	msg.Ret.Close()
 	if msg.Verb == Error {
@@ -88,13 +86,13 @@ func (o *Object) Attach(name string) (in Receiver, out *Object, err error) {
 	return nil, nil, fmt.Errorf("unexpected verb %v", msg.Verb)
 }
 
-func (o *Object) Error(msg string, args ...interface{}) error {
-	_, err := o.Send(&Message{Verb: Error, Args: []string{fmt.Sprintf(msg, args...)}})
+func (c *Client) Error(msg string, args ...interface{}) error {
+	_, err := c.Send(&Message{Verb: Error, Args: []string{fmt.Sprintf(msg, args...)}})
 	return err
 }
 
-func (o *Object) Connect() (net.Conn, error) {
-	ret, err := o.Send(&Message{Verb: Connect, Ret: RetPipe})
+func (c *Client) Connect() (net.Conn, error) {
+	ret, err := c.Send(&Message{Verb: Connect, Ret: RetPipe})
 	if err != nil {
 		return nil, err
 	}
@@ -121,21 +119,21 @@ func (o *Object) Connect() (net.Conn, error) {
 	return nil, fmt.Errorf("unexpected verb %v", msg.Verb)
 }
 
-func (o *Object) SetJson(val interface{}) error {
+func (c *Client) SetJson(val interface{}) error {
 	txt, err := json.Marshal(val)
 	if err != nil {
 		return err
 	}
-	return o.Set(string(txt))
+	return c.Set(string(txt))
 }
 
-func (o *Object) Set(vals ...string) error {
-	_, err := o.Send(&Message{Verb: Set, Args: vals})
+func (c *Client) Set(vals ...string) error {
+	_, err := c.Send(&Message{Verb: Set, Args: vals})
 	return err
 }
 
-func (o *Object) Get() (string, error) {
-	ret, err := o.Send(&Message{Verb: Get, Ret: RetPipe})
+func (c *Client) Get() (string, error) {
+	ret, err := c.Send(&Message{Verb: Get, Ret: RetPipe})
 	if err != nil {
 		return "", err
 	}
@@ -158,8 +156,8 @@ func (o *Object) Get() (string, error) {
 	return "", fmt.Errorf("unexpected verb %v", msg.Verb)
 }
 
-func (o *Object) Watch() (Receiver, error) {
-	ret, err := o.Send(&Message{Verb: Watch, Ret: RetPipe})
+func (c *Client) Watch() (Receiver, error) {
+	ret, err := c.Send(&Message{Verb: Watch, Ret: RetPipe})
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +171,8 @@ func (o *Object) Watch() (Receiver, error) {
 	return nil, fmt.Errorf("unexpected verb %v", msg.Verb)
 }
 
-func (o *Object) Start() error {
-	ret, err := o.Send(&Message{Verb: Start, Ret: RetPipe})
+func (c *Client) Start() error {
+	ret, err := c.Send(&Message{Verb: Start, Ret: RetPipe})
 	msg, err := ret.Receive(0)
 	if err == io.EOF {
 		return fmt.Errorf("unexpected EOF")
@@ -188,8 +186,8 @@ func (o *Object) Start() error {
 	return fmt.Errorf("unexpected verb %v", msg.Verb)
 }
 
-func (o *Object) Stop() error {
-	ret, err := o.Send(&Message{Verb: Stop, Ret: RetPipe})
+func (c *Client) Stop() error {
+	ret, err := c.Send(&Message{Verb: Stop, Ret: RetPipe})
 	msg, err := ret.Receive(0)
 	if err == io.EOF {
 		return fmt.Errorf("unexpected EOF")
