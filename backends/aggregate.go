@@ -30,11 +30,11 @@ func Aggregate() libswarm.Sender {
 }
 
 type aggregator struct {
-	backends []*libswarm.Object
+	backends []*libswarm.Client
 	server   *libswarm.Server
 }
 
-func newAggregator(allBackends *libswarm.Object, server *libswarm.Server, args []string) (*aggregator, error) {
+func newAggregator(allBackends *libswarm.Client, server *libswarm.Server, args []string) (*aggregator, error) {
 	a := &aggregator{server: server}
 
 	for _, argString := range args {
