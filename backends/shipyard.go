@@ -3,7 +3,7 @@ package backends
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -11,29 +11,29 @@ import (
 	"time"
 )
 
-func Shipyard() beam.Sender {
-	backend := beam.NewServer()
-	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
+func Shipyard() libswarm.Sender {
+	backend := libswarm.NewServer()
+	backend.OnVerb(libswarm.Spawn, libswarm.Handler(func(ctx *libswarm.Message) error {
 		if len(ctx.Args) != 3 {
 			return fmt.Errorf("Shipyard: Usage <shipyard URL> <user> <pass>")
 		}
 
 		c := &shipyard{url: ctx.Args[0], user: ctx.Args[1], pass: ctx.Args[2]}
 
-		c.Server = beam.NewServer()
-		c.Server.OnVerb(beam.Attach, beam.Handler(c.attach))
-		c.Server.OnVerb(beam.Start, beam.Handler(c.start))
-		c.Server.OnVerb(beam.Ls, beam.Handler(c.containers))
-		c.OnVerb(beam.Get, beam.Handler(c.containerInspect))
-		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+		c.Server = libswarm.NewServer()
+		c.Server.OnVerb(libswarm.Attach, libswarm.Handler(c.attach))
+		c.Server.OnVerb(libswarm.Start, libswarm.Handler(c.start))
+		c.Server.OnVerb(libswarm.Ls, libswarm.Handler(c.containers))
+		c.OnVerb(libswarm.Get, libswarm.Handler(c.containerInspect))
+		_, err := ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: c.Server})
 		return err
 	}))
 	return backend
 }
 
-func (c *shipyard) attach(ctx *beam.Message) error {
+func (c *shipyard) attach(ctx *libswarm.Message) error {
 	if ctx.Args[0] == "" {
-		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+		ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: c.Server})
 		for {
 			time.Sleep(1 * time.Second)
 		}
@@ -41,17 +41,17 @@ func (c *shipyard) attach(ctx *beam.Message) error {
 	return nil
 }
 
-func (c *shipyard) start(ctx *beam.Message) error {
-	ctx.Ret.Send(&beam.Message{Verb: beam.Ack})
+func (c *shipyard) start(ctx *libswarm.Message) error {
+	ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack})
 	return nil
 }
 
 type shipyard struct {
 	url, user, pass string
-	*beam.Server
+	*libswarm.Server
 }
 
-func (c *shipyard) containers(ctx *beam.Message) error {
+func (c *shipyard) containers(ctx *libswarm.Message) error {
 	out, err := c.gateway("GET", "containers", "")
 	if err != nil {
 		return err
@@ -62,7 +62,7 @@ func (c *shipyard) containers(ctx *beam.Message) error {
 	for _, c := range data.Objects {
 		ids = append(ids, c.Id)
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: ids}); err != nil {
+	if _, err := ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Set, Args: ids}); err != nil {
 		return err
 	}
 	return nil
@@ -76,7 +76,7 @@ type shipyardObject struct {
 	Id string `json:"container_id"`
 }
 
-func (c *shipyard) containerInspect(ctx *beam.Message) error {
+func (c *shipyard) containerInspect(ctx *libswarm.Message) error {
 	if len(ctx.Args) != 1 {
 		return fmt.Errorf("Expected 1 container id, got %s", len(ctx.Args))
 	}
@@ -87,7 +87,7 @@ func (c *shipyard) containerInspect(ctx *beam.Message) error {
 	}
 	var data shipyardObject
 	json.Unmarshal(out, &data)
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{"foo", "bar"}}); err != nil {
+	if _, err := ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Set, Args: []string{"foo", "bar"}}); err != nil {
 		return err
 	}
 	return nil

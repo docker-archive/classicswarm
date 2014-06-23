@@ -1,7 +1,7 @@
 package backends
 
 import (
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
 
 	"fmt"
 	"io/ioutil"
@@ -240,21 +240,21 @@ func (s *stubServer) AllSummaries() []string {
 	return summaries
 }
 
-func instance(t *testing.T, server *stubServer) *beam.Object {
+func instance(t *testing.T, server *stubServer) *libswarm.Object {
 	url := "tcp://localhost:4243"
 	if server != nil {
 		url = strings.Replace(server.URL, "http://", "tcp://", 1)
 	}
 
 	backend := DockerClient()
-	instance, err := beam.Obj(backend).Spawn(url)
+	instance, err := libswarm.Obj(backend).Spawn(url)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return instance
 }
 
-func child(t *testing.T, server *stubServer, i *beam.Object, name string) *beam.Object {
+func child(t *testing.T, server *stubServer, i *libswarm.Object, name string) *libswarm.Object {
 	_, child, err := i.Attach(name)
 	if err != nil {
 		t.Fatal(err)

@@ -3,7 +3,7 @@ package backends
 import (
 	"errors"
 	"fmt"
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
 	"net"
 	"net/http"
 	"os"
@@ -36,22 +36,22 @@ type ec2Config struct {
 type ec2Client struct {
 	config         *ec2Config
 	ec2Conn        *ec2.EC2
-	Server         *beam.Server
+	Server         *libswarm.Server
 	instance       *ec2.Instance
 	sshTunnel      *os.Process
-	dockerInstance *beam.Object
+	dockerInstance *libswarm.Object
 }
 
-func (c *ec2Client) get(ctx *beam.Message) error {
+func (c *ec2Client) get(ctx *libswarm.Message) error {
 	output, err := c.dockerInstance.Get()
 	if err != nil {
 		return err
 	}
-	ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{output}})
+	ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Set, Args: []string{output}})
 	return nil
 }
 
-func (c *ec2Client) start(ctx *beam.Message) error {
+func (c *ec2Client) start(ctx *libswarm.Message) error {
 	if instance, err := c.findInstance(); err != nil {
 		return err
 	} else if instance != nil {
@@ -73,44 +73,44 @@ func (c *ec2Client) start(ctx *beam.Message) error {
 	c.waitForDockerDaemon()
 	fmt.Printf("ec2 service up and running: region: %s zone: %s\n",
 		c.config.region.Name, c.config.zone)
-	ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+	ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: c.Server})
 
 	return nil
 }
 
-func (c *ec2Client) spawn(ctx *beam.Message) error {
+func (c *ec2Client) spawn(ctx *libswarm.Message) error {
 	out, err := c.dockerInstance.Spawn(ctx.Args...)
 	if err != nil {
 		return err
 	}
-	ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: out})
+	ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: out})
 	return nil
 }
 
-func (c *ec2Client) ls(ctx *beam.Message) error {
+func (c *ec2Client) ls(ctx *libswarm.Message) error {
 	output, err := c.dockerInstance.Ls()
 	if err != nil {
 		return err
 	}
-	ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: output})
+	ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Set, Args: output})
 	return nil
 }
 
-func (c *ec2Client) stop(ctx *beam.Message) error {
+func (c *ec2Client) stop(ctx *libswarm.Message) error {
 	c.dockerInstance.Stop()
 	return nil
 }
 
-func (c *ec2Client) attach(ctx *beam.Message) error {
+func (c *ec2Client) attach(ctx *libswarm.Message) error {
 	if ctx.Args[0] == "" {
-		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.Server})
+		ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: c.Server})
 		<-make(chan struct{})
 	} else {
 		_, out, err := c.dockerInstance.Attach(ctx.Args[0])
 		if err != nil {
 			return err
 		}
-		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: out})
+		ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: out})
 	}
 
 	return nil
@@ -281,7 +281,7 @@ func (c *ec2Client) initDockerClientInstance(instance *ec2.Instance) error {
 		URLHost: "localhost",
 	})
 
-	dockerBackend := beam.Obj(dockerClient)
+	dockerBackend := libswarm.Obj(dockerClient)
 	url := fmt.Sprintf("tcp://localhost:%s", c.config.sshLocalPort)
 	dockerInstance, err := dockerBackend.Spawn(url)
 	c.dockerInstance = dockerInstance
@@ -341,9 +341,9 @@ func signalHandler(client *ec2Client) {
 	}()
 }
 
-func Ec2() beam.Sender {
-	backend := beam.NewServer()
-	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
+func Ec2() libswarm.Sender {
+	backend := libswarm.NewServer()
+	backend.OnVerb(libswarm.Spawn, libswarm.Handler(func(ctx *libswarm.Message) error {
 		var config, err = newConfig(ctx.Args)
 
 		if err != nil {
@@ -355,16 +355,16 @@ func Ec2() beam.Sender {
 			return err
 		}
 
-		client := &ec2Client{config, ec2Conn, beam.NewServer(), nil, nil, nil}
-		client.Server.OnVerb(beam.Spawn, beam.Handler(client.spawn))
-		client.Server.OnVerb(beam.Start, beam.Handler(client.start))
-		client.Server.OnVerb(beam.Stop, beam.Handler(client.stop))
-		client.Server.OnVerb(beam.Attach, beam.Handler(client.attach))
-		client.Server.OnVerb(beam.Ls, beam.Handler(client.ls))
-		client.Server.OnVerb(beam.Get, beam.Handler(client.get))
+		client := &ec2Client{config, ec2Conn, libswarm.NewServer(), nil, nil, nil}
+		client.Server.OnVerb(libswarm.Spawn, libswarm.Handler(client.spawn))
+		client.Server.OnVerb(libswarm.Start, libswarm.Handler(client.start))
+		client.Server.OnVerb(libswarm.Stop, libswarm.Handler(client.stop))
+		client.Server.OnVerb(libswarm.Attach, libswarm.Handler(client.attach))
+		client.Server.OnVerb(libswarm.Ls, libswarm.Handler(client.ls))
+		client.Server.OnVerb(libswarm.Get, libswarm.Handler(client.get))
 
 		signalHandler(client)
-		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: client.Server})
+		_, err = ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: client.Server})
 
 		return err
 	}))
