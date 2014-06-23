@@ -12,7 +12,7 @@ type Client struct {
 	Sender
 }
 
-func Obj(dst Sender) *Client {
+func AsClient(dst Sender) *Client {
 	return &Client{dst}
 }
 

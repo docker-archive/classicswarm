@@ -40,7 +40,7 @@ func Orchard() libswarm.Sender {
 			URLHost:         host.IPAddress,
 			TLSClientConfig: tlsConfig,
 		})
-		forwardBackend := libswarm.Obj(backend)
+		forwardBackend := libswarm.AsClient(backend)
 		forwardInstance, err := forwardBackend.Spawn(url)
 		if err != nil {
 			return nil, err

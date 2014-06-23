@@ -109,13 +109,13 @@ type containerJson struct {
 }
 
 func getContainerJson(out libswarm.Sender, containerID string) (containerJson, error) {
-	o := libswarm.Obj(out)
+	o := libswarm.AsClient(out)
 
 	_, containerOut, err := o.Attach(containerID)
 	if err != nil {
 		return containerJson{}, err
 	}
-	container := libswarm.Obj(containerOut)
+	container := libswarm.AsClient(containerOut)
 	responseJson, err := container.Get()
 	if err != nil {
 		return containerJson{}, err
@@ -142,7 +142,7 @@ func getContainersJSON(out libswarm.Sender, version version.Version, w http.Resp
 		return err
 	}
 
-	o := libswarm.Obj(out)
+	o := libswarm.AsClient(out)
 	names, err := o.Ls()
 	if err != nil {
 		return err
@@ -225,7 +225,7 @@ func postContainersCreate(out libswarm.Sender, version version.Version, w http.R
 		return err
 	}
 
-	container, err := libswarm.Obj(out).Spawn(string(body))
+	container, err := libswarm.AsClient(out).Spawn(string(body))
 	if err != nil {
 		return err
 	}
@@ -250,8 +250,8 @@ func postContainersStart(out libswarm.Sender, version version.Version, w http.Re
 	// TODO: r.Body
 
 	name := vars["name"]
-	_, containerOut, err := libswarm.Obj(out).Attach(name)
-	container := libswarm.Obj(containerOut)
+	_, containerOut, err := libswarm.AsClient(out).Attach(name)
+	container := libswarm.AsClient(containerOut)
 	if err != nil {
 		return err
 	}
@@ -269,8 +269,8 @@ func postContainersStop(out libswarm.Sender, version version.Version, w http.Res
 	}
 
 	name := vars["name"]
-	_, containerOut, err := libswarm.Obj(out).Attach(name)
-	container := libswarm.Obj(containerOut)
+	_, containerOut, err := libswarm.AsClient(out).Attach(name)
+	container := libswarm.AsClient(containerOut)
 	if err != nil {
 		return err
 	}
@@ -325,11 +325,11 @@ func postContainersAttach(out libswarm.Sender, version version.Version, w http.R
 	errStream := dockerutils.NewStdWriter(outStream, dockerutils.Stderr)
 	outStream = dockerutils.NewStdWriter(outStream, dockerutils.Stdout)
 
-	_, containerOut, err := libswarm.Obj(out).Attach(vars["name"])
+	_, containerOut, err := libswarm.AsClient(out).Attach(vars["name"])
 	if err != nil {
 		return err
 	}
-	container := libswarm.Obj(containerOut)
+	container := libswarm.AsClient(containerOut)
 
 	containerR, _, err := container.Attach("")
 	var tasks sync.WaitGroup

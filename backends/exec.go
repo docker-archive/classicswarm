@@ -46,7 +46,7 @@ func Exec() libswarm.Sender {
 			if _, err := msg.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: inW}); err != nil {
 				return err
 			}
-			out := libswarm.Obj(msg.Ret)
+			out := libswarm.AsClient(msg.Ret)
 			go func() {
 				defer stdin.Close()
 				for {
@@ -84,7 +84,7 @@ func Exec() libswarm.Sender {
 			go func() {
 				defer cmd.tasks.Done()
 				if err := cmd.Cmd.Wait(); err != nil {
-					libswarm.Obj(msg.Ret).Log("%s exited status=%v", cmd.Cmd.Path, err)
+					libswarm.AsClient(msg.Ret).Log("%s exited status=%v", cmd.Cmd.Path, err)
 				}
 			}()
 			msg.Ret.Send(&libswarm.Message{Verb: libswarm.Ack})

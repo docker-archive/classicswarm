@@ -281,7 +281,7 @@ func (c *ec2Client) initDockerClientInstance(instance *ec2.Instance) error {
 		URLHost: "localhost",
 	})
 
-	dockerBackend := libswarm.Obj(dockerClient)
+	dockerBackend := libswarm.AsClient(dockerClient)
 	url := fmt.Sprintf("tcp://localhost:%s", c.config.sshLocalPort)
 	dockerInstance, err := dockerBackend.Spawn(url)
 	c.dockerInstance = dockerInstance
