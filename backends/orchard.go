@@ -1,7 +1,7 @@
 package backends
 
 import (
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
 	"github.com/orchardup/go-orchard/api"
 
 	"crypto/tls"
@@ -11,9 +11,9 @@ import (
 	"os"
 )
 
-func Orchard() beam.Sender {
-	backend := beam.NewServer()
-	backend.OnSpawn(func(cmd ...string) (beam.Sender, error) {
+func Orchard() libswarm.Sender {
+	backend := libswarm.NewServer()
+	backend.OnSpawn(func(cmd ...string) (libswarm.Sender, error) {
 		if len(cmd) != 2 {
 			return nil, fmt.Errorf("orchard: spawn expects 2 arguments: API token and name of host")
 		}
@@ -40,7 +40,7 @@ func Orchard() beam.Sender {
 			URLHost:         host.IPAddress,
 			TLSClientConfig: tlsConfig,
 		})
-		forwardBackend := beam.Obj(backend)
+		forwardBackend := libswarm.Obj(backend)
 		forwardInstance, err := forwardBackend.Spawn(url)
 		if err != nil {
 			return nil, err
