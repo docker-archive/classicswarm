@@ -23,9 +23,93 @@
 			"Rev": "2ba9f0995cf0215c20ebd6de43a14d70af30fea6"
 		},
 		{
+			"ImportPath": "github.com/BurntSushi/toml",
+			"Rev": "c2e6da3db91e5bf414c5e970e534bf0c7ea9fed2"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.0.0-43-g3fa24ca",
 			"Rev": "3fa24ca4f3284911d9cac655d06b1d548653c180"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/etcd",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/event",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/job",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/machine",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/pkg",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/registry",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/resource",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/sign",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/ssh",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/third_party/code.google.com/p/gosshnew/ssh",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/third_party/github.com/coreos/etcd/error",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/third_party/github.com/coreos/go-etcd/etcd",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/third_party/github.com/coreos/go-semver/semver",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/third_party/github.com/dotcloud/docker/pkg/netlink",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/third_party/github.com/golang/glog",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
+		},
+		{
+			"ImportPath": "github.com/coreos/fleet/unit",
+			"Comment": "v0.5.0",
+			"Rev": "7c9a0c97942e64bdb497fa3a8b762e3fa12d8858"
 		},
 		{
 			"ImportPath": "github.com/coreos/go-systemd/activation",
@@ -33,8 +117,8 @@
 			"Rev": "2fb21b34171f083d46d66195caa7ec121d941ec5"
 		},
 		{
-			"ImportPath": "github.com/docker/spdystream",
-			"Rev": "87969a9c4b79508e63004ac17a97eb9278c08b3c"
+			"ImportPath": "github.com/docker/libchan",
+			"Rev": "c0e08e2e1691281581123d16a07f6075d3ae1400"
 		},
 		{
 			"ImportPath": "github.com/dotcloud/docker/api",
@@ -149,12 +233,35 @@
 			"Rev": "9b36453141c35697401168b07f2c09fcff7721ce"
 		},
 		{
-			"ImportPath": "github.com/tutumcloud/go-tutum",
-			"Rev": "c07f413c4e14bcc40f5bb9c6dbe40ec2289fa234"
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "57bb2fa7a7e00b26c80e4c4b0d4f15a210d94039"
+		},
+		{
+			"ImportPath": "github.com/orchardup/go-orchard/api",
+			"Comment": "2.0.6-5-gd51b303",
+			"Rev": "d51b303897c0e2da06110a9e8d13f88e38711520"
+		},
+		{
+			"ImportPath": "github.com/orchardup/go-orchard/constants",
+			"Comment": "2.0.6-5-gd51b303",
+			"Rev": "d51b303897c0e2da06110a9e8d13f88e38711520"
+		},
+		{
+			"ImportPath": "github.com/racker/perigee",
+			"Comment": "v0.0.0-11-g01db319",
+			"Rev": "01db3191866051f2ec854c2d876ac1a179d3049c"
 		},
 		{
 			"ImportPath": "github.com/rackspace/gophercloud",
 			"Rev": "2285a429874c1365ef6c6d3ceb08b1d428e26aca"
+		},
+		{
+			"ImportPath": "github.com/samalba/dockerclient",
+			"Rev": "7e912a702d1613898c695eecc3da315665022567"
+		},
+		{
+			"ImportPath": "github.com/tutumcloud/go-tutum",
+			"Rev": "c07f413c4e14bcc40f5bb9c6dbe40ec2289fa234"
 		}
 	]
 }
