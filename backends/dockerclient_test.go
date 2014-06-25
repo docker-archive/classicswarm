@@ -19,6 +19,8 @@ type requestStub struct {
 
 	resStatus int
 	resBody   string
+
+	callCount int
 }
 
 func TestBackendSpawn(t *testing.T) {
@@ -57,6 +59,7 @@ func TestLs(t *testing.T) {
 	if !reflect.DeepEqual(names, expected) {
 		t.Fatalf("expected %#v, got %#v", expected, names)
 	}
+	server.Check()
 }
 
 func TestSpawn(t *testing.T) {
@@ -73,6 +76,7 @@ func TestSpawn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	server.Check()
 }
 
 func TestAttachToChild(t *testing.T) {
@@ -85,6 +89,31 @@ func TestAttachToChild(t *testing.T) {
 	})
 	i := instance(t, server)
 	child(t, server, i, name)
+	server.Check()
+}
+
+func TestGetChild(t *testing.T) {
+	name := "foo"
+	expectedContent := `{"Image": "busybox", "Command": ["/bin/true"]}`
+
+	server := makeServer(t, &requestStub{
+		reqMethod: "GET",
+		reqPath:   fmt.Sprintf("/containers/%s/json", name),
+
+		resBody: expectedContent,
+
+		callCount: 2,
+	})
+	i := instance(t, server)
+	c := child(t, server, i, name)
+	content, err := c.Get()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if content != expectedContent {
+		t.Fatalf("Expected %#v, got %#v", expectedContent, content)
+	}
+	server.Check()
 }
 
 func TestStartChild(t *testing.T) {
@@ -107,6 +136,7 @@ func TestStartChild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	server.Check()
 }
 
 func TestStopChild(t *testing.T) {
@@ -128,42 +158,89 @@ func TestStopChild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	server.Check()
 }
 
-func makeServer(t *testing.T, stubs ...*requestStub) *httptest.Server {
+type stubRecord struct {
+	stub      *requestStub
+	summary   string
+	callCount int
+}
+
+type stubServer struct {
+	*httptest.Server
+
+	stubs []*stubRecord
+	t     *testing.T
+}
+
+func makeServer(t *testing.T, stubs ...*requestStub) *stubServer {
+	s := &stubServer{
+		stubs: []*stubRecord{},
+		t:     t,
+	}
+
+	s.Server = httptest.NewServer(http.HandlerFunc(s.ServeRequest))
+
 	for _, stub := range stubs {
 		stub.reqPath = fmt.Sprintf("/v1.11%s", stub.reqPath)
-	}
-
-	stubSummaries := []string{}
-	for _, stub := range stubs {
-		stubSummaries = append(stubSummaries, fmt.Sprintf("%s %s", stub.reqMethod, stub.reqPath))
-	}
-
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for _, stub := range stubs {
-			if r.Method == stub.reqMethod && r.URL.Path == stub.reqPath {
-				body, err := ioutil.ReadAll(r.Body)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if string(body) != stub.reqBody {
-					t.Fatalf("expected body: %#v, got body: %#v", stub.reqBody, string(body))
-				}
-
-				if stub.resStatus > 0 {
-					w.WriteHeader(stub.resStatus)
-				}
-				w.Write([]byte(stub.resBody))
-				return
-			}
+		if stub.callCount == 0 {
+			stub.callCount = 1
 		}
 
-		t.Fatalf("Unexpected request: '%s %s'.\nStubs: %#v", r.Method, r.URL.Path, stubSummaries)
-	}))
+		s.stubs = append(s.stubs, &stubRecord{
+			stub:      stub,
+			summary:   fmt.Sprintf("%s %s", stub.reqMethod, stub.reqPath),
+			callCount: 0,
+		})
+	}
+
+	return s
 }
 
-func instance(t *testing.T, server *httptest.Server) *beam.Object {
+func (s *stubServer) Check() {
+	for _, record := range s.stubs {
+		if record.callCount != record.stub.callCount {
+			s.t.Fatalf("Expected %#v to be called %d times, but was called %d times",
+				record.summary, record.stub.callCount, record.callCount)
+		}
+	}
+}
+
+func (s *stubServer) ServeRequest(w http.ResponseWriter, r *http.Request) {
+	for _, record := range s.stubs {
+		stub := record.stub
+		if r.Method == stub.reqMethod && r.URL.Path == stub.reqPath {
+			body, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				s.t.Fatal(err)
+			}
+			if string(body) != stub.reqBody {
+				s.t.Fatalf("expected body: %#v, got body: %#v", stub.reqBody, string(body))
+			}
+
+			if stub.resStatus > 0 {
+				w.WriteHeader(stub.resStatus)
+			}
+			w.Write([]byte(stub.resBody))
+
+			record.callCount += 1
+			return
+		}
+	}
+
+	s.t.Fatalf("Unexpected request: '%s %s'.\nStubs: %#v", r.Method, r.URL.Path, s.AllSummaries())
+}
+
+func (s *stubServer) AllSummaries() []string {
+	summaries := []string{}
+	for _, record := range s.stubs {
+		summaries = append(summaries, record.summary)
+	}
+	return summaries
+}
+
+func instance(t *testing.T, server *stubServer) *beam.Object {
 	url := "tcp://localhost:4243"
 	if server != nil {
 		url = strings.Replace(server.URL, "http://", "tcp://", 1)
@@ -177,7 +254,7 @@ func instance(t *testing.T, server *httptest.Server) *beam.Object {
 	return instance
 }
 
-func child(t *testing.T, server *httptest.Server, i *beam.Object, name string) *beam.Object {
+func child(t *testing.T, server *stubServer, i *beam.Object, name string) *beam.Object {
 	_, child, err := i.Attach(name)
 	if err != nil {
 		t.Fatal(err)
