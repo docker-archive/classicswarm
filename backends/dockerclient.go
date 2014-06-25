@@ -31,26 +31,25 @@ func DockerClient() beam.Sender {
 
 func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 	backend := beam.NewServer()
-	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
-		if len(ctx.Args) != 1 {
-			return fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(ctx.Args))
+	backend.OnSpawn(func(cmd ...string) (beam.Sender, error) {
+		if len(cmd) != 1 {
+			return nil, fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(cmd))
 		}
 		client := newClient()
 		client.scheme = config.Scheme
 		client.urlHost = config.URLHost
 		client.transport.TLSClientConfig = config.TLSClientConfig
-		client.setURL(ctx.Args[0])
+		client.setURL(cmd[0])
 		b := &dockerClientBackend{
 			client: client,
 			Server: beam.NewServer(),
 		}
-		b.Server.OnAttach(beam.Handler(b.attach))
-		b.Server.OnStart(beam.Handler(b.start))
-		b.Server.OnLs(beam.Handler(b.ls))
-		b.Server.OnSpawn(beam.Handler(b.spawn))
-		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
-		return err
-	}))
+		b.Server.OnAttach(b.attach)
+		b.Server.OnStart(b.start)
+		b.Server.OnLs(b.ls)
+		b.Server.OnSpawn(b.spawn)
+		return b.Server, nil
+	})
 	return backend
 }
 
@@ -59,12 +58,12 @@ type dockerClientBackend struct {
 	*beam.Server
 }
 
-func (b *dockerClientBackend) attach(ctx *beam.Message) error {
-	if ctx.Args[0] == "" {
-		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
+func (b *dockerClientBackend) attach(name string, ret beam.Sender) error {
+	if name == "" {
+		ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
 		<-make(chan struct{})
 	} else {
-		path := fmt.Sprintf("/containers/%s/json", ctx.Args[0])
+		path := fmt.Sprintf("/containers/%s/json", name)
 		resp, err := b.client.call("GET", path, "")
 		if err != nil {
 			return err
@@ -76,74 +75,66 @@ func (b *dockerClientBackend) attach(ctx *beam.Message) error {
 		if resp.StatusCode != 200 {
 			return fmt.Errorf("%s", respBody)
 		}
-		c := b.newContainer(ctx.Args[0])
-		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c})
+		c := b.newContainer(name)
+		ret.Send(&beam.Message{Verb: beam.Ack, Ret: c})
 	}
 	return nil
 }
 
-func (b *dockerClientBackend) start(ctx *beam.Message) error {
-	ctx.Ret.Send(&beam.Message{Verb: beam.Ack})
+func (b *dockerClientBackend) start() error {
 	return nil
 }
 
-func (b *dockerClientBackend) ls(ctx *beam.Message) error {
+func (b *dockerClientBackend) ls() ([]string, error) {
 	resp, err := b.client.call("GET", "/containers/json", "")
 	if err != nil {
-		return fmt.Errorf("get: %v", err)
+		return nil, fmt.Errorf("get: %v", err)
 	}
 	// FIXME: check for response error
 	c := engine.NewTable("Created", 0)
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("read body: %v", err)
+		return nil, fmt.Errorf("read body: %v", err)
 	}
 	if _, err := c.ReadListFrom(body); err != nil {
-		return fmt.Errorf("readlist: %v", err)
+		return nil, fmt.Errorf("readlist: %v", err)
 	}
 	names := []string{}
 	for _, env := range c.Data {
 		names = append(names, env.GetList("Names")[0][1:])
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: names}); err != nil {
-		return fmt.Errorf("send response: %v", err)
-	}
-	return nil
+	return names, nil
 }
 
-func (b *dockerClientBackend) spawn(ctx *beam.Message) error {
-	if len(ctx.Args) != 1 {
-		return fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(ctx.Args))
+func (b *dockerClientBackend) spawn(cmd ...string) (beam.Sender, error) {
+	if len(cmd) != 1 {
+		return nil, fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(cmd))
 	}
-	resp, err := b.client.call("POST", "/containers/create", ctx.Args[0])
+	resp, err := b.client.call("POST", "/containers/create", cmd[0])
 	if err != nil {
-		return err
+		return nil, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if resp.StatusCode != 201 {
-		return fmt.Errorf("expected status code 201, got %d:\n%s", resp.StatusCode, respBody)
+		return nil, fmt.Errorf("expected status code 201, got %d:\n%s", resp.StatusCode, respBody)
 	}
 	var respJson struct{ Id string }
 	if err = json.Unmarshal(respBody, &respJson); err != nil {
-		return err
+		return nil, err
 	}
-	c := b.newContainer(respJson.Id)
-	if _, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c}); err != nil {
-		return err
-	}
-	return nil
+	return b.newContainer(respJson.Id), nil
 }
 
 func (b *dockerClientBackend) newContainer(id string) beam.Sender {
 	c := &container{backend: b, id: id}
 	instance := beam.NewServer()
-	instance.OnAttach(beam.Handler(c.attach))
-	instance.OnStart(beam.Handler(c.start))
-	instance.OnStop(beam.Handler(c.stop))
-	instance.OnGet(beam.Handler(c.get))
+	instance.OnAttach(c.attach)
+	instance.OnStart(c.start)
+	instance.OnStop(c.stop)
+	instance.OnGet(c.get)
 	return instance
 }
 
@@ -152,8 +143,8 @@ type container struct {
 	id      string
 }
 
-func (c *container) attach(ctx *beam.Message) error {
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
+func (c *container) attach(name string, ret beam.Sender) error {
+	if _, err := ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
 		return err
 	}
 
@@ -161,14 +152,14 @@ func (c *container) attach(ctx *beam.Message) error {
 
 	stdoutR, stdoutW := io.Pipe()
 	stderrR, stderrW := io.Pipe()
-	go beam.EncodeStream(ctx.Ret, stdoutR, "stdout")
-	go beam.EncodeStream(ctx.Ret, stderrR, "stderr")
+	go beam.EncodeStream(ret, stdoutR, "stdout")
+	go beam.EncodeStream(ret, stderrR, "stderr")
 	c.backend.client.hijack("POST", path, nil, stdoutW, stderrW)
 
 	return nil
 }
 
-func (c *container) start(ctx *beam.Message) error {
+func (c *container) start() error {
 	path := fmt.Sprintf("/containers/%s/start", c.id)
 	resp, err := c.backend.client.call("POST", path, "{}")
 	if err != nil {
@@ -181,13 +172,10 @@ func (c *container) start(ctx *beam.Message) error {
 	if resp.StatusCode != 204 {
 		return fmt.Errorf("expected status code 204, got %d:\n%s", resp.StatusCode, respBody)
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
-		return err
-	}
 	return nil
 }
 
-func (c *container) stop(ctx *beam.Message) error {
+func (c *container) stop() error {
 	path := fmt.Sprintf("/containers/%s/stop", c.id)
 	resp, err := c.backend.client.call("POST", path, "")
 	if err != nil {
@@ -200,29 +188,23 @@ func (c *container) stop(ctx *beam.Message) error {
 	if resp.StatusCode != 204 {
 		return fmt.Errorf("expected status code 204, got %d:\n%s", resp.StatusCode, respBody)
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
-		return err
-	}
 	return nil
 }
 
-func (c *container) get(ctx *beam.Message) error {
+func (c *container) get() (string, error) {
 	path := fmt.Sprintf("/containers/%s/json", c.id)
 	resp, err := c.backend.client.call("GET", path, "")
 	if err != nil {
-		return err
+		return "", err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("%s", respBody)
+		return "", fmt.Errorf("%s", respBody)
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{string(respBody)}}); err != nil {
-		return err
-	}
-	return nil
+	return string(respBody), nil
 }
 
 type client struct {

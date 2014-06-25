@@ -14,7 +14,7 @@ func NewTree() *Tree {
 		Server:   NewServer(),
 		children: make(map[string]Sender),
 	}
-	t.OnAttach(Handler(func(msg *Message) error {
+	t.OnVerb(Attach, Handler(func(msg *Message) error {
 		if len(msg.Args) == 0 || msg.Args[0] == "" {
 			msg.Ret.Send(&Message{Verb: Ack, Ret: t})
 			return nil
@@ -26,7 +26,7 @@ func NewTree() *Tree {
 		Obj(msg.Ret).Error("not found")
 		return nil
 	}))
-	t.OnLs(Handler(func(msg *Message) error {
+	t.OnVerb(Ls, Handler(func(msg *Message) error {
 		names := make([]string, 0, len(t.children))
 		for name := range t.children {
 			names = append(names, name)
