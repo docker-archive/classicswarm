@@ -164,7 +164,7 @@ func randomHexString(n int) string {
 }
 
 type fleetUnit struct {
-	unit string
+	unit   string
 	client *fleetClient
 }
 
@@ -223,14 +223,14 @@ func (u *fleetUnit) get(msg *beam.Message) error {
 	j, err := u.client.getJobByPartialId(u.unit)
 
 	i.Id = u.unit
-	i.Name = "/"+u.unit
+	i.Name = "/" + u.unit
 	i.Path = u.unit
 	i.Args = []string{}
 	i.Created = time.Now().Format(time.RFC3339)
 	i.State.StartedAt = time.Now().Format(time.RFC3339)
 	i.State.Running = (j.UnitState.ActiveState == "active")
 	i.Config = &dockerclient.ContainerConfig{
-		Cmd: j.Unit.Contents["X-Docker"]["Cmd"],
+		Cmd:   j.Unit.Contents["X-Docker"]["Cmd"],
 		Image: j.Unit.Contents["X-Docker"]["Image"][0],
 	}
 	i.HostConfig = &dockerclient.HostConfig{}
