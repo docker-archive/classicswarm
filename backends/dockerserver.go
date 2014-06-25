@@ -22,7 +22,7 @@ import (
 
 func DockerServer() beam.Sender {
 	backend := beam.NewServer()
-	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
 		instance := beam.Task(func(in beam.Receiver, out beam.Sender) {
 			url := "tcp://localhost:4243"
 			if len(ctx.Args) > 0 {

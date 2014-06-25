@@ -25,14 +25,14 @@ func main() {
 
 func cmdDaemon(c *cli.Context) {
 	app := beam.NewServer()
-	app.OnLog(beam.Handler(func(msg *beam.Message) error {
-		log.Printf("%s\n", strings.Join(msg.Args, " "))
+	app.OnLog(func(args ...string) error {
+		log.Printf("%s\n", strings.Join(args, " "))
 		return nil
-	}))
-	app.OnError(beam.Handler(func(msg *beam.Message) error {
-		Fatalf("Fatal: %v", strings.Join(msg.Args[:1], ""))
+	})
+	app.OnError(func(args ...string) error {
+		Fatalf("Fatal: %v", strings.Join(args[:1], ""))
 		return nil
-	}))
+	})
 	back := backends.New()
 	if len(c.Args()) == 0 {
 		names, err := back.Ls()

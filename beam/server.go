@@ -27,36 +27,75 @@ func (s *Server) OnVerb(v Verb, h Sender) *Server {
 	return s
 }
 
-func (s *Server) OnSpawn(h Sender) *Server {
-	return s.OnVerb(Spawn, h)
+func (s *Server) OnLog(h func(...string) error) *Server {
+	return s.OnVerb(Log, Handler(func(msg *Message) error {
+		return h(msg.Args...)
+	}))
 }
 
-func (s *Server) OnStart(h Sender) *Server {
-	return s.OnVerb(Start, h)
+func (s *Server) OnLs(h func() ([]string, error)) *Server {
+	return s.OnVerb(Ls, Handler(func(msg *Message) error {
+		names, err := h()
+		if err != nil {
+			return err
+		}
+		_, err = msg.Ret.Send(&Message{Verb: Set, Args: names})
+		return err
+	}))
 }
 
-func (s *Server) OnStop(h Sender) *Server {
-	return s.OnVerb(Stop, h)
+func (s *Server) OnSpawn(h func(cmd ...string) (Sender, error)) *Server {
+	return s.OnVerb(Spawn, Handler(func(msg *Message) error {
+		obj, err := h(msg.Args...)
+		if err != nil {
+			return err
+		}
+		_, err = msg.Ret.Send(&Message{Verb: Ack, Ret: obj})
+		return err
+	}))
 }
 
-func (s *Server) OnAttach(h Sender) *Server {
-	return s.OnVerb(Attach, h)
+func (s *Server) OnAttach(h func(name string, ret Sender) error) *Server {
+	return s.OnVerb(Attach, Handler(func(msg *Message) error {
+		return h(msg.Args[0], msg.Ret)
+	}))
 }
 
-func (s *Server) OnLog(h Sender) *Server {
-	return s.OnVerb(Log, h)
+func (s *Server) OnError(h func(...string) error) *Server {
+	return s.OnVerb(Error, Handler(func(msg *Message) error {
+		return h(msg.Args...)
+	}))
 }
 
-func (s *Server) OnError(h Sender) *Server {
-	return s.OnVerb(Error, h)
+func (s *Server) OnGet(h func() (string, error)) *Server {
+	return s.OnVerb(Get, Handler(func(msg *Message) error {
+		content, err := h()
+		if err != nil {
+			return err
+		}
+		_, err = msg.Ret.Send(&Message{Verb: Set, Args: []string{content}})
+		return err
+	}))
 }
 
-func (s *Server) OnLs(h Sender) *Server {
-	return s.OnVerb(Ls, h)
+func (s *Server) OnStart(h func() error) *Server {
+	return s.OnVerb(Start, Handler(func(msg *Message) error {
+		if err := h(); err != nil {
+			return err
+		}
+		_, err := msg.Ret.Send(&Message{Verb: Ack})
+		return err
+	}))
 }
 
-func (s *Server) OnGet(h Sender) *Server {
-	return s.OnVerb(Get, h)
+func (s *Server) OnStop(h func() error) *Server {
+	return s.OnVerb(Stop, Handler(func(msg *Message) error {
+		if err := h(); err != nil {
+			return err
+		}
+		_, err := msg.Ret.Send(&Message{Verb: Ack})
+		return err
+	}))
 }
 
 func (s *Server) Send(msg *Message) (Receiver, error) {
