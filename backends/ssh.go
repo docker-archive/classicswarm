@@ -187,7 +187,7 @@ func parseArgs(args []string) (*tunnelConfig, error) {
 
 func Ssh() beam.Sender {
 	backend := beam.NewServer()
-	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
 
 		config, err := parseArgs(ctx.Args)
 
@@ -197,8 +197,8 @@ func Ssh() beam.Sender {
 
 		client := &sshClient{beam.NewServer(), config}
 
-		client.server.OnStart(beam.Handler(client.start))
-		client.server.OnAttach(beam.Handler(client.attach))
+		client.server.OnVerb(beam.Start, beam.Handler(client.start))
+		client.server.OnVerb(beam.Attach, beam.Handler(client.attach))
 
 		handleSignal(client)
 		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: client.server})
