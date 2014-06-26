@@ -107,7 +107,7 @@ func (b *dockerClientBackend) ls() ([]string, error) {
 }
 
 func (b *dockerClientBackend) createContainer(cmd ...string) (beam.Sender, error) {
-  if len(cmd) != 1 {
+	if len(cmd) != 1 {
 		return nil, fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(cmd))
 	}
 
@@ -123,7 +123,7 @@ func (b *dockerClientBackend) createContainer(cmd ...string) (beam.Sender, error
 
 	if resp.StatusCode == 404 {
 		return nil, fmt.Errorf("expected status code 201, got %d:\n%s", resp.StatusCode, respBody)
-  }
+	}
 
 	var respJson struct{ Id string }
 	if err = json.Unmarshal(respBody, &respJson); err != nil {
@@ -138,47 +138,47 @@ func (b *dockerClientBackend) createImage(cmd ...string) error {
 	}
 
 	var respJson struct{ Image string }
-  if err := json.Unmarshal([]byte(cmd[0]), &respJson); err != nil {
+	if err := json.Unmarshal([]byte(cmd[0]), &respJson); err != nil {
 		return err
 	}
 
-  imageTag := strings.Split(respJson.Image, ":")
+	imageTag := strings.Split(respJson.Image, ":")
 
-  var tag = "latest"
-  image := imageTag[0]
+	var tag = "latest"
+	image := imageTag[0]
 
-  if len(imageTag) > 1 {
-    tag = imageTag[1]
-  }
+	if len(imageTag) > 1 {
+		tag = imageTag[1]
+	}
 
-  url := fmt.Sprintf("/images/create?fromImage=%s&tag=%s", image, tag)
+	url := fmt.Sprintf("/images/create?fromImage=%s&tag=%s", image, tag)
 
-  resp, err := b.client.call("POST", url, "")
+	resp, err := b.client.call("POST", url, "")
 	if err != nil {
 		return err
 	}
 
-  _, err = ioutil.ReadAll(resp.Body)
+	_, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 
-  return nil
+	return nil
 }
 
 func (b *dockerClientBackend) spawn(cmd ...string) (beam.Sender, error) {
-  sender, err := b.createContainer(cmd...)
+	sender, err := b.createContainer(cmd...)
 
-  if err != nil {
-    err = b.createImage(cmd...)
-    if err != nil {
-      return sender, err
-    }
-    sender, err = b.createContainer(cmd...)
-    if err != nil {
-      return sender, err
-    }
-  }
+	if err != nil {
+		err = b.createImage(cmd...)
+		if err != nil {
+			return sender, err
+		}
+		sender, err = b.createContainer(cmd...)
+		if err != nil {
+			return sender, err
+		}
+	}
 
 	return sender, nil
 }
