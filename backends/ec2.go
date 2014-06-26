@@ -343,7 +343,7 @@ func signalHandler(client *ec2Client) {
 
 func Ec2() beam.Sender {
 	backend := beam.NewServer()
-	backend.OnSpawn(beam.Handler(func(ctx *beam.Message) error {
+	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
 		var config, err = newConfig(ctx.Args)
 
 		if err != nil {
@@ -356,12 +356,12 @@ func Ec2() beam.Sender {
 		}
 
 		client := &ec2Client{config, ec2Conn, beam.NewServer(), nil, nil, nil}
-		client.Server.OnSpawn(beam.Handler(client.spawn))
-		client.Server.OnStart(beam.Handler(client.start))
-		client.Server.OnStop(beam.Handler(client.stop))
-		client.Server.OnAttach(beam.Handler(client.attach))
-		client.Server.OnLs(beam.Handler(client.ls))
-		client.Server.OnGet(beam.Handler(client.get))
+		client.Server.OnVerb(beam.Spawn, beam.Handler(client.spawn))
+		client.Server.OnVerb(beam.Start, beam.Handler(client.start))
+		client.Server.OnVerb(beam.Stop, beam.Handler(client.stop))
+		client.Server.OnVerb(beam.Attach, beam.Handler(client.attach))
+		client.Server.OnVerb(beam.Ls, beam.Handler(client.ls))
+		client.Server.OnVerb(beam.Get, beam.Handler(client.get))
 
 		signalHandler(client)
 		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: client.Server})
