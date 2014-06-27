@@ -1,7 +1,9 @@
 package backends
 
 import (
+	"github.com/docker/libswarm/auth"
 	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm/inject"
 	"github.com/docker/libswarm/debug"
 )
 
@@ -17,6 +19,8 @@ func New() *beam.Object {
 	backends.Bind("debug", debug.Debug())
 	backends.Bind("fakeclient", FakeClient())
 	backends.Bind("dockerclient", DockerClient())
+	backends.Bind("auth", auth.Authenticator())
+	backends.Bind("inject", inject.Injector())
 	backends.Bind("exec", Exec())
 	backends.Bind("dockerserver", DockerServer())
 	backends.Bind("orchard", Orchard())
