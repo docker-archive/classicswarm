@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/docker/libswarm/backends"
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
 	_ "github.com/dotcloud/docker/api/server"
 	"github.com/flynn/go-shlex"
 	"io"
@@ -24,7 +24,7 @@ func main() {
 }
 
 func cmdDaemon(c *cli.Context) {
-	app := beam.NewServer()
+	app := libswarm.NewServer()
 	app.OnLog(func(args ...string) error {
 		log.Printf("%s\n", strings.Join(args, " "))
 		return nil
@@ -42,7 +42,7 @@ func cmdDaemon(c *cli.Context) {
 		fmt.Println(strings.Join(names, "\n"))
 		return
 	}
-	var previousInstanceR beam.Receiver
+	var previousInstanceR libswarm.Receiver
 	// FIXME: refactor into a Pipeline
 	for idx, backendArg := range c.Args() {
 		bName, bArgs, err := parseCmd(backendArg)
@@ -61,9 +61,9 @@ func cmdDaemon(c *cli.Context) {
 		if err != nil {
 			Fatalf("attach: %v", err)
 		}
-		go func(r beam.Receiver, w beam.Sender, idx int) {
+		go func(r libswarm.Receiver, w libswarm.Sender, idx int) {
 			if r != nil {
-				beam.Copy(w, r)
+				libswarm.Copy(w, r)
 			}
 			w.Close()
 		}(previousInstanceR, instanceW, idx)
@@ -72,7 +72,7 @@ func cmdDaemon(c *cli.Context) {
 		}
 		previousInstanceR = instanceR
 	}
-	_, err := beam.Copy(app, previousInstanceR)
+	_, err := libswarm.Copy(app, previousInstanceR)
 	if err != nil {
 		Fatalf("copy: %v", err)
 	}
