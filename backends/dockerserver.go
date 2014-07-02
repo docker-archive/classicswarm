@@ -3,11 +3,12 @@ package backends
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
+	"github.com/docker/libswarm/utils"
 	"github.com/dotcloud/docker/api"
 	"github.com/dotcloud/docker/pkg/version"
 	dockerContainerConfig "github.com/dotcloud/docker/runconfig"
-	"github.com/dotcloud/docker/utils"
+	dockerutils "github.com/dotcloud/docker/utils"
 	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
@@ -20,10 +21,10 @@ import (
 	"time"
 )
 
-func DockerServer() beam.Sender {
-	backend := beam.NewServer()
-	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
-		instance := beam.Task(func(in beam.Receiver, out beam.Sender) {
+func DockerServer() libswarm.Sender {
+	backend := libswarm.NewServer()
+	backend.OnVerb(libswarm.Spawn, libswarm.Handler(func(ctx *libswarm.Message) error {
+		instance := utils.Task(func(in libswarm.Receiver, out libswarm.Sender) {
 			url := "tcp://localhost:4243"
 			if len(ctx.Args) > 0 {
 				url = ctx.Args[0]
@@ -33,15 +34,15 @@ func DockerServer() beam.Sender {
 				fmt.Printf("listenAndServe: %v", err)
 			}
 		})
-		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: instance})
+		_, err := ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: instance})
 		return err
 	}))
 	return backend
 }
 
-type HttpApiFunc func(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error
+type HttpApiFunc func(out libswarm.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error
 
-func listenAndServe(urlStr string, out beam.Sender) error {
+func listenAndServe(urlStr string, out libswarm.Sender) error {
 	fmt.Println("Starting Docker server...")
 	r, err := createRouter(out)
 	if err != nil {
@@ -69,7 +70,7 @@ func listenAndServe(urlStr string, out beam.Sender) error {
 	return httpSrv.Serve(l)
 }
 
-func ping(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+func ping(out libswarm.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	_, err := w.Write([]byte{'O', 'K'})
 	return err
 }
@@ -107,14 +108,14 @@ type containerJson struct {
 	VolumesRW      map[string]bool
 }
 
-func getContainerJson(out beam.Sender, containerID string) (containerJson, error) {
-	o := beam.Obj(out)
+func getContainerJson(out libswarm.Sender, containerID string) (containerJson, error) {
+	o := libswarm.AsClient(out)
 
 	_, containerOut, err := o.Attach(containerID)
 	if err != nil {
 		return containerJson{}, err
 	}
-	container := beam.Obj(containerOut)
+	container := libswarm.AsClient(containerOut)
 	responseJson, err := container.Get()
 	if err != nil {
 		return containerJson{}, err
@@ -128,7 +129,7 @@ func getContainerJson(out beam.Sender, containerID string) (containerJson, error
 	return response, nil
 }
 
-func getContainerInfo(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+func getContainerInfo(out libswarm.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	container, err := getContainerJson(out, vars["name"])
 	if err != nil {
 		return err
@@ -136,12 +137,12 @@ func getContainerInfo(out beam.Sender, version version.Version, w http.ResponseW
 	return writeJSON(w, http.StatusOK, container)
 }
 
-func getContainersJSON(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+func getContainersJSON(out libswarm.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
 
-	o := beam.Obj(out)
+	o := libswarm.AsClient(out)
 	names, err := o.Ls()
 	if err != nil {
 		return err
@@ -214,7 +215,7 @@ func getContainersJSON(out beam.Sender, version version.Version, w http.Response
 	return writeJSON(w, http.StatusOK, responses)
 }
 
-func postContainersCreate(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+func postContainersCreate(out libswarm.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if err := r.ParseForm(); err != nil {
 		return nil
 	}
@@ -224,7 +225,7 @@ func postContainersCreate(out beam.Sender, version version.Version, w http.Respo
 		return err
 	}
 
-	container, err := beam.Obj(out).Spawn(string(body))
+	container, err := libswarm.AsClient(out).Spawn(string(body))
 	if err != nil {
 		return err
 	}
@@ -241,7 +242,7 @@ func postContainersCreate(out beam.Sender, version version.Version, w http.Respo
 	return writeJSON(w, http.StatusCreated, response)
 }
 
-func postContainersStart(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+func postContainersStart(out libswarm.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
 	}
@@ -249,8 +250,8 @@ func postContainersStart(out beam.Sender, version version.Version, w http.Respon
 	// TODO: r.Body
 
 	name := vars["name"]
-	_, containerOut, err := beam.Obj(out).Attach(name)
-	container := beam.Obj(containerOut)
+	_, containerOut, err := libswarm.AsClient(out).Attach(name)
+	container := libswarm.AsClient(containerOut)
 	if err != nil {
 		return err
 	}
@@ -262,14 +263,14 @@ func postContainersStart(out beam.Sender, version version.Version, w http.Respon
 	return nil
 }
 
-func postContainersStop(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+func postContainersStop(out libswarm.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
 	}
 
 	name := vars["name"]
-	_, containerOut, err := beam.Obj(out).Attach(name)
-	container := beam.Obj(containerOut)
+	_, containerOut, err := libswarm.AsClient(out).Attach(name)
+	container := libswarm.AsClient(containerOut)
 	if err != nil {
 		return err
 	}
@@ -291,7 +292,7 @@ func hijackServer(w http.ResponseWriter) (io.ReadCloser, io.Writer, error) {
 	return conn, conn, nil
 }
 
-func postContainersAttach(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+func postContainersAttach(out libswarm.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
@@ -321,20 +322,20 @@ func postContainersAttach(out beam.Sender, version version.Version, w http.Respo
 	fmt.Fprintf(outStream, "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.docker.raw-stream\r\n\r\n")
 
 	// TODO: if a TTY, then no multiplexing is done
-	errStream := utils.NewStdWriter(outStream, utils.Stderr)
-	outStream = utils.NewStdWriter(outStream, utils.Stdout)
+	errStream := dockerutils.NewStdWriter(outStream, dockerutils.Stderr)
+	outStream = dockerutils.NewStdWriter(outStream, dockerutils.Stdout)
 
-	_, containerOut, err := beam.Obj(out).Attach(vars["name"])
+	_, containerOut, err := libswarm.AsClient(out).Attach(vars["name"])
 	if err != nil {
 		return err
 	}
-	container := beam.Obj(containerOut)
+	container := libswarm.AsClient(containerOut)
 
 	containerR, _, err := container.Attach("")
 	var tasks sync.WaitGroup
 	go func() {
 		defer tasks.Done()
-		err := beam.DecodeStream(outStream, containerR, "stdout")
+		err := utils.DecodeStream(outStream, containerR, "stdout")
 		if err != nil {
 			fmt.Printf("decodestream: %v\n", err)
 		}
@@ -342,7 +343,7 @@ func postContainersAttach(out beam.Sender, version version.Version, w http.Respo
 	tasks.Add(1)
 	go func() {
 		defer tasks.Done()
-		err := beam.DecodeStream(errStream, containerR, "stderr")
+		err := utils.DecodeStream(errStream, containerR, "stderr")
 		if err != nil {
 			fmt.Printf("decodestream: %v\n", err)
 		}
@@ -353,7 +354,7 @@ func postContainersAttach(out beam.Sender, version version.Version, w http.Respo
 	return nil
 }
 
-func postContainersWait(out beam.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+func postContainersWait(out libswarm.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	if vars == nil {
 		return fmt.Errorf("Missing parameter")
 	}
@@ -365,7 +366,7 @@ func postContainersWait(out beam.Sender, version version.Version, w http.Respons
 	})
 }
 
-func createRouter(out beam.Sender) (*mux.Router, error) {
+func createRouter(out libswarm.Sender) (*mux.Router, error) {
 	r := mux.NewRouter()
 	m := map[string]map[string]HttpApiFunc{
 		"GET": {
@@ -405,7 +406,7 @@ func createRouter(out beam.Sender) (*mux.Router, error) {
 	return r, nil
 }
 
-func makeHttpHandler(out beam.Sender, localMethod string, localRoute string, handlerFunc HttpApiFunc, dockerVersion version.Version) http.HandlerFunc {
+func makeHttpHandler(out libswarm.Sender, localMethod string, localRoute string, handlerFunc HttpApiFunc, dockerVersion version.Version) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// log the request
 		fmt.Printf("Calling %s %s\n", localMethod, localRoute)

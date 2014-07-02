@@ -1,4 +1,4 @@
-package beam
+package libswarm
 
 import (
 	"fmt"
