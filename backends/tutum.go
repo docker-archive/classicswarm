@@ -3,7 +3,7 @@ package backends
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
 	"github.com/dotcloud/docker/engine"
 	"github.com/tutumcloud/go-tutum"
 	"io/ioutil"
@@ -18,9 +18,9 @@ var (
 	tutumConnectorVersion = "v1.11"
 )
 
-func Tutum() beam.Sender {
-	backend := beam.NewServer()
-	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
+func Tutum() libswarm.Sender {
+	backend := libswarm.NewServer()
+	backend.OnVerb(libswarm.Spawn, libswarm.Handler(func(ctx *libswarm.Message) error {
 		if len(ctx.Args) == 2 {
 			tutum.User = ctx.Args[0]
 			tutum.ApiKey = ctx.Args[1]
@@ -34,13 +34,13 @@ func Tutum() beam.Sender {
 		}
 		t := &tutumBackend{
 			tutumDockerConnector: tutumDockerConnector,
-			Server:               beam.NewServer(),
+			Server:               libswarm.NewServer(),
 		}
-		t.Server.OnVerb(beam.Attach, beam.Handler(t.attach))
-		t.Server.OnVerb(beam.Start, beam.Handler(t.ack))
-		t.Server.OnVerb(beam.Ls, beam.Handler(t.ls))
-		t.Server.OnVerb(beam.Spawn, beam.Handler(t.spawn))
-		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: t.Server})
+		t.Server.OnVerb(libswarm.Attach, libswarm.Handler(t.attach))
+		t.Server.OnVerb(libswarm.Start, libswarm.Handler(t.ack))
+		t.Server.OnVerb(libswarm.Ls, libswarm.Handler(t.ls))
+		t.Server.OnVerb(libswarm.Spawn, libswarm.Handler(t.spawn))
+		_, err = ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: t.Server})
 		return err
 	}))
 	return backend
@@ -48,28 +48,28 @@ func Tutum() beam.Sender {
 
 type tutumBackend struct {
 	tutumDockerConnector *tutumDockerConnector
-	*beam.Server
+	*libswarm.Server
 }
 
-func (t *tutumBackend) attach(ctx *beam.Message) error {
+func (t *tutumBackend) attach(ctx *libswarm.Message) error {
 	if ctx.Args[0] == "" {
-		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: t.Server})
+		ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: t.Server})
 		for {
 			time.Sleep(1 * time.Second)
 		}
 	} else {
 		c := t.newContainer(ctx.Args[0])
-		ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c})
+		ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: c})
 	}
 	return nil
 }
 
-func (t *tutumBackend) ack(ctx *beam.Message) error {
-	ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: t.Server})
+func (t *tutumBackend) ack(ctx *libswarm.Message) error {
+	ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: t.Server})
 	return nil
 }
 
-func (t *tutumBackend) ls(ctx *beam.Message) error {
+func (t *tutumBackend) ls(ctx *libswarm.Message) error {
 	resp, err := t.tutumDockerConnector.call("GET", "/containers/json", "")
 	if err != nil {
 		return fmt.Errorf("%s: get: %v", t.tutumDockerConnector.URL.String(), err)
@@ -86,13 +86,13 @@ func (t *tutumBackend) ls(ctx *beam.Message) error {
 	for _, env := range c.Data {
 		ids = append(ids, env.GetList("Id")[0])
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: ids}); err != nil {
+	if _, err := ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Set, Args: ids}); err != nil {
 		return fmt.Errorf("%s: send response: %v", t.tutumDockerConnector.URL.String(), err)
 	}
 	return nil
 }
 
-func (t *tutumBackend) spawn(ctx *beam.Message) error {
+func (t *tutumBackend) spawn(ctx *libswarm.Message) error {
 	if len(ctx.Args) != 1 {
 		return fmt.Errorf("tutum: spawn takes exactly 1 argument, got %d", len(ctx.Args))
 	}
@@ -112,18 +112,18 @@ func (t *tutumBackend) spawn(ctx *beam.Message) error {
 		return err
 	}
 	c := t.newContainer(respJson.Id)
-	if _, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c}); err != nil {
+	if _, err = ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: c}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *tutumBackend) newContainer(id string) beam.Sender {
+func (t *tutumBackend) newContainer(id string) libswarm.Sender {
 	c := &tutumContainer{tutumBackend: t, id: id}
-	instance := beam.NewServer()
-	instance.OnVerb(beam.Get, beam.Handler(c.get))
-	instance.OnVerb(beam.Start, beam.Handler(c.start))
-	instance.OnVerb(beam.Stop, beam.Handler(c.stop))
+	instance := libswarm.NewServer()
+	instance.OnVerb(libswarm.Get, libswarm.Handler(c.get))
+	instance.OnVerb(libswarm.Start, libswarm.Handler(c.start))
+	instance.OnVerb(libswarm.Stop, libswarm.Handler(c.stop))
 	return instance
 }
 
@@ -132,7 +132,7 @@ type tutumContainer struct {
 	id           string
 }
 
-func (c *tutumContainer) get(ctx *beam.Message) error {
+func (c *tutumContainer) get(ctx *libswarm.Message) error {
 	path := fmt.Sprintf("/containers/%s/json", c.id)
 	resp, err := c.tutumBackend.tutumDockerConnector.call("GET", path, "")
 	if err != nil {
@@ -146,13 +146,13 @@ func (c *tutumContainer) get(ctx *beam.Message) error {
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("%s", respBody)
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Set, Args: []string{string(respBody)}}); err != nil {
+	if _, err := ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Set, Args: []string{string(respBody)}}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *tutumContainer) start(ctx *beam.Message) error {
+func (c *tutumContainer) start(ctx *libswarm.Message) error {
 	path := fmt.Sprintf("/containers/%s/start", c.id)
 	resp, err := c.tutumBackend.tutumDockerConnector.call("POST", path, "")
 	if err != nil {
@@ -165,13 +165,13 @@ func (c *tutumContainer) start(ctx *beam.Message) error {
 	if resp.StatusCode != 204 {
 		return fmt.Errorf("expected status code 204, got %d:\n%s", resp.StatusCode, respBody)
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
+	if _, err := ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *tutumContainer) stop(ctx *beam.Message) error {
+func (c *tutumContainer) stop(ctx *libswarm.Message) error {
 	path := fmt.Sprintf("/containers/%s/stop", c.id)
 	resp, err := c.tutumBackend.tutumDockerConnector.call("POST", path, "")
 	if err != nil {
@@ -184,7 +184,7 @@ func (c *tutumContainer) stop(ctx *beam.Message) error {
 	if resp.StatusCode != 204 {
 		return fmt.Errorf("expected status code 204, got %d:\n%s", resp.StatusCode, respBody)
 	}
-	if _, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
+	if _, err := ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack}); err != nil {
 		return err
 	}
 	return nil
