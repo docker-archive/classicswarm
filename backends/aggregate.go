@@ -1,7 +1,7 @@
 package backends
 
 import (
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
 	"github.com/flynn/go-shlex"
 
 	"fmt"
@@ -9,11 +9,11 @@ import (
 	"sync"
 )
 
-func Aggregate() beam.Sender {
-	backend := beam.NewServer()
-	backend.OnSpawn(func(cmd ...string) (beam.Sender, error) {
+func Aggregate() libswarm.Sender {
+	backend := libswarm.NewServer()
+	backend.OnSpawn(func(cmd ...string) (libswarm.Sender, error) {
 		allBackends := New()
-		instance := beam.NewServer()
+		instance := libswarm.NewServer()
 
 		a, err := newAggregator(allBackends, instance, cmd)
 		if err != nil {
@@ -30,11 +30,11 @@ func Aggregate() beam.Sender {
 }
 
 type aggregator struct {
-	backends []*beam.Object
-	server   *beam.Server
+	backends []*libswarm.Client
+	server   *libswarm.Server
 }
 
-func newAggregator(allBackends *beam.Object, server *beam.Server, args []string) (*aggregator, error) {
+func newAggregator(allBackends *libswarm.Client, server *libswarm.Server, args []string) (*aggregator, error) {
 	a := &aggregator{server: server}
 
 	for _, argString := range args {
@@ -60,13 +60,13 @@ func newAggregator(allBackends *beam.Object, server *beam.Server, args []string)
 	return a, nil
 }
 
-func (a *aggregator) attach(name string, ret beam.Sender) error {
+func (a *aggregator) attach(name string, ret libswarm.Sender) error {
 	if name != "" {
 		// TODO: implement this?
 		return fmt.Errorf("attaching to a child is not implemented")
 	}
 
-	if _, err := ret.Send(&beam.Message{Verb: beam.Ack, Ret: a.server}); err != nil {
+	if _, err := ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: a.server}); err != nil {
 		return err
 	}
 
@@ -80,7 +80,7 @@ func (a *aggregator) attach(name string, ret beam.Sender) error {
 		copies.Add(1)
 		go func() {
 			log.Printf("copying output from %#v\n", b)
-			beam.Copy(ret, r)
+			libswarm.Copy(ret, r)
 			log.Printf("finished output from %#v\n", b)
 			copies.Done()
 		}()

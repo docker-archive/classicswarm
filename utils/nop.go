@@ -1,13 +1,15 @@
-package beam
+package utils
 
 import (
 	"github.com/docker/libchan"
+	"github.com/docker/libswarm"
+
 	"io"
 )
 
 type NopSender struct{}
 
-func (s NopSender) Send(msg *Message) (Receiver, error) {
+func (s NopSender) Send(msg *libswarm.Message) (libswarm.Receiver, error) {
 	return NopReceiver{}, nil
 }
 
@@ -21,7 +23,7 @@ func (s NopSender) Unwrap() libchan.Sender {
 
 type NopReceiver struct{}
 
-func (r NopReceiver) Receive(mode int) (*Message, error) {
+func (r NopReceiver) Receive(mode int) (*libswarm.Message, error) {
 	return nil, io.EOF
 }
 

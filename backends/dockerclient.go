@@ -4,9 +4,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
+	"github.com/docker/libswarm/utils"
 	"github.com/dotcloud/docker/engine"
-	"github.com/dotcloud/docker/utils"
+	dockerutils "github.com/dotcloud/docker/utils"
 	"io"
 	"io/ioutil"
 	"net"
@@ -22,16 +23,16 @@ type DockerClientConfig struct {
 	TLSClientConfig *tls.Config
 }
 
-func DockerClient() beam.Sender {
+func DockerClient() libswarm.Sender {
 	return DockerClientWithConfig(&DockerClientConfig{
 		Scheme:  "http",
 		URLHost: "dummy.host",
 	})
 }
 
-func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
-	backend := beam.NewServer()
-	backend.OnSpawn(func(cmd ...string) (beam.Sender, error) {
+func DockerClientWithConfig(config *DockerClientConfig) libswarm.Sender {
+	backend := libswarm.NewServer()
+	backend.OnSpawn(func(cmd ...string) (libswarm.Sender, error) {
 		if len(cmd) != 1 {
 			return nil, fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(cmd))
 		}
@@ -42,7 +43,7 @@ func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 		client.setURL(cmd[0])
 		b := &dockerClientBackend{
 			client: client,
-			Server: beam.NewServer(),
+			Server: libswarm.NewServer(),
 		}
 		b.Server.OnAttach(b.attach)
 		b.Server.OnStart(b.start)
@@ -55,12 +56,12 @@ func DockerClientWithConfig(config *DockerClientConfig) beam.Sender {
 
 type dockerClientBackend struct {
 	client *client
-	*beam.Server
+	*libswarm.Server
 }
 
-func (b *dockerClientBackend) attach(name string, ret beam.Sender) error {
+func (b *dockerClientBackend) attach(name string, ret libswarm.Sender) error {
 	if name == "" {
-		ret.Send(&beam.Message{Verb: beam.Ack, Ret: b.Server})
+		ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: b.Server})
 		<-make(chan struct{})
 	} else {
 		path := fmt.Sprintf("/containers/%s/json", name)
@@ -76,7 +77,7 @@ func (b *dockerClientBackend) attach(name string, ret beam.Sender) error {
 			return fmt.Errorf("%s", respBody)
 		}
 		c := b.newContainer(name)
-		ret.Send(&beam.Message{Verb: beam.Ack, Ret: c})
+		ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: c})
 	}
 	return nil
 }
@@ -106,7 +107,7 @@ func (b *dockerClientBackend) ls() ([]string, error) {
 	return names, nil
 }
 
-func (b *dockerClientBackend) createContainer(cmd ...string) (beam.Sender, error) {
+func (b *dockerClientBackend) createContainer(cmd ...string) (libswarm.Sender, error) {
 	if len(cmd) != 1 {
 		return nil, fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(cmd))
 	}
@@ -166,7 +167,7 @@ func (b *dockerClientBackend) createImage(cmd ...string) error {
 	return nil
 }
 
-func (b *dockerClientBackend) spawn(cmd ...string) (beam.Sender, error) {
+func (b *dockerClientBackend) spawn(cmd ...string) (libswarm.Sender, error) {
 	sender, err := b.createContainer(cmd...)
 
 	if err != nil {
@@ -183,9 +184,9 @@ func (b *dockerClientBackend) spawn(cmd ...string) (beam.Sender, error) {
 	return sender, nil
 }
 
-func (b *dockerClientBackend) newContainer(id string) beam.Sender {
+func (b *dockerClientBackend) newContainer(id string) libswarm.Sender {
 	c := &container{backend: b, id: id}
-	instance := beam.NewServer()
+	instance := libswarm.NewServer()
 	instance.OnAttach(c.attach)
 	instance.OnStart(c.start)
 	instance.OnStop(c.stop)
@@ -198,8 +199,8 @@ type container struct {
 	id      string
 }
 
-func (c *container) attach(name string, ret beam.Sender) error {
-	if _, err := ret.Send(&beam.Message{Verb: beam.Ack}); err != nil {
+func (c *container) attach(name string, ret libswarm.Sender) error {
+	if _, err := ret.Send(&libswarm.Message{Verb: libswarm.Ack}); err != nil {
 		return err
 	}
 
@@ -207,8 +208,8 @@ func (c *container) attach(name string, ret beam.Sender) error {
 
 	stdoutR, stdoutW := io.Pipe()
 	stderrR, stderrW := io.Pipe()
-	go beam.EncodeStream(ret, stdoutR, "stdout")
-	go beam.EncodeStream(ret, stderrR, "stderr")
+	go utils.EncodeStream(ret, stdoutR, "stdout")
+	go utils.EncodeStream(ret, stderrR, "stderr")
 	c.backend.client.hijack("POST", path, nil, stdoutW, stderrW)
 
 	return nil
@@ -325,40 +326,40 @@ func (c *client) hijack(method, path string, in io.ReadCloser, stdout, stderr io
 	rwc, br := clientconn.Hijack()
 	defer rwc.Close()
 
-	receiveStdout := utils.Go(func() (err error) {
+	receiveStdout := dockerutils.Go(func() (err error) {
 		defer func() {
 			if in != nil {
 				in.Close()
 			}
 		}()
-		_, err = utils.StdCopy(stdout, stderr, br)
-		utils.Debugf("[hijack] End of stdout")
+		_, err = dockerutils.StdCopy(stdout, stderr, br)
+		dockerutils.Debugf("[hijack] End of stdout")
 		return err
 	})
-	sendStdin := utils.Go(func() error {
+	sendStdin := dockerutils.Go(func() error {
 		if in != nil {
 			io.Copy(rwc, in)
-			utils.Debugf("[hijack] End of stdin")
+			dockerutils.Debugf("[hijack] End of stdin")
 		}
 		if tcpc, ok := rwc.(*net.TCPConn); ok {
 			if err := tcpc.CloseWrite(); err != nil {
-				utils.Debugf("Couldn't send EOF: %s", err)
+				dockerutils.Debugf("Couldn't send EOF: %s", err)
 			}
 		} else if unixc, ok := rwc.(*net.UnixConn); ok {
 			if err := unixc.CloseWrite(); err != nil {
-				utils.Debugf("Couldn't send EOF: %s", err)
+				dockerutils.Debugf("Couldn't send EOF: %s", err)
 			}
 		}
 		// Discard errors due to pipe interruption
 		return nil
 	})
 	if err := <-receiveStdout; err != nil {
-		utils.Debugf("Error receiveStdout: %s", err)
+		dockerutils.Debugf("Error receiveStdout: %s", err)
 		return err
 	}
 
 	if err := <-sendStdin; err != nil {
-		utils.Debugf("Error sendStdin: %s", err)
+		dockerutils.Debugf("Error sendStdin: %s", err)
 		return err
 	}
 	return nil
