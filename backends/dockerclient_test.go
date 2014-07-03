@@ -79,6 +79,25 @@ func TestSpawn(t *testing.T) {
 	server.Check()
 }
 
+func TestSpawnWithName(t *testing.T) {
+	name := "foo"
+	server := makeServer(t, &requestStub{
+		reqMethod: "POST",
+		reqPath:   "/containers/create?name=foo",
+		reqBody:   "{}",
+		resStatus: 201,
+		resBody:   "{}",
+	},
+	)
+
+	i := instance(t, server)
+	_, err := i.Spawn(fmt.Sprintf("{\"name\":\"%s\"}", name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	server.Check()
+}
+
 func TestAttachToChild(t *testing.T) {
 	name := "foo"
 	server := makeServer(t, &requestStub{
@@ -210,7 +229,12 @@ func (s *stubServer) Check() {
 func (s *stubServer) ServeRequest(w http.ResponseWriter, r *http.Request) {
 	for _, record := range s.stubs {
 		stub := record.stub
-		if r.Method == stub.reqMethod && r.URL.Path == stub.reqPath {
+		path := r.URL.Path
+		q := r.URL.RawQuery
+		if q != "" {
+			path += "?" + q
+		}
+		if r.Method == stub.reqMethod && path == stub.reqPath {
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
 				s.t.Fatal(err)
