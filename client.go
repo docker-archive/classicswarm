@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"strings"
 )
 
@@ -91,7 +90,7 @@ func (c *Client) Error(msg string, args ...interface{}) error {
 	return err
 }
 
-func (c *Client) Connect() (net.Conn, error) {
+func (c *Client) Connect() (io.ReadWriteCloser, error) {
 	ret, err := c.Send(&Message{Verb: Connect, Ret: RetPipe})
 	if err != nil {
 		return nil, err
@@ -105,13 +104,7 @@ func (c *Client) Connect() (net.Conn, error) {
 		if msg.Att == nil {
 			return nil, fmt.Errorf("missing attachment")
 		}
-		conn, err := net.FileConn(msg.Att)
-		if err != nil {
-			msg.Att.Close()
-			return nil, err
-		}
-		msg.Att.Close()
-		return conn, nil
+		return msg.Att, nil
 	}
 	if msg.Verb == Error {
 		return nil, fmt.Errorf(strings.Join(msg.Args[:1], ""))

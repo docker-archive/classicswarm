@@ -37,18 +37,12 @@
 			"Rev": "2fb21b34171f083d46d66195caa7ec121d941ec5"
 		},
 		{
-			"ImportPath": "github.com/docker/libchan",
-			"Rev": "459978d483ec79a7d8e980ebca00eb950eb64931"
+			"ImportPath": "github.com/dmcgowan/go/codec",
+			"Rev": "5d26f5fd8a4e87c22037b52bf41aad8d69e5f436"
 		},
 		{
-			"ImportPath": "github.com/docker/libcontainer/cgroups",
-			"Comment": "v1.1.0-56-gfb3d909",
-			"Rev": "fb3d909c288ab23f005ddbbdd8bc81c36a1cd701"
-		},
-		{
-			"ImportPath": "github.com/docker/libcontainer/devices",
-			"Comment": "v1.1.0-56-gfb3d909",
-			"Rev": "fb3d909c288ab23f005ddbbdd8bc81c36a1cd701"
+			"ImportPath": "github.com/dmcgowan/libchan",
+			"Rev": "a7122feb42d3e5e706373c034128e3f80252c350"
 		},
 		{
 			"ImportPath": "github.com/dotcloud/docker/api",
@@ -72,6 +66,16 @@
 		},
 		{
 			"ImportPath": "github.com/dotcloud/docker/opts",
+			"Comment": "v0.11.1-466-g77ae37a",
+			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/beam",
+			"Comment": "v0.11.1-466-g77ae37a",
+			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
+		},
+		{
+			"ImportPath": "github.com/dotcloud/docker/pkg/libcontainer/cgroups",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
