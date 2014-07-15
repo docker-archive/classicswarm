@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/docker/libswarm/swarmd",
-	"GoVersion": "go1.2",
+	"GoVersion": "go1.2.1",
 	"Deps": [
 		{
 			"ImportPath": "code.google.com/p/go.net/websocket",
@@ -23,6 +23,10 @@
 			"Rev": "2ba9f0995cf0215c20ebd6de43a14d70af30fea6"
 		},
 		{
+			"ImportPath": "github.com/BurntSushi/toml",
+			"Rev": "bd2bdf7f18f849530ef7a1c29a4290217cab32a1"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.0.0-43-g3fa24ca",
 			"Rev": "3fa24ca4f3284911d9cac655d06b1d548653c180"
@@ -33,8 +37,18 @@
 			"Rev": "2fb21b34171f083d46d66195caa7ec121d941ec5"
 		},
 		{
-			"ImportPath": "github.com/docker/spdystream",
-			"Rev": "87969a9c4b79508e63004ac17a97eb9278c08b3c"
+			"ImportPath": "github.com/docker/libchan",
+			"Rev": "459978d483ec79a7d8e980ebca00eb950eb64931"
+		},
+		{
+			"ImportPath": "github.com/docker/libcontainer/cgroups",
+			"Comment": "v1.1.0-56-gfb3d909",
+			"Rev": "fb3d909c288ab23f005ddbbdd8bc81c36a1cd701"
+		},
+		{
+			"ImportPath": "github.com/docker/libcontainer/devices",
+			"Comment": "v1.1.0-56-gfb3d909",
+			"Rev": "fb3d909c288ab23f005ddbbdd8bc81c36a1cd701"
 		},
 		{
 			"ImportPath": "github.com/dotcloud/docker/api",
@@ -58,16 +72,6 @@
 		},
 		{
 			"ImportPath": "github.com/dotcloud/docker/opts",
-			"Comment": "v0.11.1-466-g77ae37a",
-			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
-		},
-		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/beam",
-			"Comment": "v0.11.1-466-g77ae37a",
-			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
-		},
-		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/libcontainer/cgroups",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
@@ -149,12 +153,41 @@
 			"Rev": "9b36453141c35697401168b07f2c09fcff7721ce"
 		},
 		{
-			"ImportPath": "github.com/tutumcloud/go-tutum",
-			"Rev": "c07f413c4e14bcc40f5bb9c6dbe40ec2289fa234"
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "6fb2c832bcac61d01212ab1d172f7a14a8585b07"
+		},
+		{
+			"ImportPath": "github.com/orchardup/go-orchard/api",
+			"Comment": "2.0.7-6-g46d97d3",
+			"Rev": "46d97d34b4d5dd39948091764ad9462f16ffd94f"
+		},
+		{
+			"ImportPath": "github.com/orchardup/go-orchard/constants",
+			"Comment": "2.0.7-6-g46d97d3",
+			"Rev": "46d97d34b4d5dd39948091764ad9462f16ffd94f"
+		},
+		{
+			"ImportPath": "github.com/racker/perigee",
+			"Comment": "v0.0.0-11-g01db319",
+			"Rev": "01db3191866051f2ec854c2d876ac1a179d3049c"
 		},
 		{
 			"ImportPath": "github.com/rackspace/gophercloud",
 			"Rev": "2285a429874c1365ef6c6d3ceb08b1d428e26aca"
+		},
+		{
+			"ImportPath": "github.com/tutumcloud/go-tutum",
+			"Rev": "c07f413c4e14bcc40f5bb9c6dbe40ec2289fa234"
+		},
+		{
+			"ImportPath": "launchpad.net/goamz/aws",
+			"Comment": "48",
+			"Rev": "ian.booth@canonical.com-20140708164959-72q70lo1du0e4qki"
+		},
+		{
+			"ImportPath": "launchpad.net/goamz/ec2",
+			"Comment": "48",
+			"Rev": "ian.booth@canonical.com-20140708164959-72q70lo1du0e4qki"
 		}
 	]
 }
