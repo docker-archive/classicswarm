@@ -25,5 +25,7 @@ func New() *libswarm.Client {
 	backends.Bind("shipyard", Shipyard())
 	backends.Bind("ec2", Ec2())
 	backends.Bind("tutum", Tutum())
+	backends.Bind("logforwarder", LogForwarder())
+	backends.Bind("stdoutlogger", StdoutLogger())
 	return libswarm.AsClient(backends)
 }
