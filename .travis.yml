@@ -1,0 +1,9 @@
+language: go
+
+go:
+  - 1.2
+  - 1.3
+
+before_install:
+  - "export PATH=${GOPATH//://bin:}/bin:$PATH"
+  - "make deps"
