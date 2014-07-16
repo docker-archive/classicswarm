@@ -225,6 +225,19 @@ func postContainersCreate(out libswarm.Sender, version version.Version, w http.R
 		return err
 	}
 
+	name := r.Form.Get("name")
+	if name != "" {
+		var reqJson map[string]interface{}
+		if err = json.Unmarshal(body, &reqJson); err != nil {
+			return err
+		}
+		reqJson["name"] = name
+		body, err = json.Marshal(reqJson)
+		if err != nil {
+			return err
+		}
+	}
+
 	container, err := libswarm.AsClient(out).Spawn(string(body))
 	if err != nil {
 		return err
