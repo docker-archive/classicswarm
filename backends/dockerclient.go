@@ -112,7 +112,24 @@ func (b *dockerClientBackend) createContainer(cmd ...string) (libswarm.Sender, e
 		return nil, fmt.Errorf("dockerclient: spawn takes exactly 1 argument, got %d", len(cmd))
 	}
 
-	resp, err := b.client.call("POST", "/containers/create", cmd[0])
+	param := cmd[0]
+	containerValues := url.Values{}
+
+	var postParam map[string]interface{}
+	if err := json.Unmarshal([]byte(param), &postParam); err != nil {
+		return nil, err
+	}
+	if name, ok := postParam["name"]; ok {
+		containerValues.Set("name", name.(string))
+		delete(postParam, "name")
+		tmp, err := json.Marshal(postParam)
+		if err != nil {
+			return nil, err
+		}
+		param = string(tmp)
+	}
+
+	resp, err := b.client.call("POST", "/containers/create?"+containerValues.Encode(), param)
 	if err != nil {
 		return nil, err
 	}
