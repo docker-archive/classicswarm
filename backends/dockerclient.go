@@ -82,7 +82,7 @@ func (b *dockerClientBackend) attach(name string, ret libswarm.Sender) error {
 	return nil
 }
 
-func (b *dockerClientBackend) start() error {
+func (b *dockerClientBackend) start(config string) error {
 	return nil
 }
 
@@ -232,9 +232,12 @@ func (c *container) attach(name string, ret libswarm.Sender) error {
 	return nil
 }
 
-func (c *container) start() error {
+func (c *container) start(config string) error {
+	if config == "" {
+		config = "{}"
+	}
 	path := fmt.Sprintf("/containers/%s/start", c.id)
-	resp, err := c.backend.client.call("POST", path, "{}")
+	resp, err := c.backend.client.call("POST", path, config)
 	if err != nil {
 		return err
 	}
@@ -316,6 +319,12 @@ func (c *client) call(method, path, body string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	if body != "" {
+		req.Header.Set("Content-Type", "application/json")
+	} else if method == "POST" {
+		req.Header.Set("Content-Type", "plain/text")
+	}
+
 	httpClient := &http.Client{Transport: c.transport}
 	resp, err := httpClient.Do(req)
 	if err != nil {

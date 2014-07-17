@@ -171,8 +171,8 @@ func (c *Client) Watch() (Receiver, error) {
 	return nil, fmt.Errorf("unexpected verb %v", msg.Verb)
 }
 
-func (c *Client) Start() error {
-	ret, err := c.Send(&Message{Verb: Start, Ret: RetPipe})
+func (c *Client) Start(config string) error {
+	ret, err := c.Send(&Message{Verb: Start, Args: []string{config}, Ret: RetPipe})
 	msg, err := ret.Receive(0)
 	if err == io.EOF {
 		return fmt.Errorf("unexpected EOF")
