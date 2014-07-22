@@ -122,12 +122,17 @@ func defaultSshKeyPath() string {
 	return path.Join(dir, ".ssh", "id_rsa")
 }
 
+func (c *ec2Client) defaultAvailabilityZones() string {
+	filter := ec2.NewFilter()
+	resp, _ := c.ec2Conn.AvailabilityZones(filter)
+	return resp.Zones[0].Name
+}
+
 func defaultConfigValues() (config *ec2Config) {
 	config = new(ec2Config)
 	config.region = aws.USEast
 	config.ami = "ami-7c807d14"
 	config.instanceType = "t1.micro"
-	config.zone = "us-east-1a"
 	config.sshUser = "ec2-user"
 	config.tag = "docker-ec2-swarm"
 	config.sshLocalPort = "4910"
@@ -362,6 +367,10 @@ func Ec2() libswarm.Sender {
 		client.Server.OnVerb(libswarm.Attach, libswarm.Handler(client.attach))
 		client.Server.OnVerb(libswarm.Ls, libswarm.Handler(client.ls))
 		client.Server.OnVerb(libswarm.Get, libswarm.Handler(client.get))
+
+		if config.zone == "" {
+			config.zone = client.defaultAvailabilityZones()
+		}
 
 		signalHandler(client)
 		_, err = ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: client.Server})
