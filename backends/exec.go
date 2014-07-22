@@ -1,20 +1,20 @@
 package backends
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
-	"encoding/json"
-	"bufio"
 	"strings"
 	"sync"
 
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
 )
 
-func Exec() beam.Sender {
-	e := beam.NewServer()
-	e.OnVerb(beam.Spawn, beam.Handler(func(msg *beam.Message) error {
+func Exec() libswarm.Sender {
+	e := libswarm.NewServer()
+	e.OnVerb(libswarm.Spawn, libswarm.Handler(func(msg *libswarm.Message) error {
 		if len(msg.Args) < 1 {
 			return fmt.Errorf("usage: SPAWN exec|... <config>")
 		}
@@ -22,18 +22,18 @@ func Exec() beam.Sender {
 			return fmt.Errorf("invalid command: %s", msg.Args[0])
 		}
 		var config struct {
-			Path	string
-			Args	[]string
+			Path string
+			Args []string
 		}
 		if err := json.Unmarshal([]byte(msg.Args[1]), &config); err != nil {
 			config.Path = msg.Args[1]
 			config.Args = msg.Args[2:]
 		}
 		cmd := &command{
-			Cmd:	exec.Command(config.Path, config.Args...),
-			Server: beam.NewServer(),
+			Cmd:    exec.Command(config.Path, config.Args...),
+			Server: libswarm.NewServer(),
 		}
-		cmd.OnVerb(beam.Attach, beam.Handler(func(msg *beam.Message) error {
+		cmd.OnVerb(libswarm.Attach, libswarm.Handler(func(msg *libswarm.Message) error {
 			stdout, err := cmd.StdoutPipe()
 			if err != nil {
 				return err
@@ -42,11 +42,11 @@ func Exec() beam.Sender {
 			if err != nil {
 				return err
 			}
-			inR, inW := beam.Pipe()
-			if _, err := msg.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: inW}); err != nil {
+			inR, inW := libswarm.Pipe()
+			if _, err := msg.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: inW}); err != nil {
 				return err
 			}
-			out := beam.Obj(msg.Ret)
+			out := libswarm.AsClient(msg.Ret)
 			go func() {
 				defer stdin.Close()
 				for {
@@ -54,7 +54,7 @@ func Exec() beam.Sender {
 					if err != nil {
 						return
 					}
-					if msg.Verb == beam.Log && len(msg.Args) > 0 {
+					if msg.Verb == libswarm.Log && len(msg.Args) > 0 {
 						fmt.Fprintf(stdin, "%s\n", strings.TrimRight(msg.Args[0], "\r\n"))
 					}
 				}
@@ -76,7 +76,7 @@ func Exec() beam.Sender {
 			cmd.tasks.Wait()
 			return nil
 		}))
-		cmd.OnVerb(beam.Start, beam.Handler(func(msg *beam.Message) error {
+		cmd.OnVerb(libswarm.Start, libswarm.Handler(func(msg *libswarm.Message) error {
 			cmd.tasks.Add(1)
 			if err := cmd.Cmd.Start(); err != nil {
 				return err
@@ -84,13 +84,13 @@ func Exec() beam.Sender {
 			go func() {
 				defer cmd.tasks.Done()
 				if err := cmd.Cmd.Wait(); err != nil {
-					beam.Obj(msg.Ret).Log("%s exited status=%v", cmd.Cmd.Path, err)
+					libswarm.AsClient(msg.Ret).Log("%s exited status=%v", cmd.Cmd.Path, err)
 				}
 			}()
-			msg.Ret.Send(&beam.Message{Verb: beam.Ack})
+			msg.Ret.Send(&libswarm.Message{Verb: libswarm.Ack})
 			return nil
 		}))
-		if _, err := msg.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: cmd}); err != nil {
+		if _, err := msg.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: cmd}); err != nil {
 			return err
 		}
 		return nil
@@ -100,6 +100,6 @@ func Exec() beam.Sender {
 
 type command struct {
 	*exec.Cmd
-	*beam.Server
+	*libswarm.Server
 	tasks sync.WaitGroup
 }

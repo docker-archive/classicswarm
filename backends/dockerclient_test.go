@@ -1,7 +1,7 @@
 package backends
 
 import (
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
 
 	"fmt"
 	"io/ioutil"
@@ -73,6 +73,25 @@ func TestSpawn(t *testing.T) {
 	})
 	i := instance(t, server)
 	_, err := i.Spawn("{}")
+	if err != nil {
+		t.Fatal(err)
+	}
+	server.Check()
+}
+
+func TestSpawnWithName(t *testing.T) {
+	name := "foo"
+	server := makeServer(t, &requestStub{
+		reqMethod: "POST",
+		reqPath:   "/containers/create?name=foo",
+		reqBody:   "{}",
+		resStatus: 201,
+		resBody:   "{}",
+	},
+	)
+
+	i := instance(t, server)
+	_, err := i.Spawn(fmt.Sprintf("{\"name\":\"%s\"}", name))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,7 +229,12 @@ func (s *stubServer) Check() {
 func (s *stubServer) ServeRequest(w http.ResponseWriter, r *http.Request) {
 	for _, record := range s.stubs {
 		stub := record.stub
-		if r.Method == stub.reqMethod && r.URL.Path == stub.reqPath {
+		path := r.URL.Path
+		q := r.URL.RawQuery
+		if q != "" {
+			path += "?" + q
+		}
+		if r.Method == stub.reqMethod && path == stub.reqPath {
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
 				s.t.Fatal(err)
@@ -240,21 +264,21 @@ func (s *stubServer) AllSummaries() []string {
 	return summaries
 }
 
-func instance(t *testing.T, server *stubServer) *beam.Object {
+func instance(t *testing.T, server *stubServer) *libswarm.Client {
 	url := "tcp://localhost:4243"
 	if server != nil {
 		url = strings.Replace(server.URL, "http://", "tcp://", 1)
 	}
 
 	backend := DockerClient()
-	instance, err := beam.Obj(backend).Spawn(url)
+	instance, err := libswarm.AsClient(backend).Spawn(url)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return instance
 }
 
-func child(t *testing.T, server *stubServer, i *beam.Object, name string) *beam.Object {
+func child(t *testing.T, server *stubServer, i *libswarm.Client, name string) *libswarm.Client {
 	_, child, err := i.Attach(name)
 	if err != nil {
 		t.Fatal(err)

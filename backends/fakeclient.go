@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/docker/libswarm/beam"
+	"github.com/docker/libswarm"
+	"github.com/docker/libswarm/utils"
 )
 
-func FakeClient() beam.Sender {
-	backend := beam.NewServer()
-	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
+func FakeClient() libswarm.Sender {
+	backend := libswarm.NewServer()
+	backend.OnVerb(libswarm.Spawn, libswarm.Handler(func(ctx *libswarm.Message) error {
 		// Instantiate a new fakeclient instance
-		instance := beam.Task(func(in beam.Receiver, out beam.Sender) {
+		instance := utils.Task(func(in libswarm.Receiver, out libswarm.Sender) {
 			fmt.Printf("fake client!\n")
 			defer fmt.Printf("end of fake client!\n")
-			o := beam.Obj(out)
+			o := libswarm.AsClient(out)
 			o.Log("fake client starting")
 			defer o.Log("fake client terminating")
 			for {
@@ -22,9 +23,8 @@ func FakeClient() beam.Sender {
 				o.Log("fake client heartbeat!")
 			}
 		})
-		_, err := ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: instance})
+		_, err := ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: instance})
 		return err
 	}))
 	return backend
 }
-

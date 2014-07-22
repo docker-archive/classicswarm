@@ -120,7 +120,7 @@ Control an [Orchard](https://www.orchardup.com/) host from libswarm. It takes tw
 
 ### Amazon EC2
 
-*Help wanted!*
+*Aaron Feng*
 
 ### Consul
 
