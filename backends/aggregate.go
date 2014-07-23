@@ -62,8 +62,12 @@ func newAggregator(allBackends *libswarm.Client, server *libswarm.Server, args [
 
 func (a *aggregator) attach(name string, ret libswarm.Sender) error {
 	if name != "" {
-		// TODO: implement this?
-		return fmt.Errorf("attaching to a child is not implemented")
+		_, child, err := a.attachToChild(name)
+		if err != nil {
+			return err
+		}
+		_, err = ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: child})
+		return err
 	}
 
 	if _, err := ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: a.server}); err != nil {
@@ -88,6 +92,17 @@ func (a *aggregator) attach(name string, ret libswarm.Sender) error {
 
 	copies.Wait()
 	return nil
+}
+
+func (a *aggregator) attachToChild(name string) (libswarm.Receiver, *libswarm.Client, error) {
+	for _, b := range a.backends {
+		in, out, err := b.Attach(name)
+		if err == nil {
+			return in, out, err
+		}
+	}
+
+	return nil, nil, fmt.Errorf("No such child: %s", name)
 }
 
 func (a *aggregator) start() error {
