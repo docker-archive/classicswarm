@@ -1,17 +1,18 @@
 package backends
 
 import (
-	"code.google.com/p/go.crypto/ssh"
 	"errors"
 	"fmt"
-	"github.com/codegangsta/cli"
-	"github.com/docker/libswarm/beam"
 	"io"
 	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"code.google.com/p/go.crypto/ssh"
+	"github.com/codegangsta/cli"
+	"github.com/docker/libswarm"
 )
 
 var (
@@ -31,12 +32,12 @@ type tunnelConfig struct {
 }
 
 type sshClient struct {
-	server       *beam.Server
+	server       *libswarm.Server
 	tunnelConfig *tunnelConfig
 }
 
-func (c *sshClient) attach(ctx *beam.Message) error {
-	ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: c.server})
+func (c *sshClient) attach(ctx *libswarm.Message) error {
+	ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: c.server})
 	<-make(chan struct{})
 	return nil
 }
@@ -69,7 +70,7 @@ func (c *sshClient) newSshConfig(signer ssh.Signer) *ssh.ClientConfig {
 	return &sshConfig
 }
 
-func (c *sshClient) start(ctx *beam.Message) error {
+func (c *sshClient) start(ctx *libswarm.Message) error {
 	signer, err := c.loadSshSigner()
 	if err != nil {
 		return err
@@ -185,9 +186,9 @@ func parseArgs(args []string) (*tunnelConfig, error) {
 	return config, nil
 }
 
-func Ssh() beam.Sender {
-	backend := beam.NewServer()
-	backend.OnVerb(beam.Spawn, beam.Handler(func(ctx *beam.Message) error {
+func Ssh() libswarm.Sender {
+	backend := libswarm.NewServer()
+	backend.OnVerb(libswarm.Spawn, libswarm.Handler(func(ctx *libswarm.Message) error {
 
 		config, err := parseArgs(ctx.Args)
 
@@ -195,13 +196,13 @@ func Ssh() beam.Sender {
 			return err
 		}
 
-		client := &sshClient{beam.NewServer(), config}
+		client := &sshClient{libswarm.NewServer(), config}
 
-		client.server.OnVerb(beam.Start, beam.Handler(client.start))
-		client.server.OnVerb(beam.Attach, beam.Handler(client.attach))
+		client.server.OnVerb(libswarm.Start, libswarm.Handler(client.start))
+		client.server.OnVerb(libswarm.Attach, libswarm.Handler(client.attach))
 
 		handleSignal(client)
-		_, err = ctx.Ret.Send(&beam.Message{Verb: beam.Ack, Ret: client.server})
+		_, err = ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: client.server})
 
 		return err
 	}))
