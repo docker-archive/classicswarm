@@ -122,6 +122,8 @@ Control an [Orchard](https://www.orchardup.com/) host from libswarm. It takes tw
 
 *Aaron Feng*
 
+[README](http://bit.ly/ec2-libswarm-readme)
+
 ### Consul
 
 *Help wanted!*
