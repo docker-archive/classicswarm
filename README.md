@@ -17,7 +17,7 @@ Here are some examples of what you can do with libswarm:
 
 * Swap in a new clustering and service discovery system, without changing any application code.
 
-* Collect logs across an in-house Mesos cluster, a Cloudfoundry deployment and individual servers staggered in 3 different datacenters, forward them to your legacy syslog deployment, then perform custom analytics on them.
+* Collect logs across an in-house Mesos cluster, a Cloud Foundry deployment and individual servers staggered in 3 different datacenters, forward them to your legacy syslog deployment, then perform custom analytics on them.
 
 * Simulate your entire service topology in a single process, then scale it out simply by re-arranging adapters.
 
