@@ -3,7 +3,6 @@ package backends
 import (
 	"errors"
 	"fmt"
-	"github.com/docker/libswarm"
 	"net"
 	"net/http"
 	"os"
@@ -15,22 +14,25 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/docker/libswarm"
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/ec2"
 )
 
 type ec2Config struct {
-	securityGroup string
-	instanceType  string
-	zone          string
-	ami           string
-	tag           string
-	sshUser       string
-	sshKey        string
-	sshLocalPort  string
-	sshRemotePort string
-	keypair       string
-	region        aws.Region
+	securityGroupId string
+	instanceType    string
+	zone            string
+	ami             string
+	tag             string
+	sshUser         string
+	sshKey          string
+	sshPort         string
+	sshLocalPort    string
+	sshRemotePort   string
+	keypair         string
+	subnetId        string
+	region          aws.Region
 }
 
 type ec2Client struct {
@@ -71,8 +73,9 @@ func (c *ec2Client) start(ctx *libswarm.Message) error {
 	c.waitForSsh()
 	c.startSshTunnel()
 	c.waitForDockerDaemon()
-	fmt.Printf("ec2 service up and running: region: %s zone: %s\n",
-		c.config.region.Name, c.config.zone)
+	// TODO (aaron): display zone info
+	fmt.Printf("ec2 service up and running: region: %s\n",
+		c.config.region.Name)
 	ctx.Ret.Send(&libswarm.Message{Verb: libswarm.Ack, Ret: c.Server})
 
 	return nil
@@ -125,15 +128,27 @@ func defaultSshKeyPath() string {
 func defaultConfigValues() (config *ec2Config) {
 	config = new(ec2Config)
 	config.region = aws.USEast
-	config.ami = "ami-7c807d14"
-	config.instanceType = "t1.micro"
-	config.zone = "us-east-1a"
+	config.instanceType = "t2.micro"
 	config.sshUser = "ec2-user"
-	config.tag = "docker-ec2-swarm"
+	config.sshPort = "22"
+	config.tag = "docker-ec2-libswarm"
 	config.sshLocalPort = "4910"
 	config.sshRemotePort = "4243"
 	config.sshKey = defaultSshKeyPath()
 	return config
+}
+
+func defaultAMI(conn *ec2.EC2) (string, error) {
+	filter := ec2.NewFilter()
+	imageName := "amzn-ami-hvm-2014.03.2.x86_64-ebs"
+	filter.Add("name", imageName)
+	resp, _ := conn.Images(nil, filter)
+
+	if len(resp.Images) == 0 {
+		return "", fmt.Errorf("Unable to retrieve ami id for image name: %s", imageName)
+	}
+
+	return resp.Images[0].Id, nil
 }
 
 func newConfig(args []string) (config *ec2Config, err error) {
@@ -157,18 +172,23 @@ func newConfig(args []string) (config *ec2Config, err error) {
 			config.ami = val
 		case "--keypair":
 			config.keypair = val
-		case "--security_group":
-			config.securityGroup = val
+		case "--security_group_id":
+			config.securityGroupId = val
 		case "--instance_type":
 			config.instanceType = val
 		case "--ssh_user":
 			config.sshUser = val
+		case "--ssh_port":
+			config.sshPort = val
 		case "--ssh_key":
 			config.sshKey = val
+		case "--subnet_id":
+			config.subnetId = val
 		default:
 			fmt.Printf("Unrecognizable option: %s value: %s", opt, val)
 		}
 	}
+
 	return config, nil
 }
 
@@ -203,7 +223,20 @@ func awsInit(config *ec2Config) (ec2Conn *ec2.EC2, err error) {
 		return nil, err
 	}
 
-	return ec2.New(auth, config.region), nil
+	conn := ec2.New(auth, config.region)
+
+	if config.ami == "" {
+		fmt.Println("No AMI specified.  Retrieving default ami")
+
+		amiId, err := defaultAMI(conn)
+		if err != nil {
+			return nil, fmt.Errorf("Please manually specify an ami.")
+		}
+
+		config.ami = amiId
+	}
+
+	return conn, nil
 }
 
 func (c *ec2Client) findInstance() (instance *ec2.Instance, err error) {
@@ -237,13 +270,14 @@ func (c *ec2Client) tagtInstance() error {
 }
 
 func (c *ec2Client) startInstance() error {
+	// TODO: allow more than one sg in the future
 	options := ec2.RunInstances{
-		ImageId:      c.config.ami,
-		InstanceType: c.config.instanceType,
-		KeyName:      c.config.keypair,
-		AvailZone:    c.config.zone,
-		// TODO: allow more than one sg in the future
-		SecurityGroups: []ec2.SecurityGroup{ec2.SecurityGroup{Name: c.config.securityGroup}},
+		SubnetId:       c.config.subnetId,
+		ImageId:        c.config.ami,
+		InstanceType:   c.config.instanceType,
+		KeyName:        c.config.keypair,
+		AvailZone:      c.config.zone,
+		SecurityGroups: []ec2.SecurityGroup{ec2.SecurityGroup{Id: c.config.securityGroupId}},
 		UserData:       []byte(userdata),
 	}
 
@@ -293,7 +327,7 @@ func (c *ec2Client) initDockerClientInstance(instance *ec2.Instance) error {
 }
 
 func (c *ec2Client) waitForDockerDaemon() {
-	fmt.Println("waiting for docker daemon on remote machine to be available.")
+	fmt.Println("Waiting for docker daemon on remote machine to be available.")
 	for {
 		resp, _ := http.Get("http://localhost:" + c.config.sshLocalPort)
 		// wait for a response.  any response to know docker daemon is up
@@ -307,8 +341,8 @@ func (c *ec2Client) waitForDockerDaemon() {
 }
 
 func (c *ec2Client) waitForSsh() {
-	fmt.Println("waiting for ssh to be available.  make sure ssh is open on port 22.")
-	conn := waitFor(c.instance.IPAddress, "22")
+	fmt.Printf("Waiting for ssh to be available.  make sure ssh is open on port %s.\n", c.config.sshPort)
+	conn := waitFor(c.instance.IPAddress, c.config.sshPort)
 	conn.Close()
 }
 
@@ -351,11 +385,13 @@ func Ec2() libswarm.Sender {
 		}
 
 		ec2Conn, err := awsInit(config)
+
 		if err != nil {
 			return err
 		}
 
 		client := &ec2Client{config, ec2Conn, libswarm.NewServer(), nil, nil, nil}
+
 		client.Server.OnVerb(libswarm.Spawn, libswarm.Handler(client.spawn))
 		client.Server.OnVerb(libswarm.Start, libswarm.Handler(client.start))
 		client.Server.OnVerb(libswarm.Stop, libswarm.Handler(client.stop))
@@ -396,7 +432,7 @@ func (c *ec2Client) startSshTunnel() error {
 		"-o", "StrictHostKeyChecking=no",
 		"-i", c.config.sshKey,
 		"-A",
-		"-p", "22",
+		"-p", c.config.sshPort,
 		fmt.Sprintf("%s@%s", c.config.sshUser, c.instance.IPAddress),
 		"-N",
 		"-f",
