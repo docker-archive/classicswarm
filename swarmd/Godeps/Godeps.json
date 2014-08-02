@@ -51,92 +51,92 @@
 			"Rev": "fb3d909c288ab23f005ddbbdd8bc81c36a1cd701"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/api",
+			"ImportPath": "github.com/docker/docker/api",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/dockerversion",
+			"ImportPath": "github.com/docker/docker/dockerversion",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/engine",
+			"ImportPath": "github.com/docker/docker/engine",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/nat",
+			"ImportPath": "github.com/docker/docker/nat",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/opts",
+			"ImportPath": "github.com/docker/docker/opts",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/listenbuffer",
+			"ImportPath": "github.com/docker/docker/pkg/listenbuffer",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/mflag",
+			"ImportPath": "github.com/docker/docker/pkg/mflag",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/mount",
+			"ImportPath": "github.com/docker/docker/pkg/mount",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/sysinfo",
+			"ImportPath": "github.com/docker/docker/pkg/sysinfo",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/systemd",
+			"ImportPath": "github.com/docker/docker/pkg/systemd",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/term",
+			"ImportPath": "github.com/docker/docker/pkg/term",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/units",
+			"ImportPath": "github.com/docker/docker/pkg/units",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/user",
+			"ImportPath": "github.com/docker/docker/pkg/user",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/pkg/version",
+			"ImportPath": "github.com/docker/docker/pkg/version",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/registry",
+			"ImportPath": "github.com/docker/docker/registry",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/runconfig",
+			"ImportPath": "github.com/docker/docker/runconfig",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/utils",
+			"ImportPath": "github.com/docker/docker/utils",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},
 		{
-			"ImportPath": "github.com/dotcloud/docker/vendor/src/code.google.com/p/go/src/pkg/archive/tar",
+			"ImportPath": "github.com/docker/docker/vendor/src/code.google.com/p/go/src/pkg/archive/tar",
 			"Comment": "v0.11.1-466-g77ae37a",
 			"Rev": "77ae37a3836997d215ed3f1750533a9815205695"
 		},

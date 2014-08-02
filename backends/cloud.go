@@ -17,7 +17,7 @@ package backends
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dotcloud/docker/engine"
+	"github.com/docker/docker/engine"
 	"io/ioutil"
 	"log"
 	"net/http"
