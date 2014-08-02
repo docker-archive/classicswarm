@@ -22,22 +22,46 @@ Here are some examples of what you can do with libswarm:
 * Simulate your entire service topology in a single process, then scale it out simply by re-arranging adapters.
 
 * Organize your application as loosely coupled services from day 1, without over-engineering.
- 
+
 ## Installation
 
-First get the go dependencies:
+You can install `libswarm` in a few simple steps. You will need to make
+Go installed on your host.
+
+1. Download the current source code.
 
 ```sh
-go get github.com/docker/libswarm/...
+go get github.com/docker/libswarm
 ```
 
-Then you can compile `swarmd` with:
+2. Make sure `$GOPATH/bin` is in your `$PATH`
+
+```sh
+export PATH=$GOPATH/bin:$PATH
+```
+
+3. Download or update the current dependencies.
+
+```sh
+cd $GOPATH/src/github.com/docker/libswarm
+make deps
+```
+
+NOTE: You may also need `bzr`. On OS X, you can install it from
+[here](http://wiki.bazaar.canonical.com/MacOSXDownloads) or via Home
+Brew: `brew install bzr`. On Debian & Ubuntu, `apt-get install bzr` and
+on Red Hat et al, `yum install bzr`.
+
+4. Then compile `swarmd` with:
 
 ```sh
 go install github.com/docker/libswarm/swarmd
 ```
 
-If `$GOPATH/bin` is in your `PATH`, you can invoke `swarmd` from the CLI.
+## Running libswarm
+
+If `$GOPATH/bin` is in your `PATH`, you can invoke `swarmd` from the
+command line.
 
 ```sh
 $ swarmd -h
