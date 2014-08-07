@@ -84,6 +84,14 @@ This service can be used to control a Docker Engine from libswarm services. It t
 
 *Help wanted!*
 
+### SkyDNS
+
+*Help wanted!*
+
+### SkyDNS2
+
+*Help wanted!*
+
 ### Geard
 
 *Clayton Coleman*
