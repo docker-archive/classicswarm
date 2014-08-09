@@ -31,8 +31,8 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
-	"github.com/dotcloud/docker/engine"
-	"github.com/dotcloud/docker/runconfig"
+	"github.com/docker/docker/engine"
+	"github.com/docker/docker/runconfig"
 	"github.com/rackspace/gophercloud"
 )
 
