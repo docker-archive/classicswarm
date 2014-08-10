@@ -115,3 +115,7 @@ func (s *Server) Close() error {
 func (s *Server) Unwrap() libchan.Sender {
 	return &senderUnwrapper{s}
 }
+
+func (s *Server) Client() *Client {
+	return AsClient(s)
+}
