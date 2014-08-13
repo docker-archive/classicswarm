@@ -3,13 +3,6 @@ package backends
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/docker/libswarm"
-	"github.com/docker/libswarm/utils"
-	"github.com/dotcloud/docker/api"
-	"github.com/dotcloud/docker/pkg/version"
-	dockerContainerConfig "github.com/dotcloud/docker/runconfig"
-	dockerutils "github.com/dotcloud/docker/utils"
-	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
 	"net"
@@ -19,6 +12,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/docker/docker/api"
+	"github.com/docker/docker/pkg/version"
+	dockerContainerConfig "github.com/docker/docker/runconfig"
+	dockerutils "github.com/docker/docker/utils"
+	"github.com/docker/libswarm"
+	"github.com/docker/libswarm/utils"
+	"github.com/gorilla/mux"
 )
 
 func DockerServer() libswarm.Sender {

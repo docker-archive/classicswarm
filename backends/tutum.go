@@ -3,14 +3,15 @@ package backends
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/docker/libswarm"
-	"github.com/dotcloud/docker/engine"
-	"github.com/tutumcloud/go-tutum"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/docker/docker/engine"
+	"github.com/docker/libswarm"
+	"github.com/tutumcloud/go-tutum"
 )
 
 var (
