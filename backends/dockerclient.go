@@ -4,10 +4,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/docker/libswarm"
-	"github.com/docker/libswarm/utils"
-	"github.com/dotcloud/docker/engine"
-	dockerutils "github.com/dotcloud/docker/utils"
 	"io"
 	"io/ioutil"
 	"net"
@@ -15,6 +11,11 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+
+	"github.com/docker/docker/engine"
+	dockerutils "github.com/docker/docker/utils"
+	"github.com/docker/libswarm"
+	"github.com/docker/libswarm/utils"
 )
 
 type DockerClientConfig struct {

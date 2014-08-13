@@ -17,12 +17,13 @@ package backends
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dotcloud/docker/engine"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+
+	"github.com/docker/docker/engine"
 )
 
 // The Cloud interface provides the contract that cloud providers should implement to enable
