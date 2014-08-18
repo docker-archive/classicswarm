@@ -41,8 +41,8 @@
 			"Rev": "5d26f5fd8a4e87c22037b52bf41aad8d69e5f436"
 		},
 		{
-			"ImportPath": "github.com/dmcgowan/libchan",
-			"Rev": "a7122feb42d3e5e706373c034128e3f80252c350"
+			"ImportPath": "github.com/docker/libchan",
+			"Rev": "8acda1e7bc9baff2981306b0d723bbdc3196f334"
 		},
 		{
 			"ImportPath": "github.com/dotcloud/docker/api",

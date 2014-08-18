@@ -1,7 +1,7 @@
 package libswarm
 
 import (
-	"github.com/dmcgowan/libchan"
+	"github.com/docker/libchan"
 
 	"fmt"
 	"io"
@@ -47,10 +47,7 @@ func (s *senderWrapper) Send(msg *Message) (Receiver, error) {
 	}
 
 	if msg.Ret != nil {
-		thisEnd, otherEnd, err := s.Sender.CreateNestedReceiver()
-		if err != nil {
-			return nil, err
-		}
+		thisEnd, otherEnd := libchan.Pipe()
 
 		imsg.Ret = otherEnd
 
@@ -61,23 +58,7 @@ func (s *senderWrapper) Send(msg *Message) (Receiver, error) {
 		}
 	}
 
-	if msg.Att != nil {
-		byteStream, err := s.Sender.CreateByteStream()
-		if err != nil {
-			return nil, err
-		}
-
-		imsg.Att = byteStream
-
-		go func() {
-			io.Copy(byteStream, msg.Att)
-			byteStream.Close()
-		}()
-		go func() {
-			io.Copy(msg.Att, byteStream)
-			msg.Att.Close()
-		}()
-	}
+	imsg.Att = msg.Att
 
 	return rcvr, s.Sender.Send(imsg)
 }
