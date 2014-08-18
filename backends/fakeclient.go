@@ -28,4 +28,3 @@ func FakeClient() libswarm.Sender {
 	}))
 	return backend
 }
-

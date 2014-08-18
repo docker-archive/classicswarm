@@ -192,6 +192,10 @@
 			"ImportPath": "launchpad.net/goamz/ec2",
 			"Comment": "48",
 			"Rev": "ian.booth@canonical.com-20140708164959-72q70lo1du0e4qki"
+		},
+		{
+			"ImportPath": "code.google.com/p/go.crypto/ssh",
+			"Rev": "1064b89a6fb591df0dd65422295b8498916b092f"
 		}
 	]
 }

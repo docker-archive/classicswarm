@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/docker/libswarm/backends"
 	"github.com/docker/libswarm"
+	"github.com/docker/libswarm/backends"
 	_ "github.com/dotcloud/docker/api/server"
 	"github.com/flynn/go-shlex"
 	"io"

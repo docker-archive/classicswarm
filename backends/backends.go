@@ -23,6 +23,8 @@ func New() *libswarm.Client {
 	backends.Bind("orchard", Orchard())
 	backends.Bind("aggregate", Aggregate())
 	backends.Bind("shipyard", Shipyard())
+	backends.Bind("ssh", Ssh())
+	backends.Bind("tutum", Tutum())
 	backends.Bind("ec2", Ec2())
 	backends.Bind("tutum", Tutum())
 	return libswarm.AsClient(backends)

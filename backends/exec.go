@@ -1,11 +1,11 @@
 package backends
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
-	"encoding/json"
-	"bufio"
 	"strings"
 	"sync"
 
@@ -22,15 +22,15 @@ func Exec() libswarm.Sender {
 			return fmt.Errorf("invalid command: %s", msg.Args[0])
 		}
 		var config struct {
-			Path	string
-			Args	[]string
+			Path string
+			Args []string
 		}
 		if err := json.Unmarshal([]byte(msg.Args[1]), &config); err != nil {
 			config.Path = msg.Args[1]
 			config.Args = msg.Args[2:]
 		}
 		cmd := &command{
-			Cmd:	exec.Command(config.Path, config.Args...),
+			Cmd:    exec.Command(config.Path, config.Args...),
 			Server: libswarm.NewServer(),
 		}
 		cmd.OnVerb(libswarm.Attach, libswarm.Handler(func(msg *libswarm.Message) error {
