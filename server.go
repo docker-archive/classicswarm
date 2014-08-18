@@ -76,9 +76,13 @@ func (s *Server) OnGet(h func() (string, error)) *Server {
 	}))
 }
 
-func (s *Server) OnStart(h func() error) *Server {
+func (s *Server) OnStart(h func(string) error) *Server {
 	return s.OnVerb(Start, Handler(func(msg *Message) error {
-		if err := h(); err != nil {
+		config := ""
+		if len(msg.Args) > 0 {
+			config = msg.Args[0]
+		}
+		if err := h(config); err != nil {
 			return err
 		}
 		_, err := msg.Ret.Send(&Message{Verb: Ack})

@@ -67,7 +67,7 @@ func cmdDaemon(c *cli.Context) {
 			}
 			w.Close()
 		}(previousInstanceR, instanceW, idx)
-		if err := instance.Start(); err != nil {
+		if err := instance.Start(""); err != nil {
 			Fatalf("start: %v", err)
 		}
 		previousInstanceR = instanceR

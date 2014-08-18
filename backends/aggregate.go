@@ -90,9 +90,9 @@ func (a *aggregator) attach(name string, ret libswarm.Sender) error {
 	return nil
 }
 
-func (a *aggregator) start() error {
+func (a *aggregator) start(config string) error {
 	for _, b := range a.backends {
-		err := b.Start()
+		err := b.Start(config)
 		if err != nil {
 			return err
 		}

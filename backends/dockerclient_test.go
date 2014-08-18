@@ -33,7 +33,7 @@ func TestAttachAndStart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = i.Start()
+	err = i.Start("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,6 +137,30 @@ func TestGetChild(t *testing.T) {
 
 func TestStartChild(t *testing.T) {
 	name := "foo"
+	config := "{\"PortBindings\":{\"4000/tcp\":[{\"HostIp\":\"\",\"HostPort\":\"80\"}]}}"
+	server := makeServer(t, &requestStub{
+		reqMethod: "GET",
+		reqPath:   fmt.Sprintf("/containers/%s/json", name),
+
+		resBody: "{}",
+	}, &requestStub{
+		reqMethod: "POST",
+		reqPath:   fmt.Sprintf("/containers/%s/start", name),
+		reqBody:   config,
+
+		resStatus: 204,
+	})
+	i := instance(t, server)
+	c := child(t, server, i, name)
+	err := c.Start(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server.Check()
+}
+
+func TestStartEmptyConfig(t *testing.T) {
+	name := "foo"
 	server := makeServer(t, &requestStub{
 		reqMethod: "GET",
 		reqPath:   fmt.Sprintf("/containers/%s/json", name),
@@ -151,7 +175,7 @@ func TestStartChild(t *testing.T) {
 	})
 	i := instance(t, server)
 	c := child(t, server, i, name)
-	err := c.Start()
+	err := c.Start("")
 	if err != nil {
 		t.Fatal(err)
 	}

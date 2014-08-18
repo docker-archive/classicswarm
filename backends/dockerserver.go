@@ -260,7 +260,10 @@ func postContainersStart(out libswarm.Sender, version version.Version, w http.Re
 		return fmt.Errorf("Missing parameter")
 	}
 
-	// TODO: r.Body
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
 
 	name := vars["name"]
 	_, containerOut, err := libswarm.AsClient(out).Attach(name)
@@ -268,7 +271,7 @@ func postContainersStart(out libswarm.Sender, version version.Version, w http.Re
 	if err != nil {
 		return err
 	}
-	if err := container.Start(); err != nil {
+	if err := container.Start(string(body)); err != nil {
 		return err
 	}
 
