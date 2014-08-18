@@ -119,6 +119,14 @@ example: `dockerclient tcp://10.1.2.3:4243`
 
 *Help wanted!*
 
+### SkyDNS
+
+*Help wanted!*
+
+### SkyDNS2
+
+*Help wanted!*
+
 ### Geard
 
 *Clayton Coleman*
