@@ -1,8 +1,6 @@
 package libswarm
 
 import (
-	"github.com/docker/libchan"
-
 	"fmt"
 )
 
@@ -110,8 +108,4 @@ func (s *Server) Send(msg *Message) (Receiver, error) {
 
 func (s *Server) Close() error {
 	return fmt.Errorf("can't close")
-}
-
-func (s *Server) Unwrap() libchan.Sender {
-	return &senderUnwrapper{s}
 }

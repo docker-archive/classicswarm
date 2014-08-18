@@ -1,6 +1,9 @@
 package libswarm
 
 import (
+	"github.com/docker/libswarm/iowrapper"
+
+	"io"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -29,10 +32,11 @@ func TestVerbArgs(t *testing.T) {
 
 func TestReturnChannel(t *testing.T) {
 	receiver, sender := Pipe()
+
 	replyReceiver, replySender := Pipe()
 
 	go func() {
-		receivedMsg, err := receiver.Receive(0)
+		receivedMsg, err := receiver.Receive(Ret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -42,8 +46,7 @@ func TestReturnChannel(t *testing.T) {
 		receivedMsg.Ret.Send(&Message{Verb: Set})
 	}()
 
-	_, err := sender.Send(&Message{Verb: Get, Ret: replySender})
-	if err != nil {
+	if _, err := sender.Send(&Message{Verb: Get, Ret: replySender}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -63,7 +66,7 @@ func TestRetPipe(t *testing.T) {
 	receiver, sender := Pipe()
 
 	go func() {
-		receivedMsg, err := receiver.Receive(0)
+		receivedMsg, err := receiver.Receive(Ret)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,6 +74,7 @@ func TestRetPipe(t *testing.T) {
 			t.Fatalf("Didn't get a message")
 		}
 		receivedMsg.Ret.Send(&Message{Verb: Set})
+		receivedMsg.Ret.Close()
 	}()
 
 	replyReceiver, err := sender.Send(&Message{Verb: Get, Ret: RetPipe})
@@ -92,28 +96,17 @@ func TestRetPipe(t *testing.T) {
 
 func TestAttachment(t *testing.T) {
 	expectedContents := "hello world\n"
-
-	f, err := ioutil.TempFile("/tmp", "libswarm-beam-TestAttachment-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	if err = ioutil.WriteFile(f.Name(), []byte(expectedContents), 0700); err != nil {
-		t.Fatal(err)
-	}
-	if err = f.Sync(); err != nil {
-		t.Fatal(err)
-	}
+	r, w := io.Pipe()
 
 	receiver, sender := Pipe()
 
 	go func() {
-		msg, err := receiver.Receive(0)
+		msg, err := receiver.Receive(Ret)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		msg.Ret.Send(&Message{Verb: Connect, Att: f})
+		msg.Ret.Send(&Message{Verb: Connect, Att: iowrapper.Wrap(r)})
 	}()
 
 	ret, err := sender.Send(&Message{Verb: Connect, Ret: RetPipe})
@@ -125,11 +118,18 @@ func TestAttachment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if reply == nil {
+		t.Fatalf("Didn't get a reply")
+	}
 	if reply.Att == nil {
 		t.Fatalf("Didn't get an attachment back")
 	}
 
-	contents, err := ioutil.ReadAll(reply.Att)
+	go func() {
+		w.Write([]byte(expectedContents))
+		w.Close()
+	}()
+	contents, err := ioutil.ReadAll(reply.Att.(io.Reader))
 	if err != nil {
 		t.Fatal(err)
 	}
