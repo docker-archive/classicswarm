@@ -299,6 +299,7 @@ func newClient() *client {
 func (c *client) setURL(url string) {
 	parts := strings.SplitN(url, "://", 2)
 	proto, host := parts[0], parts[1]
+	c.urlHost = host
 	c.transport.Dial = func(_, _ string) (net.Conn, error) {
 		return net.Dial(proto, host)
 	}
