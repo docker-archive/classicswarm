@@ -145,7 +145,6 @@ func TestStartChild(t *testing.T) {
 	}, &requestStub{
 		reqMethod: "POST",
 		reqPath:   fmt.Sprintf("/containers/%s/start", name),
-		reqBody:   "{}",
 
 		resStatus: 204,
 	})
