@@ -17,6 +17,7 @@ First get the go dependencies:
 ```sh
 go get github.com/docker/libswarm/...
 go get github.com/goinggo/mapstructure
+go get github.com/nadgowdas/openstack
 ```
 
 Then you can compile `swarmd` with:

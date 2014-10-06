@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/libswarm"
 	"github.com/goinggo/mapstructure"
-	"github.com/openstack/goopenstack"
+	"github.com/nadgowdas/openstack/goopenstack"
 	"io/ioutil"
 	"strings"
 	"time"
