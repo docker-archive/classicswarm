@@ -193,3 +193,19 @@ func (c *Client) Stop() error {
 	}
 	return fmt.Errorf("unexpected verb %v", msg.Verb)
 }
+
+func (c *Client) Delete() error {
+	ret, err := c.Send(&Message{Verb: Delete, Ret: RetPipe})
+	msg, err := ret.Receive(0)
+
+	if err == io.EOF {
+		return fmt.Errorf("unexpected EOF")
+	}
+	if msg.Verb == Ack {
+		return nil
+	}
+	if msg.Verb == Error {
+		return fmt.Errorf(strings.Join(msg.Args[:1], ""))
+	}
+	return fmt.Errorf("unexpected verb %v", msg.Verb)
+}

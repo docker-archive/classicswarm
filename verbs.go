@@ -19,10 +19,11 @@ const (
 	Spawn
 	Start
 	Stop
+	Delete
 	Watch
 )
 
-var verbs = []string{"Ack", "Attach", "Connect", "Error", "File", "Get", "Log", "Ls", "Set", "Spawn", "Start", "Stop", "Watch"}
+var verbs = []string{"Ack", "Attach", "Connect", "Error", "File", "Get", "Log", "Ls", "Set", "Spawn", "Start", "Stop", "Delete", "Watch"}
 
 func VerbFromString(s string) (Verb, error) {
 	for i, verb := range verbs {

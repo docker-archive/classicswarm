@@ -226,12 +226,14 @@ func postContainersCreate(out libswarm.Sender, version version.Version, w http.R
 	}
 
 	name := r.Form.Get("name")
+	imgName := r.Form.Get("image")
 	if name != "" {
 		var reqJson map[string]interface{}
 		if err = json.Unmarshal(body, &reqJson); err != nil {
 			return err
 		}
 		reqJson["name"] = name
+		reqJson["image"] = imgName
 		body, err = json.Marshal(reqJson)
 		if err != nil {
 			return err
@@ -379,6 +381,27 @@ func postContainersWait(out libswarm.Sender, version version.Version, w http.Res
 	})
 }
 
+func deleteContainer(out libswarm.Sender, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+
+	name := vars["name"]
+
+	_, containerOut, err := libswarm.AsClient(out).Attach(name)
+	container := libswarm.AsClient(containerOut)
+	if err != nil {
+		return err
+	}
+
+	if err := container.Delete(); err != nil {
+		return err
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
 func createRouter(out libswarm.Sender) (*mux.Router, error) {
 	r := mux.NewRouter()
 	m := map[string]map[string]HttpApiFunc{
@@ -394,7 +417,9 @@ func createRouter(out libswarm.Sender) (*mux.Router, error) {
 			"/containers/{name:.*}/stop":   postContainersStop,
 			"/containers/{name:.*}/wait":   postContainersWait,
 		},
-		"DELETE":  {},
+		"DELETE": {
+			"/containers/{name:.*}": deleteContainer,
+		},
 		"OPTIONS": {},
 	}
 
