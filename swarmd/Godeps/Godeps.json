@@ -195,7 +195,7 @@
 		},
 		{
 			"ImportPath": "github.com/MSOpenTech/azure-sdk-for-go",
-			"Rev": "753dde68bf2fde061ff108c6b02b7a45421529aa"
+			"Rev": "43719165c8b42a47f6b9d13b206271842396bdaf"
 		}
 	]
 }

@@ -136,6 +136,7 @@ func waitForDocker(config *AzureConfig) error {
 	url := fmt.Sprintf("http://%s:%v", config.DnsName+".cloudapp.net", config.DockerPort)
 	success := waitForDockerEndpoint(url, maxRepeats)
 	if !success {
+		fmt.Print("\n")
 		fmt.Println("Restarting docker daemon on remote machine.")
 		err := vmClient.RestartRole(config.DnsName, config.DnsName, config.DnsName)
 		if err != nil {
@@ -143,6 +144,7 @@ func waitForDocker(config *AzureConfig) error {
 		}
 		success = waitForDockerEndpoint(url, maxRepeats)
 		if !success {
+			fmt.Print("\n")
 			fmt.Println("Error: Can not run docker daemon on remote machine. Please check docker daemon at " + url)
 		}
 	}
@@ -247,11 +249,12 @@ func getOrCreateAzureInstance(config *AzureConfig) error {
 	}
 	dockerVM, err := vmClient.GetVMDeployment(config.DnsName, config.DnsName)
 	if err != nil {
-		return err
-	}
-	if dockerVM == nil {
-		err = createDockerVM(config)
-		if err != nil {
+		if strings.Contains(err.Error(), "Code: ResourceNotFound") {
+			err = createDockerVM(config)
+			if err != nil {
+				return err
+			}
+		} else {
 			return err
 		}
 	} else {
@@ -360,7 +363,7 @@ func createDockerVM(options *AzureConfig) error {
 	if err != nil {
 		return err
 	}
-	vmConfig, err = vmClient.AddAzureLinuxProvisioningConfig(vmConfig, options.UserName, options.UserPassword, options.SshCert)
+	vmConfig, err = vmClient.AddAzureLinuxProvisioningConfig(vmConfig, options.UserName, options.UserPassword, options.SshCert, options.SshPort)
 	if err != nil {
 		return err
 	}
