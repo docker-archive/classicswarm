@@ -324,11 +324,6 @@ func parseUserSpecifiedOptions(args []string, options *AzureConfig) {
 		case "--location":
 			options.Location = val
 		case "--size":
-			if val != "ExtraSmall" && val != "Small" && val != "Medium" &&
-				val != "Large" && val != "ExtraLarge" &&
-				val != "A5" && val != "A6" && val != "A7" {
-				PrintErrorAndExit(errors.New("Invalid VM size specified with --size"))
-			}
 			options.RoleSize = val
 		case "--ssh":
 			sshPort, err := strconv.Atoi(val)
