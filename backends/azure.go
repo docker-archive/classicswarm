@@ -9,7 +9,7 @@ import (
 	"github.com/MSOpenTech/azure-sdk-for-go/clients/vmClient"
 	"github.com/docker/libswarm"
 	"io/ioutil"
-	"net/http"
+	"net"
 	"os"
 	"os/user"
 	"path"
@@ -130,23 +130,30 @@ func (client *azureClient) stop(ctx *libswarm.Message) error {
 	return nil
 }
 
+func waitForSsh(config *AzureConfig) {
+	fmt.Println("Waiting for SSH...")
+	url := fmt.Sprintf("%s:%v", config.DnsName+".cloudapp.net", config.SshPort)
+	for {
+		conn, err := net.Dial("tcp", url)
+		if err != nil {
+			continue
+		}
+		defer conn.Close()
+		if _, err = conn.Read(make([]byte, 1)); err != nil {
+			continue
+		}
+		break
+	}
+}
+
 func waitForDocker(config *AzureConfig) error {
 	fmt.Println("Waiting for docker daemon on remote machine to be available.")
-	maxRepeats := 24
-	url := fmt.Sprintf("http://%s:%v", config.DnsName+".cloudapp.net", config.DockerPort)
+	maxRepeats := 48
+	url := fmt.Sprintf("%s:%v", config.DnsName+".cloudapp.net", config.DockerPort)
 	success := waitForDockerEndpoint(url, maxRepeats)
 	if !success {
 		fmt.Print("\n")
-		fmt.Println("Restarting docker daemon on remote machine.")
-		err := vmClient.RestartRole(config.DnsName, config.DnsName, config.DnsName)
-		if err != nil {
-			return err
-		}
-		success = waitForDockerEndpoint(url, maxRepeats)
-		if !success {
-			fmt.Print("\n")
-			fmt.Println("Error: Can not run docker daemon on remote machine. Please check docker daemon at " + url)
-		}
+		fmt.Println("Error: Can not run docker daemon on remote machine. Please check docker daemon at " + url)
 	}
 	fmt.Println()
 	fmt.Println("Docker daemon is ready.")
@@ -156,20 +163,18 @@ func waitForDocker(config *AzureConfig) error {
 func waitForDockerEndpoint(url string, maxRepeats int) bool {
 	counter := 0
 	for {
-		resp, err := http.Get(url)
-		error := err.Error()
-		if strings.Contains(error, "malformed HTTP response") || len(error) == 0 {
-			break
-		}
 		fmt.Print(".")
-		if resp != nil {
-			fmt.Println(resp)
+		conn, err := net.Dial("tcp", url)
+		if err != nil {
+			time.Sleep(10 * time.Second)
+			counter++
+			if counter == maxRepeats {
+				return false
+			}
+			continue
 		}
-		time.Sleep(10 * time.Second)
-		counter++
-		if counter == maxRepeats {
-			return false
-		}
+		defer conn.Close()
+		break
 	}
 	return true
 }
@@ -266,6 +271,7 @@ func getOrCreateAzureInstance(config *AzureConfig) error {
 			}
 		}
 	}
+	waitForSsh(config)
 	err = waitForDocker(config)
 	if err != nil {
 		return err
