@@ -38,7 +38,7 @@ type Node struct {
 	mux          sync.Mutex
 	ch           chan bool
 	containers   map[string]*Container
-	client       dockerclient.DockerClientInterface
+	client       dockerclient.Client
 	eventHandler EventHandler
 }
 
@@ -59,7 +59,7 @@ func (n *Node) Connect(config *tls.Config) error {
 	return n.connectClient(c)
 }
 
-func (n *Node) connectClient(client dockerclient.DockerClientInterface) error {
+func (n *Node) connectClient(client dockerclient.Client) error {
 	n.client = client
 
 	// Fetch the engine labels.

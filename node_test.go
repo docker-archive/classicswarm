@@ -25,7 +25,7 @@ func TestNodeConnectionFailure(t *testing.T) {
 	assert.False(t, node.IsConnected())
 
 	// Always fail.
-	client := dockerclient.NewDockerClientMock()
+	client := dockerclient.NewMockClient()
 	client.On("Info").Return(&dockerclient.Info{}, errors.New("fail"))
 
 	// Connect() should fail and IsConnected() return false.
@@ -39,7 +39,7 @@ func TestNodeSpecs(t *testing.T) {
 	node := NewNode("test", "test")
 	assert.False(t, node.IsConnected())
 
-	client := dockerclient.NewDockerClientMock()
+	client := dockerclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
 	client.On("ListContainers", true).Return([]dockerclient.Container{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
@@ -61,7 +61,7 @@ func TestNodeState(t *testing.T) {
 	node := NewNode("test", "test")
 	assert.False(t, node.IsConnected())
 
-	client := dockerclient.NewDockerClientMock()
+	client := dockerclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
 
