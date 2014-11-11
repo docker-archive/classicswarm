@@ -208,8 +208,7 @@ func (n *Node) Remove(container *Container, force bool) error {
 }
 
 func (e *Node) Pull(image string) error {
-	imageInfo := parseImageName(image)
-	if err := e.client.PullImage(imageInfo.Name, imageInfo.Tag); err != nil {
+	if err := e.client.PullImage(image); err != nil {
 		return err
 	}
 	return nil
