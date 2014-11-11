@@ -118,8 +118,8 @@ func (n *Node) updateState() error {
 	n.containers = make(map[string]*Container)
 	for _, c := range containers {
 		container := &Container{}
-		container.Container = &c
-		n.containers[c.Id] = container
+		container.Container = c
+		n.containers[container.Id] = container
 	}
 
 	log.Printf("[%s] Updated state", n.ID)

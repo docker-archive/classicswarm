@@ -3,7 +3,7 @@ package libcluster
 import "github.com/samalba/dockerclient"
 
 type Container struct {
-	*dockerclient.Container
+	dockerclient.Container
 
 	node *Node
 }
