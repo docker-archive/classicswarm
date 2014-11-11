@@ -74,10 +74,19 @@ func TestNodeState(t *testing.T) {
 
 	// The node should only have a single container at this point.
 	assert.Len(t, node.Containers(), 1)
+	if _, ok := node.Containers()["one"]; !ok {
+		t.Fatalf("Missing container: one")
+	}
 
 	// Fake an event which will trigger a refresh. The second container will appear.
 	node.handler(&dockerclient.Event{Id: "two", Status: "created"})
 	assert.Len(t, node.Containers(), 2)
+	if _, ok := node.Containers()["one"]; !ok {
+		t.Fatalf("Missing container: one")
+	}
+	if _, ok := node.Containers()["two"]; !ok {
+		t.Fatalf("Missing container: two")
+	}
 
 	client.Mock.AssertExpectations(t)
 }
