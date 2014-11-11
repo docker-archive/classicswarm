@@ -38,3 +38,19 @@ func (c *Cluster) AddNode(n *Node) error {
 	c.nodes[n.ID] = n
 	return nil
 }
+
+// Containers returns all the containers running in the cluster.
+func (c *Cluster) Containers() []*Container {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	out := []*Container{}
+	for _, n := range c.nodes {
+		containers := n.Containers()
+		for _, container := range containers {
+			out = append(out, container)
+		}
+	}
+
+	return out
+}
