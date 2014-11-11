@@ -119,6 +119,7 @@ func (n *Node) updateState() error {
 	for _, c := range containers {
 		container := &Container{}
 		container.Container = c
+		container.node = n
 		n.containers[container.Id] = container
 	}
 
