@@ -1,24 +1,50 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
+	"strings"
 
+	"github.com/docker/libcluster"
 	"github.com/gorilla/mux"
+	"github.com/samalba/dockerclient"
 )
 
-type HttpApiFunc func(w http.ResponseWriter, r *http.Request)
+type HttpApiFunc func(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request)
 
-func ping(w http.ResponseWriter, r *http.Request) {
+func getContainersJSON(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	all := r.Form.Get("all") == "1"
+
+	out := []dockerclient.Container{}
+	for _, container := range c.Containers() {
+		// Skip stopped containers unless -a was specified.
+		if !strings.Contains(container.Status, "Up") && !all {
+			continue
+		}
+		out = append(out, container.Container)
+	}
+
+	sort.Sort(sort.Reverse(ContainerSorter(out)))
+	json.NewEncoder(w).Encode(out)
+}
+
+func ping(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
 }
 
-func notImplementedHandler(w http.ResponseWriter, r *http.Request) {
+func notImplementedHandler(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Not supported in clustering mode.", http.StatusNotImplemented)
 }
 
-func createRouter() (*mux.Router, error) {
+func createRouter(c *libcluster.Cluster) (*mux.Router, error) {
 	r := mux.NewRouter()
 	m := map[string]map[string]HttpApiFunc{
 		"GET": {
@@ -33,8 +59,8 @@ func createRouter() (*mux.Router, error) {
 			"/images/{name:.*}/get":           notImplementedHandler,
 			"/images/{name:.*}/history":       notImplementedHandler,
 			"/images/{name:.*}/json":          notImplementedHandler,
-			"/containers/ps":                  notImplementedHandler,
-			"/containers/json":                notImplementedHandler,
+			"/containers/ps":                  getContainersJSON,
+			"/containers/json":                getContainersJSON,
 			"/containers/{name:.*}/export":    notImplementedHandler,
 			"/containers/{name:.*}/changes":   notImplementedHandler,
 			"/containers/{name:.*}/json":      notImplementedHandler,
@@ -82,7 +108,7 @@ func createRouter() (*mux.Router, error) {
 			localFct := fct
 			wrap := func(w http.ResponseWriter, r *http.Request) {
 				fmt.Printf("-> %s %s\n", r.Method, r.RequestURI)
-				localFct(w, r)
+				localFct(c, w, r)
 			}
 			localMethod := method
 
@@ -95,8 +121,8 @@ func createRouter() (*mux.Router, error) {
 	return r, nil
 }
 
-func ListenAndServe(addr string) error {
-	r, err := createRouter()
+func ListenAndServe(c *libcluster.Cluster, addr string) error {
+	r, err := createRouter(c)
 	if err != nil {
 		return err
 	}
