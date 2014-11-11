@@ -8,6 +8,10 @@ type Container struct {
 	node *Node
 }
 
+func (c *Container) Node() *Node {
+	return c.node
+}
+
 func (c *Container) Start() error {
 	return c.node.client.StartContainer(c.Id, nil)
 }

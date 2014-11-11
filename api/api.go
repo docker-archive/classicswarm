@@ -1,10 +1,14 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -62,9 +66,41 @@ func getContainersJSON(c *libcluster.Cluster, w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(out)
 }
 
+// GET /containers/{name:.*}/json
+func getContainerJSON(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
+	container := c.Container(mux.Vars(r)["name"])
+	if container != nil {
+		resp, err := http.Get(container.Node().Addr + "/containers/" + container.Id + "/json")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node().IP)), -1))
+	}
+}
+
 // GET /_ping
 func ping(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
+}
+
+// Redirect a GET request to the right node
+func redirectContainer(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
+	container := c.Container(mux.Vars(r)["name"])
+	if container != nil {
+		re := regexp.MustCompile("/v([0-9.]*)") // TODO: discuss about skipping the version or not
+
+		newURL, _ := url.Parse(container.Node().Addr)
+		newURL.RawQuery = r.URL.RawQuery
+		newURL.Path = re.ReplaceAllLiteralString(r.URL.Path, "")
+		fmt.Println("REDIR ->", newURL.String())
+		http.Redirect(w, r, newURL.String(), http.StatusSeeOther)
+	}
 }
 
 func notImplementedHandler(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
@@ -88,11 +124,11 @@ func createRouter(c *libcluster.Cluster) (*mux.Router, error) {
 			"/images/{name:.*}/json":          notImplementedHandler,
 			"/containers/ps":                  getContainersJSON,
 			"/containers/json":                getContainersJSON,
-			"/containers/{name:.*}/export":    notImplementedHandler,
-			"/containers/{name:.*}/changes":   notImplementedHandler,
-			"/containers/{name:.*}/json":      notImplementedHandler,
-			"/containers/{name:.*}/top":       notImplementedHandler,
-			"/containers/{name:.*}/logs":      notImplementedHandler,
+			"/containers/{name:.*}/export":    redirectContainer,
+			"/containers/{name:.*}/changes":   redirectContainer,
+			"/containers/{name:.*}/json":      getContainerJSON,
+			"/containers/{name:.*}/top":       redirectContainer,
+			"/containers/{name:.*}/logs":      redirectContainer,
 			"/containers/{name:.*}/attach/ws": notImplementedHandler,
 		},
 		"POST": {

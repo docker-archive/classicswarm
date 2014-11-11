@@ -2,6 +2,7 @@ package libcluster
 
 import (
 	"errors"
+	"strings"
 	"sync"
 )
 
@@ -39,7 +40,7 @@ func (c *Cluster) AddNode(n *Node) error {
 	return nil
 }
 
-// Containers returns all the containers running in the cluster.
+// Containers returns all the containers in the cluster.
 func (c *Cluster) Containers() []*Container {
 	c.Lock()
 	defer c.Unlock()
@@ -55,7 +56,26 @@ func (c *Cluster) Containers() []*Container {
 	return out
 }
 
-// Return the list of node in the cluster
+// Container returns the container with ID in the cluster
+func (c *Cluster) Container(IdOrName string) *Container {
+	for _, container := range c.Containers() {
+		// Match ID prefix.
+		if strings.HasPrefix(container.Id, IdOrName) {
+			return container
+		}
+
+		// Match name, /name or engine/name.
+		for _, name := range container.Names {
+			if name == IdOrName || name == "/"+IdOrName || container.node.ID+name == IdOrName {
+				return container
+			}
+		}
+	}
+
+	return nil
+}
+
+// Nodes returns the list of nodes in the cluster
 func (c *Cluster) Nodes() map[string]*Node {
 	return c.nodes
 }
