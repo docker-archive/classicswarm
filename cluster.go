@@ -54,3 +54,8 @@ func (c *Cluster) Containers() []*Container {
 
 	return out
 }
+
+// Return the list of node in the cluster
+func (c *Cluster) Nodes() map[string]*Node {
+	return c.nodes
+}

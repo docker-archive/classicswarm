@@ -15,6 +15,32 @@ import (
 
 type HttpApiFunc func(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request)
 
+// GET /info
+func getInfo(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
+	var driverStatus [][2]string
+
+	for ID, node := range c.Nodes() {
+		driverStatus = append(driverStatus, [2]string{ID, node.Addr})
+	}
+	info := struct {
+		Containers                             int
+		Driver, ExecutionDriver                string
+		DriverStatus                           [][2]string
+		KernelVersion, OperatingSystem         string
+		MemoryLimit, SwapLimit, IPv4Forwarding bool
+	}{
+		len(c.Containers()),
+		"libcluster", "libcluster",
+		driverStatus,
+		"N/A", "N/A",
+		true, true, true,
+	}
+
+	json.NewEncoder(w).Encode(info)
+}
+
+// GET /containers/ps
+// GET /containers/json
 func getContainersJSON(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -36,6 +62,7 @@ func getContainersJSON(c *libcluster.Cluster, w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(out)
 }
 
+// GET /_ping
 func ping(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
 }
@@ -50,7 +77,7 @@ func createRouter(c *libcluster.Cluster) (*mux.Router, error) {
 		"GET": {
 			"/_ping":                          ping,
 			"/events":                         notImplementedHandler,
-			"/info":                           notImplementedHandler,
+			"/info":                           getInfo,
 			"/version":                        notImplementedHandler,
 			"/images/json":                    notImplementedHandler,
 			"/images/viz":                     notImplementedHandler,
