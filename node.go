@@ -28,6 +28,8 @@ func NewNode(id string, addr string) *Node {
 }
 
 type Node struct {
+	sync.Mutex
+
 	ID     string
 	IP     string
 	Addr   string
@@ -35,7 +37,6 @@ type Node struct {
 	Memory int64
 	Labels map[string]string
 
-	mux          sync.Mutex
 	ch           chan bool
 	containers   map[string]*Container
 	client       dockerclient.Client
@@ -112,8 +113,8 @@ func (n *Node) updateState() error {
 		return err
 	}
 
-	n.mux.Lock()
-	defer n.mux.Unlock()
+	n.Lock()
+	defer n.Unlock()
 
 	n.containers = make(map[string]*Container)
 	for _, c := range containers {
@@ -199,8 +200,8 @@ func (n *Node) Remove(container *Container, force bool) error {
 
 	// Remove the container from the state. Eventually, the state refresh loop
 	// will rewrite this.
-	n.mux.Lock()
-	defer n.mux.Unlock()
+	n.Lock()
+	defer n.Unlock()
 	delete(n.containers, container.Id)
 
 	return nil

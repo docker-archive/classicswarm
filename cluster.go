@@ -11,7 +11,7 @@ var (
 )
 
 type Cluster struct {
-	mux   sync.Mutex
+	sync.Mutex
 	nodes map[string]*Node
 }
 
@@ -28,8 +28,8 @@ func (c *Cluster) AddNode(n *Node) error {
 		return ErrNodeNotConnected
 	}
 
-	c.mux.Lock()
-	defer c.mux.Unlock()
+	c.Lock()
+	defer c.Unlock()
 
 	if _, exists := c.nodes[n.ID]; exists {
 		return ErrNodeAlreadyRegistered
@@ -41,8 +41,8 @@ func (c *Cluster) AddNode(n *Node) error {
 
 // Containers returns all the containers running in the cluster.
 func (c *Cluster) Containers() []*Container {
-	c.mux.Lock()
-	defer c.mux.Unlock()
+	c.Lock()
+	defer c.Unlock()
 
 	out := []*Container{}
 	for _, n := range c.nodes {
