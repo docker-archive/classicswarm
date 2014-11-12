@@ -3,12 +3,12 @@ package libcluster
 import (
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"sync"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/samalba/dockerclient"
 )
 
@@ -124,7 +124,7 @@ func (n *Node) updateState() error {
 		n.containers[container.Id] = container
 	}
 
-	log.Printf("[%s] Updated state", n.ID)
+	log.Debugf("[%s] Updated state", n.ID)
 	return nil
 }
 
@@ -142,7 +142,7 @@ func (n *Node) updateLoop() {
 			err = n.updateState()
 		}
 		if err != nil {
-			log.Printf("[%s] Updated state failed: %v", n.ID, err)
+			log.Errorf("[%s] Updated state failed: %v", n.ID, err)
 		}
 	}
 }

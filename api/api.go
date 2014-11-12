@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"regexp"
 	"sort"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/libcluster"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
@@ -165,12 +165,13 @@ func createRouter(c *libcluster.Cluster) (*mux.Router, error) {
 
 	for method, routes := range m {
 		for route, fct := range routes {
-			log.Printf("Registering %s, %s", method, route)
+			log.Debugf("Registering %s, %s", method, route)
+
 			// NOTE: scope issue, make sure the variables are local and won't be changed
 			localRoute := route
 			localFct := fct
 			wrap := func(w http.ResponseWriter, r *http.Request) {
-				fmt.Printf("-> %s %s\n", r.Method, r.RequestURI)
+				log.Infof("%s %s", r.Method, r.RequestURI)
 				localFct(c, w, r)
 			}
 			localMethod := method

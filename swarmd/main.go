@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/libcluster"
 	"github.com/docker/libcluster/api"
 )
@@ -14,6 +14,11 @@ func main() {
 		fmt.Printf("Usage: %s node1 node2 ...\n", os.Args[0])
 		os.Exit(1)
 	}
+
+	// Setup logging
+	log.SetOutput(os.Stderr)
+	log.SetLevel(log.DebugLevel)
+
 	c := libcluster.NewCluster()
 	for _, addr := range os.Args[1:] {
 		n := libcluster.NewNode(addr, addr)
