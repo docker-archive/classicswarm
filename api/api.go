@@ -84,6 +84,27 @@ func getContainerJSON(c *libcluster.Cluster, w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// DELETE /containers/{name:.*}
+func deleteContainer(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	name := mux.Vars(r)["name"]
+	force := r.Form.Get("force") == "1"
+	container := c.Container(name)
+	if container == nil {
+		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
+		return
+	}
+	if err := container.Node().Remove(container, force); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
+
 // GET /_ping
 func ping(c *libcluster.Cluster, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
@@ -155,7 +176,7 @@ func createRouter(c *libcluster.Cluster) (*mux.Router, error) {
 			"/exec/{name:.*}/resize":        notImplementedHandler,
 		},
 		"DELETE": {
-			"/containers/{name:.*}": notImplementedHandler,
+			"/containers/{name:.*}": deleteContainer,
 			"/images/{name:.*}":     notImplementedHandler,
 		},
 		"OPTIONS": {
