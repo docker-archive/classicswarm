@@ -88,6 +88,20 @@ func getContainerJSON(c *HttpApiContext, w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// POST /containers/{name:.*}/start
+func postContainersStart(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+	container := c.cluster.Container(name)
+	if container == nil {
+		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
+		return
+	}
+	if err := container.Start(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
+}
+
 // DELETE /containers/{name:.*}
 func deleteContainer(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -170,7 +184,7 @@ func createRouter(c *HttpApiContext) (*mux.Router, error) {
 			"/containers/{name:.*}/pause":   notImplementedHandler,
 			"/containers/{name:.*}/unpause": notImplementedHandler,
 			"/containers/{name:.*}/restart": notImplementedHandler,
-			"/containers/{name:.*}/start":   notImplementedHandler,
+			"/containers/{name:.*}/start":   postContainersStart,
 			"/containers/{name:.*}/stop":    notImplementedHandler,
 			"/containers/{name:.*}/wait":    notImplementedHandler,
 			"/containers/{name:.*}/resize":  notImplementedHandler,
