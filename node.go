@@ -108,7 +108,7 @@ func (n *Node) updateSpecs() error {
 
 // Refresh the list and status of containers running on the node.
 func (n *Node) updateState() error {
-	containers, err := n.client.ListContainers(true)
+	containers, err := n.client.ListContainers(true, false)
 	if err != nil {
 		return err
 	}
