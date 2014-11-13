@@ -64,6 +64,11 @@ func getContainersJSON(c *HttpApiContext, w http.ResponseWriter, r *http.Request
 		if !strings.Contains(tmp.Status, "Up") && !all {
 			continue
 		}
+		// TODO remove the Node ID in the name when we have a good solution
+		tmp.Names = make([]string, len(container.Names))
+		for i, name := range container.Names {
+			tmp.Names[i] = "/" + container.Node().ID + name
+		}
 		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
 		for i, port := range container.Ports {
 			tmp.Ports[i] = port
