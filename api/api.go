@@ -38,7 +38,7 @@ func getInfo(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
 		MemoryLimit, SwapLimit, IPv4Forwarding bool
 	}{
 		len(c.cluster.Containers()),
-		"libcluster", "libcluster",
+		"libcluster", "libcluster", //TODO: remove this crap once https://github.com/docker/docker/pull/9131 is merged
 		driverStatus,
 		"N/A", "N/A",
 		true, true, true,
@@ -57,13 +57,21 @@ func getContainersJSON(c *HttpApiContext, w http.ResponseWriter, r *http.Request
 
 	all := r.Form.Get("all") == "1"
 
-	out := []dockerclient.Container{}
+	out := []*dockerclient.Container{}
 	for _, container := range c.cluster.Containers() {
+		tmp := (*container).Container
 		// Skip stopped containers unless -a was specified.
-		if !strings.Contains(container.Status, "Up") && !all {
+		if !strings.Contains(tmp.Status, "Up") && !all {
 			continue
 		}
-		out = append(out, container.Container)
+		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
+		for i, port := range container.Ports {
+			tmp.Ports[i] = port
+			if port.IP == "0.0.0.0" {
+				tmp.Ports[i].IP = container.Node().IP
+			}
+		}
+		out = append(out, &tmp)
 	}
 
 	sort.Sort(sort.Reverse(ContainerSorter(out)))
@@ -103,7 +111,7 @@ func postContainersStart(c *HttpApiContext, w http.ResponseWriter, r *http.Reque
 }
 
 // POST /containers/{name:.*}/pause
-func postContainersPause(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func postContainerPause(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	container := c.cluster.Container(name)
 	if container == nil {
@@ -117,7 +125,7 @@ func postContainersPause(c *HttpApiContext, w http.ResponseWriter, r *http.Reque
 }
 
 // POST /containers/{name:.*}/unpause
-func postContainersUnpause(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func postContainerUnpause(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	container := c.cluster.Container(name)
 	if container == nil {

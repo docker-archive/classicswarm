@@ -32,6 +32,6 @@ func (c *Container) Pause() error {
 	return c.node.client.PauseContainer(c.Id)
 }
 
-func (c *Container) Unpause(timeout int) error {
+func (c *Container) Unpause() error {
 	return c.node.client.UnpauseContainer(c.Id)
 }

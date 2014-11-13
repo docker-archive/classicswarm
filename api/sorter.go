@@ -4,7 +4,7 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-type ContainerSorter []dockerclient.Container
+type ContainerSorter []*dockerclient.Container
 
 func (s ContainerSorter) Len() int {
 	return len(s)
