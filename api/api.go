@@ -178,7 +178,7 @@ func redirectContainer(c *HttpApiContext, w http.ResponseWriter, r *http.Request
 		newURL, _ := url.Parse(container.Node().Addr)
 		newURL.RawQuery = r.URL.RawQuery
 		newURL.Path = re.ReplaceAllLiteralString(r.URL.Path, "")
-		fmt.Println("REDIR ->", newURL.String())
+		log.Debugf("REDIRECT TO %s", newURL.String())
 		http.Redirect(w, r, newURL.String(), http.StatusSeeOther)
 	}
 }
