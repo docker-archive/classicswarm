@@ -102,6 +102,34 @@ func postContainersStart(c *HttpApiContext, w http.ResponseWriter, r *http.Reque
 	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
 }
 
+// POST /containers/{name:.*}/pause
+func postContainersPause(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+	container := c.cluster.Container(name)
+	if container == nil {
+		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
+		return
+	}
+	if err := container.Pause(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
+}
+
+// POST /containers/{name:.*}/unpause
+func postContainersUnpause(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+	container := c.cluster.Container(name)
+	if container == nil {
+		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
+		return
+	}
+	if err := container.Unpause(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
+}
+
 // DELETE /containers/{name:.*}
 func deleteContainer(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -181,8 +209,8 @@ func createRouter(c *HttpApiContext) (*mux.Router, error) {
 			"/images/{name:.*}/tag":         notImplementedHandler,
 			"/containers/create":            notImplementedHandler,
 			"/containers/{name:.*}/kill":    notImplementedHandler,
-			"/containers/{name:.*}/pause":   notImplementedHandler,
-			"/containers/{name:.*}/unpause": notImplementedHandler,
+			"/containers/{name:.*}/pause":   postContainerPause,
+			"/containers/{name:.*}/unpause": postContainerUnpause,
 			"/containers/{name:.*}/restart": notImplementedHandler,
 			"/containers/{name:.*}/start":   postContainersStart,
 			"/containers/{name:.*}/stop":    notImplementedHandler,
