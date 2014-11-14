@@ -29,5 +29,5 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	api.ListenAndServe(c, ":4243")
+	log.Fatal(api.ListenAndServe(c, ":4243"))
 }
