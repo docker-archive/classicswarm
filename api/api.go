@@ -25,23 +25,17 @@ type handler func(c *context, w http.ResponseWriter, r *http.Request)
 
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
-	var driverStatus [][2]string
+	driverStatus := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(c.cluster.Nodes()))}}
 
 	for ID, node := range c.cluster.Nodes() {
 		driverStatus = append(driverStatus, [2]string{ID, node.Addr})
 	}
 	info := struct {
-		Containers                             int
-		Driver, ExecutionDriver                string
-		DriverStatus                           [][2]string
-		KernelVersion, OperatingSystem         string
-		MemoryLimit, SwapLimit, IPv4Forwarding bool
+		Containers   int
+		DriverStatus [][2]string
 	}{
 		len(c.cluster.Containers()),
-		"libcluster", "libcluster", //TODO: remove this crap once https://github.com/docker/docker/pull/9131 is merged
 		driverStatus,
-		"N/A", "N/A",
-		true, true, true,
 	}
 
 	json.NewEncoder(w).Encode(info)
