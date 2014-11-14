@@ -13,12 +13,14 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/libcluster"
+	"github.com/docker/libcluster/scheduler"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
 )
 
 type context struct {
-	cluster *libcluster.Cluster
+	cluster   *libcluster.Cluster
+	scheduler *scheduler.Scheduler
 }
 
 type handler func(c *context, w http.ResponseWriter, r *http.Request)
@@ -93,6 +95,25 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write(bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node().IP)), -1))
 	}
+}
+
+// POST /containers/create
+func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	var config dockerclient.ContainerConfig
+
+	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	container, err := c.scheduler.CreateContainer(&config, r.Form.Get("name"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
+	return
 }
 
 // POST /containers/{name:.*}/start
@@ -224,7 +245,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 			"/images/load":                  notImplementedHandler,
 			"/images/{name:.*}/push":        notImplementedHandler,
 			"/images/{name:.*}/tag":         notImplementedHandler,
-			"/containers/create":            notImplementedHandler,
+			"/containers/create":            postContainersCreate,
 			"/containers/{name:.*}/kill":    notImplementedHandler,
 			"/containers/{name:.*}/pause":   postContainerPause,
 			"/containers/{name:.*}/unpause": postContainerUnpause,
@@ -273,9 +294,10 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 	return r, nil
 }
 
-func ListenAndServe(c *libcluster.Cluster, addr string) error {
+func ListenAndServe(c *libcluster.Cluster, s *scheduler.Scheduler, addr string) error {
 	context := &context{
-		cluster: c,
+		cluster:   c,
+		scheduler: s,
 	}
 	r, err := createRouter(context, false)
 	if err != nil {

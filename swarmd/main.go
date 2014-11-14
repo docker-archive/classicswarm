@@ -7,6 +7,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/libcluster"
 	"github.com/docker/libcluster/api"
+	"github.com/docker/libcluster/scheduler"
 )
 
 func main() {
@@ -29,5 +30,6 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	log.Fatal(api.ListenAndServe(c, ":4243"))
+	s := scheduler.NewScheduler(c)
+	log.Fatal(api.ListenAndServe(c, s, ":4243"))
 }
