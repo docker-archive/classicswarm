@@ -17,14 +17,14 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-type HttpApiContext struct {
+type context struct {
 	cluster *libcluster.Cluster
 }
 
-type HttpApiFunc func(c *HttpApiContext, w http.ResponseWriter, r *http.Request)
+type handler func(c *context, w http.ResponseWriter, r *http.Request)
 
 // GET /info
-func getInfo(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	var driverStatus [][2]string
 
 	for ID, node := range c.cluster.Nodes() {
@@ -49,7 +49,7 @@ func getInfo(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
 
 // GET /containers/ps
 // GET /containers/json
-func getContainersJSON(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -84,7 +84,7 @@ func getContainersJSON(c *HttpApiContext, w http.ResponseWriter, r *http.Request
 }
 
 // GET /containers/{name:.*}/json
-func getContainerJSON(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	container := c.cluster.Container(mux.Vars(r)["name"])
 	if container != nil {
 		resp, err := http.Get(container.Node().Addr + "/containers/" + container.Id + "/json")
@@ -102,7 +102,7 @@ func getContainerJSON(c *HttpApiContext, w http.ResponseWriter, r *http.Request)
 }
 
 // POST /containers/{name:.*}/start
-func postContainersStart(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	container := c.cluster.Container(name)
 	if container == nil {
@@ -116,7 +116,7 @@ func postContainersStart(c *HttpApiContext, w http.ResponseWriter, r *http.Reque
 }
 
 // POST /containers/{name:.*}/pause
-func postContainerPause(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func postContainerPause(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	container := c.cluster.Container(name)
 	if container == nil {
@@ -130,7 +130,7 @@ func postContainerPause(c *HttpApiContext, w http.ResponseWriter, r *http.Reques
 }
 
 // POST /containers/{name:.*}/unpause
-func postContainerUnpause(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func postContainerUnpause(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	container := c.cluster.Container(name)
 	if container == nil {
@@ -144,7 +144,7 @@ func postContainerUnpause(c *HttpApiContext, w http.ResponseWriter, r *http.Requ
 }
 
 // DELETE /containers/{name:.*}
-func deleteContainer(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func deleteContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -165,12 +165,12 @@ func deleteContainer(c *HttpApiContext, w http.ResponseWriter, r *http.Request) 
 }
 
 // GET /_ping
-func ping(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
 }
 
 // Redirect a GET request to the right node
-func redirectContainer(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func redirectContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	container := c.cluster.Container(mux.Vars(r)["name"])
 	if container != nil {
 		re := regexp.MustCompile("/v([0-9.]*)") // TODO: discuss about skipping the version or not
@@ -184,11 +184,11 @@ func redirectContainer(c *HttpApiContext, w http.ResponseWriter, r *http.Request
 }
 
 // Default handler for methods not supported by clustering.
-func notImplementedHandler(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Not supported in clustering mode.", http.StatusNotImplemented)
 }
 
-func optionsHandler(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -198,9 +198,9 @@ func writeCorsHeaders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
 }
 
-func createRouter(c *HttpApiContext, enableCors bool) (*mux.Router, error) {
+func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 	r := mux.NewRouter()
-	m := map[string]map[string]HttpApiFunc{
+	m := map[string]map[string]handler{
 		"GET": {
 			"/_ping":                          ping,
 			"/events":                         notImplementedHandler,
@@ -280,7 +280,7 @@ func createRouter(c *HttpApiContext, enableCors bool) (*mux.Router, error) {
 }
 
 func ListenAndServe(c *libcluster.Cluster, addr string) error {
-	context := &HttpApiContext{
+	context := &context{
 		cluster: c,
 	}
 	r, err := createRouter(context, false)
