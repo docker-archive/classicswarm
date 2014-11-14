@@ -188,7 +188,17 @@ func notImplementedHandler(c *HttpApiContext, w http.ResponseWriter, r *http.Req
 	http.Error(w, "Not supported in clustering mode.", http.StatusNotImplemented)
 }
 
-func createRouter(c *HttpApiContext) (*mux.Router, error) {
+func optionsHandler(c *HttpApiContext, w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func writeCorsHeaders(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
+	w.Header().Add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
+}
+
+func createRouter(c *HttpApiContext, enableCors bool) (*mux.Router, error) {
 	r := mux.NewRouter()
 	m := map[string]map[string]HttpApiFunc{
 		"GET": {
@@ -240,7 +250,7 @@ func createRouter(c *HttpApiContext) (*mux.Router, error) {
 			"/images/{name:.*}":     notImplementedHandler,
 		},
 		"OPTIONS": {
-			"": notImplementedHandler,
+			"": optionsHandler,
 		},
 	}
 
@@ -253,6 +263,9 @@ func createRouter(c *HttpApiContext) (*mux.Router, error) {
 			localFct := fct
 			wrap := func(w http.ResponseWriter, r *http.Request) {
 				log.Infof("%s %s", r.Method, r.RequestURI)
+				if enableCors {
+					writeCorsHeaders(w, r)
+				}
 				localFct(c, w, r)
 			}
 			localMethod := method
@@ -270,7 +283,7 @@ func ListenAndServe(c *libcluster.Cluster, addr string) error {
 	context := &HttpApiContext{
 		cluster: c,
 	}
-	r, err := createRouter(context)
+	r, err := createRouter(context, false)
 	if err != nil {
 		return err
 	}
