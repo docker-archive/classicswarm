@@ -35,3 +35,9 @@ func (eh *eventsHandler) Handle(e *libcluster.Event) error {
 	eh.RUnlock()
 	return nil
 }
+
+func (eh *eventsHandler) Size() int {
+	eh.RLock()
+	defer eh.RUnlock()
+	return len(eh.ws)
+}

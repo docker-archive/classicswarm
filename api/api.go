@@ -23,6 +23,7 @@ type context struct {
 	cluster       *libcluster.Cluster
 	scheduler     *scheduler.Scheduler
 	eventsHandler *eventsHandler
+	debug         bool
 }
 
 type handler func(c *context, w http.ResponseWriter, r *http.Request)
@@ -35,11 +36,15 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		driverStatus = append(driverStatus, [2]string{ID, node.Addr})
 	}
 	info := struct {
-		Containers   int
-		DriverStatus [][2]string
+		Containers      int
+		DriverStatus    [][2]string
+		NEventsListener int
+		Debug           bool
 	}{
 		len(c.cluster.Containers()),
 		driverStatus,
+		c.eventsHandler.Size(),
+		c.debug,
 	}
 
 	json.NewEncoder(w).Encode(info)
