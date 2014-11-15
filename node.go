@@ -207,8 +207,8 @@ func (n *Node) Remove(container *Container, force bool) error {
 	return nil
 }
 
-func (e *Node) Pull(image string) error {
-	if err := e.client.PullImage(image); err != nil {
+func (n *Node) Pull(image string) error {
+	if err := n.client.PullImage(image); err != nil {
 		return err
 	}
 	return nil
