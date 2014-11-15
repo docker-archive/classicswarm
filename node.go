@@ -70,7 +70,7 @@ func (n *Node) connectClient(client dockerclient.Client) error {
 	}
 
 	// Force a state update before returning.
-	if err := n.updateState(); err != nil {
+	if err := n.updateContainers(); err != nil {
 		n.client = nil
 		return err
 	}
@@ -107,7 +107,7 @@ func (n *Node) updateSpecs() error {
 }
 
 // Refresh the list and status of containers running on the node.
-func (n *Node) updateState() error {
+func (n *Node) updateContainers() error {
 	containers, err := n.client.ListContainers(true, false)
 	if err != nil {
 		return err
@@ -118,17 +118,31 @@ func (n *Node) updateState() error {
 
 	n.containers = make(map[string]*Container)
 	for _, c := range containers {
-		container := &Container{}
-		container.Container = c
-		container.node = n
-		n.containers[container.Id] = container
+		if current, exists := n.containers[c.Id]; exists {
+			// The container exists. Update its state.
+			current.Container = c
+		} else {
+			// This is a brand new container.
+			container := &Container{}
+			container.Container = c
+			container.node = n
+
+			info, err := n.client.InspectContainer(container.Id)
+			if err != nil {
+				log.Errorf("[%s] Unable to update state of %s", n.ID, c.Id)
+				continue
+			}
+			container.Info = *info
+
+			n.containers[container.Id] = container
+		}
 	}
 
 	log.Debugf("[%s] Updated state", n.ID)
 	return nil
 }
 
-func (n *Node) updateStateAsync() {
+func (n *Node) updateContainersAsync() {
 	n.ch <- true
 }
 
@@ -137,9 +151,9 @@ func (n *Node) updateLoop() {
 		var err error
 		select {
 		case <-n.ch:
-			err = n.updateState()
+			err = n.updateContainers()
 		case <-time.After(stateRefreshPeriod):
-			err = n.updateState()
+			err = n.updateContainers()
 		}
 		if err != nil {
 			log.Errorf("[%s] Updated state failed: %v", n.ID, err)
@@ -171,7 +185,7 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
-	n.updateState()
+	n.updateContainers()
 
 	return n.containers[id], nil
 }
@@ -233,7 +247,7 @@ func (n *Node) String() string {
 
 func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
 	// Something changed - refresh our internal state.
-	n.updateState()
+	n.updateContainers()
 
 	// If there is no event handler registered, abort right now.
 	if n.eventHandler == nil {
