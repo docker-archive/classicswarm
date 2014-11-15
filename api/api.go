@@ -179,7 +179,7 @@ func deleteContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
 		return
 	}
-	if err := container.Node().Remove(container, force); err != nil {
+	if err := c.scheduler.RemoveContainer(container, force); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
