@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/docker/libcluster"
@@ -44,6 +45,10 @@ func (s *Scheduler) selectNodeForContainer(config *dockerclient.ContainerConfig)
 func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name string) (*libcluster.Container, error) {
 	s.Lock()
 	defer s.Unlock()
+
+	if config.Memory == 0 || config.CpuShares == 0 {
+		return nil, fmt.Errorf("Creating containers in clustering mode requires resource constraints (-c and -m) to be set")
+	}
 
 	node, err := s.selectNodeForContainer(config)
 	if err != nil {
