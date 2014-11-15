@@ -3,12 +3,21 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/libcluster"
 	"github.com/docker/libcluster/api"
 	"github.com/docker/libcluster/scheduler"
 )
+
+type logHandler struct {
+}
+
+func (h *logHandler) Handle(e *libcluster.Event) error {
+	log.Printf("event -> type: %q time: %q image: %q container: %q", e.Type, e.Time.Format(time.RubyDate), e.Container.Image, e.Container.Id)
+	return nil
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -30,6 +39,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	c.Events(&logHandler{})
 	s := scheduler.NewScheduler(c)
 	log.Fatal(api.ListenAndServe(c, s, ":4243"))
 }

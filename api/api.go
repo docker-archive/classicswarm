@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -19,8 +20,9 @@ import (
 )
 
 type context struct {
-	cluster   *libcluster.Cluster
-	scheduler *scheduler.Scheduler
+	cluster       *libcluster.Cluster
+	scheduler     *scheduler.Scheduler
+	eventsHandler *eventsHandler
 }
 
 type handler func(c *context, w http.ResponseWriter, r *http.Request)
@@ -179,6 +181,21 @@ func deleteContainer(c *context, w http.ResponseWriter, r *http.Request) {
 
 }
 
+// GET /events
+func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
+	c.eventsHandler.Lock()
+	c.eventsHandler.ws[r.RemoteAddr] = w
+	c.eventsHandler.cs[r.RemoteAddr] = make(chan struct{})
+	c.eventsHandler.Unlock()
+	w.Header().Set("Content-Type", "application/json")
+
+	if f, ok := w.(http.Flusher); ok {
+		f.Flush()
+	}
+
+	<-c.eventsHandler.cs[r.RemoteAddr]
+}
+
 // GET /_ping
 func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
@@ -218,7 +235,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 	m := map[string]map[string]handler{
 		"GET": {
 			"/_ping":                          ping,
-			"/events":                         notImplementedHandler,
+			"/events":                         getEvents,
 			"/info":                           getInfo,
 			"/version":                        notImplementedHandler,
 			"/images/json":                    notImplementedHandler,
@@ -298,7 +315,12 @@ func ListenAndServe(c *libcluster.Cluster, s *scheduler.Scheduler, addr string) 
 	context := &context{
 		cluster:   c,
 		scheduler: s,
+		eventsHandler: &eventsHandler{
+			ws: make(map[string]io.Writer),
+			cs: make(map[string]chan struct{}),
+		},
 	}
+	c.Events(context.eventsHandler)
 	r, err := createRouter(context, false)
 	if err != nil {
 		return err

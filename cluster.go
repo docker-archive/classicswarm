@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strings"
 	"sync"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -13,13 +15,23 @@ var (
 
 type Cluster struct {
 	sync.Mutex
-	nodes map[string]*Node
+	eventHandlers []EventHandler
+	nodes         map[string]*Node
 }
 
 func NewCluster() *Cluster {
 	return &Cluster{
 		nodes: make(map[string]*Node),
 	}
+}
+
+func (c *Cluster) Handle(e *Event) error {
+	for _, eventHandler := range c.eventHandlers {
+		if err := eventHandler.Handle(e); err != nil {
+			log.Error(err)
+		}
+	}
+	return nil
 }
 
 // Register a node within the cluster. The node must have been already
@@ -37,7 +49,7 @@ func (c *Cluster) AddNode(n *Node) error {
 	}
 
 	c.nodes[n.ID] = n
-	return nil
+	return n.Events(c)
 }
 
 // Containers returns all the containers in the cluster.
@@ -78,4 +90,9 @@ func (c *Cluster) Container(IdOrName string) *Container {
 // Nodes returns the list of nodes in the cluster
 func (c *Cluster) Nodes() map[string]*Node {
 	return c.nodes
+}
+
+func (c *Cluster) Events(h EventHandler) error {
+	c.eventHandlers = append(c.eventHandlers, h)
+	return nil
 }

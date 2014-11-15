@@ -241,10 +241,21 @@ func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
 	}
 
 	event := &Event{
-		Node:      n,
-		Type:      ev.Status,
-		Time:      time.Unix(int64(ev.Time), 0),
-		Container: n.containers[ev.Id],
+		Node: n,
+		Type: ev.Status,
+		Time: time.Unix(int64(ev.Time), 0),
+	}
+
+	if container, ok := n.containers[ev.Id]; ok {
+		event.Container = container
+	} else {
+		event.Container = &Container{
+			node: n,
+			Container: dockerclient.Container{
+				Id:    ev.Id,
+				Image: ev.From,
+			},
+		}
 	}
 
 	n.eventHandler.Handle(event)
