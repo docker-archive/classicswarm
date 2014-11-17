@@ -161,6 +161,24 @@ func (n *Node) updateLoop() {
 	}
 }
 
+// Return the sum of memory reserved by containers.
+func (n *Node) ReservedMemory() int64 {
+	var r int64 = 0
+	for _, c := range n.containers {
+		r += int64(c.Info.Config.Memory)
+	}
+	return r
+}
+
+// Return the sum of CPUs reserved by containers.
+func (n *Node) ReservedCpus() float64 {
+	r := 0.0
+	for _, c := range n.containers {
+		r += float64(c.Info.Config.CpuShares) / 100.0 * float64(n.Cpus)
+	}
+	return r
+}
+
 func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*Container, error) {
 	var (
 		err    error
