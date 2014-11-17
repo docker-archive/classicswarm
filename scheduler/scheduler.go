@@ -18,11 +18,11 @@ type Scheduler struct {
 	filters  []filter.Filter
 }
 
-func NewScheduler(cluster *libcluster.Cluster) *Scheduler {
+func NewScheduler(cluster *libcluster.Cluster, strategy strategy.PlacementStrategy, filters []filter.Filter) *Scheduler {
 	return &Scheduler{
 		cluster:  cluster,
-		strategy: &strategy.RandomPlacementStrategy{},
-		filters:  []filter.Filter{},
+		strategy: strategy,
+		filters:  filters,
 	}
 }
 

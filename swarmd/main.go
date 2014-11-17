@@ -9,6 +9,8 @@ import (
 	"github.com/docker/libcluster"
 	"github.com/docker/libcluster/api"
 	"github.com/docker/libcluster/scheduler"
+	"github.com/docker/libcluster/scheduler/filter"
+	"github.com/docker/libcluster/scheduler/strategy"
 )
 
 type logHandler struct {
@@ -39,7 +41,9 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+
 	c.Events(&logHandler{})
-	s := scheduler.NewScheduler(c)
+	s := scheduler.NewScheduler(c, &strategy.RandomPlacementStrategy{}, []filter.Filter{})
+
 	log.Fatal(api.ListenAndServe(c, s, ":4243"))
 }
