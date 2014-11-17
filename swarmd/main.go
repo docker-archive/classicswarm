@@ -43,7 +43,7 @@ func main() {
 	}
 
 	c.Events(&logHandler{})
-	s := scheduler.NewScheduler(c, &strategy.RandomPlacementStrategy{}, []filter.Filter{})
+	s := scheduler.NewScheduler(c, &strategy.BinPackingPlacementStrategy{}, []filter.Filter{})
 
 	log.Fatal(api.ListenAndServe(c, s, ":4243"))
 }
