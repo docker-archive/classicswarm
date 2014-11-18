@@ -3,6 +3,7 @@ package discovery
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -37,4 +38,14 @@ func RegisterSlave(addr, token string) error {
 
 	_, err := http.Post(fmt.Sprintf("%s/%s/%s", DISCOVERY_URL, "clusters", token), "application/json", buf)
 	return err
+}
+
+// CreateCluster returns a unique cluster token
+func CreateCluster() (string, error) {
+	resp, err := http.Post(fmt.Sprintf("%s/%s", DISCOVERY_URL, "clusters"), "", nil)
+	if err != nil {
+		return "", err
+	}
+	token, err := ioutil.ReadAll(resp.Body)
+	return string(token), err
 }

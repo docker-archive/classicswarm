@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -60,6 +61,19 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
+		{
+			Name:      "create",
+			ShortName: "c",
+			Usage:     "create a cluster",
+
+			Action: func(c *cli.Context) {
+				token, err := discovery.CreateCluster()
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println(token)
+			},
+		},
 		{
 			Name:      "manage",
 			ShortName: "m",
@@ -144,5 +158,7 @@ func main() {
 		},
 	}
 
-	log.Fatal(app.Run(os.Args))
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
 }
