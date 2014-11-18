@@ -7,11 +7,11 @@ import (
 
 type Filter interface {
 	// Return a subset of nodes that were accepted by the filtering policy.
-	Filter(*dockerclient.ContainerConfig, []*libcluster.Node) ([]*libcluster.Node, error)
+	Filter(*dockerclient.ContainerConfig, []*swarm.Node) ([]*swarm.Node, error)
 }
 
 // Apply a set of filters in batch.
-func ApplyFilters(filters []Filter, config *dockerclient.ContainerConfig, nodes []*libcluster.Node) ([]*libcluster.Node, error) {
+func ApplyFilters(filters []Filter, config *dockerclient.ContainerConfig, nodes []*swarm.Node) ([]*swarm.Node, error) {
 	var err error
 
 	for _, filter := range filters {

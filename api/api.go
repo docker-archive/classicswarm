@@ -20,7 +20,7 @@ import (
 )
 
 type context struct {
-	cluster       *libcluster.Cluster
+	cluster       *swarm.Cluster
 	scheduler     *scheduler.Scheduler
 	eventsHandler *eventsHandler
 	debug         bool
@@ -316,7 +316,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 	return r, nil
 }
 
-func ListenAndServe(c *libcluster.Cluster, s *scheduler.Scheduler, addr string) error {
+func ListenAndServe(c *swarm.Cluster, s *scheduler.Scheduler, addr string) error {
 	context := &context{
 		cluster:   c,
 		scheduler: s,

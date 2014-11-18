@@ -1,4 +1,4 @@
-package libcluster
+package swarm
 
 import (
 	"errors"

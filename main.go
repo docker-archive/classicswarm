@@ -18,7 +18,7 @@ import (
 type logHandler struct {
 }
 
-func (h *logHandler) Handle(e *libcluster.Event) error {
+func (h *logHandler) Handle(e *swarm.Event) error {
 	log.Printf("event -> type: %q time: %q image: %q container: %q", e.Type, e.Time.Format(time.RubyDate), e.Container.Image, e.Container.Id)
 	return nil
 }
@@ -82,10 +82,10 @@ func main() {
 
 			Action: func(c *cli.Context) {
 
-				refresh := func(cluster *libcluster.Cluster, nodes []string) error {
+				refresh := func(cluster *swarm.Cluster, nodes []string) error {
 					for _, addr := range nodes {
 						if cluster.Node(addr) == nil {
-							n := libcluster.NewNode(addr, addr)
+							n := swarm.NewNode(addr, addr)
 							if err := n.Connect(nil); err != nil {
 								return err
 							}
@@ -97,7 +97,7 @@ func main() {
 					return nil
 				}
 
-				cluster := libcluster.NewCluster()
+				cluster := swarm.NewCluster()
 				cluster.Events(&logHandler{})
 
 				if c.String("token") != "" {

@@ -1,4 +1,4 @@
-package libcluster
+package swarm
 
 import "github.com/samalba/dockerclient"
 

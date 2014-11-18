@@ -17,7 +17,7 @@ func init() {
 type RandomPlacementStrategy struct {
 }
 
-func (p *RandomPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*libcluster.Node) (*libcluster.Node, error) {
+func (p *RandomPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*swarm.Node) (*swarm.Node, error) {
 	n := rand.Intn(len(nodes))
 	for i, node := range nodes {
 		if i == n {

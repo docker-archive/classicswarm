@@ -13,12 +13,12 @@ import (
 type Scheduler struct {
 	sync.Mutex
 
-	cluster  *libcluster.Cluster
+	cluster  *swarm.Cluster
 	strategy strategy.PlacementStrategy
 	filters  []filter.Filter
 }
 
-func NewScheduler(cluster *libcluster.Cluster, strategy strategy.PlacementStrategy, filters []filter.Filter) *Scheduler {
+func NewScheduler(cluster *swarm.Cluster, strategy strategy.PlacementStrategy, filters []filter.Filter) *Scheduler {
 	return &Scheduler{
 		cluster:  cluster,
 		strategy: strategy,
@@ -27,8 +27,8 @@ func NewScheduler(cluster *libcluster.Cluster, strategy strategy.PlacementStrate
 }
 
 // Find a nice home for our container.
-func (s *Scheduler) selectNodeForContainer(config *dockerclient.ContainerConfig) (*libcluster.Node, error) {
-	candidates := []*libcluster.Node{}
+func (s *Scheduler) selectNodeForContainer(config *dockerclient.ContainerConfig) (*swarm.Node, error) {
+	candidates := []*swarm.Node{}
 	for _, node := range s.cluster.Nodes() {
 		candidates = append(candidates, node)
 	}
@@ -42,7 +42,7 @@ func (s *Scheduler) selectNodeForContainer(config *dockerclient.ContainerConfig)
 }
 
 // Schedule a brand new container into the cluster.
-func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name string) (*libcluster.Container, error) {
+func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name string) (*swarm.Container, error) {
 	s.Lock()
 	defer s.Unlock()
 
@@ -59,7 +59,7 @@ func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name s
 
 // Remove a container from the cluster. Containers should always be destroyed
 // through the scheduler to guarantee atomicity.
-func (s *Scheduler) RemoveContainer(container *libcluster.Container, force bool) error {
+func (s *Scheduler) RemoveContainer(container *swarm.Container, force bool) error {
 	s.Lock()
 	defer s.Unlock()
 

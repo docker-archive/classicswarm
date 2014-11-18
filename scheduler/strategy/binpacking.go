@@ -15,7 +15,7 @@ var (
 type BinPackingPlacementStrategy struct {
 }
 
-func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*libcluster.Node) (*libcluster.Node, error) {
+func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*swarm.Node) (*swarm.Node, error) {
 	scores := scores{}
 
 	for _, node := range nodes {
@@ -50,7 +50,7 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 }
 
 type score struct {
-	node  *libcluster.Node
+	node  *swarm.Node
 	score float64
 }
 

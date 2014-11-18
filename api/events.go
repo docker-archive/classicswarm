@@ -15,7 +15,7 @@ type eventsHandler struct {
 	cs map[string]chan struct{}
 }
 
-func (eh *eventsHandler) Handle(e *libcluster.Event) error {
+func (eh *eventsHandler) Handle(e *swarm.Event) error {
 	eh.RLock()
 	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d}", "status", e.Type, "id", e.Container.Id, "from", e.Container.Image+" node:"+e.Node.ID, "time", e.Time.Unix())
 
