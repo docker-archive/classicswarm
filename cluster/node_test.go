@@ -41,7 +41,7 @@ func TestNodeSpecs(t *testing.T) {
 
 	client := dockerclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
-	client.On("ListContainers", true, false).Return([]dockerclient.Container{}, nil)
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
 
 	assert.NoError(t, node.connectClient(client))
@@ -66,9 +66,9 @@ func TestNodeState(t *testing.T) {
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
 
 	// The client will return one container at first, then a second one will appear.
-	client.On("ListContainers", true, false).Return([]dockerclient.Container{{Id: "one"}}, nil).Once()
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "one"}}, nil).Once()
 	client.On("InspectContainer", "one").Return(&dockerclient.ContainerInfo{}, nil).Once()
-	client.On("ListContainers", true, false).Return([]dockerclient.Container{{Id: "one"}, {Id: "two"}}, nil).Once()
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "one"}, {Id: "two"}}, nil).Once()
 	client.On("InspectContainer", "two").Return(&dockerclient.ContainerInfo{}, nil).Once()
 
 	assert.NoError(t, node.connectClient(client))
