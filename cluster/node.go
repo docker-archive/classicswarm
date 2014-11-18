@@ -113,6 +113,9 @@ func (n *Node) updateContainers() error {
 		return err
 	}
 
+	n.Lock()
+	defer n.Unlock()
+
 	merged := make(map[string]*Container)
 	for _, c := range containers {
 		if current, exists := n.containers[c.Id]; exists {
@@ -136,9 +139,7 @@ func (n *Node) updateContainers() error {
 		}
 	}
 
-	n.Lock()
 	n.containers = merged
-	n.Unlock()
 
 	log.Debugf("[%s] Updated state", n.ID)
 	return nil

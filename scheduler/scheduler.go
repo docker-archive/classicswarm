@@ -43,12 +43,12 @@ func (s *Scheduler) selectNodeForContainer(config *dockerclient.ContainerConfig)
 
 // Schedule a brand new container into the cluster.
 func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error) {
-	s.Lock()
-	defer s.Unlock()
-
 	if config.Memory == 0 || config.CpuShares == 0 {
 		return nil, fmt.Errorf("Creating containers in clustering mode requires resource constraints (-c and -m) to be set")
 	}
+
+	s.Lock()
+	defer s.Unlock()
 
 	node, err := s.selectNodeForContainer(config)
 	if err != nil {
