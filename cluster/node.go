@@ -206,7 +206,6 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
-	log.Debug("Updating containers after create")
 	n.updateContainers()
 
 	return n.containers[id], nil
