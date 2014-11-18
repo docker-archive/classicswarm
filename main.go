@@ -29,6 +29,22 @@ func main() {
 	app.Version = "0.0.1"
 
 	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:   "debug",
+			Usage:  "debug mode",
+			EnvVar: "DEBUG",
+		},
+	}
+
+	app.Before = func(c *cli.Context) error {
+		log.SetOutput(os.Stderr)
+		if c.Bool("debug") {
+			log.SetLevel(log.DebugLevel)
+		}
+		return nil
+	}
+
+	clusterFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:   "token",
 			Value:  "",
@@ -41,19 +57,6 @@ func main() {
 			Usage:  "ip to advertise",
 			EnvVar: "SWARM_ADDR",
 		},
-		cli.BoolFlag{
-			Name:   "debug",
-			Usage:  "debug mode",
-			EnvVar: "DEBUG",
-		},
-	}
-
-	debug := func(c *cli.Context) error {
-		log.SetOutput(os.Stderr)
-		if c.Bool("debug") {
-			log.SetLevel(log.DebugLevel)
-		}
-		return nil
 	}
 
 	app.Commands = []cli.Command{
@@ -61,21 +64,23 @@ func main() {
 			Name:      "manage",
 			ShortName: "m",
 			Usage:     "manage a docker cluster",
-			Before:    debug,
+			Flags:     clusterFlags,
+
 			Action: func(c *cli.Context) {
 
-				refresh := func(cluster *libcluster.Cluster, nodes []string) {
+				refresh := func(cluster *libcluster.Cluster, nodes []string) error {
 					for _, addr := range nodes {
 						if cluster.Node(addr) == nil {
 							n := libcluster.NewNode(addr, addr)
 							if err := n.Connect(nil); err != nil {
-								log.Fatal(err)
+								return err
 							}
 							if err := cluster.AddNode(n); err != nil {
-								log.Fatal(err)
+								return err
 							}
 						}
 					}
+					return nil
 				}
 
 				cluster := libcluster.NewCluster()
@@ -87,7 +92,9 @@ func main() {
 						log.Fatal(err)
 
 					}
-					refresh(cluster, nodes)
+					if err := refresh(cluster, nodes); err != nil {
+						log.Fatal(err)
+					}
 					go func() {
 						for {
 							time.Sleep(25 * time.Second)
@@ -98,7 +105,9 @@ func main() {
 						}
 					}()
 				} else {
-					refresh(cluster, c.Args()[1:])
+					if err := refresh(cluster, c.Args()); err != nil {
+						log.Fatal(err)
+					}
 				}
 
 				s := scheduler.NewScheduler(cluster, &strategy.BinPackingPlacementStrategy{}, []filter.Filter{})
@@ -110,7 +119,8 @@ func main() {
 			Name:      "join",
 			ShortName: "j",
 			Usage:     "join a docker cluster",
-			Before:    debug,
+			Flags:     clusterFlags,
+
 			Action: func(c *cli.Context) {
 
 				if c.String("token") == "" {
@@ -134,5 +144,5 @@ func main() {
 		},
 	}
 
-	app.Run(os.Args)
+	log.Fatal(app.Run(os.Args))
 }
