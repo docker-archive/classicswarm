@@ -33,6 +33,7 @@ func main() {
 		},
 	}
 
+	// logs
 	app.Before = func(c *cli.Context) error {
 		log.SetOutput(os.Stderr)
 		if c.Bool("debug") {
@@ -41,19 +42,18 @@ func main() {
 		return nil
 	}
 
-	clusterFlags := []cli.Flag{
-		cli.StringFlag{
-			Name:   "token",
-			Value:  "",
-			Usage:  "cluster token",
-			EnvVar: "SWARM_TOKEN",
-		},
-		cli.StringFlag{
-			Name:   "addr",
-			Value:  "127.0.0.1:4243",
-			Usage:  "ip to advertise",
-			EnvVar: "SWARM_ADDR",
-		},
+	// flags
+	flToken := cli.StringFlag{
+		Name:   "token",
+		Value:  "",
+		Usage:  "cluster token",
+		EnvVar: "SWARM_TOKEN",
+	}
+	flAddr := cli.StringFlag{
+		Name:   "addr",
+		Value:  "127.0.0.1:4243",
+		Usage:  "ip to advertise",
+		EnvVar: "SWARM_ADDR",
 	}
 
 	app.Commands = []cli.Command{
@@ -61,7 +61,6 @@ func main() {
 			Name:      "create",
 			ShortName: "c",
 			Usage:     "create a cluster",
-
 			Action: func(c *cli.Context) {
 				token, err := discovery.CreateCluster()
 				if err != nil {
@@ -71,17 +70,32 @@ func main() {
 			},
 		},
 		{
+			Name:      "list",
+			ShortName: "l",
+			Usage:     "list nodes in a cluster",
+			Flags:     []cli.Flag{flToken},
+			Action: func(c *cli.Context) {
+				nodes, err := discovery.FetchSlaves(c.String("token"))
+				if err != nil {
+					log.Fatal(err)
+				}
+				for _, node := range nodes {
+					fmt.Println(node)
+				}
+			},
+		},
+		{
 			Name:      "manage",
 			ShortName: "m",
 			Usage:     "manage a docker cluster",
-			Flags:     clusterFlags,
+			Flags:     []cli.Flag{flToken, flAddr},
 			Action:    manage,
 		},
 		{
 			Name:      "join",
 			ShortName: "j",
 			Usage:     "join a docker cluster",
-			Flags:     clusterFlags,
+			Flags:     []cli.Flag{flToken, flAddr},
 			Action:    join,
 		},
 	}
