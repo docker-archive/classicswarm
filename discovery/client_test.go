@@ -2,7 +2,7 @@ package discovery
 
 import "testing"
 
-func TestRegisterLocal(t *testing.T) {
+func TestRegister(t *testing.T) {
 	expected := "127.0.0.1:2675"
 	if err := RegisterSlave(expected, "TEST_TOKEN"); err != nil {
 		t.Fatal(err)
