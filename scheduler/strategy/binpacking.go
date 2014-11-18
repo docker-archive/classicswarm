@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/docker/libcluster/swarm"
+	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
 )
 
@@ -15,7 +15,7 @@ var (
 type BinPackingPlacementStrategy struct {
 }
 
-func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*swarm.Node) (*swarm.Node, error) {
+func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*cluster.Node) (*cluster.Node, error) {
 	scores := scores{}
 
 	for _, node := range nodes {
@@ -50,7 +50,7 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 }
 
 type score struct {
-	node  *swarm.Node
+	node  *cluster.Node
 	score float64
 }
 

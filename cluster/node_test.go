@@ -1,4 +1,4 @@
-package swarm
+package cluster
 
 import (
 	"errors"

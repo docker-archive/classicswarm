@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/docker/libcluster/swarm"
+	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
 )
 
@@ -17,7 +17,7 @@ func init() {
 type RandomPlacementStrategy struct {
 }
 
-func (p *RandomPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*swarm.Node) (*swarm.Node, error) {
+func (p *RandomPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*cluster.Node) (*cluster.Node, error) {
 	n := rand.Intn(len(nodes))
 	for i, node := range nodes {
 		if i == n {

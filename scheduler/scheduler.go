@@ -4,21 +4,21 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/docker/libcluster/scheduler/filter"
-	"github.com/docker/libcluster/scheduler/strategy"
-	"github.com/docker/libcluster/swarm"
+	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/filter"
+	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/samalba/dockerclient"
 )
 
 type Scheduler struct {
 	sync.Mutex
 
-	cluster  *swarm.Cluster
+	cluster  *cluster.Cluster
 	strategy strategy.PlacementStrategy
 	filters  []filter.Filter
 }
 
-func NewScheduler(cluster *swarm.Cluster, strategy strategy.PlacementStrategy, filters []filter.Filter) *Scheduler {
+func NewScheduler(cluster *cluster.Cluster, strategy strategy.PlacementStrategy, filters []filter.Filter) *Scheduler {
 	return &Scheduler{
 		cluster:  cluster,
 		strategy: strategy,
@@ -27,8 +27,8 @@ func NewScheduler(cluster *swarm.Cluster, strategy strategy.PlacementStrategy, f
 }
 
 // Find a nice home for our container.
-func (s *Scheduler) selectNodeForContainer(config *dockerclient.ContainerConfig) (*swarm.Node, error) {
-	candidates := []*swarm.Node{}
+func (s *Scheduler) selectNodeForContainer(config *dockerclient.ContainerConfig) (*cluster.Node, error) {
+	candidates := []*cluster.Node{}
 	for _, node := range s.cluster.Nodes() {
 		candidates = append(candidates, node)
 	}
@@ -42,7 +42,7 @@ func (s *Scheduler) selectNodeForContainer(config *dockerclient.ContainerConfig)
 }
 
 // Schedule a brand new container into the cluster.
-func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name string) (*swarm.Container, error) {
+func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error) {
 	s.Lock()
 	defer s.Unlock()
 
@@ -59,7 +59,7 @@ func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name s
 
 // Remove a container from the cluster. Containers should always be destroyed
 // through the scheduler to guarantee atomicity.
-func (s *Scheduler) RemoveContainer(container *swarm.Container, force bool) error {
+func (s *Scheduler) RemoveContainer(container *cluster.Container, force bool) error {
 	s.Lock()
 	defer s.Unlock()
 

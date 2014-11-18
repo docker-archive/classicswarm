@@ -5,24 +5,24 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/libcluster/api"
-	"github.com/docker/libcluster/discovery"
-	"github.com/docker/libcluster/scheduler"
-	"github.com/docker/libcluster/scheduler/filter"
-	"github.com/docker/libcluster/scheduler/strategy"
-	"github.com/docker/libcluster/swarm"
+	"github.com/docker/swarm/api"
+	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/discovery"
+	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/scheduler/filter"
+	"github.com/docker/swarm/scheduler/strategy"
 )
 
 func manage(c *cli.Context) {
 
-	refresh := func(cluster *swarm.Cluster, nodes []string) error {
+	refresh := func(c *cluster.Cluster, nodes []string) error {
 		for _, addr := range nodes {
-			if cluster.Node(addr) == nil {
-				n := swarm.NewNode(addr, addr)
+			if c.Node(addr) == nil {
+				n := cluster.NewNode(addr, addr)
 				if err := n.Connect(nil); err != nil {
 					return err
 				}
-				if err := cluster.AddNode(n); err != nil {
+				if err := c.AddNode(n); err != nil {
 					return err
 				}
 			}
@@ -30,7 +30,7 @@ func manage(c *cli.Context) {
 		return nil
 	}
 
-	cluster := swarm.NewCluster()
+	cluster := cluster.NewCluster()
 	cluster.Events(&logHandler{})
 
 	if c.String("token") != "" {

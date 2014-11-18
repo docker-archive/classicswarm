@@ -13,14 +13,14 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/libcluster/scheduler"
-	"github.com/docker/libcluster/swarm"
+	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
 )
 
 type context struct {
-	cluster       *swarm.Cluster
+	cluster       *cluster.Cluster
 	scheduler     *scheduler.Scheduler
 	eventsHandler *eventsHandler
 	debug         bool
@@ -316,7 +316,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 	return r, nil
 }
 
-func ListenAndServe(c *swarm.Cluster, s *scheduler.Scheduler, addr string) error {
+func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, addr string) error {
 	context := &context{
 		cluster:   c,
 		scheduler: s,

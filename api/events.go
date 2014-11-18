@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/docker/libcluster/swarm"
+	"github.com/docker/swarm/cluster"
 )
 
 type eventsHandler struct {
@@ -15,7 +15,7 @@ type eventsHandler struct {
 	cs map[string]chan struct{}
 }
 
-func (eh *eventsHandler) Handle(e *swarm.Event) error {
+func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	eh.RLock()
 	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d}", "status", e.Type, "id", e.Container.Id, "from", e.Container.Image+" node:"+e.Node.ID, "time", e.Time.Unix())
 
