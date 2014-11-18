@@ -113,30 +113,32 @@ func (n *Node) updateContainers() error {
 		return err
 	}
 
-	n.Lock()
-	defer n.Unlock()
-
-	n.containers = make(map[string]*Container)
+	merged := make(map[string]*Container)
 	for _, c := range containers {
 		if current, exists := n.containers[c.Id]; exists {
 			// The container exists. Update its state.
 			current.Container = c
+			merged[current.Id] = current
 		} else {
 			// This is a brand new container.
 			container := &Container{}
 			container.Container = c
 			container.node = n
 
-			info, err := n.client.InspectContainer(container.Id)
+			info, err := n.client.InspectContainer(c.Id)
 			if err != nil {
 				log.Errorf("[%s] Unable to update state of %s", n.ID, c.Id)
 				continue
 			}
 			container.Info = *info
 
-			n.containers[container.Id] = container
+			merged[container.Id] = container
 		}
 	}
+
+	n.Lock()
+	n.containers = merged
+	n.Unlock()
 
 	log.Debugf("[%s] Updated state", n.ID)
 	return nil
@@ -203,6 +205,7 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
+	log.Debug("Updating containers after create")
 	n.updateContainers()
 
 	return n.containers[id], nil
