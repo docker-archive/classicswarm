@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/codegangsta/cli"
 	"github.com/docker/libcluster"
 	"github.com/docker/libcluster/api"
+	"github.com/docker/libcluster/discovery"
 	"github.com/docker/libcluster/scheduler"
 	"github.com/docker/libcluster/scheduler/filter"
 	"github.com/docker/libcluster/scheduler/strategy"
@@ -22,28 +23,116 @@ func (h *logHandler) Handle(e *libcluster.Event) error {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s node1 node2 ...\n", os.Args[0])
-		os.Exit(1)
+	app := cli.NewApp()
+	app.Name = "swarm"
+	app.Usage = "docker clustering"
+	app.Version = "0.0.1"
+
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:   "token",
+			Value:  "",
+			Usage:  "cluster token",
+			EnvVar: "SWARM_TOKEN",
+		},
+		cli.StringFlag{
+			Name:   "addr",
+			Value:  "127.0.0.1:4243",
+			Usage:  "ip to advertise",
+			EnvVar: "SWARM_ADDR",
+		},
+		cli.BoolFlag{
+			Name:   "debug",
+			Usage:  "debug mode",
+			EnvVar: "DEBUG",
+		},
 	}
 
-	// Setup logging
-	log.SetOutput(os.Stderr)
-	log.SetLevel(log.DebugLevel)
-
-	c := libcluster.NewCluster()
-	for _, addr := range os.Args[1:] {
-		n := libcluster.NewNode(addr, addr)
-		if err := n.Connect(nil); err != nil {
-			log.Fatal(err)
+	debug := func(c *cli.Context) error {
+		log.SetOutput(os.Stderr)
+		if c.Bool("debug") {
+			log.SetLevel(log.DebugLevel)
 		}
-		if err := c.AddNode(n); err != nil {
-			log.Fatal(err)
-		}
+		return nil
 	}
 
-	c.Events(&logHandler{})
-	s := scheduler.NewScheduler(c, &strategy.BinPackingPlacementStrategy{}, []filter.Filter{})
+	app.Commands = []cli.Command{
+		{
+			Name:      "manage",
+			ShortName: "m",
+			Usage:     "manage a docker cluster",
+			Before:    debug,
+			Action: func(c *cli.Context) {
 
-	log.Fatal(api.ListenAndServe(c, s, ":4243"))
+				refresh := func(cluster *libcluster.Cluster, nodes []string) {
+					for _, addr := range nodes {
+						if cluster.Node(addr) == nil {
+							n := libcluster.NewNode(addr, addr)
+							if err := n.Connect(nil); err != nil {
+								log.Fatal(err)
+							}
+							if err := cluster.AddNode(n); err != nil {
+								log.Fatal(err)
+							}
+						}
+					}
+				}
+
+				cluster := libcluster.NewCluster()
+				cluster.Events(&logHandler{})
+
+				if c.String("token") != "" {
+					nodes, err := discovery.FetchSlaves(c.String("token"))
+					if err != nil {
+						log.Fatal(err)
+
+					}
+					refresh(cluster, nodes)
+					go func() {
+						for {
+							time.Sleep(25 * time.Second)
+							nodes, err = discovery.FetchSlaves(c.String("token"))
+							if err == nil {
+								refresh(cluster, nodes)
+							}
+						}
+					}()
+				} else {
+					refresh(cluster, c.Args()[1:])
+				}
+
+				s := scheduler.NewScheduler(cluster, &strategy.BinPackingPlacementStrategy{}, []filter.Filter{})
+
+				log.Fatal(api.ListenAndServe(cluster, s, c.String("addr")))
+			},
+		},
+		{
+			Name:      "join",
+			ShortName: "j",
+			Usage:     "join a docker cluster",
+			Before:    debug,
+			Action: func(c *cli.Context) {
+
+				if c.String("token") == "" {
+					log.Fatal("--token required to join a cluster")
+				}
+
+				if err := discovery.RegisterSlave(c.String("addr"), c.String("token")); err != nil {
+					log.Fatal(err)
+				}
+
+				// heartbeat every 25 seconds
+				go func() {
+					for {
+						time.Sleep(25 * time.Second)
+						if err := discovery.RegisterSlave(c.String("addr"), c.String("token")); err != nil {
+							log.Error(err)
+						}
+					}
+				}()
+			},
+		},
+	}
+
+	app.Run(os.Args)
 }

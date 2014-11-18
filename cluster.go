@@ -92,6 +92,11 @@ func (c *Cluster) Nodes() map[string]*Node {
 	return c.nodes
 }
 
+func (c *Cluster) Node(ID string) *Node {
+	node, _ := c.nodes[ID]
+	return node
+}
+
 func (c *Cluster) Events(h EventHandler) error {
 	c.eventHandlers = append(c.eventHandlers, h)
 	return nil
