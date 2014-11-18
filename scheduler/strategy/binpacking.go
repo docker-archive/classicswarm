@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/docker/libcluster"
+	"github.com/docker/libcluster/swarm"
 	"github.com/samalba/dockerclient"
 )
 

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/docker/libcluster"
 	"github.com/docker/libcluster/scheduler/filter"
 	"github.com/docker/libcluster/scheduler/strategy"
+	"github.com/docker/libcluster/swarm"
 	"github.com/samalba/dockerclient"
 )
 

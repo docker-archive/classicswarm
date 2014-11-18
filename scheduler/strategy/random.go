@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/docker/libcluster"
+	"github.com/docker/libcluster/swarm"
 	"github.com/samalba/dockerclient"
 )
 
