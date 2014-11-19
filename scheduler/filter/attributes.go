@@ -1,0 +1,45 @@
+package filter
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/docker/swarm/cluster"
+	"github.com/samalba/dockerclient"
+)
+
+// AttributeFilter selects only nodes that match certain attributes. Attributes
+// include storagedriver, executiondriver and so on.
+type AttributeFilter struct {
+}
+
+func (f *AttributeFilter) extractConstraints(env []string) map[string]string {
+	constraints := make(map[string]string)
+	for _, e := range env {
+		if strings.HasPrefix(e, "constraint:") {
+			constraint := strings.TrimPrefix(e, "constraint:")
+			parts := strings.SplitN(constraint, "=", 2)
+			constraints[strings.ToLower(parts[0])] = strings.ToLower(parts[1])
+		}
+	}
+	return constraints
+}
+
+func (f *AttributeFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
+	constraints := f.extractConstraints(config.Env)
+	for k, v := range constraints {
+		candidates := []*cluster.Node{}
+		for _, node := range nodes {
+			if label, ok := node.Labels[k]; ok {
+				if strings.Contains(strings.ToLower(label), v) {
+					candidates = append(candidates, node)
+				}
+			}
+		}
+		if len(candidates) == 0 {
+			return nil, fmt.Errorf("unable to find a node that satisfies %s == %s", k, v)
+		}
+		nodes = candidates
+	}
+	return nodes, nil
+}

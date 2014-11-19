@@ -57,7 +57,7 @@ func manage(c *cli.Context) {
 		}
 	}
 
-	s := scheduler.NewScheduler(cluster, &strategy.BinPackingPlacementStrategy{}, []filter.Filter{&filter.PortFilter{}})
+	s := scheduler.NewScheduler(cluster, &strategy.BinPackingPlacementStrategy{}, []filter.Filter{&filter.AttributeFilter{}, &filter.PortFilter{}})
 
 	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr")))
 }
