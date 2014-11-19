@@ -49,7 +49,7 @@ func TestNodeSpecs(t *testing.T) {
 
 	assert.Equal(t, node.Cpus, mockInfo.NCPU)
 	assert.Equal(t, node.Memory, mockInfo.MemTotal)
-	assert.Equal(t, node.Labels["graphdriver"], mockInfo.Driver)
+	assert.Equal(t, node.Labels["storagedriver"], mockInfo.Driver)
 	assert.Equal(t, node.Labels["executiondriver"], mockInfo.ExecutionDriver)
 	assert.Equal(t, node.Labels["kernelversion"], mockInfo.KernelVersion)
 	assert.Equal(t, node.Labels["operatingsystem"], mockInfo.OperatingSystem)
