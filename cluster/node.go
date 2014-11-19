@@ -98,7 +98,7 @@ func (n *Node) updateSpecs() error {
 	n.Cpus = info.NCPU
 	n.Memory = info.MemTotal
 	n.Labels = map[string]string{
-		"graphdriver":     info.Driver,
+		"storagedriver":   info.Driver,
 		"executiondriver": info.ExecutionDriver,
 		"kernelversion":   info.KernelVersion,
 		"operatingsystem": info.OperatingSystem,
