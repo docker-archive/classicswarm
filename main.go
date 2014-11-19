@@ -3,21 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
 )
-
-type logHandler struct {
-}
-
-func (h *logHandler) Handle(e *cluster.Event) error {
-	log.Printf("event -> type: %q time: %q image: %q container: %q", e.Type, e.Time.Format(time.RubyDate), e.Container.Image, e.Container.Id)
-	return nil
-}
 
 func main() {
 	app := cli.NewApp()

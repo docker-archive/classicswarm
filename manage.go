@@ -13,6 +13,14 @@ import (
 	"github.com/docker/swarm/scheduler/strategy"
 )
 
+type logHandler struct {
+}
+
+func (h *logHandler) Handle(e *cluster.Event) error {
+	log.Printf("event -> type: %q time: %q image: %q container: %q", e.Type, e.Time.Format(time.RubyDate), e.Container.Image, e.Container.Id)
+	return nil
+}
+
 func manage(c *cli.Context) {
 
 	refresh := func(c *cluster.Cluster, nodes []string) error {
