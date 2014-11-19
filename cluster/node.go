@@ -19,10 +19,11 @@ const (
 
 func NewNode(id string, addr string) *Node {
 	e := &Node{
-		ID:     id,
-		Addr:   addr,
-		Labels: make(map[string]string),
-		ch:     make(chan bool),
+		ID:         id,
+		Addr:       addr,
+		Labels:     make(map[string]string),
+		ch:         make(chan bool),
+		containers: make(map[string]*Container),
 	}
 	return e
 }
@@ -295,4 +296,13 @@ func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
 	}
 
 	n.eventHandler.Handle(event)
+}
+
+// Used only on tests
+func (n *Node) AddContainer(container *Container) {
+	n.containers[container.Id] = container
+}
+
+func (n *Node) CleanupContainers() {
+	n.containers = make(map[string]*Container)
 }
