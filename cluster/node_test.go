@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/samalba/dockerclient"
@@ -68,7 +69,7 @@ func TestNodeState(t *testing.T) {
 	// The client will return one container at first, then a second one will appear.
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "one"}}, nil).Once()
 	client.On("InspectContainer", "one").Return(&dockerclient.ContainerInfo{}, nil).Once()
-	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "one"}, {Id: "two"}}, nil).Once()
+	client.On("ListContainers", true, false, fmt.Sprintf("{%q:[%q]}", "id", "two")).Return([]dockerclient.Container{{Id: "two"}}, nil).Once()
 	client.On("InspectContainer", "two").Return(&dockerclient.ContainerInfo{}, nil).Once()
 
 	assert.NoError(t, node.connectClient(client))
