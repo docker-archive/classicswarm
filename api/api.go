@@ -32,8 +32,8 @@ type handler func(c *context, w http.ResponseWriter, r *http.Request)
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	driverStatus := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(c.cluster.Nodes()))}}
 
-	for ID, node := range c.cluster.Nodes() {
-		driverStatus = append(driverStatus, [2]string{ID, node.Addr})
+	for _, node := range c.cluster.Nodes() {
+		driverStatus = append(driverStatus, [2]string{node.Name, node.Addr})
 	}
 	info := struct {
 		Containers      int
@@ -70,7 +70,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		// TODO remove the Node ID in the name when we have a good solution
 		tmp.Names = make([]string, len(container.Names))
 		for i, name := range container.Names {
-			tmp.Names[i] = "/" + container.Node().ID + name
+			tmp.Names[i] = "/" + container.Node().Name + name
 		}
 		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
 		for i, port := range container.Ports {

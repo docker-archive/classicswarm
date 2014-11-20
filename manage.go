@@ -26,7 +26,7 @@ func manage(c *cli.Context) {
 	refresh := func(c *cluster.Cluster, nodes []string) error {
 		for _, addr := range nodes {
 			if c.Node(addr) == nil {
-				n := cluster.NewNode(addr, addr)
+				n := cluster.NewNode(addr)
 				if err := n.Connect(nil); err != nil {
 					return err
 				}

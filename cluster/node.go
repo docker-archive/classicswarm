@@ -17,9 +17,8 @@ const (
 	stateRefreshPeriod = 30 * time.Second
 )
 
-func NewNode(id string, addr string) *Node {
+func NewNode(addr string) *Node {
 	e := &Node{
-		ID:         id,
 		Addr:       addr,
 		Labels:     make(map[string]string),
 		ch:         make(chan bool),
@@ -34,6 +33,7 @@ type Node struct {
 	ID     string
 	IP     string
 	Addr   string
+	Name   string
 	Cpus   int64
 	Memory int64
 	Labels map[string]string
@@ -96,6 +96,8 @@ func (n *Node) updateSpecs() error {
 	if err != nil {
 		return err
 	}
+	n.ID = info.ID
+	n.Name = info.Name
 	n.Cpus = info.NCPU
 	n.Memory = info.MemTotal
 	n.Labels = map[string]string{
