@@ -137,6 +137,21 @@ func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
 }
 
+// POST /containers/{name:.*}/kill
+func postContainerKill(c *context, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+	container := c.cluster.Container(name)
+	if container == nil {
+		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
+		return
+	}
+
+	if err := container.Kill(r.Form.Get("signal")); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
+}
+
 // POST /containers/{name:.*}/pause
 func postContainerPause(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
@@ -268,7 +283,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 			"/images/{name:.*}/push":        notImplementedHandler,
 			"/images/{name:.*}/tag":         notImplementedHandler,
 			"/containers/create":            postContainersCreate,
-			"/containers/{name:.*}/kill":    notImplementedHandler,
+			"/containers/{name:.*}/kill":    postContainerKill,
 			"/containers/{name:.*}/pause":   postContainerPause,
 			"/containers/{name:.*}/unpause": postContainerUnpause,
 			"/containers/{name:.*}/restart": notImplementedHandler,

@@ -17,8 +17,8 @@ func (c *Container) Start() error {
 	return c.node.client.StartContainer(c.Id, nil)
 }
 
-func (c *Container) Kill(sig int) error {
-	return c.node.client.KillContainer(c.Id)
+func (c *Container) Kill(signal string) error {
+	return c.node.client.KillContainer(c.Id, signal)
 }
 
 func (c *Container) Stop() error {
