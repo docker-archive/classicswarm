@@ -30,10 +30,10 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 		)
 
 		if config.CpuShares > 0 {
-			cpuScore = (node.ReservedCpus() + int64(config.CpuShares)) * 100 / int64(node.Cpus)
+			cpuScore = (node.ReservedCpus() + config.CpuShares) * 100 / node.Cpus
 		}
 		if config.Memory > 0 {
-			memoryScore = (node.ReservedMemory() + int64(config.Memory)) * 100 / node.Memory
+			memoryScore = (node.ReservedMemory() + config.Memory) * 100 / node.Memory
 		}
 		var total = ((cpuScore + memoryScore) / 200) * 100
 

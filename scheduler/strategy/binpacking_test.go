@@ -9,14 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createNode(ID string, memory int64, cpus int) *cluster.Node {
+func createNode(ID string, memory int64, cpus int64) *cluster.Node {
 	node := cluster.NewNode(ID, "")
 	node.Memory = memory * 1024 * 1024 * 1024
 	node.Cpus = cpus
 	return node
 }
 
-func createConfig(memory int, cpus int) *dockerclient.ContainerConfig {
+func createConfig(memory int64, cpus int64) *dockerclient.ContainerConfig {
 	return &dockerclient.ContainerConfig{Memory: memory * 1024 * 1024 * 1024, CpuShares: cpus}
 }
 

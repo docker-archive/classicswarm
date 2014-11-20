@@ -34,7 +34,7 @@ type Node struct {
 	ID     string
 	IP     string
 	Addr   string
-	Cpus   int
+	Cpus   int64
 	Memory int64
 	Labels map[string]string
 
@@ -204,7 +204,7 @@ func (n *Node) refreshLoop() {
 func (n *Node) ReservedMemory() int64 {
 	var r int64 = 0
 	for _, c := range n.containers {
-		r += int64(c.Info.Config.Memory)
+		r += c.Info.Config.Memory
 	}
 	return r
 }
@@ -218,13 +218,13 @@ func (n *Node) AvailableMemory() int64 {
 func (n *Node) ReservedCpus() int64 {
 	var r int64 = 0
 	for _, c := range n.containers {
-		r += int64(c.Info.Config.CpuShares)
+		r += c.Info.Config.CpuShares
 	}
 	return r
 }
 
 func (n *Node) AvailalbleCpus() int64 {
-	return int64(n.Cpus) - n.ReservedCpus()
+	return n.Cpus - n.ReservedCpus()
 }
 
 func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*Container, error) {
