@@ -68,9 +68,9 @@ func TestNodeState(t *testing.T) {
 
 	// The client will return one container at first, then a second one will appear.
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "one"}}, nil).Once()
-	client.On("InspectContainer", "one").Return(&dockerclient.ContainerInfo{}, nil).Once()
+	client.On("InspectContainer", "one").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf("{%q:[%q]}", "id", "two")).Return([]dockerclient.Container{{Id: "two"}}, nil).Once()
-	client.On("InspectContainer", "two").Return(&dockerclient.ContainerInfo{}, nil).Once()
+	client.On("InspectContainer", "two").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
 
 	assert.NoError(t, node.connectClient(client))
 	assert.True(t, node.IsConnected())

@@ -173,6 +173,9 @@ func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*
 		}
 		container.Info = *info
 
+		// real CpuShares -> nb of CPUs
+		container.Info.Config.CpuShares = container.Info.Config.CpuShares / 100.0 * n.Cpus
+
 		containers[container.Id] = container
 	}
 	return containers, nil
@@ -206,13 +209,22 @@ func (n *Node) ReservedMemory() int64 {
 	return r
 }
 
+// Return the memory availalble on this node.
+func (n *Node) AvailableMemory() int64 {
+	return n.Memory - n.ReservedMemory()
+}
+
 // Return the sum of CPUs reserved by containers.
-func (n *Node) ReservedCpus() float64 {
-	r := 0.0
+func (n *Node) ReservedCpus() int64 {
+	var r int64 = 0
 	for _, c := range n.containers {
-		r += float64(c.Info.Config.CpuShares) / 100.0 * float64(n.Cpus)
+		r += int64(c.Info.Config.CpuShares)
 	}
 	return r
+}
+
+func (n *Node) AvailalbleCpus() int64 {
+	return int64(n.Cpus) - n.ReservedCpus()
 }
 
 func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*Container, error) {
@@ -222,7 +234,12 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 		client = n.client
 	)
 
-	if id, err = client.CreateContainer(config, name); err != nil {
+	newConfig := *config
+
+	// nb of CPUs -> real CpuShares
+	newConfig.CpuShares = config.CpuShares * 100 / n.Cpus
+
+	if id, err = client.CreateContainer(&newConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.
 		if err != dockerclient.ErrNotFound {
 			return nil, err
@@ -232,7 +249,7 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 			return nil, err
 		}
 		// ...And try again.
-		if id, err = client.CreateContainer(config, name); err != nil {
+		if id, err = client.CreateContainer(&newConfig, name); err != nil {
 			return nil, err
 		}
 	}

@@ -1,6 +1,7 @@
 package strategy
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/docker/swarm/cluster"
@@ -23,27 +24,21 @@ func createContainer(ID string, config *dockerclient.ContainerConfig) *cluster.C
 	return &cluster.Container{Container: dockerclient.Container{Id: ID}, Info: dockerclient.ContainerInfo{Config: config}}
 }
 
-func TestPlaceContainer(t *testing.T) {
+func TestPlaceContainerMemory(t *testing.T) {
 	s := &BinPackingPlacementStrategy{}
 
-	nodes := []*cluster.Node{
-		createNode("node-1", 2, 4),
-		createNode("node-2", 2, 4),
-		createNode("node-3", 2, 4),
+	nodes := []*cluster.Node{}
+	for i := 0; i < 2; i++ {
+		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 2, 1))
 	}
 
-	// try to place a 10G container
-	config := createConfig(10, 1)
-	_, err := s.PlaceContainer(config, nodes)
-
-	// check that it refuses because the cluster is full
-	assert.Error(t, err)
-
-	// add one container 1G
-	config = createConfig(1, 1)
+	// add 1 container 1G
+	config := createConfig(1, 0)
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
 	node1.AddContainer(createContainer("c1", config))
+
+	assert.Equal(t, node1.ReservedMemory(), 1024*1024*1024)
 
 	// add another container 1G
 	config = createConfig(1, 1)
@@ -51,55 +46,153 @@ func TestPlaceContainer(t *testing.T) {
 	assert.NoError(t, err)
 	node2.AddContainer(createContainer("c2", config))
 
+	assert.Equal(t, node2.ReservedMemory(), 2*1024*1024*1024)
+
 	// check that both containers ended on the same node
 	assert.Equal(t, node1.ID, node2.ID, "")
 	assert.Equal(t, len(node1.Containers()), len(node2.Containers()), "")
 
-	// add another container 2G
-	config = createConfig(2, 1)
-	node3, err := s.PlaceContainer(createConfig(2, 1), nodes)
+}
+
+func TestPlaceContainerCPU(t *testing.T) {
+	s := &BinPackingPlacementStrategy{}
+
+	nodes := []*cluster.Node{}
+	for i := 0; i < 2; i++ {
+		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 1, 2))
+	}
+
+	// add 1 container 1CPU
+	config := createConfig(0, 1)
+	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node3.AddContainer(createContainer("c3", config))
+	node1.AddContainer(createContainer("c1", config))
+
+	assert.Equal(t, node1.ReservedCpus(), 1)
+
+	// add another container 1CPU
+	config = createConfig(0, 1)
+	node2, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	node2.AddContainer(createContainer("c2", config))
+
+	assert.Equal(t, node2.ReservedCpus(), 2)
+
+	// check that both containers ended on the same node
+	assert.Equal(t, node1.ID, node2.ID, "")
+	assert.Equal(t, len(node1.Containers()), len(node2.Containers()), "")
+
+}
+
+func TestPlaceContainerHuge(t *testing.T) {
+	s := &BinPackingPlacementStrategy{}
+
+	nodes := []*cluster.Node{}
+	for i := 0; i < 100; i++ {
+		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 1, 1))
+	}
+
+	// add 100 container 1CPU
+	for i := 0; i < 100; i++ {
+		node, err := s.PlaceContainer(createConfig(0, 1), nodes)
+		assert.NoError(t, err)
+		node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(0, 100)))
+	}
+
+	// try to add another container 1CPU
+	_, err := s.PlaceContainer(createConfig(0, 1), nodes)
+	assert.Error(t, err)
+
+	// add 100 container 1G
+	for i := 0; i < 100; i++ {
+		node, err := s.PlaceContainer(createConfig(1, 0), nodes)
+		assert.NoError(t, err)
+		node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(1, 0)))
+	}
+
+	// try to add another container 1G
+	_, err = s.PlaceContainer(createConfig(1, 0), nodes)
+	assert.Error(t, err)
+
+}
+
+// The demo
+func TestPlaceContainerDemo(t *testing.T) {
+	s := &BinPackingPlacementStrategy{}
+
+	nodes := []*cluster.Node{}
+	for i := 0; i < 3; i++ {
+		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 2, 4))
+	}
+
+	// try to place a 10G container
+	config := createConfig(10, 0)
+	_, err := s.PlaceContainer(config, nodes)
+
+	// check that it refuses because the cluster is full
+	assert.Error(t, err)
+
+	// add one container 1G
+	config = createConfig(1, 0)
+	node1, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	node1.AddContainer(createContainer("c1", config))
+
+	// add another container 1G
+	config = createConfig(1, 0)
+	node1bis, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	node1bis.AddContainer(createContainer("c2", config))
+
+	// check that both containers ended on the same node
+	assert.Equal(t, node1.ID, node1bis.ID, "")
+	assert.Equal(t, len(node1.Containers()), len(node1bis.Containers()), "")
+
+	// add another container 2G
+	config = createConfig(2, 0)
+	node2, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	node2.AddContainer(createContainer("c3", config))
+
+	// check that it ends up on another node
+	assert.NotEqual(t, node1.ID, node2.ID, "")
+
+	// add another container 1G
+	config = createConfig(1, 0)
+	node3, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	node3.AddContainer(createContainer("c4", config))
 
 	// check that it ends up on another node
 	assert.NotEqual(t, node1.ID, node3.ID, "")
+	assert.NotEqual(t, node2.ID, node3.ID, "")
 
 	// add another container 1G
-	config = createConfig(1, 1)
-	node4, err := s.PlaceContainer(config, nodes)
+	config = createConfig(1, 0)
+	node3bis, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node4.AddContainer(createContainer("c4", config))
-
-	// check that it ends up on another node
-	assert.NotEqual(t, node1.ID, node4.ID, "")
-	assert.NotEqual(t, node3.ID, node4.ID, "")
-
-	// add another container 1G
-	config = createConfig(1, 1)
-	node5, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
-	node5.AddContainer(createContainer("c5", config))
+	node3bis.AddContainer(createContainer("c5", config))
 
 	// check that it ends up on the same node
-	assert.Equal(t, node4.ID, node5.ID, "")
+	assert.Equal(t, node3.ID, node3bis.ID, "")
 
 	// try to add another container
-	config = createConfig(1, 1)
+	config = createConfig(1, 0)
 	_, err = s.PlaceContainer(config, nodes)
 
 	// check that it refuses because the cluster is full
 	assert.Error(t, err)
 
 	// remove container in the middle
-	node3.CleanupContainers()
+	node2.CleanupContainers()
 
 	// add another container
-	config = createConfig(1, 1)
-	node6, err := s.PlaceContainer(config, nodes)
+	config = createConfig(1, 0)
+	node2bis, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node6.AddContainer(createContainer("c6", config))
+	node2bis.AddContainer(createContainer("c6", config))
 
 	// check it ends up on `node3`
-	assert.Equal(t, node3.ID, node6.ID, "")
-	assert.Equal(t, len(node3.Containers()), len(node6.Containers()), "")
+	assert.Equal(t, node2.ID, node2bis.ID, "")
+	assert.Equal(t, len(node2.Containers()), len(node2bis.Containers()), "")
 }

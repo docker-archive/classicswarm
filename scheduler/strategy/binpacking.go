@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrNoResourcesAvailable = errors.New("no resources avaliable to schedule container")
+	ErrNoResourcesAvailable = errors.New("no resources available to schedule container")
 )
 
 type BinPackingPlacementStrategy struct {
@@ -25,17 +25,19 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 		}
 
 		var (
-			memory = int64(config.Memory)
-			cpus   = float64(config.CpuShares) / 100.0 * float64(node.Cpus)
+			cpuScore    int64 = 100
+			memoryScore int64 = 100
 		)
 
-		var (
-			cpuScore    = ((node.ReservedCpus() + cpus) / float64(node.Cpus)) * 100.0
-			memoryScore = (float64(node.ReservedMemory()+memory) / float64(node.Memory)) * 100.0
-			total       = ((cpuScore + memoryScore) / 200.0) * 100.0
-		)
+		if config.CpuShares > 0 {
+			cpuScore = (node.ReservedCpus() + int64(config.CpuShares)) * 100 / int64(node.Cpus)
+		}
+		if config.Memory > 0 {
+			memoryScore = (node.ReservedMemory() + int64(config.Memory)) * 100 / node.Memory
+		}
+		var total = ((cpuScore + memoryScore) / 200) * 100
 
-		if cpuScore <= 100.0 && memoryScore <= 100.0 {
+		if cpuScore <= 100 && memoryScore <= 100 {
 			scores = append(scores, &score{node: node, score: total})
 		}
 	}
@@ -51,7 +53,7 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 
 type score struct {
 	node  *cluster.Node
-	score float64
+	score int64
 }
 
 type scores []*score
