@@ -41,29 +41,31 @@ func manage(c *cli.Context) {
 	cluster := cluster.NewCluster()
 	cluster.Events(&logHandler{})
 
-	if c.String("token") != "" {
-		nodes, err := discovery.FetchSlaves(c.String("token"))
-		if err != nil {
-			log.Fatal(err)
+	go func() {
+		if c.String("token") != "" {
+			nodes, err := discovery.FetchSlaves(c.String("token"))
+			if err != nil {
+				log.Fatal(err)
 
-		}
-		if err := refresh(cluster, nodes); err != nil {
-			log.Fatal(err)
-		}
-		go func() {
-			for {
-				time.Sleep(25 * time.Second)
-				nodes, err = discovery.FetchSlaves(c.String("token"))
-				if err == nil {
-					refresh(cluster, nodes)
-				}
 			}
-		}()
-	} else {
-		if err := refresh(cluster, c.Args()); err != nil {
-			log.Fatal(err)
+			if err := refresh(cluster, nodes); err != nil {
+				log.Fatal(err)
+			}
+			go func() {
+				for {
+					time.Sleep(25 * time.Second)
+					nodes, err = discovery.FetchSlaves(c.String("token"))
+					if err == nil {
+						refresh(cluster, nodes)
+					}
+				}
+			}()
+		} else {
+			if err := refresh(cluster, c.Args()); err != nil {
+				log.Fatal(err)
+			}
 		}
-	}
+	}()
 
 	s := scheduler.NewScheduler(cluster, &strategy.BinPackingPlacementStrategy{}, []filter.Filter{&filter.AttributeFilter{}, &filter.PortFilter{}})
 
