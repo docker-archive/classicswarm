@@ -70,6 +70,10 @@ func main() {
 			Usage:     "list nodes in a cluster",
 			Flags:     []cli.Flag{flToken},
 			Action: func(c *cli.Context) {
+				if c.String("token") == "" {
+					log.Fatal("--token required to list a cluster")
+				}
+
 				nodes, err := discovery.FetchSlaves(c.String("token"))
 				if err != nil {
 					log.Fatal(err)
