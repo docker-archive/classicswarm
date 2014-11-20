@@ -45,6 +45,11 @@ func main() {
 		Usage:  "ip to advertise",
 		EnvVar: "SWARM_ADDR",
 	}
+	flHeartBeat := cli.IntFlag{
+		Name:  "heartbeat, hb",
+		Value: 25,
+		Usage: "time in second between each heartbeat",
+	}
 
 	app.Commands = []cli.Command{
 		{
@@ -78,14 +83,14 @@ func main() {
 			Name:      "manage",
 			ShortName: "m",
 			Usage:     "manage a docker cluster",
-			Flags:     []cli.Flag{flToken, flAddr},
+			Flags:     []cli.Flag{flToken, flAddr, flHeartBeat},
 			Action:    manage,
 		},
 		{
 			Name:      "join",
 			ShortName: "j",
 			Usage:     "join a docker cluster",
-			Flags:     []cli.Flag{flToken, flAddr},
+			Flags:     []cli.Flag{flToken, flAddr, flHeartBeat},
 			Action:    join,
 		},
 	}

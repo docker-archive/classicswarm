@@ -92,9 +92,13 @@ func (c *Cluster) Nodes() map[string]*Node {
 	return c.nodes
 }
 
-func (c *Cluster) Node(ID string) *Node {
-	node, _ := c.nodes[ID]
-	return node
+func (c *Cluster) Node(addr string) *Node {
+	for _, node := range c.nodes {
+		if node.Addr == addr {
+			return node
+		}
+	}
+	return nil
 }
 
 func (c *Cluster) Events(h EventHandler) error {

@@ -18,9 +18,9 @@ func join(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	// heartbeat every 25 seconds
+	hb := time.Duration(c.Int("heartbeat"))
 	for {
-		time.Sleep(25 * time.Second)
+		time.Sleep(hb * time.Second)
 		if err := discovery.RegisterSlave(c.String("addr"), c.String("token")); err != nil {
 			log.Error(err)
 		}

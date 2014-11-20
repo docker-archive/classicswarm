@@ -55,9 +55,10 @@ func manage(c *cli.Context) {
 			if err := refresh(cluster, nodes); err != nil {
 				log.Fatal(err)
 			}
+			hb := time.Duration(c.Int("heartbeat"))
 			go func() {
 				for {
-					time.Sleep(25 * time.Second)
+					time.Sleep(hb * time.Second)
 					nodes, err = discovery.FetchSlaves(c.String("token"))
 					if err == nil {
 						refresh(cluster, nodes)
