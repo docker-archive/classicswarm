@@ -10,7 +10,8 @@ import (
 )
 
 func createNode(ID string, memory int64, cpus int64) *cluster.Node {
-	node := cluster.NewNode(ID, "")
+	node := cluster.NewNode(ID)
+	node.ID = ID
 	node.Memory = memory * 1024 * 1024 * 1024
 	node.Cpus = cpus
 	return node

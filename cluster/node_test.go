@@ -22,7 +22,7 @@ var (
 )
 
 func TestNodeConnectionFailure(t *testing.T) {
-	node := NewNode("test", "test")
+	node := NewNode("test")
 	assert.False(t, node.IsConnected())
 
 	// Always fail.
@@ -37,7 +37,7 @@ func TestNodeConnectionFailure(t *testing.T) {
 }
 
 func TestNodeSpecs(t *testing.T) {
-	node := NewNode("test", "test")
+	node := NewNode("test")
 	assert.False(t, node.IsConnected())
 
 	client := dockerclient.NewMockClient()
@@ -59,7 +59,7 @@ func TestNodeSpecs(t *testing.T) {
 }
 
 func TestNodeState(t *testing.T) {
-	node := NewNode("test", "test")
+	node := NewNode("test")
 	assert.False(t, node.IsConnected())
 
 	client := dockerclient.NewMockClient()

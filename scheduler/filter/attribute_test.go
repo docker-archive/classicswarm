@@ -12,9 +12,9 @@ func TestAttributeFilter(t *testing.T) {
 	var (
 		f     = AttributeFilter{}
 		nodes = []*cluster.Node{
-			cluster.NewNode("node-1", ""),
-			cluster.NewNode("node-2", ""),
-			cluster.NewNode("node-3", ""),
+			cluster.NewNode("node-1"),
+			cluster.NewNode("node-2"),
+			cluster.NewNode("node-3"),
 		}
 		result []*cluster.Node
 		err    error
