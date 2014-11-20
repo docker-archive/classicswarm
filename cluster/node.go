@@ -123,13 +123,13 @@ func (n *Node) refreshContainers() error {
 	for _, c := range containers {
 		merged, err = n.updateContainer(c, merged)
 		if err != nil {
-			log.Errorf("[%s] Unable to update state of %s", n.ID, c.Id)
+			log.Errorf("[%s/%s] Unable to update state of %s", n.ID, n.Name, c.Id)
 		}
 	}
 
 	n.containers = merged
 
-	log.Debugf("[%s] Updated state", n.ID)
+	log.Debugf("[%s/%s] Updated state", n.ID, n.Name)
 	return nil
 }
 
