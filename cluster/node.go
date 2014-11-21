@@ -340,7 +340,12 @@ func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
 		return
 	}
 
-	event := &Event{NodeName: n.Name}
+	event := &Event{
+		NodeName: n.Name,
+		NodeID:   n.ID,
+		NodeAddr: n.Addr,
+		NodeIP:   n.IP,
+	}
 	event.Event = *ev
 
 	n.eventHandler.Handle(event)
