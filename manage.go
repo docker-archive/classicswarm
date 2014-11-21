@@ -24,22 +24,25 @@ func (h *logHandler) Handle(e *cluster.Event) error {
 
 func manage(c *cli.Context) {
 
-	refresh := func(c *cluster.Cluster, nodes []string) error {
+	refresh := func(c *cluster.Cluster, nodes []string) {
 		for _, addr := range nodes {
-			if !strings.Contains(addr, "://") {
-				addr = "http://" + addr
-			}
-			if c.Node(addr) == nil {
-				n := cluster.NewNode(addr)
-				if err := n.Connect(nil); err != nil {
-					return err
+			go func(addr string) {
+				if !strings.Contains(addr, "://") {
+					addr = "http://" + addr
 				}
-				if err := c.AddNode(n); err != nil {
-					return err
+				if c.Node(addr) == nil {
+					n := cluster.NewNode(addr)
+					if err := n.Connect(nil); err != nil {
+						log.Error(err)
+						return
+					}
+					if err := c.AddNode(n); err != nil {
+						log.Error(err)
+						return
+					}
 				}
-			}
+			}(addr)
 		}
-		return nil
 	}
 
 	cluster := cluster.NewCluster()
@@ -52,9 +55,8 @@ func manage(c *cli.Context) {
 				log.Fatal(err)
 
 			}
-			if err := refresh(cluster, nodes); err != nil {
-				log.Fatal(err)
-			}
+			refresh(cluster, nodes)
+
 			hb := time.Duration(c.Int("heartbeat"))
 			go func() {
 				for {
@@ -66,9 +68,7 @@ func manage(c *cli.Context) {
 				}
 			}()
 		} else {
-			if err := refresh(cluster, c.Args()); err != nil {
-				log.Fatal(err)
-			}
+			refresh(cluster, c.Args())
 		}
 	}()
 
