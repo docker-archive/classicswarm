@@ -1,12 +1,11 @@
 package cluster
 
-import "time"
+import "github.com/samalba/dockerclient"
 
 type Event struct {
-	Type      string
-	Container *Container
-	Node      *Node
-	Time      time.Time
+	dockerclient.Event
+
+	NodeName string
 }
 
 type EventHandler interface {

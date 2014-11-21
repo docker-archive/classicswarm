@@ -18,7 +18,7 @@ type logHandler struct {
 }
 
 func (h *logHandler) Handle(e *cluster.Event) error {
-	log.Printf("event -> type: %q time: %q image: %q container: %q", e.Type, e.Time.Format(time.RubyDate), e.Container.Image, e.Container.Id)
+	log.Printf("event -> status: %q from: %q id: %q node: %q", e.Status, e.From, e.Id, e.NodeName)
 	return nil
 }
 

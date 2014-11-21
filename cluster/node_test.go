@@ -76,18 +76,20 @@ func TestNodeState(t *testing.T) {
 	assert.True(t, node.IsConnected())
 
 	// The node should only have a single container at this point.
-	assert.Len(t, node.Containers(), 1)
-	if _, ok := node.Containers()["one"]; !ok {
+	containers := node.Containers()
+	assert.Len(t, containers, 1)
+	if containers[0].Id != "one" {
 		t.Fatalf("Missing container: one")
 	}
 
 	// Fake an event which will trigger a refresh. The second container will appear.
 	node.handler(&dockerclient.Event{Id: "two", Status: "created"})
-	assert.Len(t, node.Containers(), 2)
-	if _, ok := node.Containers()["one"]; !ok {
+	containers = node.Containers()
+	assert.Len(t, containers, 2)
+	if containers[0].Id != "one" && containers[1].Id != "one" {
 		t.Fatalf("Missing container: one")
 	}
-	if _, ok := node.Containers()["two"]; !ok {
+	if containers[0].Id != "two" && containers[1].Id != "two" {
 		t.Fatalf("Missing container: two")
 	}
 

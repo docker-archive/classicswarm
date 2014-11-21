@@ -17,7 +17,7 @@ type eventsHandler struct {
 
 func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	eh.RLock()
-	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d}", "status", e.Type, "id", e.Container.Id, "from", e.Container.Image+" node:"+e.Node.ID, "time", e.Time.Unix())
+	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d}", "status", e.Status, "id", e.Id, "from", e.From+" node:"+e.NodeName, "time", e.Time)
 
 	for key, w := range eh.ws {
 		if _, err := fmt.Fprintf(w, str); err != nil {

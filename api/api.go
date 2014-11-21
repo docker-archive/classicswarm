@@ -32,9 +32,10 @@ type handler func(c *context, w http.ResponseWriter, r *http.Request)
 
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
-	driverStatus := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(c.cluster.Nodes()))}}
+	nodes := c.cluster.Nodes()
+	driverStatus := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(nodes))}}
 
-	for _, node := range c.cluster.Nodes() {
+	for _, node := range nodes {
 		driverStatus = append(driverStatus, [2]string{node.Name, node.Addr})
 	}
 	info := struct {

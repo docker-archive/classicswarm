@@ -14,7 +14,7 @@ var (
 )
 
 type Cluster struct {
-	sync.Mutex
+	sync.RWMutex
 	eventHandlers []EventHandler
 	nodes         map[string]*Node
 }
@@ -88,8 +88,14 @@ func (c *Cluster) Container(IdOrName string) *Container {
 }
 
 // Nodes returns the list of nodes in the cluster
-func (c *Cluster) Nodes() map[string]*Node {
-	return c.nodes
+func (c *Cluster) Nodes() []*Node {
+	nodes := []*Node{}
+	c.RLock()
+	for _, node := range c.nodes {
+		nodes = append(nodes, node)
+	}
+	c.RUnlock()
+	return nodes
 }
 
 func (c *Cluster) Node(addr string) *Node {

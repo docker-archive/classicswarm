@@ -28,7 +28,7 @@ func NewNode(addr string) *Node {
 }
 
 type Node struct {
-	sync.Mutex
+	sync.RWMutex
 
 	ID     string
 	IP     string
@@ -205,9 +205,11 @@ func (n *Node) refreshLoop() {
 // Return the sum of memory reserved by containers.
 func (n *Node) ReservedMemory() int64 {
 	var r int64 = 0
+	n.RLock()
 	for _, c := range n.containers {
 		r += c.Info.Config.Memory
 	}
+	n.RUnlock()
 	return r
 }
 
@@ -219,9 +221,11 @@ func (n *Node) AvailableMemory() int64 {
 // Return the sum of CPUs reserved by containers.
 func (n *Node) ReservedCpus() int64 {
 	var r int64 = 0
+	n.RLock()
 	for _, c := range n.containers {
 		r += c.Info.Config.CpuShares
 	}
+	n.RUnlock()
 	return r
 }
 
@@ -259,6 +263,9 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
 	n.refreshContainer(id)
+
+	n.RLock()
+	defer n.RUnlock()
 
 	return n.containers[id], nil
 }
@@ -310,8 +317,14 @@ func (n *Node) Events(h EventHandler) error {
 	return nil
 }
 
-func (n *Node) Containers() map[string]*Container {
-	return n.containers
+func (n *Node) Containers() []*Container {
+	containers := []*Container{}
+	n.RLock()
+	for _, container := range n.containers {
+		containers = append(containers, container)
+	}
+	n.RUnlock()
+	return containers
 }
 
 func (n *Node) String() string {
@@ -327,23 +340,8 @@ func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
 		return
 	}
 
-	event := &Event{
-		Node: n,
-		Type: ev.Status,
-		Time: time.Unix(int64(ev.Time), 0),
-	}
-
-	if container, ok := n.containers[ev.Id]; ok {
-		event.Container = container
-	} else {
-		event.Container = &Container{
-			node: n,
-			Container: dockerclient.Container{
-				Id:    ev.Id,
-				Image: ev.From,
-			},
-		}
-	}
+	event := &Event{NodeName: n.Name}
+	event.Event = *ev
 
 	n.eventHandler.Handle(event)
 }
