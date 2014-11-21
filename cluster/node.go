@@ -15,6 +15,9 @@ import (
 const (
 	// Force-refresh the state of the node this often.
 	stateRefreshPeriod = 30 * time.Second
+
+	// Timeout for requests sent out to the node.
+	requestTimeout = 10 * time.Second
 )
 
 func NewNode(addr string) *Node {
@@ -47,7 +50,7 @@ type Node struct {
 // Connect will initialize a connection to the Docker daemon running on the
 // host, gather machine specs (memory, cpu, ...) and monitor state changes.
 func (n *Node) Connect(config *tls.Config) error {
-	c, err := dockerclient.NewDockerClient(n.Addr, config)
+	c, err := dockerclient.NewDockerClientTimeout(n.Addr, config, time.Duration(requestTimeout))
 	if err != nil {
 		return err
 	}
