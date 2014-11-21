@@ -106,6 +106,10 @@ func (n *Node) updateSpecs() error {
 		"kernelversion":   info.KernelVersion,
 		"operatingsystem": info.OperatingSystem,
 	}
+	for _, label := range info.Labels {
+		kv := strings.SplitN(label, "=", 2)
+		n.Labels[kv[0]] = kv[1]
+	}
 	return nil
 }
 
