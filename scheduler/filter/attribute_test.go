@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAttributeFilter(t *testing.T) {
+func TestLabeleFilter(t *testing.T) {
 	var (
-		f     = AttributeFilter{}
+		f     = LabelFilter{}
 		nodes = []*cluster.Node{
 			cluster.NewNode("node-1"),
 			cluster.NewNode("node-2"),

@@ -8,12 +8,11 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-// AttributeFilter selects only nodes that match certain attributes. Attributes
-// include storagedriver, executiondriver and so on.
-type AttributeFilter struct {
+// LabelFilter selects only nodes that match certain labels.
+type LabelFilter struct {
 }
 
-func (f *AttributeFilter) extractConstraints(env []string) map[string]string {
+func (f *LabelFilter) extractConstraints(env []string) map[string]string {
 	constraints := make(map[string]string)
 	for _, e := range env {
 		if strings.HasPrefix(e, "constraint:") {
@@ -25,7 +24,7 @@ func (f *AttributeFilter) extractConstraints(env []string) map[string]string {
 	return constraints
 }
 
-func (f *AttributeFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
+func (f *LabelFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
 	constraints := f.extractConstraints(config.Env)
 	for k, v := range constraints {
 		candidates := []*cluster.Node{}

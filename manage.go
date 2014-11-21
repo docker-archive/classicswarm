@@ -75,7 +75,7 @@ func manage(c *cli.Context) {
 	s := scheduler.NewScheduler(
 		cluster,
 		&strategy.BinPackingPlacementStrategy{OvercommitRatio: 0.05},
-		[]filter.Filter{&filter.AttributeFilter{}, &filter.PortFilter{}},
+		[]filter.Filter{&filter.LabelFilter{}, &filter.PortFilter{}},
 	)
 
 	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr"), c.App.Version))
