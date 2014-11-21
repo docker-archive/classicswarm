@@ -78,5 +78,5 @@ func manage(c *cli.Context) {
 		[]filter.Filter{&filter.AttributeFilter{}, &filter.PortFilter{}},
 	)
 
-	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr")))
+	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr"), c.App.Version))
 }

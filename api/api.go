@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -24,6 +25,7 @@ type context struct {
 	scheduler     *scheduler.Scheduler
 	eventsHandler *eventsHandler
 	debug         bool
+	version       string
 }
 
 type handler func(c *context, w http.ResponseWriter, r *http.Request)
@@ -48,6 +50,21 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(info)
+}
+
+// GET /version
+func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
+	version := struct {
+		Version   string
+		GoVersion string
+		GitCommit string
+	}{
+		Version:   "swarm/" + c.version,
+		GoVersion: runtime.Version(),
+		GitCommit: "swarm",
+	}
+
+	json.NewEncoder(w).Encode(version)
 }
 
 // GET /containers/ps
@@ -257,7 +274,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 			"/_ping":                          ping,
 			"/events":                         getEvents,
 			"/info":                           getInfo,
-			"/version":                        notImplementedHandler,
+			"/version":                        getVersion,
 			"/images/json":                    notImplementedHandler,
 			"/images/viz":                     notImplementedHandler,
 			"/images/search":                  notImplementedHandler,
@@ -331,10 +348,11 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 	return r, nil
 }
 
-func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, addr string) error {
+func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, addr, version string) error {
 	context := &context{
 		cluster:   c,
 		scheduler: s,
+		version:   version,
 		eventsHandler: &eventsHandler{
 			ws: make(map[string]io.Writer),
 			cs: make(map[string]chan struct{}),
