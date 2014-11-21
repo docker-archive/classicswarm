@@ -29,9 +29,18 @@ func (f *LabelFilter) Filter(config *dockerclient.ContainerConfig, nodes []*clus
 	for k, v := range constraints {
 		candidates := []*cluster.Node{}
 		for _, node := range nodes {
-			if label, ok := node.Labels[k]; ok {
-				if strings.Contains(strings.ToLower(label), v) {
+			switch k {
+			case "node":
+				// "node" label is a special case pinning a container to a specific node.
+				if strings.ToLower(node.ID) == v || strings.ToLower(node.Name) == v {
 					candidates = append(candidates, node)
+				}
+			default:
+				// By default match the node labels.
+				if label, ok := node.Labels[k]; ok {
+					if strings.Contains(strings.ToLower(label), v) {
+						candidates = append(candidates, node)
+					}
 				}
 			}
 		}
