@@ -52,7 +52,6 @@ func TestPlaceContainerMemory(t *testing.T) {
 	// check that both containers ended on the same node
 	assert.Equal(t, node1.ID, node2.ID, "")
 	assert.Equal(t, len(node1.Containers()), len(node2.Containers()), "")
-
 }
 
 func TestPlaceContainerCPU(t *testing.T) {
@@ -82,7 +81,6 @@ func TestPlaceContainerCPU(t *testing.T) {
 	// check that both containers ended on the same node
 	assert.Equal(t, node1.ID, node2.ID, "")
 	assert.Equal(t, len(node1.Containers()), len(node2.Containers()), "")
-
 }
 
 func TestPlaceContainerHuge(t *testing.T) {
@@ -114,7 +112,38 @@ func TestPlaceContainerHuge(t *testing.T) {
 	// try to add another container 1G
 	_, err = s.PlaceContainer(createConfig(1, 0), nodes)
 	assert.Error(t, err)
+}
 
+func TestPlaceContainerOvercommit(t *testing.T) {
+	s := &BinPackingPlacementStrategy{OvercommitRatio: 0.05}
+
+	nodes := []*cluster.Node{createNode("node-1", 0, 1)}
+	nodes[0].Memory = 100
+
+	config := createConfig(0, 0)
+
+	// Below limit should still work.
+	config.Memory = 90
+	node, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	assert.Equal(t, node, nodes[0])
+
+	// At memory limit should still work.
+	config.Memory = 100
+	node, err = s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	assert.Equal(t, node, nodes[0])
+
+	// Up to 105% it should still work.
+	config.Memory = 105
+	node, err = s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	assert.Equal(t, node, nodes[0])
+
+	// Above it should return an error.
+	config.Memory = 106
+	node, err = s.PlaceContainer(config, nodes)
+	assert.Error(t, err)
 }
 
 // The demo

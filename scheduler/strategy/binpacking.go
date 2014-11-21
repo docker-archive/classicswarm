@@ -13,14 +13,19 @@ var (
 )
 
 type BinPackingPlacementStrategy struct {
+	OvercommitRatio float64
 }
 
 func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*cluster.Node) (*cluster.Node, error) {
 	scores := scores{}
 
+	ratio := int64(p.OvercommitRatio * 100)
 	for _, node := range nodes {
+		nodeMemory := node.Memory + (node.Memory * ratio / 100)
+		nodeCpus := node.Cpus + (node.Cpus * ratio / 100)
+
 		// Skip nodes that are smaller than the requested resources.
-		if node.Memory < int64(config.Memory) || node.Cpus < config.CpuShares {
+		if nodeMemory < int64(config.Memory) || nodeCpus < config.CpuShares {
 			continue
 		}
 
@@ -30,10 +35,10 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 		)
 
 		if config.CpuShares > 0 {
-			cpuScore = (node.ReservedCpus() + config.CpuShares) * 100 / node.Cpus
+			cpuScore = (node.ReservedCpus() + config.CpuShares) * 100 / nodeCpus
 		}
 		if config.Memory > 0 {
-			memoryScore = (node.ReservedMemory() + config.Memory) * 100 / node.Memory
+			memoryScore = (node.ReservedMemory() + config.Memory) * 100 / nodeMemory
 		}
 		var total = ((cpuScore + memoryScore) / 200) * 100
 
