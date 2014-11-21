@@ -52,7 +52,7 @@ docker ps
 docker run -d -e constraint:storagedriver=aufs redis
 docker ps
 
-docker run -d -e constraint:host=fedora-1 redis
+docker run -d -e constraint:node=fedora-1 redis
 docker ps
 
 # clean up cluster
