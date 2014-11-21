@@ -61,4 +61,12 @@ func TestLabeleFilter(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[2])
+
+	// Make sure constraints are evaluated as logical ANDs.
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:name=node0", "constraint:group=1"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[0])
 }
