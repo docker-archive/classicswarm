@@ -26,6 +26,7 @@ func NewNode(addr string) *Node {
 		Labels:     make(map[string]string),
 		ch:         make(chan bool),
 		containers: make(map[string]*Container),
+		healthy:    true,
 	}
 	return e
 }
@@ -45,6 +46,7 @@ type Node struct {
 	containers   map[string]*Container
 	client       dockerclient.Client
 	eventHandler EventHandler
+	healthy      bool
 }
 
 // Connect will initialize a connection to the Docker daemon running on the
@@ -89,8 +91,12 @@ func (n *Node) connectClient(client dockerclient.Client) error {
 }
 
 // IsConnected returns true if the engine is connected to a remote docker API
-func (e *Node) IsConnected() bool {
-	return e.client != nil
+func (n *Node) IsConnected() bool {
+	return n.client != nil
+}
+
+func (n *Node) IsHealthy() bool {
+	return n.healthy
 }
 
 // Gather node specs (CPU, memory, constraints, ...).
@@ -203,8 +209,15 @@ func (n *Node) refreshLoop() {
 		case <-time.After(stateRefreshPeriod):
 			err = n.refreshContainers()
 		}
+
 		if err != nil {
-			log.Errorf("[%s] Updated state failed: %v", n.ID, err)
+			n.healthy = false
+			log.Errorf("[%s/%s] Flagging node as dead. Updated state failed: %v", n.ID, n.Name, err)
+		} else {
+			if !n.healthy {
+				log.Infof("[%s/%s] Node came back to life. Hooray!", n.ID, n.Name)
+			}
+			n.healthy = true
 		}
 	}
 }
