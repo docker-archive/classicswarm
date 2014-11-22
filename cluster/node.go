@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -307,7 +308,8 @@ func (n *Node) ListImages() ([]string, error) {
 	return out, nil
 }
 
-func (n *Node) Remove(container *Container, force bool) error {
+// Destroy and remove a container from the node.
+func (n *Node) Destroy(container *Container, force bool) error {
 	if err := n.client.RemoveContainer(container.Id, force); err != nil {
 		return err
 	}
@@ -371,11 +373,33 @@ func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
 	n.eventHandler.Handle(event)
 }
 
-// Used only on tests
-func (n *Node) AddContainer(container *Container) {
+// Inject a container into the internal state.
+func (n *Node) AddContainer(container *Container) error {
+	n.Lock()
+	defer n.Unlock()
+
+	if _, ok := n.containers[container.Id]; ok {
+		return errors.New("container already exists")
+	}
 	n.containers[container.Id] = container
+	return nil
 }
 
+// Remove a container from the internal test.
+func (n *Node) RemoveContainer(container *Container) error {
+	n.Lock()
+	defer n.Unlock()
+
+	if _, ok := n.containers[container.Id]; !ok {
+		return errors.New("container not found")
+	}
+	delete(n.containers, container.Id)
+	return nil
+}
+
+// Wipes the internal container state.
 func (n *Node) CleanupContainers() {
+	n.Lock()
 	n.containers = make(map[string]*Container)
+	n.Unlock()
 }

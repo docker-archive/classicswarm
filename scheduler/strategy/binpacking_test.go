@@ -37,7 +37,7 @@ func TestPlaceContainerMemory(t *testing.T) {
 	config := createConfig(1, 0)
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node1.AddContainer(createContainer("c1", config))
+	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 
 	assert.Equal(t, node1.ReservedMemory(), 1024*1024*1024)
 
@@ -45,7 +45,7 @@ func TestPlaceContainerMemory(t *testing.T) {
 	config = createConfig(1, 1)
 	node2, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node2.AddContainer(createContainer("c2", config))
+	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 
 	assert.Equal(t, node2.ReservedMemory(), 2*1024*1024*1024)
 
@@ -66,7 +66,7 @@ func TestPlaceContainerCPU(t *testing.T) {
 	config := createConfig(0, 1)
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node1.AddContainer(createContainer("c1", config))
+	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 
 	assert.Equal(t, node1.ReservedCpus(), 1)
 
@@ -74,8 +74,7 @@ func TestPlaceContainerCPU(t *testing.T) {
 	config = createConfig(0, 1)
 	node2, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node2.AddContainer(createContainer("c2", config))
-
+	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 	assert.Equal(t, node2.ReservedCpus(), 2)
 
 	// check that both containers ended on the same node
@@ -95,7 +94,7 @@ func TestPlaceContainerHuge(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		node, err := s.PlaceContainer(createConfig(0, 1), nodes)
 		assert.NoError(t, err)
-		node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(0, 100)))
+		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(0, 100))))
 	}
 
 	// try to add another container 1CPU
@@ -103,10 +102,10 @@ func TestPlaceContainerHuge(t *testing.T) {
 	assert.Error(t, err)
 
 	// add 100 container 1G
-	for i := 0; i < 100; i++ {
+	for i := 100; i < 200; i++ {
 		node, err := s.PlaceContainer(createConfig(1, 0), nodes)
 		assert.NoError(t, err)
-		node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(1, 0)))
+		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(1, 0))))
 	}
 
 	// try to add another container 1G
@@ -166,13 +165,13 @@ func TestPlaceContainerDemo(t *testing.T) {
 	config = createConfig(1, 0)
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node1.AddContainer(createContainer("c1", config))
+	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 
 	// add another container 1G
 	config = createConfig(1, 0)
 	node1bis, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node1bis.AddContainer(createContainer("c2", config))
+	assert.NoError(t, node1bis.AddContainer(createContainer("c2", config)))
 
 	// check that both containers ended on the same node
 	assert.Equal(t, node1.ID, node1bis.ID, "")
@@ -182,7 +181,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 	config = createConfig(2, 0)
 	node2, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node2.AddContainer(createContainer("c3", config))
+	assert.NoError(t, node2.AddContainer(createContainer("c3", config)))
 
 	// check that it ends up on another node
 	assert.NotEqual(t, node1.ID, node2.ID, "")
@@ -191,7 +190,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 	config = createConfig(1, 0)
 	node3, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node3.AddContainer(createContainer("c4", config))
+	assert.NoError(t, node3.AddContainer(createContainer("c4", config)))
 
 	// check that it ends up on another node
 	assert.NotEqual(t, node1.ID, node3.ID, "")
@@ -201,7 +200,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 	config = createConfig(1, 0)
 	node3bis, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node3bis.AddContainer(createContainer("c5", config))
+	assert.NoError(t, node3bis.AddContainer(createContainer("c5", config)))
 
 	// check that it ends up on the same node
 	assert.Equal(t, node3.ID, node3bis.ID, "")
@@ -220,7 +219,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 	config = createConfig(1, 0)
 	node2bis, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	node2bis.AddContainer(createContainer("c6", config))
+	assert.NoError(t, node2bis.AddContainer(createContainer("c6", config)))
 
 	// check it ends up on `node3`
 	assert.Equal(t, node2.ID, node2bis.ID, "")

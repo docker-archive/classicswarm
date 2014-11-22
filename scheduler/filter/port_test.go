@@ -59,7 +59,7 @@ func TestPortFilterNoConflicts(t *testing.T) {
 	// Add a container taking a different (4242) port.
 	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{}}
 	container.Info.NetworkSettings.Ports = makeBinding("", "4242")
-	nodes[0].AddContainer(container)
+	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Since no node is using port 80, there should be no filter
 	result, err = p.Filter(config, nodes)
@@ -82,7 +82,7 @@ func TestPortFilterSimple(t *testing.T) {
 	// Add a container taking away port 80 to nodes[0].
 	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{}}
 	container.Info.NetworkSettings.Ports = makeBinding("", "80")
-	nodes[0].AddContainer(container)
+	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Request port 80.
 	config := &dockerclient.ContainerConfig{
@@ -112,7 +112,7 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 	// Add a container taking away port 80 on every interface to nodes[0].
 	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{}}
 	container.Info.NetworkSettings.Ports = makeBinding("", "80")
-	nodes[0].AddContainer(container)
+	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Request port 80 for the local interface.
 	config := &dockerclient.ContainerConfig{
@@ -131,7 +131,7 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 	// nodes[1].
 	container = &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{}}
 	container.Info.NetworkSettings.Ports = makeBinding("127.0.0.1", "4242")
-	nodes[1].AddContainer(container)
+	assert.NoError(t, nodes[1].AddContainer(container))
 
 	// Request port 4242 on the same interface.
 	config = &dockerclient.ContainerConfig{
