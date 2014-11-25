@@ -15,6 +15,24 @@ type eventsHandler struct {
 	cs map[string]chan struct{}
 }
 
+func NewEventsHandler() *eventsHandler {
+	return &eventsHandler{
+		ws: make(map[string]io.Writer),
+		cs: make(map[string]chan struct{}),
+	}
+}
+
+func (eh *eventsHandler) Add(remoteAddr string, w io.Writer) {
+	eh.Lock()
+	eh.ws[remoteAddr] = w
+	eh.cs[remoteAddr] = make(chan struct{})
+	eh.Unlock()
+}
+
+func (eh *eventsHandler) Wait(remoteAddr string) {
+	<-eh.cs[remoteAddr]
+}
+
 func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	eh.RLock()
 

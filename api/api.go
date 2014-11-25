@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -221,17 +220,15 @@ func deleteContainer(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /events
 func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
-	c.eventsHandler.Lock()
-	c.eventsHandler.ws[r.RemoteAddr] = w
-	c.eventsHandler.cs[r.RemoteAddr] = make(chan struct{})
-	c.eventsHandler.Unlock()
+	c.eventsHandler.Add(r.RemoteAddr, w)
+
 	w.Header().Set("Content-Type", "application/json")
 
 	if f, ok := w.(http.Flusher); ok {
 		f.Flush()
 	}
 
-	<-c.eventsHandler.cs[r.RemoteAddr]
+	c.eventsHandler.Wait(r.RemoteAddr)
 }
 
 // GET /_ping
@@ -351,13 +348,10 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 
 func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, addr, version string) error {
 	context := &context{
-		cluster:   c,
-		scheduler: s,
-		version:   version,
-		eventsHandler: &eventsHandler{
-			ws: make(map[string]io.Writer),
-			cs: make(map[string]chan struct{}),
-		},
+		cluster:       c,
+		scheduler:     s,
+		version:       version,
+		eventsHandler: NewEventsHandler(),
 	}
 	c.Events(context.eventsHandler)
 	r, err := createRouter(context, false)
