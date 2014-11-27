@@ -181,6 +181,10 @@ host to control.
 
 *Help wanted!*
 
+### Linode
+
+*Help wanted!*
+
 ### SoftLayer
 
 *Help wanted!*
