@@ -41,7 +41,7 @@ Go installed on your host.
 1. Download the current source code.
 
 ```sh
-go get github.com/docker/libswarm
+git clone https://github.com/docker/libswarm $GOPATH/src/github.com/docker/libswarm
 ```
 
 2. Make sure `$GOPATH/bin` is in your `$PATH`
