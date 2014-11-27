@@ -234,7 +234,7 @@ func (c *container) attach(name string, ret libswarm.Sender) error {
 
 func (c *container) start() error {
 	path := fmt.Sprintf("/containers/%s/start", c.id)
-	resp, err := c.backend.client.call("POST", path, "{}")
+	resp, err := c.backend.client.call("POST", path, "")
 	if err != nil {
 		return err
 	}
