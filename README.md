@@ -1,5 +1,7 @@
 # swarm: docker clustering
 
+![Docker Swarm Logo](logo.png?raw=true "Docker Swarm Logo")
+
 ## Example usage
 
 ```bash
