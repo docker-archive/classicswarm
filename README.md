@@ -4,7 +4,7 @@
 
 `swarm` is a simple tool which controls a cluster of Docker hosts and exposes it as a single "virtual" host.
 
-`swarm` uses the standard Docker API as its frontend, which means any tool which speaks Docker can control swarmd transparently: dokku, fig, krane, flynn, deis, docker-ui, shipyard, drone.io, Jenkins... and of course the Docker client itself.
+`swarm` uses the standard Docker API as its frontend, which means any tool which speaks Docker can control swarm transparently: dokku, fig, krane, flynn, deis, docker-ui, shipyard, drone.io, Jenkins... and of course the Docker client itself.
 
 Like the other Docker projects, `swarm` follows the "batteries included but removable" principle. It ships with a simple scheduling backend out of the box. The goal is to provide a smooth out-of-box experience for simple use cases, and allow swapping in more powerful backends, like `Mesos`, for large scale production deployments.
 
