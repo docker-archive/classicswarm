@@ -10,12 +10,12 @@ Like the other Docker projects, `swarm` follows the "batteries included but remo
 
 ### Installation
 
-1: Download the current source code.
+######1 - Download the current source code.
 ```sh
 go get github.com/docker/swarm
 ```
 
-2: Compile and install swarm
+######2 - Compile and install `swarm`
 ```sh
 go install github.com/docker/swarm
 ```
