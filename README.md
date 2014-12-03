@@ -1,8 +1,8 @@
-## Swarm: a clustering system that speaks the Docker API
+## Swarm: a Docker-native clustering system
 
 ![Docker Swarm Logo](logo.png?raw=true "Docker Swarm Logo")
 
-`swarm` is a simple tool which can control all machines in your distributed system using a variety of backend adaptors, and exposes it on a single, unified endpoint.
+`swarm` is a simple tool which controls a cluster of Docker hosts and exposes it as a single "virtual" host.
 
 `swarm` uses the standard Docker API as its frontend, which means any tool which speaks Docker can control swarmd transparently: dokku, fig, krane, flynn, deis, docker-ui, shipyard, drone.io, Jenkins... and of course the Docker client itself.
 
