@@ -50,6 +50,10 @@ http://<docker_daemon_ip2:4243>
 http://<docker_daemon_ip3:4243>
 ```
 
+## Participating
+
+We welcome pull requests and patchs; come say on IRC, #docker-swarm on freenode.
+
 ## Creators
 
 **Andrea Luzzardi**
