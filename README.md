@@ -1,4 +1,4 @@
-# swarm: a clustering system that speaks the standard Docker API
+## Swarm: a clustering system that speaks the Docker API
 
 ![Docker Swarm Logo](logo.png?raw=true "Docker Swarm Logo")
 
