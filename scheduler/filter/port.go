@@ -33,7 +33,7 @@ func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []*clust
 
 func (p *PortFilter) portAlreadyInUse(node *cluster.Node, requested dockerclient.PortBinding) bool {
 	for _, c := range node.Containers() {
-		for _, port := range c.Info.NetworkSettings.Ports {
+		for _, port := range c.Info.HostConfig.PortBindings {
 			for _, binding := range port {
 				if binding.HostPort == requested.HostPort {
 					// Another container on the same host is binding on the same
