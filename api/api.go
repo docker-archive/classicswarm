@@ -84,6 +84,9 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(tmp.Status, "Up") && !all {
 			continue
 		}
+		if !container.Node().IsHealthy() {
+			tmp.Status = "Pending"
+		}
 		// TODO remove the Node ID in the name when we have a good solution
 		tmp.Names = make([]string, len(container.Names))
 		for i, name := range container.Names {
