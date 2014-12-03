@@ -57,8 +57,7 @@ func TestPortFilterNoConflicts(t *testing.T) {
 	assert.Equal(t, result, nodes)
 
 	// Add a container taking a different (4242) port.
-	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{}}
-	container.Info.NetworkSettings.Ports = makeBinding("", "4242")
+	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{HostConfig: &dockerclient.HostConfig{PortBindings: makeBinding("", "4242")}}}
 	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Since no node is using port 80, there should be no filter
@@ -80,8 +79,7 @@ func TestPortFilterSimple(t *testing.T) {
 	)
 
 	// Add a container taking away port 80 to nodes[0].
-	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{}}
-	container.Info.NetworkSettings.Ports = makeBinding("", "80")
+	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{HostConfig: &dockerclient.HostConfig{PortBindings: makeBinding("", "80")}}}
 	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Request port 80.
@@ -110,8 +108,7 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 	)
 
 	// Add a container taking away port 80 on every interface to nodes[0].
-	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{}}
-	container.Info.NetworkSettings.Ports = makeBinding("", "80")
+	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{HostConfig: &dockerclient.HostConfig{PortBindings: makeBinding("", "80")}}}
 	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Request port 80 for the local interface.
@@ -129,8 +126,7 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 
 	// Add a container taking away port 4242 on the local interface of
 	// nodes[1].
-	container = &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{}}
-	container.Info.NetworkSettings.Ports = makeBinding("127.0.0.1", "4242")
+	container = &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{HostConfig: &dockerclient.HostConfig{PortBindings: makeBinding("127.0.0.1", "4242")}}}
 	assert.NoError(t, nodes[1].AddContainer(container))
 
 	// Request port 4242 on the same interface.
