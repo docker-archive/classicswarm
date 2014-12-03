@@ -78,7 +78,7 @@ func (c *Cluster) Container(IdOrName string) *Container {
 
 		// Match name, /name or engine/name.
 		for _, name := range container.Names {
-			if name == IdOrName || name == "/"+IdOrName || container.node.ID+name == IdOrName {
+			if name == IdOrName || name == "/"+IdOrName || container.node.ID+name == IdOrName || container.node.Name+name == IdOrName {
 				return container
 			}
 		}
