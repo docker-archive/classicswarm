@@ -8,7 +8,21 @@
 
 Like the other Docker projects, `swarm` follows the "batteries included but removable" principle. It ships with a simple scheduling backend out of the box. The goal is to provide a smooth out-of-box experience for simple use cases, and allow swapping in more powerful backends, like `Mesos`, for large scale production deployments.
 
-## Example usage
+### Installation
+
+1. Download the current source code.
+
+```sh
+go get github.com/docker/swarm
+```
+
+2. Compile and install swarm
+
+```sh
+go install github.com/docker/swarm
+```
+
+### Example usage
 
 ```bash
 # create a cluster
@@ -16,18 +30,18 @@ $ swarm create
 6856663cdefdec325839a4b7e1de38e8
 
 # on each of your nodes, start the swarm agent
-$ docker run -d -p 4243:4243 swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip1:4243>
-$ docker run -d -p 4243:4243 swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip2:4243>
-$ docker run -d -p 4243:4243 swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip3:4243>
+$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip1:4243>
+$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip2:4243>
+$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip3:4243>
 ...
 
 # start the manager on any machine or your laptop
-$ docker run -d -p 4243:4243 swarm manage --token=6856663cdefdec325839a4b7e1de38e8
+$ swarm manage --token=6856663cdefdec325839a4b7e1de38e8 --addr=<swarm_ip:4243>
 
 # use the regular docker cli
-$ docker -H <ip:4243> ps 
-$ docker -H <ip:4243> run ... 
-$ docker -H <ip:4243> info
+$ docker -H <swarm_ip:4243> ps 
+$ docker -H <swarm_ip:4243> run ... 
+$ docker -H <swarm_ip:4243> info
 ...
 
 # list nodes in your cluster
