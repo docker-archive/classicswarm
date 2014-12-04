@@ -1,4 +1,4 @@
-## Swarm: a Docker-native clustering system
+## Swarm: a Docker-native clustering system [![Build Status](https://travis-ci.org/docker/swarm.svg?branch=master)](https://travis-ci.org/docker/swarm)
 
 ![Docker Swarm Logo](logo.png?raw=true "Docker Swarm Logo")
 
