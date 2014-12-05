@@ -12,6 +12,8 @@ import (
 
 var (
 	mockInfo = &dockerclient.Info{
+		ID:              "id",
+		Name:            "name",
 		NCPU:            10,
 		MemTotal:        20,
 		Driver:          "driver-test",
@@ -30,6 +32,17 @@ func TestNodeConnectionFailure(t *testing.T) {
 	client.On("Info").Return(&dockerclient.Info{}, errors.New("fail"))
 
 	// Connect() should fail and IsConnected() return false.
+	assert.Error(t, node.connectClient(client))
+	assert.False(t, node.IsConnected())
+
+	client.Mock.AssertExpectations(t)
+}
+
+func TestOutdatedNode(t *testing.T) {
+	node := NewNode("test")
+	client := dockerclient.NewMockClient()
+	client.On("Info").Return(&dockerclient.Info{}, nil)
+
 	assert.Error(t, node.connectClient(client))
 	assert.False(t, node.IsConnected())
 
