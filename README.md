@@ -20,6 +20,15 @@ go get github.com/docker/swarm
 go install github.com/docker/swarm
 ```
 
+######3 - Nodes setup
+The only requirement for Swarm nodes is to run a regular Docker daemon.
+
+In order for Swarm to be able to communicate with its nodes, they must bind on a network interface.
+This can be achieved by starting Docker with the `-H` flag (e.g. `-H 0.0.0.0:2375`).
+
+Currently, nodes must be running the Docker **master** version.
+Master binaries are available here: https://master.dockerproject.com/
+
 ### Example usage
 
 ```bash
