@@ -37,26 +37,26 @@ $ swarm create
 6856663cdefdec325839a4b7e1de38e8
 
 # on each of your nodes, start the swarm agent
-$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip1:4243>
-$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip2:4243>
-$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip3:4243>
+$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip1:2375>
+$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip2:2375>
+$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip3:2375>
 ...
 
 # start the manager on any machine or your laptop
-$ swarm manage --token=6856663cdefdec325839a4b7e1de38e8 --addr=<swarm_ip:4243>
+$ swarm manage --token=6856663cdefdec325839a4b7e1de38e8 --addr=<swarm_ip:2375>
 
 # use the regular docker cli
-$ docker -H <swarm_ip:4243> info
-$ docker -H <swarm_ip:4243> run ... 
-$ docker -H <swarm_ip:4243> ps 
-$ docker -H <swarm_ip:4243> logs ...
+$ docker -H <swarm_ip:2375> info
+$ docker -H <swarm_ip:2375> run ... 
+$ docker -H <swarm_ip:2375> ps 
+$ docker -H <swarm_ip:2375> logs ...
 ...
 
 # list nodes in your cluster
 $ swarm list --token=6856663cdefdec325839a4b7e1de38e8
-http://<docker_daemon_ip1:4243>
-http://<docker_daemon_ip2:4243>
-http://<docker_daemon_ip3:4243>
+http://<docker_daemon_ip1:2375>
+http://<docker_daemon_ip2:2375>
+http://<docker_daemon_ip3:2375>
 ```
 
 ## Participating
