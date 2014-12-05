@@ -106,6 +106,11 @@ func (n *Node) updateSpecs() error {
 	if err != nil {
 		return err
 	}
+	// Older versions of Docker don't expose the ID field and are not supported
+	// by Swarm.  Catch the error ASAP and refuse to connect.
+	if len(info.ID) == 0 {
+		return fmt.Errorf("Node %s is running an unsupported version of Docker Engine. Please upgrade.", n.Addr)
+	}
 	n.ID = info.ID
 	n.Name = info.Name
 	n.Cpus = info.NCPU
@@ -333,7 +338,7 @@ func (n *Node) Pull(image string) error {
 // Register an event handler.
 func (n *Node) Events(h EventHandler) error {
 	if n.eventHandler != nil {
-		return fmt.Errorf("event handler already set")
+		return errors.New("event handler already set")
 	}
 	n.eventHandler = h
 	return nil
