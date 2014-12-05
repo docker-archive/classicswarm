@@ -324,7 +324,7 @@ func (n *Node) Destroy(container *Container, force bool) error {
 }
 
 func (n *Node) Pull(image string) error {
-	if err := n.client.PullImage(image, nil); err != nil {
+	if err := n.client.PullImage(image); err != nil {
 		return err
 	}
 	return nil
