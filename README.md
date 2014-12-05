@@ -37,9 +37,7 @@ $ swarm create
 6856663cdefdec325839a4b7e1de38e8
 
 # on each of your nodes, start the swarm agent
-$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<public_node_ip1:2375>
-$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<public_node_ip2:2375>
-$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<public_node_ip3:2375>
+$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<public_node_ip:2375>
 ...
 
 # start the manager on any machine or your laptop
