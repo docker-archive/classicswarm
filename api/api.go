@@ -349,7 +349,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 	return r, nil
 }
 
-func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, addr, version string) error {
+func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, addr, version string, enableCors bool) error {
 	context := &context{
 		cluster:       c,
 		scheduler:     s,
@@ -357,7 +357,7 @@ func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, addr, version st
 		eventsHandler: NewEventsHandler(),
 	}
 	c.Events(context.eventsHandler)
-	r, err := createRouter(context, false)
+	r, err := createRouter(context, enableCors)
 	if err != nil {
 		return err
 	}

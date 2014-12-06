@@ -50,6 +50,10 @@ func main() {
 		Value: 25,
 		Usage: "time in second between each heartbeat",
 	}
+	flEnableCors := cli.BoolFlag{
+		Name:  "api-enable-cors, cors",
+		Usage: "enable CORS headers in the remote API",
+	}
 
 	app.Commands = []cli.Command{
 		{
@@ -87,7 +91,7 @@ func main() {
 			Name:      "manage",
 			ShortName: "m",
 			Usage:     "manage a docker cluster",
-			Flags:     []cli.Flag{flToken, flAddr, flHeartBeat},
+			Flags:     []cli.Flag{flToken, flAddr, flHeartBeat, flEnableCors},
 			Action:    manage,
 		},
 		{
