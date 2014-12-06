@@ -82,5 +82,5 @@ func manage(c *cli.Context) {
 		},
 	)
 
-	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr"), c.App.Version))
+	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr"), c.App.Version, c.Bool("cors")))
 }
