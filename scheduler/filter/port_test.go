@@ -11,8 +11,8 @@ import (
 
 func makeBinding(ip, port string) map[string][]dockerclient.PortBinding {
 	return map[string][]dockerclient.PortBinding{
-		fmt.Sprintf("%s/tcp", port): []dockerclient.PortBinding{
-			dockerclient.PortBinding{
+		fmt.Sprintf("%s/tcp", port): {
+			{
 				HostIp:   ip,
 				HostPort: port,
 			},
