@@ -10,17 +10,12 @@ Like the other Docker projects, `swarm` follows the "batteries included but remo
 
 ### Installation
 
-######1 - Download the current source code.
+######1 - Download and install the current source code.
 ```sh
-go get github.com/docker/swarm
+go get -u github.com/docker/swarm
 ```
 
-######2 - Compile and install `swarm`
-```sh
-go install github.com/docker/swarm
-```
-
-######3 - Nodes setup
+######2 - Nodes setup
 The only requirement for Swarm nodes is to run a regular Docker daemon.
 
 In order for Swarm to be able to communicate with its nodes, they must bind on a network interface.
@@ -37,26 +32,23 @@ $ swarm create
 6856663cdefdec325839a4b7e1de38e8
 
 # on each of your nodes, start the swarm agent
-$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip1:4243>
-$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip2:4243>
-$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<docker_daemon_ip3:4243>
-...
+#  <node_ip> doesn't have to be public (eg. 192.168.0.X),
+#  as long as the other nodes can reach it, it is fine.
+$ swarm join --token=6856663cdefdec325839a4b7e1de38e8 --addr=<node_ip:2375>
 
 # start the manager on any machine or your laptop
-$ swarm manage --token=6856663cdefdec325839a4b7e1de38e8 --addr=<swarm_ip:4243>
+$ swarm manage --token=6856663cdefdec325839a4b7e1de38e8 --addr=<swarm_ip:swarm_port>
 
 # use the regular docker cli
-$ docker -H <swarm_ip:4243> info
-$ docker -H <swarm_ip:4243> run ... 
-$ docker -H <swarm_ip:4243> ps 
-$ docker -H <swarm_ip:4243> logs ...
+$ docker -H <swarm_ip:swarm_port> info
+$ docker -H <swarm_ip:swarm_port> run ... 
+$ docker -H <swarm_ip:swarm_port> ps 
+$ docker -H <swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
 $ swarm list --token=6856663cdefdec325839a4b7e1de38e8
-http://<docker_daemon_ip1:4243>
-http://<docker_daemon_ip2:4243>
-http://<docker_daemon_ip3:4243>
+http://<node_ip:2375>
 ```
 
 ## Participating
