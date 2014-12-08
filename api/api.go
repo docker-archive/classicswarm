@@ -134,6 +134,11 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if config.AttachStdout || config.AttachStdin || config.AttachStderr {
+		http.Error(w, "Attach is not supported in clustering mode, use -d.", http.StatusInternalServerError)
+		return
+	}
+
 	container, err := c.scheduler.CreateContainer(&config, r.Form.Get("name"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
