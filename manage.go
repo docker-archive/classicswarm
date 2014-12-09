@@ -1,6 +1,10 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -22,7 +26,52 @@ func (h *logHandler) Handle(e *cluster.Event) error {
 	return nil
 }
 
+// Load the TLS certificates/keys and, if verify is true, the CA.
+func loadTlsConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
+	c, err := tls.LoadX509KeyPair(cert, key)
+	if err != nil {
+		return nil, fmt.Errorf("Couldn't load X509 key pair (%s, %s): %s. Key encrypted?",
+			cert, key, err)
+	}
+
+	config := &tls.Config{
+		Certificates: []tls.Certificate{c},
+		MinVersion:   tls.VersionTLS10,
+	}
+
+	if verify {
+		certPool := x509.NewCertPool()
+		file, err := ioutil.ReadFile(ca)
+		if err != nil {
+			return nil, fmt.Errorf("Couldn't read CA certificate: %s", err)
+		}
+		certPool.AppendCertsFromPEM(file)
+		config.RootCAs = certPool
+	} else {
+		// If --tlsverify is not supplied, disable CA validation.
+		config.InsecureSkipVerify = true
+	}
+
+	return config, nil
+}
+
 func manage(c *cli.Context) {
+	var (
+		tlsConfig *tls.Config = nil
+		err       error
+	)
+
+	// If either --tls or --tlsverify are specified, load the certificates.
+	if c.Bool("tls") || c.Bool("tlsverify") {
+		tlsConfig, err = loadTlsConfig(
+			c.String("tlscacert"),
+			c.String("tlscert"),
+			c.String("tlskey"),
+			c.Bool("tlsverify"))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	refresh := func(c *cluster.Cluster, nodes []string) {
 		for _, addr := range nodes {
@@ -32,7 +81,7 @@ func manage(c *cli.Context) {
 				}
 				if c.Node(addr) == nil {
 					n := cluster.NewNode(addr)
-					if err := n.Connect(nil); err != nil {
+					if err := n.Connect(tlsConfig); err != nil {
 						log.Error(err)
 						return
 					}
@@ -82,5 +131,5 @@ func manage(c *cli.Context) {
 		},
 	)
 
-	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr"), c.App.Version, c.Bool("cors")))
+	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr"), c.App.Version, c.Bool("cors"), tlsConfig))
 }

@@ -51,6 +51,19 @@ $ swarm list --token=6856663cdefdec325839a4b7e1de38e8
 http://<node_ip:2375>
 ```
 
+### TLS
+
+Swarm supports TLS authentication between the CLI and Swarm but also between Swarm and the Docker nodes.
+
+In order to enable TLS, the same command line options as Docker can be specified:
+
+`swarm manage --tlsverify --tlscacert=<CACERT> --tlscert=<CERT> --tlskey=<KEY> [...]`
+
+Please refer to the [Docker documentation](https://docs.docker.com/articles/https/) for more information on how
+to set up TLS authentication on Docker and generating the certificates.
+
+Note that Swarm certificates must be generated with`extendedKeyUsage = clientAuth,serverAuth`.
+
 ## Participating
 
 We welcome pull requests and patches; come say hi on IRC, #docker-swarm on freenode.
