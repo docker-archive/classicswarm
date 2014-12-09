@@ -127,7 +127,10 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 // POST /containers/create
 func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	var config dockerclient.ContainerConfig
+	var (
+		config dockerclient.ContainerConfig
+		name   = r.Form.Get("name")
+	)
 
 	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -139,7 +142,12 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	container, err := c.scheduler.CreateContainer(&config, r.Form.Get("name"))
+	if container := c.cluster.Container(name); container != nil {
+		http.Error(w, fmt.Sprintf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, container.Id, name), http.StatusConflict)
+		return
+	}
+
+	container, err := c.scheduler.CreateContainer(&config, name)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
