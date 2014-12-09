@@ -20,6 +20,7 @@ var (
 		ExecutionDriver: "execution-driver-test",
 		KernelVersion:   "1.2.3",
 		OperatingSystem: "golang",
+		Labels:          []string{"foo=bar"},
 	}
 )
 
@@ -60,6 +61,7 @@ func TestNodeSpecs(t *testing.T) {
 
 	assert.NoError(t, node.connectClient(client))
 	assert.True(t, node.IsConnected())
+	assert.True(t, node.IsHealthy())
 
 	assert.Equal(t, node.Cpus, mockInfo.NCPU)
 	assert.Equal(t, node.Memory, mockInfo.MemTotal)
@@ -67,6 +69,7 @@ func TestNodeSpecs(t *testing.T) {
 	assert.Equal(t, node.Labels["executiondriver"], mockInfo.ExecutionDriver)
 	assert.Equal(t, node.Labels["kernelversion"], mockInfo.KernelVersion)
 	assert.Equal(t, node.Labels["operatingsystem"], mockInfo.OperatingSystem)
+	assert.Equal(t, node.Labels["foo"], "bar")
 
 	client.Mock.AssertExpectations(t)
 }
