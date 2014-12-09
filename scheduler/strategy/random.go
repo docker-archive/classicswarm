@@ -18,10 +18,12 @@ type RandomPlacementStrategy struct {
 }
 
 func (p *RandomPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*cluster.Node) (*cluster.Node, error) {
-	n := rand.Intn(len(nodes))
-	for i, node := range nodes {
-		if i == n {
-			return node, nil
+	if size := len(nodes); size > 0 {
+		n := rand.Intn(len(nodes))
+		for i, node := range nodes {
+			if i == n {
+				return node, nil
+			}
 		}
 	}
 	return nil, errors.New("No nodes running in the cluster")
