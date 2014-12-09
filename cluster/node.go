@@ -239,11 +239,6 @@ func (n *Node) ReservedMemory() int64 {
 	return r
 }
 
-// Return the memory availalble on this node.
-func (n *Node) AvailableMemory() int64 {
-	return n.Memory - n.ReservedMemory()
-}
-
 // Return the sum of CPUs reserved by containers.
 func (n *Node) ReservedCpus() int64 {
 	var r int64 = 0
@@ -253,10 +248,6 @@ func (n *Node) ReservedCpus() int64 {
 	}
 	n.RUnlock()
 	return r
-}
-
-func (n *Node) AvailalbleCpus() int64 {
-	return n.Cpus - n.ReservedCpus()
 }
 
 func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*Container, error) {
