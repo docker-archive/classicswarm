@@ -50,6 +50,25 @@ func TestOutdatedNode(t *testing.T) {
 	client.Mock.AssertExpectations(t)
 }
 
+func TestNodeCpusMemory(t *testing.T) {
+	node := NewNode("test")
+	assert.False(t, node.IsConnected())
+
+	client := dockerclient.NewMockClient()
+	client.On("Info").Return(mockInfo, nil)
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
+
+	assert.NoError(t, node.connectClient(client))
+	assert.True(t, node.IsConnected())
+	assert.True(t, node.IsHealthy())
+
+	assert.Equal(t, node.ReservedCpus(), 0)
+	assert.Equal(t, node.ReservedMemory(), 0)
+
+	client.Mock.AssertExpectations(t)
+}
+
 func TestNodeSpecs(t *testing.T) {
 	node := NewNode("test")
 	assert.False(t, node.IsConnected())
