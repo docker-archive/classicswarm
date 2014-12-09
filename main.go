@@ -29,10 +29,30 @@ func main() {
 		if c.Bool("debug") {
 			log.SetLevel(log.DebugLevel)
 		}
+
+		return nil
+	}
+
+	beforeCommand := func(c *cli.Context) error {
+		url := c.String("discovery-url")
+
+		if len(url) > 0 {
+			err := discovery.SetupDiscovery(url)
+			if err != nil {
+				return err
+			}
+		}
+
 		return nil
 	}
 
 	// flags
+	flDiscoveryUrl := cli.StringFlag{
+		Name:   "discovery-url",
+		Value:  discovery.DOCKER_HUB_SCHEME,
+		Usage:  "discovery URL",
+		EnvVar: "SWARM_DISCOVERY_URL",
+	}
 	flToken := cli.StringFlag{
 		Name:   "token",
 		Value:  "",
@@ -80,6 +100,8 @@ func main() {
 			Name:      "create",
 			ShortName: "c",
 			Usage:     "create a cluster",
+			Before:    beforeCommand,
+			Flags:     []cli.Flag{flDiscoveryUrl},
 			Action: func(c *cli.Context) {
 				token, err := discovery.CreateCluster()
 				if err != nil {
@@ -92,7 +114,8 @@ func main() {
 			Name:      "list",
 			ShortName: "l",
 			Usage:     "list nodes in a cluster",
-			Flags:     []cli.Flag{flToken},
+			Before:    beforeCommand,
+			Flags:     []cli.Flag{flDiscoveryUrl, flToken},
 			Action: func(c *cli.Context) {
 				if c.String("token") == "" {
 					log.Fatal("--token required to list a cluster")
@@ -111,17 +134,18 @@ func main() {
 			Name:      "manage",
 			ShortName: "m",
 			Usage:     "manage a docker cluster",
-			Flags: []cli.Flag{
-				flToken, flAddr, flHeartBeat,
+			Before:    beforeCommand,
+			Flags: []cli.Flag{flDiscoveryUrl, flToken,
 				flTls, flTlsCaCert, flTlsCert, flTlsKey, flTlsVerify,
-				flEnableCors},
+				flAddr, flHeartBeat, flEnableCors},
 			Action: manage,
 		},
 		{
 			Name:      "join",
 			ShortName: "j",
 			Usage:     "join a docker cluster",
-			Flags:     []cli.Flag{flToken, flAddr, flHeartBeat},
+			Before:    beforeCommand,
+			Flags:     []cli.Flag{flDiscoveryUrl, flToken, flAddr, flHeartBeat},
 			Action:    join,
 		},
 	}
