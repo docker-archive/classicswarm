@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -127,10 +128,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 // POST /containers/create
 func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	var (
-		config dockerclient.ContainerConfig
-		name   = r.Form.Get("name")
-	)
+	var config dockerclient.ContainerConfig
 
 	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -142,12 +140,7 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if container := c.cluster.Container(name); container != nil {
-		http.Error(w, fmt.Sprintf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, container.Id, name), http.StatusConflict)
-		return
-	}
-
-	container, err := c.scheduler.CreateContainer(&config, name)
+	container, err := c.scheduler.CreateContainer(&config, r.Form.Get("name"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -362,7 +355,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 	return r, nil
 }
 
-func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, addr, version string, enableCors bool) error {
+func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, addr, version string, enableCors bool, tlsConfig *tls.Config) error {
 	context := &context{
 		cluster:       c,
 		scheduler:     s,
@@ -377,6 +370,13 @@ func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, addr, version st
 	server := &http.Server{
 		Addr:    addr,
 		Handler: r,
+	}
+	if tlsConfig != nil {
+		l, err := tls.Listen("tcp", addr, tlsConfig)
+		if err != nil {
+			return err
+		}
+		return server.Serve(l)
 	}
 	return server.ListenAndServe()
 }

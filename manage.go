@@ -82,5 +82,9 @@ func manage(c *cli.Context) {
 		},
 	)
 
-	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr"), c.App.Version, c.Bool("cors")))
+	tlsConfig, err := getTlsConfig(c.Bool("tls"), c.Bool("tlsverify"), c.String("tlskey"), c.String("tlscert"), c.String("tlscakey"), c.String("tlscert"))
+	if err != nil {
+		log.Fatalf("Error setting up TLS", err)
+	}
+	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr"), c.App.Version, c.Bool("cors"), tlsConfig))
 }

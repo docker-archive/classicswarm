@@ -54,6 +54,26 @@ func main() {
 		Name:  "api-enable-cors, cors",
 		Usage: "enable CORS headers in the remote API",
 	}
+	flTls := cli.BoolFlag{
+		Name:  "tls",
+		Usage: "Enable TLS",
+	}
+	flTlsVerify := cli.BoolFlag{
+		Name:  "tlsverify",
+		Usage: "Enable TLS Server Verification",
+	}
+	flTlsCa := cli.StringFlag{
+		Name:  "tlscacert",
+		Usage: "Location of tls ca cert",
+	}
+	flTlsCert := cli.StringFlag{
+		Name:  "tlscert",
+		Usage: "Location of tls cert",
+	}
+	flTlsKey := cli.StringFlag{
+		Name:  "tlskey",
+		Usage: "Location of tls key",
+	}
 
 	app.Commands = []cli.Command{
 		{
@@ -91,14 +111,14 @@ func main() {
 			Name:      "manage",
 			ShortName: "m",
 			Usage:     "manage a docker cluster",
-			Flags:     []cli.Flag{flToken, flAddr, flHeartBeat, flEnableCors},
+			Flags:     []cli.Flag{flToken, flAddr, flHeartBeat, flEnableCors, flTls, flTlsVerify, flTlsCa, flTlsKey, flTlsCert},
 			Action:    manage,
 		},
 		{
 			Name:      "join",
 			ShortName: "j",
 			Usage:     "join a docker cluster",
-			Flags:     []cli.Flag{flToken, flAddr, flHeartBeat},
+			Flags:     []cli.Flag{flToken, flAddr, flHeartBeat, flTls, flTlsVerify, flTlsCa, flTlsKey, flTlsCert},
 			Action:    join,
 		},
 	}
