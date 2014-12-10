@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -11,8 +12,9 @@ import (
 type InitFunc func(url string) (DiscoveryService, error)
 
 type DiscoveryService interface {
-	FetchNodes() ([]string, error)
-	RegisterNode(addr string) error
+	Fetch() ([]string, error)
+	Watch(int) <-chan time.Time
+	Register(string) error
 }
 
 var (

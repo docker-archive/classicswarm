@@ -1,8 +1,10 @@
 package file
 
 import (
+	"errors"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"github.com/docker/swarm/discovery"
 )
@@ -19,7 +21,7 @@ func Init(file string) (discovery.DiscoveryService, error) {
 	return FileDiscoveryService{path: file}, nil
 }
 
-func (s FileDiscoveryService) FetchNodes() ([]string, error) {
+func (s FileDiscoveryService) Fetch() ([]string, error) {
 	data, err := ioutil.ReadFile(s.path)
 	if err != nil {
 		return nil, err
@@ -28,7 +30,10 @@ func (s FileDiscoveryService) FetchNodes() ([]string, error) {
 	return strings.Split(string(data), "\n"), nil
 }
 
-func (s FileDiscoveryService) RegisterNode(addr string) error {
+func (s FileDiscoveryService) Watch(heartbeat int) <-chan time.Time {
+	return time.Tick(time.Duration(heartbeat) * time.Second)
+}
 
-	return nil
+func (s FileDiscoveryService) Register(addr string) error {
+	return errors.New("unimplemented")
 }
