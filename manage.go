@@ -98,7 +98,6 @@ func manage(c *cli.Context) {
 	cluster.Events(&logHandler{})
 
 	go func() {
-		fmt.Println(c.String("discovery"))
 		if c.String("discovery") != "" {
 			d, err := discovery.New(c.String("discovery"))
 			if err != nil {

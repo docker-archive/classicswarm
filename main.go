@@ -6,7 +6,9 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+
 	"github.com/docker/swarm/discovery"
+	_ "github.com/docker/swarm/discovery/file"
 	"github.com/docker/swarm/discovery/token"
 )
 
