@@ -27,7 +27,14 @@ func (s FileDiscoveryService) Fetch() ([]string, error) {
 		return nil, err
 	}
 
-	return strings.Split(string(data), "\n"), nil
+	lines := []string{}
+
+	for _, line := range strings.Split(string(data), "\n") {
+		if line != "" {
+			lines = append(lines, line)
+		}
+	}
+	return lines, nil
 }
 
 func (s FileDiscoveryService) Watch(heartbeat int) <-chan time.Time {

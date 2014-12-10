@@ -30,7 +30,7 @@ func Register(scheme string, initFunc InitFunc) error {
 	if _, exists := discoveries[scheme]; exists {
 		return fmt.Errorf("scheme already registered %s", scheme)
 	}
-	fmt.Printf("Registering %q discovery service", scheme)
+	log.Debugf("Registering %q discovery service", scheme)
 	discoveries[scheme] = initFunc
 
 	return nil
@@ -43,8 +43,8 @@ func New(rawurl string) (DiscoveryService, error) {
 	}
 
 	if initFct, exists := discoveries[url.Scheme]; exists {
-		log.Debugf("Initialising %q discovery service with %q", url.Scheme, url.Host)
-		return initFct(url.Host)
+		log.Debugf("Initialising %q discovery service with %q", url.Scheme, url.Host+url.Path)
+		return initFct(url.Host + url.Path)
 	}
 
 	return nil, ErrNotSupported
