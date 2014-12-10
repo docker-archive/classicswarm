@@ -106,7 +106,7 @@ func main() {
 					log.Fatal(err)
 				}
 
-				nodes, err := d.FetchNodes()
+				nodes, err := d.Fetch()
 				if err != nil {
 					log.Fatal(err)
 				}

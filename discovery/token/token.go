@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/docker/swarm/discovery"
 )
@@ -25,7 +26,7 @@ func Init(token string) (discovery.DiscoveryService, error) {
 }
 
 // FetchNodes returns the node for the discovery service at the specified endpoint
-func (s TokenDiscoveryService) FetchNodes() ([]string, error) {
+func (s TokenDiscoveryService) Fetch() ([]string, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", DISCOVERY_URL, "clusters", s.token))
 	if err != nil {
 		return nil, err
@@ -45,8 +46,12 @@ func (s TokenDiscoveryService) FetchNodes() ([]string, error) {
 	return addrs, nil
 }
 
+func (s TokenDiscoveryService) Watch(heartbeat int) <-chan time.Time {
+	return time.Tick(time.Duration(heartbeat) * time.Second)
+}
+
 // RegisterNode adds a new node identified by the into the discovery service
-func (s TokenDiscoveryService) RegisterNode(addr string) error {
+func (s TokenDiscoveryService) Register(addr string) error {
 	buf := strings.NewReader(addr)
 
 	_, err := http.Post(fmt.Sprintf("%s/%s/%s", DISCOVERY_URL,

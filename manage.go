@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -104,18 +103,16 @@ func manage(c *cli.Context) {
 				log.Fatal(err)
 			}
 
-			nodes, err := d.FetchNodes()
+			nodes, err := d.Fetch()
 			if err != nil {
 				log.Fatal(err)
 
 			}
 			refresh(cluster, nodes)
 
-			hb := time.Duration(c.Int("heartbeat"))
 			go func() {
-				for {
-					time.Sleep(hb * time.Second)
-					nodes, err = d.FetchNodes()
+				for _ = range d.Watch(c.Int("heartbeat")) {
+					nodes, err = d.Fetch()
 					if err == nil {
 						refresh(cluster, nodes)
 					}
