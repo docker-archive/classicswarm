@@ -84,7 +84,7 @@ func main() {
 			ShortName: "c",
 			Usage:     "create a cluster",
 			Action: func(c *cli.Context) {
-				token, err := token.CreateCluster()
+				token, err := token.New("").CreateCluster()
 				if err != nil {
 					log.Fatal(err)
 				}

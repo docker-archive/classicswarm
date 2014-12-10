@@ -14,6 +14,7 @@ import (
 const DISCOVERY_URL = "https://discovery-stage.hub.docker.com/v1"
 
 type TokenDiscoveryService struct {
+	url   string
 	token string
 }
 
@@ -21,13 +22,23 @@ func init() {
 	discovery.Register("token", Init)
 }
 
-func Init(token string) (discovery.DiscoveryService, error) {
-	return TokenDiscoveryService{token: token}, nil
+func Init(urltoken string) (discovery.DiscoveryService, error) {
+	if i := strings.LastIndex(urltoken, "/"); i != -1 {
+		return TokenDiscoveryService{url: "https://" + urltoken[:i], token: urltoken[i+1:]}, nil
+	}
+
+	return TokenDiscoveryService{url: DISCOVERY_URL, token: urltoken}, nil
+}
+func New(url string) *TokenDiscoveryService {
+	if url != "" {
+		return &TokenDiscoveryService{url: url}
+	}
+	return &TokenDiscoveryService{url: DISCOVERY_URL}
 }
 
 // FetchNodes returns the node for the discovery service at the specified endpoint
 func (s TokenDiscoveryService) Fetch() ([]string, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", DISCOVERY_URL, "clusters", s.token))
+	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", s.url, "clusters", s.token))
 	if err != nil {
 		return nil, err
 	}
@@ -54,14 +65,14 @@ func (s TokenDiscoveryService) Watch(heartbeat int) <-chan time.Time {
 func (s TokenDiscoveryService) Register(addr string) error {
 	buf := strings.NewReader(addr)
 
-	_, err := http.Post(fmt.Sprintf("%s/%s/%s", DISCOVERY_URL,
+	_, err := http.Post(fmt.Sprintf("%s/%s/%s", s.url,
 		"clusters", s.token), "application/json", buf)
 	return err
 }
 
 // CreateCluster returns a unique cluster token
-func CreateCluster() (string, error) {
-	resp, err := http.Post(fmt.Sprintf("%s/%s", DISCOVERY_URL, "clusters"), "", nil)
+func (s TokenDiscoveryService) CreateCluster() (string, error) {
+	resp, err := http.Post(fmt.Sprintf("%s/%s", s.url, "clusters"), "", nil)
 	if err != nil {
 		return "", err
 	}
