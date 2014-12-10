@@ -1,28 +1,34 @@
 package token
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestInit(t *testing.T) {
+	discovery, _ := Init("token")
+	if dtoken, ok := discovery.(TokenDiscoveryService); ok {
+		assert.Equal(t, dtoken.token, "token")
+		assert.Equal(t, dtoken.url, DISCOVERY_URL)
+	}
+
+	discovery, _ = Init("custom/path/token")
+	if dtoken, ok := discovery.(TokenDiscoveryService); ok {
+		assert.Equal(t, dtoken.token, "token")
+		assert.Equal(t, dtoken.url, "https://custom/path")
+	}
+}
 
 func TestRegister(t *testing.T) {
-	discovery := TokenDiscoveryService{token: "TEST_TOKEN"}
+	discovery := TokenDiscoveryService{token: "TEST_TOKEN", url: DISCOVERY_URL}
 	expected := "127.0.0.1:2675"
-	if err := discovery.RegisterNode(expected); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, discovery.Register(expected))
 
-	addrs, err := discovery.FetchNodes()
-	if err != nil {
-		t.Fatal(err)
-	}
+	addrs, err := discovery.Fetch()
+	assert.NoError(t, err)
+	assert.Equal(t, len(addrs), 1)
+	assert.Equal(t, addrs[0], expected)
 
-	if len(addrs) != 1 {
-		t.Fatalf("expected addr len == 1, got len = %d", len(addrs))
-	}
-
-	if addrs[0] != expected {
-		t.Fatalf("expected addr %q but received %q", expected, addrs[0])
-	}
-
-	if err = discovery.RegisterNode(expected); err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, discovery.Register(expected))
 }
