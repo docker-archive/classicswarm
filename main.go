@@ -7,6 +7,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/discovery"
+	"github.com/docker/swarm/discovery/token"
 )
 
 func main() {
@@ -33,11 +34,11 @@ func main() {
 	}
 
 	// flags
-	flToken := cli.StringFlag{
-		Name:   "token",
+	flDiscovery := cli.StringFlag{
+		Name:   "discovery",
 		Value:  "",
-		Usage:  "cluster token",
-		EnvVar: "SWARM_TOKEN",
+		Usage:  "token://<token>, file://path/to/file",
+		EnvVar: "SWARM_DISCOVERY",
 	}
 	flAddr := cli.StringFlag{
 		Name:   "addr",
@@ -81,7 +82,7 @@ func main() {
 			ShortName: "c",
 			Usage:     "create a cluster",
 			Action: func(c *cli.Context) {
-				token, err := discovery.CreateCluster()
+				token, err := token.CreateCluster()
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -92,13 +93,18 @@ func main() {
 			Name:      "list",
 			ShortName: "l",
 			Usage:     "list nodes in a cluster",
-			Flags:     []cli.Flag{flToken},
+			Flags:     []cli.Flag{flDiscovery},
 			Action: func(c *cli.Context) {
-				if c.String("token") == "" {
-					log.Fatal("--token required to list a cluster")
+				if c.String("discovery") == "" {
+					log.Fatal("--discovery required to list a cluster")
 				}
 
-				nodes, err := discovery.FetchSlaves(c.String("token"))
+				d, err := discovery.New(c.String("discovery"))
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				nodes, err := d.FetchNodes()
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -112,7 +118,7 @@ func main() {
 			ShortName: "m",
 			Usage:     "manage a docker cluster",
 			Flags: []cli.Flag{
-				flToken, flAddr, flHeartBeat,
+				flDiscovery, flAddr, flHeartBeat,
 				flTls, flTlsCaCert, flTlsCert, flTlsKey, flTlsVerify,
 				flEnableCors},
 			Action: manage,
@@ -121,7 +127,7 @@ func main() {
 			Name:      "join",
 			ShortName: "j",
 			Usage:     "join a docker cluster",
-			Flags:     []cli.Flag{flToken, flAddr, flHeartBeat},
+			Flags:     []cli.Flag{flDiscovery, flAddr, flHeartBeat},
 			Action:    join,
 		},
 	}
