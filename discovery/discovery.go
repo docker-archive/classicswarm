@@ -28,7 +28,7 @@ func Register(scheme string, initFunc InitFunc) error {
 	if _, exists := discoveries[scheme]; exists {
 		return fmt.Errorf("scheme already registered %s", scheme)
 	}
-	log.Debugf("Registering %q discovery service", scheme)
+	fmt.Printf("Registering %q discovery service", scheme)
 	discoveries[scheme] = initFunc
 
 	return nil

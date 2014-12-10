@@ -24,16 +24,6 @@ func Init(token string) (discovery.DiscoveryService, error) {
 	return TokenDiscoveryService{token: token}, nil
 }
 
-// CreateCluster returns a unique cluster token
-func CreateCluster() (string, error) {
-	resp, err := http.Post(fmt.Sprintf("%s/%s", DISCOVERY_URL, "clusters"), "", nil)
-	if err != nil {
-		return "", err
-	}
-	token, err := ioutil.ReadAll(resp.Body)
-	return string(token), err
-}
-
 // FetchNodes returns the node for the discovery service at the specified endpoint
 func (s TokenDiscoveryService) FetchNodes() ([]string, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", DISCOVERY_URL, "clusters", s.token))
@@ -62,4 +52,14 @@ func (s TokenDiscoveryService) RegisterNode(addr string) error {
 	_, err := http.Post(fmt.Sprintf("%s/%s/%s", DISCOVERY_URL,
 		"clusters", s.token), "application/json", buf)
 	return err
+}
+
+// CreateCluster returns a unique cluster token
+func CreateCluster() (string, error) {
+	resp, err := http.Post(fmt.Sprintf("%s/%s", DISCOVERY_URL, "clusters"), "", nil)
+	if err != nil {
+		return "", err
+	}
+	token, err := ioutil.ReadAll(resp.Body)
+	return string(token), err
 }
