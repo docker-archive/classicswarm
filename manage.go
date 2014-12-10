@@ -98,8 +98,14 @@ func manage(c *cli.Context) {
 	cluster.Events(&logHandler{})
 
 	go func() {
-		if c.String("token") != "" {
-			nodes, err := discovery.FetchSlaves(c.String("token"))
+		fmt.Println(c.String("discovery"))
+		if c.String("discovery") != "" {
+			d, err := discovery.New(c.String("discovery"))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			nodes, err := d.FetchNodes()
 			if err != nil {
 				log.Fatal(err)
 
@@ -110,7 +116,7 @@ func manage(c *cli.Context) {
 			go func() {
 				for {
 					time.Sleep(hb * time.Second)
-					nodes, err = discovery.FetchSlaves(c.String("token"))
+					nodes, err = d.FetchNodes()
 					if err == nil {
 						refresh(cluster, nodes)
 					}

@@ -1,14 +1,15 @@
-package discovery
+package token
 
 import "testing"
 
 func TestRegister(t *testing.T) {
+	discovery := TokenDiscoveryService{token: "TEST_TOKEN"}
 	expected := "127.0.0.1:2675"
-	if err := RegisterSlave(expected, "TEST_TOKEN"); err != nil {
+	if err := discovery.RegisterNode(expected); err != nil {
 		t.Fatal(err)
 	}
 
-	addrs, err := FetchSlaves("TEST_TOKEN")
+	addrs, err := discovery.FetchNodes()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -21,7 +22,7 @@ func TestRegister(t *testing.T) {
 		t.Fatalf("expected addr %q but received %q", expected, addrs[0])
 	}
 
-	if err = RegisterSlave(expected, "TEST_TOKEN"); err != nil {
+	if err = discovery.RegisterNode(expected); err != nil {
 		t.Fatal(err)
 	}
 }

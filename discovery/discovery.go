@@ -1,0 +1,49 @@
+package discovery
+
+import (
+	"errors"
+	"fmt"
+	"net/url"
+
+	log "github.com/Sirupsen/logrus"
+)
+
+type InitFunc func(url string) (DiscoveryService, error)
+
+type DiscoveryService interface {
+	FetchNodes() ([]string, error)
+	RegisterNode(addr string) error
+}
+
+var (
+	discoveries     map[string]InitFunc
+	ErrNotSupported = errors.New("discovery service not supported")
+)
+
+func init() {
+	discoveries = make(map[string]InitFunc)
+}
+
+func Register(scheme string, initFunc InitFunc) error {
+	if _, exists := discoveries[scheme]; exists {
+		return fmt.Errorf("scheme already registered %s", scheme)
+	}
+	log.Debugf("Registering %q discovery service", scheme)
+	discoveries[scheme] = initFunc
+
+	return nil
+}
+
+func New(rawurl string) (DiscoveryService, error) {
+	url, err := url.Parse(rawurl)
+	if err != nil {
+		return nil, err
+	}
+
+	if initFct, exists := discoveries[url.Scheme]; exists {
+		log.Debugf("Initialising %q discovery service with %q", url.Scheme, url.Host)
+		return initFct(url.Host)
+	}
+
+	return nil, ErrNotSupported
+}
