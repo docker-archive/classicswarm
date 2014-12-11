@@ -70,6 +70,10 @@ func (c *Cluster) Containers() []*Container {
 
 // Container returns the container with ID in the cluster
 func (c *Cluster) Container(IdOrName string) *Container {
+	// Abort immediately if the name is empty.
+	if len(IdOrName) == 0 {
+		return nil
+	}
 	for _, container := range c.Containers() {
 		// Match ID prefix.
 		if strings.HasPrefix(container.Id, IdOrName) {
