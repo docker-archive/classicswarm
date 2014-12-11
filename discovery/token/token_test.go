@@ -7,17 +7,14 @@ import (
 )
 
 func TestInit(t *testing.T) {
-	discovery, _ := Init("token", 0)
-	if dtoken, ok := discovery.(TokenDiscoveryService); ok {
-		assert.Equal(t, dtoken.token, "token")
-		assert.Equal(t, dtoken.url, DISCOVERY_URL)
-	}
+	discovery := &TokenDiscoveryService{}
+	discovery.Initialize("token", 0)
+	assert.Equal(t, discovery.token, "token")
+	assert.Equal(t, discovery.url, DISCOVERY_URL)
 
-	discovery, _ = Init("custom/path/token", 0)
-	if dtoken, ok := discovery.(TokenDiscoveryService); ok {
-		assert.Equal(t, dtoken.token, "token")
-		assert.Equal(t, dtoken.url, "https://custom/path")
-	}
+	discovery.Initialize("custom/path/token", 0)
+	assert.Equal(t, discovery.token, "token")
+	assert.Equal(t, discovery.url, "https://custom/path")
 }
 
 func TestRegister(t *testing.T) {

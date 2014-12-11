@@ -85,7 +85,7 @@ func main() {
 			ShortName: "c",
 			Usage:     "create a cluster",
 			Action: func(c *cli.Context) {
-				token, err := token.New("").CreateCluster()
+				token, err := (&token.TokenDiscoveryService{}).CreateCluster()
 				if err != nil {
 					log.Fatal(err)
 				}

@@ -23,7 +23,7 @@ func join(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	hb := c.Duration("heartbeat")
+	hb := time.Duration(c.Int("heartbeat"))
 	for {
 		time.Sleep(hb * time.Second)
 		if err := d.Register(c.String("addr")); err != nil {
