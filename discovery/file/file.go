@@ -21,20 +21,20 @@ func Init(file string) (discovery.DiscoveryService, error) {
 	return FileDiscoveryService{path: file}, nil
 }
 
-func (s FileDiscoveryService) Fetch() ([]string, error) {
+func (s FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	data, err := ioutil.ReadFile(s.path)
 	if err != nil {
 		return nil, err
 	}
 
-	lines := []string{}
+	var nodes []*discovery.Node
 
 	for _, line := range strings.Split(string(data), "\n") {
 		if line != "" {
-			lines = append(lines, line)
+			nodes = append(nodes, discovery.NewNode(line))
 		}
 	}
-	return lines, nil
+	return nodes, nil
 }
 
 func (s FileDiscoveryService) Watch(heartbeat int) <-chan time.Time {

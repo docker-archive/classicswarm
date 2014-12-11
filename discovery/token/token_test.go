@@ -28,7 +28,7 @@ func TestRegister(t *testing.T) {
 	addrs, err := discovery.Fetch()
 	assert.NoError(t, err)
 	assert.Equal(t, len(addrs), 1)
-	assert.Equal(t, addrs[0], expected)
+	assert.Equal(t, addrs[0].String(), "http://"+expected)
 
 	assert.NoError(t, discovery.Register(expected))
 }

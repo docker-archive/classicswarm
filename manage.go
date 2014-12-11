@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -72,14 +71,11 @@ func manage(c *cli.Context) {
 		}
 	}
 
-	refresh := func(c *cluster.Cluster, nodes []string) {
+	refresh := func(c *cluster.Cluster, nodes []*discovery.Node) {
 		for _, addr := range nodes {
-			go func(addr string) {
-				if !strings.Contains(addr, "://") {
-					addr = "http://" + addr
-				}
-				if c.Node(addr) == nil {
-					n := cluster.NewNode(addr)
+			go func(node *discovery.Node) {
+				if c.Node(node.String()) == nil {
+					n := cluster.NewNode(node.String())
 					if err := n.Connect(tlsConfig); err != nil {
 						log.Error(err)
 						return
@@ -119,7 +115,11 @@ func manage(c *cli.Context) {
 				}
 			}()
 		} else {
-			refresh(cluster, c.Args())
+			var nodes []*discovery.Node
+			for _, arg := range c.Args() {
+				nodes = append(nodes, discovery.NewNode(arg))
+			}
+			refresh(cluster, nodes)
 		}
 	}()
 

@@ -38,15 +38,16 @@ func Init(uris string) (discovery.DiscoveryService, error) {
 	client.CreateDir(path, DEFAULT_TTL) // skip error check error because it might already exists
 	return EtcdDiscoveryService{client: client, path: path}, nil
 }
-func (s EtcdDiscoveryService) Fetch() ([]string, error) {
+func (s EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	resp, err := s.client.Get(s.path, true, true)
 	if err != nil {
 		return nil, err
 	}
-	nodes := []string{}
+
+	var nodes []*discovery.Node
 
 	for _, n := range resp.Node.Nodes {
-		nodes = append(nodes, n.Value)
+		nodes = append(nodes, discovery.NewNode(n.Value))
 	}
 	return nodes, nil
 }

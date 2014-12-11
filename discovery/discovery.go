@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -11,8 +12,23 @@ import (
 
 type InitFunc func(url string) (DiscoveryService, error)
 
+type Node struct {
+	url string
+}
+
+func NewNode(url string) *Node {
+	if !strings.Contains(url, "://") {
+		url = "http://" + url
+	}
+	return &Node{url: url}
+}
+
+func (n Node) String() string {
+	return n.url
+}
+
 type DiscoveryService interface {
-	Fetch() ([]string, error)
+	Fetch() ([]*Node, error)
 	Watch(int) <-chan time.Time
 	Register(string) error
 }

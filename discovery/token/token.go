@@ -37,7 +37,7 @@ func New(url string) *TokenDiscoveryService {
 }
 
 // FetchNodes returns the node for the discovery service at the specified endpoint
-func (s TokenDiscoveryService) Fetch() ([]string, error) {
+func (s TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", s.url, "clusters", s.token))
 	if err != nil {
 		return nil, err
@@ -54,7 +54,12 @@ func (s TokenDiscoveryService) Fetch() ([]string, error) {
 		}
 	}
 
-	return addrs, nil
+	var nodes []*discovery.Node
+	for _, addr := range addrs {
+		nodes = append(nodes, discovery.NewNode(addr))
+	}
+
+	return nodes, nil
 }
 
 func (s TokenDiscoveryService) Watch(heartbeat int) <-chan time.Time {
