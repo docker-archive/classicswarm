@@ -14,17 +14,18 @@ import (
 const DISCOVERY_URL = "https://discovery-stage.hub.docker.com/v1"
 
 type TokenDiscoveryService struct {
-	url   string
-	token string
+	heartbeat int
+	url       string
+	token     string
 }
 
 func init() {
 	discovery.Register("token", Init)
 }
 
-func Init(urltoken string) (discovery.DiscoveryService, error) {
+func Init(urltoken string, heartbeat int) (discovery.DiscoveryService, error) {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
-		return TokenDiscoveryService{url: "https://" + urltoken[:i], token: urltoken[i+1:]}, nil
+		return TokenDiscoveryService{url: "https://" + urltoken[:i], token: urltoken[i+1:], heartbeat: heartbeat}, nil
 	}
 
 	return TokenDiscoveryService{url: DISCOVERY_URL, token: urltoken}, nil
@@ -62,8 +63,8 @@ func (s TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s TokenDiscoveryService) Watch(heartbeat int) <-chan time.Time {
-	return time.Tick(time.Duration(heartbeat) * time.Second)
+func (s TokenDiscoveryService) Watch() <-chan time.Time {
+	return time.Tick(time.Duration(s.heartbeat) * time.Second)
 }
 
 // RegisterNode adds a new node identified by the into the discovery service

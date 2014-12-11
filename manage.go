@@ -94,7 +94,7 @@ func manage(c *cli.Context) {
 
 	go func() {
 		if c.String("discovery") != "" {
-			d, err := discovery.New(c.String("discovery"))
+			d, err := discovery.New(c.String("discovery"), c.Int("heartbeat"))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -107,7 +107,7 @@ func manage(c *cli.Context) {
 			refresh(cluster, nodes)
 
 			go func() {
-				for _ = range d.Watch(c.Int("heartbeat")) {
+				for _ = range d.Watch() {
 					nodes, err = d.Fetch()
 					if err == nil {
 						refresh(cluster, nodes)

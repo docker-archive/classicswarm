@@ -102,7 +102,7 @@ func main() {
 					log.Fatal("--discovery required to list a cluster")
 				}
 
-				d, err := discovery.New(c.String("discovery"))
+				d, err := discovery.New(c.String("discovery"), 0)
 				if err != nil {
 					log.Fatal(err)
 				}

@@ -14,7 +14,7 @@ func join(c *cli.Context) {
 		log.Fatal("--discovery required to join a cluster")
 	}
 
-	d, err := discovery.New(c.String("discovery"))
+	d, err := discovery.New(c.String("discovery"), c.Int("heartbeat"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,7 +23,7 @@ func join(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	hb := time.Duration(c.Int("heartbeat"))
+	hb := c.Duration("heartbeat")
 	for {
 		time.Sleep(hb * time.Second)
 		if err := d.Register(c.String("addr")); err != nil {
