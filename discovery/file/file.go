@@ -15,14 +15,20 @@ type FileDiscoveryService struct {
 }
 
 func init() {
-	discovery.Register("file", Init)
+	discovery.Register("file",
+		func() discovery.DiscoveryService {
+			return &FileDiscoveryService{}
+		},
+	)
 }
 
-func Init(file string, heartbeat int) (discovery.DiscoveryService, error) {
-	return FileDiscoveryService{path: file, heartbeat: heartbeat}, nil
+func (s *FileDiscoveryService) Initialize(path string, heartbeat int) error {
+	s.path = path
+	s.heartbeat = heartbeat
+	return nil
 }
 
-func (s FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
+func (s *FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	data, err := ioutil.ReadFile(s.path)
 	if err != nil {
 		return nil, err
@@ -38,10 +44,10 @@ func (s FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s FileDiscoveryService) Watch() <-chan time.Time {
+func (s *FileDiscoveryService) Watch() <-chan time.Time {
 	return time.Tick(time.Duration(s.heartbeat) * time.Second)
 }
 
-func (s FileDiscoveryService) Register(addr string) error {
+func (s *FileDiscoveryService) Register(addr string) error {
 	return errors.New("unimplemented")
 }

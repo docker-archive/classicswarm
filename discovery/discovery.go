@@ -10,8 +10,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-type InitFunc func(url string, heartbeat int) (DiscoveryService, error)
-
 type Node struct {
 	url string
 }
@@ -28,26 +26,27 @@ func (n Node) String() string {
 }
 
 type DiscoveryService interface {
+	Initialize(string, int) error
 	Fetch() ([]*Node, error)
 	Watch() <-chan time.Time
 	Register(string) error
 }
 
 var (
-	discoveries     map[string]InitFunc
+	discoveries     map[string]func() DiscoveryService
 	ErrNotSupported = errors.New("discovery service not supported")
 )
 
 func init() {
-	discoveries = make(map[string]InitFunc)
+	discoveries = make(map[string]func() DiscoveryService)
 }
 
-func Register(scheme string, initFunc InitFunc) error {
+func Register(scheme string, f func() DiscoveryService) error {
 	if _, exists := discoveries[scheme]; exists {
 		return fmt.Errorf("scheme already registered %s", scheme)
 	}
 	log.Debugf("Registering %q discovery service", scheme)
-	discoveries[scheme] = initFunc
+	discoveries[scheme] = f
 
 	return nil
 }
@@ -58,9 +57,11 @@ func New(rawurl string, heartbeat int) (DiscoveryService, error) {
 		return nil, err
 	}
 
-	if initFct, exists := discoveries[url.Scheme]; exists {
+	if f, exists := discoveries[url.Scheme]; exists {
 		log.Debugf("Initialising %q discovery service with %q", url.Scheme, url.Host+url.Path)
-		return initFct(url.Host+url.Path, heartbeat)
+		discovery := f()
+		err := discovery.Initialize(url.Host+url.Path, heartbeat)
+		return discovery, err
 	}
 
 	return nil, ErrNotSupported

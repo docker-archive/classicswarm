@@ -17,28 +17,40 @@ type EtcdDiscoveryService struct {
 }
 
 func init() {
-	discovery.Register("etcd", Init)
+	discovery.Register("etcd",
+		func() discovery.DiscoveryService {
+			return &EtcdDiscoveryService{}
+		},
+	)
 }
 
-func Init(uris string, heartbeat int) (discovery.DiscoveryService, error) {
+func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat int) error {
 	var (
 		// split here because uris can contain multiples ips
 		// like `etcd://192.168.0.1,192.168.0.2,192.168.0.3/path`
 		parts    = strings.SplitN(uris, "/", 2)
 		ips      = strings.Split(parts[0], ",")
 		machines []string
-		path     = "/" + parts[1] + "/"
 	)
 	for _, ip := range ips {
 		machines = append(machines, "http://"+ip)
 	}
 
-	client := etcd.NewClient(machines)
-	ttl := uint64(heartbeat * 3 / 2)
-	client.CreateDir(path, ttl) // skip error check error because it might already exists
-	return EtcdDiscoveryService{client: client, path: path, ttl: ttl}, nil
+	s.client = etcd.NewClient(machines)
+	s.ttl = uint64(heartbeat * 3 / 2)
+	s.path = "/" + parts[1] + "/"
+	if _, err := s.client.CreateDir(s.path, s.ttl); err != nil {
+		if etcdError, ok := err.(*etcd.EtcdError); ok {
+			if etcdError.ErrorCode != 105 { // skip key already exists
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+	return nil
 }
-func (s EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
+func (s *EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	resp, err := s.client.Get(s.path, true, true)
 	if err != nil {
 		return nil, err
@@ -52,7 +64,7 @@ func (s EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s EtcdDiscoveryService) Watch() <-chan time.Time {
+func (s *EtcdDiscoveryService) Watch() <-chan time.Time {
 	watchChan := make(chan *etcd.Response)
 	timeChan := make(chan time.Time)
 	go s.client.Watch(s.path, 0, true, watchChan, nil)
@@ -66,7 +78,7 @@ func (s EtcdDiscoveryService) Watch() <-chan time.Time {
 	return timeChan
 }
 
-func (s EtcdDiscoveryService) Register(addr string) error {
+func (s *EtcdDiscoveryService) Register(addr string) error {
 	_, err := s.client.Set(path.Join(s.path, addr), addr, s.ttl)
 	return err
 }

@@ -20,25 +20,28 @@ type TokenDiscoveryService struct {
 }
 
 func init() {
-	discovery.Register("token", Init)
+	discovery.Register("token",
+		func() discovery.DiscoveryService {
+			return &TokenDiscoveryService{}
+		},
+	)
 }
 
-func Init(urltoken string, heartbeat int) (discovery.DiscoveryService, error) {
+func (s *TokenDiscoveryService) Initialize(urltoken string, heartbeat int) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
-		return TokenDiscoveryService{url: "https://" + urltoken[:i], token: urltoken[i+1:], heartbeat: heartbeat}, nil
+		s.url = "https://" + urltoken[:i]
+		s.token = urltoken[i+1:]
+	} else {
+		s.url = DISCOVERY_URL
+		s.token = urltoken
 	}
+	s.heartbeat = heartbeat
 
-	return TokenDiscoveryService{url: DISCOVERY_URL, token: urltoken}, nil
-}
-func New(url string) *TokenDiscoveryService {
-	if url != "" {
-		return &TokenDiscoveryService{url: url}
-	}
-	return &TokenDiscoveryService{url: DISCOVERY_URL}
+	return nil
 }
 
 // FetchNodes returns the node for the discovery service at the specified endpoint
-func (s TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
+func (s *TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", s.url, "clusters", s.token))
 	if err != nil {
 		return nil, err
@@ -63,12 +66,12 @@ func (s TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s TokenDiscoveryService) Watch() <-chan time.Time {
+func (s *TokenDiscoveryService) Watch() <-chan time.Time {
 	return time.Tick(time.Duration(s.heartbeat) * time.Second)
 }
 
 // RegisterNode adds a new node identified by the into the discovery service
-func (s TokenDiscoveryService) Register(addr string) error {
+func (s *TokenDiscoveryService) Register(addr string) error {
 	buf := strings.NewReader(addr)
 
 	_, err := http.Post(fmt.Sprintf("%s/%s/%s", s.url,
@@ -77,7 +80,7 @@ func (s TokenDiscoveryService) Register(addr string) error {
 }
 
 // CreateCluster returns a unique cluster token
-func (s TokenDiscoveryService) CreateCluster() (string, error) {
+func (s *TokenDiscoveryService) CreateCluster() (string, error) {
 	resp, err := http.Post(fmt.Sprintf("%s/%s", s.url, "clusters"), "", nil)
 	if err != nil {
 		return "", err
