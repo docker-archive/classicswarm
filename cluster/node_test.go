@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/samalba/dockerclient"
+	"github.com/samalba/dockerclient/mockclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -29,7 +30,7 @@ func TestNodeConnectionFailure(t *testing.T) {
 	assert.False(t, node.IsConnected())
 
 	// Always fail.
-	client := dockerclient.NewMockClient()
+	client := mockclient.NewMockClient()
 	client.On("Info").Return(&dockerclient.Info{}, errors.New("fail"))
 
 	// Connect() should fail and IsConnected() return false.
@@ -41,7 +42,7 @@ func TestNodeConnectionFailure(t *testing.T) {
 
 func TestOutdatedNode(t *testing.T) {
 	node := NewNode("test")
-	client := dockerclient.NewMockClient()
+	client := mockclient.NewMockClient()
 	client.On("Info").Return(&dockerclient.Info{}, nil)
 
 	assert.Error(t, node.connectClient(client))
@@ -54,7 +55,7 @@ func TestNodeCpusMemory(t *testing.T) {
 	node := NewNode("test")
 	assert.False(t, node.IsConnected())
 
-	client := dockerclient.NewMockClient()
+	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
@@ -73,7 +74,7 @@ func TestNodeSpecs(t *testing.T) {
 	node := NewNode("test")
 	assert.False(t, node.IsConnected())
 
-	client := dockerclient.NewMockClient()
+	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
@@ -97,7 +98,7 @@ func TestNodeState(t *testing.T) {
 	node := NewNode("test")
 	assert.False(t, node.IsConnected())
 
-	client := dockerclient.NewMockClient()
+	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
 

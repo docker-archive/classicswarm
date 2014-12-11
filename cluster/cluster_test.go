@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/samalba/dockerclient"
+	"github.com/samalba/dockerclient/mockclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -13,7 +14,7 @@ func createNode(t *testing.T, ID string) *Node {
 
 	assert.False(t, node.IsConnected())
 
-	client := dockerclient.NewMockClient()
+	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
