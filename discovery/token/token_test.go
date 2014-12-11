@@ -7,13 +7,13 @@ import (
 )
 
 func TestInit(t *testing.T) {
-	discovery, _ := Init("token")
+	discovery, _ := Init("token", 0)
 	if dtoken, ok := discovery.(TokenDiscoveryService); ok {
 		assert.Equal(t, dtoken.token, "token")
 		assert.Equal(t, dtoken.url, DISCOVERY_URL)
 	}
 
-	discovery, _ = Init("custom/path/token")
+	discovery, _ = Init("custom/path/token", 0)
 	if dtoken, ok := discovery.(TokenDiscoveryService); ok {
 		assert.Equal(t, dtoken.token, "token")
 		assert.Equal(t, dtoken.url, "https://custom/path")

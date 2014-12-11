@@ -10,9 +10,8 @@ import (
 	"github.com/docker/swarm/discovery"
 )
 
-const DEFAULT_TTL = 30
-
 type EtcdDiscoveryService struct {
+	ttl    uint64
 	client *etcd.Client
 	path   string
 }
@@ -21,7 +20,7 @@ func init() {
 	discovery.Register("etcd", Init)
 }
 
-func Init(uris string) (discovery.DiscoveryService, error) {
+func Init(uris string, heartbeat int) (discovery.DiscoveryService, error) {
 	var (
 		// split here because uris can contain multiples ips
 		// like `etcd://192.168.0.1,192.168.0.2,192.168.0.3/path`
@@ -35,8 +34,9 @@ func Init(uris string) (discovery.DiscoveryService, error) {
 	}
 
 	client := etcd.NewClient(machines)
-	client.CreateDir(path, DEFAULT_TTL) // skip error check error because it might already exists
-	return EtcdDiscoveryService{client: client, path: path}, nil
+	ttl := uint64(heartbeat * 3 / 2)
+	client.CreateDir(path, ttl) // skip error check error because it might already exists
+	return EtcdDiscoveryService{client: client, path: path, ttl: ttl}, nil
 }
 func (s EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	resp, err := s.client.Get(s.path, true, true)
@@ -52,7 +52,7 @@ func (s EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s EtcdDiscoveryService) Watch(heartbeat int) <-chan time.Time {
+func (s EtcdDiscoveryService) Watch() <-chan time.Time {
 	watchChan := make(chan *etcd.Response)
 	timeChan := make(chan time.Time)
 	go s.client.Watch(s.path, 0, true, watchChan, nil)
@@ -67,6 +67,6 @@ func (s EtcdDiscoveryService) Watch(heartbeat int) <-chan time.Time {
 }
 
 func (s EtcdDiscoveryService) Register(addr string) error {
-	_, err := s.client.Set(path.Join(s.path, addr), addr, DEFAULT_TTL)
+	_, err := s.client.Set(path.Join(s.path, addr), addr, s.ttl)
 	return err
 }

@@ -10,15 +10,16 @@ import (
 )
 
 type FileDiscoveryService struct {
-	path string
+	heartbeat int
+	path      string
 }
 
 func init() {
 	discovery.Register("file", Init)
 }
 
-func Init(file string) (discovery.DiscoveryService, error) {
-	return FileDiscoveryService{path: file}, nil
+func Init(file string, heartbeat int) (discovery.DiscoveryService, error) {
+	return FileDiscoveryService{path: file, heartbeat: heartbeat}, nil
 }
 
 func (s FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
@@ -37,8 +38,8 @@ func (s FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s FileDiscoveryService) Watch(heartbeat int) <-chan time.Time {
-	return time.Tick(time.Duration(heartbeat) * time.Second)
+func (s FileDiscoveryService) Watch() <-chan time.Time {
+	return time.Tick(time.Duration(s.heartbeat) * time.Second)
 }
 
 func (s FileDiscoveryService) Register(addr string) error {

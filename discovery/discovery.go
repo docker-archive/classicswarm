@@ -10,7 +10,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-type InitFunc func(url string) (DiscoveryService, error)
+type InitFunc func(url string, heartbeat int) (DiscoveryService, error)
 
 type Node struct {
 	url string
@@ -29,7 +29,7 @@ func (n Node) String() string {
 
 type DiscoveryService interface {
 	Fetch() ([]*Node, error)
-	Watch(int) <-chan time.Time
+	Watch() <-chan time.Time
 	Register(string) error
 }
 
@@ -52,7 +52,7 @@ func Register(scheme string, initFunc InitFunc) error {
 	return nil
 }
 
-func New(rawurl string) (DiscoveryService, error) {
+func New(rawurl string, heartbeat int) (DiscoveryService, error) {
 	url, err := url.Parse(rawurl)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func New(rawurl string) (DiscoveryService, error) {
 
 	if initFct, exists := discoveries[url.Scheme]; exists {
 		log.Debugf("Initialising %q discovery service with %q", url.Scheme, url.Host+url.Path)
-		return initFct(url.Host + url.Path)
+		return initFct(url.Host+url.Path, heartbeat)
 	}
 
 	return nil, ErrNotSupported
