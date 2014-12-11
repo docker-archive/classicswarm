@@ -23,6 +23,8 @@ func init() {
 
 func Init(uris string) (discovery.DiscoveryService, error) {
 	var (
+		// split here because uris can contain multiples ips
+		// like `etcd://192.168.0.1,192.168.0.2,192.168.0.3/path`
 		parts    = strings.SplitN(uris, "/", 2)
 		ips      = strings.Split(parts[0], ",")
 		machines []string
