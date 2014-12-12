@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/swarm/cluster"
 )
 
 type Node struct {
@@ -28,7 +27,7 @@ func (n Node) String() string {
 type DiscoveryService interface {
 	Initialize(string, int) error
 	Fetch() ([]*Node, error)
-	Watch(*cluster.Cluster, func(*cluster.Cluster, []*Node))
+	Watch(func(nodes []*Node))
 	Register(string) error
 }
 

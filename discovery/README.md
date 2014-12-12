@@ -87,7 +87,7 @@ simply implements this interface:
 type DiscoveryService interface {
      Initialize(string, int) error
      Fetch() ([]string, error)
-     Watch(*cluster.Cluster, func(*cluster.Cluster, []*Node))
+     Watch(func([]*Node))
      Register(string) error
 }
 ```
@@ -99,9 +99,8 @@ take the `--dicovery` withtout the scheme and a heartbeat (in seconds)
 returns the list of all the nodes from the discovery
 
 ######Watch
-triggers when you need to update (`Fetch`) the list of nodes,
-it can happen either via un timer (like `token`) or use
-backend specific features (like `etcd`)
+triggers an update (`Fetch`),it can happen either via
+a timer (like `token`) or use backend specific features (like `etcd`)
 
 ######Register
 add a new node to the discovery
