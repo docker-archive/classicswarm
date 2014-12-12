@@ -2,7 +2,7 @@ language: go
 
 install:
   - go get code.google.com/p/go.tools/cmd/cover
-  - go get -d -v ./...
+  - go get -d -v ./... && go build -v ./...
 
 go:
   - 1.3
