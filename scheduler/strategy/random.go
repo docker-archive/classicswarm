@@ -9,12 +9,13 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-func init() {
-	rand.Seed(time.Now().UTC().UnixNano())
-}
-
 // Randomly place the container into the cluster.
 type RandomPlacementStrategy struct {
+}
+
+func (p *RandomPlacementStrategy) Initialize(_ string) error {
+	rand.Seed(time.Now().UTC().UnixNano())
+	return nil
 }
 
 func (p *RandomPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*cluster.Node) (*cluster.Node, error) {
