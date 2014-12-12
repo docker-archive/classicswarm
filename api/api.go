@@ -216,7 +216,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 			r.URL.Host = parts[0]
 		}
 
-		log.Println("[PROXY] -->", r.Method, r.URL)
+		log.Debugf("[PROXY] --> %s %s", r.Method, r.URL)
 		resp, err := client.Do(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
