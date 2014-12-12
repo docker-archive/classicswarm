@@ -87,7 +87,7 @@ simply implements this interface:
 type DiscoveryService interface {
      Initialize(string, int) error
      Fetch() ([]string, error)
-     Watch() <-chan time.Time
+     Watch(*cluster.Cluster, func(*cluster.Cluster, []*Node))
      Register(string) error
 }
 ```
