@@ -5,8 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"strings"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -73,14 +71,11 @@ func manage(c *cli.Context) {
 		}
 	}
 
-	refresh := func(c *cluster.Cluster, nodes []string) {
+	refresh := func(c *cluster.Cluster, nodes []*discovery.Node) {
 		for _, addr := range nodes {
-			go func(addr string) {
-				if !strings.Contains(addr, "://") {
-					addr = "http://" + addr
-				}
-				if c.Node(addr) == nil {
-					n := cluster.NewNode(addr)
+			go func(node *discovery.Node) {
+				if c.Node(node.String()) == nil {
+					n := cluster.NewNode(node.String())
 					if err := n.Connect(tlsConfig); err != nil {
 						log.Error(err)
 						return
@@ -98,26 +93,33 @@ func manage(c *cli.Context) {
 	cluster.Events(&logHandler{})
 
 	go func() {
-		if c.String("token") != "" {
-			nodes, err := discovery.FetchSlaves(c.String("token"))
+		if c.String("discovery") != "" {
+			d, err := discovery.New(c.String("discovery"), c.Int("heartbeat"))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			nodes, err := d.Fetch()
 			if err != nil {
 				log.Fatal(err)
 
 			}
 			refresh(cluster, nodes)
 
-			hb := time.Duration(c.Int("heartbeat"))
 			go func() {
-				for {
-					time.Sleep(hb * time.Second)
-					nodes, err = discovery.FetchSlaves(c.String("token"))
+				for _ = range d.Watch() {
+					nodes, err = d.Fetch()
 					if err == nil {
 						refresh(cluster, nodes)
 					}
 				}
 			}()
 		} else {
-			refresh(cluster, c.Args())
+			var nodes []*discovery.Node
+			for _, arg := range c.Args() {
+				nodes = append(nodes, discovery.NewNode(arg))
+			}
+			refresh(cluster, nodes)
 		}
 	}()
 
