@@ -18,4 +18,8 @@ Docker Swarm Roadmap
 
 ####Extensibility
 * [ ] pluggable scheduler
-* [ ] discovery backends (etcd / zookeeper / hub...) 
+* [ ] discovery backends
+  * [x]    etcd
+  * [ ]    zookeeper
+  * [x]    hub 
+  * [x]    file

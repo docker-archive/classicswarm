@@ -1,31 +1,107 @@
-#discovery.hub.docker.com
+Discovery
+=========
 
-Docker Swarm comes with a simple discovery service built into the [Docker Hub](http://hub.docker.com)
+`Docker Swarm` comes with multiple Discovery backends
 
-The discovery service is still in alpha stage and currently hosted at `http://discovery-stage.hub.docker.com`
+## Examples
 
-#####Create a new cluster
-`-> POST http://discovery.hub.docker.com/v1/clusters (data="")`
+##### Using the hosted discovery service
 
-`<- <token>`
+```bash
+# create a cluster
+$ swarm create
+6856663cdefdec325839a4b7e1de38e8
 
-#####Add new nodes to a cluster
-`-> POST http://discovery.hub.docker.com/v1/clusters/<token> (data="<ip:port1>")`
+# on each of your nodes, start the swarm agent
+#  <node_ip> doesn't have to be public (eg. 192.168.0.X),
+#  as long as the other nodes can reach it, it is fine.
+$ swarm join --discovery token://6856663cdefdec325839a4b7e1de38e8 --addr=<node_ip:2375>
 
-`<- OK`
+# start the manager on any machine or your laptop
+$ swarm manage --discovery token://6856663cdefdec325839a4b7e1de38e8 --addr=<swarm_ip:swarm_port>
 
-`-> POST http://discovery.hub.docker.com/v1/clusters/token (data="<ip:port2>")`
+# use the regular docker cli
+$ docker -H <swarm_ip:swarm_port> info
+$ docker -H <swarm_ip:swarm_port> run ... 
+$ docker -H <swarm_ip:swarm_port> ps 
+$ docker -H <swarm_ip:swarm_port> logs ...
+...
 
-`<- OK`
+# list nodes in your cluster
+$ swarm list --discovery token://6856663cdefdec325839a4b7e1de38e8
+http://<node_ip:2375>
+```
 
+###### Using a static file describing the cluster
 
-#####List nodes in a cluster
-`-> GET http://discovery.hub.docker.com/v1/clusters/token`
+```bash
+# for each of your nodes, add a line to a file
+#  <node_ip> doesn't have to be public (eg. 192.168.0.X),
+#  as long as the other nodes can reach it, it is fine.
+$ echo <node_ip:2375> >> /tmp/my_cluster
 
-`<- ["<ip:port1>", "<ip:port2>"]`
+# start the manager on any machine or your laptop
+$ swarm manage --discovery file:///tmp/my_cluster --addr=<swarm_ip:swarm_port>
 
+# use the regular docker cli
+$ docker -H <swarm_ip:swarm_port> info
+$ docker -H <swarm_ip:swarm_port> run ... 
+$ docker -H <swarm_ip:swarm_port> ps 
+$ docker -H <swarm_ip:swarm_port> logs ...
+...
 
-#####Delete a cluster (all the nodes in a cluster)
-`-> DELETE http://discovery.hub.docker.com/v1/clusters/token`
+# list nodes in your cluster
+$ swarm list --discovery file:///tmp/my_cluster
+http://<node_ip:2375>
+```
 
-`<- OK`
+###### Using etcd
+
+```bash
+# on each of your nodes, start the swarm agent
+#  <node_ip> doesn't have to be public (eg. 192.168.0.X),
+#  as long as the other nodes can reach it, it is fine.
+$ swarm join --discovery etcd://<etcd_ip>/>path> --addr=<node_ip:2375>
+
+# start the manager on any machine or your laptop
+$ swarm manage --discovery etcd://<etcd_ip>/>path> --addr=<swarm_ip:swarm_port>
+
+# use the regular docker cli
+$ docker -H <swarm_ip:swarm_port> info
+$ docker -H <swarm_ip:swarm_port> run ... 
+$ docker -H <swarm_ip:swarm_port> ps 
+$ docker -H <swarm_ip:swarm_port> logs ...
+...
+
+# list nodes in your cluster
+$ swarm list --discovery etcd://<etcd_ip>/>path>
+http://<node_ip:2375>
+```
+
+## Contributing
+
+Contributing a new discovery backend is easy,
+simply implements this interface:
+
+```go
+type DiscoveryService interface {
+     Initialize(string, int) error
+     Fetch() ([]string, error)
+     Watch() <-chan time.Time
+     Register(string) error
+}
+```
+
+######Initialize
+take the `--dicovery` withtout the scheme and a heartbeat (in seconds)
+
+######Fetch
+returns the list of all the nodes from the discovery
+
+######Watch
+triggers when you need to update (`Fetch`) the list of nodes,
+it can happen either via un timer (like `token`) or use
+backend specific features (like `etcd`)
+
+######Register
+add a new node to the discovery

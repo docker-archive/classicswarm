@@ -10,18 +10,23 @@ import (
 
 func join(c *cli.Context) {
 
-	if c.String("token") == "" {
-		log.Fatal("--token required to join a cluster")
+	if c.String("discovery") == "" {
+		log.Fatal("--discovery required to join a cluster")
 	}
 
-	if err := discovery.RegisterSlave(c.String("addr"), c.String("token")); err != nil {
+	d, err := discovery.New(c.String("discovery"), c.Int("heartbeat"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := d.Register(c.String("addr")); err != nil {
 		log.Fatal(err)
 	}
 
 	hb := time.Duration(c.Int("heartbeat"))
 	for {
 		time.Sleep(hb * time.Second)
-		if err := discovery.RegisterSlave(c.String("addr"), c.String("token")); err != nil {
+		if err := d.Register(c.String("addr")); err != nil {
 			log.Error(err)
 		}
 	}
