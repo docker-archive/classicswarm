@@ -123,9 +123,13 @@ func manage(c *cli.Context) {
 		}
 	}()
 
-	s := scheduler.NewScheduler(
+	s, err := strategy.New(c.String("strategy"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	sched := scheduler.NewScheduler(
 		cluster,
-		&strategy.BinPackingPlacementStrategy{OvercommitRatio: 0.05},
+		s,
 		[]filter.Filter{
 			&filter.HealthFilter{},
 			&filter.LabelFilter{},
@@ -133,5 +137,5 @@ func manage(c *cli.Context) {
 		},
 	)
 
-	log.Fatal(api.ListenAndServe(cluster, s, c.String("addr"), c.App.Version, c.Bool("cors"), tlsConfig))
+	log.Fatal(api.ListenAndServe(cluster, sched, c.String("addr"), c.App.Version, c.Bool("cors"), tlsConfig))
 }

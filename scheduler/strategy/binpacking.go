@@ -3,6 +3,7 @@ package strategy
 import (
 	"errors"
 	"sort"
+	"strconv"
 
 	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
@@ -14,6 +15,11 @@ var (
 
 type BinPackingPlacementStrategy struct {
 	OvercommitRatio float64
+}
+
+func (p *BinPackingPlacementStrategy) Initialize(opts string) (err error) {
+	p.OvercommitRatio, err = strconv.ParseFloat(opts, 64)
+	return err
 }
 
 func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*cluster.Node) (*cluster.Node, error) {
