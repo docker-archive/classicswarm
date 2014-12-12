@@ -5,11 +5,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
-	"net/url"
-	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -158,63 +157,6 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// POST /containers/{name:.*}/start
-func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
-	container := c.cluster.Container(name)
-	if container == nil {
-		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
-		return
-	}
-	if err := container.Start(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
-}
-
-// POST /containers/{name:.*}/kill
-func postContainerKill(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
-	container := c.cluster.Container(name)
-	if container == nil {
-		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
-		return
-	}
-
-	if err := container.Kill(r.Form.Get("signal")); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
-}
-
-// POST /containers/{name:.*}/pause
-func postContainerPause(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
-	container := c.cluster.Container(name)
-	if container == nil {
-		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
-		return
-	}
-	if err := container.Pause(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
-}
-
-// POST /containers/{name:.*}/unpause
-func postContainerUnpause(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
-	container := c.cluster.Container(name)
-	if container == nil {
-		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
-		return
-	}
-	if err := container.Unpause(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
-}
-
 // DELETE /containers/{name:.*}
 func deleteContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -254,17 +196,33 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
 }
 
-// Redirect a GET request to the right node
-func redirectContainer(c *context, w http.ResponseWriter, r *http.Request) {
+// Proxy a request to the right node
+func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	container := c.cluster.Container(mux.Vars(r)["name"])
 	if container != nil {
-		re := regexp.MustCompile("/v([0-9.]*)") // TODO: discuss about skipping the version or not
 
-		newURL, _ := url.Parse(container.Node().Addr)
-		newURL.RawQuery = r.URL.RawQuery
-		newURL.Path = re.ReplaceAllLiteralString(r.URL.Path, "")
-		log.Debugf("REDIRECT TO %s", newURL.String())
-		http.Redirect(w, r, newURL.String(), http.StatusSeeOther)
+		// Use a new client for each request
+		client := &http.Client{}
+
+		// RequestURI may not be sent to client
+		r.RequestURI = ""
+
+		parts := strings.SplitN(container.Node().Addr, "://", 2)
+		if len(parts) == 2 {
+			r.URL.Scheme = parts[0]
+			r.URL.Host = parts[1]
+		} else {
+			r.URL.Scheme = "http"
+			r.URL.Host = parts[0]
+		}
+
+		log.Println("[PROXY] -->", r.Method, r.URL)
+		resp, err := client.Do(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		io.Copy(w, resp.Body)
 	}
 }
 
@@ -300,12 +258,13 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 			"/images/{name:.*}/json":          notImplementedHandler,
 			"/containers/ps":                  getContainersJSON,
 			"/containers/json":                getContainersJSON,
-			"/containers/{name:.*}/export":    redirectContainer,
-			"/containers/{name:.*}/changes":   redirectContainer,
+			"/containers/{name:.*}/export":    proxyContainer,
+			"/containers/{name:.*}/changes":   proxyContainer,
 			"/containers/{name:.*}/json":      getContainerJSON,
-			"/containers/{name:.*}/top":       redirectContainer,
-			"/containers/{name:.*}/logs":      redirectContainer,
+			"/containers/{name:.*}/top":       proxyContainer,
+			"/containers/{name:.*}/logs":      proxyContainer,
 			"/containers/{name:.*}/attach/ws": notImplementedHandler,
+			"/exec/{id:.*}/json":              proxyContainer,
 		},
 		"POST": {
 			"/auth":                         notImplementedHandler,
@@ -316,19 +275,19 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 			"/images/{name:.*}/push":        notImplementedHandler,
 			"/images/{name:.*}/tag":         notImplementedHandler,
 			"/containers/create":            postContainersCreate,
-			"/containers/{name:.*}/kill":    postContainerKill,
-			"/containers/{name:.*}/pause":   postContainerPause,
-			"/containers/{name:.*}/unpause": postContainerUnpause,
-			"/containers/{name:.*}/restart": notImplementedHandler,
-			"/containers/{name:.*}/start":   postContainersStart,
-			"/containers/{name:.*}/stop":    notImplementedHandler,
-			"/containers/{name:.*}/wait":    notImplementedHandler,
-			"/containers/{name:.*}/resize":  notImplementedHandler,
+			"/containers/{name:.*}/kill":    proxyContainer,
+			"/containers/{name:.*}/pause":   proxyContainer,
+			"/containers/{name:.*}/unpause": proxyContainer,
+			"/containers/{name:.*}/restart": proxyContainer,
+			"/containers/{name:.*}/start":   proxyContainer,
+			"/containers/{name:.*}/stop":    proxyContainer,
+			"/containers/{name:.*}/wait":    proxyContainer,
+			"/containers/{name:.*}/resize":  proxyContainer,
 			"/containers/{name:.*}/attach":  notImplementedHandler,
 			"/containers/{name:.*}/copy":    notImplementedHandler,
 			"/containers/{name:.*}/exec":    notImplementedHandler,
 			"/exec/{name:.*}/start":         notImplementedHandler,
-			"/exec/{name:.*}/resize":        notImplementedHandler,
+			"/exec/{name:.*}/resize":        proxyContainer,
 		},
 		"DELETE": {
 			"/containers/{name:.*}": deleteContainer,
