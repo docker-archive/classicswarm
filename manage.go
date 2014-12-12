@@ -106,14 +106,7 @@ func manage(c *cli.Context) {
 			}
 			refresh(cluster, nodes)
 
-			go func() {
-				for _ = range d.Watch() {
-					nodes, err = d.Fetch()
-					if err == nil {
-						refresh(cluster, nodes)
-					}
-				}
-			}()
+			go d.Watch(cluster, refresh)
 		} else {
 			var nodes []*discovery.Node
 			for _, arg := range c.Args() {
