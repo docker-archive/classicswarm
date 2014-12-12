@@ -6,7 +6,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/coreos/go-etcd/etcd"
-	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
 )
 
@@ -64,14 +63,14 @@ func (s *EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s *EtcdDiscoveryService) Watch(c *cluster.Cluster, refresh func(c *cluster.Cluster, nodes []*discovery.Node)) {
+func (s *EtcdDiscoveryService) Watch(updateNodes func(nodes []*discovery.Node)) {
 	watchChan := make(chan *etcd.Response)
 	go s.client.Watch(s.path, 0, true, watchChan, nil)
 	for _ = range watchChan {
 		log.Debugf("[ETCD] Watch triggered")
 		nodes, err := s.Fetch()
 		if err == nil {
-			refresh(c, nodes)
+			updateNodes(nodes)
 		}
 	}
 }

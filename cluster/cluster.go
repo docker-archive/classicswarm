@@ -1,11 +1,13 @@
 package cluster
 
 import (
+	"crypto/tls"
 	"errors"
 	"strings"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/swarm/discovery"
 )
 
 var (
@@ -15,13 +17,15 @@ var (
 
 type Cluster struct {
 	sync.RWMutex
+	tlsConfig     *tls.Config
 	eventHandlers []EventHandler
 	nodes         map[string]*Node
 }
 
-func NewCluster() *Cluster {
+func NewCluster(tlsConfig *tls.Config) *Cluster {
 	return &Cluster{
-		nodes: make(map[string]*Node),
+		tlsConfig: tlsConfig,
+		nodes:     make(map[string]*Node),
 	}
 }
 
@@ -50,6 +54,24 @@ func (c *Cluster) AddNode(n *Node) error {
 
 	c.nodes[n.ID] = n
 	return n.Events(c)
+}
+
+func (c *Cluster) UpdateNodes(nodes []*discovery.Node) {
+	for _, addr := range nodes {
+		go func(node *discovery.Node) {
+			if c.Node(node.String()) == nil {
+				n := NewNode(node.String())
+				if err := n.Connect(c.tlsConfig); err != nil {
+					log.Error(err)
+					return
+				}
+				if err := c.AddNode(n); err != nil {
+					log.Error(err)
+					return
+				}
+			}
+		}(addr)
+	}
 }
 
 // Containers returns all the containers in the cluster.

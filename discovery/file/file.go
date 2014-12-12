@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
-
-	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
 )
 
@@ -45,11 +43,11 @@ func (s *FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s *FileDiscoveryService) Watch(c *cluster.Cluster, refresh func(c *cluster.Cluster, nodes []*discovery.Node)) {
+func (s *FileDiscoveryService) Watch(updateNodes func(nodes []*discovery.Node)) {
 	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
 		nodes, err := s.Fetch()
 		if err == nil {
-			refresh(c, nodes)
+			updateNodes(nodes)
 		}
 	}
 }

@@ -71,25 +71,7 @@ func manage(c *cli.Context) {
 		}
 	}
 
-	refresh := func(c *cluster.Cluster, nodes []*discovery.Node) {
-		for _, addr := range nodes {
-			go func(node *discovery.Node) {
-				if c.Node(node.String()) == nil {
-					n := cluster.NewNode(node.String())
-					if err := n.Connect(tlsConfig); err != nil {
-						log.Error(err)
-						return
-					}
-					if err := c.AddNode(n); err != nil {
-						log.Error(err)
-						return
-					}
-				}
-			}(addr)
-		}
-	}
-
-	cluster := cluster.NewCluster()
+	cluster := cluster.NewCluster(tlsConfig)
 	cluster.Events(&logHandler{})
 
 	go func() {
@@ -104,15 +86,15 @@ func manage(c *cli.Context) {
 				log.Fatal(err)
 
 			}
-			refresh(cluster, nodes)
+			cluster.UpdateNodes(nodes)
 
-			go d.Watch(cluster, refresh)
+			go d.Watch(cluster.UpdateNodes)
 		} else {
 			var nodes []*discovery.Node
 			for _, arg := range c.Args() {
 				nodes = append(nodes, discovery.NewNode(arg))
 			}
-			refresh(cluster, nodes)
+			cluster.UpdateNodes(nodes)
 		}
 	}()
 
