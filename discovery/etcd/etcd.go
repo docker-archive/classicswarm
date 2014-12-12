@@ -3,10 +3,10 @@ package etcd
 import (
 	"path"
 	"strings"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/coreos/go-etcd/etcd"
+	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
 )
 
@@ -64,18 +64,16 @@ func (s *EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s *EtcdDiscoveryService) Watch() <-chan time.Time {
+func (s *EtcdDiscoveryService) Watch(c *cluster.Cluster, refresh func(c *cluster.Cluster, nodes []*discovery.Node)) {
 	watchChan := make(chan *etcd.Response)
-	timeChan := make(chan time.Time)
 	go s.client.Watch(s.path, 0, true, watchChan, nil)
-	go func() {
-		for {
-			<-watchChan
-			log.Debugf("[ETCD] Watch triggered")
-			timeChan <- time.Now()
+	for _ = range watchChan {
+		log.Debugf("[ETCD] Watch triggered")
+		nodes, err := s.Fetch()
+		if err == nil {
+			refresh(c, nodes)
 		}
-	}()
-	return timeChan
+	}
 }
 
 func (s *EtcdDiscoveryService) Register(addr string) error {
