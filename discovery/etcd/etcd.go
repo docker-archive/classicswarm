@@ -16,11 +16,7 @@ type EtcdDiscoveryService struct {
 }
 
 func init() {
-	discovery.Register("etcd",
-		func() discovery.DiscoveryService {
-			return &EtcdDiscoveryService{}
-		},
-	)
+	discovery.Register("etcd", &EtcdDiscoveryService{})
 }
 
 func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat int) error {
