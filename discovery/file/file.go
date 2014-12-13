@@ -44,8 +44,13 @@ func (s *FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s *FileDiscoveryService) Watch() <-chan time.Time {
-	return time.Tick(time.Duration(s.heartbeat) * time.Second)
+func (s *FileDiscoveryService) Watch(callback discovery.WatchCallback) {
+	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
+		nodes, err := s.Fetch()
+		if err == nil {
+			callback(nodes)
+		}
+	}
 }
 
 func (s *FileDiscoveryService) Register(addr string) error {
