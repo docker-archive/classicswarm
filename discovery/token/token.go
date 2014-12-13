@@ -20,11 +20,7 @@ type TokenDiscoveryService struct {
 }
 
 func init() {
-	discovery.Register("token",
-		func() discovery.DiscoveryService {
-			return &TokenDiscoveryService{}
-		},
-	)
+	discovery.Register("token", &TokenDiscoveryService{})
 }
 
 func (s *TokenDiscoveryService) Initialize(urltoken string, heartbeat int) error {
