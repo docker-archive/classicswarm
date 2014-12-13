@@ -63,14 +63,14 @@ func (s *EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s *EtcdDiscoveryService) Watch(updateNodes func(nodes []*discovery.Node)) {
+func (s *EtcdDiscoveryService) Watch(callback discovery.WatchCallback) {
 	watchChan := make(chan *etcd.Response)
 	go s.client.Watch(s.path, 0, true, watchChan, nil)
 	for _ = range watchChan {
 		log.Debugf("[ETCD] Watch triggered")
 		nodes, err := s.Fetch()
 		if err == nil {
-			updateNodes(nodes)
+			callback(nodes)
 		}
 	}
 }
