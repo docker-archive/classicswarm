@@ -34,21 +34,21 @@ type DiscoveryService interface {
 }
 
 var (
-	discoveries       map[string]func() DiscoveryService
+	discoveries       map[string]DiscoveryService
 	ErrNotSupported   = errors.New("discovery service not supported")
 	ErrNotImplemented = errors.New("not implemented in this discovery service")
 )
 
 func init() {
-	discoveries = make(map[string]func() DiscoveryService)
+	discoveries = make(map[string]DiscoveryService)
 }
 
-func Register(scheme string, f func() DiscoveryService) error {
+func Register(scheme string, d DiscoveryService) error {
 	if _, exists := discoveries[scheme]; exists {
 		return fmt.Errorf("scheme already registered %s", scheme)
 	}
 	log.Debugf("Registering %q discovery service", scheme)
-	discoveries[scheme] = f
+	discoveries[scheme] = d
 
 	return nil
 }
@@ -59,9 +59,8 @@ func New(rawurl string, heartbeat int) (DiscoveryService, error) {
 		return nil, err
 	}
 
-	if f, exists := discoveries[url.Scheme]; exists {
+	if discovery, exists := discoveries[url.Scheme]; exists {
 		log.Debugf("Initialising %q discovery service with %q", url.Scheme, url.Host+url.Path)
-		discovery := f()
 		err := discovery.Initialize(url.Host+url.Path, heartbeat)
 		return discovery, err
 	}
