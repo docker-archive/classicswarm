@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInit(t *testing.T) {
+func TestInitialize(t *testing.T) {
 	discovery := &TokenDiscoveryService{}
 	discovery.Initialize("token", 0)
 	assert.Equal(t, discovery.token, "token")
@@ -18,7 +18,7 @@ func TestInit(t *testing.T) {
 }
 
 func TestRegister(t *testing.T) {
-	discovery := TokenDiscoveryService{token: "TEST_TOKEN", url: DISCOVERY_URL}
+	discovery := &TokenDiscoveryService{token: "TEST_TOKEN", url: DISCOVERY_URL}
 	expected := "127.0.0.1:2675"
 	assert.NoError(t, discovery.Register(expected))
 
