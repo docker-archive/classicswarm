@@ -22,9 +22,10 @@ var (
 )
 
 func init() {
-	strategies = make(map[string]PlacementStrategy)
-	strategies["binpacking"] = &BinPackingPlacementStrategy{}
-	strategies["random"] = &RandomPlacementStrategy{}
+	strategies = map[string]PlacementStrategy{
+		"binpacking": &BinPackingPlacementStrategy{},
+		"random":     &RandomPlacementStrategy{},
+	}
 }
 
 func New(nameAndOpts string) (PlacementStrategy, error) {
