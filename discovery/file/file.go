@@ -1,7 +1,6 @@
 package file
 
 import (
-	"errors"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -54,5 +53,5 @@ func (s *FileDiscoveryService) Watch(callback discovery.WatchCallback) {
 }
 
 func (s *FileDiscoveryService) Register(addr string) error {
-	return errors.New("unimplemented")
+	return discovery.ErrNotImplemented
 }
