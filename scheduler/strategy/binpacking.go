@@ -3,6 +3,7 @@ package strategy
 import (
 	"errors"
 	"sort"
+	"strconv"
 
 	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
@@ -13,16 +14,21 @@ var (
 )
 
 type BinPackingPlacementStrategy struct {
-	OvercommitRatio float64
+	ratio int64
+}
+
+func (p *BinPackingPlacementStrategy) Initialize(opts string) error {
+	overcommitRatio, err := strconv.ParseFloat(opts, 64)
+	p.ratio = int64(overcommitRatio * 100)
+	return err
 }
 
 func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*cluster.Node) (*cluster.Node, error) {
 	scores := scores{}
 
-	ratio := int64(p.OvercommitRatio * 100)
 	for _, node := range nodes {
-		nodeMemory := node.Memory + (node.Memory * ratio / 100)
-		nodeCpus := node.Cpus + (node.Cpus * ratio / 100)
+		nodeMemory := node.Memory + (node.Memory * p.ratio / 100)
+		nodeCpus := node.Cpus + (node.Cpus * p.ratio / 100)
 
 		// Skip nodes that are smaller than the requested resources.
 		if nodeMemory < int64(config.Memory) || nodeCpus < config.CpuShares {
