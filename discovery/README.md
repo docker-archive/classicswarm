@@ -87,7 +87,7 @@ simply implements this interface:
 type DiscoveryService interface {
      Initialize(string, int) error
      Fetch() ([]string, error)
-     Watch(func([]*Node))
+     Watch(WatchCallback)
      Register(string) error
 }
 ```

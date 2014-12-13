@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
+
 	"github.com/docker/swarm/discovery"
 )
 
@@ -43,11 +44,11 @@ func (s *FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s *FileDiscoveryService) Watch(updateNodes func(nodes []*discovery.Node)) {
+func (s *FileDiscoveryService) Watch(callback discovery.WatchCallback) {
 	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
 		nodes, err := s.Fetch()
 		if err == nil {
-			updateNodes(nodes)
+			callback(nodes)
 		}
 	}
 }

@@ -24,10 +24,12 @@ func (n Node) String() string {
 	return n.url
 }
 
+type WatchCallback func(nodes []*Node)
+
 type DiscoveryService interface {
 	Initialize(string, int) error
 	Fetch() ([]*Node, error)
-	Watch(func(nodes []*Node))
+	Watch(WatchCallback)
 	Register(string) error
 }
 
