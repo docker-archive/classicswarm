@@ -34,8 +34,9 @@ type DiscoveryService interface {
 }
 
 var (
-	discoveries     map[string]func() DiscoveryService
-	ErrNotSupported = errors.New("discovery service not supported")
+	discoveries       map[string]func() DiscoveryService
+	ErrNotSupported   = errors.New("discovery service not supported")
+	ErrNotImplemented = errors.New("not implemented in this discovery service")
 )
 
 func init() {
