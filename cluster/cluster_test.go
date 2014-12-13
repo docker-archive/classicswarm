@@ -32,7 +32,7 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 }
 
 func TestAddNode(t *testing.T) {
-	c := NewCluster()
+	c := NewCluster(nil)
 
 	assert.Equal(t, len(c.Nodes()), 0)
 	assert.Nil(t, c.Node("test"))
@@ -52,7 +52,7 @@ func TestAddNode(t *testing.T) {
 }
 
 func TestLookupContainer(t *testing.T) {
-	c := NewCluster()
+	c := NewCluster(nil)
 	container := dockerclient.Container{
 		Id:    "container-id",
 		Names: []string{"/container-name1", "/container-name2"},

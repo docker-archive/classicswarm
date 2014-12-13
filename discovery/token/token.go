@@ -66,8 +66,13 @@ func (s *TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	return nodes, nil
 }
 
-func (s *TokenDiscoveryService) Watch() <-chan time.Time {
-	return time.Tick(time.Duration(s.heartbeat) * time.Second)
+func (s *TokenDiscoveryService) Watch(callback discovery.WatchCallback) {
+	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
+		nodes, err := s.Fetch()
+		if err == nil {
+			callback(nodes)
+		}
+	}
 }
 
 // RegisterNode adds a new node identified by the into the discovery service

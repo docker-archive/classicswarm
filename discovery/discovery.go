@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -25,10 +24,12 @@ func (n Node) String() string {
 	return n.url
 }
 
+type WatchCallback func(nodes []*Node)
+
 type DiscoveryService interface {
 	Initialize(string, int) error
 	Fetch() ([]*Node, error)
-	Watch() <-chan time.Time
+	Watch(WatchCallback)
 	Register(string) error
 }
 
