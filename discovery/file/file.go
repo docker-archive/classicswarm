@@ -14,11 +14,7 @@ type FileDiscoveryService struct {
 }
 
 func init() {
-	discovery.Register("file",
-		func() discovery.DiscoveryService {
-			return &FileDiscoveryService{}
-		},
-	)
+	discovery.Register("file", &FileDiscoveryService{})
 }
 
 func (s *FileDiscoveryService) Initialize(path string, heartbeat int) error {
