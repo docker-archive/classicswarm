@@ -18,7 +18,7 @@ $ swarm create
 $ swarm join --discovery token://6856663cdefdec325839a4b7e1de38e8 --addr=<node_ip:2375>
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery token://6856663cdefdec325839a4b7e1de38e8 --addr=<swarm_ip:swarm_port>
+$ swarm manage --discovery token://6856663cdefdec325839a4b7e1de38e8 -H=<swarm_ip:swarm_port>
 
 # use the regular docker cli
 $ docker -H <swarm_ip:swarm_port> info
@@ -41,7 +41,7 @@ http://<node_ip:2375>
 $ echo <node_ip:2375> >> /tmp/my_cluster
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery file:///tmp/my_cluster --addr=<swarm_ip:swarm_port>
+$ swarm manage --discovery file:///tmp/my_cluster -H=<swarm_ip:swarm_port>
 
 # use the regular docker cli
 $ docker -H <swarm_ip:swarm_port> info
@@ -64,7 +64,7 @@ http://<node_ip:2375>
 $ swarm join --discovery etcd://<etcd_ip>/>path> --addr=<node_ip:2375>
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery etcd://<etcd_ip>/>path> --addr=<swarm_ip:swarm_port>
+$ swarm manage --discovery etcd://<etcd_ip>/>path> -H=<swarm_ip:swarm_port>
 
 # use the regular docker cli
 $ docker -H <swarm_ip:swarm_port> info
