@@ -38,15 +38,15 @@ func TestAddNode(t *testing.T) {
 	assert.Nil(t, c.Node("test"))
 	assert.Nil(t, c.Node("test2"))
 
-	assert.NoError(t, c.AddNode(createNode(t, "test")))
+	assert.NoError(t, c.addNode(createNode(t, "test")))
 	assert.Equal(t, len(c.Nodes()), 1)
 	assert.NotNil(t, c.Node("test"))
 
-	assert.Error(t, c.AddNode(createNode(t, "test")))
+	assert.Error(t, c.addNode(createNode(t, "test")))
 	assert.Equal(t, len(c.Nodes()), 1)
 	assert.NotNil(t, c.Node("test"))
 
-	assert.NoError(t, c.AddNode(createNode(t, "test2")))
+	assert.NoError(t, c.addNode(createNode(t, "test2")))
 	assert.Equal(t, len(c.Nodes()), 2)
 	assert.NotNil(t, c.Node("test2"))
 }
@@ -58,7 +58,7 @@ func TestLookupContainer(t *testing.T) {
 		Names: []string{"/container-name1", "/container-name2"},
 	}
 	node := createNode(t, "test-node", container)
-	assert.NoError(t, c.AddNode(node))
+	assert.NoError(t, c.addNode(node))
 
 	// Invalid lookup
 	assert.Nil(t, c.Container("invalid-id"))
