@@ -15,6 +15,12 @@ var (
 		Usage:  "ip to advertise",
 		EnvVar: "SWARM_ADDR",
 	}
+	flHosts = cli.StringSliceFlag{
+		Name:   "host, H",
+		Value:  &cli.StringSlice{"tcp://127.0.0.1:4243"},
+		Usage:  "ip/socket to listen on",
+		EnvVar: "SWARM_HOST",
+	}
 	flHeartBeat = cli.IntFlag{
 		Name:  "heartbeat, hb",
 		Value: 25,
