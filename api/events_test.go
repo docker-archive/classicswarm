@@ -27,10 +27,12 @@ func TestHandle(t *testing.T) {
 	assert.Equal(t, eh.Size(), 1)
 
 	event := &cluster.Event{
-		NodeName: "node_name",
-		NodeID:   "node_id",
-		NodeAddr: "node_addr",
-		NodeIP:   "node_ip",
+		Node: &cluster.Node{
+			Name: "node_name",
+			ID:   "node_id",
+			Addr: "node_addr",
+			IP:   "node_ip",
+		},
 	}
 	event.Event.Status = "status"
 	event.Event.Id = "id"
