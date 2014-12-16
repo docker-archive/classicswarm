@@ -18,6 +18,8 @@ func main() {
 	app.Name = "swarm"
 	app.Usage = "docker clustering"
 	app.Version = "0.0.1"
+	app.Author = ""
+	app.Email = ""
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
