@@ -1,65 +1,37 @@
 package scheduler
 
 import (
-	"sync"
+	"errors"
 
+	log "github.com/Sirupsen/logrus"
+	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/scheduler/filter"
-	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/samalba/dockerclient"
 )
 
-type Scheduler struct {
-	sync.Mutex
-
-	cluster  *cluster.Cluster
-	strategy strategy.PlacementStrategy
-	filters  []filter.Filter
+type Scheduler interface {
+	Initialize(cluster *cluster.Cluster, c *cli.Context) error
+	// Given a container configuration and name, create and return a new container
+	CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error)
+	RemoveContainer(container *cluster.Container, force bool) error
 }
 
-func NewScheduler(cluster *cluster.Cluster, strategy strategy.PlacementStrategy, filters []filter.Filter) *Scheduler {
-	return &Scheduler{
-		cluster:  cluster,
-		strategy: strategy,
-		filters:  filters,
+var (
+	schedulers      map[string]Scheduler
+	ErrNotSupported = errors.New("scheduler not supported")
+)
+
+func init() {
+	schedulers = map[string]Scheduler{
+		"swarm": &SwarmScheduler{},
 	}
 }
 
-// Find a nice home for our container.
-func (s *Scheduler) selectNodeForContainer(config *dockerclient.ContainerConfig) (*cluster.Node, error) {
-	candidates := s.cluster.Nodes()
-
-	accepted, err := filter.ApplyFilters(s.filters, config, candidates)
-	if err != nil {
-		return nil, err
+func New(cluster *cluster.Cluster, name string, c *cli.Context) (Scheduler, error) {
+	if scheduler, exists := schedulers[name]; exists {
+		log.Debugf("Initialising %q scheduler", name)
+		err := scheduler.Initialize(cluster, c)
+		return scheduler, err
 	}
-
-	return s.strategy.PlaceContainer(config, accepted)
-}
-
-// Schedule a brand new container into the cluster.
-func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error) {
-	/*Disable for now
-	if config.Memory == 0 || config.CpuShares == 0 {
-		return nil, fmt.Errorf("Creating containers in clustering mode requires resource constraints (-c and -m) to be set")
-	}
-	*/
-
-	s.Lock()
-	defer s.Unlock()
-
-	node, err := s.selectNodeForContainer(config)
-	if err != nil {
-		return nil, err
-	}
-	return node.Create(config, name, true)
-}
-
-// Remove a container from the cluster. Containers should always be destroyed
-// through the scheduler to guarantee atomicity.
-func (s *Scheduler) RemoveContainer(container *cluster.Container, force bool) error {
-	s.Lock()
-	defer s.Unlock()
-
-	return container.Node().Destroy(container, force)
+	return nil, ErrNotSupported
 }

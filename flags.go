@@ -44,6 +44,11 @@ var (
 		Name:  "tlsverify",
 		Usage: "Use TLS and verify the remote",
 	}
+	flScheduler = cli.StringFlag{
+		Name:  "scheduler",
+		Usage: "Scheduler to use [swarm]",
+		Value: "swarm",
+	}
 	flStrategy = cli.StringFlag{
 		Name:  "strategy",
 		Usage: "PlacementStrategy to use [binpacking, random]",

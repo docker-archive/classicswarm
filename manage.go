@@ -12,8 +12,6 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/scheduler"
-	"github.com/docker/swarm/scheduler/filter"
-	"github.com/docker/swarm/scheduler/strategy"
 )
 
 type logHandler struct {
@@ -98,19 +96,10 @@ func manage(c *cli.Context) {
 		}
 	}()
 
-	s, err := strategy.New(c.String("strategy"))
+	sched, err := scheduler.New(cluster, c.String("scheduler"), c)
 	if err != nil {
 		log.Fatal(err)
 	}
-	sched := scheduler.NewScheduler(
-		cluster,
-		s,
-		[]filter.Filter{
-			&filter.HealthFilter{},
-			&filter.LabelFilter{},
-			&filter.PortFilter{},
-		},
-	)
 
 	log.Fatal(api.ListenAndServe(cluster, sched, c.String("addr"), c.App.Version, c.Bool("cors"), tlsConfig))
 }
