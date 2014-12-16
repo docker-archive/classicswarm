@@ -20,7 +20,7 @@ type logHandler struct {
 }
 
 func (h *logHandler) Handle(e *cluster.Event) error {
-	log.Printf("event -> status: %q from: %q id: %q node: %q", e.Status, e.From, e.Id, e.NodeName)
+	log.Printf("event -> status: %q from: %q id: %q node: %q", e.Status, e.From, e.Id, e.Node.Name)
 	return nil
 }
 
