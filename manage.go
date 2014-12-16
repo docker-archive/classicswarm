@@ -112,5 +112,10 @@ func manage(c *cli.Context) {
 		},
 	)
 
-	log.Fatal(api.ListenAndServe(cluster, sched, c.String("addr"), c.App.Version, c.Bool("cors"), tlsConfig))
+	// see https://github.com/codegangsta/cli/issues/160
+	hosts := c.StringSlice("host")
+	if c.IsSet("host") || c.IsSet("H") {
+		hosts = hosts[1:]
+	}
+	log.Fatal(api.ListenAndServe(cluster, sched, hosts, c.App.Version, c.Bool("cors"), tlsConfig))
 }
