@@ -14,6 +14,8 @@ import (
 	"github.com/docker/swarm/scheduler"
 )
 
+const DefaultDockerPort = ":2375"
+
 func newUnixListener(addr string, tlsConfig *tls.Config) (net.Listener, error) {
 	if err := syscall.Unlink(addr); err != nil && !os.IsNotExist(err) {
 		return nil, err
@@ -43,6 +45,9 @@ func newUnixListener(addr string, tlsConfig *tls.Config) (net.Listener, error) {
 func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error) {
 	l, err := net.Listen(proto, addr)
 	if err != nil {
+		if strings.Contains(err.Error(), "address already in use") && strings.Contains(addr, DefaultDockerPort) {
+			return nil, fmt.Errorf("%s: is Docker already running on this machine? Try using a different port", err)
+		}
 		return nil, err
 	}
 	if tlsConfig != nil {
