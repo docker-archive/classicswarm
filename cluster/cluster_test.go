@@ -63,14 +63,16 @@ func TestLookupContainer(t *testing.T) {
 	// Invalid lookup
 	assert.Nil(t, c.Container("invalid-id"))
 	assert.Nil(t, c.Container(""))
-	// Container ID lookup.
-	assert.NotNil(t, c.Container("container-id"))
-	// Container ID prefix lookup.
-	assert.NotNil(t, c.Container("container-"))
 	// Container name lookup.
 	assert.NotNil(t, c.Container("container-name1"))
 	assert.NotNil(t, c.Container("container-name2"))
 	// Container node/name matching.
 	assert.NotNil(t, c.Container("test-node/container-name1"))
 	assert.NotNil(t, c.Container("test-node/container-name2"))
+
+	// Container ID lookup.
+	vid := c.Container("container-name1").VirtualId
+	assert.NotNil(t, c.Container(vid))
+	// Container ID prefix lookup.
+	assert.NotNil(t, c.Container(vid[0:3]))
 }

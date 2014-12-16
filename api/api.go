@@ -78,7 +78,13 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 
 	out := []*dockerclient.Container{}
 	for _, container := range c.cluster.Containers() {
+		// Create a copy of the container for the API response. This way we can
+		// mess around the copy without changing the underlying object.
 		tmp := (*container).Container
+
+		// Expose the VirtualId as Id.
+		tmp.Id = container.VirtualId
+
 		// Skip stopped containers unless -a was specified.
 		if !strings.Contains(tmp.Status, "Up") && !all {
 			continue
@@ -142,7 +148,7 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	if container := c.cluster.Container(name); container != nil {
-		http.Error(w, fmt.Sprintf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, container.Id, name), http.StatusConflict)
+		http.Error(w, fmt.Sprintf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, container.VirtualId, name), http.StatusConflict)
 		return
 	}
 
@@ -151,7 +157,7 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
+	fmt.Fprintf(w, "{%q:%q}", "Id", container.VirtualId)
 	return
 }
 
@@ -213,6 +219,9 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 			r.URL.Scheme = "http"
 			r.URL.Host = parts[0]
 		}
+
+		// Map the VirtualId back to the node Id.
+		r.URL.Path = strings.Replace(r.URL.Path, container.VirtualId, container.Id, 1)
 
 		log.Debugf("[PROXY] --> %s %s", r.Method, r.URL)
 		resp, err := client.Do(r)

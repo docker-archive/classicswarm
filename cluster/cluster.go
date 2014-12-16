@@ -8,6 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/discovery"
+	"github.com/samalba/dockerclient"
 )
 
 var (
@@ -31,11 +32,48 @@ func NewCluster(tlsConfig *tls.Config) *Cluster {
 	}
 }
 
+func (c *Cluster) refreshContainers(node *Node) {
+	c.Lock()
+	c.refreshContainersLocked(node)
+	c.Unlock()
+}
+
+// Variant of refreshContainers() that must be called only when the lock is
+// acquired.
+func (c *Cluster) refreshContainersLocked(node *Node) {
+	c.containers[node] = node.Containers()
+	for _, container := range c.containers[node] {
+		if len(container.VirtualId) == 0 {
+			vid := generateVirtualID()
+			log.Debugf("Mapping container %s to VID %s", container.Id, vid)
+			container.VirtualId = vid
+		}
+	}
+}
+
+// Deploy a container into a `specific` node on the cluster.
+func (c *Cluster) DeployContainer(node *Node, config *dockerclient.ContainerConfig, name string) (*Container, error) {
+	container, err := node.Create(config, name, true)
+	if err != nil {
+		return nil, err
+	}
+	c.refreshContainers(node)
+	return container, nil
+}
+
+// Destroys a given `container` from the cluster.
+func (c *Cluster) DestroyContainer(container *Container, force bool) error {
+	node := container.Node()
+	if err := node.Destroy(container, force); err != nil {
+		return err
+	}
+	c.refreshContainers(node)
+	return nil
+}
+
 func (c *Cluster) Handle(e *Event) error {
 	// Refresh the container list for `node` as soon as we receive an event.
-	c.Lock()
-	c.containers[e.Node] = e.Node.Containers()
-	c.Unlock()
+	c.refreshContainers(e.Node)
 
 	// Dispatch the event to all the handlers.
 	for _, eventHandler := range c.eventHandlers {
@@ -62,7 +100,7 @@ func (c *Cluster) AddNode(n *Node) error {
 
 	// Register the node and its containers.
 	c.nodes[n.ID] = n
-	c.containers[n] = n.Containers()
+	c.refreshContainersLocked(n)
 
 	return n.Events(c)
 }
@@ -106,9 +144,12 @@ func (c *Cluster) Container(IdOrName string) *Container {
 	if len(IdOrName) == 0 {
 		return nil
 	}
+
+	c.RLock()
+	defer c.RUnlock()
 	for _, container := range c.Containers() {
 		// Match ID prefix.
-		if strings.HasPrefix(container.Id, IdOrName) {
+		if strings.HasPrefix(container.VirtualId, IdOrName) {
 			return container
 		}
 
