@@ -17,7 +17,7 @@ var (
 	}
 	flHosts = cli.StringSliceFlag{
 		Name:   "host, H",
-		Value:  &cli.StringSlice{"tcp://127.0.0.1:4243"},
+		Value:  &cli.StringSlice{"tcp://127.0.0.1:2375"},
 		Usage:  "ip/socket to listen on",
 		EnvVar: "SWARM_HOST",
 	}

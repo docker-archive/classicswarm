@@ -1,3 +1,3 @@
 FROM golang:onbuild
-EXPOSE 4243
+EXPOSE 2375
 ENTRYPOINT ["swarm"]
