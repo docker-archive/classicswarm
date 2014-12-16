@@ -33,7 +33,9 @@ func NewCluster(tlsConfig *tls.Config) *Cluster {
 
 func (c *Cluster) Handle(e *Event) error {
 	// Refresh the container list for `node` as soon as we receive an event.
+	c.Lock()
 	c.containers[e.Node] = e.Node.Containers()
+	c.Unlock()
 
 	// Dispatch the event to all the handlers.
 	for _, eventHandler := range c.eventHandlers {
