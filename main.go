@@ -82,7 +82,7 @@ func main() {
 			ShortName: "m",
 			Usage:     "manage a docker cluster",
 			Flags: []cli.Flag{
-				flStrategy,
+				flStrategy, flFilter,
 				flDiscovery, flHosts, flHeartBeat,
 				flTls, flTlsCaCert, flTlsCert, flTlsKey, flTlsVerify,
 				flEnableCors},
