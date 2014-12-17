@@ -16,8 +16,6 @@ type ConsulDiscoveryService struct {
 	prefix    string
 }
 
-const swarm_prefix = "swarm"
-
 func init() {
 	discovery.Register("consul", &ConsulDiscoveryService{})
 }
@@ -39,7 +37,7 @@ func (s *ConsulDiscoveryService) Initialize(uris string, heartbeat int) error {
 	}
 	s.client = client
 	s.heartbeat = uint64(heartbeat)
-	s.prefix = swarm_prefix + "/" + path + "/"
+	s.prefix = path + "/"
 	kv := s.client.KV()
 	p := &consul.KVPair{Key: s.prefix, Value: nil}
 	_, err = kv.Put(p, nil)
