@@ -3,7 +3,6 @@ package scheduler
 import (
 	"sync"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
@@ -18,8 +17,8 @@ type SwarmScheduler struct {
 	filters  []filter.Filter
 }
 
-func (s *SwarmScheduler) Initialize(cluster *cluster.Cluster, c *cli.Context) error {
-	strat, err := strategy.New(c.String("strategy"))
+func (s *SwarmScheduler) Initialize(cluster *cluster.Cluster, opts map[string]string) error {
+	strat, err := strategy.New(opts["strategy"])
 	if err != nil {
 		return err
 	}

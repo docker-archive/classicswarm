@@ -96,7 +96,7 @@ func manage(c *cli.Context) {
 		}
 	}()
 
-	sched, err := scheduler.New(cluster, c.String("scheduler"), c)
+	sched, err := scheduler.New(cluster, c.String("scheduler"), c.StringSlice("scheduler-option"))
 	if err != nil {
 		log.Fatal(err)
 	}

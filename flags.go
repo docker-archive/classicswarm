@@ -49,9 +49,9 @@ var (
 		Usage: "Scheduler to use [swarm]",
 		Value: "swarm",
 	}
-	flStrategy = cli.StringFlag{
-		Name:  "strategy",
-		Usage: "PlacementStrategy to use [binpacking, random]",
-		Value: "binpacking:0.05",
+	flSchedulerOpt = cli.StringSliceFlag{
+		Name:  "scheduler-option",
+		Usage: "Scheduler option. For default scheduler (swarm): strategy:[binpackin, random]",
+		Value: &cli.StringSlice{"strategy:binpacking:005"},
 	}
 )
