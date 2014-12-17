@@ -25,6 +25,7 @@ var (
 func init() {
 	schedulers = map[string]Scheduler{
 		"swarm": &SwarmScheduler{},
+		"api":   &ApiScheduler{},
 	}
 }
 
