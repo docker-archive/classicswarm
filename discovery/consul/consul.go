@@ -65,7 +65,9 @@ func (s *ConsulDiscoveryService) Fetch() ([]*discovery.Node, error) {
 }
 
 func (s *ConsulDiscoveryService) Watch(callback discovery.WatchCallback) {
-	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
+	c := time.Tick(time.Duration(s.heartbeat) * time.Second)
+	for {
+		<-c
 		nodes, err := s.Fetch()
 		if err == nil {
 			callback(nodes)
