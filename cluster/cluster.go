@@ -40,13 +40,10 @@ func (c *Cluster) Handle(e *Event) error {
 
 // Register a node within the cluster. The node must have been already
 // initialized.
-func (c *Cluster) AddNode(n *Node) error {
+func (c *Cluster) addNode(n *Node) error {
 	if !n.IsConnected() {
 		return ErrNodeNotConnected
 	}
-
-	c.Lock()
-	defer c.Unlock()
 
 	if _, exists := c.nodes[n.ID]; exists {
 		return ErrNodeAlreadyRegistered
@@ -57,6 +54,9 @@ func (c *Cluster) AddNode(n *Node) error {
 }
 
 func (c *Cluster) UpdateNodes(nodes []*discovery.Node) {
+	c.Lock()
+	defer c.Unlock()
+
 	for _, addr := range nodes {
 		go func(node *discovery.Node) {
 			if c.Node(node.String()) == nil {
@@ -65,7 +65,7 @@ func (c *Cluster) UpdateNodes(nodes []*discovery.Node) {
 					log.Error(err)
 					return
 				}
-				if err := c.AddNode(n); err != nil {
+				if err := c.addNode(n); err != nil {
 					log.Error(err)
 					return
 				}
