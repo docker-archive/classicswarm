@@ -89,19 +89,19 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(tmp.Status, "Up") && !all {
 			continue
 		}
-		if !container.Node().IsHealthy() {
+		if !container.Node.IsHealthy() {
 			tmp.Status = "Pending"
 		}
 		// TODO remove the Node ID in the name when we have a good solution
 		tmp.Names = make([]string, len(container.Names))
 		for i, name := range container.Names {
-			tmp.Names[i] = "/" + container.Node().Name + name
+			tmp.Names[i] = "/" + container.Node.Name + name
 		}
 		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
 		for i, port := range container.Ports {
 			tmp.Ports[i] = port
 			if port.IP == "0.0.0.0" {
-				tmp.Ports[i].IP = container.Node().IP
+				tmp.Ports[i].IP = container.Node.IP
 			}
 		}
 		out = append(out, &tmp)
@@ -115,7 +115,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	container := c.cluster.Container(mux.Vars(r)["name"])
 	if container != nil {
-		resp, err := http.Get(container.Node().Addr + "/containers/" + container.Id + "/json")
+		resp, err := http.Get(container.Node.Addr + "/containers/" + container.Id + "/json")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -125,7 +125,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Write(bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node().IP)), -1))
+		w.Write(bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node.IP)), -1))
 	}
 }
 
@@ -211,7 +211,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		// RequestURI may not be sent to client
 		r.RequestURI = ""
 
-		parts := strings.SplitN(container.Node().Addr, "://", 2)
+		parts := strings.SplitN(container.Node.Addr, "://", 2)
 		if len(parts) == 2 {
 			r.URL.Scheme = parts[0]
 			r.URL.Host = parts[1]

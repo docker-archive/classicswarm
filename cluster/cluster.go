@@ -63,11 +63,10 @@ func (c *Cluster) DeployContainer(node *Node, config *dockerclient.ContainerConf
 
 // Destroys a given `container` from the cluster.
 func (c *Cluster) DestroyContainer(container *Container, force bool) error {
-	node := container.Node()
-	if err := node.Destroy(container, force); err != nil {
+	if err := container.Node.Destroy(container, force); err != nil {
 		return err
 	}
-	c.refreshContainers(node)
+	c.refreshContainers(container.Node)
 	return nil
 }
 
@@ -155,7 +154,7 @@ func (c *Cluster) Container(IdOrName string) *Container {
 
 		// Match name, /name or engine/name.
 		for _, name := range container.Names {
-			if name == IdOrName || name == "/"+IdOrName || container.node.ID+name == IdOrName || container.node.Name+name == IdOrName {
+			if name == IdOrName || name == "/"+IdOrName || container.Node.ID+name == IdOrName || container.Node.Name+name == IdOrName {
 				return container
 			}
 		}
