@@ -102,14 +102,20 @@ func manage(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// see https://github.com/codegangsta/cli/issues/160
+	names := c.StringSlice("filter")
+	if c.IsSet("filter") || c.IsSet("f") {
+		names = names[3:]
+	}
+	fs, err := filter.New(names)
+	if err != nil {
+		log.Fatal(err)
+	}
 	sched := scheduler.NewScheduler(
 		cluster,
 		s,
-		[]filter.Filter{
-			&filter.HealthFilter{},
-			&filter.LabelFilter{},
-			&filter.PortFilter{},
-		},
+		fs,
 	)
 
 	// see https://github.com/codegangsta/cli/issues/160

@@ -55,4 +55,9 @@ var (
 		Usage: "PlacementStrategy to use [binpacking, random]",
 		Value: "binpacking:0.05",
 	}
+	flFilter = cli.StringSliceFlag{
+		Name:  "filter, f",
+		Usage: "Filter to use [health, label, port]",
+		Value: &cli.StringSlice{"health", "label", "port"},
+	}
 )
