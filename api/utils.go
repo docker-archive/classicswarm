@@ -45,7 +45,7 @@ func proxy(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseW
 	// RequestURI may not be sent to client
 	r.RequestURI = ""
 
-	parts := strings.SplitN(container.Node().Addr, "://", 2)
+	parts := strings.SplitN(container.Node.Addr, "://", 2)
 	if len(parts) == 2 {
 		r.URL.Scheme = parts[0]
 		r.URL.Host = parts[1]
@@ -66,8 +66,8 @@ func proxy(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseW
 }
 
 func hijack(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseWriter, r *http.Request) error {
-	addr := container.Node().Addr
-	if parts := strings.SplitN(container.Node().Addr, "://", 2); len(parts) == 2 {
+	addr := container.Node.Addr
+	if parts := strings.SplitN(container.Node.Addr, "://", 2); len(parts) == 2 {
 		addr = parts[1]
 	}
 
