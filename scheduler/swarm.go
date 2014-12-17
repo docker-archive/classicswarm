@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/docker/swarm/cluster"
@@ -18,17 +19,23 @@ type SwarmScheduler struct {
 }
 
 func (s *SwarmScheduler) Initialize(cluster *cluster.Cluster, opts map[string]string) error {
+
+	// Strategy
 	strat, err := strategy.New(opts["strategy"])
 	if err != nil {
 		return err
 	}
 	s.strategy = strat
-	s.cluster = cluster
-	s.filters = []filter.Filter{
-		&filter.HealthFilter{},
-		&filter.LabelFilter{},
-		&filter.PortFilter{},
+
+	// Filters
+	names := strings.Split(opts["filters"], ",")
+	fs, err := filter.New(names)
+	if err != nil {
+		return err
 	}
+	s.filters = fs
+
+	s.cluster = cluster
 	return nil
 }
 

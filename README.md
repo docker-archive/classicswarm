@@ -34,7 +34,7 @@ $ swarm create
 $ swarm join --discovery token://6856663cdefdec325839a4b7e1de38e8 --addr=<node_ip:2375>
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery token://6856663cdefdec325839a4b7e1de38e8 --addr=<swarm_ip:swarm_port>
+$ swarm manage --discovery token://6856663cdefdec325839a4b7e1de38e8 -H=<swarm_ip:swarm_port>
 
 # use the regular docker cli
 $ docker -H <swarm_ip:swarm_port> info

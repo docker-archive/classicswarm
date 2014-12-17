@@ -15,6 +15,12 @@ var (
 		Usage:  "ip to advertise",
 		EnvVar: "SWARM_ADDR",
 	}
+	flHosts = cli.StringSliceFlag{
+		Name:   "host, H",
+		Value:  &cli.StringSlice{"tcp://127.0.0.1:4243"},
+		Usage:  "ip/socket to listen on",
+		EnvVar: "SWARM_HOST",
+	}
 	flHeartBeat = cli.IntFlag{
 		Name:  "heartbeat, hb",
 		Value: 25,
@@ -46,12 +52,12 @@ var (
 	}
 	flScheduler = cli.StringFlag{
 		Name:  "scheduler",
-		Usage: "Scheduler to use [swarm]",
+		Usage: "Scheduler to use [swarm, api]",
 		Value: "swarm",
 	}
 	flSchedulerOpt = cli.StringSliceFlag{
 		Name:  "scheduler-option",
-		Usage: "Scheduler option. For default scheduler (swarm): strategy:[binpackin, random]",
-		Value: &cli.StringSlice{"strategy:binpacking:005"},
+		Usage: "Scheduler option. For swarm scheduler, default options: strategy:binpacking:0.05 filters:health,label,port",
+		Value: &cli.StringSlice{"strategy:binpacking:0.05", "filters:health,label,port"},
 	}
 )

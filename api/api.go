@@ -2,12 +2,10 @@ package api
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"runtime"
 	"sort"
@@ -321,33 +319,4 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 	}
 
 	return r, nil
-}
-
-func ListenAndServe(c *cluster.Cluster, s scheduler.Scheduler, addr, version string, enableCors bool, tlsConfig *tls.Config) error {
-	context := &context{
-		cluster:       c,
-		scheduler:     s,
-		version:       version,
-		eventsHandler: NewEventsHandler(),
-	}
-	c.Events(context.eventsHandler)
-	r, err := createRouter(context, enableCors)
-	if err != nil {
-		return err
-	}
-
-	server := &http.Server{
-		Addr:    addr,
-		Handler: r,
-	}
-
-	l, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
-	}
-	if tlsConfig != nil {
-		tlsConfig.NextProtos = []string{"http/1.1"}
-		l = tls.NewListener(l, tlsConfig)
-	}
-	return server.Serve(l)
 }

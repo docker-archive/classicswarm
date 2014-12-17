@@ -18,6 +18,8 @@ func main() {
 	app.Name = "swarm"
 	app.Usage = "docker clustering"
 	app.Version = "0.0.1"
+	app.Author = ""
+	app.Email = ""
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
@@ -81,7 +83,7 @@ func main() {
 			Usage:     "manage a docker cluster",
 			Flags: []cli.Flag{
 				flScheduler, flSchedulerOpt,
-				flDiscovery, flAddr, flHeartBeat,
+				flDiscovery, flHosts, flHeartBeat,
 				flTls, flTlsCaCert, flTlsCert, flTlsKey, flTlsVerify,
 				flEnableCors},
 			Action: manage,
