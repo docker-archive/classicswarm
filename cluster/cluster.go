@@ -18,35 +18,55 @@ var (
 
 type Cluster struct {
 	sync.RWMutex
+	store         *Store
 	tlsConfig     *tls.Config
 	eventHandlers []EventHandler
 	nodes         map[string]*Node
 	containers    map[*Node][]*Container
 }
 
-func NewCluster(tlsConfig *tls.Config) *Cluster {
+func NewCluster(store *Store, tlsConfig *tls.Config) *Cluster {
 	return &Cluster{
+		store:      store,
 		tlsConfig:  tlsConfig,
 		nodes:      make(map[string]*Node),
 		containers: make(map[*Node][]*Container),
 	}
 }
 
-func (c *Cluster) refreshContainers(node *Node) {
-	c.Lock()
-	c.refreshContainersLocked(node)
-	c.Unlock()
+func (c *Cluster) assignVirtualId(container *Container) {
+	// Try a reverse lookup of the container into the store to find out if we already did the mapping.
+	for _, sc := range c.store.All() {
+		if sc.Id == container.Id {
+			log.Debugf("Restored container %s (%s)", sc.VirtualId, sc.Id)
+			container.VirtualId = sc.VirtualId
+			if err := c.store.Replace(sc.VirtualId, container); err != nil {
+				log.Errorf("Unable to update state for container %s: %v", container.Id, err)
+			}
+			return
+		}
+	}
+
+	// This is an unknown container - generate a VID and store it.
+	vid := generateVirtualID()
+	log.Debugf("Mapping container %s to VID %s", container.Id, vid)
+	container.VirtualId = vid
+	if err := c.store.Add(vid, container); err != nil {
+		log.Errorf("Unable to save state for container %s: %v", container.Id, err)
+	}
 }
 
-// Variant of refreshContainers() that must be called only when the lock is
-// acquired.
-func (c *Cluster) refreshContainersLocked(node *Node) {
+func (c *Cluster) refreshContainers(node *Node) {
+	c.Lock()
+	defer c.Unlock()
+
 	c.containers[node] = node.Containers()
+
+	// VID mapping.
 	for _, container := range c.containers[node] {
+		// Assign virtual ID to containers without any.
 		if len(container.VirtualId) == 0 {
-			vid := generateVirtualID()
-			log.Debugf("Mapping container %s to VID %s", container.Id, vid)
-			container.VirtualId = vid
+			c.assignVirtualId(container)
 		}
 	}
 }
@@ -64,6 +84,9 @@ func (c *Cluster) DeployContainer(node *Node, config *dockerclient.ContainerConf
 // Destroys a given `container` from the cluster.
 func (c *Cluster) DestroyContainer(container *Container, force bool) error {
 	if err := container.Node.Destroy(container, force); err != nil {
+		return err
+	}
+	if err := c.store.Remove(container.VirtualId); err != nil {
 		return err
 	}
 	c.refreshContainers(container.Node)
@@ -91,16 +114,15 @@ func (c *Cluster) AddNode(n *Node) error {
 	}
 
 	c.Lock()
-	defer c.Unlock()
-
 	if _, exists := c.nodes[n.ID]; exists {
+		c.Unlock()
 		return ErrNodeAlreadyRegistered
 	}
-
-	// Register the node and its containers.
+	// Register the node.
 	c.nodes[n.ID] = n
-	c.refreshContainersLocked(n)
+	c.Unlock()
 
+	c.refreshContainers(n)
 	return n.Events(c)
 }
 

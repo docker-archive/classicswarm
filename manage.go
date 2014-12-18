@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"path"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -71,7 +72,12 @@ func manage(c *cli.Context) {
 		}
 	}
 
-	cluster := cluster.NewCluster(tlsConfig)
+	store := cluster.NewStore(path.Join(c.String("store"), "state"))
+	if err := store.Initialize(); err != nil {
+		log.Fatal(err)
+	}
+
+	cluster := cluster.NewCluster(store, tlsConfig)
 	cluster.Events(&logHandler{})
 
 	go func() {

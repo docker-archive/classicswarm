@@ -186,7 +186,7 @@ func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*
 		// This is a brand new container.
 		container := &Container{}
 		container.Container = c
-		container.node = n
+		container.Node = n
 
 		info, err := n.client.InspectContainer(c.Id)
 		if err != nil {
