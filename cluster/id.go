@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-func generateVirtualID() string {
+func generateVirtualId() string {
 	id := make([]byte, 32)
 
 	if _, err := io.ReadFull(rand.Reader, id); err != nil {

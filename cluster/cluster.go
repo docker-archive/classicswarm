@@ -48,7 +48,7 @@ func (c *Cluster) assignVirtualId(container *Container) {
 	}
 
 	// This is an unknown container - generate a VID and store it.
-	vid := generateVirtualID()
+	vid := generateVirtualId()
 	log.Debugf("Mapping container %s to VID %s", container.Id, vid)
 	container.VirtualId = vid
 	if err := c.store.Add(vid, container); err != nil {
