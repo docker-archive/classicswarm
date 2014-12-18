@@ -2,8 +2,10 @@ package filter
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
 )
@@ -27,18 +29,32 @@ func (f *LabelFilter) extractConstraints(env []string) map[string]string {
 func (f *LabelFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
 	constraints := f.extractConstraints(config.Env)
 	for k, v := range constraints {
+		regex := "^" + strings.Replace(v, "*", ".*", -1) + "$"
+		log.Debugf("matching constraint: %s=%s", k, regex)
 		candidates := []*cluster.Node{}
 		for _, node := range nodes {
 			switch k {
 			case "node":
 				// "node" label is a special case pinning a container to a specific node.
-				if strings.ToLower(node.ID) == v || strings.ToLower(node.Name) == v {
+				matchedID, err := regexp.MatchString(regex, strings.ToLower(node.ID))
+				if err != nil {
+					log.Error(err)
+				}
+				matchedName, err := regexp.MatchString(regex, strings.ToLower(node.Name))
+				if err != nil {
+					log.Error(err)
+				}
+				if matchedID || matchedName {
 					candidates = append(candidates, node)
 				}
 			default:
 				// By default match the node labels.
 				if label, ok := node.Labels[k]; ok {
-					if strings.Contains(strings.ToLower(label), v) {
+					matched, err := regexp.MatchString(regex, strings.ToLower(label))
+					if err != nil {
+						log.Error(err)
+					}
+					if matched {
 						candidates = append(candidates, node)
 					}
 				}
