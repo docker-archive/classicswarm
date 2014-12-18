@@ -10,11 +10,11 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-// LabelFilter selects only nodes that match certain labels.
-type LabelFilter struct {
+// ConstraintFilter selects only nodes that match certain labels.
+type ConstraintFilter struct {
 }
 
-func (f *LabelFilter) extractConstraints(env []string) map[string]string {
+func (f *ConstraintFilter) extractConstraints(env []string) map[string]string {
 	constraints := make(map[string]string)
 	for _, e := range env {
 		if strings.HasPrefix(e, "constraint:") {
@@ -26,7 +26,7 @@ func (f *LabelFilter) extractConstraints(env []string) map[string]string {
 	return constraints
 }
 
-func (f *LabelFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
+func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
 	constraints := f.extractConstraints(config.Env)
 	for k, v := range constraints {
 		regex := "^" + strings.Replace(v, "*", ".*", -1) + "$"

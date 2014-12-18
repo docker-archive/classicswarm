@@ -20,9 +20,9 @@ var (
 
 func init() {
 	filters = map[string]Filter{
-		"health": &HealthFilter{},
-		"label":  &LabelFilter{},
-		"port":   &PortFilter{},
+		"health":     &HealthFilter{},
+		"constraint": &ConstraintFilter{},
+		"port":       &PortFilter{},
 	}
 }
 
