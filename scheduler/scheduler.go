@@ -52,7 +52,7 @@ func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name s
 	if err != nil {
 		return nil, err
 	}
-	return node.Create(config, name, true)
+	return s.cluster.DeployContainer(node, config, name)
 }
 
 // Remove a container from the cluster. Containers should always be destroyed

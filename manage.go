@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"path"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -14,6 +15,7 @@ import (
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
+	"github.com/docker/swarm/state"
 )
 
 type logHandler struct {
@@ -71,7 +73,12 @@ func manage(c *cli.Context) {
 		}
 	}
 
-	cluster := cluster.NewCluster(tlsConfig, c.Float64("overcommit"))
+	store := state.NewStore(path.Join(c.String("store"), "state"))
+	if err := store.Initialize(); err != nil {
+		log.Fatal(err)
+	}
+
+	cluster := cluster.NewCluster(store, tlsConfig, c.Float64("overcommit"))
 	cluster.Events(&logHandler{})
 
 	if !c.IsSet("discovery") {

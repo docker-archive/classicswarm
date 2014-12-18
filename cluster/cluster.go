@@ -8,6 +8,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/discovery"
+	"github.com/docker/swarm/state"
+	"github.com/samalba/dockerclient"
 )
 
 var (
@@ -17,18 +19,52 @@ var (
 
 type Cluster struct {
 	sync.RWMutex
+	store           *state.Store
 	tlsConfig       *tls.Config
 	eventHandlers   []EventHandler
 	nodes           map[string]*Node
 	overcommitRatio float64
 }
 
-func NewCluster(tlsConfig *tls.Config, overcommitRatio float64) *Cluster {
+func NewCluster(store *state.Store, tlsConfig *tls.Config, overcommitRatio float64) *Cluster {
 	return &Cluster{
 		tlsConfig:       tlsConfig,
 		nodes:           make(map[string]*Node),
+		store:           store,
 		overcommitRatio: overcommitRatio,
 	}
+}
+
+// Deploy a container into a `specific` node on the cluster.
+func (c *Cluster) DeployContainer(node *Node, config *dockerclient.ContainerConfig, name string) (*Container, error) {
+	container, err := node.Create(config, name, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// Commit the requested state.
+	st := &state.RequestedState{
+		Name:   name,
+		Config: config,
+	}
+	if err := c.store.Add(container.Id, st); err != nil {
+		return nil, err
+	}
+	return container, nil
+}
+
+// Destroys a given `container` from the cluster.
+func (c *Cluster) DestroyContainer(container *Container, force bool) error {
+	if err := container.Node.Destroy(container, force); err != nil {
+		return err
+	}
+	if err := c.store.Remove(container.Id); err != nil {
+		if err == state.ErrNotFound {
+			log.Debugf("Container %s not found in the store", container.Id)
+		}
+		return err
+	}
+	return nil
 }
 
 func (c *Cluster) Handle(e *Event) error {
