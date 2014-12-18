@@ -31,24 +31,38 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 	return node
 }
 
+func TestAddConnectingNode(t *testing.T) {
+	c := NewCluster(nil)
+
+	assert.Equal(t, len(c.connectingNodes), 0)
+
+	assert.NoError(t, c.AddConnectingNode("test"))
+	assert.Equal(t, len(c.connectingNodes), 1)
+
+	assert.Error(t, c.AddConnectingNode("test"))
+	assert.Equal(t, len(c.connectingNodes), 1)
+
+	assert.NoError(t, c.AddNode(createNode(t, "test")))
+	assert.Equal(t, len(c.connectingNodes), 0)
+	assert.Equal(t, len(c.Nodes()), 1)
+
+	assert.Error(t, c.AddConnectingNode("test"))
+
+}
+
 func TestAddNode(t *testing.T) {
 	c := NewCluster(nil)
 
 	assert.Equal(t, len(c.Nodes()), 0)
-	assert.Nil(t, c.Node("test"))
-	assert.Nil(t, c.Node("test2"))
 
 	assert.NoError(t, c.AddNode(createNode(t, "test")))
 	assert.Equal(t, len(c.Nodes()), 1)
-	assert.NotNil(t, c.Node("test"))
 
 	assert.Error(t, c.AddNode(createNode(t, "test")))
 	assert.Equal(t, len(c.Nodes()), 1)
-	assert.NotNil(t, c.Node("test"))
 
 	assert.NoError(t, c.AddNode(createNode(t, "test2")))
 	assert.Equal(t, len(c.Nodes()), 2)
-	assert.NotNil(t, c.Node("test2"))
 }
 
 func TestLookupContainer(t *testing.T) {

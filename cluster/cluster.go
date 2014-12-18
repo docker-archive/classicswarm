@@ -13,19 +13,22 @@ import (
 var (
 	ErrNodeNotConnected      = errors.New("node is not connected to docker's REST API")
 	ErrNodeAlreadyRegistered = errors.New("node was already added to the cluster")
+	ErrNodeAlreadyConnecting = errors.New("node is already connecting")
 )
 
 type Cluster struct {
 	sync.RWMutex
-	tlsConfig     *tls.Config
-	eventHandlers []EventHandler
-	nodes         map[string]*Node
+	tlsConfig       *tls.Config
+	eventHandlers   []EventHandler
+	nodes           map[string]*Node
+	connectingNodes map[string]struct{}
 }
 
 func NewCluster(tlsConfig *tls.Config) *Cluster {
 	return &Cluster{
-		tlsConfig: tlsConfig,
-		nodes:     make(map[string]*Node),
+		tlsConfig:       tlsConfig,
+		nodes:           make(map[string]*Node),
+		connectingNodes: make(map[string]struct{}),
 	}
 }
 
@@ -36,6 +39,29 @@ func (c *Cluster) Handle(e *Event) error {
 		}
 	}
 	return nil
+}
+
+func (c *Cluster) AddConnectingNode(addr string) error {
+	c.Lock()
+	defer c.Unlock()
+
+	for _, node := range c.nodes {
+		if node.Addr == addr {
+			return ErrNodeAlreadyRegistered
+		}
+	}
+
+	if _, exists := c.connectingNodes[addr]; exists {
+		return ErrNodeAlreadyConnecting
+	}
+
+	c.connectingNodes[addr] = struct{}{}
+	return nil
+}
+func (c *Cluster) RemoveConnectingNode(addr string) {
+	c.Lock()
+	delete(c.connectingNodes, addr)
+	c.Unlock()
 }
 
 // Register a node within the cluster. The node must have been already
@@ -53,15 +79,17 @@ func (c *Cluster) AddNode(n *Node) error {
 	}
 
 	c.nodes[n.ID] = n
+	delete(c.connectingNodes, n.Addr)
 	return n.Events(c)
 }
 
 func (c *Cluster) UpdateNodes(nodes []*discovery.Node) {
 	for _, addr := range nodes {
 		go func(node *discovery.Node) {
-			if c.Node(node.String()) == nil {
+			if c.AddConnectingNode(node.String()) == nil {
 				n := NewNode(node.String())
 				if err := n.Connect(c.tlsConfig); err != nil {
+					c.RemoveConnectingNode(node.String())
 					log.Error(err)
 					return
 				}
@@ -122,15 +150,6 @@ func (c *Cluster) Nodes() []*Node {
 	}
 	c.RUnlock()
 	return nodes
-}
-
-func (c *Cluster) Node(addr string) *Node {
-	for _, node := range c.nodes {
-		if node.Addr == addr {
-			return node
-		}
-	}
-	return nil
 }
 
 func (c *Cluster) Events(h EventHandler) error {
