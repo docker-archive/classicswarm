@@ -72,10 +72,10 @@ The scheduler selected `node-2` since it was started with the `storage=disk` lab
 Additionally, a standard set of constraints can be used when scheduling containers without specifying them when starting the node.
 Those tags are sourced from `docker info` and currently include:
 
-* OperatingSystem
-* KernelVersion
-* Driver
-* ExecutionDriver
+* storagedriver
+* executiondriver
+* kernelversion
+* operatingsystem
 
 ## Port Filter
 
@@ -123,4 +123,4 @@ $ docker run -d -p 80:80 nginx
 
 ## Health Filter
 
-This filter will prevent scheduling containers and unhealthy nodes.
+This filter will prevent scheduling containers on unhealthy nodes.
