@@ -10,6 +10,8 @@ Thoses filters are used to schedule containers on a subset of nodes.
 * [Port](README.md#port-filter)
 * [Healty](README.md#healthy-filter)
 
+You can choose the filter(s) you want to use with the `--filter` flag of `swarm manage`
+
 ## Constraint Filter
 
 Constraints are key/value pairs associated to particular nodes. You can see them as *node tags*.
