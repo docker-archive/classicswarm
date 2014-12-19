@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,6 +11,7 @@ import (
 func TestStore(t *testing.T) {
 	dir, err := ioutil.TempDir("", "store-test")
 	assert.NoError(t, err)
+	defer assert.NoError(t, os.RemoveAll(dir))
 	store := NewStore(dir)
 	assert.NoError(t, store.Initialize())
 

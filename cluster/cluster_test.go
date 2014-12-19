@@ -3,6 +3,7 @@ package cluster
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/samalba/dockerclient"
@@ -33,14 +34,12 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 	return node
 }
 
-func newCluster(t *testing.T) *Cluster {
+func TestAddNode(t *testing.T) {
 	dir, err := ioutil.TempDir("", "store-test")
 	assert.NoError(t, err)
-	return NewCluster(NewStore(dir), nil)
-}
+	defer assert.NoError(t, os.RemoveAll(dir))
+	c := NewCluster(NewStore(dir), nil)
 
-func TestAddNode(t *testing.T) {
-	c := newCluster(t)
 	assert.Equal(t, len(c.Nodes()), 0)
 	assert.Nil(t, c.Node("test"))
 	assert.Nil(t, c.Node("test2"))
@@ -59,7 +58,11 @@ func TestAddNode(t *testing.T) {
 }
 
 func TestContainerLookup(t *testing.T) {
-	c := newCluster(t)
+	dir, err := ioutil.TempDir("", "store-test")
+	assert.NoError(t, err)
+	defer assert.NoError(t, os.RemoveAll(dir))
+	c := NewCluster(NewStore(dir), nil)
+
 	container := dockerclient.Container{
 		Id:    "container-id",
 		Names: []string{"/container-name1", "/container-name2"},
@@ -102,7 +105,10 @@ func TestContainerNodeMapping(t *testing.T) {
 	assert.True(t, node.IsConnected())
 
 	// Create a test cluster.
-	c := newCluster(t)
+	dir, err := ioutil.TempDir("", "store-test")
+	assert.NoError(t, err)
+	defer assert.NoError(t, os.RemoveAll(dir))
+	c := NewCluster(NewStore(dir), nil)
 	assert.NoError(t, c.AddNode(node))
 
 	// Ensure that the cluster picked up the already existing container from
@@ -128,7 +134,10 @@ func TestDeployContainer(t *testing.T) {
 	node := createNode(t, "test")
 
 	// Create a test cluster.
-	c := newCluster(t)
+	dir, err := ioutil.TempDir("", "store-test")
+	assert.NoError(t, err)
+	defer assert.NoError(t, os.RemoveAll(dir))
+	c := NewCluster(NewStore(dir), nil)
 	assert.NoError(t, c.AddNode(node))
 
 	// Fake dockerclient calls to deploy a container.
