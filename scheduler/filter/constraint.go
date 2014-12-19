@@ -26,35 +26,33 @@ func (f *ConstraintFilter) extractConstraints(env []string) map[string]string {
 	return constraints
 }
 
+// Create the regex for globbing (ex: ub*t* -> ^ub.*t.*$)
+// and match.
+func (f *ConstraintFilter) match(pattern, s string) bool {
+	regex := "^" + strings.Replace(pattern, "*", ".*", -1) + "$"
+	matched, err := regexp.MatchString(regex, strings.ToLower(s))
+	if err != nil {
+		log.Error(err)
+	}
+	return matched
+}
+
 func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
 	constraints := f.extractConstraints(config.Env)
 	for k, v := range constraints {
-		regex := "^" + strings.Replace(v, "*", ".*", -1) + "$"
-		log.Debugf("matching constraint: %s=%s", k, regex)
+		log.Debugf("matching constraint: %s=%s", k, v)
 		candidates := []*cluster.Node{}
 		for _, node := range nodes {
 			switch k {
 			case "node":
 				// "node" label is a special case pinning a container to a specific node.
-				matchedID, err := regexp.MatchString(regex, strings.ToLower(node.ID))
-				if err != nil {
-					log.Error(err)
-				}
-				matchedName, err := regexp.MatchString(regex, strings.ToLower(node.Name))
-				if err != nil {
-					log.Error(err)
-				}
-				if matchedID || matchedName {
+				if f.match(v, node.ID) || f.match(v, node.Name) {
 					candidates = append(candidates, node)
 				}
 			default:
 				// By default match the node labels.
 				if label, ok := node.Labels[k]; ok {
-					matched, err := regexp.MatchString(regex, strings.ToLower(label))
-					if err != nil {
-						log.Error(err)
-					}
-					if matched {
+					if f.match(v, label) {
 						candidates = append(candidates, node)
 					}
 				}
