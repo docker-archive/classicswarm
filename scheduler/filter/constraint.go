@@ -2,17 +2,19 @@ package filter
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
 )
 
-// LabelFilter selects only nodes that match certain labels.
-type LabelFilter struct {
+// ConstraintFilter selects only nodes that match certain labels.
+type ConstraintFilter struct {
 }
 
-func (f *LabelFilter) extractConstraints(env []string) map[string]string {
+func (f *ConstraintFilter) extractConstraints(env []string) map[string]string {
 	constraints := make(map[string]string)
 	for _, e := range env {
 		if strings.HasPrefix(e, "constraint:") {
@@ -24,21 +26,33 @@ func (f *LabelFilter) extractConstraints(env []string) map[string]string {
 	return constraints
 }
 
-func (f *LabelFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
+// Create the regex for globbing (ex: ub*t* -> ^ub.*t.*$)
+// and match.
+func (f *ConstraintFilter) match(pattern, s string) bool {
+	regex := "^" + strings.Replace(pattern, "*", ".*", -1) + "$"
+	matched, err := regexp.MatchString(regex, strings.ToLower(s))
+	if err != nil {
+		log.Error(err)
+	}
+	return matched
+}
+
+func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
 	constraints := f.extractConstraints(config.Env)
 	for k, v := range constraints {
+		log.Debugf("matching constraint: %s=%s", k, v)
 		candidates := []*cluster.Node{}
 		for _, node := range nodes {
 			switch k {
 			case "node":
 				// "node" label is a special case pinning a container to a specific node.
-				if strings.ToLower(node.ID) == v || strings.ToLower(node.Name) == v {
+				if f.match(v, node.ID) || f.match(v, node.Name) {
 					candidates = append(candidates, node)
 				}
 			default:
 				// By default match the node labels.
 				if label, ok := node.Labels[k]; ok {
-					if strings.Contains(strings.ToLower(label), v) {
+					if f.match(v, label) {
 						candidates = append(candidates, node)
 					}
 				}
