@@ -8,6 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/discovery"
+	"github.com/samalba/dockerclient"
 )
 
 var (
@@ -17,19 +18,86 @@ var (
 
 type Cluster struct {
 	sync.RWMutex
+	store         *Store
 	tlsConfig     *tls.Config
 	eventHandlers []EventHandler
 	nodes         map[string]*Node
+	containers    map[*Node][]*Container
 }
 
-func NewCluster(tlsConfig *tls.Config) *Cluster {
+func NewCluster(store *Store, tlsConfig *tls.Config) *Cluster {
 	return &Cluster{
-		tlsConfig: tlsConfig,
-		nodes:     make(map[string]*Node),
+		store:      store,
+		tlsConfig:  tlsConfig,
+		nodes:      make(map[string]*Node),
+		containers: make(map[*Node][]*Container),
 	}
 }
 
+func (c *Cluster) assignVirtualId(container *Container) {
+	// Try a reverse lookup of the container into the store to find out if we already did the mapping.
+	for _, sc := range c.store.All() {
+		if sc.Id == container.Id {
+			log.Debugf("Restored container %s (%s)", sc.VirtualId, sc.Id)
+			container.VirtualId = sc.VirtualId
+			if err := c.store.Replace(sc.VirtualId, container); err != nil {
+				log.Errorf("Unable to update state for container %s: %v", container.Id, err)
+			}
+			return
+		}
+	}
+
+	// This is an unknown container - generate a VID and store it.
+	vid := generateVirtualId()
+	log.Debugf("Mapping container %s to VID %s", container.Id, vid)
+	container.VirtualId = vid
+	if err := c.store.Add(vid, container); err != nil {
+		log.Errorf("Unable to save state for container %s: %v", container.Id, err)
+	}
+}
+
+func (c *Cluster) refreshContainers(node *Node) {
+	c.Lock()
+	defer c.Unlock()
+
+	c.containers[node] = node.Containers()
+
+	// VID mapping.
+	for _, container := range c.containers[node] {
+		// Assign virtual ID to containers without any.
+		if len(container.VirtualId) == 0 {
+			c.assignVirtualId(container)
+		}
+	}
+}
+
+// Deploy a container into a `specific` node on the cluster.
+func (c *Cluster) DeployContainer(node *Node, config *dockerclient.ContainerConfig, name string) (*Container, error) {
+	container, err := node.Create(config, name, true)
+	if err != nil {
+		return nil, err
+	}
+	c.refreshContainers(node)
+	return container, nil
+}
+
+// Destroys a given `container` from the cluster.
+func (c *Cluster) DestroyContainer(container *Container, force bool) error {
+	if err := container.Node.Destroy(container, force); err != nil {
+		return err
+	}
+	if err := c.store.Remove(container.VirtualId); err != nil {
+		return err
+	}
+	c.refreshContainers(container.Node)
+	return nil
+}
+
 func (c *Cluster) Handle(e *Event) error {
+	// Refresh the container list for `node` as soon as we receive an event.
+	c.refreshContainers(e.Node)
+
+	// Dispatch the event to all the handlers.
 	for _, eventHandler := range c.eventHandlers {
 		if err := eventHandler.Handle(e); err != nil {
 			log.Error(err)
@@ -46,13 +114,15 @@ func (c *Cluster) AddNode(n *Node) error {
 	}
 
 	c.Lock()
-	defer c.Unlock()
-
 	if _, exists := c.nodes[n.ID]; exists {
+		c.Unlock()
 		return ErrNodeAlreadyRegistered
 	}
-
+	// Register the node.
 	c.nodes[n.ID] = n
+	c.Unlock()
+
+	c.refreshContainers(n)
 	return n.Events(c)
 }
 
@@ -76,14 +146,13 @@ func (c *Cluster) UpdateNodes(nodes []*discovery.Node) {
 
 // Containers returns all the containers in the cluster.
 func (c *Cluster) Containers() []*Container {
-	c.Lock()
-	defer c.Unlock()
+	c.RLock()
+	defer c.RUnlock()
 
 	out := []*Container{}
-	for _, n := range c.nodes {
-		containers := n.Containers()
-		for _, container := range containers {
-			out = append(out, container)
+	for _, containers := range c.containers {
+		for _, c := range containers {
+			out = append(out, c)
 		}
 	}
 
@@ -96,15 +165,18 @@ func (c *Cluster) Container(IdOrName string) *Container {
 	if len(IdOrName) == 0 {
 		return nil
 	}
+
+	c.RLock()
+	defer c.RUnlock()
 	for _, container := range c.Containers() {
 		// Match ID prefix.
-		if strings.HasPrefix(container.Id, IdOrName) {
+		if strings.HasPrefix(container.VirtualId, IdOrName) {
 			return container
 		}
 
 		// Match name, /name or engine/name.
 		for _, name := range container.Names {
-			if name == IdOrName || name == "/"+IdOrName || container.node.ID+name == IdOrName || container.node.Name+name == IdOrName {
+			if name == IdOrName || name == "/"+IdOrName || container.Node.ID+name == IdOrName || container.Node.Name+name == IdOrName {
 				return container
 			}
 		}

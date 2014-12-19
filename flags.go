@@ -3,6 +3,11 @@ package main
 import "github.com/codegangsta/cli"
 
 var (
+	flStore = cli.StringFlag{
+		Name:  "store",
+		Value: "/var/lib/docker/swarm/store",
+		Usage: "",
+	}
 	flDiscovery = cli.StringFlag{
 		Name:   "discovery",
 		Value:  "",
