@@ -2,24 +2,26 @@ Docker Swarm Roadmap
 =====================
 
 ####Security
-* [x] TLS
+* [x] TLS authentication
 
 ####Scheduler
-* [ ] storage + Virtual Container ID
-* [ ] rebalancing
-* [ ] affinity constraints + improved constraints expression (==, !=)
-* [ ] global scheduling
+* [ ] Persistent state storage
+* [ ] Virtual Container ID
+* [ ] Rebalancing
+* [ ] Affinity constraints & improved constraints expression (==, !=, regular expressions)
+* [ ] Global scheduling (schedule containers on every node)
 
 ####Multi-tenancy
-* [ ] master election
-* [ ] shared state
+* [ ] Master election
+* [ ] Shared state
 
 ####API Matching
-* [ ] docker attach
+* [ ] Bring Swarm API on par with Docker API as much as possible
+* [ ] Support for `docker attach` (interactive sessions)
 
 ####Extensibility
-* [ ] pluggable scheduler
-* [ ] discovery backends
+* [ ] Pluggable scheduler
+* [ ] Discovery backends
   * [x]    etcd
   * [ ]    zookeeper
   * [x]    hub 
