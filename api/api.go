@@ -220,6 +220,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		w.WriteHeader(resp.StatusCode)
 		io.Copy(w, resp.Body)
 	}
 }
