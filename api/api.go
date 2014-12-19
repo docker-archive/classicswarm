@@ -20,7 +20,7 @@ import (
 
 type context struct {
 	cluster       *cluster.Cluster
-	scheduler     *scheduler.Scheduler
+	scheduler     scheduler.Scheduler
 	eventsHandler *eventsHandler
 	debug         bool
 	version       string

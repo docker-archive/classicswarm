@@ -50,14 +50,14 @@ var (
 		Name:  "tlsverify",
 		Usage: "Use TLS and verify the remote",
 	}
-	flStrategy = cli.StringFlag{
-		Name:  "strategy",
-		Usage: "PlacementStrategy to use [binpacking, random]",
-		Value: "binpacking:0.05",
+	flScheduler = cli.StringFlag{
+		Name:  "scheduler",
+		Usage: "Scheduler to use [swarm, api]",
+		Value: "swarm",
 	}
-	flFilter = cli.StringSliceFlag{
-		Name:  "filter, f",
-		Usage: "Filter to use [health, label, port]",
-		Value: &cli.StringSlice{"health", "label", "port"},
+	flSchedulerOpt = cli.StringSliceFlag{
+		Name:  "scheduler-option",
+		Usage: "Scheduler option. For swarm scheduler, default options: strategy:binpacking:0.05 filters:health,label,port",
+		Value: &cli.StringSlice{"strategy:binpacking:0.05", "filters:health,label,port"},
 	}
 )

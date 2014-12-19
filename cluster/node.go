@@ -345,6 +345,18 @@ func (n *Node) Containers() []*Container {
 	return containers
 }
 
+func (n *Node) Container(id string) *Container {
+	n.refreshContainer(id)
+
+	n.RLock()
+	defer n.RUnlock()
+
+	if container, exists := n.containers[id]; exists {
+		return container
+	}
+	return nil
+}
+
 func (n *Node) String() string {
 	return fmt.Sprintf("node %s addr %s", n.ID, n.Addr)
 }
