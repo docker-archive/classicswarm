@@ -51,6 +51,10 @@ http://<node_ip:2375>
 See [here](https://github.com/docker/swarm/discovery) for more information about
 other discovery services.
 
+### Advanced Scheduling
+
+See [filters](scheduler/filter) and [strategies](scheduler/strategy) to learn more about advanced scheduling.
+
 ### TLS
 
 Swarm supports TLS authentication between the CLI and Swarm but also between Swarm and the Docker nodes.
