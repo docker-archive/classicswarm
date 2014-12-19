@@ -8,6 +8,7 @@ Docker Swarm Roadmap
 * [ ] storage + Virtual Container ID
 * [ ] rebalancing
 * [ ] affinity constraints + improved constraints expression (==, !=)
+* [ ] global scheduling
 
 ####Multi-tenancy
 * [ ] master election
