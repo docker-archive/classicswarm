@@ -4,11 +4,7 @@ import "github.com/samalba/dockerclient"
 
 type Event struct {
 	dockerclient.Event
-
-	NodeName string
-	NodeID   string
-	NodeAddr string
-	NodeIP   string
+	Node *Node
 }
 
 type EventHandler interface {
