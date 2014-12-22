@@ -48,7 +48,7 @@ $ swarm list --discovery token://6856663cdefdec325839a4b7e1de38e8
 http://<node_ip:2375>
 ```
 
-See [here](https://github.com/docker/swarm/discovery) for more information about
+See [here](discovery) for more information about
 other discovery services.
 
 ### Advanced Scheduling
