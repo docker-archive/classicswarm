@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"runtime"
 	"sort"
@@ -136,11 +137,6 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if config.AttachStdout || config.AttachStdin || config.AttachStderr {
-		httpError(w, "Attach is not supported in clustering mode, use -d.", http.StatusInternalServerError)
-		return
-	}
-
 	if container := c.cluster.Container(name); container != nil {
 		httpError(w, fmt.Sprintf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, container.Id, name), http.StatusConflict)
 		return
@@ -225,6 +221,52 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Proxy a hijack request to the right node
+func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
+	container := c.cluster.Container(mux.Vars(r)["name"])
+	if container != nil {
+		addr := container.Node().Addr
+		if parts := strings.SplitN(container.Node().Addr, "://", 2); len(parts) == 2 {
+			addr = parts[1]
+		}
+
+		log.Debugf("[HIJACK PROXY] --> %s", addr)
+
+		d, err := net.Dial("tcp", addr)
+		if err != nil {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		nc, _, err := hj.Hijack()
+		if err != nil {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer nc.Close()
+		defer d.Close()
+
+		err = r.Write(d)
+		if err != nil {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		errc := make(chan error, 2)
+		cp := func(dst io.Writer, src io.Reader) {
+			_, err := io.Copy(dst, src)
+			errc <- err
+		}
+		go cp(d, nc)
+		go cp(nc, d)
+		<-errc
+	}
+}
+
 // Default handler for methods not supported by clustering.
 func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	httpError(w, "Not supported in clustering mode.", http.StatusNotImplemented)
@@ -287,7 +329,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 			"/containers/{name:.*}/stop":    proxyContainer,
 			"/containers/{name:.*}/wait":    proxyContainer,
 			"/containers/{name:.*}/resize":  proxyContainer,
-			"/containers/{name:.*}/attach":  notImplementedHandler,
+			"/containers/{name:.*}/attach":  proxyHijack,
 			"/containers/{name:.*}/copy":    notImplementedHandler,
 			"/containers/{name:.*}/exec":    notImplementedHandler,
 			"/exec/{name:.*}/start":         notImplementedHandler,
