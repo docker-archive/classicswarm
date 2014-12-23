@@ -70,7 +70,7 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 // GET /containers/json
 func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -111,12 +111,12 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	if container != nil {
 		resp, err := http.Get(container.Node().Addr + "/containers/" + container.Id + "/json")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Write(bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node().IP)), -1))
@@ -132,23 +132,23 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		httpError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if config.AttachStdout || config.AttachStdin || config.AttachStderr {
-		http.Error(w, "Attach is not supported in clustering mode, use -d.", http.StatusInternalServerError)
+		httpError(w, "Attach is not supported in clustering mode, use -d.", http.StatusInternalServerError)
 		return
 	}
 
 	if container := c.cluster.Container(name); container != nil {
-		http.Error(w, fmt.Sprintf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, container.Id, name), http.StatusConflict)
+		httpError(w, fmt.Sprintf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, container.Id, name), http.StatusConflict)
 		return
 	}
 
 	container, err := c.scheduler.CreateContainer(&config, name)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
@@ -158,7 +158,7 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 // DELETE /containers/{name:.*}
 func deleteContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -166,11 +166,11 @@ func deleteContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	force := r.Form.Get("force") == "1"
 	container := c.cluster.Container(name)
 	if container == nil {
-		http.Error(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
+		httpError(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
 		return
 	}
 	if err := c.scheduler.RemoveContainer(container, force); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -217,7 +217,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		log.Debugf("[PROXY] --> %s %s", r.Method, r.URL)
 		resp, err := client.Do(r)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.WriteHeader(resp.StatusCode)
@@ -227,7 +227,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Default handler for methods not supported by clustering.
 func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Not supported in clustering mode.", http.StatusNotImplemented)
+	httpError(w, "Not supported in clustering mode.", http.StatusNotImplemented)
 }
 
 func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
@@ -238,6 +238,11 @@ func writeCorsHeaders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
 	w.Header().Add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
+}
+
+func httpError(w http.ResponseWriter, err string, status int) {
+	log.Error(err)
+	http.Error(w, err, status)
 }
 
 func createRouter(c *context, enableCors bool) (*mux.Router, error) {
