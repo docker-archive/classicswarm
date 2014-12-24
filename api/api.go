@@ -119,7 +119,14 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Write(bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node().IP)), -1))
+		// insert node name
+		data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"NodeName\":%q,\"Name\":\"/", container.Node().Name)), -1)
+		// insert node ID
+		data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"NodeID\":%q,\"Name\":\"/", container.Node().ID)), -1)
+		// insert node IP
+		data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"NodeIP\":%q,\"Name\":\"/", container.Node().IP)), -1)
+		data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node().IP)), -1)
+		w.Write(data)
 	}
 }
 
