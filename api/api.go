@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"runtime"
 	"sort"
@@ -192,84 +190,27 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to the right node
 func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
-	container := c.cluster.Container(mux.Vars(r)["name"])
-	if container != nil {
+	container, err := getContainerFromVars(c, mux.Vars(r))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
-		// Use a new client for each request
-		client := &http.Client{}
-
-		// RequestURI may not be sent to client
-		r.RequestURI = ""
-
-		parts := strings.SplitN(container.Node().Addr, "://", 2)
-		if len(parts) == 2 {
-			r.URL.Scheme = parts[0]
-			r.URL.Host = parts[1]
-		} else {
-			r.URL.Scheme = "http"
-			r.URL.Host = parts[0]
-		}
-
-		log.Debugf("[PROXY] --> %s %s", r.Method, r.URL)
-		resp, err := client.Do(r)
-		if err != nil {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(resp.StatusCode)
-		io.Copy(w, resp.Body)
+	if err := proxy(container, w, r); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 // Proxy a hijack request to the right node
 func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
-	container := c.cluster.Container(mux.Vars(r)["name"])
-	if container != nil {
-		addr := container.Node().Addr
-		if parts := strings.SplitN(container.Node().Addr, "://", 2); len(parts) == 2 {
-			addr = parts[1]
-		}
+	container, err := getContainerFromVars(c, mux.Vars(r))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
-		log.Debugf("[HIJACK PROXY] --> %s", addr)
-
-		d, err := net.Dial("tcp", addr)
-		if err != nil {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		hj, ok := w.(http.Hijacker)
-		if !ok {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		nc, _, err := hj.Hijack()
-		if err != nil {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer nc.Close()
-		defer d.Close()
-
-		err = r.Write(d)
-		if err != nil {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		errc := make(chan error, 2)
-		cp := func(dst io.Writer, src io.Reader) {
-			_, err := io.Copy(dst, src)
-			if conn, ok := dst.(interface {
-				CloseWrite() error
-			}); ok {
-				conn.CloseWrite()
-			}
-			errc <- err
-		}
-		go cp(d, nc)
-		go cp(nc, d)
-		<-errc
-		<-errc
+	if err := hijack(container, w, r); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
