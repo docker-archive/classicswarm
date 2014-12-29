@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -19,7 +20,13 @@ func join(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	if err := d.Register(c.String("addr")); err != nil {
+	addr := c.String("addr")
+	addrParts := strings.SplitN(addr, ":", 2)
+	if len(addrParts) != 2 {
+		log.Fatal("--addr should be of the form ip:port")
+	}
+
+	if err := d.Register(addr); err != nil {
 		log.Fatal(err)
 	}
 

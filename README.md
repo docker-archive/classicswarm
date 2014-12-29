@@ -39,7 +39,7 @@ $ swarm create
 $ swarm join --discovery token://<cluster_id> --addr=<node_ip:2375>
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery token://<cluster_id> -H=<swarm_ip:swarm_port>
+$ swarm manage --discovery token://<cluster_id> -H <swarm_ip:swarm_port>
 
 # use the regular docker cli
 $ docker -H <swarm_ip:swarm_port> info
@@ -50,7 +50,7 @@ $ docker -H <swarm_ip:swarm_port> logs ...
 
 # list nodes in your cluster
 $ swarm list --discovery token://<cluster_id>
-http://<node_ip:2375>
+<node_ip:2375>
 ```
 
 See [here](discovery) for more information about
