@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -14,9 +13,6 @@ type Node struct {
 }
 
 func NewNode(url string) *Node {
-	if !strings.Contains(url, "://") {
-		url = "http://" + url
-	}
 	return &Node{url: url}
 }
 
