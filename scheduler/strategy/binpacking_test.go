@@ -47,7 +47,7 @@ func TestPlaceContainerMemory(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 
-	assert.Equal(t, node2.ReservedMemory(), 2*1024*1024*1024)
+	assert.Equal(t, node2.ReservedMemory(), int64(2*1024*1024*1024))
 
 	// check that both containers ended on the same node
 	assert.Equal(t, node1.ID, node2.ID, "")
