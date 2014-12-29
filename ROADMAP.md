@@ -24,5 +24,6 @@ Docker Swarm Roadmap
 * [ ] Discovery backends
   * [x]    etcd
   * [ ]    zookeeper
+  * [ ]    consul
   * [x]    hub 
   * [x]    file
