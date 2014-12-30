@@ -11,13 +11,14 @@ import (
 	_ "github.com/docker/swarm/discovery/etcd"
 	_ "github.com/docker/swarm/discovery/file"
 	"github.com/docker/swarm/discovery/token"
+	"github.com/docker/swarm/swarmversion"
 )
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "swarm"
 	app.Usage = "docker clustering"
-	app.Version = "0.0.1"
+	app.Version = swarmversion.VERSION + ", gitcommit: " + swarmversion.GITCOMMIT
 	app.Author = ""
 	app.Email = ""
 

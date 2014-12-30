@@ -14,6 +14,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/swarmversion"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
 )
@@ -58,9 +59,9 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 		GoVersion string
 		GitCommit string
 	}{
-		Version:   "swarm/" + c.version,
+		Version:   "swarm/" + swarmversion.VERSION,
 		GoVersion: runtime.Version(),
-		GitCommit: "swarm",
+		GitCommit: swarmversion.GITCOMMIT,
 	}
 
 	json.NewEncoder(w).Encode(version)
