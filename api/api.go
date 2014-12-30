@@ -202,6 +202,22 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
 }
 
+// Proxy a request to the right node and do a force refresh
+func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Request) {
+	container, err := getContainerFromVars(c, mux.Vars(r))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err := proxy(container, w, r); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	log.Debugf("[REFRESH CONTAINER] --> %s", container.Id)
+	container.Node().ForceRefreshContainer(container.Container)
+}
+
 // Proxy a request to the right node
 func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	container, err := getContainerFromVars(c, mux.Vars(r))
@@ -271,7 +287,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 			"/containers/{name:.*}/top":       proxyContainer,
 			"/containers/{name:.*}/logs":      proxyContainer,
 			"/containers/{name:.*}/attach/ws": notImplementedHandler,
-			"/exec/{id:.*}/json":              proxyContainer,
+			"/exec/{execid:.*}/json":          proxyContainer,
 		},
 		"POST": {
 			"/auth":                         notImplementedHandler,
@@ -292,9 +308,9 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 			"/containers/{name:.*}/resize":  proxyContainer,
 			"/containers/{name:.*}/attach":  proxyHijack,
 			"/containers/{name:.*}/copy":    notImplementedHandler,
-			"/containers/{name:.*}/exec":    notImplementedHandler,
-			"/exec/{name:.*}/start":         notImplementedHandler,
-			"/exec/{name:.*}/resize":        proxyContainer,
+			"/containers/{name:.*}/exec":    proxyContainerAndForceRefresh,
+			"/exec/{execid:.*}/start":       proxyHijack,
+			"/exec/{execid:.*}/resize":      proxyContainer,
 		},
 		"DELETE": {
 			"/containers/{name:.*}": deleteContainer,

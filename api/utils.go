@@ -20,6 +20,16 @@ func getContainerFromVars(c *context, vars map[string]string) (*cluster.Containe
 		return nil, fmt.Errorf("Container %s not found", name)
 
 	}
+	if ID, ok := vars["execid"]; ok {
+		for _, container := range c.cluster.Containers() {
+			for _, execID := range container.Info.ExecIDs {
+				if ID == execID {
+					return container, nil
+				}
+			}
+		}
+		return nil, fmt.Errorf("Exec %s not found", ID)
+	}
 	return nil, errors.New("Not found")
 }
 
