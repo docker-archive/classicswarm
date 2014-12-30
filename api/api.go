@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"runtime"
@@ -150,11 +149,6 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if config.AttachStdout || config.AttachStdin || config.AttachStderr {
-		httpError(w, "Attach is not supported in clustering mode, use -d.", http.StatusInternalServerError)
-		return
-	}
-
 	if container := c.cluster.Container(name); container != nil {
 		httpError(w, fmt.Sprintf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, container.Id, name), http.StatusConflict)
 		return
@@ -210,32 +204,27 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to the right node
 func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
-	container := c.cluster.Container(mux.Vars(r)["name"])
-	if container != nil {
+	container, err := getContainerFromVars(c, mux.Vars(r))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
-		// Use a new client for each request
-		client := &http.Client{}
+	if err := proxy(container, w, r); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+}
 
-		// RequestURI may not be sent to client
-		r.RequestURI = ""
+// Proxy a hijack request to the right node
+func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
+	container, err := getContainerFromVars(c, mux.Vars(r))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
-		parts := strings.SplitN(container.Node().Addr, "://", 2)
-		if len(parts) == 2 {
-			r.URL.Scheme = parts[0]
-			r.URL.Host = parts[1]
-		} else {
-			r.URL.Scheme = "http"
-			r.URL.Host = parts[0]
-		}
-
-		log.Debugf("[PROXY] --> %s %s", r.Method, r.URL)
-		resp, err := client.Do(r)
-		if err != nil {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(resp.StatusCode)
-		io.Copy(w, resp.Body)
+	if err := hijack(container, w, r); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -301,7 +290,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 			"/containers/{name:.*}/stop":    proxyContainer,
 			"/containers/{name:.*}/wait":    proxyContainer,
 			"/containers/{name:.*}/resize":  proxyContainer,
-			"/containers/{name:.*}/attach":  notImplementedHandler,
+			"/containers/{name:.*}/attach":  proxyHijack,
 			"/containers/{name:.*}/copy":    notImplementedHandler,
 			"/containers/{name:.*}/exec":    notImplementedHandler,
 			"/exec/{name:.*}/start":         notImplementedHandler,
