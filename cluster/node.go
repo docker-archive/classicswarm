@@ -177,6 +177,27 @@ func (n *Node) refreshContainer(ID string) error {
 	return err
 }
 
+func (n *Node) ForceRefreshContainer(c dockerclient.Container) error {
+	container := &Container{}
+	container.Container = c
+	container.node = n
+
+	info, err := n.client.InspectContainer(c.Id)
+	if err != nil {
+		return err
+	}
+	container.Info = *info
+
+	// real CpuShares -> nb of CPUs
+	container.Info.Config.CpuShares = container.Info.Config.CpuShares / 100.0 * n.Cpus
+
+	n.Lock()
+	n.containers[container.Id] = container
+	n.Unlock()
+
+	return nil
+}
+
 func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*Container) (map[string]*Container, error) {
 	if current, exists := n.containers[c.Id]; exists {
 		// The container exists. Update its state.
