@@ -16,5 +16,5 @@ install:
 
 script:
  - bash "$DOCKER_PATH/project/make/validate-dco"
- - bash "$DOCKER_PATH/project/make/validate-gofmt"
+ - if [[ "$TRAVIS_GO_VERSION" == 1.3* ]]; then bash "$DOCKER_PATH/project/make/validate-gofmt"; fi
  - go test -v ./...
