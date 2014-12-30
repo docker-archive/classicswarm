@@ -25,8 +25,6 @@ POST "/images/load"
 POST "/images/{name:.*}/push"
 POST "/images/{name:.*}/tag"
 POST "/containers/{name:.*}/copy"
-POST "/containers/{name:.*}/exec"
-POST "/exec/{name:.*}/start"
 
 DELETE "/images/{name:.*}"
 ```
