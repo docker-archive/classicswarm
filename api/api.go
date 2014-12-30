@@ -60,7 +60,7 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 	}{
 		Version:   "swarm/" + c.version,
 		GoVersion: runtime.Version(),
-		GitCommit: "swarm",
+		GitCommit: "n/a",
 	}
 
 	json.NewEncoder(w).Encode(version)
@@ -86,11 +86,12 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if !container.Node().IsHealthy() {
 			tmp.Status = "Pending"
 		}
-		// TODO remove the Node ID in the name when we have a good solution
+		// TODO remove the Node Name in the name when we have a good solution
 		tmp.Names = make([]string, len(container.Names))
 		for i, name := range container.Names {
 			tmp.Names[i] = "/" + container.Node().Name + name
 		}
+		// insert node IP
 		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
 		for i, port := range container.Ports {
 			tmp.Ports[i] = port
@@ -119,7 +120,20 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		w.Write(bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node().IP)), -1))
+
+		n, err := json.Marshal(container.Node())
+		if err != nil {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// insert Node field
+		data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"Node\":%s,\"Name\":\"/", n)), -1)
+
+		// insert node IP
+		data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node().IP)), -1)
+		w.Write(data)
+
 	}
 }
 
