@@ -87,7 +87,7 @@ http://<node_ip:2375>
 $ swarm join --discovery consul://<consul_addr>/<path> --addr=<node_ip:2375>
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery consul://<consul_addr>/<path> --addr=<swarm_ip:swarm_port>
+$ swarm manage --discovery consul://<consul_addr>/<path> -H=<swarm_ip:swarm_port>
 
 # use the regular docker cli
 $ docker -H <swarm_ip:swarm_port> info
