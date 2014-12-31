@@ -2,19 +2,67 @@ language: go
 
 go:
   - 1.3
-  - 1.4
+#  - 1.4
+# see https://github.com/moovweb/gvm/pull/116 for why Go 1.4 is currently disabled
+
+# https://github.com/docker/libcontainer/blob/e9f44b52de03138d9273eadd5a87a0cea11b4f5d/.travis.yml
+
+# this section defines the majority of our "build matrix"
+# see http://docs.travis-ci.com/user/build-configuration/#The-Build-Matrix
+env:
+  - TRAVIS_GLOBAL_WTF=1 # since we don't want to re-run dco/gofmt checks for every single GOOS/GOARCH combination, we artificially create a separate build matrix cell here where those checks will be run (see the TRAVIS_GLOBAL_WTF checks in the script commands below)
+  - _GOOS=linux _GOARCH=amd64
+  - _GOOS=linux _GOARCH=386
+  - _GOOS=linux _GOARCH=arm
+  - _GOOS=darwin _GOARCH=amd64
+  - _GOOS=darwin _GOARCH=386
+  - _GOOS=windows _GOARCH=amd64
+  - _GOOS=windows _GOARCH=386
 
 # let us have speedy Docker-based Travis workers
 sudo: false
 
 install:
-  - export DOCKER_PATH="${GOPATH%%:*}/src/github.com/docker/docker"
-  - mkdir -pv "$DOCKER_PATH/project/make"
-  - ( cd "$DOCKER_PATH/project/make" && wget -c 'https://raw.githubusercontent.com/docker/docker/master/project/make/'{.validate,validate-dco,validate-gofmt} )
-  - sed -i 's!docker/docker!docker/swarm!' "$DOCKER_PATH/project/make/.validate"
-  - go get -t -v ./...
+  # setup our current repo as "github.com/docker/swarm" in the GOPATH
+  - mkdir -pv "${GOPATH%%:*}/src/github.com/docker"
+    && [ -d "${GOPATH%%:*}/src/github.com/docker/swarm" ]
+    || ln -sv "$(pwd -P)" "${GOPATH%%:*}/src/github.com/docker/swarm"
+  # grab the files from docker/docker that do DCO/gofmt checking (and make the minor adjustments necessary to make them do docker/swarm)
+  - if [ "$TRAVIS_GLOBAL_WTF" ]; then
+      export DOCKER_PATH="${GOPATH%%:*}/src/github.com/docker/docker";
+      mkdir -pv "$DOCKER_PATH/project/make";
+      ( cd "$DOCKER_PATH/project/make" && wget -c 'https://raw.githubusercontent.com/docker/docker/master/project/make/'{.validate,validate-dco,validate-gofmt} );
+      sed -i 's!docker/docker!docker/swarm!' "$DOCKER_PATH/project/make/.validate";
+    fi
+  # cross-compile the Go toolchain for the GOOS/GOARCH combo we're testing
+  - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
+      gvm cross "$_GOOS" "$_GOARCH";
+      export GOOS="$_GOOS" GOARCH="$_GOARCH";
+    fi
+  # snag any external Go dependencies
+  - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
+      go get -t -v ./...;
+    fi
+  # add some debugging output that's super helpful when adapting the Travis scripts (so that which environment variables are available in the exact situation being debugged can be seen easily, with real-life examples)
+  - env | sort
+  - go env
 
 script:
- - bash "$DOCKER_PATH/project/make/validate-dco"
- - if [[ "$TRAVIS_GO_VERSION" == 1.3* ]]; then bash "$DOCKER_PATH/project/make/validate-gofmt"; fi
- - go test -v ./...
+ - if [ "$TRAVIS_GLOBAL_WTF" ]; then
+     bash "$DOCKER_PATH/project/make/validate-dco";
+   fi
+ # check gofmt, but only on Go 1.3
+ - if [[ "$TRAVIS_GLOBAL_WTF" && "$TRAVIS_GO_VERSION" == go1.3* ]]; then
+     bash "$DOCKER_PATH/project/make/validate-gofmt";
+   fi
+ # when we're on the native GOHOSTOS/GOHOSTARCH, the test suite will run as-is, but for all other platforms, we only want to test compilation
+ - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
+     case "$(go env GOOS)/$(go env GOARCH)" in
+       $(go env GOHOSTOS)/$(go env GOHOSTARCH))
+         go test -v ./...;
+         ;;
+       *)
+         go build -v;
+         ;;
+     esac
+   fi
