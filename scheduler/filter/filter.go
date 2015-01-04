@@ -23,6 +23,8 @@ func init() {
 		"health":     &HealthFilter{},
 		"constraint": &ConstraintFilter{},
 		"port":       &PortFilter{},
+		"volume":     &VolumeFilter{},
+		"net":        &NetFilter{},
 	}
 }
 

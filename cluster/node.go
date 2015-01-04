@@ -396,3 +396,14 @@ func (n *Node) CleanupContainers() {
 	n.containers = make(map[string]*Container)
 	n.Unlock()
 }
+
+// Inject a container into the internal state.
+func (n *Node) InspectContainer(id string) (*dockerclient.ContainerInfo, error) {
+
+	return n.client.InspectContainer(id)
+}
+
+// Inject a container into the internal state.
+func (n *Node) StartContainer(id string, config *dockerclient.HostConfig) error {
+	return n.client.StartContainer(id, config)
+}
