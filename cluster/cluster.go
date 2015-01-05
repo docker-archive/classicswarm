@@ -48,7 +48,11 @@ func (c *Cluster) AddNode(n *Node) error {
 	c.Lock()
 	defer c.Unlock()
 
-	if _, exists := c.nodes[n.ID]; exists {
+	if old, exists := c.nodes[n.ID]; exists {
+		if old.IP != n.IP {
+			log.Errorf("ID duplicated: %s", n.ID)
+			log.Errorf("IP [%s] and [%s] share the same ID", old.IP, n.IP)
+		}
 		return ErrNodeAlreadyRegistered
 	}
 
