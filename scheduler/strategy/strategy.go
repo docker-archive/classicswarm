@@ -39,7 +39,7 @@ func New(nameAndOpts string) (PlacementStrategy, error) {
 	}
 
 	if strategy, exists := strategies[name]; exists {
-		log.Debugf("Initialising %q strategy with %q", name, opts)
+		log.Debugf("Initializing %q strategy with %q", name, opts)
 		err := strategy.Initialize(opts)
 		return strategy, err
 	}
