@@ -60,7 +60,7 @@ func New(rawurl string, heartbeat int) (DiscoveryService, error) {
 	}
 
 	if discovery, exists := discoveries[url.Scheme]; exists {
-		log.Debugf("Initialising %q discovery service with %q", url.Scheme, url.Host+url.Path)
+		log.Debugf("Initializing %q discovery service with %q", url.Scheme, url.Host+url.Path)
 		err := discovery.Initialize(url.Host+url.Path, heartbeat)
 		return discovery, err
 	}

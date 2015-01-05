@@ -31,7 +31,7 @@ func New(names []string) ([]Filter, error) {
 
 	for _, name := range names {
 		if filter, exists := filters[name]; exists {
-			log.Debugf("Initialising %q filter", name)
+			log.Debugf("Initializing %q filter", name)
 			selectedFilters = append(selectedFilters, filter)
 		} else {
 			return nil, ErrNotSupported
