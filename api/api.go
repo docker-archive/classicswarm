@@ -459,7 +459,7 @@ func processLinks(c *context, containerNode *cluster.Node, config *dockerclient.
 								ambassadorConfig.Image = getAmbassadorImage()
 								ipAddr := targetInfo.NetworkSettings.IpAddress
 								//Set the port as the environment variable
-								for p, _ := range targetInfo.NetworkSettings.Ports {
+								for p := range targetInfo.NetworkSettings.Ports {
 									portInfo := strings.Split(p, "/")
 									port, protocol := portInfo[0], portInfo[1]
 									env = append(env, fmt.Sprintf("%s_PORT_%s_%s=%s://%s:%s", strings.ToUpper(alias), port, strings.ToUpper(protocol), protocol, ipAddr, port))
