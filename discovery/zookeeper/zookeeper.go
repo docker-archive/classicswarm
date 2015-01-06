@@ -76,5 +76,9 @@ func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 
 func (s *ZkDiscoveryService) Register(addr string) error {
 	_, err := s.conn.Create(path.Join(s.path, "/"+addr), []byte(addr), 0, zk.WorldACL(zk.PermAll))
-	return err
+	if err != zk.ErrNodeExists {
+		return err
+	} else {
+		return nil
+	}
 }
