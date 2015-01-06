@@ -17,6 +17,8 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
+const APIVERSION = "1.16"
+
 type context struct {
 	cluster       *cluster.Cluster
 	scheduler     *scheduler.Scheduler
@@ -53,13 +55,19 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 // GET /version
 func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 	version := struct {
-		Version   string
-		GoVersion string
-		GitCommit string
+		Version    string
+		ApiVersion string
+		GoVersion  string
+		GitCommit  string
+		Os         string
+		Arch       string
 	}{
-		Version:   "swarm/" + c.version,
-		GoVersion: runtime.Version(),
-		GitCommit: "n/a",
+		Version:    "swarm/" + c.version,
+		ApiVersion: APIVERSION,
+		GoVersion:  runtime.Version(),
+		GitCommit:  "n/a",
+		Os:         runtime.GOOS,
+		Arch:       runtime.GOARCH,
 	}
 
 	json.NewEncoder(w).Encode(version)
