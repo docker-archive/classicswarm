@@ -65,7 +65,7 @@ func proxy(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseW
 	return nil
 }
 
-func hijack(container *cluster.Container, w http.ResponseWriter, r *http.Request) error {
+func hijack(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseWriter, r *http.Request) error {
 	addr := container.Node().Addr
 	if parts := strings.SplitN(container.Node().Addr, "://", 2); len(parts) == 2 {
 		addr = parts[1]
@@ -73,7 +73,16 @@ func hijack(container *cluster.Container, w http.ResponseWriter, r *http.Request
 
 	log.Debugf("[HIJACK PROXY] --> %s", addr)
 
-	d, err := net.Dial("tcp", addr)
+	var (
+		d   net.Conn
+		err error
+	)
+
+	if tlsConfig != nil {
+		d, err = tls.Dial("tcp", addr, tlsConfig)
+	} else {
+		d, err = net.Dial("tcp", addr)
+	}
 	if err != nil {
 		return err
 	}

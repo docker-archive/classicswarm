@@ -220,7 +220,7 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := proxy(container, w, r); err != nil {
+	if err := proxy(c.tlsConfig, container, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -249,7 +249,7 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := hijack(container, w, r); err != nil {
+	if err := hijack(c.tlsConfig, container, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
