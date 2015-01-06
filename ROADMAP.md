@@ -23,7 +23,7 @@ Docker Swarm Roadmap
 * [ ] Pluggable scheduler
 * [ ] Discovery backends
   * [x]    etcd
-  * [ ]    zookeeper
+  * [x]    zookeeper
   * [x]    consul
   * [x]    hub 
   * [x]    file
