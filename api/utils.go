@@ -1,6 +1,7 @@
 package api
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -33,9 +34,13 @@ func getContainerFromVars(c *context, vars map[string]string) (*cluster.Containe
 	return nil, errors.New("Not found")
 }
 
-func proxy(container *cluster.Container, w http.ResponseWriter, r *http.Request) error {
+func proxy(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseWriter, r *http.Request) error {
 	// Use a new client for each request
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+	}
 
 	// RequestURI may not be sent to client
 	r.RequestURI = ""
