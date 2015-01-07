@@ -177,6 +177,34 @@ func (n *Node) refreshContainer(ID string) error {
 	return err
 }
 
+func (n *Node) ForceRefreshContainer(c dockerclient.Container) error {
+	return n.inspectContainer(c, n.containers, true)
+}
+
+func (n *Node) inspectContainer(c dockerclient.Container, containers map[string]*Container, lock bool) error {
+
+	container := &Container{}
+	container.Container = c
+	container.node = n
+
+	info, err := n.client.InspectContainer(c.Id)
+	if err != nil {
+		return err
+	}
+	container.Info = *info
+
+	// real CpuShares -> nb of CPUs
+	container.Info.Config.CpuShares = container.Info.Config.CpuShares / 100.0 * n.Cpus
+
+	if lock {
+		n.Lock()
+		defer n.Unlock()
+	}
+	containers[container.Id] = container
+
+	return nil
+}
+
 func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*Container) (map[string]*Container, error) {
 	if current, exists := n.containers[c.Id]; exists {
 		// The container exists. Update its state.
@@ -184,20 +212,9 @@ func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*
 		containers[current.Id] = current
 	} else {
 		// This is a brand new container.
-		container := &Container{}
-		container.Container = c
-		container.node = n
-
-		info, err := n.client.InspectContainer(c.Id)
-		if err != nil {
-			return containers, err
+		if err := n.inspectContainer(c, containers, false); err != nil {
+			return nil, err
 		}
-		container.Info = *info
-
-		// real CpuShares -> nb of CPUs
-		container.Info.Config.CpuShares = container.Info.Config.CpuShares / 100.0 * n.Cpus
-
-		containers[container.Id] = container
 	}
 	return containers, nil
 }

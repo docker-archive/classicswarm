@@ -17,7 +17,7 @@ Docker Swarm Roadmap
 
 ####API Matching
 * [ ] Bring Swarm API on par with Docker API as much as possible
-* [ ] Support for `docker attach` (interactive sessions)
+* [x] Support for `docker attach` (interactive sessions)
 
 ####Extensibility
 * [ ] Pluggable scheduler
