@@ -65,13 +65,24 @@ func (s *ZkDiscoveryService) Fetch() ([]*discovery.Node, error) {
 }
 
 func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
-	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
-		log.Debugf("[ZK] Watch triggered")
-		nodes, err := s.Fetch()
-		if err == nil {
-			callback(nodes)
-		}
+
+	_, _, eventChan, err := s.conn.ChildrenW(s.path)
+	if err != nil {
+		log.Debugf("[ZK] Watch aborted")
+		return
 	}
+
+	for e := range eventChan {
+		if e.Type == zk.EventNodeChildrenChanged {
+			log.Debugf("[ZK] Watch triggered")
+			nodes, err := s.Fetch()
+			if err == nil {
+				callback(nodes)
+			}
+		}
+
+	}
+
 }
 
 func (s *ZkDiscoveryService) Register(addr string) error {
