@@ -281,7 +281,7 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 
 	if id, err = client.CreateContainer(&newConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.
-		if err != dockerclient.ErrNotFound {
+		if err != dockerclient.ErrNotFound || !pullImage {
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
