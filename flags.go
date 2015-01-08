@@ -6,7 +6,6 @@ var (
 	flDiscovery = cli.StringFlag{
 		Name:   "discovery",
 		Value:  "",
-		Usage:  "DiscoveryService to use [token://<token>, etcd://<ip1>,<ip2>/<path>, file://path/to/file, consul://<addr>/<path>]",
 		EnvVar: "SWARM_DISCOVERY",
 	}
 	flAddr = cli.StringFlag{
@@ -57,7 +56,7 @@ var (
 	}
 	flFilter = cli.StringSliceFlag{
 		Name:  "filter, f",
-		Usage: "Filter to use [constraint, health, port]",
-		Value: &cli.StringSlice{"constraint", "health", "port"},
+		Usage: "Filter to use [constraint, health, port, volume, net]",
+		Value: &cli.StringSlice{"constraint", "health", "port", "volume", "net"},
 	}
 )

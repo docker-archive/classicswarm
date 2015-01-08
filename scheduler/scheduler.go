@@ -26,7 +26,10 @@ func NewScheduler(cluster *cluster.Cluster, strategy strategy.PlacementStrategy,
 }
 
 // Find a nice home for our container.
-func (s *Scheduler) selectNodeForContainer(config *dockerclient.ContainerConfig) (*cluster.Node, error) {
+func (s *Scheduler) SelectNodeForContainer(config *dockerclient.ContainerConfig) (*cluster.Node, error) {
+	s.Lock()
+	defer s.Unlock()
+
 	candidates := s.cluster.Nodes()
 
 	accepted, err := filter.ApplyFilters(s.filters, config, candidates)
@@ -45,10 +48,7 @@ func (s *Scheduler) CreateContainer(config *dockerclient.ContainerConfig, name s
 	}
 	*/
 
-	s.Lock()
-	defer s.Unlock()
-
-	node, err := s.selectNodeForContainer(config)
+	node, err := s.SelectNodeForContainer(config)
 	if err != nil {
 		return nil, err
 	}
