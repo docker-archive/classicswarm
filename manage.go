@@ -78,7 +78,7 @@ func manage(c *cli.Context) {
 		log.Fatal("--discovery required to manage a cluster")
 	}
 
-	s, err := strategy.New(c.String("strategy"))
+	s, err := strategy.New(c.String("strategy"), int64(c.Int("overcommit")))
 	if err != nil {
 		log.Fatal(err)
 	}
