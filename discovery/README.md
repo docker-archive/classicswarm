@@ -101,6 +101,29 @@ $ swarm list --discovery consul://<consul_addr>/<path>
 http://<node_ip:2375>
 ```
 
+###### Using zookeeper
+
+```bash
+# on each of your nodes, start the swarm agent
+#  <node_ip> doesn't have to be public (eg. 192.168.0.X),
+#  as long as the other nodes can reach it, it is fine.
+$ swarm join --discovery zk://<zookeeper_addr1>,<zookeeper_addr2>/<path> --addr=<node_ip:2375>
+
+# start the manager on any machine or your laptop
+$ swarm manage --discovery zk://<zookeeper_addr1>,<zookeeper_addr2>/<path> -H=<swarm_ip:swarm_port>
+
+# use the regular docker cli
+$ docker -H <swarm_ip:swarm_port> info
+$ docker -H <swarm_ip:swarm_port> run ...
+$ docker -H <swarm_ip:swarm_port> ps
+$ docker -H <swarm_ip:swarm_port> logs ...
+...
+
+# list nodes in your cluster
+$ swarm list --discovery zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
+http://<node_ip:2375>
+```
+
 ## Contributing
 
 Contributing a new discovery backend is easy,
