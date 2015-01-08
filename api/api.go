@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -25,6 +26,7 @@ type context struct {
 	eventsHandler *eventsHandler
 	debug         bool
 	version       string
+	tlsConfig     *tls.Config
 }
 
 type handler func(c *context, w http.ResponseWriter, r *http.Request)
@@ -218,7 +220,7 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := proxy(container, w, r); err != nil {
+	if err := proxy(c.tlsConfig, container, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -234,7 +236,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := proxy(container, w, r); err != nil {
+	if err := proxy(c.tlsConfig, container, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -247,7 +249,7 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := hijack(container, w, r); err != nil {
+	if err := hijack(c.tlsConfig, container, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
