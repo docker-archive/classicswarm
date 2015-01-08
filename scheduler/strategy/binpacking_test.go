@@ -114,7 +114,7 @@ func TestPlaceContainerHuge(t *testing.T) {
 }
 
 func TestPlaceContainerOvercommit(t *testing.T) {
-	s, err := New("binpacking:0.05")
+	s, err := New("binpacking", 105)
 	assert.NoError(t, err)
 
 	nodes := []*cluster.Node{createNode("node-1", 0, 1)}

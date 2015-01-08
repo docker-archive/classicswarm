@@ -87,7 +87,7 @@ func main() {
 			Flags: []cli.Flag{
 				flDiscovery,
 				flStrategy, flFilter,
-				flHosts, flHeartBeat,
+				flHosts, flHeartBeat, flOverCommit,
 				flTls, flTlsCaCert, flTlsCert, flTlsKey, flTlsVerify,
 				flEnableCors},
 			Action: manage,

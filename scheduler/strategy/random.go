@@ -13,7 +13,7 @@ import (
 type RandomPlacementStrategy struct {
 }
 
-func (p *RandomPlacementStrategy) Initialize(_ string) error {
+func (p *RandomPlacementStrategy) Initialize(_ int64) error {
 	rand.Seed(time.Now().UTC().UnixNano())
 	return nil
 }
