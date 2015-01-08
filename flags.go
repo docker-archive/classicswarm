@@ -6,7 +6,7 @@ var (
 	flDiscovery = cli.StringFlag{
 		Name:   "discovery",
 		Value:  "",
-		Usage:  "DiscoveryService to use [token://<token>, etcd://<ip1>,<ip2>/<path>, file://path/to/file, consul://<addr>/<path>]",
+		Usage:  "DiscoveryService to use [token://<token>, etcd://<ip1>,<ip2>/<path>, file://path/to/file, consul://<addr>/<path>, zk://<ip1>,<ip2>/<path>]",
 		EnvVar: "SWARM_DISCOVERY",
 	}
 	flAddr = cli.StringFlag{
