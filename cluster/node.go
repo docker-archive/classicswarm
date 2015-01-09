@@ -243,6 +243,8 @@ func (n *Node) refreshLoop() {
 		} else {
 			if !n.healthy {
 				log.Infof("[%s/%s] Node came back to life. Hooray!", n.ID, n.Name)
+				n.client.StopAllMonitorEvents()
+				n.client.StartMonitorEvents(n.handler)
 			}
 			n.healthy = true
 		}
