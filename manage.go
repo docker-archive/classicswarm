@@ -74,29 +74,9 @@ func manage(c *cli.Context) {
 	cluster := cluster.NewCluster(tlsConfig)
 	cluster.Events(&logHandler{})
 
-	go func() {
-		if c.String("discovery") != "" {
-			d, err := discovery.New(c.String("discovery"), c.Int("heartbeat"))
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			nodes, err := d.Fetch()
-			if err != nil {
-				log.Fatal(err)
-
-			}
-			cluster.UpdateNodes(nodes)
-
-			go d.Watch(cluster.UpdateNodes)
-		} else {
-			var nodes []*discovery.Node
-			for _, arg := range c.Args() {
-				nodes = append(nodes, discovery.NewNode(arg))
-			}
-			cluster.UpdateNodes(nodes)
-		}
-	}()
+	if !c.IsSet("discovery") {
+		log.Fatal("--discovery required to manage a cluster")
+	}
 
 	s, err := strategy.New(c.String("strategy"))
 	if err != nil {
@@ -112,6 +92,24 @@ func manage(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// get the list of nodes from the discovery service
+	go func() {
+		d, err := discovery.New(c.String("discovery"), c.Int("heartbeat"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		nodes, err := d.Fetch()
+		if err != nil {
+			log.Fatal(err)
+
+		}
+		cluster.UpdateNodes(nodes)
+
+		go d.Watch(cluster.UpdateNodes)
+	}()
+
 	sched := scheduler.NewScheduler(
 		cluster,
 		s,
