@@ -317,7 +317,7 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 			"/containers/{name:.*}/wait":    proxyContainer,
 			"/containers/{name:.*}/resize":  proxyContainer,
 			"/containers/{name:.*}/attach":  proxyHijack,
-			"/containers/{name:.*}/copy":    notImplementedHandler,
+			"/containers/{name:.*}/copy":    proxyContainer,
 			"/containers/{name:.*}/exec":    proxyContainerAndForceRefresh,
 			"/exec/{execid:.*}/start":       proxyHijack,
 			"/exec/{execid:.*}/resize":      proxyContainer,
