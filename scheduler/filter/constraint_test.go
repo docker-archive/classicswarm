@@ -12,9 +12,9 @@ func TestConstrainteFilter(t *testing.T) {
 	var (
 		f     = ConstraintFilter{}
 		nodes = []*cluster.Node{
-			cluster.NewNode("node-0"),
-			cluster.NewNode("node-1"),
-			cluster.NewNode("node-2"),
+			cluster.NewNode("node-0", 100),
+			cluster.NewNode("node-1", 100),
+			cluster.NewNode("node-2", 100),
 		}
 		result []*cluster.Node
 		err    error

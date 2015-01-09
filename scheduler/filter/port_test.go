@@ -24,9 +24,9 @@ func TestPortFilterNoConflicts(t *testing.T) {
 	var (
 		p     = PortFilter{}
 		nodes = []*cluster.Node{
-			cluster.NewNode("node-1"),
-			cluster.NewNode("node-2"),
-			cluster.NewNode("node-3"),
+			cluster.NewNode("node-1", 100),
+			cluster.NewNode("node-2", 100),
+			cluster.NewNode("node-3", 100),
 		}
 		result []*cluster.Node
 		err    error
@@ -70,9 +70,9 @@ func TestPortFilterSimple(t *testing.T) {
 	var (
 		p     = PortFilter{}
 		nodes = []*cluster.Node{
-			cluster.NewNode("node-1"),
-			cluster.NewNode("node-2"),
-			cluster.NewNode("node-3"),
+			cluster.NewNode("node-1", 100),
+			cluster.NewNode("node-2", 100),
+			cluster.NewNode("node-3", 100),
 		}
 		result []*cluster.Node
 		err    error
@@ -99,9 +99,9 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 	var (
 		p     = PortFilter{}
 		nodes = []*cluster.Node{
-			cluster.NewNode("node-1"),
-			cluster.NewNode("node-2"),
-			cluster.NewNode("node-3"),
+			cluster.NewNode("node-1", 100),
+			cluster.NewNode("node-2", 100),
+			cluster.NewNode("node-3", 100),
 		}
 		result []*cluster.Node
 		err    error

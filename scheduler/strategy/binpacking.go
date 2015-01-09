@@ -12,12 +12,9 @@ var (
 	ErrNoResourcesAvailable = errors.New("no resources available to schedule container")
 )
 
-type BinPackingPlacementStrategy struct {
-	overcommitRatio int64
-}
+type BinPackingPlacementStrategy struct{}
 
-func (p *BinPackingPlacementStrategy) Initialize(overcommitRatio int64) error {
-	p.overcommitRatio = overcommitRatio - 100
+func (p *BinPackingPlacementStrategy) Initialize() error {
 	return nil
 }
 
@@ -25,8 +22,8 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 	scores := scores{}
 
 	for _, node := range nodes {
-		nodeMemory := node.Memory + (node.Memory * p.overcommitRatio / 100)
-		nodeCpus := node.Cpus + (node.Cpus * p.overcommitRatio / 100)
+		nodeMemory := node.OverCommitedMemory()
+		nodeCpus := node.OverCommitedCpus()
 
 		// Skip nodes that are smaller than the requested resources.
 		if nodeMemory < int64(config.Memory) || nodeCpus < config.CpuShares {
