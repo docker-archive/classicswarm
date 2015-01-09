@@ -71,14 +71,14 @@ func manage(c *cli.Context) {
 		}
 	}
 
-	cluster := cluster.NewCluster(tlsConfig)
+	cluster := cluster.NewCluster(tlsConfig, int64(c.Int("overcommit")))
 	cluster.Events(&logHandler{})
 
 	if !c.IsSet("discovery") {
 		log.Fatal("--discovery required to manage a cluster")
 	}
 
-	s, err := strategy.New(c.String("strategy"), int64(c.Int("overcommit")))
+	s, err := strategy.New(c.String("strategy"))
 	if err != nil {
 		log.Fatal(err)
 	}

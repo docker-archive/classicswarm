@@ -9,7 +9,7 @@ import (
 )
 
 type PlacementStrategy interface {
-	Initialize(overcommitRatio int64) error
+	Initialize() error
 	// Given a container configuration and a set of nodes, select the target
 	// node where the container should be scheduled.
 	PlaceContainer(config *dockerclient.ContainerConfig, nodes []*cluster.Node) (*cluster.Node, error)
@@ -27,10 +27,10 @@ func init() {
 	}
 }
 
-func New(name string, overcommitRatio int64) (PlacementStrategy, error) {
+func New(name string) (PlacementStrategy, error) {
 	if strategy, exists := strategies[name]; exists {
 		log.Debugf("Initializing %q strategy", name)
-		err := strategy.Initialize(overcommitRatio)
+		err := strategy.Initialize()
 		return strategy, err
 	}
 
