@@ -16,6 +16,12 @@ func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 	constraints := extractEnv("constraint", config.Env)
 	for k, v := range constraints {
 		log.Debugf("matching constraint: %s=%s", k, v)
+		negate := false
+		if strings.HasPrefix(v, "!") {
+			log.Debugf("negate detected")
+			v = strings.TrimPrefix(v, "!")
+			negate = true
+		}
 		candidates := []*cluster.Node{}
 		for _, node := range nodes {
 			switch k {
@@ -27,8 +33,14 @@ func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 			default:
 				// By default match the node labels.
 				if label, ok := node.Labels[k]; ok {
-					if match(v, label) {
-						candidates = append(candidates, node)
+					if negate {
+						if f.match(v, label) == false {
+							candidates = append(candidates, node)
+						}
+					} else {
+						if f.match(v, label) {
+							candidates = append(candidates, node)
+						}
 					}
 				}
 			}
