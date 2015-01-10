@@ -8,18 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConstraintFilter(t *testing.T) {
-	var (
-		f     = ConstraintFilter{}
-		nodes = []*cluster.Node{
-			cluster.NewNode("node-0", 0),
-			cluster.NewNode("node-1", 0),
-			cluster.NewNode("node-2", 0),
-		}
-		result []*cluster.Node
-		err    error
-	)
-
+func testFixtures() (nodes []*cluster.Node) {
+	nodes = []*cluster.Node{
+		cluster.NewNode("node-0", 0),
+		cluster.NewNode("node-1", 0),
+		cluster.NewNode("node-2", 0),
+	}
 	nodes[0].ID = "node-0-id"
 	nodes[0].Name = "node-0-name"
 	nodes[0].Labels = map[string]string{
@@ -43,6 +37,17 @@ func TestConstraintFilter(t *testing.T) {
 		"group":  "2",
 		"region": "eu",
 	}
+	return
+}
+
+/*
+func TestConstrainteFilter(t *testing.T) {
+	var (
+		f      = ConstraintFilter{}
+		nodes  = testFixtures()
+		result []*cluster.Node
+		err    error
+	)
 
 	// Without constraints we should get the unfiltered list of nodes back.
 	result, err = f.Filter(&dockerclient.ContainerConfig{}, nodes)
@@ -107,4 +112,29 @@ func TestConstraintFilter(t *testing.T) {
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
+}
+*/
+
+func TestConstraintNotExpression(t *testing.T) {
+	var (
+		f      = ConstraintFilter{}
+		nodes  = testFixtures()
+		result []*cluster.Node
+		err    error
+	)
+
+	// Check not (!) expression
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:name=!node0"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+
+	// Check not with globber pattern
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:region=!us*"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0].Labels["region"], "eu")
 }
