@@ -41,21 +41,21 @@ func (f *ConstraintFilter) match(pattern, s string, useRegex bool) bool {
 func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
 	constraints := extractEnv("constraint", config.Env)
 	for k, v := range constraints {
-
-		v0 := v
-
 		log.Debugf("matching constraint: %s=%s", k, v)
 
-		negate := false
-		useRegex := false
+		// keep the original for display in case of error
+		v0 := v
 
+		negate := false
 		if strings.HasPrefix(v, "!") {
 			log.Debugf("negate detected")
 			v = strings.TrimPrefix(v, "!")
 			negate = true
 		}
+
+		useRegex := false
 		if strings.HasPrefix(v, "/") && strings.HasSuffix(v, "/") {
-			log.Infof("regex detected")
+			log.Debugf("regex detected")
 			v = strings.TrimPrefix(strings.TrimSuffix(v, "/"), "/")
 			useRegex = true
 		}
