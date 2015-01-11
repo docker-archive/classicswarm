@@ -147,6 +147,18 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 
 As you can see here, the containers were only scheduled on nodes with the redis imagealreayd pulled.
 
+#### Constraint Expression Syntax
+
+Additionally, you can use a not (`!`) to negate and a regular expression in the form of `/regexp/` for specifying a constraint.
+For example,
+
+* `name=node1` will match nodes named with `node1`.
+* `name=!node1` will match all nodes, except `node1`.
+* `region=!us*` will match all nodes outside the regions prefixed with `us`.
+* `name=/node[12]/` will match nodes named `node1` and `node2`.
+* `name=/node\d/` will match all nodes named with `node` + 1 digit
+* `node=!/node-[01]-id/` will match all nodes, except those with ids `node-0-id` and `node-1-id`
+
 ## Port Filter
 
 With this filter, `ports` are considered as a unique resource.
