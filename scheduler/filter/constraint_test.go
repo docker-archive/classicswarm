@@ -40,7 +40,6 @@ func testFixtures() (nodes []*cluster.Node) {
 	return
 }
 
-/*
 func TestConstrainteFilter(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
@@ -113,9 +112,8 @@ func TestConstrainteFilter(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 }
-*/
 
-func TestConstraintNotExpression(t *testing.T) {
+func TestConstraintNotExpr(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
@@ -130,6 +128,20 @@ func TestConstraintNotExpression(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
+	// Check not does_not_exist. All should be found
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:name=!does_not_exist"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
+
+	// Check name must not start with n
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:name=!n*"},
+	}, nodes)
+	assert.Error(t, err)
+	assert.Len(t, result, 0)
+
 	// Check not with globber pattern
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"constraint:region=!us*"},
@@ -137,4 +149,43 @@ func TestConstraintNotExpression(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0].Labels["region"], "eu")
+}
+
+func TestConstraintRegExp(t *testing.T) {
+	var (
+		f      = ConstraintFilter{}
+		nodes  = testFixtures()
+		result []*cluster.Node
+		err    error
+	)
+
+	// Check with regular expression /node\d/ matches node{0..2}
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:name=/node\d/`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
+
+	// Check with regular expression /node\d/ matches node{0..2}
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:name=/node[12]/`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+
+	// Check with regular expression ! and regexp /node[12]/ matches node[0]
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:name=!/node[12]/`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[0])
+
+	// Validate node pinning by ! and regexp.
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:node=!/node-[01]-id/"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[2])
 }
