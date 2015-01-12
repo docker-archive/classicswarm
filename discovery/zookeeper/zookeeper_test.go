@@ -20,6 +20,6 @@ func TestCreateNodes(t *testing.T) {
 	service := &ZkDiscoveryService{}
 	assert.Equal(t, service.createNodes(nil), []*discovery.Node{})
 	nodes := service.createNodes([]string{"127.0.0.1", "127.0.0.2"})
-	assert.Equal(t, nodes[0].String(), "http://127.0.0.1")
-	assert.Equal(t, nodes[1].String(), "http://127.0.0.2")
+	assert.Equal(t, nodes[0].String(), "127.0.0.1")
+	assert.Equal(t, nodes[1].String(), "127.0.0.2")
 }
