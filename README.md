@@ -24,7 +24,7 @@ go get -u github.com/docker/swarm
 The only requirement for Swarm nodes is to run a regular Docker daemon (version `1.4.0` and later).
 
 In order for Swarm to be able to communicate with its nodes, they must bind on a network interface.
-This can be achieved by starting Docker with the `-H` flag (e.g. `-H 0.0.0.0:2375`).
+This can be achieved by starting Docker with the `-H` flag (e.g. `-H tcp://0.0.0.0:2375`).
 
 ### Example usage
 
@@ -39,13 +39,13 @@ $ swarm create
 $ swarm join --discovery token://<cluster_id> --addr=<node_ip:2375>
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery token://<cluster_id> -H <swarm_ip:swarm_port>
+$ swarm manage --discovery token://<cluster_id> -H tcp://<swarm_ip:swarm_port>
 
 # use the regular docker cli
-$ docker -H <swarm_ip:swarm_port> info
-$ docker -H <swarm_ip:swarm_port> run ...
-$ docker -H <swarm_ip:swarm_port> ps
-$ docker -H <swarm_ip:swarm_port> logs ...
+$ docker -H tcp://<swarm_ip:swarm_port> info
+$ docker -H tcp://<swarm_ip:swarm_port> run ...
+$ docker -H tcp://<swarm_ip:swarm_port> ps
+$ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
@@ -91,5 +91,5 @@ We welcome pull requests and patches; come say hi on IRC, #docker-swarm on freen
 
 ## Copyright and license
 
-Code and documentation copyright 2014 Docker, inc. Code released under the Apache 2.0 license.
+Code and documentation copyright 2014-2015 Docker, inc. Code released under the Apache 2.0 license.
 Docs released under Creative commons.
