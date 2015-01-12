@@ -1,4 +1,4 @@
-package cluster
+package state
 
 import (
 	"encoding/json"
@@ -9,8 +9,6 @@ import (
 	"path"
 	"path/filepath"
 	"sync"
-
-	"github.com/samalba/dockerclient"
 )
 
 var (
@@ -24,11 +22,6 @@ type Store struct {
 	values  map[string]*RequestedState
 
 	sync.RWMutex
-}
-
-type RequestedState struct {
-	Name   string
-	Config *dockerclient.ContainerConfig
 }
 
 func NewStore(rootdir string) *Store {
