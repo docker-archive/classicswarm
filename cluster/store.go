@@ -9,6 +9,8 @@ import (
 	"path"
 	"path/filepath"
 	"sync"
+
+	"github.com/samalba/dockerclient"
 )
 
 var (
@@ -16,18 +18,23 @@ var (
 	ErrAlreadyExists = errors.New("already exists")
 )
 
-// A simple key<->Container store.
+// A simple key<->RequestedState store.
 type Store struct {
-	RootDir    string
-	containers map[string]*Container
+	RootDir string
+	values  map[string]*RequestedState
 
 	sync.RWMutex
 }
 
+type RequestedState struct {
+	Name   string
+	Config *dockerclient.ContainerConfig
+}
+
 func NewStore(rootdir string) *Store {
 	return &Store{
-		RootDir:    rootdir,
-		containers: make(map[string]*Container),
+		RootDir: rootdir,
+		values:  make(map[string]*RequestedState),
 	}
 }
 
@@ -67,7 +74,7 @@ func (s *Store) restore() error {
 		}
 
 		// Load the object back.
-		container, err := s.load(path.Join(s.RootDir, file))
+		value, err := s.load(path.Join(s.RootDir, file))
 		if err != nil {
 			return err
 		}
@@ -79,49 +86,49 @@ func (s *Store) restore() error {
 		}
 
 		// Store it back.
-		s.containers[key] = container
+		s.values[key] = value
 	}
 	return nil
 }
 
-func (s *Store) load(file string) (*Container, error) {
+func (s *Store) load(file string) (*RequestedState, error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load %s: %v", file, err)
 	}
-	container := &Container{}
-	if err := json.Unmarshal(data, container); err != nil {
+	value := &RequestedState{}
+	if err := json.Unmarshal(data, value); err != nil {
 		return nil, err
 	}
-	return container, nil
+	return value, nil
 }
 
 // Retrieves an object from the store keyed by `key`.
-func (s *Store) Get(key string) (*Container, error) {
+func (s *Store) Get(key string) (*RequestedState, error) {
 	s.RLock()
 	defer s.RUnlock()
 
-	if value, ok := s.containers[key]; ok {
+	if value, ok := s.values[key]; ok {
 		return value, nil
 	}
 	return nil, ErrNotFound
 }
 
 // Return all objects of the store.
-func (s *Store) All() []*Container {
+func (s *Store) All() []*RequestedState {
 	s.RLock()
 	defer s.RUnlock()
 
-	states := make([]*Container, len(s.containers))
+	states := make([]*RequestedState, len(s.values))
 	i := 0
-	for _, state := range s.containers {
+	for _, state := range s.values {
 		states[i] = state
 		i = i + 1
 	}
 	return states
 }
 
-func (s *Store) set(key string, value *Container) error {
+func (s *Store) set(key string, value *RequestedState) error {
 	data, err := json.MarshalIndent(value, "", "    ")
 	if err != nil {
 		return err
@@ -131,16 +138,16 @@ func (s *Store) set(key string, value *Container) error {
 		return err
 	}
 
-	s.containers[key] = value
+	s.values[key] = value
 	return nil
 }
 
 // Add a new object on the store. `key` must be unique.
-func (s *Store) Add(key string, value *Container) error {
+func (s *Store) Add(key string, value *RequestedState) error {
 	s.Lock()
 	defer s.Unlock()
 
-	if _, exists := s.containers[key]; exists {
+	if _, exists := s.values[key]; exists {
 		return ErrAlreadyExists
 	}
 
@@ -148,11 +155,11 @@ func (s *Store) Add(key string, value *Container) error {
 }
 
 // Replaces an already existing object from the store.
-func (s *Store) Replace(key string, value *Container) error {
+func (s *Store) Replace(key string, value *RequestedState) error {
 	s.Lock()
 	defer s.Unlock()
 
-	if _, exists := s.containers[key]; !exists {
+	if _, exists := s.values[key]; !exists {
 		return ErrNotFound
 	}
 
@@ -164,7 +171,7 @@ func (s *Store) Remove(key string) error {
 	s.Lock()
 	defer s.Unlock()
 
-	if _, exists := s.containers[key]; !exists {
+	if _, exists := s.values[key]; !exists {
 		return ErrNotFound
 	}
 
@@ -172,6 +179,6 @@ func (s *Store) Remove(key string) error {
 		return err
 	}
 
-	delete(s.containers, key)
+	delete(s.values, key)
 	return nil
 }
