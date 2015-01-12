@@ -61,5 +61,5 @@ func (s *Scheduler) RemoveContainer(container *cluster.Container, force bool) er
 	s.Lock()
 	defer s.Unlock()
 
-	return container.Node().Destroy(container, force)
+	return container.Node.Destroy(container, force)
 }
