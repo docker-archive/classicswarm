@@ -92,20 +92,20 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(tmp.Status, "Up") && !all {
 			continue
 		}
-		if !container.Node().IsHealthy() {
+		if !container.Node.IsHealthy() {
 			tmp.Status = "Pending"
 		}
 		// TODO remove the Node Name in the name when we have a good solution
 		tmp.Names = make([]string, len(container.Names))
 		for i, name := range container.Names {
-			tmp.Names[i] = "/" + container.Node().Name + name
+			tmp.Names[i] = "/" + container.Node.Name + name
 		}
 		// insert node IP
 		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
 		for i, port := range container.Ports {
 			tmp.Ports[i] = port
 			if port.IP == "0.0.0.0" {
-				tmp.Ports[i].IP = container.Node().IP
+				tmp.Ports[i].IP = container.Node.IP
 			}
 		}
 		out = append(out, &tmp)
@@ -119,7 +119,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	container := c.cluster.Container(mux.Vars(r)["name"])
 	if container != nil {
-		resp, err := http.Get(container.Node().Addr + "/containers/" + container.Id + "/json")
+		resp, err := http.Get(container.Node.Addr + "/containers/" + container.Id + "/json")
 		if err != nil {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -130,7 +130,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		n, err := json.Marshal(container.Node())
+		n, err := json.Marshal(container.Node)
 		if err != nil {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -140,9 +140,8 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"Node\":%s,\"Name\":\"/", n)), -1)
 
 		// insert node IP
-		data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node().IP)), -1)
+		data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node.IP)), -1)
 		w.Write(data)
-
 	}
 }
 
@@ -225,7 +224,7 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 	}
 
 	log.Debugf("[REFRESH CONTAINER] --> %s", container.Id)
-	container.Node().ForceRefreshContainer(container.Container)
+	container.Node.ForceRefreshContainer(container.Container)
 }
 
 // Proxy a request to the right node
