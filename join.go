@@ -1,7 +1,7 @@
 package main
 
 import (
-	"strings"
+	"regexp"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -21,8 +21,7 @@ func join(c *cli.Context) {
 	}
 
 	addr := c.String("addr")
-	addrParts := strings.SplitN(addr, ":", 2)
-	if len(addrParts) != 2 {
+	if m, _ := regexp.MatchString("^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:[0-9]{1,5}$", addr); !m {
 		log.Fatal("--addr should be of the form ip:port")
 	}
 
