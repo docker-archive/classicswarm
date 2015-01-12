@@ -13,12 +13,12 @@ func TestStore(t *testing.T) {
 	store := NewStore(dir)
 	assert.NoError(t, store.Initialize())
 
-	c1 := &Container{}
-	c1.Id = "foo"
-	c2 := &Container{}
-	c2.Id = "bar"
+	c1 := &RequestedState{}
+	c1.Name = "foo"
+	c2 := &RequestedState{}
+	c2.Name = "bar"
 
-	var ret *Container
+	var ret *RequestedState
 
 	// Add "foo" into the store.
 	assert.NoError(t, store.Add("foo", c1))
@@ -26,7 +26,7 @@ func TestStore(t *testing.T) {
 	// Retrieve "foo" from the store.
 	ret, err = store.Get("foo")
 	assert.NoError(t, err)
-	assert.Equal(t, c1.Id, ret.Id)
+	assert.Equal(t, c1.Name, ret.Name)
 
 	// Try to add "foo" again.
 	assert.EqualError(t, store.Add("foo", c1), ErrAlreadyExists.Error())
@@ -35,7 +35,7 @@ func TestStore(t *testing.T) {
 	assert.NoError(t, store.Replace("foo", c2))
 	ret, err = store.Get("foo")
 	assert.NoError(t, err)
-	assert.Equal(t, c2.Id, ret.Id)
+	assert.Equal(t, c2.Name, ret.Name)
 
 	// Initialize a brand new store and retrieve "foo" again.
 	// This is to ensure data load on initialization works correctly.
@@ -43,5 +43,5 @@ func TestStore(t *testing.T) {
 	assert.NoError(t, store.Initialize())
 	ret, err = store.Get("foo")
 	assert.NoError(t, err)
-	assert.Equal(t, c2.Id, ret.Id)
+	assert.Equal(t, c2.Name, ret.Name)
 }
