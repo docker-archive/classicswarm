@@ -189,3 +189,38 @@ func TestConstraintRegExp(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[2])
 }
+
+func TestFilterRegExpWithEscape(t *testing.T) {
+	var (
+		f      = ConstraintFilter{}
+		nodes  = testFixtures()
+		result []*cluster.Node
+		err    error
+	)
+
+	// Prepare node with a strange name
+	node3 := cluster.NewNode("node-3")
+	node3.ID = "node-3-id"
+	node3.Name = "node-3-name"
+	node3.Labels = map[string]string{
+		"name":   "foo[bar]",
+		"group":  "2",
+		"region": "eu",
+	}
+	nodes = append(nodes, node3)
+
+	// Test filter with a strange name
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:name=/foo\[bar\]/`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[3])
+
+	// Test ! filter with a strange name
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:name=!/foo\[bar\]/`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
+}
