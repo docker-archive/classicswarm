@@ -183,9 +183,10 @@ func (n *Node) ForceRefreshContainer(c dockerclient.Container) error {
 
 func (n *Node) inspectContainer(c dockerclient.Container, containers map[string]*Container, lock bool) error {
 
-	container := &Container{}
-	container.Container = c
-	container.Node = n
+	container := &Container{
+		Container: c,
+		Node:      n,
+	}
 
 	info, err := n.client.InspectContainer(c.Id)
 	if err != nil {
@@ -376,9 +377,9 @@ func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
 	}
 
 	event := &Event{
-		Node: n,
+		Node:  n,
+		Event: *ev,
 	}
-	event.Event = *ev
 
 	n.eventHandler.Handle(event)
 }

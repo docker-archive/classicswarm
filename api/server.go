@@ -38,10 +38,7 @@ func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, hosts []string, 
 		tlsConfig:     tlsConfig,
 	}
 	c.Events(context.eventsHandler)
-	r, err := createRouter(context, enableCors)
-	if err != nil {
-		return err
-	}
+	r := createRouter(context, enableCors)
 	chErrors := make(chan error, len(hosts))
 
 	for _, host := range hosts {
