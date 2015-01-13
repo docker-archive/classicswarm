@@ -6,7 +6,7 @@ var (
 	flDiscovery = cli.StringFlag{
 		Name:   "discovery",
 		Value:  "",
-		Usage:  "DiscoveryService to use [token://<token>,\n\t\t\t\t etcd://<ip1>,<ip2>/<path>,\n\t\t\t\t file://path/to/file,\n\t\t\t\t consul://<addr>/<path>,\n\t\t\t\t zk://<ip1>,<ip2>/<path>,\n\t\t\t\t <ip1>,<ip2>]",
+		Usage:  "discovery service to use [token://<token>,\n\t\t\t\t  etcd://<ip1>,<ip2>/<path>,\n\t\t\t\t  file://path/to/file,\n\t\t\t\t  consul://<addr>/<path>,\n\t\t\t\t  zk://<ip1>,<ip2>/<path>,\n\t\t\t\t  <ip1>,<ip2>]",
 		EnvVar: "SWARM_DISCOVERY",
 	}
 	flAddr = cli.StringFlag{
@@ -32,32 +32,32 @@ var (
 	}
 	flTls = cli.BoolFlag{
 		Name:  "tls",
-		Usage: "Use TLS; implied by --tlsverify=true",
+		Usage: "use TLS; implied by --tlsverify=true",
 	}
 	flTlsCaCert = cli.StringFlag{
 		Name:  "tlscacert",
-		Usage: "Trust only remotes providing a certificate signed by the CA given here",
+		Usage: "trust only remotes providing a certificate signed by the CA given here",
 	}
 	flTlsCert = cli.StringFlag{
 		Name:  "tlscert",
-		Usage: "Path to TLS certificate file",
+		Usage: "path to TLS certificate file",
 	}
 	flTlsKey = cli.StringFlag{
 		Name:  "tlskey",
-		Usage: "Path to TLS key file",
+		Usage: "path to TLS key file",
 	}
 	flTlsVerify = cli.BoolFlag{
 		Name:  "tlsverify",
-		Usage: "Use TLS and verify the remote",
+		Usage: "use TLS and verify the remote",
 	}
 	flStrategy = cli.StringFlag{
 		Name:  "strategy",
-		Usage: "PlacementStrategy to use [binpacking, random]",
+		Usage: "placement strategy to use [binpacking, random]",
 		Value: "binpacking:0.05",
 	}
 	flFilter = cli.StringSliceFlag{
 		Name:  "filter, f",
-		Usage: "Filter to use [constraint, health, port]",
+		Usage: "filter to use [constraint, health, port]",
 		Value: &cli.StringSlice{"constraint", "health", "port"},
 	}
 )
