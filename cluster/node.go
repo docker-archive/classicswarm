@@ -376,9 +376,9 @@ func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
 	}
 
 	event := &Event{
-		Node: n,
+		Node:  n,
+		Event: *ev,
 	}
-	event.Event = *ev
 
 	n.eventHandler.Handle(event)
 }
