@@ -273,7 +273,7 @@ func httpError(w http.ResponseWriter, err string, status int) {
 	http.Error(w, err, status)
 }
 
-func createRouter(c *context, enableCors bool) (*mux.Router, error) {
+func createRouter(c *context, enableCors bool) *mux.Router {
 	r := mux.NewRouter()
 	m := map[string]map[string]handler{
 		"GET": {
@@ -352,5 +352,5 @@ func createRouter(c *context, enableCors bool) (*mux.Router, error) {
 		}
 	}
 
-	return r, nil
+	return r
 }
