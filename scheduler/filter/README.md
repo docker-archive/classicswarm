@@ -3,7 +3,7 @@ Filters
 
 The `Docker Swarm` scheduler comes with multiple filters.
 
-Thoses filters are used to schedule containers on a subset of nodes.
+These filters are used to schedule containers on a subset of nodes.
 
 `Docker Swarm` currently supports 3 filters:
 * [Constraint](README.md#constraint-filter)
@@ -21,9 +21,9 @@ When creating a container, the user can select a subset of nodes that should be 
 This approach has several practical use cases such as:
 * Selecting specific host properties (such as `storage=ssd`, in order to schedule containers on specific hardware).
 * Tagging nodes based on their physical location (`region=us-east`, to force containers to run on a given location).
-* Logical cluster partioning (`environment=production`, to split a cluster into sub-clusters with different properties).
+* Logical cluster partitioning (`environment=production`, to split a cluster into sub-clusters with different properties).
 
-To tag a node with a specific set of key/value pairs, one must pass a list of `--label` options at docker  startup time.
+To tag a node with a specific set of key/value pairs, one must pass a list of `--label` options at docker startup time.
 
 For instance, let's start `node-1` with the `storage=ssd` label:
 
