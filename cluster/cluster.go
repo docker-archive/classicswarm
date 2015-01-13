@@ -20,16 +20,24 @@ type Cluster struct {
 	tlsConfig     *tls.Config
 	eventHandlers []EventHandler
 	nodes         map[string]*Node
+	containers    map[*Node][]*Container
 }
 
 func NewCluster(tlsConfig *tls.Config) *Cluster {
 	return &Cluster{
-		tlsConfig: tlsConfig,
-		nodes:     make(map[string]*Node),
+		tlsConfig:  tlsConfig,
+		nodes:      make(map[string]*Node),
+		containers: make(map[*Node][]*Container),
 	}
 }
 
 func (c *Cluster) Handle(e *Event) error {
+	// Refresh the container list for `node` as soon as we receive an event.
+	c.Lock()
+	c.containers[e.Node] = e.Node.Containers()
+	c.Unlock()
+
+	// Dispatch the event to all the handlers.
 	for _, eventHandler := range c.eventHandlers {
 		if err := eventHandler.Handle(e); err != nil {
 			log.Error(err)
@@ -55,7 +63,10 @@ func (c *Cluster) AddNode(n *Node) error {
 		return ErrNodeAlreadyRegistered
 	}
 
+	// Register the node and its containers.
 	c.nodes[n.ID] = n
+	c.containers[n] = n.Containers()
+
 	return n.Events(c)
 }
 
@@ -79,14 +90,13 @@ func (c *Cluster) UpdateNodes(nodes []*discovery.Node) {
 
 // Containers returns all the containers in the cluster.
 func (c *Cluster) Containers() []*Container {
-	c.Lock()
-	defer c.Unlock()
+	c.RLock()
+	defer c.RUnlock()
 
 	out := []*Container{}
-	for _, n := range c.nodes {
-		containers := n.Containers()
-		for _, container := range containers {
-			out = append(out, container)
+	for _, containers := range c.containers {
+		for _, c := range containers {
+			out = append(out, c)
 		}
 	}
 
