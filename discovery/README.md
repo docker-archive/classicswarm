@@ -132,7 +132,9 @@ $ swarm list --discovery zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
 
 ```bash
 # start the manager on any machine or your laptop
-$ swarm manage --discovery list://<node_ip1:2375>,<node_ip2:2375> -H=<swarm_ip:swarm_port>
+$ swarm manage --discovery <node_ip1:2375>,<node_ip2:2375> -H=<swarm_ip:swarm_port>
+#or
+$ swarm manage --discovery nodes://<node_ip1:2375>,<node_ip2:2375> -H=<swarm_ip:swarm_port>
 
 # use the regular docker cli
 $ docker -H <swarm_ip:swarm_port> info
