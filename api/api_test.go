@@ -18,10 +18,7 @@ func serveRequest(c *cluster.Cluster, s *scheduler.Scheduler, w http.ResponseWri
 		version:   "test-version",
 	}
 
-	r, err := createRouter(context, false)
-	if err != nil {
-		return err
-	}
+	r := createRouter(context, false)
 	r.ServeHTTP(w, req)
 	return nil
 }
