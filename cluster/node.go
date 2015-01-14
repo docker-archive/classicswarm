@@ -21,14 +21,14 @@ const (
 	requestTimeout = 10 * time.Second
 )
 
-func NewNode(addr string, overcommitRatio int64) *Node {
+func NewNode(addr string, overcommitRatio float64) *Node {
 	e := &Node{
 		Addr:            addr,
 		Labels:          make(map[string]string),
 		ch:              make(chan bool),
 		containers:      make(map[string]*Container),
 		healthy:         true,
-		overcommitRatio: overcommitRatio - 100,
+		overcommitRatio: int64(overcommitRatio * 100),
 	}
 	return e
 }
