@@ -270,11 +270,11 @@ func (n *Node) ReservedCpus() int64 {
 	return r
 }
 
-func (n *Node) OverCommitedMemory() int64 {
+func (n *Node) UsableMemory() int64 {
 	return n.Memory + (n.Memory * n.overcommitRatio / 100)
 }
 
-func (n *Node) OverCommitedCpus() int64 {
+func (n *Node) UsableCpus() int64 {
 	return n.Cpus + (n.Cpus * n.overcommitRatio / 100)
 }
 

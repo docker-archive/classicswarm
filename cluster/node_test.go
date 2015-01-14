@@ -187,22 +187,22 @@ func TestCreateContainer(t *testing.T) {
 	assert.Len(t, node.Containers(), 2)
 }
 
-func TestOverCommitedMemory(t *testing.T) {
+func TestUsableMemory(t *testing.T) {
 	node := NewNode("test", 105)
 	node.Memory = 1024
-	assert.Equal(t, node.OverCommitedMemory(), 1024+1024*5/100)
+	assert.Equal(t, node.UsableMemory(), 1024+1024*5/100)
 
 	node = NewNode("test", 90)
 	node.Memory = 1024
-	assert.Equal(t, node.OverCommitedMemory(), 1024-1024*10/100)
+	assert.Equal(t, node.UsableMemory(), 1024-1024*10/100)
 }
 
-func TestOverCommitedCpus(t *testing.T) {
+func TestUsableCpus(t *testing.T) {
 	node := NewNode("test", 105)
 	node.Cpus = 2
-	assert.Equal(t, node.OverCommitedCpus(), 2+2*5/100)
+	assert.Equal(t, node.UsableCpus(), 2+2*5/100)
 
 	node = NewNode("test", 90)
 	node.Cpus = 2
-	assert.Equal(t, node.OverCommitedCpus(), 2-2*10/100)
+	assert.Equal(t, node.UsableCpus(), 2-2*10/100)
 }
