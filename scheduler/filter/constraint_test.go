@@ -199,7 +199,7 @@ func TestFilterRegExpWithEscape(t *testing.T) {
 	)
 
 	// Prepare node with a strange name
-	node3 := cluster.NewNode("node-3")
+	node3 := cluster.NewNode("node-3", 0)
 	node3.ID = "node-3-id"
 	node3.Name = "node-3-name"
 	node3.Labels = map[string]string{
@@ -234,7 +234,7 @@ func TestFilterRegExpCaseInsensitive(t *testing.T) {
 	)
 
 	// Prepare node with a strange name
-	node3 := cluster.NewNode("node-3")
+	node3 := cluster.NewNode("node-3", 0)
 	node3.ID = "node-3-id"
 	node3.Name = "node-3-name"
 	node3.Labels = map[string]string{
