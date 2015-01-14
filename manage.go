@@ -71,7 +71,7 @@ func manage(c *cli.Context) {
 		}
 	}
 
-	cluster := cluster.NewCluster(tlsConfig)
+	cluster := cluster.NewCluster(tlsConfig, c.Float64("overcommit"))
 	cluster.Events(&logHandler{})
 
 	if !c.IsSet("discovery") {

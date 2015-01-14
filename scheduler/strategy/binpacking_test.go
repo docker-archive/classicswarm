@@ -10,7 +10,7 @@ import (
 )
 
 func createNode(ID string, memory int64, cpus int64) *cluster.Node {
-	node := cluster.NewNode(ID)
+	node := cluster.NewNode(ID, 0.05)
 	node.ID = ID
 	node.Memory = memory * 1024 * 1024 * 1024
 	node.Cpus = cpus
@@ -114,7 +114,7 @@ func TestPlaceContainerHuge(t *testing.T) {
 }
 
 func TestPlaceContainerOvercommit(t *testing.T) {
-	s, err := New("binpacking:0.05")
+	s, err := New("binpacking")
 	assert.NoError(t, err)
 
 	nodes := []*cluster.Node{createNode("node-1", 0, 1)}

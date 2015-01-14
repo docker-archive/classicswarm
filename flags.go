@@ -50,10 +50,15 @@ var (
 		Name:  "tlsverify",
 		Usage: "use TLS and verify the remote",
 	}
+	flOverCommit = cli.Float64Flag{
+		Name:  "overcommit, oc",
+		Usage: "overcommit to apply on resources",
+		Value: 0.05,
+	}
 	flStrategy = cli.StringFlag{
 		Name:  "strategy",
 		Usage: "placement strategy to use [binpacking, random]",
-		Value: "binpacking:0.05",
+		Value: "binpacking",
 	}
 	flFilter = cli.StringSliceFlag{
 		Name:  "filter, f",
