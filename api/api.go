@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"runtime"
 	"sort"
@@ -229,7 +230,7 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := proxy(c.tlsConfig, container, w, r); err != nil {
+	if err := proxy(c.tlsConfig, container.Node.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -245,7 +246,16 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := proxy(c.tlsConfig, container, w, r); err != nil {
+	if err := proxy(c.tlsConfig, container.Node.Addr, w, r); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// Proxy a request to a random node
+func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
+	nodes := c.cluster.Nodes()
+
+	if err := proxy(c.tlsConfig, nodes[rand.Intn(len(nodes))].Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -258,7 +268,7 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := hijack(c.tlsConfig, container, w, r); err != nil {
+	if err := hijack(c.tlsConfig, container.Node.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -293,7 +303,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/version":                        getVersion,
 			"/images/json":                    notImplementedHandler,
 			"/images/viz":                     notImplementedHandler,
-			"/images/search":                  notImplementedHandler,
+			"/images/search":                  proxyRandom,
 			"/images/get":                     notImplementedHandler,
 			"/images/{name:.*}/get":           notImplementedHandler,
 			"/images/{name:.*}/history":       notImplementedHandler,
@@ -309,7 +319,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/exec/{execid:.*}/json":          proxyContainer,
 		},
 		"POST": {
-			"/auth":                         notImplementedHandler,
+			"/auth":                         proxyRandom,
 			"/commit":                       notImplementedHandler,
 			"/build":                        notImplementedHandler,
 			"/images/create":                notImplementedHandler,
