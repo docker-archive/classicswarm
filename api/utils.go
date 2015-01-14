@@ -45,14 +45,12 @@ func proxy(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseW
 	// RequestURI may not be sent to client
 	r.RequestURI = ""
 
-	parts := strings.SplitN(container.Node.Addr, "://", 2)
-	if len(parts) == 2 {
-		r.URL.Scheme = parts[0]
-		r.URL.Host = parts[1]
+	if tlsConfig != nil {
+		r.URL.Scheme = "https"
 	} else {
 		r.URL.Scheme = "http"
-		r.URL.Host = parts[0]
 	}
+	r.URL.Host = container.Node.Addr
 
 	log.Debugf("[PROXY] --> %s %s", r.Method, r.URL)
 	resp, err := client.Do(r)
