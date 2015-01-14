@@ -13,6 +13,13 @@ import (
 	"github.com/docker/swarm/cluster"
 )
 
+func newClientAndScheme(tlsConfig *tls.Config) (*http.Client, string) {
+	if tlsConfig != nil {
+		return &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}}, "https"
+	}
+	return &http.Client{}, "http"
+}
+
 func getContainerFromVars(c *context, vars map[string]string) (*cluster.Container, error) {
 	if name, ok := vars["name"]; ok {
 		if container := c.cluster.Container(name); container != nil {
@@ -36,20 +43,12 @@ func getContainerFromVars(c *context, vars map[string]string) (*cluster.Containe
 
 func proxy(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseWriter, r *http.Request) error {
 	// Use a new client for each request
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-	}
-
+	client, scheme := newClientAndScheme(tlsConfig)
 	// RequestURI may not be sent to client
 	r.RequestURI = ""
 
-	if tlsConfig != nil {
-		r.URL.Scheme = "https"
-	} else {
-		r.URL.Scheme = "http"
-	}
+	r.URL.Scheme = scheme
+
 	r.URL.Host = container.Node.Addr
 
 	log.Debugf("[PROXY] --> %s %s", r.Method, r.URL)
