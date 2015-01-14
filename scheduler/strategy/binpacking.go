@@ -22,8 +22,8 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 	scores := scores{}
 
 	for _, node := range nodes {
-		nodeMemory := node.OverCommitedMemory()
-		nodeCpus := node.OverCommitedCpus()
+		nodeMemory := node.UsableMemory()
+		nodeCpus := node.UsableCpus()
 
 		// Skip nodes that are smaller than the requested resources.
 		if nodeMemory < int64(config.Memory) || nodeCpus < config.CpuShares {
