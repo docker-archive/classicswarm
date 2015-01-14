@@ -305,3 +305,54 @@ func TestFilterRegExpCaseInsensitive(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 3)
 }
+
+func TestFilterWithRelativeComparisons(t *testing.T) {
+	var (
+		f      = ConstraintFilter{}
+		nodes  = testFixtures()
+		result []*cluster.Node
+		err    error
+	)
+
+	// Prepare node with a strange name
+	node3 := cluster.NewNode("node-3", 0)
+	node3.ID = "node-3-id"
+	node3.Name = "node-3-name"
+	node3.Labels = map[string]string{
+		"name":   "aBcDeF",
+		"group":  "4",
+		"kernel": "3.1",
+		"region": "eu",
+	}
+	nodes = append(nodes, node3)
+
+	// Check with less than or equal
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:group<=3`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
+
+	// Check with greater than or equal
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:group>=4`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+
+	// Another gte check with a complex string
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:kernel>=3.0`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[3])
+	assert.Equal(t, result[0].Labels["kernel"], "3.1")
+
+	// Check with greater than or equal. This should match node-3-id.
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:node>=node-3`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+}

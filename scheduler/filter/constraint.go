@@ -58,6 +58,16 @@ func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 			negate = true
 		}
 
+		gte := strings.HasSuffix(k, ">")
+		lte := strings.HasSuffix(k, "<")
+		if gte {
+			log.Debugf("gt (>) detected in key")
+			k = strings.TrimSuffix(k, ">")
+		} else if lte {
+			log.Debugf("lt (<) detected in key")
+			k = strings.TrimSuffix(k, "<")
+		}
+
 		useRegex := false
 		if strings.HasPrefix(v, "/") && strings.HasSuffix(v, "/") {
 			log.Debugf("regex detected")
@@ -70,20 +80,32 @@ func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 			switch k {
 			case "node":
 				// "node" label is a special case pinning a container to a specific node.
-<<<<<<< HEAD
-				if match(v, node.ID) || match(v, node.Name) {
-=======
 				matchResult := f.match(v, node.ID, useRegex) || f.match(v, node.Name, useRegex)
 				if (negate && !matchResult) || (!negate && matchResult) {
->>>>>>> improve regexp matching
+
+				if gte && node.ID >= v {
 					candidates = append(candidates, node)
+				} else if lte && node.ID <= v {
+					candidates = append(candidates, node)
+				} else {
+					// "node" label is a special case pinning a container to a specific node.
+					matchResult := f.match(v, node.ID, useRegex) || f.match(v, node.Name, useRegex)
+					if (negate && !matchResult) || (!negate && matchResult) {
+						candidates = append(candidates, node)
+					}
 				}
 			default:
 				// By default match the node labels.
 				if label, ok := node.Labels[k]; ok {
-					matchResult := f.match(v, label, useRegex)
-					if (negate && !matchResult) || (!negate && matchResult) {
+					if gte && label >= v {
 						candidates = append(candidates, node)
+					} else if lte && label <= v {
+						candidates = append(candidates, node)
+					} else {
+						matchResult := f.match(v, label, useRegex)
+						if (negate && !matchResult) || (!negate && matchResult) {
+							candidates = append(candidates, node)
+						}
 					}
 				}
 			}
