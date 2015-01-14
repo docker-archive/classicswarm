@@ -20,6 +20,9 @@ func TestStore(t *testing.T) {
 
 	var ret *RequestedState
 
+	// Add an invalid key
+	assert.EqualError(t, store.Add("", c1), ErrInvalidKey.Error())
+
 	// Add "foo" into the store.
 	assert.NoError(t, store.Add("foo", c1))
 

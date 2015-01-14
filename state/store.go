@@ -9,11 +9,14 @@ import (
 	"path"
 	"path/filepath"
 	"sync"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
 	ErrNotFound      = errors.New("not found")
 	ErrAlreadyExists = errors.New("already exists")
+	ErrInvalidKey    = errors.New("invalid key")
 )
 
 // A simple key<->RequestedState store.
@@ -63,19 +66,22 @@ func (s *Store) restore() error {
 		// Verify the file extension.
 		extension := filepath.Ext(file)
 		if extension != ".json" {
-			return fmt.Errorf("invalid file extension for filename %s (%s)", file, extension)
+			log.Errorf("invalid file extension for filename %s (%s)", file, extension)
+			continue
 		}
 
 		// Load the object back.
 		value, err := s.load(path.Join(s.RootDir, file))
 		if err != nil {
-			return err
+			log.Errorf(err.Error())
+			continue
 		}
 
 		// Extract the key.
 		key := file[0 : len(file)-len(extension)]
 		if len(key) == 0 {
-			return fmt.Errorf("invalid filename %s", file)
+			log.Errorf("invalid filename %s", file)
+			continue
 		}
 
 		// Store it back.
@@ -122,6 +128,10 @@ func (s *Store) All() []*RequestedState {
 }
 
 func (s *Store) set(key string, value *RequestedState) error {
+	if len(key) == 0 {
+		return ErrInvalidKey
+	}
+
 	data, err := json.MarshalIndent(value, "", "    ")
 	if err != nil {
 		return err
