@@ -10,14 +10,12 @@ Here are the main differences:
 ```
 GET "/images/json"
 GET "/images/json"
-GET "/images/search"
 GET "/images/get"
 GET "/images/{name:.*}/get"
 GET "/images/{name:.*}/history"
 GET "/images/{name:.*}/json"
 GET "/containers/{name:.*}/attach/ws"
 
-POST "/auth"
 POST "/commit"
 POST "/build"
 POST "/images/create"
