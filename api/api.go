@@ -119,7 +119,9 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	container := c.cluster.Container(mux.Vars(r)["name"])
 	if container != nil {
-		resp, err := http.Get(container.Node.Addr + "/containers/" + container.Id + "/json")
+		client, scheme := newClientAndScheme(c.tlsConfig)
+
+		resp, err := client.Get(scheme + "://" + container.Node.Addr + "/containers/" + container.Id + "/json")
 		if err != nil {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
