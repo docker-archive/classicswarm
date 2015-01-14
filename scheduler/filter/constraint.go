@@ -45,11 +45,16 @@ func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 
 		// keep the original for display in case of error
 		v0 := v
+		k0 := k
 
 		negate := false
 		if strings.HasPrefix(v, "!") {
-			log.Debugf("negate detected")
+			log.Debugf("negate detected in value")
 			v = strings.TrimPrefix(v, "!")
+			negate = true
+		} else if strings.HasSuffix(k, "!") {
+			log.Debugf("negate detected in key")
+			k = strings.TrimSuffix(k, "!")
 			negate = true
 		}
 
@@ -84,7 +89,7 @@ func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 			}
 		}
 		if len(candidates) == 0 {
-			return nil, fmt.Errorf("unable to find a node that satisfies %s = %s", k, v0)
+			return nil, fmt.Errorf("unable to find a node that satisfies %s=%s", k0, v0)
 		}
 		nodes = candidates
 	}

@@ -151,6 +151,44 @@ func TestConstraintNotExpr(t *testing.T) {
 	assert.Equal(t, result[0].Labels["region"], "eu")
 }
 
+func TestConstraintAlternativeNotExpr(t *testing.T) {
+	var (
+		f      = ConstraintFilter{}
+		nodes  = testFixtures()
+		result []*cluster.Node
+		err    error
+	)
+
+	// Check not (!) expression
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:name!=node0"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+
+	// Check not does_not_exist. All should be found
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:name!=does_not_exist"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
+
+	// Check name must not start with n
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:name!=n*"},
+	}, nodes)
+	assert.Error(t, err)
+	assert.Len(t, result, 0)
+
+	// Check not with globber pattern
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:region!=us*"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0].Labels["region"], "eu")
+}
+
 func TestConstraintRegExp(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
