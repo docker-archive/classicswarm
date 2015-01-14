@@ -20,10 +20,10 @@ type Cluster struct {
 	tlsConfig       *tls.Config
 	eventHandlers   []EventHandler
 	nodes           map[string]*Node
-	overcommitRatio int64
+	overcommitRatio float64
 }
 
-func NewCluster(tlsConfig *tls.Config, overcommitRatio int64) *Cluster {
+func NewCluster(tlsConfig *tls.Config, overcommitRatio float64) *Cluster {
 	return &Cluster{
 		tlsConfig:       tlsConfig,
 		nodes:           make(map[string]*Node),

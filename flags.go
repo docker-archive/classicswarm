@@ -50,10 +50,10 @@ var (
 		Name:  "tlsverify",
 		Usage: "use TLS and verify the remote",
 	}
-	flOverCommit = cli.IntFlag{
+	flOverCommit = cli.Float64Flag{
 		Name:  "overcommit, oc",
 		Usage: "overcommit to apply on resources",
-		Value: 105,
+		Value: 0.05,
 	}
 	flStrategy = cli.StringFlag{
 		Name:  "strategy",
