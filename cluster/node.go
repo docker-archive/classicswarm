@@ -21,13 +21,14 @@ const (
 	requestTimeout = 10 * time.Second
 )
 
-func NewNode(addr string) *Node {
+func NewNode(addr string, overcommitRatio float64) *Node {
 	e := &Node{
-		Addr:       addr,
-		Labels:     make(map[string]string),
-		ch:         make(chan bool),
-		containers: make(map[string]*Container),
-		healthy:    true,
+		Addr:            addr,
+		Labels:          make(map[string]string),
+		ch:              make(chan bool),
+		containers:      make(map[string]*Container),
+		healthy:         true,
+		overcommitRatio: int64(overcommitRatio * 100),
 	}
 	return e
 }
@@ -43,11 +44,12 @@ type Node struct {
 	Memory int64
 	Labels map[string]string
 
-	ch           chan bool
-	containers   map[string]*Container
-	client       dockerclient.Client
-	eventHandler EventHandler
-	healthy      bool
+	ch              chan bool
+	containers      map[string]*Container
+	client          dockerclient.Client
+	eventHandler    EventHandler
+	healthy         bool
+	overcommitRatio int64
 }
 
 // Connect will initialize a connection to the Docker daemon running on the
@@ -266,6 +268,14 @@ func (n *Node) ReservedCpus() int64 {
 	}
 	n.RUnlock()
 	return r
+}
+
+func (n *Node) UsableMemory() int64 {
+	return n.Memory + (n.Memory * n.overcommitRatio / 100)
+}
+
+func (n *Node) UsableCpus() int64 {
+	return n.Cpus + (n.Cpus * n.overcommitRatio / 100)
 }
 
 func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*Container, error) {

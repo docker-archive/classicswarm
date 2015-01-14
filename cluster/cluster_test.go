@@ -10,7 +10,7 @@ import (
 )
 
 func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *Node {
-	node := NewNode(ID)
+	node := NewNode(ID, 0)
 	node.Name = ID
 
 	assert.False(t, node.IsConnected())
@@ -32,7 +32,7 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 }
 
 func TestAddNode(t *testing.T) {
-	c := NewCluster(nil)
+	c := NewCluster(nil, 0)
 
 	assert.Equal(t, len(c.Nodes()), 0)
 	assert.Nil(t, c.Node("test"))
@@ -52,7 +52,7 @@ func TestAddNode(t *testing.T) {
 }
 
 func TestLookupContainer(t *testing.T) {
-	c := NewCluster(nil)
+	c := NewCluster(nil, 0)
 	container := dockerclient.Container{
 		Id:    "container-id",
 		Names: []string{"/container-name1", "/container-name2"},

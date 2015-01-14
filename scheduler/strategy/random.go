@@ -10,10 +10,9 @@ import (
 )
 
 // Randomly place the container into the cluster.
-type RandomPlacementStrategy struct {
-}
+type RandomPlacementStrategy struct{}
 
-func (p *RandomPlacementStrategy) Initialize(_ string) error {
+func (p *RandomPlacementStrategy) Initialize() error {
 	rand.Seed(time.Now().UTC().UnixNano())
 	return nil
 }

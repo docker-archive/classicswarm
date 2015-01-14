@@ -17,15 +17,17 @@ var (
 
 type Cluster struct {
 	sync.RWMutex
-	tlsConfig     *tls.Config
-	eventHandlers []EventHandler
-	nodes         map[string]*Node
+	tlsConfig       *tls.Config
+	eventHandlers   []EventHandler
+	nodes           map[string]*Node
+	overcommitRatio float64
 }
 
-func NewCluster(tlsConfig *tls.Config) *Cluster {
+func NewCluster(tlsConfig *tls.Config, overcommitRatio float64) *Cluster {
 	return &Cluster{
-		tlsConfig: tlsConfig,
-		nodes:     make(map[string]*Node),
+		tlsConfig:       tlsConfig,
+		nodes:           make(map[string]*Node),
+		overcommitRatio: overcommitRatio,
 	}
 }
 
@@ -63,7 +65,7 @@ func (c *Cluster) UpdateNodes(nodes []*discovery.Node) {
 	for _, addr := range nodes {
 		go func(node *discovery.Node) {
 			if c.Node(node.String()) == nil {
-				n := NewNode(node.String())
+				n := NewNode(node.String(), c.overcommitRatio)
 				if err := n.Connect(c.tlsConfig); err != nil {
 					log.Error(err)
 					return
