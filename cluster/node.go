@@ -238,6 +238,9 @@ func (n *Node) refreshLoop() {
 		}
 
 		if err != nil {
+			if n.healthy {
+				n.emitCustomEvent("node_die")
+			}
 			n.healthy = false
 			log.Errorf("[%s/%s] Flagging node as dead. Updated state failed: %v", n.ID, n.Name, err)
 		} else {
@@ -245,10 +248,27 @@ func (n *Node) refreshLoop() {
 				log.Infof("[%s/%s] Node came back to life. Hooray!", n.ID, n.Name)
 				n.client.StopAllMonitorEvents()
 				n.client.StartMonitorEvents(n.handler)
+				n.emitCustomEvent("node_comes_back")
 			}
 			n.healthy = true
 		}
 	}
+}
+
+func (n *Node) emitCustomEvent(event string) {
+	// If there is no event handler registered, abort right now.
+	if n.eventHandler == nil {
+		return
+	}
+	ev := &Event{
+		Event: dockerclient.Event{
+			Status: event,
+			From:   "swarm",
+			Time:   time.Now().Unix(),
+		},
+		Node: n,
+	}
+	n.eventHandler.Handle(ev)
 }
 
 // Return the sum of memory reserved by containers.
