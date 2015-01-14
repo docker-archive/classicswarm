@@ -31,7 +31,7 @@ func (f *ConstraintFilter) match(pattern, s string, useRegex bool) bool {
 	if !useRegex {
 		regex = "^" + strings.Replace(pattern, "*", ".*", -1) + "$"
 	}
-	matched, err := regexp.MatchString(regex, strings.ToLower(s))
+	matched, err := regexp.MatchString(regex, s)
 	if err != nil {
 		log.Error(err)
 	}

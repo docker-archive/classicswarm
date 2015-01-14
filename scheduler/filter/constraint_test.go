@@ -224,3 +224,46 @@ func TestFilterRegExpWithEscape(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 3)
 }
+
+func TestFilterRegExpCaseInsensitive(t *testing.T) {
+	var (
+		f      = ConstraintFilter{}
+		nodes  = testFixtures()
+		result []*cluster.Node
+		err    error
+	)
+
+	// Prepare node with a strange name
+	node3 := cluster.NewNode("node-3")
+	node3.ID = "node-3-id"
+	node3.Name = "node-3-name"
+	node3.Labels = map[string]string{
+		"name":   "aBcDeF",
+		"group":  "2",
+		"region": "eu",
+	}
+	nodes = append(nodes, node3)
+
+	// Case-sensitive, so not match
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:name=/abcdef/`},
+	}, nodes)
+	assert.Error(t, err)
+	assert.Len(t, result, 0)
+
+	// Match with case-insensitive
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:name=/(?i)abcdef/`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[3])
+	assert.Equal(t, result[0].Labels["name"], "aBcDeF")
+
+	// Test ! filter combined with case insensitive
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{`constraint:name=!/(?i)abc*/`},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
+}
