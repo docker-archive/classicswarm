@@ -9,8 +9,6 @@ import (
 )
 
 func TestAffinityFilter(t *testing.T) {
-	//TODO: add test for images
-
 	var (
 		f     = AffinityFilter{}
 		nodes = []*cluster.Node{
@@ -30,6 +28,10 @@ func TestAffinityFilter(t *testing.T) {
 			Names: []string{"container-0-name"},
 		},
 	})
+	nodes[0].AddImage(&dockerclient.Image{
+		Id:       "image-0-id",
+		RepoTags: []string{"image-0:tag1", "image-0:tag2"},
+	})
 
 	nodes[1].ID = "node-1-id"
 	nodes[1].Name = "node-1-name"
@@ -38,6 +40,10 @@ func TestAffinityFilter(t *testing.T) {
 			Id:    "container-1-id",
 			Names: []string{"container-1-name"},
 		},
+	})
+	nodes[1].AddImage(&dockerclient.Image{
+		Id:       "image-1-id",
+		RepoTags: []string{"image-1:tag1", "image-0:tag3", "image-1:tag2"},
 	})
 
 	nodes[2].ID = "node-2-id"
@@ -70,7 +76,7 @@ func TestAffinityFilter(t *testing.T) {
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[2])
 
-	// Validate node pinning by id.
+	// Validate by id.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"affinity:container=container-0-id"},
 	}, nodes)
@@ -78,9 +84,25 @@ func TestAffinityFilter(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
-	// Validate node pinning by name.
+	// Validate by name.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"affinity:container=container-1-name"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[1])
+
+	// Validate images by id
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:image=image-0-id"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[0])
+
+	// Validate images by name
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:image=image-0:tag3"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
