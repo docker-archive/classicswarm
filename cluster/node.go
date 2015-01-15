@@ -239,7 +239,7 @@ func (n *Node) refreshLoop() {
 
 		if err != nil {
 			if n.healthy {
-				n.emitCustomEvent("node_die")
+				n.emitCustomEvent("node_disconnect")
 			}
 			n.healthy = false
 			log.Errorf("[%s/%s] Flagging node as dead. Updated state failed: %v", n.ID, n.Name, err)
@@ -248,7 +248,7 @@ func (n *Node) refreshLoop() {
 				log.Infof("[%s/%s] Node came back to life. Hooray!", n.ID, n.Name)
 				n.client.StopAllMonitorEvents()
 				n.client.StartMonitorEvents(n.handler)
-				n.emitCustomEvent("node_comes_back")
+				n.emitCustomEvent("node_reconnect")
 			}
 			n.healthy = true
 		}
