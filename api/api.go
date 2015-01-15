@@ -51,6 +51,7 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		c.debug,
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(info)
 }
 
@@ -72,6 +73,7 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 		Arch:       runtime.GOARCH,
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(version)
 }
 
@@ -112,6 +114,8 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	sort.Sort(sort.Reverse(ContainerSorter(out)))
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(out)
 }
 
@@ -143,6 +147,8 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 
 		// insert node IP
 		data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node.IP)), -1)
+
+		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 	}
 }
@@ -170,6 +176,8 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
 	return
 }

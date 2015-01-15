@@ -41,6 +41,16 @@ func getContainerFromVars(c *context, vars map[string]string) (*cluster.Containe
 	return nil, errors.New("Not found")
 }
 
+// from https://github.com/golang/go/blob/master/src/net/http/httputil/reverseproxy.go#L82
+func copyHeader(dst, src http.Header) {
+	for k, vv := range src {
+		for _, v := range vv {
+			fmt.Println(k, v)
+			dst.Add(k, v)
+		}
+	}
+}
+
 func proxy(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseWriter, r *http.Request) error {
 	// Use a new client for each request
 	client, scheme := newClientAndScheme(tlsConfig)
@@ -56,6 +66,8 @@ func proxy(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseW
 	if err != nil {
 		return err
 	}
+
+	copyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 
