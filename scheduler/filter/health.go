@@ -15,7 +15,7 @@ var (
 type HealthFilter struct {
 }
 
-func (f *HealthFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
+func (f *HealthFilter) Filter(_ *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
 	result := []*cluster.Node{}
 	for _, node := range nodes {
 		if node.IsHealthy() {
