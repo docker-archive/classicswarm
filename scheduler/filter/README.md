@@ -150,15 +150,22 @@ As you can see here, the containers were only scheduled on nodes with the redis 
 #### Constraint Expression Syntax
 
 Additionally, you can use a not (`!`) to negate and a regular expression in the form of `/regexp/` for specifying a constraint.
+Relative comparisons, `>=` and `<=` are also supported, but they are limited to `string` comparison only.
+
 For example,
 
 * `constraint:name=node1` will match nodes named with `node1`.
-* `constraint:name=!node1` will match all nodes, except `node1`.
+* `constraint:name==node1` will also match nodes named with `node1`. Note that `==` also allowed.
+* `constraint:name!=node1` will match all nodes, except `node1`.
+* `constraint:name=!node1` will match all nodes, except `node1` (alternative syntax).
 * `constraint:region=!us*` will match all nodes outside the regions prefixed with `us`.
 * `constraint:name=/node[12]/` will match nodes named `node1` and `node2`.
 * `constraint:name=/node\d/` will match all nodes named with `node` + 1 digit.
 * `constraint:node=!/node-[01]-id/` will match all nodes, except those with ids `node-0-id` and `node-1-id`.
 * `constraint:name=!/foo\[bar\]/` will match all nodes, except those with name `foo[bar]`. You can see the use of escape characters here.
+* `constraint:name=/(?i)node1/` will match all nodes named with `node1` case-insensitive. So 'NoDe1' or 'NODE1' will also matched.
+* `constraint:kernel>=3.0` will match all nodes with label `kernel` greater than or equal to "3.0". This is the string, not numeric, comparison.
+* `constraint:group<=3` will match all nodes with `group`  less than or equal to "3". This is also the string, not numeric, comparison.
 
 ## Port Filter
 
