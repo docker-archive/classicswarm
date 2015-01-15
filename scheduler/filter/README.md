@@ -96,6 +96,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 ```
 
 Using `-e affinity:container=front` will schedule a container next to the container `front`.
+You can also use IDs instead of name: `-e affinity:container=87c4376856a8`
 
 ```
 $ docker run -d --name logger -e affinity:container=front logger
@@ -120,7 +121,7 @@ $ docker -H node-2:2375 pull redis
 ```
 
 Here only `node-1` and `node-3` have the `redis` image. Using `-e affinity:image=redis` we can
-schedule container only on these 2 nodes.
+schedule container only on these 2 nodes. You can also use the image ID instead of it's name.
 
 ```
 $ docker run -d --name redis1 -e affinity:image=redis redis
