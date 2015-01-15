@@ -46,6 +46,7 @@ type Node struct {
 
 	ch              chan bool
 	containers      map[string]*Container
+	images          []*dockerclient.Image
 	client          dockerclient.Client
 	eventHandler    EventHandler
 	healthy         bool
@@ -81,6 +82,10 @@ func (n *Node) connectClient(client dockerclient.Client) error {
 
 	// Force a state update before returning.
 	if err := n.refreshContainers(); err != nil {
+		n.client = nil
+		return err
+	}
+	if err := n.refreshImages(); err != nil {
 		n.client = nil
 		return err
 	}
@@ -128,6 +133,18 @@ func (n *Node) updateSpecs() error {
 		kv := strings.SplitN(label, "=", 2)
 		n.Labels[kv[0]] = kv[1]
 	}
+	return nil
+}
+
+// Refresh the list of images on the node.
+func (n *Node) refreshImages() error {
+	images, err := n.client.ListImages()
+	if err != nil {
+		return err
+	}
+	n.Lock()
+	n.images = images
+	n.Unlock()
 	return nil
 }
 
@@ -237,6 +254,10 @@ func (n *Node) refreshLoop() {
 			err = n.refreshContainers()
 		}
 
+		if err == nil {
+			err = n.refreshImages()
+		}
+
 		if err != nil {
 			n.healthy = false
 			log.Errorf("[%s/%s] Flagging node as dead. Updated state failed: %v", n.ID, n.Name, err)
@@ -316,23 +337,6 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 	return n.containers[id], nil
 }
 
-func (n *Node) ListImages() ([]string, error) {
-	images, err := n.client.ListImages()
-	if err != nil {
-		return nil, err
-	}
-
-	out := []string{}
-
-	for _, i := range images {
-		for _, t := range i.RepoTags {
-			out = append(out, t)
-		}
-	}
-
-	return out, nil
-}
-
 // Destroy and remove a container from the node.
 func (n *Node) Destroy(container *Container, force bool) error {
 	if err := n.client.RemoveContainer(container.Id, force); err != nil {
@@ -372,6 +376,12 @@ func (n *Node) Containers() []*Container {
 	}
 	n.RUnlock()
 	return containers
+}
+
+func (n *Node) Images() []*dockerclient.Image {
+	n.RLock()
+	defer n.RUnlock()
+	return n.images
 }
 
 func (n *Node) String() string {

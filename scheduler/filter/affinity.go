@@ -21,22 +21,23 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 			switch k {
 			case "container":
 				for _, container := range node.Containers() {
-					// "node" label is a special case pinning a container to a specific node.
 					if match(v, container.Id) || match(v, container.Names[0]) {
 						candidates = append(candidates, node)
 						break
 					}
 				}
 			case "image":
-				//TODO use cache
-				images, err := node.ListImages()
-				if err != nil {
-					break
-				}
-				for _, image := range images {
-					if match(v, image) {
+			done:
+				for _, image := range node.Images() {
+					if match(v, image.Id) {
 						candidates = append(candidates, node)
 						break
+					}
+					for _, t := range image.RepoTags {
+						if match(v, t) {
+							candidates = append(candidates, node)
+							break done
+						}
 					}
 				}
 			}
