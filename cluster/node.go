@@ -55,16 +55,17 @@ type Node struct {
 // Connect will initialize a connection to the Docker daemon running on the
 // host, gather machine specs (memory, cpu, ...) and monitor state changes.
 func (n *Node) Connect(config *tls.Config) error {
-	c, err := dockerclient.NewDockerClientTimeout(n.Addr, config, time.Duration(requestTimeout))
-	if err != nil {
-		return err
-	}
-
-	addr, err := net.ResolveIPAddr("ip4", strings.Split(c.URL.Host, ":")[0])
+	parts := strings.Split(n.Addr, ":")
+	addr, err := net.ResolveIPAddr("ip4", parts[0])
 	if err != nil {
 		return err
 	}
 	n.IP = addr.IP.String()
+
+	c, err := dockerclient.NewDockerClientTimeout(n.IP+":"+parts[1], config, time.Duration(requestTimeout))
+	if err != nil {
+		return err
+	}
 
 	return n.connectClient(c)
 }
