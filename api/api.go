@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"runtime"
 	"sort"
@@ -14,6 +15,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/scheduler/filter"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
 )
@@ -229,7 +231,7 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := proxy(c.tlsConfig, container, w, r); err != nil {
+	if err := proxy(c.tlsConfig, container.Node.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -245,7 +247,24 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := proxy(c.tlsConfig, container, w, r); err != nil {
+	if err := proxy(c.tlsConfig, container.Node.Addr, w, r); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// Proxy a request to a random node
+func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
+	candidates := c.cluster.Nodes()
+
+	healthFilter := &filter.HealthFilter{}
+	accepted, err := healthFilter.Filter(nil, candidates)
+
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := proxy(c.tlsConfig, accepted[rand.Intn(len(accepted))].Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -258,7 +277,7 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := hijack(c.tlsConfig, container, w, r); err != nil {
+	if err := hijack(c.tlsConfig, container.Node.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -293,7 +312,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/version":                        getVersion,
 			"/images/json":                    notImplementedHandler,
 			"/images/viz":                     notImplementedHandler,
-			"/images/search":                  notImplementedHandler,
+			"/images/search":                  proxyRandom,
 			"/images/get":                     notImplementedHandler,
 			"/images/{name:.*}/get":           notImplementedHandler,
 			"/images/{name:.*}/history":       notImplementedHandler,
@@ -309,7 +328,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/exec/{execid:.*}/json":          proxyContainer,
 		},
 		"POST": {
-			"/auth":                         notImplementedHandler,
+			"/auth":                         proxyRandom,
 			"/commit":                       notImplementedHandler,
 			"/build":                        notImplementedHandler,
 			"/images/create":                notImplementedHandler,

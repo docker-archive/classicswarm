@@ -51,15 +51,14 @@ func copyHeader(dst, src http.Header) {
 	}
 }
 
-func proxy(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseWriter, r *http.Request) error {
+func proxy(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request) error {
 	// Use a new client for each request
 	client, scheme := newClientAndScheme(tlsConfig)
 	// RequestURI may not be sent to client
 	r.RequestURI = ""
 
 	r.URL.Scheme = scheme
-
-	r.URL.Host = container.Node.Addr
+	r.URL.Host = addr
 
 	log.Debugf("[PROXY] --> %s %s", r.Method, r.URL)
 	resp, err := client.Do(r)
@@ -74,9 +73,8 @@ func proxy(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseW
 	return nil
 }
 
-func hijack(tlsConfig *tls.Config, container *cluster.Container, w http.ResponseWriter, r *http.Request) error {
-	addr := container.Node.Addr
-	if parts := strings.SplitN(container.Node.Addr, "://", 2); len(parts) == 2 {
+func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request) error {
+	if parts := strings.SplitN(addr, "://", 2); len(parts) == 2 {
 		addr = parts[1]
 	}
 
