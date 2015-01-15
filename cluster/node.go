@@ -417,6 +417,14 @@ func (n *Node) AddContainer(container *Container) error {
 	return nil
 }
 
+// Inject an image into the internal state.
+func (n *Node) AddImage(image *dockerclient.Image) {
+	n.Lock()
+	defer n.Unlock()
+
+	n.images = append(n.images, image)
+}
+
 // Remove a container from the internal test.
 func (n *Node) RemoveContainer(container *Container) error {
 	n.Lock()
