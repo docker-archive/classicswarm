@@ -47,6 +47,14 @@ func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 		v0 := v
 		k0 := k
 
+		// support case of constraint:k==v
+		// try to check = on both sides, "k= : = : v" and "k : = : =v", to make sure it works everywhere
+		if strings.HasSuffix(k, "=") {
+			k = strings.TrimSuffix(k, "=")
+		} else if strings.HasPrefix(v, "=") {
+			v = strings.TrimPrefix(v, "=")
+		}
+
 		negate := false
 		if strings.HasPrefix(v, "!") {
 			log.Debugf("negate detected in value")
