@@ -15,6 +15,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/scheduler/filter"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
 )
@@ -253,9 +254,17 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to a random node
 func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
-	nodes := c.cluster.Nodes()
+	candidates := c.cluster.Nodes()
 
-	if err := proxy(c.tlsConfig, nodes[rand.Intn(len(nodes))].Addr, w, r); err != nil {
+	healthFilter := &filter.HealthFilter{}
+	accepted, err := healthFilter.Filter(nil, candidates)
+
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := proxy(c.tlsConfig, accepted[rand.Intn(len(accepted))].Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
