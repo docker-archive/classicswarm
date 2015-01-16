@@ -9,6 +9,11 @@ import (
 	"github.com/docker/swarm/discovery"
 )
 
+func checkAddrFormat(addr string) bool {
+	m, _ := regexp.MatchString("^[0-9a-zA-Z._-]+:[0-9]{1,5}$", addr)
+	return m
+}
+
 func join(c *cli.Context) {
 
 	if c.String("discovery") == "" {
@@ -21,8 +26,9 @@ func join(c *cli.Context) {
 	}
 
 	addr := c.String("addr")
-	if m, _ := regexp.MatchString("^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:[0-9]{1,5}$", addr); !m {
-		log.Fatal("--addr should be of the form ip:port")
+
+	if !checkAddrFormat(addr) {
+		log.Fatal("--addr should be of the form ip:port or hostname:port")
 	}
 
 	if err := d.Register(addr); err != nil {
