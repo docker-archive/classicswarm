@@ -44,7 +44,7 @@ func main() {
 	app.Commands = []cli.Command{
 		{
 			Name:      "create",
-			ShortName: "c",
+			ShortName: "cr",
 			Usage:     "create a cluster",
 			Action: func(c *cli.Context) {
 				discovery := &token.TokenDiscoveryService{}
@@ -55,6 +55,16 @@ func main() {
 				}
 				fmt.Println(token)
 			},
+		},
+		{
+			Name:      "config",
+			ShortName: "cf",
+			Usage:     "get the config of a swarm node",
+			Flags: []cli.Flag{
+				flDiscovery,
+				flTls, flTlsCaCert, flTlsCert, flTlsKey, flTlsVerify,
+			},
+			Action: config,
 		},
 		{
 			Name:      "list",
