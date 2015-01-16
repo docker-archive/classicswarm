@@ -379,9 +379,13 @@ func (n *Node) Containers() []*Container {
 }
 
 func (n *Node) Images() []*dockerclient.Image {
+	images := []*dockerclient.Image{}
 	n.RLock()
-	defer n.RUnlock()
-	return n.images
+	for _, image := range n.images {
+		images = append(images, image)
+	}
+	n.RUnlock()
+	return images
 }
 
 func (n *Node) String() string {
@@ -390,7 +394,11 @@ func (n *Node) String() string {
 
 func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
 	// Something changed - refresh our internal state.
-	n.refreshContainer(ev.Id)
+	if ev.Status == "pull" {
+		n.refreshImages()
+	} else {
+		n.refreshContainer(ev.Id)
+	}
 
 	// If there is no event handler registered, abort right now.
 	if n.eventHandler == nil {
