@@ -8,8 +8,6 @@ Here are the main differences:
 ####Some endpoints are not (yet) implemented
 
 ```
-GET "/images/json"
-GET "/images/json"
 GET "/images/get"
 GET "/images/{name:.*}/get"
 GET "/images/{name:.*}/history"
