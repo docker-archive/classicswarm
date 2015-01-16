@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -61,20 +62,45 @@ func parse(k, v string) (string, string, comparison, bool) {
 	return k, v, mode, useRegex
 }
 
-func extractEnv(key string, env []string) map[string]string {
+func extractEnv(key string, env []string) (map[string]string, error) {
 	values := make(map[string]string)
 	for _, e := range env {
 		if strings.HasPrefix(e, key+":") {
 			value := strings.TrimPrefix(e, key+":")
 			parts := strings.SplitN(value, "=", 2)
+
+			// validate key
+			// allow alpha-numeric
+			// but also allow !,>,< operators as suffix
+			matched, err := regexp.MatchString(`^(?i)[a-z_][a-z0-9\-_]+[><!]?$`, parts[0])
+
+			if err != nil {
+				return nil, err
+			}
+			if matched == false {
+				return nil, fmt.Errorf("Key '%s' is not valid", parts[0])
+			}
+
 			if len(parts) == 2 {
+
+				// validate value
+				// allow leading = in case of using ==
+				// allow * for globbing
+				// allow regexp
+				matched, err := regexp.MatchString(`^(?i)[=!\/]?[a-z0-9:\-_\.\*/\(\)\?\+\[\]\\\^\$]+$`, parts[1])
+				if err != nil {
+					return nil, err
+				}
+				if matched == false {
+					return nil, fmt.Errorf("Value '%s' is not valid", parts[1])
+				}
 				values[strings.ToLower(parts[0])] = parts[1]
 			} else {
 				values[strings.ToLower(parts[0])] = ""
 			}
 		}
 	}
-	return values
+	return values, nil
 }
 
 // Create the regex for globbing (ex: ub*t* -> ^ub.*t.*$) and match.

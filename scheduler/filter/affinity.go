@@ -13,7 +13,11 @@ type AffinityFilter struct {
 }
 
 func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
-	affinities := extractEnv("affinity", config.Env)
+	affinities, err := extractEnv("affinity", config.Env)
+	if err != nil {
+		return nil, err
+	}
+
 	for k, v := range affinities {
 		log.Debugf("matching affinity: %s=%s", k, v)
 		candidates := []*cluster.Node{}
@@ -21,7 +25,7 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 			switch k {
 			case "container":
 				for _, container := range node.Containers() {
-					if match(v, container.Id) || match(v, container.Names[0]) {
+					if match(v, container.Id, false) || match(v, container.Names[0], false) {
 						candidates = append(candidates, node)
 						break
 					}
@@ -29,12 +33,12 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 			case "image":
 			done:
 				for _, image := range node.Images() {
-					if match(v, image.Id) {
+					if match(v, image.Id, false) {
 						candidates = append(candidates, node)
 						break
 					}
 					for _, t := range image.RepoTags {
-						if match(v, t) {
+						if match(v, t, false) {
 							candidates = append(candidates, node)
 							break done
 						}

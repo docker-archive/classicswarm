@@ -149,11 +149,18 @@ As you can see here, the containers were only scheduled on nodes with the redis 
 
 #### Constraint Expression Syntax
 
-Additionally, you can use a not (`!`) to negate and a regular expression in the form of `/regexp/` for specifying a constraint.
+As previously mentioned, a constraint consists of a `key` and a `value`.
+A `key` must conform the alpha-numeric pattern, with the leading alphabet or underscore.
+
+A `value` must be one of the following:
+* An alpha-numeric string, dots, hyphens, and underscores.
+* A globbing pattern, i.e., `abc*`.
+* A regular expression in the form of `/regexp/`. We support the Go's regular expression syntax.
+
+You can use a not (`!`) to negate and a regular expression in the form of `/regexp/` for specifying a constraint.
 Relative comparisons, `>=` and `<=` are also supported, but they are limited to `string` comparison only.
 
 For example,
-
 * `constraint:name=node1` will match nodes named with `node1`.
 * `constraint:name==node1` will also match nodes named with `node1`. Note that `==` also allowed.
 * `constraint:name!=node1` will match all nodes, except `node1`.

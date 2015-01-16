@@ -13,7 +13,10 @@ type ConstraintFilter struct {
 }
 
 func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
-	constraints := extractEnv("constraint", config.Env)
+	constraints, err := extractEnv("constraint", config.Env)
+	if err != nil {
+		return nil, err
+	}
 	for k, v := range constraints {
 		log.Debugf("matching constraint: %s=%s", k, v)
 
