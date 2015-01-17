@@ -45,7 +45,6 @@ func getContainerFromVars(c *context, vars map[string]string) (*cluster.Containe
 func copyHeader(dst, src http.Header) {
 	for k, vv := range src {
 		for _, v := range vv {
-			fmt.Println(k, v)
 			dst.Add(k, v)
 		}
 	}
