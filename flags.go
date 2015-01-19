@@ -1,8 +1,27 @@
 package main
 
-import "github.com/codegangsta/cli"
+import (
+	"github.com/codegangsta/cli"
+	"os/user"
+	"path"
+
+	log "github.com/Sirupsen/logrus"
+)
+
+func homepath(p string) string {
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return path.Join(usr.HomeDir, p)
+}
 
 var (
+	flStore = cli.StringFlag{
+		Name:  "rootdir",
+		Value: homepath(".swarm"),
+		Usage: "",
+	}
 	flDiscovery = cli.StringFlag{
 		Name:   "discovery",
 		Value:  "",

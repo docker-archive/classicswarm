@@ -86,6 +86,7 @@ func main() {
 			Usage:     "manage a docker cluster",
 			Flags: []cli.Flag{
 				flDiscovery,
+				flStore,
 				flStrategy, flFilter,
 				flHosts, flHeartBeat, flOverCommit,
 				flTls, flTlsCaCert, flTlsCert, flTlsKey, flTlsVerify,
