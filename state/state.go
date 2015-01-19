@@ -5,6 +5,7 @@ import (
 )
 
 type RequestedState struct {
+	ID     string
 	Name   string
 	Config *dockerclient.ContainerConfig
 }
