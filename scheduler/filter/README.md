@@ -8,7 +8,7 @@ These filters are used to schedule containers on a subset of nodes.
 `Docker Swarm` currently supports 3 filters:
 * [Constraint](README.md#constraint-filter)
 * [Port](README.md#port-filter)
-* [Healty](README.md#healthy-filter)
+* [Healthy](README.md#healthy-filter)
 
 You can choose the filter(s) you want to use with the `--filter` flag of `swarm manage`
 
