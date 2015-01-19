@@ -44,6 +44,7 @@ func (c *Cluster) DeployContainer(node *Node, config *dockerclient.ContainerConf
 
 	// Commit the requested state.
 	st := &state.RequestedState{
+		ID:     container.Id,
 		Name:   name,
 		Config: config,
 	}
