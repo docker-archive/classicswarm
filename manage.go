@@ -73,7 +73,7 @@ func manage(c *cli.Context) {
 		}
 	}
 
-	store := state.NewStore(path.Join(c.String("store"), "state"))
+	store := state.NewStore(path.Join(c.String("rootdir"), "state"))
 	if err := store.Initialize(); err != nil {
 		log.Fatal(err)
 	}
