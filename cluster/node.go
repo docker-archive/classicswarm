@@ -90,6 +90,7 @@ func (n *Node) connectClient(client dockerclient.Client) error {
 
 	// Start monitoring events from the Node.
 	n.client.StartMonitorEvents(n.handler)
+	n.emitCustomEvent("node_connect")
 
 	return nil
 }
