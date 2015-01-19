@@ -1,11 +1,16 @@
-Docker Swarm API
-================
+---
+page_title: Docker Swarm API
+page_description: Swarm API
+page_keywords: docker, swarm, clustering, api
+---
+
+# Docker Swarm API
 
 The Docker Swarm API is compatible with the [Offical Docker API](https://docs.docker.com/reference/api/docker_remote_api/):
 
 Here are the main differences:
 
-####Some endpoints are not (yet) implemented
+## Some endpoints are not (yet) implemented
 
 ```
 GET "/images/get"
@@ -22,7 +27,7 @@ POST "/images/{name:.*}/tag"
 DELETE "/images/{name:.*}"
 ```
 
-####Some endpoints have more information
+## Some endpoints have more information
 
 * `GET "/containers/{name:.*}/json"`: New field `Node` added:
 
