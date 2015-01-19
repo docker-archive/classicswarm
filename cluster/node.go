@@ -95,7 +95,7 @@ func (n *Node) connectClient(client dockerclient.Client) error {
 
 	// Start monitoring events from the Node.
 	n.client.StartMonitorEvents(n.handler)
-	n.emitCustomEvent("node_connect")
+	n.emitEvent("node_connect")
 
 	return nil
 }
@@ -261,7 +261,7 @@ func (n *Node) refreshLoop() {
 
 		if err != nil {
 			if n.healthy {
-				n.emitCustomEvent("node_disconnect")
+				n.emitEvent("node_disconnect")
 			}
 			n.healthy = false
 			log.Errorf("[%s/%s] Flagging node as dead. Updated state failed: %v", n.ID, n.Name, err)
@@ -270,7 +270,7 @@ func (n *Node) refreshLoop() {
 				log.Infof("[%s/%s] Node came back to life. Hooray!", n.ID, n.Name)
 				n.client.StopAllMonitorEvents()
 				n.client.StartMonitorEvents(n.handler)
-				n.emitCustomEvent("node_reconnect")
+				n.emitEvent("node_reconnect")
 				if err := n.updateSpecs(); err != nil {
 					log.Errorf("[%s/%s] Update node specs failed: %v", n.ID, n.Name, err)
 				}
@@ -280,7 +280,7 @@ func (n *Node) refreshLoop() {
 	}
 }
 
-func (n *Node) emitCustomEvent(event string) {
+func (n *Node) emitEvent(event string) {
 	// If there is no event handler registered, abort right now.
 	if n.eventHandler == nil {
 		return
