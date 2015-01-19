@@ -250,6 +250,9 @@ func (n *Node) refreshLoop() {
 				n.client.StopAllMonitorEvents()
 				n.client.StartMonitorEvents(n.handler)
 				n.emitCustomEvent("node_reconnect")
+				if err := n.updateSpecs(); err != nil {
+					log.Errorf("[%s/%s] Update node specs failed: %v", n.ID, n.Name, err)
+				}
 			}
 			n.healthy = true
 		}
