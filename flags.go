@@ -81,7 +81,7 @@ var (
 	}
 	flFilter = cli.StringSliceFlag{
 		Name:  "filter, f",
-		Usage: "filter to use [constraint, health, port]",
-		Value: &cli.StringSlice{"constraint", "health", "port"},
+		Usage: "filter to use [constraint, affinity, health, port]",
+		Value: &cli.StringSlice{"constraint", "affinity", "health", "port"},
 	}
 )

@@ -20,6 +20,7 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
 	client.On("ListContainers", true, false, "").Return(containers, nil)
+	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
 	client.On("InspectContainer", mock.Anything).Return(
 		&dockerclient.ContainerInfo{
 			Config: &dockerclient.ContainerConfig{CpuShares: 100},

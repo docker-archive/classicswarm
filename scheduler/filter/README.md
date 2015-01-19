@@ -7,6 +7,7 @@ These filters are used to schedule containers on a subset of nodes.
 
 `Docker Swarm` currently supports 3 filters:
 * [Constraint](README.md#constraint-filter)
+* [Affinity](README.md#affinity-filter)
 * [Port](README.md#port-filter)
 * [Healthy](README.md#healthy-filter)
 
@@ -78,6 +79,73 @@ Those tags are sourced from `docker info` and currently include:
 * executiondriver
 * kernelversion
 * operatingsystem
+
+## Affinity Filter
+
+#### Containers
+
+You can schedule 2 containers and make the container #2 next to the container #1.
+
+```
+$ docker run -d -p 80:80 --name front nginx
+ 87c4376856a8
+
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
+87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      front
+```
+
+Using `-e affinity:container=front` will schedule a container next to the container `front`.
+You can also use IDs instead of name: `-e affinity:container=87c4376856a8`
+
+```
+$ docker run -d --name logger -e affinity:container=front logger
+ 87c4376856a8
+
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
+87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      front
+963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1      logger
+```
+
+The `logger` container ends up on `node-1` because his affinity with the container `front`.
+
+#### Images
+
+You can schedule a container only on nodes where the images is already pulled.
+
+```
+$ docker -H node-1:2375 pull redis
+$ docker -H node-2:2375 pull mysql
+$ docker -H node-2:2375 pull redis
+```
+
+Here only `node-1` and `node-3` have the `redis` image. Using `-e affinity:image=redis` we can
+schedule container only on these 2 nodes. You can also use the image ID instead of it's name.
+
+```
+$ docker run -d --name redis1 -e affinity:image=redis redis
+$ docker run -d --name redis2 -e affinity:image=redis redis
+$ docker run -d --name redis3 -e affinity:image=redis redis
+$ docker run -d --name redis4 -e affinity:image=redis redis
+$ docker run -d --name redis5 -e affinity:image=redis redis
+$ docker run -d --name redis6 -e affinity:image=redis redis
+$ docker run -d --name redis7 -e affinity:image=redis redis
+$ docker run -d --name redis8 -e affinity:image=redis redis
+
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
+87c4376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis1
+1212386856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis2
+87c4376639a8        redis:latest        "redis"             Less than a second ago   running                                             node-3      redis3
+1234376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis4
+86c2136253a8        redis:latest        "redis"             Less than a second ago   running                                             node-3      redis5
+87c3236856a8        redis:latest        "redis"             Less than a second ago   running                                             node-3      redis6
+87c4376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-3      redis7
+963841b138d8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis8
+```
+
+As you can see here, the containers were only scheduled on nodes with the redis imagealreayd pulled.
 
 ## Port Filter
 
