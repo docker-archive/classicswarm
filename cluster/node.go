@@ -394,7 +394,7 @@ func (n *Node) String() string {
 
 func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
 	// Something changed - refresh our internal state.
-	if ev.Status == "pull" {
+	if ev.Status == "pull" || ev.Status == "untag" || ev.Status == "delete" {
 		n.refreshImages()
 	} else {
 		n.refreshContainer(ev.Id)
