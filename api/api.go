@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
@@ -77,6 +78,45 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(version)
+}
+
+// GET /images/json
+func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filters, err := dockerfilters.FromParam(r.Form.Get("filters"))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	accepteds, _ := filters["node"]
+	images := []*dockerclient.Image{}
+
+	for _, node := range c.cluster.Nodes() {
+		if len(accepteds) != 0 {
+			found := false
+			for _, accepted := range accepteds {
+				if accepted == node.Name || accepted == node.ID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+
+		for _, image := range node.Images() {
+			images = append(images, image)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(images)
 }
 
 // GET /containers/ps
@@ -310,7 +350,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/events":                         getEvents,
 			"/info":                           getInfo,
 			"/version":                        getVersion,
-			"/images/json":                    notImplementedHandler,
+			"/images/json":                    getImagesJSON,
 			"/images/viz":                     notImplementedHandler,
 			"/images/search":                  proxyRandom,
 			"/images/get":                     notImplementedHandler,
