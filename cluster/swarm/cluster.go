@@ -186,6 +186,14 @@ func (c *Cluster) Image(IdOrName string) *cluster.Image {
 	return nil
 }
 
+func (c *Cluster) Pull(name string, begin, end func(string)) {
+	for _, node := range c.nodes {
+		begin(node.Name())
+		node.Pull(name)
+		end(node.Name())
+	}
+}
+
 // Containers returns all the containers in the cluster.
 func (c *Cluster) Containers() []*cluster.Container {
 	c.RLock()

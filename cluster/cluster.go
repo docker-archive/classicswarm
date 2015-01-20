@@ -11,5 +11,7 @@ type Cluster interface {
 	Containers() []*Container
 	Container(IdOrName string) *Container
 
+	Pull(name string, begin, end func(string))
+
 	Info() [][2]string
 }

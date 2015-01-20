@@ -18,7 +18,7 @@ GET "/containers/{name:.*}/attach/ws"
 
 POST "/commit"
 POST "/build"
-POST "/images/create"
+POST "/images/create" (pull implemented)
 POST "/images/load"
 POST "/images/{name:.*}/push"
 POST "/images/{name:.*}/tag"
