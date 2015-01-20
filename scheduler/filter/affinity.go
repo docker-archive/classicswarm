@@ -19,13 +19,20 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 	}
 
 	for k, v := range affinities {
-		log.Debugf("matching affinity: %s=%s", k, v)
+		log.Debugf("matching affinity: %s%s%s", k, v[0], v[1])
+
 		candidates := []*cluster.Node{}
 		for _, node := range nodes {
 			switch k {
 			case "container":
 				for _, container := range node.Containers() {
-					if match(v, container.Id, false) || match(v, container.Names[0], false) {
+					matchResult := false
+					if v[0] != "!=" {
+						matchResult = match(v, container.Id) || match(v, container.Names[0])
+					} else if v[0] == "!=" {
+						matchResult = match(v, container.Id) && match(v, container.Names[0])
+					}
+					if matchResult {
 						candidates = append(candidates, node)
 						break
 					}
@@ -33,12 +40,12 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 			case "image":
 			done:
 				for _, image := range node.Images() {
-					if match(v, image.Id, false) {
+					if match(v, image.Id) {
 						candidates = append(candidates, node)
 						break
 					}
-					for _, t := range image.RepoTags {
-						if match(v, t, false) {
+					for _, tag := range image.RepoTags {
+						if match(v, tag) {
 							candidates = append(candidates, node)
 							break done
 						}
@@ -47,7 +54,7 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 			}
 		}
 		if len(candidates) == 0 {
-			return nil, fmt.Errorf("unable to find a node that satisfies %s == %s", k, v)
+			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", k, v[0], v[1])
 		}
 		nodes = candidates
 	}

@@ -55,13 +55,13 @@ func TestConstrainteFilter(t *testing.T) {
 
 	// Set a constraint that cannot be fullfilled and expect an error back.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:does_not_exist=true"},
+		Env: []string{"constraint:does_not_exist==true"},
 	}, nodes)
 	assert.Error(t, err)
 
 	// Set a contraint that can only be filled by a single node.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name=node1"},
+		Env: []string{"constraint:name==node1"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -69,7 +69,7 @@ func TestConstrainteFilter(t *testing.T) {
 
 	// This constraint can only be fullfilled by a subset of nodes.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:group=1"},
+		Env: []string{"constraint:group==1"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
@@ -77,7 +77,7 @@ func TestConstrainteFilter(t *testing.T) {
 
 	// Validate node pinning by id.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:node=node-2-id"},
+		Env: []string{"constraint:node==node-2-id"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -85,7 +85,7 @@ func TestConstrainteFilter(t *testing.T) {
 
 	// Validate node pinning by name.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:node=node-1-name"},
+		Env: []string{"constraint:node==node-1-name"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -93,7 +93,7 @@ func TestConstrainteFilter(t *testing.T) {
 
 	// Make sure constraints are evaluated as logical ANDs.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name=node0", "constraint:group=1"},
+		Env: []string{"constraint:name==node0", "constraint:group==1"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -101,63 +101,25 @@ func TestConstrainteFilter(t *testing.T) {
 
 	// Check matching
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:region=us"},
+		Env: []string{"constraint:region==us"},
 	}, nodes)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:region=us*"},
+		Env: []string{"constraint:region==us*"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:region=*us*"},
+		Env: []string{"constraint:region==*us*"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 }
 
 func TestConstraintNotExpr(t *testing.T) {
-	var (
-		f      = ConstraintFilter{}
-		nodes  = testFixtures()
-		result []*cluster.Node
-		err    error
-	)
-
-	// Check not (!) expression
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name=!node0"},
-	}, nodes)
-	assert.NoError(t, err)
-	assert.Len(t, result, 2)
-
-	// Check not does_not_exist. All should be found
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name=!does_not_exist"},
-	}, nodes)
-	assert.NoError(t, err)
-	assert.Len(t, result, 3)
-
-	// Check name must not start with n
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name=!n*"},
-	}, nodes)
-	assert.Error(t, err)
-	assert.Len(t, result, 0)
-
-	// Check not with globber pattern
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:region=!us*"},
-	}, nodes)
-	assert.NoError(t, err)
-	assert.Len(t, result, 1)
-	assert.Equal(t, result[0].Labels["region"], "eu")
-}
-
-func TestConstraintAlternativeNotExpr(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
@@ -205,21 +167,21 @@ func TestConstraintRegExp(t *testing.T) {
 
 	// Check with regular expression /node\d/ matches node{0..2}
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name=/node\d/`},
+		Env: []string{`constraint:name==/node\d/`},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 3)
 
 	// Check with regular expression /node\d/ matches node{0..2}
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name=/node[12]/`},
+		Env: []string{`constraint:name==/node[12]/`},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	// Check with regular expression ! and regexp /node[12]/ matches node[0]
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name=!/node[12]/`},
+		Env: []string{`constraint:name!=/node[12]/`},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -227,7 +189,7 @@ func TestConstraintRegExp(t *testing.T) {
 
 	// Validate node pinning by ! and regexp.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:node=!/node-[01]-id/"},
+		Env: []string{"constraint:node!=/node-[01]-id/"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -255,14 +217,14 @@ func TestFilterRegExpCaseInsensitive(t *testing.T) {
 
 	// Case-sensitive, so not match
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name=/abcdef/`},
+		Env: []string{`constraint:name==/abcdef/`},
 	}, nodes)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 
 	// Match with case-insensitive
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name=/(?i)abcdef/`},
+		Env: []string{`constraint:name==/(?i)abcdef/`},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -271,7 +233,7 @@ func TestFilterRegExpCaseInsensitive(t *testing.T) {
 
 	// Test ! filter combined with case insensitive
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name=!/(?i)abc*/`},
+		Env: []string{`constraint:name!=/(?i)abc*/`},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 3)
@@ -328,7 +290,7 @@ func TestFilterWithRelativeComparisons(t *testing.T) {
 	assert.Len(t, result, 1)
 }
 
-func TestFilterWithDoubleEquals(t *testing.T) {
+func TestFilterEquals(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
@@ -357,5 +319,25 @@ func TestFilterWithDoubleEquals(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
+}
 
+func TestUnsupportedOperators(t *testing.T) {
+	var (
+		f      = ConstraintFilter{}
+		nodes  = testFixtures()
+		result []*cluster.Node
+		err    error
+	)
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:name=node0"},
+	}, nodes)
+	assert.Error(t, err)
+	assert.Len(t, result, 0)
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:name=!node0"},
+	}, nodes)
+	assert.Error(t, err)
+	assert.Len(t, result, 0)
 }
