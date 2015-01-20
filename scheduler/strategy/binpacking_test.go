@@ -226,3 +226,36 @@ func TestPlaceContainerDemo(t *testing.T) {
 	assert.Equal(t, node2.ID, node2bis.ID, "")
 	assert.Equal(t, len(node2.Containers()), len(node2bis.Containers()), "")
 }
+
+func TestComplexPlacement(t *testing.T) {
+	s := &BinPackingPlacementStrategy{}
+
+	nodes := []*cluster.Node{}
+	for i := 0; i < 2; i++ {
+		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 4, 4))
+	}
+
+	// add one container 2G
+	config := createConfig(2, 0)
+	node1, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
+
+	// add one container 3G
+	config = createConfig(3, 0)
+	node2, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
+
+	// check that they end up on separate nodes
+	assert.NotEqual(t, node1.ID, node2.ID, "")
+
+	// add one container 1G
+	config = createConfig(1, 0)
+	node3, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	assert.NoError(t, node3.AddContainer(createContainer("c3", config)))
+
+	// check that it ends up on the same node as the 3G
+	assert.Equal(t, node2.ID, node3.ID, "")
+}
