@@ -33,6 +33,10 @@ func (p *BalancedPlacementStrategy) PlaceContainer(config *dockerclient.Containe
 
 		var total = cpuScore + memoryScore + containerScore
 
+		if cpuScore > 100 || memoryScore > 100 {
+			continue
+		}
+
 		scores = append(scores, &balancedScore{node: node, score: total})
 	}
 

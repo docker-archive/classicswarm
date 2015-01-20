@@ -69,7 +69,7 @@ func TestBalancedPlaceContainerHuge(t *testing.T) {
 	s := &BalancedPlacementStrategy{}
 
 	nodes := []*cluster.Node{}
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 100; i++ {
 		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 1, 1))
 	}
 
@@ -77,7 +77,7 @@ func TestBalancedPlaceContainerHuge(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		node, err := s.PlaceContainer(createConfig(0, 1), nodes)
 		assert.NoError(t, err)
-		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(0, 100))))
+		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(0, 1))))
 	}
 
 	// add 100 container 1G
@@ -194,17 +194,11 @@ func TestBalancedPlaceContainerDemo(t *testing.T) {
 
 	// try to add another container
 	config = createConfig(3, 0)
-	c6node, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
-	assert.NoError(t, c6node.AddContainer(createContainer("c6", config)))
+	_, err = s.PlaceContainer(config, nodes)
+	assert.Error(t, err)
 
-	// check that it succeeds because the strategy allows overflow
-	assert.NoError(t, err)
-
-	// nodes: 5G 0CPU, 2G 0CPU, 2G 0CPU
-
-	// clear the big node
-	c6node.CleanupContainers()
+	// clear a node
+	c1node.CleanupContainers()
 
 	// nodes: 0G 0CPU, 2G 0CPU, 2G 0CPU
 
@@ -215,7 +209,7 @@ func TestBalancedPlaceContainerDemo(t *testing.T) {
 	assert.NoError(t, c7node.AddContainer(createContainer("c7", config)))
 
 	// check it ends up on the node we just cleared
-	assert.Equal(t, c7node.ID, c6node.ID, "")
+	assert.Equal(t, c7node.ID, c1node.ID, "")
 	assert.Equal(t, len(c7node.Containers()), 1, "")
 
 	// nodes: 4G 0CPU, 2G 0CPU, 2G 0CPU
