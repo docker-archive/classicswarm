@@ -41,7 +41,7 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 		if config.Memory > 0 {
 			memoryScore = (node.ReservedMemory() + config.Memory) * 100 / nodeMemory
 		}
-		var total = ((cpuScore + memoryScore) / 200) * 100
+		var total = (cpuScore + memoryScore) / 2
 
 		if cpuScore <= 100 && memoryScore <= 100 {
 			scores = append(scores, &score{node: node, score: total})
