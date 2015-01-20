@@ -248,7 +248,7 @@ func TestComplexPlacement(t *testing.T) {
 	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 
 	// check that they end up on separate nodes
-	assert.NotEqual(t, node1.ID, node2.ID, "")
+	assert.NotEqual(t, node1.ID, node2.ID)
 
 	// add one container 1G
 	config = createConfig(1, 0)
@@ -257,5 +257,5 @@ func TestComplexPlacement(t *testing.T) {
 	assert.NoError(t, node3.AddContainer(createContainer("c3", config)))
 
 	// check that it ends up on the same node as the 3G
-	assert.Equal(t, node2.ID, node3.ID, "")
+	assert.Equal(t, node2.ID, node3.ID)
 }
