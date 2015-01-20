@@ -81,7 +81,7 @@ func manage(c *cli.Context) {
 	cluster := cluster.NewCluster(store, tlsConfig, c.Float64("overcommit"))
 	cluster.Events(&logHandler{})
 
-	if !c.IsSet("discovery") {
+	if c.String("discovery") == "" {
 		log.Fatal("--discovery required to manage a cluster")
 	}
 
