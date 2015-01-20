@@ -95,11 +95,11 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      front
 ```
 
-Using `-e affinity:container=front` will schedule a container next to the container `front`.
-You can also use IDs instead of name: `-e affinity:container=87c4376856a8`
+Using `-e affinity:container==front` will schedule a container next to the container `front`.
+You can also use IDs instead of name: `-e affinity:container==87c4376856a8`
 
 ```
-$ docker run -d --name logger -e affinity:container=front logger
+$ docker run -d --name logger -e affinity:container==front logger
  87c4376856a8
 
 $ docker ps
@@ -124,14 +124,14 @@ Here only `node-1` and `node-3` have the `redis` image. Using `-e affinity:image
 schedule container only on these 2 nodes. You can also use the image ID instead of it's name.
 
 ```
-$ docker run -d --name redis1 -e affinity:image=redis redis
-$ docker run -d --name redis2 -e affinity:image=redis redis
-$ docker run -d --name redis3 -e affinity:image=redis redis
-$ docker run -d --name redis4 -e affinity:image=redis redis
-$ docker run -d --name redis5 -e affinity:image=redis redis
-$ docker run -d --name redis6 -e affinity:image=redis redis
-$ docker run -d --name redis7 -e affinity:image=redis redis
-$ docker run -d --name redis8 -e affinity:image=redis redis
+$ docker run -d --name redis1 -e affinity:image==redis redis
+$ docker run -d --name redis2 -e affinity:image==redis redis
+$ docker run -d --name redis3 -e affinity:image==redis redis
+$ docker run -d --name redis4 -e affinity:image==redis redis
+$ docker run -d --name redis5 -e affinity:image==redis redis
+$ docker run -d --name redis6 -e affinity:image==redis redis
+$ docker run -d --name redis7 -e affinity:image==redis redis
+$ docker run -d --name redis8 -e affinity:image==redis redis
 
 $ docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
@@ -147,9 +147,9 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 
 As you can see here, the containers were only scheduled on nodes with the redis imagealreayd pulled.
 
-#### Constraint Expression Syntax
+#### Expression Syntax
 
-As previously mentioned, a constraint consists of a `key` and a `value`.
+An affinity or a constraint expression consists of a `key` and a `value`.
 A `key` must conform the alpha-numeric pattern, with the leading alphabet or underscore.
 
 A `value` must be one of the following:
@@ -157,8 +157,8 @@ A `value` must be one of the following:
 * A globbing pattern, i.e., `abc*`.
 * A regular expression in the form of `/regexp/`. We support the Go's regular expression syntax.
 
-You can use a not (`!`) to negate and a regular expression in the form of `/regexp/` for specifying a constraint.
-Relative comparisons, `>=` and `<=` are also supported, but they are limited to `string` comparison only.
+Current `swarm` supports affinity/constraint operators as the following: `==`, `!=`, `>=` and `<=`.
+Relative comparisons, `>=` and `<=` are supported, but limited to `string` comparison only.
 
 For example,
 * `constraint:name==node1` will match nodes named with `node1`.
