@@ -15,12 +15,12 @@ func checkAddrFormat(addr string) bool {
 }
 
 func join(c *cli.Context) {
-
-	if c.String("discovery") == "" {
-		log.Fatal("--discovery required to join a cluster")
+	dflag := getDiscovery(c)
+	if dflag == "" {
+		log.Fatal("discovery required to join a cluster. See 'swarm join --help'.")
 	}
 
-	d, err := discovery.New(c.String("discovery"), c.Int("heartbeat"))
+	d, err := discovery.New(dflag, c.Int("heartbeat"))
 	if err != nil {
 		log.Fatal(err)
 	}

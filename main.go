@@ -60,13 +60,13 @@ func main() {
 			Name:      "list",
 			ShortName: "l",
 			Usage:     "list nodes in a cluster",
-			Flags:     []cli.Flag{flDiscovery},
 			Action: func(c *cli.Context) {
-				if c.String("discovery") == "" {
-					log.Fatal("--discovery required to list a cluster")
+				dflag := getDiscovery(c)
+				if dflag == "" {
+					log.Fatal("discovery required to list a cluster. See 'swarm list --help'.")
 				}
 
-				d, err := discovery.New(c.String("discovery"), 0)
+				d, err := discovery.New(dflag, 0)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -85,7 +85,6 @@ func main() {
 			ShortName: "m",
 			Usage:     "manage a docker cluster",
 			Flags: []cli.Flag{
-				flDiscovery,
 				flStore,
 				flStrategy, flFilter,
 				flHosts, flHeartBeat, flOverCommit,
@@ -97,7 +96,7 @@ func main() {
 			Name:      "join",
 			ShortName: "j",
 			Usage:     "join a docker cluster",
-			Flags:     []cli.Flag{flDiscovery, flAddr, flHeartBeat},
+			Flags:     []cli.Flag{flAddr, flHeartBeat},
 			Action:    join,
 		},
 	}
