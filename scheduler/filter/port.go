@@ -20,6 +20,30 @@ func (p *PortFilter) Name() string {
 
 // Filter is exported
 func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+	if config.HostConfig.NetworkMode == "host" {
+		return p.filterHost(config, nodes)
+	}
+
+	return p.filterBridge(config, nodes)
+}
+
+func (p *PortFilter) filterHost(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+	for port := range config.ExposedPorts {
+		candidates := []*node.Node{}
+		for _, node := range nodes {
+			if !p.portAlreadyExposed(node, port) {
+				candidates = append(candidates, node)
+			}
+		}
+		if len(candidates) == 0 {
+			return nil, fmt.Errorf("unable to find a node with port %s available in the Host mode", port)
+		}
+		nodes = candidates
+	}
+	return nodes, nil
+}
+
+func (p *PortFilter) filterBridge(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	for _, port := range config.HostConfig.PortBindings {
 		for _, binding := range port {
 			candidates := []*node.Node{}
@@ -35,6 +59,19 @@ func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []*node.
 		}
 	}
 	return nodes, nil
+}
+
+func (p *PortFilter) portAlreadyExposed(node *node.Node, requestedPort string) bool {
+	for _, c := range node.Containers {
+		if c.Info.HostConfig.NetworkMode == "host" {
+			for port := range c.Info.Config.ExposedPorts {
+				if port == requestedPort {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (p *PortFilter) portAlreadyInUse(node *node.Node, requested dockerclient.PortBinding) bool {
