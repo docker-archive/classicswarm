@@ -379,6 +379,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/containers/{name:.*}/kill":    proxyContainer,
 			"/containers/{name:.*}/pause":   proxyContainer,
 			"/containers/{name:.*}/unpause": proxyContainer,
+			"/containers/{name:.*}/rename":  proxyContainer,
 			"/containers/{name:.*}/restart": proxyContainer,
 			"/containers/{name:.*}/start":   proxyContainer,
 			"/containers/{name:.*}/stop":    proxyContainer,
