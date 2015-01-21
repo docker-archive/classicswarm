@@ -45,7 +45,7 @@ Once the nodes are registered with the cluster, the master pulls their respectiv
 Let's start a MySQL server and make sure it gets good I/O performance by selecting nodes with flash drives:
 
 ```
-$ docker run -d -P -e constraint:storage=ssd --name db mysql
+$ docker run -d -P -e constraint:storage==ssd --name db mysql
 f8b693db9cd6
 
 $ docker ps
@@ -59,7 +59,7 @@ In this case, the master selected all nodes that met the `storage=ssd` constrain
 Now we want to run an `nginx` frontend in our cluster. However, we don't want *flash* drives since we'll mostly write logs to disk.
 
 ```
-$ docker run -d -P -e constraint:storage=disk --name frontend nginx
+$ docker run -d -P -e constraint:storage==disk --name frontend nginx
 f8b693db9cd6
 
 $ docker ps
@@ -95,11 +95,11 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      front
 ```
 
-Using `-e affinity:container=front` will schedule a container next to the container `front`.
-You can also use IDs instead of name: `-e affinity:container=87c4376856a8`
+Using `-e affinity:container==front` will schedule a container next to the container `front`.
+You can also use IDs instead of name: `-e affinity:container==87c4376856a8`
 
 ```
-$ docker run -d --name logger -e affinity:container=front logger
+$ docker run -d --name logger -e affinity:container==front logger
  87c4376856a8
 
 $ docker ps
@@ -124,14 +124,14 @@ Here only `node-1` and `node-3` have the `redis` image. Using `-e affinity:image
 schedule container only on these 2 nodes. You can also use the image ID instead of it's name.
 
 ```
-$ docker run -d --name redis1 -e affinity:image=redis redis
-$ docker run -d --name redis2 -e affinity:image=redis redis
-$ docker run -d --name redis3 -e affinity:image=redis redis
-$ docker run -d --name redis4 -e affinity:image=redis redis
-$ docker run -d --name redis5 -e affinity:image=redis redis
-$ docker run -d --name redis6 -e affinity:image=redis redis
-$ docker run -d --name redis7 -e affinity:image=redis redis
-$ docker run -d --name redis8 -e affinity:image=redis redis
+$ docker run -d --name redis1 -e affinity:image==redis redis
+$ docker run -d --name redis2 -e affinity:image==redis redis
+$ docker run -d --name redis3 -e affinity:image==redis redis
+$ docker run -d --name redis4 -e affinity:image==redis redis
+$ docker run -d --name redis5 -e affinity:image==redis redis
+$ docker run -d --name redis6 -e affinity:image==redis redis
+$ docker run -d --name redis7 -e affinity:image==redis redis
+$ docker run -d --name redis8 -e affinity:image==redis redis
 
 $ docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
@@ -146,6 +146,28 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 ```
 
 As you can see here, the containers were only scheduled on nodes with the redis imagealreayd pulled.
+
+#### Expression Syntax
+
+An affinity or a constraint expression consists of a `key` and a `value`.
+A `key` must conform the alpha-numeric pattern, with the leading alphabet or underscore.
+
+A `value` must be one of the following:
+* An alpha-numeric string, dots, hyphens, and underscores.
+* A globbing pattern, i.e., `abc*`.
+* A regular expression in the form of `/regexp/`. We support the Go's regular expression syntax.
+
+Current `swarm` supports affinity/constraint operators as the following: `==` and `!=`.
+
+For example,
+* `constraint:name==node1` will match nodes named with `node1`.
+* `constraint:name!=node1` will match all nodes, except `node1`.
+* `constraint:region!=us*` will match all nodes outside the regions prefixed with `us`.
+* `constraint:name==/node[12]/` will match nodes named `node1` and `node2`.
+* `constraint:name==/node\d/` will match all nodes named with `node` + 1 digit.
+* `constraint:node!=/node-[01]-id/` will match all nodes, except those with ids `node-0-id` and `node-1-id`.
+* `constraint:name!=/foo\[bar\]/` will match all nodes, except those with name `foo[bar]`. You can see the use of escape characters here.
+* `constraint:name==/(?i)node1/` will match all nodes named with `node1` case-insensitive. So 'NoDe1' or 'NODE1' will also matched.
 
 ## Port Filter
 

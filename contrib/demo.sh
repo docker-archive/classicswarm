@@ -43,16 +43,16 @@ docker run -d -p 80:80 nginx
 # clean up cluster
 docker rm -f `docker ps -aq`
 
-docker run -d -e "constraint:operatingsystem=fedora*" redis
+docker run -d -e "constraint:operatingsystem==fedora*" redis
 docker ps
 
-docker run -d -e constraint:storagedriver=devicemapper redis
+docker run -d -e constraint:storagedriver==devicemapper redis
 docker ps
 
-docker run -d -e constraint:storagedriver=aufs redis
+docker run -d -e constraint:storagedriver==aufs redis
 docker ps
 
-docker run -d -e constraint:node=fedora-1 redis
+docker run -d -e constraint:node==fedora-1 redis
 docker ps
 
 # clean up cluster
