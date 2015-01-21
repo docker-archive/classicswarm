@@ -31,12 +31,6 @@ var (
 		Value: homepath(".swarm"),
 		Usage: "",
 	}
-	flDiscovery = cli.StringFlag{
-		Name:   "discovery",
-		Value:  "",
-		Usage:  "discovery service to use [token://<token>,\n\t\t\t\t  etcd://<ip1>,<ip2>/<path>,\n\t\t\t\t  file://path/to/file,\n\t\t\t\t  consul://<addr>/<path>,\n\t\t\t\t  zk://<ip1>,<ip2>/<path>,\n\t\t\t\t  <ip1>,<ip2>]",
-		EnvVar: "SWARM_DISCOVERY",
-	}
 	flAddr = cli.StringFlag{
 		Name:   "addr",
 		Value:  "127.0.0.1:4243",
