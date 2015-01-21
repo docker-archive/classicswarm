@@ -48,6 +48,9 @@ $ docker -H tcp://<swarm_ip:swarm_port> ps
 $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
+# connect to a node directly
+$ docker `swarm config token://<cluster_id> <node_name>` pull ...
+
 # list nodes in your cluster
 $ swarm list token://<cluster_id>
 <node_ip:2375>
