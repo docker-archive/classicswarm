@@ -15,10 +15,10 @@ $ swarm create
 # on each of your nodes, start the swarm agent
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
 #  as long as the other nodes can reach it, it is fine.
-$ swarm join --discovery token://<cluster_id> --addr=<node_ip:2375>
+$ swarm join --addr=<node_ip:2375> token://<cluster_id>
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery token://<cluster_id> -H tcp://<swarm_ip:swarm_port>
+$ swarm manage -H tcp://<swarm_ip:swarm_port> token://<cluster_id>
 
 # use the regular docker cli
 $ docker -H tcp://<swarm_ip:swarm_port> info
@@ -28,7 +28,7 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
-$ swarm list --discovery token://<cluster_id>
+$ swarm list token://<cluster_id>
 <node_ip:2375>
 ```
 
@@ -43,7 +43,7 @@ $ echo <node_ip2:2375> >> /tmp/my_cluster
 $ echo <node_ip3:2375> >> /tmp/my_cluster
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery file:///tmp/my_cluster -H tcp://<swarm_ip:swarm_port>
+$ swarm manage -H tcp://<swarm_ip:swarm_port> file:///tmp/my_cluster
 
 # use the regular docker cli
 $ docker -H tcp://<swarm_ip:swarm_port> info
@@ -53,7 +53,7 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
-$ swarm list --discovery file:///tmp/my_cluster
+$ swarm list file:///tmp/my_cluster
 <node_ip1:2375>
 <node_ip2:2375>
 <node_ip3:2375>
@@ -65,10 +65,10 @@ $ swarm list --discovery file:///tmp/my_cluster
 # on each of your nodes, start the swarm agent
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
 #  as long as the other nodes can reach it, it is fine.
-$ swarm join --discovery etcd://<etcd_ip>/<path> --addr=<node_ip:2375>
+$ swarm join --addr=<node_ip:2375> etcd://<etcd_ip>/<path>
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery etcd://<etcd_ip>/<path> -H tcp://<swarm_ip:swarm_port>
+$ swarm manage -H tcp://<swarm_ip:swarm_port> etcd://<etcd_ip>/<path>
 
 # use the regular docker cli
 $ docker -H tcp://<swarm_ip:swarm_port> info
@@ -78,7 +78,7 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
-$ swarm list --discovery etcd://<etcd_ip>/<path>
+$ swarm list etcd://<etcd_ip>/<path>
 <node_ip:2375>
 ```
 
@@ -88,10 +88,10 @@ $ swarm list --discovery etcd://<etcd_ip>/<path>
 # on each of your nodes, start the swarm agent
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
 #  as long as the other nodes can reach it, it is fine.
-$ swarm join --discovery consul://<consul_addr>/<path> --addr=<node_ip:2375>
+$ swarm join --addr=<node_ip:2375> consul://<consul_addr>/<path>
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery consul://<consul_addr>/<path> -H tcp://<swarm_ip:swarm_port>
+$ swarm manage -H tcp://<swarm_ip:swarm_port> consul://<consul_addr>/<path>
 
 # use the regular docker cli
 $ docker -H tcp://<swarm_ip:swarm_port> info
@@ -101,7 +101,7 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
-$ swarm list --discovery consul://<consul_addr>/<path>
+$ swarm list consul://<consul_addr>/<path>
 <node_ip:2375>
 ```
 
@@ -111,10 +111,10 @@ $ swarm list --discovery consul://<consul_addr>/<path>
 # on each of your nodes, start the swarm agent
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
 #  as long as the other nodes can reach it, it is fine.
-$ swarm join --discovery zk://<zookeeper_addr1>,<zookeeper_addr2>/<path> --addr=<node_ip:2375>
+$ swarm join --addr=<node_ip:2375> zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
 
 # start the manager on any machine or your laptop
-$ swarm manage --discovery zk://<zookeeper_addr1>,<zookeeper_addr2>/<path> -H tcp://<swarm_ip:swarm_port>
+$ swarm manage -H tcp://<swarm_ip:swarm_port> zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
 
 # use the regular docker cli
 $ docker -H tcp://<swarm_ip:swarm_port> info
@@ -124,7 +124,7 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
-$ swarm list --discovery zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
+$ swarm list zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
 <node_ip:2375>
 ```
 
@@ -132,9 +132,9 @@ $ swarm list --discovery zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
 
 ```bash
 # start the manager on any machine or your laptop
-$ swarm manage --discovery <node_ip1:2375>,<node_ip2:2375> -H=<swarm_ip:swarm_port>
+$ swarm manage -H <swarm_ip:swarm_port> nodes://<node_ip1:2375>,<node_ip2:2375>
 #or
-$ swarm manage --discovery nodes://<node_ip1:2375>,<node_ip2:2375> -H=<swarm_ip:swarm_port>
+$ swarm manage -H <swarm_ip:swarm_port> nodes://<node_ip1:2375>,<node_ip2:2375>
 
 # use the regular docker cli
 $ docker -H <swarm_ip:swarm_port> info
@@ -159,7 +159,7 @@ type DiscoveryService interface {
 ```
 
 ######Initialize
-take the `--discovery` without the scheme and a heartbeat (in seconds)
+take the `discovery` without the scheme and a heartbeat (in seconds)
 
 ######Fetch
 returns the list of all the nodes from the discovery
