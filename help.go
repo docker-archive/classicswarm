@@ -7,7 +7,7 @@ func init() {
 	cli.CommandHelpTemplate = `{{$DISCOVERY := or (eq .Name "manage") (eq .Name "join") (eq .Name "list")}}NAME:
    {{.Name}} - {{.Usage}}
 USAGE:
-   command {{.Name}}{{if .Flags}} [command options]{{end}} {{if $DISCOVERY}}[discovery]{{end}}{{if .Description}}
+   swarm {{.Name}}{{if .Flags}} [command options]{{end}} {{if $DISCOVERY}}[discovery]{{end}}{{if .Description}}
 DESCRIPTION:
    {{.Description}}{{end}}{{if $DISCOVERY}}
 ARGUMENTS:
