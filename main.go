@@ -19,7 +19,7 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "swarm"
-	app.Usage = "docker clustering"
+	app.Usage = "a Docker-native clustering system"
 	app.Version = "0.1.0"
 	app.Author = ""
 	app.Email = ""
