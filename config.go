@@ -28,7 +28,7 @@ func config(c *cli.Context) {
 		}
 	}
 
-	if !c.IsSet("discovery") {
+	if c.String("discovery") == "" {
 		log.Fatal("--discovery required to get config of a node")
 	}
 
@@ -60,10 +60,19 @@ func config(c *cli.Context) {
 
 	for n := range connectedNodes {
 		if n.Name == c.Args().First() || n.ID == c.Args().First() {
-			fmt.Println(n.Addr)
+			fmt.Printf("-H %s", n.Addr)
+			duplicateFlags(c, "tls", "tlsverify", "tlscacert", "tlscert", "tlskey")
 			return
 		}
 	}
 
 	log.Fatalf("Node %q not found", c.Args().First())
+}
+
+func duplicateFlags(c *cli.Context, flags ...string) {
+	for _, flag := range flags {
+		if c.IsSet(flag) {
+			fmt.Printf("--%s", flag)
+		}
+	}
 }
