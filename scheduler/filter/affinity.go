@@ -13,15 +13,20 @@ type AffinityFilter struct {
 }
 
 func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
-	affinities := extractEnv("affinity", config.Env)
-	for k, v := range affinities {
-		log.Debugf("matching affinity: %s=%s", k, v)
+	affinities, err := parseExprs("affinity", config.Env)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, affinity := range affinities {
+		log.Debugf("matching affinity: %s%s%s", affinity.key, OPERATORS[affinity.operator], affinity.value)
+
 		candidates := []*cluster.Node{}
 		for _, node := range nodes {
-			switch k {
+			switch affinity.key {
 			case "container":
 				for _, container := range node.Containers() {
-					if match(v, container.Id) || match(v, container.Names[0]) {
+					if affinity.Match(container.Id, container.Names[0]) {
 						candidates = append(candidates, node)
 						break
 					}
@@ -29,12 +34,12 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 			case "image":
 			done:
 				for _, image := range node.Images() {
-					if match(v, image.Id) {
+					if affinity.Match(image.Id) {
 						candidates = append(candidates, node)
 						break
 					}
-					for _, t := range image.RepoTags {
-						if match(v, t) {
+					for _, tag := range image.RepoTags {
+						if affinity.Match(tag) {
 							candidates = append(candidates, node)
 							break done
 						}
@@ -43,7 +48,7 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 			}
 		}
 		if len(candidates) == 0 {
-			return nil, fmt.Errorf("unable to find a node that satisfies %s == %s", k, v)
+			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", affinity.key, OPERATORS[affinity.operator], affinity.value)
 		}
 		nodes = candidates
 	}
