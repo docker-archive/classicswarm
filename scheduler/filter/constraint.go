@@ -13,38 +13,32 @@ type ConstraintFilter struct {
 }
 
 func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
-	constraints, err := extractEnv("constraint", config.Env)
+	constraints, err := parseExprs("constraint", config.Env)
 	if err != nil {
 		return nil, err
 	}
 
-	for k, v := range constraints {
-		log.Debugf("matching constraint: %s %s %s", k, v[0], v[1])
+	for _, constraint := range constraints {
+		log.Debugf("matching constraint: %s %s %s", constraint.key, OPERATORS[constraint.operator], constraint.value)
 
 		candidates := []*cluster.Node{}
 		for _, node := range nodes {
-			switch k {
+			switch constraint.key {
 			case "node":
 				// "node" label is a special case pinning a container to a specific node.
-				matchResult := false
-				if v[0] != "!=" {
-					matchResult = match(v, node.ID) || match(v, node.Name)
-				} else if v[0] == "!=" {
-					matchResult = match(v, node.ID) && match(v, node.Name)
-				}
-				if matchResult {
+				if constraint.Match(node.ID, node.Name) {
 					candidates = append(candidates, node)
 				}
 			default:
-				if label, ok := node.Labels[k]; ok {
-					if match(v, label) {
+				if label, ok := node.Labels[constraint.key]; ok {
+					if constraint.Match(label) {
 						candidates = append(candidates, node)
 					}
 				}
 			}
 		}
 		if len(candidates) == 0 {
-			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", k, v[0], v[1])
+			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", constraint.key, OPERATORS[constraint.operator], constraint.value)
 		}
 		nodes = candidates
 	}

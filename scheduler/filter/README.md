@@ -157,8 +157,7 @@ A `value` must be one of the following:
 * A globbing pattern, i.e., `abc*`.
 * A regular expression in the form of `/regexp/`. We support the Go's regular expression syntax.
 
-Current `swarm` supports affinity/constraint operators as the following: `==`, `!=`, `>=` and `<=`.
-Relative comparisons, `>=` and `<=` are supported, but limited to `string` comparison only.
+Current `swarm` supports affinity/constraint operators as the following: `==` and `!=`.
 
 For example,
 * `constraint:name==node1` will match nodes named with `node1`.
@@ -169,8 +168,6 @@ For example,
 * `constraint:node!=/node-[01]-id/` will match all nodes, except those with ids `node-0-id` and `node-1-id`.
 * `constraint:name!=/foo\[bar\]/` will match all nodes, except those with name `foo[bar]`. You can see the use of escape characters here.
 * `constraint:name==/(?i)node1/` will match all nodes named with `node1` case-insensitive. So 'NoDe1' or 'NODE1' will also matched.
-* `constraint:kernel>=3.0` will match all nodes with label `kernel` greater than or equal to "3.0". This is the string, not numeric, comparison.
-* `constraint:group<=3` will match all nodes with `group`  less than or equal to "3". This is also the string, not numeric, comparison.
 
 ## Port Filter
 
