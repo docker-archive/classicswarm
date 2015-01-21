@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/codegangsta/cli"
+	"os"
 	"os/user"
 	"path"
+
+	"github.com/codegangsta/cli"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -14,6 +16,13 @@ func homepath(p string) string {
 		log.Fatal(err)
 	}
 	return path.Join(usr.HomeDir, p)
+}
+
+func getDiscovery(c *cli.Context) string {
+	if len(c.Args()) == 1 {
+		return c.Args()[0]
+	}
+	return os.Getenv("SWARM_DISCOVERY")
 }
 
 var (
