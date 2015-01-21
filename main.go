@@ -61,7 +61,6 @@ func main() {
 			ShortName: "cf",
 			Usage:     "get the docker config to connect to a swarm node",
 			Flags: []cli.Flag{
-				flDiscovery,
 				flTls, flTlsCaCert, flTlsCert, flTlsKey, flTlsVerify,
 			},
 			Action: config,

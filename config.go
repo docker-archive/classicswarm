@@ -28,15 +28,16 @@ func config(c *cli.Context) {
 		}
 	}
 
-	if c.String("discovery") == "" {
-		log.Fatal("--discovery required to get config of a node")
+	dflag := getDiscovery(c)
+	if dflag == "" {
+		log.Fatal("discovery required to get the docker config of a node. See 'swarm config --help'.")
 	}
 
 	if len(c.Args()) != 1 {
 		log.Fatal("an argument is required to get config of a node")
 	}
 	// get the list of nodes from the discovery service
-	d, err := discovery.New(c.String("discovery"), 0)
+	d, err := discovery.New(dflag, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
