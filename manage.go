@@ -81,8 +81,9 @@ func manage(c *cli.Context) {
 	cluster := cluster.NewCluster(store, tlsConfig, c.Float64("overcommit"))
 	cluster.Events(&logHandler{})
 
-	if c.String("discovery") == "" {
-		log.Fatal("--discovery required to manage a cluster")
+	dflag := getDiscovery(c)
+	if dflag == "" {
+		log.Fatal("discovery required to manage a cluster. See 'swarm manage --help'.")
 	}
 
 	s, err := strategy.New(c.String("strategy"))
@@ -102,7 +103,7 @@ func manage(c *cli.Context) {
 
 	// get the list of nodes from the discovery service
 	go func() {
-		d, err := discovery.New(c.String("discovery"), c.Int("heartbeat"))
+		d, err := discovery.New(dflag, c.Int("heartbeat"))
 		if err != nil {
 			log.Fatal(err)
 		}
