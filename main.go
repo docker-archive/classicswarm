@@ -25,6 +25,12 @@ func main() {
 	app.Email = ""
 
 	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:   "debug",
+			Usage:  "debug mode",
+			EnvVar: "DEBUG",
+		},
+
 		cli.StringFlag{
 			Name:  "log-level, l",
 			Value: "info",
@@ -40,6 +46,13 @@ func main() {
 			log.Fatalf(err.Error())
 		}
 		log.SetLevel(level)
+
+		// If a log level wasn't specified and we are running in debug mode,
+		// enforce log-level=debug.
+		if !c.IsSet("log-level") && !c.IsSet("l") && c.Bool("debug") {
+			log.SetLevel(log.DebugLevel)
+		}
+
 		return nil
 	}
 
