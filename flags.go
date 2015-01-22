@@ -1,21 +1,17 @@
 package main
 
 import (
-	"os"
-	"os/user"
-	"path"
-
 	"github.com/codegangsta/cli"
-
-	log "github.com/Sirupsen/logrus"
+	"os"
+	"path/filepath"
+	"runtime"
 )
 
 func homepath(p string) string {
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatal(err)
+	if runtime.GOOS == "windows" {
+		return filepath.Join(os.Getenv("USERPROFILE"), p)
 	}
-	return path.Join(usr.HomeDir, p)
+	return filepath.Join(os.Getenv("HOME"), p)
 }
 
 func getDiscovery(c *cli.Context) string {
