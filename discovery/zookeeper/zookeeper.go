@@ -1,6 +1,7 @@
 package zookeeper
 
 import (
+	"fmt"
 	"path"
 	"strings"
 	"time"
@@ -27,6 +28,10 @@ func (s *ZkDiscoveryService) Initialize(uris string, heartbeat int) error {
 		parts = strings.SplitN(uris, "/", 2)
 		ips   = strings.Split(parts[0], ",")
 	)
+
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid format %q, missing <path>", uris)
+	}
 
 	conn, _, err := zk.Connect(ips, time.Second)
 
