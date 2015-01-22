@@ -25,7 +25,7 @@ func getContainerFromVars(c *context, vars map[string]string) (*cluster.Containe
 		if container := c.cluster.Container(name); container != nil {
 			return container, nil
 		}
-		return nil, fmt.Errorf("Container %s not found", name)
+		return nil, fmt.Errorf("No such container: %s", name)
 
 	}
 	if ID, ok := vars["execid"]; ok {

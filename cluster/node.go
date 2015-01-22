@@ -414,6 +414,22 @@ func (n *Node) Images() []*dockerclient.Image {
 	return images
 }
 
+// Image returns the image with IdOrName in the node
+func (n *Node) Image(IdOrName string) *dockerclient.Image {
+	size := len(IdOrName)
+	for _, image := range n.Images() {
+		if image.Id == IdOrName || (size > 2 && strings.HasPrefix(image.Id, IdOrName)) {
+			return image
+		}
+		for _, t := range image.RepoTags {
+			if t == IdOrName || (size > 2 && strings.HasPrefix(t, IdOrName)) {
+				return image
+			}
+		}
+	}
+	return nil
+}
+
 func (n *Node) String() string {
 	return fmt.Sprintf("node %s addr %s", n.ID, n.Addr)
 }

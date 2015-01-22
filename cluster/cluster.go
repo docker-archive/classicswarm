@@ -132,7 +132,7 @@ func (c *Cluster) Containers() []*Container {
 	return out
 }
 
-// Container returns the container with ID in the cluster
+// Container returns the container with IdOrName in the cluster
 func (c *Cluster) Container(IdOrName string) *Container {
 	// Abort immediately if the name is empty.
 	if len(IdOrName) == 0 {
