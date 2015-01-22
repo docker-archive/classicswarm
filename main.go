@@ -25,19 +25,21 @@ func main() {
 	app.Email = ""
 
 	app.Flags = []cli.Flag{
-		cli.BoolFlag{
-			Name:   "debug",
-			Usage:  "debug mode",
-			EnvVar: "DEBUG",
+		cli.StringFlag{
+			Name:  "log-level, l",
+			Value: "info",
+			Usage: fmt.Sprintf("Log level (options: debug, info, warn, error, fatal, panic)"),
 		},
 	}
 
 	// logs
 	app.Before = func(c *cli.Context) error {
 		log.SetOutput(os.Stderr)
-		if c.Bool("debug") {
-			log.SetLevel(log.DebugLevel)
+		level, err := log.ParseLevel(c.String("log-level"))
+		if err != nil {
+			log.Fatalf(err.Error())
 		}
+		log.SetLevel(level)
 		return nil
 	}
 
