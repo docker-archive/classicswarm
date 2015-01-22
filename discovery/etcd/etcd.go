@@ -1,6 +1,7 @@
 package etcd
 
 import (
+	"fmt"
 	"path"
 	"strings"
 
@@ -27,6 +28,11 @@ func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat int) error {
 		ips      = strings.Split(parts[0], ",")
 		machines []string
 	)
+
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid format %q, missing <path>", uris)
+	}
+
 	for _, ip := range ips {
 		machines = append(machines, "http://"+ip)
 	}
