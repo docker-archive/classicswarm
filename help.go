@@ -13,6 +13,7 @@ DESCRIPTION:
 ARGUMENTS:
    discovery{{printf "\t"}}discovery service to use [$SWARM_DISCOVERY]
             {{printf "\t"}} * token://<token>
+            {{printf "\t"}} * consul://<ip1>,<ip2>/<path>
             {{printf "\t"}} * etcd://<ip1>,<ip2>/<path>
             {{printf "\t"}} * file://path/to/file
             {{printf "\t"}} * zk://<ip1>,<ip2>/<path>
