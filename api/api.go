@@ -163,36 +163,39 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /containers/{name:.*}/json
 func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
-	container := c.cluster.Container(mux.Vars(r)["name"])
-	if container != nil {
-		client, scheme := newClientAndScheme(c.tlsConfig)
-
-		resp, err := client.Get(scheme + "://" + container.Node.Addr + "/containers/" + container.Id + "/json")
-		if err != nil {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		n, err := json.Marshal(container.Node)
-		if err != nil {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// insert Node field
-		data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"Node\":%s,\"Name\":\"/", n)), -1)
-
-		// insert node IP
-		data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node.IP)), -1)
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(data)
+	name := mux.Vars(r)["name"]
+	container := c.cluster.Container(name)
+	if container == nil {
+		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
+		return
 	}
+	client, scheme := newClientAndScheme(c.tlsConfig)
+
+	resp, err := client.Get(scheme + "://" + container.Node.Addr + "/containers/" + container.Id + "/json")
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	n, err := json.Marshal(container.Node)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// insert Node field
+	data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"Node\":%s,\"Name\":\"/", n)), -1)
+
+	// insert node IP
+	data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node.IP)), -1)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
 }
 
 // POST /containers/create
@@ -292,6 +295,19 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Proxy a request to the right node
+func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+
+	for _, node := range c.cluster.Nodes() {
+		if node.Image(name) != nil {
+			proxy(c.tlsConfig, node.Addr, w, r)
+			return
+		}
+	}
+	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
+}
+
 // Proxy a request to a random node
 func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
 	candidates := c.cluster.Nodes()
@@ -355,8 +371,8 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/images/search":                  proxyRandom,
 			"/images/get":                     notImplementedHandler,
 			"/images/{name:.*}/get":           notImplementedHandler,
-			"/images/{name:.*}/history":       notImplementedHandler,
-			"/images/{name:.*}/json":          notImplementedHandler,
+			"/images/{name:.*}/history":       proxyImage,
+			"/images/{name:.*}/json":          proxyImage,
 			"/containers/ps":                  getContainersJSON,
 			"/containers/json":                getContainersJSON,
 			"/containers/{name:.*}/export":    proxyContainer,
