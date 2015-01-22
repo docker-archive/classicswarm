@@ -1,7 +1,7 @@
 package consul
 
 import (
-	"errors"
+	"fmt"
 	"path"
 	"strings"
 	"time"
@@ -25,7 +25,7 @@ func init() {
 func (s *ConsulDiscoveryService) Initialize(uris string, heartbeat int) error {
 	parts := strings.SplitN(uris, "/", 2)
 	if len(parts) < 2 {
-		return errors.New("missing consul prefix")
+		return fmt.Errorf("invalid format %q, missing <path>", uris)
 	}
 	addr := parts[0]
 	path := parts[1]

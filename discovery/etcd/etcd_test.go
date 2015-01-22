@@ -8,6 +8,9 @@ import (
 
 func TestInitialize(t *testing.T) {
 	discovery := &EtcdDiscoveryService{}
+
+	assert.Equal(t, discovery.Initialize("127.0.0.1", 0).Error(), "invalid format \"127.0.0.1\", missing <path>")
+
 	assert.Error(t, discovery.Initialize("127.0.0.1/path", 0))
 	assert.Equal(t, discovery.path, "/path/")
 
