@@ -9,6 +9,9 @@ import (
 
 func TestInitialize(t *testing.T) {
 	service := &ZkDiscoveryService{}
+
+	assert.Equal(t, service.Initialize("127.0.0.1", 0).Error(), "invalid format \"127.0.0.1\", missing <path>")
+
 	assert.Error(t, service.Initialize("127.0.0.1/path", 0))
 	assert.Equal(t, service.path, "/path")
 
