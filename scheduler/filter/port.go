@@ -35,7 +35,10 @@ func (p *PortFilter) portAlreadyInUse(node *cluster.Node, requested dockerclient
 	for _, c := range node.Containers() {
 		for _, port := range c.Info.HostConfig.PortBindings {
 			for _, binding := range port {
-				if binding.HostPort == requested.HostPort {
+				// Check if requested port is already mapped.
+				// But when the requested port is blank, we're requesting a random port.
+				// So, let it goes through the filter.
+				if binding.HostPort == requested.HostPort && requested.HostPort != "" {
 					// Another container on the same host is binding on the same
 					// port/protocol.  Verify if they are requesting the same
 					// binding IP, or if the other container is already binding on
