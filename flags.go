@@ -8,10 +8,11 @@ import (
 )
 
 func homepath(p string) string {
+	home := os.Getenv("HOME")
 	if runtime.GOOS == "windows" {
-		return filepath.Join(os.Getenv("USERPROFILE"), p)
+		home = os.Getenv("USERPROFILE")
 	}
-	return filepath.Join(os.Getenv("HOME"), p)
+	return filepath.Join(home, p)
 }
 
 func getDiscovery(c *cli.Context) string {
