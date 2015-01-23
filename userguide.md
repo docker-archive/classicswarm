@@ -1,3 +1,9 @@
+---
+page_title: Docker Swarm
+page_description: Swarm: a Docker-native clustering system
+page_keywords: docker, swarm, clustering
+---
+
 # Swarm: a Docker-native clustering system [![Build Status](https://travis-ci.org/docker/swarm.svg?branch=master)](https://travis-ci.org/docker/swarm)
 
 ![Docker Swarm Logo](logo.png?raw=true "Docker Swarm Logo")
@@ -17,7 +23,7 @@ in more powerful backends, like `Mesos`, for large scale production deployments.
 ## Installation
 
 ###1 - Download and install the current source code.
-Ensure you have golang and git client installed (e.g. `apt-get install golang git` on Ubuntu).
+Ensure you have golang installed (e.g. `apt-get install golang` on Ubuntu).
 You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
 
 The install `swarm` binary to your `$GOPATH` directory.
