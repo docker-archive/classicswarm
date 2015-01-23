@@ -26,7 +26,7 @@ var (
 )
 
 func TestNodeConnectionFailure(t *testing.T) {
-	node := NewNode("test", 0)
+	node := NewNode("test", "2375", 0)
 	assert.False(t, node.IsConnected())
 
 	// Always fail.
@@ -41,7 +41,7 @@ func TestNodeConnectionFailure(t *testing.T) {
 }
 
 func TestOutdatedNode(t *testing.T) {
-	node := NewNode("test", 0)
+	node := NewNode("test", "2375", 0)
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(&dockerclient.Info{}, nil)
 
@@ -52,7 +52,7 @@ func TestOutdatedNode(t *testing.T) {
 }
 
 func TestNodeCpusMemory(t *testing.T) {
-	node := NewNode("test", 0)
+	node := NewNode("test", "2375", 0)
 	assert.False(t, node.IsConnected())
 
 	client := mockclient.NewMockClient()
@@ -72,7 +72,7 @@ func TestNodeCpusMemory(t *testing.T) {
 }
 
 func TestNodeSpecs(t *testing.T) {
-	node := NewNode("test", 0)
+	node := NewNode("test", "2375", 0)
 	assert.False(t, node.IsConnected())
 
 	client := mockclient.NewMockClient()
@@ -97,7 +97,7 @@ func TestNodeSpecs(t *testing.T) {
 }
 
 func TestNodeState(t *testing.T) {
-	node := NewNode("test", 0)
+	node := NewNode("test", "2375", 0)
 	assert.False(t, node.IsConnected())
 
 	client := mockclient.NewMockClient()
@@ -143,7 +143,7 @@ func TestCreateContainer(t *testing.T) {
 			Cmd:       []string{"date"},
 			Tty:       false,
 		}
-		node   = NewNode("test", 0)
+		node   = NewNode("test", "2375", 0)
 		client = mockclient.NewMockClient()
 	)
 
@@ -194,21 +194,22 @@ func TestCreateContainer(t *testing.T) {
 }
 
 func TestUsableMemory(t *testing.T) {
-	node := NewNode("test", 0.05)
+	node := NewNode("test", "2375", 0.05)
 	node.Memory = 1024
 	assert.Equal(t, node.UsableMemory(), 1024+1024*5/100)
 
-	node = NewNode("test", 0)
+	node = NewNode("test", "2375", 0)
 	node.Memory = 1024
 	assert.Equal(t, node.UsableMemory(), 1024)
 }
 
 func TestUsableCpus(t *testing.T) {
-	node := NewNode("test", 0.05)
+	node := NewNode("test", "2375", 0.05)
+
 	node.Cpus = 2
 	assert.Equal(t, node.UsableCpus(), 2+2*5/100)
 
-	node = NewNode("test", 0)
+	node = NewNode("test", "2375", 0)
 	node.Cpus = 2
 	assert.Equal(t, node.UsableCpus(), 2)
 }
