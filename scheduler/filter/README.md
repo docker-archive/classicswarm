@@ -5,7 +5,7 @@ The `Docker Swarm` scheduler comes with multiple filters.
 
 These filters are used to schedule containers on a subset of nodes.
 
-`Docker Swarm` currently supports 3 filters:
+`Docker Swarm` currently supports 4 filters:
 * [Constraint](README.md#constraint-filter)
 * [Affinity](README.md#affinity-filter)
 * [Port](README.md#port-filter)
@@ -145,7 +145,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 963841b138d8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis8
 ```
 
-As you can see here, the containers were only scheduled on nodes with the redis imagealreayd pulled.
+As you can see here, the containers were only scheduled on nodes with the redis image alreayd pulled.
 
 #### Expression Syntax
 
@@ -165,7 +165,7 @@ For example,
 * `constraint:region!=us*` will match all nodes outside the regions prefixed with `us`.
 * `constraint:name==/node[12]/` will match nodes named `node1` and `node2`.
 * `constraint:name==/node\d/` will match all nodes named with `node` + 1 digit.
-* `constraint:node!=/node-[01]-id/` will match all nodes, except those with ids `node-0-id` and `node-1-id`.
+* `constraint:name!=/node-[01]-id/` will match all nodes, except those with ids `node-0-id` and `node-1-id`.
 * `constraint:name!=/foo\[bar\]/` will match all nodes, except those with name `foo[bar]`. You can see the use of escape characters here.
 * `constraint:name==/(?i)node1/` will match all nodes named with `node1` case-insensitive. So 'NoDe1' or 'NODE1' will also matched.
 
