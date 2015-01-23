@@ -10,7 +10,8 @@ speaks Docker can control swarm transparently: dokku, fig, krane, flynn, deis,
 docker-ui, shipyard, drone.io, Jenkins... and of course the Docker client itself.
 
 Like the other Docker projects, `swarm` follows the "batteries included but removable"
-principle. It ships with a simple scheduling backend out of the box. The goal is
+principle. It ships with a simple scheduling backend out of the box, and as initial
+development settles, an API will develop to enable pluggable backends. The goal is
 to provide a smooth out-of-box experience for simple use cases, and allow swapping
 in more powerful backends, like `Mesos`, for large scale production deployments.
 
@@ -44,7 +45,7 @@ $ swarm create
 # on each of your nodes, start the swarm agent
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
 #  as long as the other nodes can reach it, it is fine.
-$ swarm join --addr=<node_ip:2375> token://<cluster_id>
+$ swarm join --addr=<node_ip:2375> --discovery=token://<cluster_id>
 
 # start the manager on any machine or your laptop
 $ swarm manage -H tcp://<swarm_ip:swarm_port> token://<cluster_id>
@@ -57,7 +58,7 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
-$ swarm list token://<cluster_id>
+$ swarm list --discovery=token://<cluster_id>
 <node_ip:2375>
 ```
 
@@ -86,7 +87,7 @@ Note that Swarm certificates must be generated with`extendedKeyUsage = clientAut
 
 ## Participating
 
-We welcome pull requests and patches; come say hi on IRC, #docker-swarm on freenode.
+We welcome pull requests and patches; come say hi on IRC, #swarm on freenode.
 
 ## Creators
 
