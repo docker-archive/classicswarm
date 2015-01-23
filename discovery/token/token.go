@@ -56,7 +56,11 @@ func (s *TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
 
 	var nodes []*discovery.Node
 	for _, addr := range addrs {
-		nodes = append(nodes, discovery.NewNode(addr))
+		node, err := discovery.NewNode(addr)
+		if err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, node)
 	}
 
 	return nodes, nil

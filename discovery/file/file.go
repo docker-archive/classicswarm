@@ -33,7 +33,11 @@ func (s *FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
 
 	for _, line := range strings.Split(string(data), "\n") {
 		if line != "" {
-			nodes = append(nodes, discovery.NewNode(line))
+			node, err := discovery.NewNode(line)
+			if err != nil {
+				return nil, err
+			}
+			nodes = append(nodes, node)
 		}
 	}
 	return nodes, nil

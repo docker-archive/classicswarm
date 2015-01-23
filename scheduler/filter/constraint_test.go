@@ -10,9 +10,9 @@ import (
 
 func testFixtures() (nodes []*cluster.Node) {
 	nodes = []*cluster.Node{
-		cluster.NewNode("node-0", 0),
-		cluster.NewNode("node-1", 0),
-		cluster.NewNode("node-2", 0),
+		cluster.NewNode("node-0", "2375", 0),
+		cluster.NewNode("node-1", "2375", 0),
+		cluster.NewNode("node-2", "2375", 0),
 	}
 	nodes[0].ID = "node-0-id"
 	nodes[0].Name = "node-0-name"
@@ -205,7 +205,7 @@ func TestFilterRegExpCaseInsensitive(t *testing.T) {
 	)
 
 	// Prepare node with a strange name
-	node3 := cluster.NewNode("node-3", 0)
+	node3 := cluster.NewNode("node-3", "2375", 0)
 	node3.ID = "node-3-id"
 	node3.Name = "node-3-name"
 	node3.Labels = map[string]string{
@@ -249,7 +249,7 @@ func TestFilterWithRelativeComparisons(t *testing.T) {
 	)
 
 	// Prepare node with a strange name
-	node3 := cluster.NewNode("node-3", 0)
+	node3 := cluster.NewNode("node-3", "2375", 0)
 	node3.ID = "node-3-id"
 	node3.Name = "node-3-name"
 	node3.Labels = map[string]string{
