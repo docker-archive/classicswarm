@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -18,7 +19,7 @@ import (
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "swarm"
+	app.Name = path.Base(os.Args[0])
 	app.Usage = "a Docker-native clustering system"
 	app.Version = "0.1.0"
 	app.Author = ""
@@ -78,7 +79,7 @@ func main() {
 			Action: func(c *cli.Context) {
 				dflag := getDiscovery(c)
 				if dflag == "" {
-					log.Fatal("discovery required to list a cluster. See 'swarm list --help'.")
+					log.Fatalf("discovery required to list a cluster. See '%s list --help'.", c.App.Name)
 				}
 
 				d, err := discovery.New(dflag, 0)

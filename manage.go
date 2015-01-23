@@ -83,7 +83,7 @@ func manage(c *cli.Context) {
 
 	dflag := getDiscovery(c)
 	if dflag == "" {
-		log.Fatal("discovery required to manage a cluster. See 'swarm manage --help'.")
+		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
 	}
 
 	s, err := strategy.New(c.String("strategy"))

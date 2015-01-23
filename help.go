@@ -1,13 +1,18 @@
 package main
 
-import "github.com/codegangsta/cli"
+import (
+	"os"
+	"path"
+
+	"github.com/codegangsta/cli"
+)
 
 func init() {
-
+	// See https://github.com/codegangsta/cli/pull/171/files
 	cli.CommandHelpTemplate = `{{$DISCOVERY := or (eq .Name "manage") (eq .Name "join") (eq .Name "list")}}NAME:
    {{.Name}} - {{.Usage}}
 USAGE:
-   swarm {{.Name}}{{if .Flags}} [options]{{end}} {{if $DISCOVERY}}<discovery>{{end}}{{if .Description}}
+   ` + path.Base(os.Args[0]) + ` {{.Name}}{{if .Flags}} [options]{{end}} {{if $DISCOVERY}}<discovery>{{end}}{{if .Description}}
 DESCRIPTION:
    {{.Description}}{{end}}{{if $DISCOVERY}}
 ARGUMENTS:
