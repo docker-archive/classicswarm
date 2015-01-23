@@ -65,7 +65,11 @@ func (s *ConsulDiscoveryService) Fetch() ([]*discovery.Node, error) {
 		if pair.Key == s.prefix {
 			continue
 		}
-		nodes = append(nodes, discovery.NewNode(string(pair.Value)))
+		node, err := discovery.NewNode(string(pair.Value))
+		if err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, node)
 	}
 	return nodes, nil
 }

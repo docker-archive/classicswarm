@@ -61,19 +61,23 @@ func (s *ZkDiscoveryService) Fetch() ([]*discovery.Node, error) {
 		return nil, err
 	}
 
-	return s.createNodes(addrs), nil
+	return s.createNodes(addrs)
 }
 
-func (s *ZkDiscoveryService) createNodes(addrs []string) (nodes []*discovery.Node) {
-	nodes = make([]*discovery.Node, 0)
+func (s *ZkDiscoveryService) createNodes(addrs []string) ([]*discovery.Node, error) {
+	nodes := make([]*discovery.Node, 0)
 	if addrs == nil {
-		return
+		return nil, fmt.Errorf("no nodes to discover")
 	}
 
 	for _, addr := range addrs {
-		nodes = append(nodes, discovery.NewNode(addr))
+		node, err := discovery.NewNode(addr)
+		if err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, node)
 	}
-	return
+	return nodes, nil
 }
 
 func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
@@ -83,7 +87,10 @@ func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 		log.Debugf("[ZK] Watch aborted")
 		return
 	}
-	nodes := s.createNodes(addrs)
+	nodes, err := s.createNodes(addrs)
+	if err != nil {
+		return
+	}
 	callback(nodes)
 
 	for e := range eventChan {

@@ -16,7 +16,11 @@ func init() {
 
 func (s *NodesDiscoveryService) Initialize(uris string, _ int) error {
 	for _, ip := range strings.Split(uris, ",") {
-		s.nodes = append(s.nodes, discovery.NewNode(ip))
+		node, err := discovery.NewNode(ip)
+		if err != nil {
+			return err
+		}
+		s.nodes = append(s.nodes, node)
 	}
 
 	return nil

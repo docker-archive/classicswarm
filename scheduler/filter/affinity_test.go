@@ -12,9 +12,9 @@ func TestAffinityFilter(t *testing.T) {
 	var (
 		f     = AffinityFilter{}
 		nodes = []*cluster.Node{
-			cluster.NewNode("node-0", 0),
-			cluster.NewNode("node-1", 0),
-			cluster.NewNode("node-2", 0),
+			cluster.NewNode("node-0", "2375", 0),
+			cluster.NewNode("node-1", "2375", 0),
+			cluster.NewNode("node-2", "2375", 0),
 		}
 		result []*cluster.Node
 		err    error

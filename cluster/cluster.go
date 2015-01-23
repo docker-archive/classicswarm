@@ -102,7 +102,7 @@ func (c *Cluster) UpdateNodes(nodes []*discovery.Node) {
 	for _, addr := range nodes {
 		go func(node *discovery.Node) {
 			if c.Node(node.String()) == nil {
-				n := NewNode(node.String(), c.overcommitRatio)
+				n := NewNode(node.Host, node.Port, c.overcommitRatio)
 				if err := n.Connect(c.tlsConfig); err != nil {
 					log.Error(err)
 					return
