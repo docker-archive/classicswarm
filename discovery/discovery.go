@@ -3,7 +3,7 @@ package discovery
 import (
 	"errors"
 	"fmt"
-	"net/url"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -49,20 +49,22 @@ func Register(scheme string, d DiscoveryService) error {
 	return nil
 }
 
-func New(rawurl string, heartbeat int) (DiscoveryService, error) {
-	url, err := url.Parse(rawurl)
-	if err != nil {
-		return nil, err
-	}
+func parse(rawurl string) (string, string) {
+	parts := strings.SplitN(rawurl, "://", 2)
 
 	// nodes:port,node2:port => nodes://node1:port,node2:port
-	if url.Scheme == "" {
-		url.Scheme = "nodes"
+	if len(parts) == 1 {
+		return "nodes", parts[0]
 	}
+	return parts[0], parts[1]
+}
 
-	if discovery, exists := discoveries[url.Scheme]; exists {
-		log.Debugf("Initializing %q discovery service with %q", url.Scheme, url.Host+url.Path)
-		err := discovery.Initialize(url.Host+url.Path, heartbeat)
+func New(rawurl string, heartbeat int) (DiscoveryService, error) {
+	scheme, uri := parse(rawurl)
+
+	if discovery, exists := discoveries[scheme]; exists {
+		log.Debugf("Initializing %q discovery service with %q", scheme, uri)
+		err := discovery.Initialize(uri, heartbeat)
 		return discovery, err
 	}
 
