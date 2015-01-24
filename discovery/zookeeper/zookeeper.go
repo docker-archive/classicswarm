@@ -67,7 +67,7 @@ func (s *ZkDiscoveryService) Fetch() ([]*discovery.Node, error) {
 func (s *ZkDiscoveryService) createNodes(addrs []string) ([]*discovery.Node, error) {
 	nodes := make([]*discovery.Node, 0)
 	if addrs == nil {
-		return nil, fmt.Errorf("no nodes to discover")
+		return nodes, nil
 	}
 
 	for _, addr := range addrs {
@@ -88,10 +88,9 @@ func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 		return
 	}
 	nodes, err := s.createNodes(addrs)
-	if err != nil {
-		return
+	if err == nil {
+		callback(nodes)
 	}
-	callback(nodes)
 
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
