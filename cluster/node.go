@@ -23,7 +23,8 @@ const (
 
 func NewNode(host, port string, overcommitRatio float64) *Node {
 	e := &Node{
-		Addr:            host,
+		Addr:            fmt.Sprintf("%s:%s", host, port),
+		Host:            host,
 		Port:            port,
 		Labels:          make(map[string]string),
 		ch:              make(chan bool),
@@ -39,6 +40,7 @@ type Node struct {
 
 	ID     string
 	IP     string
+	Host   string
 	Addr   string
 	Port   string
 	Name   string
@@ -58,7 +60,7 @@ type Node struct {
 // Connect will initialize a connection to the Docker daemon running on the
 // host, gather machine specs (memory, cpu, ...) and monitor state changes.
 func (n *Node) Connect(config *tls.Config) error {
-	addr, err := net.ResolveIPAddr("ip4", n.Addr)
+	addr, err := net.ResolveIPAddr("ip4", n.Host)
 	if err != nil {
 		return err
 	}
