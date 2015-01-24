@@ -98,7 +98,7 @@ func (n *Node) connectClient(client dockerclient.Client) error {
 	go n.refreshLoop()
 
 	// Start monitoring events from the Node.
-	n.client.StartMonitorEvents(n.handler)
+	n.client.StartMonitorEvents(n.handler, nil)
 	n.emitEvent("node_connect")
 
 	return nil
@@ -273,7 +273,7 @@ func (n *Node) refreshLoop() {
 			if !n.healthy {
 				log.Infof("[%s/%s] Node came back to life. Hooray!", n.ID, n.Name)
 				n.client.StopAllMonitorEvents()
-				n.client.StartMonitorEvents(n.handler)
+				n.client.StartMonitorEvents(n.handler, nil)
 				n.emitEvent("node_reconnect")
 				if err := n.updateSpecs(); err != nil {
 					log.Errorf("[%s/%s] Update node specs failed: %v", n.ID, n.Name, err)
@@ -438,7 +438,7 @@ func (n *Node) String() string {
 	return fmt.Sprintf("node %s addr %s", n.ID, n.Addr)
 }
 
-func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {
+func (n *Node) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
 	// Something changed - refresh our internal state.
 	if ev.Status == "pull" || ev.Status == "untag" || ev.Status == "delete" {
 		n.refreshImages()
