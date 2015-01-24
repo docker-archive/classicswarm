@@ -21,6 +21,7 @@ func NewNode(url string) (*Node, error) {
 	}
 	return &Node{host, port}, nil
 }
+
 func (n Node) String() string {
 	return fmt.Sprintf("%s:%s", n.Host, n.Port)
 }
