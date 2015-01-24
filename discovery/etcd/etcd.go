@@ -60,11 +60,7 @@ func (s *EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
 	var nodes []*discovery.Node
 
 	for _, n := range resp.Node.Nodes {
-		node, err := discovery.NewNode(n.Value)
-		if err != nil {
-			return nil, err
-		}
-		nodes = append(nodes, node)
+		nodes = append(nodes, discovery.NewNode(n.Value))
 	}
 	return nodes, nil
 }

@@ -3,27 +3,21 @@ package discovery
 import (
 	"errors"
 	"fmt"
-	"net"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
 )
 
 type Node struct {
-	Host string
-	Port string
+	url string
 }
 
-func NewNode(url string) (*Node, error) {
-	host, port, err := net.SplitHostPort(url)
-	if err != nil {
-		return nil, err
-	}
-	return &Node{host, port}, nil
+func NewNode(url string) *Node {
+	return &Node{url: url}
 }
 
 func (n Node) String() string {
-	return fmt.Sprintf("%s:%s", n.Host, n.Port)
+	return n.url
 }
 
 type WatchCallback func(nodes []*Node)
