@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func createNode(t *testing.T, ID string, Port string, containers ...dockerclient.Container) *Node {
-	node := NewNode(ID, Port, 0)
+func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *Node {
+	node := NewNode(ID, 0)
 	node.Name = ID
 
 	assert.False(t, node.IsConnected())
@@ -46,15 +46,15 @@ func TestAddNode(t *testing.T) {
 	assert.Nil(t, c.Node("test"))
 	assert.Nil(t, c.Node("test2"))
 
-	assert.NoError(t, c.AddNode(createNode(t, "test", "2375")))
+	assert.NoError(t, c.AddNode(createNode(t, "test")))
 	assert.Equal(t, len(c.Nodes()), 1)
 	assert.NotNil(t, c.Node("test"))
 
-	assert.Error(t, c.AddNode(createNode(t, "test", "2375")))
+	assert.Error(t, c.AddNode(createNode(t, "test")))
 	assert.Equal(t, len(c.Nodes()), 1)
 	assert.NotNil(t, c.Node("test"))
 
-	assert.NoError(t, c.AddNode(createNode(t, "test2", "2375")))
+	assert.NoError(t, c.AddNode(createNode(t, "test2")))
 	assert.Equal(t, len(c.Nodes()), 2)
 	assert.NotNil(t, c.Node("test2"))
 }
@@ -65,7 +65,7 @@ func TestContainerLookup(t *testing.T) {
 		Id:    "container-id",
 		Names: []string{"/container-name1", "/container-name2"},
 	}
-	node := createNode(t, "test-node", "2375", container)
+	node := createNode(t, "test-node", container)
 	assert.NoError(t, c.AddNode(node))
 
 	// Invalid lookup
@@ -85,7 +85,7 @@ func TestContainerLookup(t *testing.T) {
 
 func TestDeployContainer(t *testing.T) {
 	// Create a test node.
-	node := createNode(t, "test", "2375")
+	node := createNode(t, "test")
 
 	// Create a test cluster.
 	c := newCluster(t)
