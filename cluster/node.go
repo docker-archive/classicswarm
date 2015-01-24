@@ -55,6 +55,10 @@ type Node struct {
 	overcommitRatio int64
 }
 
+func (n *Node) String() string {
+	return fmt.Sprintf("%s:%s", n.Addr, n.Port)
+}
+
 // Connect will initialize a connection to the Docker daemon running on the
 // host, gather machine specs (memory, cpu, ...) and monitor state changes.
 func (n *Node) Connect(config *tls.Config) error {
@@ -119,7 +123,7 @@ func (n *Node) updateSpecs() error {
 	// Older versions of Docker don't expose the ID field and are not supported
 	// by Swarm.  Catch the error ASAP and refuse to connect.
 	if len(info.ID) == 0 {
-		return fmt.Errorf("Node %s is running an unsupported version of Docker Engine. Please upgrade.", n.Addr)
+		return fmt.Errorf("Node %s is running an unsupported version of Docker Engine. Please upgrade.", n.String())
 	}
 	n.ID = info.ID
 	n.Name = info.Name
@@ -429,10 +433,6 @@ func (n *Node) Image(IdOrName string) *dockerclient.Image {
 		}
 	}
 	return nil
-}
-
-func (n *Node) String() string {
-	return fmt.Sprintf("node %s addr %s", n.ID, n.Addr)
 }
 
 func (n *Node) handler(ev *dockerclient.Event, args ...interface{}) {

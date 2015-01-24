@@ -40,7 +40,7 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	driverStatus := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(nodes))}}
 
 	for _, node := range nodes {
-		driverStatus = append(driverStatus, [2]string{node.Name, node.Addr})
+		driverStatus = append(driverStatus, [2]string{node.Name, node.String()})
 	}
 	info := struct {
 		Containers      int
@@ -171,7 +171,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	client, scheme := newClientAndScheme(c.tlsConfig)
 
-	resp, err := client.Get(scheme + "://" + container.Node.Addr + "/containers/" + container.Id + "/json")
+	resp, err := client.Get(scheme + "://" + container.Node.String() + "/containers/" + container.Id + "/json")
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -274,7 +274,7 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := proxy(c.tlsConfig, container.Node.Addr, w, r); err != nil {
+	if err := proxy(c.tlsConfig, container.Node.String(), w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -290,7 +290,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := proxy(c.tlsConfig, container.Node.Addr, w, r); err != nil {
+	if err := proxy(c.tlsConfig, container.Node.String(), w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -301,7 +301,7 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 
 	for _, node := range c.cluster.Nodes() {
 		if node.Image(name) != nil {
-			proxy(c.tlsConfig, node.Addr, w, r)
+			proxy(c.tlsConfig, node.String(), w, r)
 			return
 		}
 	}
@@ -320,7 +320,7 @@ func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := proxy(c.tlsConfig, accepted[rand.Intn(len(accepted))].Addr, w, r); err != nil {
+	if err := proxy(c.tlsConfig, accepted[rand.Intn(len(accepted))].String(), w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -333,7 +333,7 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := hijack(c.tlsConfig, container.Node.Addr, w, r); err != nil {
+	if err := hijack(c.tlsConfig, container.Node.String(), w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
