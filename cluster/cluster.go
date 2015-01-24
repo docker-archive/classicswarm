@@ -168,7 +168,7 @@ func (c *Cluster) Nodes() []*Node {
 
 func (c *Cluster) Node(addr string) *Node {
 	for _, node := range c.nodes {
-		if node.Addr == addr {
+		if node.String() == addr {
 			return node
 		}
 	}
