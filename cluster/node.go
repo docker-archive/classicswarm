@@ -21,10 +21,9 @@ const (
 	requestTimeout = 10 * time.Second
 )
 
-func NewNode(host, port string, overcommitRatio float64) *Node {
+func NewNode(addr string, overcommitRatio float64) *Node {
 	e := &Node{
-		Addr:            host,
-		Port:            port,
+		Addr:            addr,
 		Labels:          make(map[string]string),
 		ch:              make(chan bool),
 		containers:      make(map[string]*Container),
@@ -40,7 +39,6 @@ type Node struct {
 	ID     string
 	IP     string
 	Addr   string
-	Port   string
 	Name   string
 	Cpus   int64
 	Memory int64
@@ -58,13 +56,18 @@ type Node struct {
 // Connect will initialize a connection to the Docker daemon running on the
 // host, gather machine specs (memory, cpu, ...) and monitor state changes.
 func (n *Node) Connect(config *tls.Config) error {
-	addr, err := net.ResolveIPAddr("ip4", n.Addr)
+	host, port, err := net.SplitHostPort(n.Addr)
+	if err != nil {
+		return err
+	}
+
+	addr, err := net.ResolveIPAddr("ip4", host)
 	if err != nil {
 		return err
 	}
 	n.IP = addr.IP.String()
 
-	c, err := dockerclient.NewDockerClientTimeout(n.IP+":"+n.Port, config, time.Duration(requestTimeout))
+	c, err := dockerclient.NewDockerClientTimeout(n.IP+":"+port, config, time.Duration(requestTimeout))
 	if err != nil {
 		return err
 	}
