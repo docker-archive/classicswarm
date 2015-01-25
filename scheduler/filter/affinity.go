@@ -2,6 +2,7 @@ package filter
 
 import (
 	"fmt"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
@@ -39,7 +40,7 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 						break
 					}
 					for _, tag := range image.RepoTags {
-						if affinity.Match(tag) {
+						if affinity.Match(tag, strings.Split(tag, ":")[0]) {
 							candidates = append(candidates, node)
 							break done
 						}
