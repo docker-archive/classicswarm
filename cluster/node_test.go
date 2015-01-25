@@ -59,7 +59,7 @@ func TestNodeCpusMemory(t *testing.T) {
 	client.On("Info").Return(mockInfo, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	assert.NoError(t, node.connectClient(client))
 	assert.True(t, node.IsConnected())
@@ -79,7 +79,7 @@ func TestNodeSpecs(t *testing.T) {
 	client.On("Info").Return(mockInfo, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	assert.NoError(t, node.connectClient(client))
 	assert.True(t, node.IsConnected())
@@ -102,7 +102,7 @@ func TestNodeState(t *testing.T) {
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	// The client will return one container at first, then a second one will appear.
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "one"}}, nil).Once()
@@ -122,7 +122,7 @@ func TestNodeState(t *testing.T) {
 	}
 
 	// Fake an event which will trigger a refresh. The second container will appear.
-	node.handler(&dockerclient.Event{Id: "two", Status: "created"})
+	node.handler(&dockerclient.Event{Id: "two", Status: "created"}, nil)
 	containers = node.Containers()
 	assert.Len(t, containers, 2)
 	if containers[0].Id != "one" && containers[1].Id != "one" {
@@ -148,7 +148,7 @@ func TestCreateContainer(t *testing.T) {
 	)
 
 	client.On("Info").Return(mockInfo, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 	assert.NoError(t, node.connectClient(client))
