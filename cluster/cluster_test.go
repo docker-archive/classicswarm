@@ -25,7 +25,7 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 		&dockerclient.ContainerInfo{
 			Config: &dockerclient.ContainerConfig{CpuShares: 100},
 		}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything).Return()
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	assert.NoError(t, node.connectClient(client))
 	assert.True(t, node.IsConnected())
