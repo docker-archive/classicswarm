@@ -74,21 +74,12 @@ func parseExprs(key string, env []string) ([]expr, error) {
 
 func (e *expr) Match(whats ...string) bool {
 	var (
-		pattern string
-		match   bool
-		err     error
+		match bool
+		err   error
 	)
 
-	if e.value[0] == '/' && e.value[len(e.value)-1] == '/' {
-		// regexp
-		pattern = e.value[1 : len(e.value)-1]
-	} else {
-		// simple match, create the regex for globbing (ex: ub*t* -> ^ub.*t.*$) and match.
-		pattern = "^" + strings.Replace(e.value, "*", ".*", -1) + "$"
-	}
-
 	for _, what := range whats {
-		if match, err = regexp.MatchString(pattern, what); match {
+		if match, err = regexp.MatchString(e.value, what); match {
 			break
 		} else if err != nil {
 			log.Error(err)
