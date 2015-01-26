@@ -36,8 +36,9 @@ func (s *TokenDiscoveryService) Initialize(urltoken string, heartbeat int) error
 	return nil
 }
 
-// FetchNodes returns the node for the discovery service at the specified endpoint
+// Fetch returns the list of nodes for the discovery service at the specified endpoint
 func (s *TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
+
 	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", s.url, "clusters", s.token))
 	if err != nil {
 		return nil, err
@@ -52,6 +53,8 @@ func (s *TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
 		if err := json.NewDecoder(resp.Body).Decode(&addrs); err != nil {
 			return nil, err
 		}
+	} else {
+		return nil, fmt.Errorf("Failed to fetch nodes, Discovery service returned %d HTTP status code", resp.StatusCode)
 	}
 
 	var nodes []*discovery.Node
