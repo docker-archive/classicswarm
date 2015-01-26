@@ -54,9 +54,7 @@ func (s *TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
 			return nil, err
 		}
 	} else {
-		err = fmt.Errorf("Failed to fetch nodes from Discovery service. "+
-			"Discovery service returned %d HTTP status code", resp.StatusCode)
-		return nil, err
+		return nil, fmt.Errorf("Failed to fetch nodes, Discovery service returned %d HTTP status code", resp.StatusCode)
 	}
 
 	var nodes []*discovery.Node
