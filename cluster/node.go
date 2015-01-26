@@ -85,10 +85,11 @@ func (n *Node) connectClient(client dockerclient.Client) error {
 	}
 
 	// Force a state update before returning.
-	if err := n.refreshContainers(); err != nil {
+	if err := n.RefreshContainers(true); err != nil {
 		n.client = nil
 		return err
 	}
+
 	if err := n.refreshImages(); err != nil {
 		n.client = nil
 		return err
@@ -153,32 +154,33 @@ func (n *Node) refreshImages() error {
 	return nil
 }
 
-// Refresh the list and status of containers running on the node.
-func (n *Node) refreshContainers() error {
+// Refresh the list and status of containers running on the node. If `full` is
+// true, each container will be inspected.
+func (n *Node) RefreshContainers(full bool) error {
 	containers, err := n.client.ListContainers(true, false, "")
 	if err != nil {
 		return err
 	}
 
-	n.Lock()
-	defer n.Unlock()
-
 	merged := make(map[string]*Container)
 	for _, c := range containers {
-		merged, err = n.updateContainer(c, merged)
+		merged, err = n.updateContainer(c, merged, full)
 		if err != nil {
 			log.Errorf("[%s/%s] Unable to update state of %s", n.ID, n.Name, c.Id)
 		}
 	}
 
+	n.Lock()
+	defer n.Unlock()
 	n.containers = merged
 
 	log.Debugf("[%s/%s] Updated state", n.ID, n.Name)
 	return nil
 }
 
-// Refresh the status of a container running on the node.
-func (n *Node) refreshContainer(ID string) error {
+// Refresh the status of a container running on the node. If `full` is true,
+// the container will be inspected.
+func (n *Node) RefreshContainer(ID string, full bool) error {
 	containers, err := n.client.ListContainers(true, false, fmt.Sprintf("{%q:[%q]}", "id", ID))
 	if err != nil {
 		return err
@@ -186,66 +188,59 @@ func (n *Node) refreshContainer(ID string) error {
 
 	if len(containers) > 1 {
 		// We expect one container, if we get more than one, trigger a full refresh.
-		return n.refreshContainers()
+		return n.RefreshContainers(full)
 	}
-
-	n.Lock()
-	defer n.Unlock()
 
 	if len(containers) == 0 {
 		// The container doesn't exist on the node, remove it.
+		n.Lock()
 		delete(n.containers, ID)
+		n.Unlock()
+
 		return nil
 	}
 
-	_, err = n.updateContainer(containers[0], n.containers)
+	_, err = n.updateContainer(containers[0], n.containers, full)
 	return err
 }
 
-func (n *Node) ForceRefreshContainer(c dockerclient.Container) error {
-	return n.inspectContainer(c, n.containers, true)
-}
+func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
+	var container *Container
 
-func (n *Node) inspectContainer(c dockerclient.Container, containers map[string]*Container, lock bool) error {
-
-	container := &Container{
-		Container: c,
-		Node:      n,
+	if current, exists := n.containers[c.Id]; exists {
+		// The container is already known.
+		container = current
+	} else {
+		// This is a brand new container. We need to do a full refresh.
+		container = &Container{
+			Node: n,
+		}
+		full = true
 	}
 
-	info, err := n.client.InspectContainer(c.Id)
-	if err != nil {
-		return err
+	// Update its internal state.
+	container.Container = c
+
+	// Update ContainerInfo.
+	if full {
+		info, err := n.client.InspectContainer(c.Id)
+		if err != nil {
+			return nil, err
+		}
+		container.Info = *info
 	}
-	container.Info = *info
 
 	// real CpuShares -> nb of CPUs
 	container.Info.Config.CpuShares = container.Info.Config.CpuShares / 100.0 * n.Cpus
 
-	if lock {
-		n.Lock()
-		defer n.Unlock()
-	}
+	n.Lock()
+	defer n.Unlock()
 	containers[container.Id] = container
 
-	return nil
-}
-
-func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*Container) (map[string]*Container, error) {
-	if current, exists := n.containers[c.Id]; exists {
-		// The container exists. Update its state.
-		current.Container = c
-		containers[current.Id] = current
-	} else {
-		// This is a brand new container.
-		if err := n.inspectContainer(c, containers, false); err != nil {
-			return nil, err
-		}
-	}
 	return containers, nil
 }
 
-func (n *Node) refreshContainersAsync() {
+func (n *Node) RefreshContainersAsync() {
 	n.ch <- true
 }
 
@@ -254,9 +249,9 @@ func (n *Node) refreshLoop() {
 		var err error
 		select {
 		case <-n.ch:
-			err = n.refreshContainers()
+			err = n.RefreshContainers(false)
 		case <-time.After(stateRefreshPeriod):
-			err = n.refreshContainers()
+			err = n.RefreshContainers(false)
 		}
 
 		if err == nil {
@@ -359,7 +354,7 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
-	n.refreshContainer(id)
+	n.RefreshContainer(id, true)
 
 	n.RLock()
 	defer n.RUnlock()
@@ -440,10 +435,18 @@ func (n *Node) String() string {
 
 func (n *Node) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
 	// Something changed - refresh our internal state.
-	if ev.Status == "pull" || ev.Status == "untag" || ev.Status == "delete" {
+	switch ev.Status {
+	case "pull", "untag", "delete":
+		// These events refer to images so there's no need to update
+		// containers.
 		n.refreshImages()
-	} else {
-		n.refreshContainer(ev.Id)
+	case "start", "die":
+		// If the container is started or stopped, we have to do an inspect in
+		// order to get the new NetworkSettings.
+		n.RefreshContainer(ev.Id, true)
+	default:
+		// Otherwise, do a "soft" refresh of the container.
+		n.RefreshContainer(ev.Id, false)
 	}
 
 	// If there is no event handler registered, abort right now.
