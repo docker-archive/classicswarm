@@ -131,6 +131,14 @@ func TestAffinityFilter(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
+	// Validate images by name
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:image==image-1"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[1])
+
 	// Not support = any more
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"affinity:image=image-0:tag3"},
