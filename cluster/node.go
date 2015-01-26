@@ -207,6 +207,8 @@ func (n *Node) RefreshContainer(ID string, full bool) error {
 func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
 	var container *Container
 
+	n.Lock()
+
 	if current, exists := n.containers[c.Id]; exists {
 		// The container is already known.
 		container = current
@@ -220,6 +222,10 @@ func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*
 
 	// Update its internal state.
 	container.Container = c
+	containers[container.Id] = container
+
+	// Release the lock here as the next step is slow.
+	n.Unlock()
 
 	// Update ContainerInfo.
 	if full {
@@ -228,14 +234,9 @@ func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*
 			return nil, err
 		}
 		container.Info = *info
+		// real CpuShares -> nb of CPUs
+		container.Info.Config.CpuShares = container.Info.Config.CpuShares / 100.0 * n.Cpus
 	}
-
-	// real CpuShares -> nb of CPUs
-	container.Info.Config.CpuShares = container.Info.Config.CpuShares / 100.0 * n.Cpus
-
-	n.Lock()
-	defer n.Unlock()
-	containers[container.Id] = container
 
 	return containers, nil
 }
