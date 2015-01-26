@@ -2,6 +2,7 @@ package filter
 
 import (
 	"fmt"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
@@ -26,7 +27,7 @@ func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 			switch constraint.key {
 			case "node":
 				// "node" label is a special case pinning a container to a specific node.
-				if constraint.Match(node.ID, node.Name) {
+				if constraint.Match(node.ID, node.Name, node.Addr, strings.Split(node.Addr, ":")[0]) {
 					candidates = append(candidates, node)
 				}
 			default:
