@@ -354,7 +354,7 @@ func writeCorsHeaders(w http.ResponseWriter, r *http.Request) {
 }
 
 func httpError(w http.ResponseWriter, err string, status int) {
-	log.Error(err)
+	log.WithField("status", status).Errorf("HTTP error: %v", err)
 	http.Error(w, err, status)
 }
 
@@ -419,13 +419,13 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 
 	for method, routes := range m {
 		for route, fct := range routes {
-			log.Debugf("Registering %s, %s", method, route)
+			log.WithFields(log.Fields{"method": method, "route": route}).Debug("Registering HTTP route")
 
 			// NOTE: scope issue, make sure the variables are local and won't be changed
 			localRoute := route
 			localFct := fct
 			wrap := func(w http.ResponseWriter, r *http.Request) {
-				log.Infof("%s %s", r.Method, r.RequestURI)
+				log.WithFields(log.Fields{"method": r.Method, "uri": r.RequestURI}).Info("HTTP request received")
 				if enableCors {
 					writeCorsHeaders(w, r)
 				}

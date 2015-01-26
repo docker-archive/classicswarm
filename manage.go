@@ -22,7 +22,7 @@ type logHandler struct {
 }
 
 func (h *logHandler) Handle(e *cluster.Event) error {
-	log.Printf("event -> status: %q from: %q id: %q node: %q", e.Status, e.From, e.Id, e.Node.Name)
+	log.WithFields(log.Fields{"node": e.Node.Name, "id": e.Id[:12], "from": e.From, "status": e.Status}).Debug("Event received")
 	return nil
 }
 
@@ -64,10 +64,10 @@ func manage(c *cli.Context) {
 	// If either --tls or --tlsverify are specified, load the certificates.
 	if c.Bool("tls") || c.Bool("tlsverify") {
 		if !c.IsSet("tlscert") || !c.IsSet("tlskey") {
-			log.Fatalf("--tlscert and --tlskey must be provided when using --tls")
+			log.Fatal("--tlscert and --tlskey must be provided when using --tls")
 		}
 		if c.Bool("tlsverify") && !c.IsSet("tlscacert") {
-			log.Fatalf("--tlscacert must be provided when using --tlsverify")
+			log.Fatal("--tlscacert must be provided when using --tlsverify")
 		}
 		tlsConfig, err = loadTlsConfig(
 			c.String("tlscacert"),

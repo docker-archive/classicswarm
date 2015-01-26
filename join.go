@@ -37,7 +37,7 @@ func join(c *cli.Context) {
 
 	hb := time.Duration(c.Int("heartbeat"))
 	for {
-		log.Infof("Registering %q on the discovery service %q every %d seconds...", addr, dflag, hb)
+		log.WithFields(log.Fields{"addr": addr, "discovery": dflag}).Infof("Registering on the discovery service every %d seconds...", hb)
 		time.Sleep(hb * time.Second)
 		if err := d.Register(addr); err != nil {
 			log.Error(err)
