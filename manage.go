@@ -63,6 +63,12 @@ func manage(c *cli.Context) {
 
 	// If either --tls or --tlsverify are specified, load the certificates.
 	if c.Bool("tls") || c.Bool("tlsverify") {
+		if !c.IsSet("tlscert") || !c.IsSet("tlskey") {
+			log.Fatalf("--tlscert and --tlskey must be provided when using --tls")
+		}
+		if c.Bool("tlsverify") && !c.IsSet("tlscacert") {
+			log.Fatalf("--tlscacert must be provided when using --tlsverify")
+		}
 		tlsConfig, err = loadTlsConfig(
 			c.String("tlscacert"),
 			c.String("tlscert"),
