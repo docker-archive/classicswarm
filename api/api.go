@@ -279,7 +279,7 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 	}
 
 	log.Debugf("[REFRESH CONTAINER] --> %s", container.Id)
-	container.Node.ForceRefreshContainer(container.Container)
+	container.Node.RefreshContainer(container.Id, true)
 }
 
 // Proxy a request to the right node
