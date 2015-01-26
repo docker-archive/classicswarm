@@ -29,7 +29,7 @@ func init() {
 
 func New(name string) (PlacementStrategy, error) {
 	if strategy, exists := strategies[name]; exists {
-		log.Debugf("Initializing %q strategy", name)
+		log.WithField("name", name).Debugf("Initializing strategy")
 		err := strategy.Initialize()
 		return strategy, err
 	}

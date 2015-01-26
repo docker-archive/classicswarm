@@ -166,7 +166,7 @@ func (n *Node) RefreshContainers(full bool) error {
 	for _, c := range containers {
 		merged, err = n.updateContainer(c, merged, full)
 		if err != nil {
-			log.Errorf("[%s/%s] Unable to update state of %s", n.ID, n.Name, c.Id)
+			log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Errorf("Unable to update state of container %q", c.Id)
 		}
 	}
 
@@ -174,7 +174,7 @@ func (n *Node) RefreshContainers(full bool) error {
 	defer n.Unlock()
 	n.containers = merged
 
-	log.Debugf("[%s/%s] Updated state", n.ID, n.Name)
+	log.WithFields(log.Fields{"id": n.ID, "name": n.Name}).Debugf("Updated node state")
 	return nil
 }
 
@@ -264,15 +264,15 @@ func (n *Node) refreshLoop() {
 				n.emitEvent("node_disconnect")
 			}
 			n.healthy = false
-			log.Errorf("[%s/%s] Flagging node as dead. Updated state failed: %v", n.ID, n.Name, err)
+			log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Errorf("Flagging node as dead. Updated state failed: %v", err)
 		} else {
 			if !n.healthy {
-				log.Infof("[%s/%s] Node came back to life. Hooray!", n.ID, n.Name)
+				log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Info("Node came back to life. Hooray!")
 				n.client.StopAllMonitorEvents()
 				n.client.StartMonitorEvents(n.handler, nil)
 				n.emitEvent("node_reconnect")
 				if err := n.updateSpecs(); err != nil {
-					log.Errorf("[%s/%s] Update node specs failed: %v", n.ID, n.Name, err)
+					log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Errorf("Update node specs failed: %v", err)
 				}
 			}
 			n.healthy = true
