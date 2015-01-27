@@ -33,16 +33,41 @@ func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []*clust
 
 func (p *PortFilter) portAlreadyInUse(node *cluster.Node, requested dockerclient.PortBinding) bool {
 	for _, c := range node.Containers() {
-		for _, port := range c.Info.HostConfig.PortBindings {
-			for _, binding := range port {
-				if binding.HostPort == requested.HostPort {
-					// Another container on the same host is binding on the same
-					// port/protocol.  Verify if they are requesting the same
-					// binding IP, or if the other container is already binding on
-					// every interface.
-					if requested.HostIp == binding.HostIp || bindsAllInterfaces(requested) || bindsAllInterfaces(binding) {
-						return true
-					}
+		// HostConfig.PortBindings contains the requested ports.
+		// NetworkSettings.Ports contains the actual ports.
+		//
+		// We have to check both because:
+		// 1/ If the port was not specifically bound (e.g. -p 80), then
+		//    HostConfig.PortBindings.HostPort will be empty and we have to check
+		//    NetworkSettings.Port.HostPort to find out which port got dynamically
+		//    allocated.
+		// 2/ If the port was bound (e.g. -p 80:80) but the container is stopped,
+		//    NetworkSettings.Port will be null and we have to check
+		//    HostConfig.PortBindings to find out the mapping.
+
+		if p.compare(requested, c.Info.HostConfig.PortBindings) || p.compare(requested, c.Info.NetworkSettings.Ports) {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *PortFilter) compare(requested dockerclient.PortBinding, bindings map[string][]dockerclient.PortBinding) bool {
+	for _, binding := range bindings {
+		for _, b := range binding {
+			if b.HostPort == "" {
+				// Skip undefined HostPorts. This happens in bindings that
+				// didn't explicitely specify an external port.
+				continue
+			}
+
+			if b.HostPort == requested.HostPort {
+				// Another container on the same host is binding on the same
+				// port/protocol.  Verify if they are requesting the same
+				// binding IP, or if the other container is already binding on
+				// every interface.
+				if requested.HostIp == b.HostIp || bindsAllInterfaces(requested) || bindsAllInterfaces(b) {
+					return true
 				}
 			}
 		}
