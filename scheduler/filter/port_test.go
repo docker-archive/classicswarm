@@ -95,6 +95,36 @@ func TestPortFilterSimple(t *testing.T) {
 	assert.NotContains(t, result, nodes[0])
 }
 
+func TestPortFilterRequestRandomPorts(t *testing.T) {
+	var (
+		p     = PortFilter{}
+		nodes = []*cluster.Node{
+			cluster.NewNode("node-1", 0),
+			cluster.NewNode("node-2", 0),
+			cluster.NewNode("node-3", 0),
+		}
+		result []*cluster.Node
+		err    error
+	)
+
+	// Add a container taking away a random port.
+	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{HostConfig: &dockerclient.HostConfig{PortBindings: makeBinding("", "")}}}
+	assert.NoError(t, nodes[0].AddContainer(container))
+
+	// Request random port.
+	config := &dockerclient.ContainerConfig{
+		HostConfig: dockerclient.HostConfig{
+			PortBindings: makeBinding("", ""),
+		},
+	}
+
+	// nodes[0] should not be excluded because a random port is taken away.
+	result, err = p.Filter(config, nodes)
+	assert.NoError(t, err)
+	assert.Equal(t, len(result), 3)
+	assert.Contains(t, result, nodes[0])
+}
+
 func TestPortFilterDifferentInterfaces(t *testing.T) {
 	var (
 		p     = PortFilter{}
