@@ -49,6 +49,9 @@ DELETE "/images/{name:.*}"
 ```
 * `GET "/containers/{name:.*}/json"`: `HostIP` replaced by the the actual Node's IP if `HostIP` is `0.0.0.0`
 
-* `GET "/containers"/json"`: Node's name prepended to the container name.
+* `GET "/containers/json"`: Node's name prepended to the container name.
 
-* `GET "/containers"/json"`: `HostIP` replaed by the the actual Node's IP if `HostIP` is `0.0.0.0`
+* `GET "/containers/json"`: `HostIP` replaced by the the actual Node's IP if `HostIP` is `0.0.0.0`
+
+* `GET "/containers/json"` : Containers started from the `swarm` official image are hidden by default, use `all=1` to display them.
+
