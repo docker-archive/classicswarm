@@ -223,6 +223,7 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "{%q:%q}", "Id", container.Id)
 	return
 }
@@ -245,7 +246,7 @@ func deleteContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // GET /events
