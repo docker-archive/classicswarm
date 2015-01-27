@@ -62,6 +62,7 @@ func (c *Cluster) DestroyContainer(container *Container, force bool) error {
 	if err := c.store.Remove(container.Id); err != nil {
 		if err == state.ErrNotFound {
 			log.Debugf("Container %s not found in the store", container.Id)
+			return nil
 		}
 		return err
 	}
