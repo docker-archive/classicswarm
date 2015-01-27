@@ -26,24 +26,31 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 		for _, node := range nodes {
 			switch affinity.key {
 			case "container":
+				if len(node.Containers()) == 0 && affinity.MatchEmpty() {
+					candidates = append(candidates, node)
+					break
+				}
 				for _, container := range node.Containers() {
-					if affinity.Match(container.Id, container.Names[0]) {
+					if affinity.Match(container.Id, strings.TrimPrefix(container.Names[0], "/")) {
 						candidates = append(candidates, node)
 						break
 					}
 				}
 			case "image":
+				if len(node.Images()) == 0 && affinity.MatchEmpty() {
+					candidates = append(candidates, node)
+					break
+				}
 			done:
 				for _, image := range node.Images() {
-					if affinity.Match(image.Id) {
-						candidates = append(candidates, node)
-						break
-					}
+					whats := append(image.RepoTags, image.Id)
+
 					for _, tag := range image.RepoTags {
-						if affinity.Match(tag, strings.Split(tag, ":")[0]) {
-							candidates = append(candidates, node)
-							break done
-						}
+						whats = append(whats, strings.Split(tag, ":")[0])
+					}
+					if affinity.Match(whats...) {
+						candidates = append(candidates, node)
+						break done
 					}
 				}
 			}
