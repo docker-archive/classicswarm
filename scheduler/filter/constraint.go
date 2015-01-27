@@ -34,6 +34,8 @@ func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 					if constraint.Match(label) {
 						candidates = append(candidates, node)
 					}
+				} else if constraint.MatchEmpty() {
+					candidates = append(candidates, node)
 				}
 			}
 		}
