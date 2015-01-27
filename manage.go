@@ -77,6 +77,12 @@ func manage(c *cli.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
+	} else {
+		// Otherwise, if neither --tls nor --tlsverify are specified, abort if
+		// the other flags are passed as they will be ignored.
+		if c.IsSet("tlscert") || c.IsSet("tlskey") || c.IsSet("tlscacert") {
+			log.Fatal("--tlscert, --tlskey and --tlscacert require the use of either --tls or --tlsverify")
+		}
 	}
 
 	store := state.NewStore(path.Join(c.String("rootdir"), "state"))
