@@ -175,3 +175,76 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, result, nodes[1])
 }
+
+func TestPortFilterRandomAssignment(t *testing.T) {
+	var (
+		p     = PortFilter{}
+		nodes = []*cluster.Node{
+			cluster.NewNode("node-1", 0),
+			cluster.NewNode("node-2", 0),
+			cluster.NewNode("node-3", 0),
+		}
+		result []*cluster.Node
+		err    error
+	)
+
+	// Simulate a container that requested to map 80 to a random port.
+	// In this case, HostConfig.PortBindings should contain a binding with no
+	// HostPort defined and NetworkSettings.Ports should contain the actual
+	// mapped port.
+	container := &cluster.Container{
+		Container: dockerclient.Container{Id: "c1"},
+		Info: dockerclient.ContainerInfo{
+			HostConfig: &dockerclient.HostConfig{
+				PortBindings: map[string][]dockerclient.PortBinding{
+					"80/tcp": {
+						{
+							HostIp:   "",
+							HostPort: "",
+						},
+					},
+				},
+			},
+			NetworkSettings: struct {
+				IpAddress   string
+				IpPrefixLen int
+				Gateway     string
+				Bridge      string
+				Ports       map[string][]dockerclient.PortBinding
+			}{
+				Ports: map[string][]dockerclient.PortBinding{
+					"80/tcp": {
+						{
+							HostIp:   "127.0.0.1",
+							HostPort: "1234",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	assert.NoError(t, nodes[0].AddContainer(container))
+
+	// Request port 80.
+	config := &dockerclient.ContainerConfig{
+		HostConfig: dockerclient.HostConfig{
+			PortBindings: makeBinding("", "80"),
+		},
+	}
+
+	// Since port "80" has been mapped to "1234", we should be able to request "80".
+	result, err = p.Filter(config, nodes)
+	assert.NoError(t, err)
+	assert.Equal(t, result, nodes)
+
+	// However, we should not be able to request "1234" since it has been used for a random assignment.
+	config = &dockerclient.ContainerConfig{
+		HostConfig: dockerclient.HostConfig{
+			PortBindings: makeBinding("", "1234"),
+		},
+	}
+	result, err = p.Filter(config, nodes)
+	assert.NoError(t, err)
+	assert.NotContains(t, result, nodes[0])
+}
