@@ -11,7 +11,7 @@ Like the other Docker projects, `swarm` follows the "batteries included but remo
 ### Installation
 
 ######1 - Download and install the current source code.
-Ensure you have golang installed (e.g. `apt-get install golang` on Ubuntu).
+Ensure you have golang and git client installed (e.g. `apt-get install golang git` on Ubuntu).
 You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
 
 The install `swarm` binary to your `$GOPATH` directory.
