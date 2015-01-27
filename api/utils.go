@@ -59,7 +59,7 @@ func proxy(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Re
 	r.URL.Scheme = scheme
 	r.URL.Host = addr
 
-	log.Debugf("[PROXY] --> %s %s", r.Method, r.URL)
+	log.WithFields(log.Fields{"method": r.Method, "url": r.URL}).Debug("Proxy request")
 	resp, err := client.Do(r)
 	if err != nil {
 		return err
@@ -77,7 +77,7 @@ func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.R
 		addr = parts[1]
 	}
 
-	log.Debugf("[HIJACK PROXY] --> %s", addr)
+	log.WithField("addr", addr).Debug("Proxy hijack request")
 
 	var (
 		d   net.Conn

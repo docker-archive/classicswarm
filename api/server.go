@@ -48,7 +48,7 @@ func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, hosts []string, 
 		}
 
 		go func() {
-			log.Infof("Listening for HTTP on %s (%s)", protoAddrParts[0], protoAddrParts[1])
+			log.WithFields(log.Fields{"proto": protoAddrParts[0], "addr": protoAddrParts[1]}).Info("Listening for HTTP")
 
 			var (
 				l      net.Listener
