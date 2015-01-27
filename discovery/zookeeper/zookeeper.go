@@ -102,7 +102,7 @@ func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 
 	addrs, _, eventChan, err := s.conn.ChildrenW(s.fullpath())
 	if err != nil {
-		log.Debugf("[ZK] Watch aborted")
+		log.WithField("name", "zk").Debug("Discovery watch aborted")
 		return
 	}
 	nodes, err := s.createNodes(addrs)
@@ -112,7 +112,7 @@ func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
-			log.Debugf("[ZK] Watch triggered")
+			log.WithField("name", "zk").Debug("Discovery watch triggered")
 			nodes, err := s.Fetch()
 			if err == nil {
 				callback(nodes)

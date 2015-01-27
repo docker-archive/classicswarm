@@ -76,6 +76,7 @@ func (s *ConsulDiscoveryService) Fetch() ([]*discovery.Node, error) {
 
 func (s *ConsulDiscoveryService) Watch(callback discovery.WatchCallback) {
 	for _ = range s.waitForChange() {
+		log.WithField("name", "consul").Debug("Discovery watch triggered")
 		nodes, err := s.Fetch()
 		if err == nil {
 			callback(nodes)
@@ -100,7 +101,7 @@ func (s *ConsulDiscoveryService) waitForChange() <-chan uint64 {
 				WaitTime:  s.heartbeat}
 			_, meta, err := kv.List(s.prefix, option)
 			if err != nil {
-				log.Errorln(err)
+				log.WithField("name", "consul").Errorf("Discovery error: %v", err)
 				break
 			}
 			s.lastIndex = meta.LastIndex

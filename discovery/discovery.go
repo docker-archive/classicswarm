@@ -49,7 +49,7 @@ func Register(scheme string, d DiscoveryService) error {
 	if _, exists := discoveries[scheme]; exists {
 		return fmt.Errorf("scheme already registered %s", scheme)
 	}
-	log.Debugf("Registering %q discovery service", scheme)
+	log.WithField("name", scheme).Debug("Registering discovery service")
 	discoveries[scheme] = d
 
 	return nil
@@ -69,7 +69,7 @@ func New(rawurl string, heartbeat int) (DiscoveryService, error) {
 	scheme, uri := parse(rawurl)
 
 	if discovery, exists := discoveries[scheme]; exists {
-		log.Debugf("Initializing %q discovery service with %q", scheme, uri)
+		log.WithFields(log.Fields{"name": scheme, "uri": uri}).Debug("Initializing discovery service")
 		err := discovery.Initialize(uri, heartbeat)
 		return discovery, err
 	}
