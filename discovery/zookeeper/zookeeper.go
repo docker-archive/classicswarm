@@ -124,7 +124,7 @@ func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 }
 
 func (s *ZkDiscoveryService) Register(addr string) error {
-	nodePath := "/" + path.Join(s.fullpath(), addr)
+	nodePath := path.Join(s.fullpath(), addr)
 
 	// check existing for the parent path first
 	exist, _, err := s.conn.Exists(s.fullpath())
