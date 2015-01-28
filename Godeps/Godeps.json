@@ -1,0 +1,55 @@
+{
+	"ImportPath": "github.com/docker/swarm",
+	"GoVersion": "devel +9ef10fde754f Thu Dec 11 16:32:25 2014 +1100",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.6.4-4-g844911c",
+			"Rev": "844911ce078544c0d950b86ef09e6d19270ed33a"
+		},
+		{
+			"ImportPath": "github.com/armon/consul-api",
+			"Rev": "dcfedd50ed5334f96adee43fc88518a4f095e15c"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-62-gbf4a526",
+			"Rev": "bf4a526f48af7badd25d2cb02d587e1b01be3b50"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-etcd/etcd",
+			"Comment": "v0.2.0-rc1-130-g6aa2da5",
+			"Rev": "6aa2da5a7a905609c93036b9307185a04a5a84a5"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/ioutils",
+			"Comment": "v1.4.1-666-g54ddb9b",
+			"Rev": "54ddb9b41d550fea021efb9f77b7993acf3d6f75"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/parsers/filters",
+			"Comment": "v1.4.1-666-g54ddb9b",
+			"Rev": "54ddb9b41d550fea021efb9f77b7993acf3d6f75"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "215affda49addc4c8ef7e2534915df2c8c35c6cd"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Rev": "e444e69cbd2e2e3e0749a2f3c717cec491552bbf"
+		},
+		{
+			"ImportPath": "github.com/samalba/dockerclient",
+			"Rev": "7e4366cfab2f2b44fcb493bee93a156a763d58b6"
+		},
+		{
+			"ImportPath": "github.com/samuel/go-zookeeper/zk",
+			"Rev": "fa6674abf3f4580b946a01bf7a1ce4ba8766205b"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Rev": "33a31e5dbed8302d5ab7e6d12b416e95c2c4ebc0"
+		}
+	]
+}

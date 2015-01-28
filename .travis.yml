@@ -19,6 +19,10 @@ env:
   - _GOOS=windows _GOARCH=amd64
   - _GOOS=windows _GOARCH=386
 
+
+before_install:
+  - go get github.com/tools/godep
+
 # let us have speedy Docker-based Travis workers
 sudo: false
 
@@ -33,15 +37,12 @@ install:
       mkdir -pv "$DOCKER_PATH/project/make";
       ( cd "$DOCKER_PATH/project/make" && wget -c 'https://raw.githubusercontent.com/docker/docker/master/project/make/'{.validate,validate-dco,validate-gofmt} );
       sed -i 's!docker/docker!docker/swarm!' "$DOCKER_PATH/project/make/.validate";
+      sed -i 's!vendor!Godeps!' "$DOCKER_PATH/project/make/validate-gofmt";
     fi
   # cross-compile the Go toolchain for the GOOS/GOARCH combo we're testing
   - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
       gvm cross "$_GOOS" "$_GOARCH";
       export GOOS="$_GOOS" GOARCH="$_GOARCH";
-    fi
-  # snag any external Go dependencies
-  - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
-      go get -t -v ./...;
     fi
   # add some debugging output that's super helpful when adapting the Travis scripts (so that which environment variables are available in the exact situation being debugged can be seen easily, with real-life examples)
   - env | sort
@@ -59,10 +60,10 @@ script:
  - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
      case "$(go env GOOS)/$(go env GOARCH)" in
        $(go env GOHOSTOS)/$(go env GOHOSTARCH))
-         go test -v ./...;
+         godep go test -v ./...;
          ;;
        *)
-         go build -v;
+         godep go build -v;
          ;;
      esac
    fi
