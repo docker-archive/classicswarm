@@ -24,8 +24,14 @@ func TestAffinityFilter(t *testing.T) {
 	nodes[0].Name = "node-0-name"
 	nodes[0].AddContainer(&cluster.Container{
 		Container: dockerclient.Container{
-			Id:    "container-0-id",
-			Names: []string{"/container-0-name"},
+			Id:    "container-n0-0-id",
+			Names: []string{"/container-n0-0-name"},
+		},
+	})
+	nodes[0].AddContainer(&cluster.Container{
+		Container: dockerclient.Container{
+			Id:    "container-n0-1-id",
+			Names: []string{"/container-n0-1-name"},
 		},
 	})
 	nodes[0].AddImage(&dockerclient.Image{
@@ -37,8 +43,14 @@ func TestAffinityFilter(t *testing.T) {
 	nodes[1].Name = "node-1-name"
 	nodes[1].AddContainer(&cluster.Container{
 		Container: dockerclient.Container{
-			Id:    "container-1-id",
-			Names: []string{"/container-1-name"},
+			Id:    "container-n1-0-id",
+			Names: []string{"/container-n1-0-name"},
+		},
+	})
+	nodes[1].AddContainer(&cluster.Container{
+		Container: dockerclient.Container{
+			Id:    "container-n1-1-id",
+			Names: []string{"/container-n1-1-name"},
 		},
 	})
 	nodes[1].AddImage(&dockerclient.Image{
@@ -62,7 +74,7 @@ func TestAffinityFilter(t *testing.T) {
 
 	// Set a contraint that can only be filled by a single node.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"affinity:container==container-0*"},
+		Env: []string{"affinity:container==container-n0*"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -78,7 +90,7 @@ func TestAffinityFilter(t *testing.T) {
 
 	// Validate by id.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"affinity:container==container-0-id"},
+		Env: []string{"affinity:container==container-n0-0-id"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -86,7 +98,15 @@ func TestAffinityFilter(t *testing.T) {
 
 	// Validate by id.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"affinity:container!=container-0-id"},
+		Env: []string{"affinity:container!=container-n0-0-id"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.NotContains(t, result, nodes[0])
+
+	// Validate by id.
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:container!=container-n0-1-id"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
@@ -94,7 +114,7 @@ func TestAffinityFilter(t *testing.T) {
 
 	// Validate by name.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"affinity:container==container-1-name"},
+		Env: []string{"affinity:container==container-n1-0-name"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
@@ -102,7 +122,15 @@ func TestAffinityFilter(t *testing.T) {
 
 	// Validate by name.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"affinity:container!=container-1-name"},
+		Env: []string{"affinity:container!=container-n1-0-name"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.NotContains(t, result, nodes[1])
+
+	// Validate by name.
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:container!=container-n1-1-name"},
 	}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
