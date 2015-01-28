@@ -174,6 +174,26 @@ func TestAffinityFilter(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
+	// Ensure that constraints can be chained.
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{
+			"affinity:container!=container-n0-1-id",
+			"affinity:container!=container-n1-1-id",
+		},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[2])
+
+	// Ensure that constraints can be chained.
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{
+			"affinity:container==container-n0-1-id",
+			"affinity:container==container-n1-1-id",
+		},
+	}, nodes)
+	assert.Error(t, err)
+
 	// Not support = any more
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"affinity:image=image-0:tag3"},
