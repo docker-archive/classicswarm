@@ -72,10 +72,6 @@ func parseExprs(key string, env []string) ([]expr, error) {
 	return exprs, nil
 }
 
-func (e *expr) MatchEmpty() bool {
-	return e.operator == NOTEQ
-}
-
 func (e *expr) Match(whats ...string) bool {
 	var (
 		pattern string
