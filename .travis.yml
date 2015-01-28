@@ -66,7 +66,7 @@ script:
  - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
      case "$(go env GOOS)/$(go env GOARCH)" in
        $(go env GOHOSTOS)/$(go env GOHOSTARCH))
-         go test -v ./...;
+         go test -v -race ./...;
          ;;
        *)
          go build -v;
