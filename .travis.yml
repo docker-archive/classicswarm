@@ -59,11 +59,14 @@ script:
  - if [[ "$TRAVIS_GLOBAL_WTF" && "$TRAVIS_GO_VERSION" == go1.3* ]]; then
      bash "$DOCKER_PATH/project/make/validate-gofmt";
    fi
+ - if [ "$TRAVIS_GLOBAL_WTF" ]; then
+     go vet  ./...;
+   fi
  # when we're on the native GOHOSTOS/GOHOSTARCH, the test suite will run as-is, but for all other platforms, we only want to test compilation
  - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
      case "$(go env GOOS)/$(go env GOARCH)" in
        $(go env GOHOSTOS)/$(go env GOHOSTARCH))
-         go test -v ./...;
+         go test -v -race ./...;
          ;;
        *)
          go build -v;
