@@ -13,6 +13,7 @@ func testFixtures() (nodes []*cluster.Node) {
 		cluster.NewNode("node-0", 0),
 		cluster.NewNode("node-1", 0),
 		cluster.NewNode("node-2", 0),
+		cluster.NewNode("node-3", 0),
 	}
 	nodes[0].ID = "node-0-id"
 	nodes[0].Name = "node-0-name"
@@ -37,6 +38,8 @@ func testFixtures() (nodes []*cluster.Node) {
 		"group":  "2",
 		"region": "eu",
 	}
+	nodes[3].ID = "node-3-id"
+	nodes[3].Name = "node-3-name"
 	return
 }
 
@@ -132,29 +135,28 @@ func TestConstraintNotExpr(t *testing.T) {
 		Env: []string{"constraint:name!=node0"},
 	}, nodes)
 	assert.NoError(t, err)
-	assert.Len(t, result, 2)
+	assert.Len(t, result, 3)
 
 	// Check not does_not_exist. All should be found
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"constraint:name!=does_not_exist"},
 	}, nodes)
 	assert.NoError(t, err)
-	assert.Len(t, result, 3)
+	assert.Len(t, result, 4)
 
 	// Check name must not start with n
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"constraint:name!=n*"},
 	}, nodes)
-	assert.Error(t, err)
-	assert.Len(t, result, 0)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
 
 	// Check not with globber pattern
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"constraint:region!=us*"},
 	}, nodes)
 	assert.NoError(t, err)
-	assert.Len(t, result, 1)
-	assert.Equal(t, result[0].Labels["region"], "eu")
+	assert.Len(t, result, 2)
 }
 
 func TestConstraintRegExp(t *testing.T) {
@@ -179,21 +181,19 @@ func TestConstraintRegExp(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
-	// Check with regular expression ! and regexp /node[12]/ matches node[0]
+	// Check with regular expression ! and regexp /node[12]/ matches node[0] and node[3]
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{`constraint:name!=/node[12]/`},
 	}, nodes)
 	assert.NoError(t, err)
-	assert.Len(t, result, 1)
-	assert.Equal(t, result[0], nodes[0])
+	assert.Len(t, result, 2)
 
 	// Validate node pinning by ! and regexp.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"constraint:node!=/node-[01]-id/"},
 	}, nodes)
 	assert.NoError(t, err)
-	assert.Len(t, result, 1)
-	assert.Equal(t, result[0], nodes[2])
+	assert.Len(t, result, 2)
 }
 
 func TestFilterRegExpCaseInsensitive(t *testing.T) {
@@ -213,7 +213,7 @@ func TestFilterRegExpCaseInsensitive(t *testing.T) {
 		"group":  "2",
 		"region": "eu",
 	}
-	nodes = append(nodes, node3)
+	nodes[3] = node3
 
 	// Case-sensitive, so not match
 	result, err = f.Filter(&dockerclient.ContainerConfig{

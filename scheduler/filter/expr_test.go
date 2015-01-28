@@ -46,6 +46,7 @@ func TestMatch(t *testing.T) {
 	assert.False(t, e.Match("foo"))
 	assert.True(t, e.Match("bar"))
 	assert.False(t, e.Match("foo", "bar"))
+	assert.False(t, e.Match("bar", "foo"))
 
 	e = expr{operator: EQ, value: "f*o"}
 	assert.True(t, e.Match("foo"))
