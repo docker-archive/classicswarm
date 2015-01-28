@@ -274,3 +274,59 @@ func TestPortFilterRandomAssignment(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotContains(t, result, nodes[0])
 }
+
+func TestPortFilterForHostMode(t *testing.T) {
+	var (
+		p     = PortFilter{}
+		nodes = []cluster.Node{
+			&FakeNode{
+				id:   "node-1-id",
+				name: "node-1-name",
+				addr: "node-1",
+			},
+			&FakeNode{
+				id:   "node-2-id",
+				name: "node-2-name",
+				addr: "node-2",
+			},
+			&FakeNode{
+				id:   "node-3-id",
+				name: "node-3-name",
+				addr: "node-3",
+			},
+		}
+		result []cluster.Node
+		err    error
+	)
+
+	// Add a container taking away port 80 in the host mode to nodes[0].
+	container := &cluster.Container{
+		Container: dockerclient.Container{Id: "c1"},
+		Info: dockerclient.ContainerInfo{
+			Config: &dockerclient.ContainerConfig{
+				ExposedPorts: map[string]struct{}{"80": {}},
+			},
+			HostConfig: &dockerclient.HostConfig{
+				NetworkMode: "host",
+			},
+		},
+	}
+
+	if n, ok := nodes[0].(*FakeNode); ok {
+		assert.NoError(t, n.AddContainer(container))
+	}
+
+	// Request port 80 in the host mode
+	config := &dockerclient.ContainerConfig{
+		ExposedPorts: map[string]struct{}{"80": {}},
+		HostConfig: dockerclient.HostConfig{
+			NetworkMode: "host",
+		},
+	}
+
+	// nodes[0] should be excluded since port 80 is taken away
+	result, err = p.Filter(config, nodes)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(result))
+	assert.NotContains(t, result, nodes[0])
+}
