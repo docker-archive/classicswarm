@@ -33,6 +33,7 @@ install:
       mkdir -pv "$DOCKER_PATH/project/make";
       ( cd "$DOCKER_PATH/project/make" && wget -c 'https://raw.githubusercontent.com/docker/docker/master/project/make/'{.validate,validate-dco,validate-gofmt} );
       sed -i 's!docker/docker!docker/swarm!' "$DOCKER_PATH/project/make/.validate";
+      sed -i 's!\^vendor/!\^Godeps/!' "$DOCKER_PATH/project/make/validate-gofmt";
     fi
   # cross-compile the Go toolchain for the GOOS/GOARCH combo we're testing
   - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
