@@ -22,6 +22,9 @@ env:
 # let us have speedy Docker-based Travis workers
 sudo: false
 
+before_install:
+  - go get github.com/tools/godep
+
 install:
   # setup our current repo as "github.com/docker/swarm" in the GOPATH
   - mkdir -pv "${GOPATH%%:*}/src/github.com/docker"
@@ -33,15 +36,16 @@ install:
       mkdir -pv "$DOCKER_PATH/project/make";
       ( cd "$DOCKER_PATH/project/make" && wget -c 'https://raw.githubusercontent.com/docker/docker/master/project/make/'{.validate,validate-dco,validate-gofmt} );
       sed -i 's!docker/docker!docker/swarm!' "$DOCKER_PATH/project/make/.validate";
+      sed -i 's!\^vendor/!\^Godeps/!' "$DOCKER_PATH/project/make/validate-gofmt";
     fi
   # cross-compile the Go toolchain for the GOOS/GOARCH combo we're testing
   - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
       gvm cross "$_GOOS" "$_GOARCH";
       export GOOS="$_GOOS" GOARCH="$_GOARCH";
     fi
-  # snag any external Go dependencies
+  # restore vendored dependencies
   - if [ -z "$TRAVIS_GLOBAL_WTF" ]; then
-      go get -t -v ./...;
+      godep restore;
     fi
   # add some debugging output that's super helpful when adapting the Travis scripts (so that which environment variables are available in the exact situation being debugged can be seen easily, with real-life examples)
   - env | sort
