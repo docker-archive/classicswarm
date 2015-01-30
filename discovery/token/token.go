@@ -2,6 +2,7 @@ package token
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -30,6 +31,10 @@ func (s *TokenDiscoveryService) Initialize(urltoken string, heartbeat int) error
 	} else {
 		s.url = DISCOVERY_URL
 		s.token = urltoken
+	}
+
+	if s.token == "" {
+		return errors.New("token is empty")
 	}
 	s.heartbeat = heartbeat
 
