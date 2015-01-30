@@ -8,13 +8,18 @@ import (
 
 func TestInitialize(t *testing.T) {
 	discovery := &TokenDiscoveryService{}
-	discovery.Initialize("token", 0)
+	err := discovery.Initialize("token", 0)
+	assert.NoError(t, err)
 	assert.Equal(t, discovery.token, "token")
 	assert.Equal(t, discovery.url, DISCOVERY_URL)
 
-	discovery.Initialize("custom/path/token", 0)
+	err = discovery.Initialize("custom/path/token", 0)
+	assert.NoError(t, err)
 	assert.Equal(t, discovery.token, "token")
 	assert.Equal(t, discovery.url, "https://custom/path")
+
+	err = discovery.Initialize("", 0)
+	assert.Error(t, err)
 }
 
 func TestRegister(t *testing.T) {
