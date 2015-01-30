@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func serveRequest(c *cluster.Cluster, s *scheduler.Scheduler, w http.ResponseWriter, req *http.Request) error {
+func serveRequest(c *cluster.Cluster, s scheduler.Scheduler, w http.ResponseWriter, req *http.Request) error {
 	context := &context{
 		cluster:   c,
 		scheduler: s,
