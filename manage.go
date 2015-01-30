@@ -12,10 +12,10 @@ import (
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
+	"github.com/docker/swarm/filter"
 	"github.com/docker/swarm/scheduler"
-	"github.com/docker/swarm/scheduler/filter"
-	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/docker/swarm/state"
+	"github.com/docker/swarm/strategy"
 )
 
 type logHandler struct {
@@ -137,11 +137,15 @@ func manage(c *cli.Context) {
 		go d.Watch(cluster.UpdateNodes)
 	}()
 
-	sched := scheduler.NewScheduler(
+	sched, err := scheduler.New(c.String("scheduler"),
 		cluster,
 		s,
 		fs,
 	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// see https://github.com/codegangsta/cli/issues/160
 	hosts := c.StringSlice("host")
