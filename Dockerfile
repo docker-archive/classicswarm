@@ -4,7 +4,7 @@ COPY . /go/src/github.com/docker/swarm
 WORKDIR /go/src/github.com/docker/swarm
 
 ENV GOPATH $GOPATH:/go/src/github.com/docker/swarm/Godeps/_workspace
-RUN go install -v
+RUN CGO_ENABLED=0 go install -v -a -tags netgo -ldflags '-w'
 
 EXPOSE 2375
 
