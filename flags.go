@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/codegangsta/cli"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/codegangsta/cli"
 )
 
 func homepath(p string) string {
@@ -34,9 +35,13 @@ var (
 		Usage:  "ip to advertise",
 		EnvVar: "SWARM_ADDR",
 	}
+
+	// hack for go vet
+	flHostsValue = cli.StringSlice([]string{"tcp://127.0.0.1:2375"})
+
 	flHosts = cli.StringSliceFlag{
 		Name:   "host, H",
-		Value:  &cli.StringSlice{"tcp://127.0.0.1:2375"},
+		Value:  &flHostsValue,
 		Usage:  "ip/socket to listen on",
 		EnvVar: "SWARM_HOST",
 	}
@@ -79,9 +84,13 @@ var (
 		Usage: "placement strategy to use [binpacking, random]",
 		Value: "binpacking",
 	}
+
+	// hack for go vet
+	flFilterValue = cli.StringSlice([]string{"constraint", "affinity", "health", "port"})
+
 	flFilter = cli.StringSliceFlag{
 		Name:  "filter, f",
 		Usage: "filter to use [constraint, affinity, health, port]",
-		Value: &cli.StringSlice{"constraint", "affinity", "health", "port"},
+		Value: &flFilterValue,
 	}
 )
