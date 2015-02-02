@@ -68,6 +68,7 @@ func proxy(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Re
 	copyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(NewWriteFlusher(w), resp.Body)
+	resp.Body.Close()
 
 	return nil
 }
