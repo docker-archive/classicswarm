@@ -1,11 +1,16 @@
-Discovery
-=========
+---
+page_title: Docker Swarm discovery
+page_description: Swarm discovery
+page_keywords: docker, swarm, clustering, discovery
+---
+
+# Discovery
 
 `Docker Swarm` comes with multiple Discovery backends
 
 ## Examples
 
-##### Using the hosted discovery service
+### Using the hosted discovery service
 
 ```bash
 # create a cluster
@@ -32,7 +37,7 @@ $ swarm list token://<cluster_id>
 <node_ip:2375>
 ```
 
-###### Using a static file describing the cluster
+### Using a static file describing the cluster
 
 ```bash
 # for each of your nodes, add a line to a file
@@ -59,7 +64,7 @@ $ swarm list file:///tmp/my_cluster
 <node_ip3:2375>
 ```
 
-###### Using etcd
+### Using etcd
 
 ```bash
 # on each of your nodes, start the swarm agent
@@ -82,7 +87,7 @@ $ swarm list etcd://<etcd_ip>/<path>
 <node_ip:2375>
 ```
 
-###### Using consul
+### Using consul
 
 ```bash
 # on each of your nodes, start the swarm agent
@@ -105,7 +110,7 @@ $ swarm list consul://<consul_addr>/<path>
 <node_ip:2375>
 ```
 
-###### Using zookeeper
+### Using zookeeper
 
 ```bash
 # on each of your nodes, start the swarm agent
@@ -128,7 +133,7 @@ $ swarm list zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
 <node_ip:2375>
 ```
 
-###### Using a static list of ips
+### Using a static list of ips
 
 ```bash
 # start the manager on any machine or your laptop
@@ -158,15 +163,17 @@ type DiscoveryService interface {
 }
 ```
 
-######Initialize
+## Extra tips
+
+### Initialize
 take the `discovery` without the scheme and a heartbeat (in seconds)
 
-######Fetch
+### Fetch
 returns the list of all the nodes from the discovery
 
-######Watch
+### Watch
 triggers an update (`Fetch`),it can happen either via
 a timer (like `token`) or use backend specific features (like `etcd`)
 
-######Register
+### Register
 add a new node to the discovery
