@@ -87,8 +87,11 @@ func (s *TokenDiscoveryService) Watch(callback discovery.WatchCallback) {
 func (s *TokenDiscoveryService) Register(addr string) error {
 	buf := strings.NewReader(addr)
 
-	_, err := http.Post(fmt.Sprintf("%s/%s/%s", s.url,
+	resp, err := http.Post(fmt.Sprintf("%s/%s/%s", s.url,
 		"clusters", s.token), "application/json", buf)
+
+	// Force connection close
+	resp.Body.Close()
 	return err
 }
 
@@ -98,6 +101,8 @@ func (s *TokenDiscoveryService) CreateCluster() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	defer resp.Body.Close()
 	token, err := ioutil.ReadAll(resp.Body)
 	return string(token), err
 }
