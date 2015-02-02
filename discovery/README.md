@@ -19,7 +19,7 @@ $ swarm create
 
 # on each of your nodes, start the swarm agent
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
-#  as long as the other nodes can reach it, it is fine.
+#  as long as the manager and the docker cli can reach it, it is fine.
 $ swarm join --addr=<node_ip:2375> token://<cluster_id>
 
 # start the manager on any machine or your laptop
@@ -42,7 +42,7 @@ $ swarm list token://<cluster_id>
 ```bash
 # for each of your nodes, add a line to a file
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
-#  as long as the other nodes can reach it, it is fine.
+#  as long as the manager and the docker cli can reach it, it is fine.
 $ echo <node_ip1:2375> >> /tmp/my_cluster
 $ echo <node_ip2:2375> >> /tmp/my_cluster
 $ echo <node_ip3:2375> >> /tmp/my_cluster
@@ -69,7 +69,7 @@ $ swarm list file:///tmp/my_cluster
 ```bash
 # on each of your nodes, start the swarm agent
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
-#  as long as the other nodes can reach it, it is fine.
+#  as long as the manager and the docker cli can reach it, it is fine.
 $ swarm join --addr=<node_ip:2375> etcd://<etcd_ip>/<path>
 
 # start the manager on any machine or your laptop
@@ -92,7 +92,7 @@ $ swarm list etcd://<etcd_ip>/<path>
 ```bash
 # on each of your nodes, start the swarm agent
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
-#  as long as the other nodes can reach it, it is fine.
+#  as long as the manager and the docker cli can reach it, it is fine.
 $ swarm join --addr=<node_ip:2375> consul://<consul_addr>/<path>
 
 # start the manager on any machine or your laptop
@@ -115,7 +115,7 @@ $ swarm list consul://<consul_addr>/<path>
 ```bash
 # on each of your nodes, start the swarm agent
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
-#  as long as the other nodes can reach it, it is fine.
+#  as long as the manager and the docker cli can reach it, it is fine.
 $ swarm join --addr=<node_ip:2375> zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
 
 # start the manager on any machine or your laptop
