@@ -2,6 +2,8 @@ package strategy
 
 import (
 	"errors"
+	"os"
+	"os/signal"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
@@ -20,11 +22,25 @@ var (
 	ErrNotSupported = errors.New("strategy not supported")
 )
 
-func init() {
+func resetStrategyMap() {
 	strategies = map[string]PlacementStrategy{
 		"binpacking": &BinPackingPlacementStrategy{},
 		"random":     &RandomPlacementStrategy{},
 	}
+}
+
+func init() {
+	resetStrategyMap()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
+	go func() {
+		for _ = range sigChan {
+			// handle ^C to stop all plugins
+			log.Debug("Ctrl+C detected, stop all plugins")
+			StopPlugins()
+		}
+	}()
 }
 
 func New(name string) (PlacementStrategy, error) {
@@ -33,6 +49,5 @@ func New(name string) (PlacementStrategy, error) {
 		err := strategy.Initialize()
 		return strategy, err
 	}
-
 	return nil, ErrNotSupported
 }

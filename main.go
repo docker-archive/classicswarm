@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -14,6 +16,7 @@ import (
 	_ "github.com/docker/swarm/discovery/nodes"
 	"github.com/docker/swarm/discovery/token"
 	_ "github.com/docker/swarm/discovery/zookeeper"
+	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/docker/swarm/version"
 )
 
@@ -57,6 +60,14 @@ func main() {
 
 		return nil
 	}
+
+	// initialize plugins and them listed
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Fatal(err)
+	}
+	plugins := strategy.InitializePlugins(dir)
+	flStrategy.Usage = fmt.Sprintf("placement strategy to use [%s]", strings.Join(plugins, ", "))
 
 	app.Commands = []cli.Command{
 		{

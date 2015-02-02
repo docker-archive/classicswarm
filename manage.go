@@ -143,6 +143,9 @@ func manage(c *cli.Context) {
 		fs,
 	)
 
+	// clean up all plugins
+	defer strategy.StopPlugins()
+
 	// see https://github.com/codegangsta/cli/issues/160
 	hosts := c.StringSlice("host")
 	if c.IsSet("host") || c.IsSet("H") {
