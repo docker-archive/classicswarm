@@ -7,8 +7,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-
-	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/discovery"
 	_ "github.com/docker/swarm/discovery/consul"
 	_ "github.com/docker/swarm/discovery/etcd"
@@ -16,17 +14,15 @@ import (
 	_ "github.com/docker/swarm/discovery/nodes"
 	"github.com/docker/swarm/discovery/token"
 	_ "github.com/docker/swarm/discovery/zookeeper"
+	"github.com/docker/swarm/version"
 )
 
 func main() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "a Docker-native clustering system"
-	app.Version = "0.1.0"
+	app.Version = version.VERSION + " (" + version.GITCOMMIT + ")"
 
-	if api.GITCOMMIT != "" {
-		app.Version += " (" + api.GITCOMMIT + ")"
-	}
 	app.Author = ""
 	app.Email = ""
 

@@ -29,11 +29,10 @@ func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error
 	return l, nil
 }
 
-func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, hosts []string, version string, enableCors bool, tlsConfig *tls.Config) error {
+func ListenAndServe(c *cluster.Cluster, s *scheduler.Scheduler, hosts []string, enableCors bool, tlsConfig *tls.Config) error {
 	context := &context{
 		cluster:       c,
 		scheduler:     s,
-		version:       version,
 		eventsHandler: NewEventsHandler(),
 		tlsConfig:     tlsConfig,
 	}
