@@ -75,7 +75,7 @@ Now we want to run an `nginx` frontend in our cluster. However, we don't want
 
 ```
 $ docker run -d -P -e constraint:storage==disk --name frontend nginx
-f8b693db9cd6
+963841b138d8
 
 $ docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
