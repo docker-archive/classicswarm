@@ -146,5 +146,5 @@ func manage(c *cli.Context) {
 	if c.IsSet("host") || c.IsSet("H") {
 		hosts = hosts[1:]
 	}
-	log.Fatal(api.ListenAndServe(cluster, sched, hosts, c.App.Version, c.Bool("cors"), tlsConfig))
+	log.Fatal(api.ListenAndServe(cluster, sched, hosts, c.Bool("cors"), tlsConfig))
 }

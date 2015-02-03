@@ -17,6 +17,7 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
+	"github.com/docker/swarm/version"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
 )
@@ -28,7 +29,6 @@ type context struct {
 	scheduler     *scheduler.Scheduler
 	eventsHandler *eventsHandler
 	debug         bool
-	version       string
 	tlsConfig     *tls.Config
 }
 
@@ -68,10 +68,10 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 		Os         string
 		Arch       string
 	}{
-		Version:    "swarm/" + c.version,
+		Version:    "swarm/" + version.VERSION,
 		ApiVersion: APIVERSION,
 		GoVersion:  runtime.Version(),
-		GitCommit:  "n/a",
+		GitCommit:  version.GITCOMMIT,
 		Os:         runtime.GOOS,
 		Arch:       runtime.GOARCH,
 	}
