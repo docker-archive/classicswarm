@@ -8,6 +8,7 @@ import (
 
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/version"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +16,6 @@ func serveRequest(c *cluster.Cluster, s *scheduler.Scheduler, w http.ResponseWri
 	context := &context{
 		cluster:   c,
 		scheduler: s,
-		version:   "test-version",
 	}
 
 	r := createRouter(context, false)
@@ -31,10 +31,10 @@ func TestGetVersion(t *testing.T) {
 	assert.NoError(t, serveRequest(nil, nil, r, req))
 	assert.Equal(t, r.Code, http.StatusOK)
 
-	version := struct {
+	v := struct {
 		Version string
 	}{}
 
-	json.NewDecoder(r.Body).Decode(&version)
-	assert.Equal(t, version.Version, "swarm/test-version")
+	json.NewDecoder(r.Body).Decode(&v)
+	assert.Equal(t, v.Version, "swarm/"+version.VERSION)
 }
