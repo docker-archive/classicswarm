@@ -14,7 +14,7 @@ These filters are used to schedule containers on a subset of nodes.
 * [Constraint](#constraint-filter)
 * [Affinity](#affinity-filter)
 * [Port](#port-filter)
-* [Healthy](#healthy-filter)
+* [Health](#health-filter)
 
 You can choose the filter(s) you want to use with the `--filter` flag of `swarm manage`
 
