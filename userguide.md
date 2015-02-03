@@ -56,10 +56,10 @@ $ swarm create
 # For each of your nodes, start a swarm agent
 #  the Docker daemon <node_ip> doesn't have to be public (eg. 192.168.0.X),
 #  as long as the swarm manager can access it.
-$ swarm join --addr=<node_ip:2375> --discovery token://<cluster_id>
+$ swarm join --addr=<node_ip:2375> token://<cluster_id>
 
 # start the manager on any machine or your laptop
-$ swarm manage -H tcp://<swarm_ip:swarm_port> --discovery token://<cluster_id>
+$ swarm manage -H tcp://<swarm_ip:swarm_port> token://<cluster_id>
 
 # use the regular docker cli
 $ docker -H tcp://<swarm_ip:swarm_port> info
@@ -69,7 +69,7 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
-$ swarm list --discovery token://<cluster_id>
+$ swarm list token://<cluster_id>
 <node_ip:2375>
 ```
 
