@@ -31,7 +31,7 @@ var (
 	}
 	flAddr = cli.StringFlag{
 		Name:   "addr",
-		Value:  "127.0.0.1:4243",
+		Value:  "127.0.0.1:2375",
 		Usage:  "ip to advertise",
 		EnvVar: "SWARM_ADDR",
 	}
