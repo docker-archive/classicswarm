@@ -23,6 +23,10 @@ import (
 
 const APIVERSION = "1.16"
 
+var (
+	GITCOMMIT string
+)
+
 type context struct {
 	cluster       *cluster.Cluster
 	scheduler     *scheduler.Scheduler
@@ -71,7 +75,7 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 		Version:    "swarm/" + c.version,
 		ApiVersion: APIVERSION,
 		GoVersion:  runtime.Version(),
-		GitCommit:  "n/a",
+		GitCommit:  GITCOMMIT,
 		Os:         runtime.GOOS,
 		Arch:       runtime.GOARCH,
 	}

@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 
+	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/discovery"
 	_ "github.com/docker/swarm/discovery/consul"
 	_ "github.com/docker/swarm/discovery/etcd"
@@ -22,6 +23,10 @@ func main() {
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "a Docker-native clustering system"
 	app.Version = "0.1.0"
+
+	if api.GITCOMMIT != "" {
+		app.Version += " (" + api.GITCOMMIT + ")"
+	}
 	app.Author = ""
 	app.Email = ""
 
