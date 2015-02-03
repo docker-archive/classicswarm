@@ -136,6 +136,10 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(tmp.Status, "Up") && !all {
 			continue
 		}
+		// Skip swarm containers unless -a was specified.
+		if strings.Split(tmp.Image, ":")[0] == "swarm" && !all {
+			continue
+		}
 		if !container.Node.IsHealthy() {
 			tmp.Status = "Pending"
 		}
