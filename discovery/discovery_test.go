@@ -6,13 +6,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewNode(t *testing.T) {
-	node, err := NewNode("127.0.0.1:2375")
-	assert.Equal(t, node.Host, "127.0.0.1")
-	assert.Equal(t, node.Port, "2375")
+func TestNewEntry(t *testing.T) {
+	entry, err := NewEntry("127.0.0.1:2375")
+	assert.Equal(t, entry.Host, "127.0.0.1")
+	assert.Equal(t, entry.Port, "2375")
 	assert.NoError(t, err)
 
-	_, err = NewNode("127.0.0.1")
+	_, err = NewEntry("127.0.0.1")
 	assert.Error(t, err)
 }
 

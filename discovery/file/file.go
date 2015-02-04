@@ -23,31 +23,31 @@ func (s *FileDiscoveryService) Initialize(path string, heartbeat int) error {
 	return nil
 }
 
-func (s *FileDiscoveryService) Fetch() ([]*discovery.Node, error) {
+func (s *FileDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	data, err := ioutil.ReadFile(s.path)
 	if err != nil {
 		return nil, err
 	}
 
-	var nodes []*discovery.Node
+	var entries []*discovery.Entry
 
 	for _, line := range strings.Split(string(data), "\n") {
 		if line != "" {
-			node, err := discovery.NewNode(line)
+			entry, err := discovery.NewEntry(line)
 			if err != nil {
 				return nil, err
 			}
-			nodes = append(nodes, node)
+			entries = append(entries, entry)
 		}
 	}
-	return nodes, nil
+	return entries, nil
 }
 
 func (s *FileDiscoveryService) Watch(callback discovery.WatchCallback) {
 	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
-		nodes, err := s.Fetch()
+		entries, err := s.Fetch()
 		if err == nil {
-			callback(nodes)
+			callback(entries)
 		}
 	}
 }

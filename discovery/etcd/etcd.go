@@ -24,9 +24,9 @@ func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat int) error {
 	var (
 		// split here because uris can contain multiples ips
 		// like `etcd://192.168.0.1,192.168.0.2,192.168.0.3/path`
-		parts    = strings.SplitN(uris, "/", 2)
-		ips      = strings.Split(parts[0], ",")
-		machines []string
+		parts   = strings.SplitN(uris, "/", 2)
+		ips     = strings.Split(parts[0], ",")
+		entries []string
 	)
 
 	if len(parts) != 2 {
@@ -34,10 +34,10 @@ func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat int) error {
 	}
 
 	for _, ip := range ips {
-		machines = append(machines, "http://"+ip)
+		entries = append(entries, "http://"+ip)
 	}
 
-	s.client = etcd.NewClient(machines)
+	s.client = etcd.NewClient(entries)
 	s.ttl = uint64(heartbeat * 3 / 2)
 	s.path = "/" + parts[1] + "/"
 	if _, err := s.client.CreateDir(s.path, s.ttl); err != nil {
@@ -51,22 +51,30 @@ func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat int) error {
 	}
 	return nil
 }
-func (s *EtcdDiscoveryService) Fetch() ([]*discovery.Node, error) {
+func (s *EtcdDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	resp, err := s.client.Get(s.path, true, true)
 	if err != nil {
 		return nil, err
 	}
 
-	var nodes []*discovery.Node
+	return s.createEntries(resp.Node.Nodes)
+}
 
-	for _, n := range resp.Node.Nodes {
-		node, err := discovery.NewNode(n.Value)
+func (s *EtcdDiscoveryService) createEntries(nodes etcd.Nodes) ([]*discovery.Entry, error) {
+	entries := []*discovery.Entry{}
+	if nodes == nil {
+		return entries, nil
+	}
+
+	for _, n := range nodes {
+		entry, err := discovery.NewEntry(n.Value)
 		if err != nil {
 			return nil, err
 		}
-		nodes = append(nodes, node)
+		entries = append(entries, entry)
 	}
-	return nodes, nil
+	return entries, nil
+
 }
 
 func (s *EtcdDiscoveryService) Watch(callback discovery.WatchCallback) {
@@ -74,9 +82,9 @@ func (s *EtcdDiscoveryService) Watch(callback discovery.WatchCallback) {
 	go s.client.Watch(s.path, 0, true, watchChan, nil)
 	for _ = range watchChan {
 		log.WithField("name", "etcd").Debug("Discovery watch triggered")
-		nodes, err := s.Fetch()
+		entries, err := s.Fetch()
 		if err == nil {
-			callback(nodes)
+			callback(entries)
 		}
 	}
 }

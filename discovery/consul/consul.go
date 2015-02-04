@@ -52,34 +52,41 @@ func (s *ConsulDiscoveryService) Initialize(uris string, heartbeat int) error {
 	s.lastIndex = meta.LastIndex
 	return nil
 }
-func (s *ConsulDiscoveryService) Fetch() ([]*discovery.Node, error) {
+func (s *ConsulDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	kv := s.client.KV()
 	pairs, _, err := kv.List(s.prefix, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var nodes []*discovery.Node
+	return s.createEntries(pairs)
+}
+
+func (s *ConsulDiscoveryService) createEntries(pairs consul.KVPairs) ([]*discovery.Entry, error) {
+	entries := []*discovery.Entry{}
+	if pairs == nil {
+		return entries, nil
+	}
 
 	for _, pair := range pairs {
 		if pair.Key == s.prefix {
 			continue
 		}
-		node, err := discovery.NewNode(string(pair.Value))
+		entry, err := discovery.NewEntry(string(pair.Value))
 		if err != nil {
 			return nil, err
 		}
-		nodes = append(nodes, node)
+		entries = append(entries, entry)
 	}
-	return nodes, nil
+	return entries, nil
 }
 
 func (s *ConsulDiscoveryService) Watch(callback discovery.WatchCallback) {
 	for _ = range s.waitForChange() {
 		log.WithField("name", "consul").Debug("Discovery watch triggered")
-		nodes, err := s.Fetch()
+		entries, err := s.Fetch()
 		if err == nil {
-			callback(nodes)
+			callback(entries)
 		}
 	}
 }

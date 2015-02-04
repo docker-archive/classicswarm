@@ -99,11 +99,11 @@ func (c *Cluster) AddNode(n *Node) error {
 	return n.Events(c)
 }
 
-func (c *Cluster) UpdateNodes(nodes []*discovery.Node) {
-	for _, addr := range nodes {
-		go func(node *discovery.Node) {
-			if c.Node(node.String()) == nil {
-				n := NewNode(node.String(), c.overcommitRatio)
+func (c *Cluster) UpdateNodes(entries []*discovery.Entry) {
+	for _, entry := range entries {
+		go func(m *discovery.Entry) {
+			if c.Node(m.String()) == nil {
+				n := NewNode(m.String(), c.overcommitRatio)
 				if err := n.Connect(c.tlsConfig); err != nil {
 					log.Error(err)
 					return
@@ -113,7 +113,7 @@ func (c *Cluster) UpdateNodes(nodes []*discovery.Node) {
 					return
 				}
 			}
-		}(addr)
+		}(entry)
 	}
 }
 

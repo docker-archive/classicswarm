@@ -7,7 +7,7 @@ import (
 )
 
 type NodesDiscoveryService struct {
-	nodes []*discovery.Node
+	entries []*discovery.Entry
 }
 
 func init() {
@@ -16,17 +16,17 @@ func init() {
 
 func (s *NodesDiscoveryService) Initialize(uris string, _ int) error {
 	for _, ip := range strings.Split(uris, ",") {
-		node, err := discovery.NewNode(ip)
+		entry, err := discovery.NewEntry(ip)
 		if err != nil {
 			return err
 		}
-		s.nodes = append(s.nodes, node)
+		s.entries = append(s.entries, entry)
 	}
 
 	return nil
 }
-func (s *NodesDiscoveryService) Fetch() ([]*discovery.Node, error) {
-	return s.nodes, nil
+func (s *NodesDiscoveryService) Fetch() ([]*discovery.Entry, error) {
+	return s.entries, nil
 }
 
 func (s *NodesDiscoveryService) Watch(callback discovery.WatchCallback) {

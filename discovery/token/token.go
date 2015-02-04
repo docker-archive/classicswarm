@@ -41,8 +41,8 @@ func (s *TokenDiscoveryService) Initialize(urltoken string, heartbeat int) error
 	return nil
 }
 
-// Fetch returns the list of nodes for the discovery service at the specified endpoint
-func (s *TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
+// Fetch returns the list of entries for the discovery service at the specified endpoint
+func (s *TokenDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 
 	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", s.url, "clusters", s.token))
 	if err != nil {
@@ -59,31 +59,31 @@ func (s *TokenDiscoveryService) Fetch() ([]*discovery.Node, error) {
 			return nil, err
 		}
 	} else {
-		return nil, fmt.Errorf("Failed to fetch nodes, Discovery service returned %d HTTP status code", resp.StatusCode)
+		return nil, fmt.Errorf("Failed to fetch entries, Discovery service returned %d HTTP status code", resp.StatusCode)
 	}
 
-	var nodes []*discovery.Node
+	var entries []*discovery.Entry
 	for _, addr := range addrs {
-		node, err := discovery.NewNode(addr)
+		entry, err := discovery.NewEntry(addr)
 		if err != nil {
 			return nil, err
 		}
-		nodes = append(nodes, node)
+		entries = append(entries, entry)
 	}
 
-	return nodes, nil
+	return entries, nil
 }
 
 func (s *TokenDiscoveryService) Watch(callback discovery.WatchCallback) {
 	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
-		nodes, err := s.Fetch()
+		entries, err := s.Fetch()
 		if err == nil {
-			callback(nodes)
+			callback(entries)
 		}
 	}
 }
 
-// RegisterNode adds a new node identified by the into the discovery service
+// RegisterEntry adds a new entry identified by the into the discovery service
 func (s *TokenDiscoveryService) Register(addr string) error {
 	buf := strings.NewReader(addr)
 
