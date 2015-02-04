@@ -17,17 +17,28 @@ in more powerful backends, like `Mesos`, for large scale production deployments.
 
 ## Installation
 
-###1 - Download and install the current source code.
+###1 - Docker image.
+The easiest way to get started with Swarm is to use the
+[official Docker image](https://registry.hub.docker.com/_/swarm/).
+
+```sh
+docker pull swarm
+```
+
+###2 - Alternative: Download and install from source.
+Alternatively, you can download and install from source instead of using the
+Docker image.
+
 Ensure you have golang and git client installed (e.g. `apt-get install golang git` on Ubuntu).
 You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
 
 The install `swarm` binary to your `$GOPATH` directory.
 
-```sh
+```bash
 go get -u github.com/docker/swarm
 ```
 
-###2 - Nodes setup
+###3 - Nodes setup
 The only requirement for Swarm nodes is to run a regular Docker daemon (version
 `1.4.0` and later).
 
@@ -39,16 +50,16 @@ network interface. This can be achieved by starting Docker with the `-H` flag
 
 ```bash
 # create a cluster
-$ swarm create
+$ docker run --rm swarm create
 6856663cdefdec325839a4b7e1de38e8 # <- this is your unique <cluster_id>
 
 # on each of your nodes, start the swarm agent
 #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
 #  as long as the swarm manager can access it.
-$ swarm join --addr=<node_ip:2375> token://<cluster_id>
+$ docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>
 
 # start the manager on any machine or your laptop
-$ swarm manage -H tcp://<swarm_ip:swarm_port> token://<cluster_id>
+$ docker run -t -p 2375:<swarm_port> -t swarm manage token://<cluster_id>
 
 # use the regular docker cli
 $ docker -H tcp://<swarm_ip:swarm_port> info
@@ -58,7 +69,7 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
-$ swarm list token://<cluster_id>
+$ docker run --rm swarm list token://<cluster_id>
 <node_ip:2375>
 ```
 
