@@ -26,18 +26,11 @@ in more powerful backends, like `Mesos`, for large scale production deployments.
 > Docker daemon (version `1.4.0` and later), configured to listen to a `tcp`
 > port that the Swarm manager can access.
 
-Docker `swarm` is currently only available as a single go binary on Linux. Download
-it from [the latest release](https://github.com/docker/swarm/releases/latest) page
-on GitHub.
+The easiest way to get started with Swarm is to use the
+[official Docker image](https://registry.hub.docker.com/_/swarm/).
 
-For example:
-
-```
-	$ wget -O swarm https://github.com/docker/swarm/releases/download/v0.1.0-rc1/swarm-Linux-x86_64
-	# OR
-	$ curl -SsL https://github.com/docker/swarm/releases/download/v0.1.0-rc1/swarm-Linux-x86_64 > swarm
-	$ chmod 755 swarm
-	$ sudo cp swarm /usr/local/bin
+```bash
+docker pull swarm
 ```
 
 ## Nodes setup
@@ -50,16 +43,16 @@ The following example uses the Docker Hub based `token` discovery service:
 
 ```bash
 # create a cluster
-$ swarm create
+$ docker run --rm swarm create
 6856663cdefdec325839a4b7e1de38e8 # <- this is your unique <cluster_id>
 
-# For each of your nodes, start a swarm agent
-#  the Docker daemon <node_ip> doesn't have to be public (eg. 192.168.0.X),
+# on each of your nodes, start the swarm agent
+#  <node_ip> doesn't have to be public (eg. 192.168.0.X),
 #  as long as the swarm manager can access it.
-$ swarm join --addr=<node_ip:2375> token://<cluster_id>
+$ docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>
 
 # start the manager on any machine or your laptop
-$ swarm manage -H tcp://<swarm_ip:swarm_port> token://<cluster_id>
+$ docker run -t -p 2375:<swarm_port> -t swarm manage token://<cluster_id>
 
 # use the regular docker cli
 $ docker -H tcp://<swarm_ip:swarm_port> info
@@ -69,7 +62,7 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 ...
 
 # list nodes in your cluster
-$ swarm list token://<cluster_id>
+$ docker run --rm swarm list token://<cluster_id>
 <node_ip:2375>
 ```
 
