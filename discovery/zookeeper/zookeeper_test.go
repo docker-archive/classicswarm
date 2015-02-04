@@ -22,18 +22,18 @@ func TestInitialize(t *testing.T) {
 	assert.Equal(t, service.fullpath(), "/path/sub1/sub2")
 }
 
-func TestCreateNodes(t *testing.T) {
+func TestCreateEntries(t *testing.T) {
 	service := &ZkDiscoveryService{}
 
-	nodes, err := service.createNodes(nil)
-	assert.Equal(t, nodes, []*discovery.Node{})
+	entries, err := service.createEntries(nil)
+	assert.Equal(t, entries, []*discovery.Entry{})
 	assert.NoError(t, err)
 
-	nodes, err = service.createNodes([]string{"127.0.0.1:2375", "127.0.0.2:2375"})
-	assert.Equal(t, nodes[0].String(), "127.0.0.1:2375")
-	assert.Equal(t, nodes[1].String(), "127.0.0.2:2375")
+	entries, err = service.createEntries([]string{"127.0.0.1:2375", "127.0.0.2:2375"})
+	assert.Equal(t, entries[0].String(), "127.0.0.1:2375")
+	assert.Equal(t, entries[1].String(), "127.0.0.2:2375")
 	assert.NoError(t, err)
 
-	_, err = service.createNodes([]string{"127.0.0.1", "127.0.0.2"})
+	_, err = service.createEntries([]string{"127.0.0.1", "127.0.0.2"})
 	assert.Error(t, err)
 }
