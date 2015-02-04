@@ -52,6 +52,8 @@ func loadTlsConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 		}
 		certPool.AppendCertsFromPEM(file)
 		config.RootCAs = certPool
+		config.ClientAuth = tls.RequireAndVerifyClientCert
+		config.ClientCAs = certPool
 	} else {
 		// If --tlsverify is not supplied, disable CA validation.
 		config.InsecureSkipVerify = true
