@@ -22,7 +22,7 @@ The BinPacking strategy will rank the nodes using their CPU and RAM availalble a
 node the most packed already. This avoid fragementation, it will leave room for bigger containers
 on usunsed machines.
 
-For instance, let's says that both `node-1` and `node-2` have 2Go de RAM:
+For instance, let's says that both `node-1` and `node-2` have 2G of RAM:
 
 ```bash
 $ docker run -d -P -m 1G --name db mysql
