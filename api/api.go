@@ -279,12 +279,17 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := proxy(c.tlsConfig, container.Node.Addr, w, r); err != nil {
+	cb := func(resp *http.Response) {
+		if resp.StatusCode == http.StatusCreated {
+			log.Debugf("[REFRESH CONTAINER] --> %s", container.Id)
+			container.Node.RefreshContainer(container.Id, true)
+		}
+	}
+
+	if err := proxyAsync(c.tlsConfig, container.Node.Addr, w, r, cb); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	log.Debugf("[REFRESH CONTAINER] --> %s", container.Id)
-	container.Node.RefreshContainer(container.Id, true)
 }
 
 // Proxy a request to the right node
