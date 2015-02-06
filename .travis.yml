@@ -1,9 +1,13 @@
 language: go
 
 go:
-  - 1.3
-#  - 1.4
-# see https://github.com/moovweb/gvm/pull/116 for why Go 1.4 is currently disabled
+  - 1.3.3
+  - 1.4.1
+
+env:
+  - GIMME_OS=linux GIMME_ARCH=amd64
+  - GIMME_OS=darwin GIMME_ARCH=amd64
+  - GIMME_OS=windows GIMME_ARCH=amd64
 
 # let us have speedy Docker-based Travis workers
 sudo: false
@@ -17,4 +21,8 @@ script:
   - script/validate-dco
   - script/validate-gofmt
   - go vet ./...
-  - go test -v -race ./...
+  - if [ "$(go env GOOS)" = "$(go env GOHOSTOS)" ]; then
+      go test -v -race ./... ;
+    else
+      go build -v ./... ;
+    fi
