@@ -133,7 +133,7 @@ You can schedule a container only on nodes where the images is already pulled.
 ```
 $ docker -H node-1:2375 pull redis
 $ docker -H node-2:2375 pull mysql
-$ docker -H node-2:2375 pull redis
+$ docker -H node-3:2375 pull redis
 ```
 
 Here only `node-1` and `node-3` have the `redis` image. Using `-e affinity:image=redis` we can
