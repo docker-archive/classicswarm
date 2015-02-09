@@ -8,7 +8,7 @@ Docker Swarm Roadmap
 * [ ] Persistent state storage
 * [ ] Virtual Container ID
 * [ ] Rebalancing
-* [ ] Affinity constraints & improved constraints expression (==, !=, regular expressions)
+* [x] Affinity constraints & improved constraints expression (==, !=, regular expressions)
 * [ ] Global scheduling (schedule containers on every node)
 
 ####Multi-tenancy
