@@ -233,7 +233,7 @@ Finally, Docker Cluster will refuse to run another container that requires port
 
 ```
 $ docker run -d -p 80:80 nginx
-2014/10/29 00:33:20 Error response from daemon: no resources availalble to schedule container
+2014/10/29 00:33:20 Error response from daemon: no resources available to schedule container
 ```
 
 ## Health Filter
