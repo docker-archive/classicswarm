@@ -76,3 +76,19 @@ func New(rawurl string, heartbeat int) (DiscoveryService, error) {
 
 	return nil, ErrNotSupported
 }
+
+func CreateEntries(addrs []string) ([]*Entry, error) {
+	entries := []*Entry{}
+	if addrs == nil {
+		return entries, nil
+	}
+
+	for _, addr := range addrs {
+		entry, err := NewEntry(addr)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+	return entries, nil
+}

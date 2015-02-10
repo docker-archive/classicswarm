@@ -62,16 +62,7 @@ func (s *TokenDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 		return nil, fmt.Errorf("Failed to fetch entries, Discovery service returned %d HTTP status code", resp.StatusCode)
 	}
 
-	var entries []*discovery.Entry
-	for _, addr := range addrs {
-		entry, err := discovery.NewEntry(addr)
-		if err != nil {
-			return nil, err
-		}
-		entries = append(entries, entry)
-	}
-
-	return entries, nil
+	return discovery.CreateEntries(addrs)
 }
 
 func (s *TokenDiscoveryService) Watch(callback discovery.WatchCallback) {
