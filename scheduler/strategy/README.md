@@ -18,7 +18,7 @@ You can choose the strategy you want to use with the `--strategy` flag of `swarm
 
 ## BinPacking strategy
 
-The BinPacking strategy will rank the nodes using their CPU and RAM availalble and will return the
+The BinPacking strategy will rank the nodes using their CPU and RAM available and will return the
 node the most packed already. This avoid fragementation, it will leave room for bigger containers
 on usunsed machines.
 
