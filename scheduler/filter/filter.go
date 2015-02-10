@@ -24,6 +24,7 @@ func init() {
 		"health":     &HealthFilter{},
 		"constraint": &ConstraintFilter{},
 		"port":       &PortFilter{},
+		"dependency": &DependencyFilter{},
 	}
 }
 
