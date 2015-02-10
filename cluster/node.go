@@ -394,6 +394,7 @@ func (n *Node) Events(h EventHandler) error {
 	return nil
 }
 
+// Containers returns all the containers in the node.
 func (n *Node) Containers() []*Container {
 	containers := []*Container{}
 	n.RLock()
@@ -402,6 +403,33 @@ func (n *Node) Containers() []*Container {
 	}
 	n.RUnlock()
 	return containers
+}
+
+// Container returns the container with IdOrName in the node.
+func (n *Node) Container(IdOrName string) *Container {
+	// Abort immediately if the name is empty.
+	if len(IdOrName) == 0 {
+		return nil
+	}
+
+	n.RLock()
+	defer n.RUnlock()
+
+	for _, container := range n.Containers() {
+		// Match ID prefix.
+		if strings.HasPrefix(container.Id, IdOrName) {
+			return container
+		}
+
+		// Match name, /name or engine/name.
+		for _, name := range container.Names {
+			if name == IdOrName || name == "/"+IdOrName || container.Node.ID+name == IdOrName || container.Node.Name+name == IdOrName {
+				return container
+			}
+		}
+	}
+
+	return nil
 }
 
 func (n *Node) Images() []*dockerclient.Image {
@@ -416,6 +444,9 @@ func (n *Node) Images() []*dockerclient.Image {
 
 // Image returns the image with IdOrName in the node
 func (n *Node) Image(IdOrName string) *dockerclient.Image {
+	n.RLock()
+	defer n.RUnlock()
+
 	size := len(IdOrName)
 	for _, image := range n.Images() {
 		if image.Id == IdOrName || (size > 2 && strings.HasPrefix(image.Id, IdOrName)) {
