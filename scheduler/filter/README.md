@@ -236,6 +236,25 @@ $ docker run -d -p 80:80 nginx
 2014/10/29 00:33:20 Error response from daemon: no resources available to schedule container
 ```
 
+## Dependency Filter
+
+This filter co-schedules dependent containers on the same node.
+
+Currently, dependencies are declared as follows:
+
+- Shared volumes: `--volumes-from=dependency`
+- Links: `--link=dependency:alias`
+- Shared network stack: `--net=container:dependency`
+
+Swarm will attempt to co-locate the dependent container on the same node. If it
+cannot be done (because the dependent container doesn't exist, or because the
+node doesn't have enough resources), it will prevent the container creation.
+
+The combination of multiple dependencies will be honored if possible. For
+instance, `--volumes-from=A --net=container:B` will attempt to co-locate the
+container on the same node as `A` and `B`. If those containers are running on
+different nodes, Swarm will prevent you from scheduling the container.
+
 ## Health Filter
 
 This filter will prevent scheduling containers on unhealthy nodes.
