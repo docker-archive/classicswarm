@@ -113,7 +113,7 @@ func manage(c *cli.Context) {
 	// see https://github.com/codegangsta/cli/issues/160
 	names := c.StringSlice("filter")
 	if c.IsSet("filter") || c.IsSet("f") {
-		names = names[3:]
+		names = names[DEFAULT_FILTER_NUMBER:]
 	}
 	fs, err := filter.New(names)
 	if err != nil {
