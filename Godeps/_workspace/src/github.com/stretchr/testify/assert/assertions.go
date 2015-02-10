@@ -36,17 +36,6 @@ func ObjectsAreEqual(expected, actual interface{}) bool {
 		return true
 	}
 
-	expectedValue := reflect.ValueOf(expected)
-	actualValue := reflect.ValueOf(actual)
-	if expectedValue == actualValue {
-		return true
-	}
-
-	// Attempt comparison after type conversion
-	if actualValue.Type().ConvertibleTo(expectedValue.Type()) && expectedValue == actualValue.Convert(expectedValue.Type()) {
-		return true
-	}
-
 	// Last ditch effort
 	if fmt.Sprintf("%#v", expected) == fmt.Sprintf("%#v", actual) {
 		return true
@@ -753,12 +742,12 @@ func matchRegexp(rx interface{}, str interface{}) bool {
 //  assert.Regexp(t, "start...$", "it's not starting")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func Regexp(t TestingT, rx interface{}, str interface{}) bool {
+func Regexp(t TestingT, rx interface{}, str interface{}, msgAndArgs ...interface{}) bool {
 
 	match := matchRegexp(rx, str)
 
 	if !match {
-		Fail(t, "Expect \"%s\" to match \"%s\"")
+		Fail(t, fmt.Sprintf("Expect \"%v\" to match \"%v\"", str, rx), msgAndArgs...)
 	}
 
 	return match
@@ -770,11 +759,11 @@ func Regexp(t TestingT, rx interface{}, str interface{}) bool {
 //  assert.NotRegexp(t, "^start", "it's not starting")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func NotRegexp(t TestingT, rx interface{}, str interface{}) bool {
+func NotRegexp(t TestingT, rx interface{}, str interface{}, msgAndArgs ...interface{}) bool {
 	match := matchRegexp(rx, str)
 
 	if match {
-		Fail(t, "Expect \"%s\" to NOT match \"%s\"")
+		Fail(t, fmt.Sprintf("Expect \"%v\" to NOT match \"%v\"", str, rx), msgAndArgs...)
 	}
 
 	return !match
