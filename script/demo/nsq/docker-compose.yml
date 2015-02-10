@@ -9,8 +9,6 @@ nsqd:
   ports:
     - "4150"
     - "4151"
-  environment:
-   - affinity:container==*nsqlookupd*
   links:
     - nsqlookupd:nsqlookupd
   command: -lookupd-tcp-address=nsqlookupd:4160
@@ -19,8 +17,6 @@ nsqadmin:
   image: nsqio/nsqadmin
   ports:
     - "4171:4171"
-  environment:
-   - affinity:container==*nsqlookupd*
   links:
     - nsqlookupd:nsqlookupd
   command: -lookupd-http-address=nsqlookupd:4161
