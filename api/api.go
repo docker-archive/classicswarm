@@ -180,6 +180,11 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// cleanup
+	defer resp.Body.Close()
+	defer closeIdleConnections(client)
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)

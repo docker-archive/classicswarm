@@ -50,6 +50,13 @@ func copyHeader(dst, src http.Header) {
 	}
 }
 
+// prevents leak with https
+func closeIdleConnections(client *http.Client) {
+	if tr, ok := client.Transport.(*http.Transport); ok {
+		tr.CloseIdleConnections()
+	}
+}
+
 func proxyAsync(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request, callback func(*http.Response)) error {
 	// Use a new client for each request
 	client, scheme := newClientAndScheme(tlsConfig)
@@ -72,7 +79,10 @@ func proxyAsync(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *ht
 	copyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(NewWriteFlusher(w), resp.Body)
+
+	// cleanup
 	resp.Body.Close()
+	closeIdleConnections(client)
 
 	return nil
 }
