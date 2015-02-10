@@ -59,26 +59,15 @@ func (s *ConsulDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 		return nil, err
 	}
 
-	return s.createEntries(pairs)
-}
-
-func (s *ConsulDiscoveryService) createEntries(pairs consul.KVPairs) ([]*discovery.Entry, error) {
-	entries := []*discovery.Entry{}
-	if pairs == nil {
-		return entries, nil
-	}
-
+	addrs := []string{}
 	for _, pair := range pairs {
 		if pair.Key == s.prefix {
 			continue
 		}
-		entry, err := discovery.NewEntry(string(pair.Value))
-		if err != nil {
-			return nil, err
-		}
-		entries = append(entries, entry)
+		addrs = append(addrs, string(pair.Value))
 	}
-	return entries, nil
+
+	return discovery.CreateEntries(addrs)
 }
 
 func (s *ConsulDiscoveryService) Watch(callback discovery.WatchCallback) {

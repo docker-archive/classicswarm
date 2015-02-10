@@ -29,18 +29,7 @@ func (s *FileDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 		return nil, err
 	}
 
-	var entries []*discovery.Entry
-
-	for _, line := range strings.Split(string(data), "\n") {
-		if line != "" {
-			entry, err := discovery.NewEntry(line)
-			if err != nil {
-				return nil, err
-			}
-			entries = append(entries, entry)
-		}
-	}
-	return entries, nil
+	return discovery.CreateEntries(strings.Split(string(data), "\n"))
 }
 
 func (s *FileDiscoveryService) Watch(callback discovery.WatchCallback) {

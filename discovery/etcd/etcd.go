@@ -57,24 +57,11 @@ func (s *EtcdDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 		return nil, err
 	}
 
-	return s.createEntries(resp.Node.Nodes)
-}
-
-func (s *EtcdDiscoveryService) createEntries(nodes etcd.Nodes) ([]*discovery.Entry, error) {
-	entries := []*discovery.Entry{}
-	if nodes == nil {
-		return entries, nil
+	addrs := []string{}
+	for _, n := range resp.Node.Nodes {
+		addrs = append(addrs, n.Value)
 	}
-
-	for _, n := range nodes {
-		entry, err := discovery.NewEntry(n.Value)
-		if err != nil {
-			return nil, err
-		}
-		entries = append(entries, entry)
-	}
-	return entries, nil
-
+	return discovery.CreateEntries(addrs)
 }
 
 func (s *EtcdDiscoveryService) Watch(callback discovery.WatchCallback) {

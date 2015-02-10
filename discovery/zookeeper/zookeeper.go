@@ -79,23 +79,7 @@ func (s *ZkDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 		return nil, err
 	}
 
-	return s.createEntries(addrs)
-}
-
-func (s *ZkDiscoveryService) createEntries(addrs []string) ([]*discovery.Entry, error) {
-	entries := []*discovery.Entry{}
-	if addrs == nil {
-		return entries, nil
-	}
-
-	for _, addr := range addrs {
-		entry, err := discovery.NewEntry(addr)
-		if err != nil {
-			return nil, err
-		}
-		entries = append(entries, entry)
-	}
-	return entries, nil
+	return discovery.CreateEntries(addrs)
 }
 
 func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
@@ -105,7 +89,7 @@ func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 		log.WithField("name", "zk").Debug("Discovery watch aborted")
 		return
 	}
-	entries, err := s.createEntries(addrs)
+	entries, err := discovery.CreateEntries(addrs)
 	if err == nil {
 		callback(entries)
 	}
