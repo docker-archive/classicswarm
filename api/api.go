@@ -152,7 +152,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
 		for i, port := range container.Ports {
 			tmp.Ports[i] = port
-			if port.IP == "0.0.0.0" {
+			if port.IP == "0.0.0.0" && !strings.HasPrefix(container.Node.IP, "127") {
 				tmp.Ports[i].IP = container.Node.IP
 			}
 		}
@@ -196,8 +196,9 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"Node\":%s,\"Name\":\"/", n)), -1)
 
 	// insert node IP
-	data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node.IP)), -1)
-
+	if !strings.HasPrefix(container.Node.IP, "127") {
+		data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node.IP)), -1)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
 }
