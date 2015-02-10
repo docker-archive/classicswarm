@@ -72,30 +72,14 @@ func (s *ZkDiscoveryService) Initialize(uris string, heartbeat int) error {
 	return nil
 }
 
-func (s *ZkDiscoveryService) Fetch() ([]*discovery.Node, error) {
+func (s *ZkDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	addrs, _, err := s.conn.Children(s.fullpath())
 
 	if err != nil {
 		return nil, err
 	}
 
-	return s.createNodes(addrs)
-}
-
-func (s *ZkDiscoveryService) createNodes(addrs []string) ([]*discovery.Node, error) {
-	nodes := make([]*discovery.Node, 0)
-	if addrs == nil {
-		return nodes, nil
-	}
-
-	for _, addr := range addrs {
-		node, err := discovery.NewNode(addr)
-		if err != nil {
-			return nil, err
-		}
-		nodes = append(nodes, node)
-	}
-	return nodes, nil
+	return discovery.CreateEntries(addrs)
 }
 
 func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
@@ -105,17 +89,17 @@ func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 		log.WithField("name", "zk").Debug("Discovery watch aborted")
 		return
 	}
-	nodes, err := s.createNodes(addrs)
+	entries, err := discovery.CreateEntries(addrs)
 	if err == nil {
-		callback(nodes)
+		callback(entries)
 	}
 
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
 			log.WithField("name", "zk").Debug("Discovery watch triggered")
-			nodes, err := s.Fetch()
+			entries, err := s.Fetch()
 			if err == nil {
-				callback(nodes)
+				callback(entries)
 			}
 		}
 
