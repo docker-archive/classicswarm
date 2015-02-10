@@ -31,7 +31,7 @@
 		},
 		{
 			"ImportPath": "github.com/coreos/go-etcd/etcd",
-			"Comment": "v0.2.0-rc1-132-gb7c233e",
+			"Comment": "v0.4.6-2-gb7c233e",
 			"Rev": "b7c233e2ef9be1016c63f66145161b317165ad7e"
 		},
 		{
@@ -66,11 +66,11 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Rev": "8ce79b9f0b77745113f82c17d0756771456ccbd3"
+			"Rev": "43d0eed2455ed136d33e9426cf52119371ca4596"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/mock",
-			"Rev": "8ce79b9f0b77745113f82c17d0756771456ccbd3"
+			"Rev": "43d0eed2455ed136d33e9426cf52119371ca4596"
 		}
 	]
 }
