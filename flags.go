@@ -86,7 +86,8 @@ var (
 	}
 
 	// hack for go vet
-	flFilterValue = cli.StringSlice([]string{"constraint", "affinity", "health", "port"})
+	flFilterValue         = cli.StringSlice([]string{"constraint", "affinity", "health", "port"})
+	DEFAULT_FILTER_NUMBER = len(flFilterValue)
 
 	flFilter = cli.StringSliceFlag{
 		Name:  "filter, f",
