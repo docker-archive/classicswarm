@@ -9,28 +9,28 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-type Node struct {
+type Entry struct {
 	Host string
 	Port string
 }
 
-func NewNode(url string) (*Node, error) {
+func NewEntry(url string) (*Entry, error) {
 	host, port, err := net.SplitHostPort(url)
 	if err != nil {
 		return nil, err
 	}
-	return &Node{host, port}, nil
+	return &Entry{host, port}, nil
 }
 
-func (n Node) String() string {
-	return fmt.Sprintf("%s:%s", n.Host, n.Port)
+func (m Entry) String() string {
+	return fmt.Sprintf("%s:%s", m.Host, m.Port)
 }
 
-type WatchCallback func(nodes []*Node)
+type WatchCallback func(entries []*Entry)
 
 type DiscoveryService interface {
 	Initialize(string, int) error
-	Fetch() ([]*Node, error)
+	Fetch() ([]*Entry, error)
 	Watch(WatchCallback)
 	Register(string) error
 }
@@ -75,4 +75,20 @@ func New(rawurl string, heartbeat int) (DiscoveryService, error) {
 	}
 
 	return nil, ErrNotSupported
+}
+
+func CreateEntries(addrs []string) ([]*Entry, error) {
+	entries := []*Entry{}
+	if addrs == nil {
+		return entries, nil
+	}
+
+	for _, addr := range addrs {
+		entry, err := NewEntry(addr)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+	return entries, nil
 }
