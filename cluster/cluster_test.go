@@ -37,7 +37,7 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 func newCluster(t *testing.T) *Cluster {
 	dir, err := ioutil.TempDir("", "store-test")
 	assert.NoError(t, err)
-	return NewCluster(state.NewStore(dir), nil, 0)
+	return NewCluster(state.NewStore(dir))
 }
 
 func TestAddNode(t *testing.T) {
@@ -81,24 +81,4 @@ func TestContainerLookup(t *testing.T) {
 	// Container node/name matching.
 	assert.NotNil(t, c.Container("test-node/container-name1"))
 	assert.NotNil(t, c.Container("test-node/container-name2"))
-}
-
-func TestDeployContainer(t *testing.T) {
-	// Create a test node.
-	node := createNode(t, "test")
-
-	// Create a test cluster.
-	c := newCluster(t)
-	assert.NoError(t, c.AddNode(node))
-
-	// Fake dockerclient calls to deploy a container.
-	client := node.client.(*mockclient.MockClient)
-	client.On("CreateContainer", mock.Anything, mock.Anything).Return("id", nil).Once()
-	client.On("ListContainers", true, false, mock.Anything).Return([]dockerclient.Container{{Id: "id"}}, nil).Once()
-	client.On("InspectContainer", "id").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
-
-	// Ensure the container gets deployed.
-	container, err := c.DeployContainer(node, &dockerclient.ContainerConfig{}, "name")
-	assert.NoError(t, err)
-	assert.Equal(t, container.Id, "id")
 }
