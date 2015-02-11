@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/state"
 	"github.com/samalba/dockerclient"
 )
@@ -19,18 +18,18 @@ var (
 type Cluster struct {
 	sync.RWMutex
 	store           *state.Store
-	tlsConfig       *tls.Config
+	TLSConfig       *tls.Config
 	eventHandlers   []EventHandler
 	nodes           map[string]*Node
-	overcommitRatio float64
+	OvercommitRatio float64
 }
 
 func NewCluster(store *state.Store, tlsConfig *tls.Config, overcommitRatio float64) *Cluster {
 	return &Cluster{
-		tlsConfig:       tlsConfig,
+		TLSConfig:       tlsConfig,
 		nodes:           make(map[string]*Node),
 		store:           store,
-		overcommitRatio: overcommitRatio,
+		OvercommitRatio: overcommitRatio,
 	}
 }
 
@@ -96,24 +95,6 @@ func (c *Cluster) AddNode(n *Node) error {
 
 	c.nodes[n.ID] = n
 	return n.Events(c)
-}
-
-func (c *Cluster) UpdateNodes(entries []*discovery.Entry) {
-	for _, entry := range entries {
-		go func(m *discovery.Entry) {
-			if c.Node(m.String()) == nil {
-				n := NewNode(m.String(), c.overcommitRatio)
-				if err := n.Connect(c.tlsConfig); err != nil {
-					log.Error(err)
-					return
-				}
-				if err := c.AddNode(n); err != nil {
-					log.Error(err)
-					return
-				}
-			}
-		}(entry)
-	}
 }
 
 // Containers returns all the containers in the cluster.

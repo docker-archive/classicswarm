@@ -22,14 +22,14 @@ func newClientAndScheme(tlsConfig *tls.Config) (*http.Client, string) {
 
 func getContainerFromVars(c *context, vars map[string]string) (*cluster.Container, error) {
 	if name, ok := vars["name"]; ok {
-		if container := c.cluster.Container(name); container != nil {
+		if container := c.scheduler.Container(name); container != nil {
 			return container, nil
 		}
 		return nil, fmt.Errorf("No such container: %s", name)
 
 	}
 	if ID, ok := vars["execid"]; ok {
-		for _, container := range c.cluster.Containers() {
+		for _, container := range c.scheduler.Containers() {
 			for _, execID := range container.Info.ExecIDs {
 				if ID == execID {
 					return container, nil

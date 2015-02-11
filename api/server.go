@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
 )
 
@@ -29,14 +28,13 @@ func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error
 	return l, nil
 }
 
-func ListenAndServe(c *cluster.Cluster, s scheduler.Scheduler, hosts []string, enableCors bool, tlsConfig *tls.Config) error {
+func ListenAndServe(s scheduler.Scheduler, hosts []string, enableCors bool, tlsConfig *tls.Config) error {
 	context := &context{
-		cluster:       c,
 		scheduler:     s,
 		eventsHandler: NewEventsHandler(),
 		tlsConfig:     tlsConfig,
 	}
-	c.Events(context.eventsHandler)
+	s.Events(context.eventsHandler)
 	r := createRouter(context, enableCors)
 	chErrors := make(chan error, len(hosts))
 
