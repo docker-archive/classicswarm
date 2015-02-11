@@ -7,8 +7,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	consul "github.com/armon/consul-api"
 	"github.com/docker/swarm/discovery"
+	consul "github.com/hashicorp/consul/api"
 )
 
 type ConsulDiscoveryService struct {
