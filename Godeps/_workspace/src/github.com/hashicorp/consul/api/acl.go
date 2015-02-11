@@ -1,4 +1,4 @@
-package consulapi
+package api
 
 const (
 	// ACLCLientType is the client type token
