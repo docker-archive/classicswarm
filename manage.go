@@ -14,6 +14,7 @@ import (
 	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/filter"
 	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/scheduler/options"
 	"github.com/docker/swarm/state"
 	"github.com/docker/swarm/strategy"
 )
@@ -97,9 +98,6 @@ func manage(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	cluster := cluster.NewCluster(store, tlsConfig, c.Float64("overcommit"))
-	cluster.Events(&logHandler{})
-
 	dflag := getDiscovery(c)
 	if dflag == "" {
 		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
@@ -120,11 +118,15 @@ func manage(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	sched, err := scheduler.New(c.String("scheduler"),
-		cluster,
-		s,
-		fs,
-	)
+	options := &options.SchedulerOptions{
+		Strategy:        s,
+		Filters:         fs,
+		Store:           store,
+		TLSConfig:       tlsConfig,
+		OvercommitRatio: c.Float64("overcommit"),
+	}
+
+	sched, err := scheduler.New(c.String("scheduler"), options)
 	if err != nil {
 		log.Fatal(err)
 	}

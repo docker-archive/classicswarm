@@ -7,22 +7,21 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/filter"
-	"github.com/docker/swarm/strategy"
+	"github.com/docker/swarm/scheduler/options"
 	"github.com/samalba/dockerclient"
 )
 
 type BuiltinScheduler struct {
 	sync.Mutex
 
-	cluster  *cluster.Cluster
-	strategy strategy.PlacementStrategy
-	filters  []filter.Filter
+	cluster *cluster.Cluster
+	options *options.SchedulerOptions
 }
 
-func (s *BuiltinScheduler) Initialize(cluster *cluster.Cluster, strategy strategy.PlacementStrategy, filters []filter.Filter) {
-	s.cluster = cluster
-	s.strategy = strategy
-	s.filters = filters
+func (s *BuiltinScheduler) Initialize(options *options.SchedulerOptions) {
+	s.options = options
+
+	s.cluster = cluster.NewCluster(s.options.Store)
 }
 
 // Schedule a brand new container into the cluster.
@@ -34,12 +33,12 @@ func (s *BuiltinScheduler) CreateContainer(config *dockerclient.ContainerConfig,
 	candidates := s.cluster.Nodes()
 
 	// Find a nice home for our container.
-	accepted, err := filter.ApplyFilters(s.filters, config, candidates)
+	accepted, err := filter.ApplyFilters(s.options.Filters, config, candidates)
 	if err != nil {
 		return nil, err
 	}
 
-	node, err := s.strategy.PlaceContainer(config, accepted)
+	node, err := s.options.Strategy.PlaceContainer(config, accepted)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +69,8 @@ func (s *BuiltinScheduler) NewEntries(entries []*discovery.Entry) {
 	for _, entry := range entries {
 		go func(m *discovery.Entry) {
 			if s.cluster.Node(m.String()) == nil {
-				n := cluster.NewNode(m.String(), s.cluster.OvercommitRatio)
-				if err := n.Connect(s.cluster.TLSConfig); err != nil {
+				n := cluster.NewNode(m.String(), s.options.OvercommitRatio)
+				if err := n.Connect(s.options.TLSConfig); err != nil {
 					log.Error(err)
 					return
 				}

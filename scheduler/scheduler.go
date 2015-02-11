@@ -6,15 +6,14 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
-	"github.com/docker/swarm/filter"
 	"github.com/docker/swarm/scheduler/builtin"
 	"github.com/docker/swarm/scheduler/mesos"
-	"github.com/docker/swarm/strategy"
+	"github.com/docker/swarm/scheduler/options"
 	"github.com/samalba/dockerclient"
 )
 
 type Scheduler interface {
-	Initialize(cluster *cluster.Cluster, strategy strategy.PlacementStrategy, filters []filter.Filter)
+	Initialize(options *options.SchedulerOptions)
 	CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error)
 	RemoveContainer(container *cluster.Container, force bool) error
 
@@ -35,10 +34,10 @@ func init() {
 	}
 }
 
-func New(name string, cluster *cluster.Cluster, strategy strategy.PlacementStrategy, filters []filter.Filter) (Scheduler, error) {
+func New(name string, options *options.SchedulerOptions) (Scheduler, error) {
 	if scheduler, exists := schedulers[name]; exists {
 		log.WithField("name", name).Debug("Initializing scheduler")
-		scheduler.Initialize(cluster, strategy, filters)
+		scheduler.Initialize(options)
 		return scheduler, nil
 	}
 	return nil, fmt.Errorf("scheduler %q not supported", name)

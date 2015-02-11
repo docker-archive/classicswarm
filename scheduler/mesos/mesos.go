@@ -6,8 +6,7 @@ import (
 
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
-	"github.com/docker/swarm/filter"
-	"github.com/docker/swarm/strategy"
+	"github.com/docker/swarm/scheduler/options"
 	"github.com/samalba/dockerclient"
 )
 
@@ -16,15 +15,15 @@ var ErrNotImplemented = errors.New("not implemented in the mesos scheduler")
 type MesosScheduler struct {
 	sync.Mutex
 
-	cluster  *cluster.Cluster
-	strategy strategy.PlacementStrategy
-	filters  []filter.Filter
+	//TODO: list of mesos masters
+	cluster *cluster.Cluster
+	options *options.SchedulerOptions
 }
 
-func (s *MesosScheduler) Initialize(cluster *cluster.Cluster, strategy strategy.PlacementStrategy, filters []filter.Filter) {
-	s.cluster = cluster
-	s.strategy = strategy
-	s.filters = filters
+func (s *MesosScheduler) Initialize(options *options.SchedulerOptions) {
+	s.options = options
+
+	s.cluster = cluster.NewCluster(s.options.Store)
 }
 
 // Schedule a brand new container into the cluster.
@@ -63,10 +62,10 @@ func (s *MesosScheduler) RemoveContainer(container *cluster.Container, force boo
 func (s *MesosScheduler) NewEntries(entries []*discovery.Entry) {
 
 	//TODO: get list of actual docker nodes from mesos masters
-	//  -   cluster.NewNode(m.String(), s.cluster.OvercommitRatio)
+	//  -   cluster.NewNode(m.String(), s.options.OvercommitRatio)
 
 	//TODO: create direct connection to those nodes
-	//  -   n.Connect(s.cluster.TLSConfig)
+	//  -   n.Connect(s.options.TLSConfig)
 
 	//TODO: add them to the cluster
 	//  -   s.cluster.AddNode(n)
