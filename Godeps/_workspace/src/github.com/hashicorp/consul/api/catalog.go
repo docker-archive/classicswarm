@@ -1,4 +1,4 @@
-package consulapi
+package api
 
 type Node struct {
 	Node    string
