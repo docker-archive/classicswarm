@@ -120,37 +120,36 @@ func manage(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	// get the list of nodes from the discovery service
+	sched, err := scheduler.New(c.String("scheduler"),
+		cluster,
+		s,
+		fs,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// get the list of entries from the discovery service
 	go func() {
 		d, err := discovery.New(dflag, c.Int("heartbeat"))
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		nodes, err := d.Fetch()
+		entries, err := d.Fetch()
 		if err != nil {
 			log.Fatal(err)
 
 		}
-		cluster.UpdateNodes(nodes)
+		sched.NewEntries(entries)
 
-		go d.Watch(cluster.UpdateNodes)
+		go d.Watch(sched.NewEntries)
 	}()
-
-	sched, err := scheduler.New(c.String("scheduler"),
-		cluster,
-		s,
-		fs,
-	)
-
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	// see https://github.com/codegangsta/cli/issues/160
 	hosts := c.StringSlice("host")
 	if c.IsSet("host") || c.IsSet("H") {
 		hosts = hosts[1:]
 	}
-	log.Fatal(api.ListenAndServe(cluster, sched, hosts, c.Bool("cors"), tlsConfig))
+	log.Fatal(api.ListenAndServe(sched, hosts, c.Bool("cors"), tlsConfig))
 }

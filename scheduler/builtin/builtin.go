@@ -3,7 +3,9 @@ package builtin
 import (
 	"sync"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/filter"
 	"github.com/docker/swarm/strategy"
 	"github.com/samalba/dockerclient"
@@ -37,11 +39,6 @@ func (s *BuiltinScheduler) selectNodeForContainer(config *dockerclient.Container
 
 // Schedule a brand new container into the cluster.
 func (s *BuiltinScheduler) CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error) {
-	/*Disable for now
-	if config.Memory == 0 || config.CpuShares == 0 {
-		return nil, fmt.Errorf("Creating containers in clustering mode requires resource constraints (-c and -m) to be set")
-	}
-	*/
 
 	s.Lock()
 	defer s.Unlock()
@@ -60,4 +57,39 @@ func (s *BuiltinScheduler) RemoveContainer(container *cluster.Container, force b
 	defer s.Unlock()
 
 	return s.cluster.DestroyContainer(container, force)
+}
+
+// Entries are Docker Nodes
+func (s *BuiltinScheduler) NewEntries(entries []*discovery.Entry) {
+	for _, entry := range entries {
+		go func(m *discovery.Entry) {
+			if s.cluster.Node(m.String()) == nil {
+				n := cluster.NewNode(m.String(), s.cluster.OvercommitRatio)
+				if err := n.Connect(s.cluster.TLSConfig); err != nil {
+					log.Error(err)
+					return
+				}
+				if err := s.cluster.AddNode(n); err != nil {
+					log.Error(err)
+					return
+				}
+			}
+		}(entry)
+	}
+}
+
+func (s *BuiltinScheduler) Events(eventsHandler cluster.EventHandler) {
+	s.cluster.Events(eventsHandler)
+}
+
+func (s *BuiltinScheduler) Nodes() []*cluster.Node {
+	return s.cluster.Nodes()
+}
+
+func (s *BuiltinScheduler) Containers() []*cluster.Container {
+	return s.cluster.Containers()
+}
+
+func (s *BuiltinScheduler) Container(IdOrName string) *cluster.Container {
+	return s.cluster.Container(IdOrName)
 }
