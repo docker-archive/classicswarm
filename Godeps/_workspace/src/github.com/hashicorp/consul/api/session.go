@@ -1,7 +1,18 @@
-package consulapi
+package api
 
 import (
 	"time"
+)
+
+const (
+	// SessionBehaviorRelease is the default behavior and causes
+	// all associated locks to be released on session invalidation.
+	SessionBehaviorRelease = "release"
+
+	// SessionBehaviorDelete is new in Consul 0.5 and changes the
+	// behavior to delete all associated locks on session invalidation.
+	// It can be used in a way similar to Ephemeral Nodes in ZooKeeper.
+	SessionBehaviorDelete = "delete"
 )
 
 // SessionEntry represents a session in consul
@@ -134,6 +145,36 @@ func (s *Session) Renew(id string, q *WriteOptions) (*SessionEntry, *WriteMeta, 
 		return entries[0], wm, nil
 	}
 	return nil, wm, nil
+}
+
+// RenewPeriodic is used to periodically invoke Session.Renew on a
+// session until a doneCh is closed. This is meant to be used in a long running
+// goroutine to ensure a session stays valid.
+func (s *Session) RenewPeriodic(initialTTL string, id string, q *WriteOptions, doneCh chan struct{}) error {
+	ttl, err := time.ParseDuration(initialTTL)
+	if err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-time.After(ttl / 2):
+			entry, _, err := s.Renew(id, q)
+			if err != nil {
+				return err
+			}
+			if entry == nil {
+				return nil
+			}
+
+			// Handle the server updating the TTL
+			ttl, _ = time.ParseDuration(entry.TTL)
+
+		case <-doneCh:
+			// Attempt a session destroy
+			s.Destroy(id, q)
+			return nil
+		}
+	}
 }
 
 // Info looks up a single session

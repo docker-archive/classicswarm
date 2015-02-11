@@ -11,10 +11,6 @@
 			"Rev": "539d4dc034c079a7188b5d4ca9650632d73c66e8"
 		},
 		{
-			"ImportPath": "github.com/armon/consul-api",
-			"Rev": "dcfedd50ed5334f96adee43fc88518a4f095e15c"
-		},
-		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-62-gbf4a526",
 			"Rev": "bf4a526f48af7badd25d2cb02d587e1b01be3b50"
@@ -51,6 +47,11 @@
 		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Rev": "e444e69cbd2e2e3e0749a2f3c717cec491552bbf"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/consul/api",
+			"Comment": "v0.5.0rc1-108-g79d28b9",
+			"Rev": "79d28b9baf2be44ada3058263572d3a72ba71d4e"
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
