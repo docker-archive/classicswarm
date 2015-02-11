@@ -25,29 +25,31 @@ func (s *BuiltinScheduler) Initialize(cluster *cluster.Cluster, strategy strateg
 	s.filters = filters
 }
 
-// Find a nice home for our container.
-func (s *BuiltinScheduler) selectNodeForContainer(config *dockerclient.ContainerConfig) (*cluster.Node, error) {
-	candidates := s.cluster.Nodes()
-
-	accepted, err := filter.ApplyFilters(s.filters, config, candidates)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.strategy.PlaceContainer(config, accepted)
-}
-
 // Schedule a brand new container into the cluster.
 func (s *BuiltinScheduler) CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error) {
 
 	s.Lock()
 	defer s.Unlock()
 
-	node, err := s.selectNodeForContainer(config)
+	candidates := s.cluster.Nodes()
+
+	// Find a nice home for our container.
+	accepted, err := filter.ApplyFilters(s.filters, config, candidates)
 	if err != nil {
 		return nil, err
 	}
-	return s.cluster.DeployContainer(node, config, name)
+
+	node, err := s.strategy.PlaceContainer(config, accepted)
+	if err != nil {
+		return nil, err
+	}
+
+	container, err := node.Create(config, name, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return container, s.cluster.CommitContainerInStore(container.Id, config, name)
 }
 
 // Remove a container from the cluster. Containers should always be destroyed
@@ -56,7 +58,11 @@ func (s *BuiltinScheduler) RemoveContainer(container *cluster.Container, force b
 	s.Lock()
 	defer s.Unlock()
 
-	return s.cluster.DestroyContainer(container, force)
+	if err := container.Node.Destroy(container, force); err != nil {
+		return err
+	}
+
+	return s.cluster.RemoveContainerFromStore(container.Id, force)
 }
 
 // Entries are Docker Nodes

@@ -33,33 +33,21 @@ func NewCluster(store *state.Store, tlsConfig *tls.Config, overcommitRatio float
 	}
 }
 
-// Deploy a container into a `specific` node on the cluster.
-func (c *Cluster) DeployContainer(node *Node, config *dockerclient.ContainerConfig, name string) (*Container, error) {
-	container, err := node.Create(config, name, true)
-	if err != nil {
-		return nil, err
-	}
-
-	// Commit the requested state.
+// Commit the requested state in the store.
+func (c *Cluster) CommitContainerInStore(Id string, config *dockerclient.ContainerConfig, name string) error {
 	st := &state.RequestedState{
-		ID:     container.Id,
+		ID:     Id,
 		Name:   name,
 		Config: config,
 	}
-	if err := c.store.Add(container.Id, st); err != nil {
-		return nil, err
-	}
-	return container, nil
+	return c.store.Add(Id, st)
 }
 
-// Destroys a given `container` from the cluster.
-func (c *Cluster) DestroyContainer(container *Container, force bool) error {
-	if err := container.Node.Destroy(container, force); err != nil {
-		return err
-	}
-	if err := c.store.Remove(container.Id); err != nil {
+// Remove a container from the store.
+func (c *Cluster) RemoveContainerFromStore(Id string, force bool) error {
+	if err := c.store.Remove(Id); err != nil {
 		if err == state.ErrNotFound {
-			log.Debugf("Container %s not found in the store", container.Id)
+			log.Debugf("Container %s not found in the store", Id)
 			return nil
 		}
 		return err
