@@ -98,7 +98,7 @@ Note that Swarm certificates must be generated with`extendedKeyUsage = clientAut
 
 ## Participating
 
-We welcome pull requests and patches; come say hi on IRC, #swarm on freenode.
+We welcome pull requests and patches; come say hi on IRC, #docker-swarm on freenode.
 
 ## Creators
 
