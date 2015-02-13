@@ -3,7 +3,6 @@ package cluster
 import (
 	"crypto/tls"
 	"errors"
-	"strings"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
@@ -119,8 +118,8 @@ func (c *Cluster) UpdateNodes(entries []*discovery.Entry) {
 
 // Containers returns all the containers in the cluster.
 func (c *Cluster) Containers() []*Container {
-	c.Lock()
-	defer c.Unlock()
+	c.RLock()
+	defer c.RUnlock()
 
 	out := []*Container{}
 	for _, n := range c.nodes {
@@ -139,17 +138,13 @@ func (c *Cluster) Container(IdOrName string) *Container {
 	if len(IdOrName) == 0 {
 		return nil
 	}
-	for _, container := range c.Containers() {
-		// Match ID prefix.
-		if strings.HasPrefix(container.Id, IdOrName) {
-			return container
-		}
 
-		// Match name, /name or engine/name.
-		for _, name := range container.Names {
-			if name == IdOrName || name == "/"+IdOrName || container.Node.ID+name == IdOrName || container.Node.Name+name == IdOrName {
-				return container
-			}
+	c.RLock()
+	defer c.RUnlock()
+
+	for _, n := range c.nodes {
+		if container := n.Container(IdOrName); container != nil {
+			return container
 		}
 	}
 
