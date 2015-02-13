@@ -19,7 +19,7 @@ func (p *BinPackingPlacementStrategy) Initialize() error {
 }
 
 func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []cluster.Node) (cluster.Node, error) {
-	scores := scores{}
+	weightedNodes := weightedNodeList{}
 
 	for _, node := range nodes {
 		nodeMemory := node.TotalMemory()
@@ -43,39 +43,16 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 		}
 
 		if cpuScore <= 100 && memoryScore <= 100 {
-			scores = append(scores, &score{node: node, score: cpuScore + memoryScore})
+			weightedNodes = append(weightedNodes, &weightedNode{Node: node, Weight: cpuScore + memoryScore})
 		}
 	}
 
-	if len(scores) == 0 {
+	if len(weightedNodes) == 0 {
 		return nil, ErrNoResourcesAvailable
 	}
 
-	sort.Sort(scores)
+	// sort by highest weight
+	sort.Sort(sort.Reverse(weightedNodes))
 
-	return scores[0].node, nil
-}
-
-type score struct {
-	node  cluster.Node
-	score int64
-}
-
-type scores []*score
-
-func (s scores) Len() int {
-	return len(s)
-}
-
-func (s scores) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
-func (s scores) Less(i, j int) bool {
-	var (
-		ip = s[i]
-		jp = s[j]
-	)
-
-	return ip.score > jp.score
+	return weightedNodes[0].Node, nil
 }
