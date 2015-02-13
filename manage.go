@@ -11,12 +11,13 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/cluster/mesos"
+	"github.com/docker/swarm/cluster/swarm"
 	"github.com/docker/swarm/discovery"
-	"github.com/docker/swarm/filter"
 	"github.com/docker/swarm/scheduler"
-	"github.com/docker/swarm/scheduler/options"
+	"github.com/docker/swarm/scheduler/filter"
+	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/docker/swarm/state"
-	"github.com/docker/swarm/strategy"
 )
 
 type logHandler struct {
@@ -118,17 +119,22 @@ func manage(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	options := &options.SchedulerOptions{
-		Strategy:        s,
-		Filters:         fs,
-		Store:           store,
+	sched := scheduler.New(s, fs)
+
+	options := &cluster.Options{
 		TLSConfig:       tlsConfig,
 		OvercommitRatio: c.Float64("overcommit"),
 	}
 
-	sched, err := scheduler.New(c.String("scheduler"), options)
-	if err != nil {
-		log.Fatal(err)
+	var cluster cluster.Cluster
+
+	switch c.String("cluster") {
+	case "swarm":
+		cluster = swarm.NewCluster(sched, store, options)
+	case "mesos":
+		cluster = mesos.NewCluster(options)
+	default:
+		log.Fatalf("cluster %q not supported", c.String("cluster"))
 	}
 
 	// get the list of entries from the discovery service
@@ -143,9 +149,9 @@ func manage(c *cli.Context) {
 			log.Fatal(err)
 
 		}
-		sched.NewEntries(entries)
+		cluster.NewEntries(entries)
 
-		go d.Watch(sched.NewEntries)
+		go d.Watch(cluster.NewEntries)
 	}()
 
 	// see https://github.com/codegangsta/cli/issues/160
@@ -153,5 +159,5 @@ func manage(c *cli.Context) {
 	if c.IsSet("host") || c.IsSet("H") {
 		hosts = hosts[1:]
 	}
-	log.Fatal(api.ListenAndServe(sched, hosts, c.Bool("cors"), tlsConfig))
+	log.Fatal(api.ListenAndServe(cluster, hosts, c.Bool("cors"), tlsConfig))
 }

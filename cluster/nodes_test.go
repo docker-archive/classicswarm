@@ -1,10 +1,8 @@
 package cluster
 
 import (
-	"io/ioutil"
 	"testing"
 
-	"github.com/docker/swarm/state"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/mockclient"
 	"github.com/stretchr/testify/assert"
@@ -34,39 +32,33 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 	return node
 }
 
-func newCluster(t *testing.T) *Cluster {
-	dir, err := ioutil.TempDir("", "store-test")
-	assert.NoError(t, err)
-	return NewCluster(state.NewStore(dir))
-}
+func TestAdd(t *testing.T) {
+	c := NewNodes()
+	assert.Equal(t, len(c.List()), 0)
+	assert.Nil(t, c.Get("test"))
+	assert.Nil(t, c.Get("test2"))
 
-func TestAddNode(t *testing.T) {
-	c := newCluster(t)
-	assert.Equal(t, len(c.Nodes()), 0)
-	assert.Nil(t, c.Node("test"))
-	assert.Nil(t, c.Node("test2"))
+	assert.NoError(t, c.Add(createNode(t, "test")))
+	assert.Equal(t, len(c.List()), 1)
+	assert.NotNil(t, c.Get("test"))
 
-	assert.NoError(t, c.AddNode(createNode(t, "test")))
-	assert.Equal(t, len(c.Nodes()), 1)
-	assert.NotNil(t, c.Node("test"))
+	assert.Error(t, c.Add(createNode(t, "test")))
+	assert.Equal(t, len(c.List()), 1)
+	assert.NotNil(t, c.Get("test"))
 
-	assert.Error(t, c.AddNode(createNode(t, "test")))
-	assert.Equal(t, len(c.Nodes()), 1)
-	assert.NotNil(t, c.Node("test"))
-
-	assert.NoError(t, c.AddNode(createNode(t, "test2")))
-	assert.Equal(t, len(c.Nodes()), 2)
-	assert.NotNil(t, c.Node("test2"))
+	assert.NoError(t, c.Add(createNode(t, "test2")))
+	assert.Equal(t, len(c.List()), 2)
+	assert.NotNil(t, c.Get("test2"))
 }
 
 func TestContainerLookup(t *testing.T) {
-	c := newCluster(t)
+	c := NewNodes()
 	container := dockerclient.Container{
 		Id:    "container-id",
 		Names: []string{"/container-name1", "/container-name2"},
 	}
 	node := createNode(t, "test-node", container)
-	assert.NoError(t, c.AddNode(node))
+	assert.NoError(t, c.Add(node))
 
 	// Invalid lookup
 	assert.Nil(t, c.Container("invalid-id"))

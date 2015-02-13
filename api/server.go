@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/cluster"
 )
 
 const DefaultDockerPort = ":2375"
@@ -28,13 +28,13 @@ func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error
 	return l, nil
 }
 
-func ListenAndServe(s scheduler.Scheduler, hosts []string, enableCors bool, tlsConfig *tls.Config) error {
+func ListenAndServe(c cluster.Cluster, hosts []string, enableCors bool, tlsConfig *tls.Config) error {
 	context := &context{
-		scheduler:     s,
+		cluster:       c,
 		eventsHandler: NewEventsHandler(),
 		tlsConfig:     tlsConfig,
 	}
-	s.Events(context.eventsHandler)
+	c.Events(context.eventsHandler)
 	r := createRouter(context, enableCors)
 	chErrors := make(chan error, len(hosts))
 
