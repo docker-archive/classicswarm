@@ -10,9 +10,10 @@ The `Docker Swarm` scheduler comes with multiple strategies.
 
 These strategies are used to rank nodes using a scores computed by the strategy.
 
-`Docker Swarm` currently supports 2 strategies:
+`Docker Swarm` currently supports 3 strategies:
 * [BinPacking](#binpacking-strategy)
 * [Random](#random-strategy)
+* [Round-Robin](#roundrobin-strategy)
 
 You can choose the strategy you want to use with the `--strategy` flag of `swarm manage`
 
@@ -54,3 +55,10 @@ already. This allows us to start a container requiring 2G of RAM on `node-2`.
 ## Random strategy
 
 The Random strategy, as it's name says, chose a random node, it's used mainly for debug.
+
+## Round-Robin strategy
+
+The Round-Robin strategy will rank the nodes based on the number of running containers on each node
+and will return the node with the least amount of containers. This is useful when you want to have
+network traffic distributed evenly across all nodes, ensuring high availability of your containers
+in case of a node failure.
