@@ -34,13 +34,15 @@ Then you can fetch `swarm` code to your `$GOPATH`.
 go get -d github.com/docker/swarm
 ```
 
-The final step is to prepare dependencies for `swarm` and compile it.
+#### Start hacking
+
+First, prepare dependencies for `swarm` and try to compile it.
 ```sh
 cd src/github.com/docker/swarm
 $GOBIN/godep restore
+go test
 go install
 ```
-You'll find the `swarm` binary under the `$GOBIN` directory.
 
 #### Adding New Dependencies
 
@@ -51,5 +53,12 @@ $GOBIN/godep save
 git diff # check what added or removed in Godep/Godeps.json
          # then manually add missing dependencies
 ```
+
+To make sure you newly added codes will make the build process happy, you can try building Swarm in the same way as defined in `Dockerfile`.
+
+```sh
+$GOBIN/godep go install
+```
+Then you should find the `swarm` binary under the `$GOBIN` directory.
 
 Happy hacking!
