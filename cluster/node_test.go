@@ -135,6 +135,38 @@ func TestNodeState(t *testing.T) {
 	client.Mock.AssertExpectations(t)
 }
 
+func TestNodeContainerLookup(t *testing.T) {
+	node := NewNode("test-node", 0)
+	assert.False(t, node.IsConnected())
+
+	client := mockclient.NewMockClient()
+	client.On("Info").Return(mockInfo, nil)
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "container-id", Names: []string{"/container-name1", "/container-name2"}}}, nil).Once()
+	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
+	client.On("InspectContainer", "container-id").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
+
+	assert.NoError(t, node.connectClient(client))
+	assert.True(t, node.IsConnected())
+
+	// Invalid lookup
+	assert.Nil(t, node.Container("invalid-id"))
+	assert.Nil(t, node.Container(""))
+	// Container ID lookup.
+	assert.NotNil(t, node.Container("container-id"))
+	// Container ID prefix lookup.
+	assert.NotNil(t, node.Container("container-"))
+	// Container name lookup.
+	assert.NotNil(t, node.Container("container-name1"))
+	assert.NotNil(t, node.Container("container-name2"))
+	// Container node/name matching.
+	assert.NotNil(t, node.Container("id/container-name1"))
+	assert.NotNil(t, node.Container("id/container-name2"))
+
+	client.Mock.AssertExpectations(t)
+}
+
 func TestCreateContainer(t *testing.T) {
 	var (
 		config = &dockerclient.ContainerConfig{

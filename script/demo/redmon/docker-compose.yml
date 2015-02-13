@@ -3,8 +3,6 @@ redis:
 
 redmon:
  image: vieux/redmon
- environment:
-  - affinity:container==*redis*
  links:
   - redis:redis
  ports:
