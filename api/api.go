@@ -14,6 +14,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
+	"github.com/docker/docker/pkg/units"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
@@ -41,6 +42,9 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 
 	for _, node := range nodes {
 		driverStatus = append(driverStatus, [2]string{node.Name, node.Addr})
+		driverStatus = append(driverStatus, [2]string{" └ Containers", fmt.Sprintf("%d", len(node.Containers()))})
+		driverStatus = append(driverStatus, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", node.ReservedCpus(), node.Cpus)})
+		driverStatus = append(driverStatus, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(node.ReservedMemory())), units.BytesSize(float64(node.Memory)))})
 	}
 	info := struct {
 		Containers      int
