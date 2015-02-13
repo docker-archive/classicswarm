@@ -2,18 +2,17 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/version"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/docker/swarm/scheduler"
-	"github.com/docker/swarm/version"
-	"github.com/stretchr/testify/assert"
 )
 
-func serveRequest(s scheduler.Scheduler, w http.ResponseWriter, req *http.Request) error {
+func serveRequest(c cluster.Cluster, w http.ResponseWriter, req *http.Request) error {
 	context := &context{
-		scheduler: s,
+		cluster: c,
 	}
 
 	r := createRouter(context, false)
