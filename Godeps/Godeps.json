@@ -41,6 +41,11 @@
 			"Rev": "12fef2d8df4e5da024418e324f7e3c3e82220a27"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/units",
+			"Comment": "v1.4.1-216-g12fef2d",
+			"Rev": "12fef2d8df4e5da024418e324f7e3c3e82220a27"
+		},
+		{
 			"ImportPath": "github.com/gorilla/context",
 			"Rev": "215affda49addc4c8ef7e2534915df2c8c35c6cd"
 		},
