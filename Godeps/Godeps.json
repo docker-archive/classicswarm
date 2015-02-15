@@ -11,6 +11,10 @@
 			"Rev": "539d4dc034c079a7188b5d4ca9650632d73c66e8"
 		},
 		{
+			"ImportPath": "github.com/chanwit/marine",
+			"Rev": "1e49cb430b5e4c52b443a379f8a9fc753958958b"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-62-gbf4a526",
 			"Rev": "bf4a526f48af7badd25d2cb02d587e1b01be3b50"
@@ -77,6 +81,10 @@
 		{
 			"ImportPath": "github.com/stretchr/testify/mock",
 			"Rev": "43d0eed2455ed136d33e9426cf52119371ca4596"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ssh",
+			"Rev": "f7445b17d61953e333441674c2d11e91ae4559d3"
 		}
 	]
 }

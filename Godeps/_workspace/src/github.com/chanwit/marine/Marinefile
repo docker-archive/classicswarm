@@ -1,0 +1,28 @@
+-- Plan file
+
+ubuntu:
+  file: ubuntu-14.10-server-amd64.ova
+  username: ubuntu
+  password: reverse
+  memory: 512
+  sudo: wget -qO- http://get.docker.com | bash
+  sudo: -- listen to 0.0.0.0:2375
+  sudo: docker pull golang:1.3
+  snapshot: origin
+
+swarm:
+  extend: ubuntu/origin
+  build-swarm: docker/swarm
+  sudo: cd swarm* && docker build -t swarm .
+  snapshot: build
+
+master:
+  extend: swarm/build
+  sudo: docker run -d --rm -t jplock/zookeeper:3.4.6
+  sudo: docker run -d --rm -t swarm:build manage zk://master/ -H $ip:2375
+
+box:
+  extend: swarm/build
+  instances: 3
+  sudo: docker run -d --rm -t swarm join zk://master/ --addr=$ip:2375
+
