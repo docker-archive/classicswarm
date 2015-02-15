@@ -49,7 +49,7 @@ go install
 To make sure other will not miss dependencies you've added to Swarm, you'll need to call `godep save` to make changes to the config file, `Godep/Godeps.json`. An important thing is that `godep` will replace the config file by the dependency information it learnt from your local machine. This step will mess the upstream config. So, changes to `Godep/Godeps.json` must be performed with care.
 
 ```sh
-$GOBIN/godep save
+$GOBIN/godep save ./...
 git diff # check what added or removed in Godep/Godeps.json
          # then manually add missing dependencies
 ```
