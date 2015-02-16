@@ -22,12 +22,32 @@ type SwarmCluster struct {
 
 func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, options *cluster.Options) cluster.Cluster {
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
-	return &SwarmCluster{
+
+	cluster := &SwarmCluster{
 		nodes:     cluster.NewNodes(),
 		scheduler: scheduler,
 		options:   options,
 		store:     store,
 	}
+
+	// get the list of entries from the discovery service
+	go func() {
+		d, err := discovery.New(options.Discovery, options.Heartbeat)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		entries, err := d.Fetch()
+		if err != nil {
+			log.Fatal(err)
+
+		}
+		cluster.newEntries(entries)
+
+		go d.Watch(cluster.newEntries)
+	}()
+
+	return cluster
 }
 
 // Schedule a brand new container into the cluster.
@@ -75,7 +95,7 @@ func (s *SwarmCluster) RemoveContainer(container *cluster.Container, force bool)
 }
 
 // Entries are Docker Nodes
-func (s *SwarmCluster) NewEntries(entries []*discovery.Entry) {
+func (s *SwarmCluster) newEntries(entries []*discovery.Entry) {
 	for _, entry := range entries {
 		go func(m *discovery.Entry) {
 			if s.nodes.Get(m.String()) == nil {
