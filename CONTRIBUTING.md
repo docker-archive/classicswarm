@@ -50,6 +50,7 @@ To make sure other will not miss dependencies you've added to Swarm, you'll need
 
 ```sh
 $GOBIN/godep save ./...
+$GOBIN/godep update <an updated package>
 git diff # check what added or removed in Godep/Godeps.json
          # then manually add missing dependencies
 ```
