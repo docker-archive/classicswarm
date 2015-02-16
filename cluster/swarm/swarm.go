@@ -30,6 +30,8 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, options *clu
 		store:     store,
 	}
 
+	cluster.nodes.Events(options.EventsHandler)
+
 	// get the list of entries from the discovery service
 	go func() {
 		d, err := discovery.New(options.Discovery, options.Heartbeat)
@@ -111,10 +113,6 @@ func (s *SwarmCluster) newEntries(entries []*discovery.Entry) {
 			}
 		}(entry)
 	}
-}
-
-func (s *SwarmCluster) Events(eventsHandler cluster.EventHandler) {
-	s.nodes.Events(eventsHandler)
 }
 
 func (s *SwarmCluster) Nodes() []*cluster.Node {

@@ -59,10 +59,6 @@ func (s *MesosCluster) RemoveContainer(container *cluster.Container, force bool)
 	return ErrNotImplemented
 }
 
-func (s *MesosCluster) Events(eventsHandler cluster.EventHandler) {
-	s.nodes.Events(eventsHandler)
-}
-
 func (s *MesosCluster) Nodes() []*cluster.Node {
 	return s.nodes.List()
 }
