@@ -1,9 +1,11 @@
 package swarm
 
 import (
+	"fmt"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/pkg/units"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/scheduler"
@@ -115,8 +117,12 @@ func (s *SwarmCluster) newEntries(entries []*discovery.Entry) {
 	}
 }
 
-func (s *SwarmCluster) Nodes() []*cluster.Node {
-	return s.nodes.List()
+func (s *SwarmCluster) Images() []*cluster.Image {
+	return s.nodes.Images()
+}
+
+func (s *SwarmCluster) Image(IdOrName string) *cluster.Image {
+	return s.nodes.Image(IdOrName)
 }
 
 func (s *SwarmCluster) Containers() []*cluster.Container {
@@ -125,4 +131,17 @@ func (s *SwarmCluster) Containers() []*cluster.Container {
 
 func (s *SwarmCluster) Container(IdOrName string) *cluster.Container {
 	return s.nodes.Container(IdOrName)
+}
+
+func (s *SwarmCluster) Info() [][2]string {
+	info := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(s.nodes.List()))}}
+
+	for _, node := range s.nodes.List() {
+		info = append(info, [2]string{node.Name, node.Addr})
+		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(node.Containers()))})
+		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", node.ReservedCpus(), node.Cpus)})
+		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(node.ReservedMemory())), units.BytesSize(float64(node.Memory)))})
+	}
+
+	return info
 }

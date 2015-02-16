@@ -6,7 +6,10 @@ type Cluster interface {
 	CreateContainer(config *dockerclient.ContainerConfig, name string) (*Container, error)
 	RemoveContainer(container *Container, force bool) error
 
-	Nodes() []*Node
+	Images() []*Image
+	Image(IdOrName string) *Image
 	Containers() []*Container
 	Container(IdOrName string) *Container
+
+	Info() [][2]string
 }
