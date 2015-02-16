@@ -34,9 +34,11 @@ func TestAffinityFilter(t *testing.T) {
 			Names: []string{"/container-n0-1-name"},
 		},
 	})
-	nodes[0].AddImage(&dockerclient.Image{
-		Id:       "image-0-id",
-		RepoTags: []string{"image-0:tag1", "image-0:tag2"},
+	nodes[0].AddImage(&cluster.Image{
+		Image: dockerclient.Image{
+			Id:       "image-0-id",
+			RepoTags: []string{"image-0:tag1", "image-0:tag2"},
+		},
 	})
 
 	nodes[1].ID = "node-1-id"
@@ -53,9 +55,11 @@ func TestAffinityFilter(t *testing.T) {
 			Names: []string{"/container-n1-1-name"},
 		},
 	})
-	nodes[1].AddImage(&dockerclient.Image{
-		Id:       "image-1-id",
-		RepoTags: []string{"image-1:tag1", "image-0:tag3", "image-1:tag2"},
+	nodes[1].AddImage(&cluster.Image{
+		Image: dockerclient.Image{
+			Id:       "image-1-id",
+			RepoTags: []string{"image-1:tag1", "image-0:tag3", "image-1:tag2"},
+		},
 	})
 
 	nodes[2].ID = "node-2-id"

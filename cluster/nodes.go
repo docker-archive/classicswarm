@@ -55,6 +55,37 @@ func (c *Nodes) Add(n *Node) error {
 	return n.Events(c)
 }
 
+// Containers returns all the images in the cluster.
+func (c *Nodes) Images() []*Image {
+	c.Lock()
+	defer c.Unlock()
+
+	out := []*Image{}
+	for _, n := range c.nodes {
+		out = append(out, n.Images()...)
+	}
+
+	return out
+}
+
+// Image returns an image with IdOrName in the cluster
+func (c *Nodes) Image(IdOrName string) *Image {
+	// Abort immediately if the name is empty.
+	if len(IdOrName) == 0 {
+		return nil
+	}
+
+	c.RLock()
+	defer c.RUnlock()
+	for _, n := range c.nodes {
+		if image := n.Image(IdOrName); image != nil {
+			return image
+		}
+	}
+
+	return nil
+}
+
 // Containers returns all the containers in the cluster.
 func (c *Nodes) Containers() []*Container {
 	c.Lock()
@@ -62,10 +93,7 @@ func (c *Nodes) Containers() []*Container {
 
 	out := []*Container{}
 	for _, n := range c.nodes {
-		containers := n.Containers()
-		for _, container := range containers {
-			out = append(out, container)
-		}
+		out = append(out, n.Containers()...)
 	}
 
 	return out

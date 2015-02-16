@@ -59,8 +59,12 @@ func (s *MesosCluster) RemoveContainer(container *cluster.Container, force bool)
 	return ErrNotImplemented
 }
 
-func (s *MesosCluster) Nodes() []*cluster.Node {
-	return s.nodes.List()
+func (s *MesosCluster) Images() []*cluster.Image {
+	return nil
+}
+
+func (s *MesosCluster) Image(IdOrName string) *cluster.Image {
+	return nil
 }
 
 func (s *MesosCluster) Containers() []*cluster.Container {
@@ -69,4 +73,8 @@ func (s *MesosCluster) Containers() []*cluster.Container {
 
 func (s *MesosCluster) Container(IdOrName string) *cluster.Container {
 	return s.nodes.Container(IdOrName)
+}
+
+func (s *MesosCluster) Info() [][2]string {
+	return nil
 }

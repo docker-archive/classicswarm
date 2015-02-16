@@ -46,7 +46,7 @@ type Node struct {
 
 	ch              chan bool
 	containers      map[string]*Container
-	images          []*dockerclient.Image
+	images          []*Image
 	client          dockerclient.Client
 	eventHandler    EventHandler
 	healthy         bool
@@ -149,7 +149,10 @@ func (n *Node) refreshImages() error {
 		return err
 	}
 	n.Lock()
-	n.images = images
+	n.images = nil
+	for _, image := range images {
+		n.images = append(n.images, &Image{Image: *image, Node: n})
+	}
 	n.Unlock()
 	return nil
 }
@@ -432,8 +435,8 @@ func (n *Node) Container(IdOrName string) *Container {
 	return nil
 }
 
-func (n *Node) Images() []*dockerclient.Image {
-	images := []*dockerclient.Image{}
+func (n *Node) Images() []*Image {
+	images := []*Image{}
 	n.RLock()
 	for _, image := range n.images {
 		images = append(images, image)
@@ -443,7 +446,7 @@ func (n *Node) Images() []*dockerclient.Image {
 }
 
 // Image returns the image with IdOrName in the node
-func (n *Node) Image(IdOrName string) *dockerclient.Image {
+func (n *Node) Image(IdOrName string) *Image {
 	n.RLock()
 	defer n.RUnlock()
 
@@ -507,7 +510,7 @@ func (n *Node) AddContainer(container *Container) error {
 }
 
 // Inject an image into the internal state.
-func (n *Node) AddImage(image *dockerclient.Image) {
+func (n *Node) AddImage(image *Image) {
 	n.Lock()
 	defer n.Unlock()
 
