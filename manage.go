@@ -120,11 +120,13 @@ func manage(c *cli.Context) {
 
 	sched := scheduler.New(s, fs)
 
+	eventsHandler := api.NewEventsHandler()
 	options := &cluster.Options{
 		TLSConfig:       tlsConfig,
 		OvercommitRatio: c.Float64("overcommit"),
 		Discovery:       dflag,
 		Heartbeat:       c.Int("heartbeat"),
+		EventsHandler:   eventsHandler,
 	}
 
 	var cluster cluster.Cluster
@@ -143,5 +145,5 @@ func manage(c *cli.Context) {
 	if c.IsSet("host") || c.IsSet("H") {
 		hosts = hosts[1:]
 	}
-	log.Fatal(api.ListenAndServe(cluster, hosts, c.Bool("cors"), tlsConfig))
+	log.Fatal(api.ListenAndServe(cluster, hosts, c.Bool("cors"), tlsConfig, eventsHandler))
 }

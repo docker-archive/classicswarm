@@ -28,13 +28,12 @@ func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error
 	return l, nil
 }
 
-func ListenAndServe(c cluster.Cluster, hosts []string, enableCors bool, tlsConfig *tls.Config) error {
+func ListenAndServe(c cluster.Cluster, hosts []string, enableCors bool, tlsConfig *tls.Config, eventsHandler *eventsHandler) error {
 	context := &context{
 		cluster:       c,
-		eventsHandler: NewEventsHandler(),
+		eventsHandler: eventsHandler,
 		tlsConfig:     tlsConfig,
 	}
-	c.Events(context.eventsHandler)
 	r := createRouter(context, enableCors)
 	chErrors := make(chan error, len(hosts))
 
