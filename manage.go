@@ -13,7 +13,6 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos"
 	"github.com/docker/swarm/cluster/swarm"
-	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
@@ -124,6 +123,8 @@ func manage(c *cli.Context) {
 	options := &cluster.Options{
 		TLSConfig:       tlsConfig,
 		OvercommitRatio: c.Float64("overcommit"),
+		Discovery:       dflag,
+		Heartbeat:       c.Int("heartbeat"),
 	}
 
 	var cluster cluster.Cluster
@@ -136,23 +137,6 @@ func manage(c *cli.Context) {
 	default:
 		log.Fatalf("cluster %q not supported", c.String("cluster"))
 	}
-
-	// get the list of entries from the discovery service
-	go func() {
-		d, err := discovery.New(dflag, c.Int("heartbeat"))
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		entries, err := d.Fetch()
-		if err != nil {
-			log.Fatal(err)
-
-		}
-		cluster.NewEntries(entries)
-
-		go d.Watch(cluster.NewEntries)
-	}()
 
 	// see https://github.com/codegangsta/cli/issues/160
 	hosts := c.StringSlice("host")

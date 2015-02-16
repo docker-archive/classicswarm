@@ -1,9 +1,6 @@
 package cluster
 
-import (
-	"github.com/docker/swarm/discovery"
-	"github.com/samalba/dockerclient"
-)
+import "github.com/samalba/dockerclient"
 
 type Cluster interface {
 	CreateContainer(config *dockerclient.ContainerConfig, name string) (*Container, error)
@@ -13,5 +10,4 @@ type Cluster interface {
 	Nodes() []*Node
 	Containers() []*Container
 	Container(IdOrName string) *Container
-	NewEntries(entries []*discovery.Entry)
 }

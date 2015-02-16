@@ -6,7 +6,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/discovery"
 	"github.com/samalba/dockerclient"
 )
 
@@ -23,6 +22,9 @@ type MesosCluster struct {
 
 func NewCluster(options *cluster.Options) cluster.Cluster {
 	log.WithFields(log.Fields{"name": "mesos"}).Debug("Initializing cluster")
+
+	//TODO: get the list of mesos masters using options.Discovery (zk://<ip1>,<ip2>,<ip3>/mesos)
+
 	return &MesosCluster{
 		nodes:   cluster.NewNodes(),
 		options: options,
@@ -55,19 +57,6 @@ func (s *MesosCluster) RemoveContainer(container *cluster.Container, force bool)
 	//TODO: remove container from store ??
 
 	return ErrNotImplemented
-}
-
-// Entries are Mesos masters
-func (s *MesosCluster) NewEntries(entries []*discovery.Entry) {
-
-	//TODO: get list of actual docker nodes from mesos masters
-	//  -   cluster.NewNode(m.String(), s.options.OvercommitRatio)
-
-	//TODO: create direct connection to those nodes
-	//  -   n.Connect(s.options.TLSConfig)
-
-	//TODO: add them to the cluster
-	//  -   s.nodes.Add(n)
 }
 
 func (s *MesosCluster) Events(eventsHandler cluster.EventHandler) {
