@@ -16,7 +16,7 @@ import (
 type SwarmCluster struct {
 	sync.RWMutex
 
-	nodes     *cluster.Nodes
+	nodes     *Nodes
 	scheduler *scheduler.Scheduler
 	options   *cluster.Options
 	store     *state.Store
@@ -26,7 +26,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, options *clu
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &SwarmCluster{
-		nodes:     cluster.NewNodes(),
+		nodes:     NewNodes(),
 		scheduler: scheduler,
 		options:   options,
 		store:     store,
