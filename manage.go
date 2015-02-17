@@ -135,7 +135,7 @@ func manage(c *cli.Context) {
 	case "swarm":
 		cluster = swarm.NewCluster(sched, store, options)
 	case "mesos":
-		cluster = mesos.NewCluster(options)
+		cluster = mesos.NewCluster(sched, options)
 	default:
 		log.Fatalf("cluster %q not supported", c.String("cluster"))
 	}

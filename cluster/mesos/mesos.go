@@ -6,6 +6,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler"
 	"github.com/samalba/dockerclient"
 )
 
@@ -16,18 +17,18 @@ type MesosCluster struct {
 
 	//TODO: list of mesos masters
 	//TODO: list of offers
-	nodes   *cluster.Nodes
-	options *cluster.Options
+	scheduler *scheduler.Scheduler
+	options   *cluster.Options
 }
 
-func NewCluster(options *cluster.Options) cluster.Cluster {
+func NewCluster(scheduler *scheduler.Scheduler, options *cluster.Options) cluster.Cluster {
 	log.WithFields(log.Fields{"name": "mesos"}).Debug("Initializing cluster")
 
 	//TODO: get the list of mesos masters using options.Discovery (zk://<ip1>,<ip2>,<ip3>/mesos)
 
 	return &MesosCluster{
-		nodes:   cluster.NewNodes(),
-		options: options,
+		scheduler: scheduler,
+		options:   options,
 	}
 }
 
@@ -37,7 +38,8 @@ func (s *MesosCluster) CreateContainer(config *dockerclient.ContainerConfig, nam
 	s.Lock()
 	defer s.Unlock()
 
-	//TODO: pick the right offer (using strategy & filters ???)
+	//TODO: pick the right offer (using strategy & filters)
+	//offer, err := s.scheduler.SelectNodeForContainer(s.offers, config)
 
 	//TODO: LaunchTask on the Mesos cluster and get container
 
@@ -68,11 +70,11 @@ func (s *MesosCluster) Image(IdOrName string) *cluster.Image {
 }
 
 func (s *MesosCluster) Containers() []*cluster.Container {
-	return s.nodes.Containers()
+	return nil
 }
 
 func (s *MesosCluster) Container(IdOrName string) *cluster.Container {
-	return s.nodes.Container(IdOrName)
+	return nil
 }
 
 func (s *MesosCluster) Info() [][2]string {

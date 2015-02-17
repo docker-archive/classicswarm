@@ -1,10 +1,11 @@
-package cluster
+package swarm
 
 import (
 	"errors"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/swarm/cluster"
 )
 
 var (
@@ -15,17 +16,17 @@ var (
 type Nodes struct {
 	sync.RWMutex
 
-	eventHandlers []EventHandler
-	nodes         map[string]*Node
+	eventHandlers []cluster.EventHandler
+	nodes         map[string]*cluster.Node
 }
 
 func NewNodes() *Nodes {
 	return &Nodes{
-		nodes: make(map[string]*Node),
+		nodes: make(map[string]*cluster.Node),
 	}
 }
 
-func (c *Nodes) Handle(e *Event) error {
+func (c *Nodes) Handle(e *cluster.Event) error {
 	for _, eventHandler := range c.eventHandlers {
 		if err := eventHandler.Handle(e); err != nil {
 			log.Error(err)
@@ -36,7 +37,7 @@ func (c *Nodes) Handle(e *Event) error {
 
 // Register a node within the cluster. The node must have been already
 // initialized.
-func (c *Nodes) Add(n *Node) error {
+func (c *Nodes) Add(n *cluster.Node) error {
 	if !n.IsConnected() {
 		return ErrNodeNotConnected
 	}
@@ -56,11 +57,11 @@ func (c *Nodes) Add(n *Node) error {
 }
 
 // Containers returns all the images in the cluster.
-func (c *Nodes) Images() []*Image {
+func (c *Nodes) Images() []*cluster.Image {
 	c.Lock()
 	defer c.Unlock()
 
-	out := []*Image{}
+	out := []*cluster.Image{}
 	for _, n := range c.nodes {
 		out = append(out, n.Images()...)
 	}
@@ -69,7 +70,7 @@ func (c *Nodes) Images() []*Image {
 }
 
 // Image returns an image with IdOrName in the cluster
-func (c *Nodes) Image(IdOrName string) *Image {
+func (c *Nodes) Image(IdOrName string) *cluster.Image {
 	// Abort immediately if the name is empty.
 	if len(IdOrName) == 0 {
 		return nil
@@ -87,11 +88,11 @@ func (c *Nodes) Image(IdOrName string) *Image {
 }
 
 // Containers returns all the containers in the cluster.
-func (c *Nodes) Containers() []*Container {
+func (c *Nodes) Containers() []*cluster.Container {
 	c.Lock()
 	defer c.Unlock()
 
-	out := []*Container{}
+	out := []*cluster.Container{}
 	for _, n := range c.nodes {
 		out = append(out, n.Containers()...)
 	}
@@ -100,7 +101,7 @@ func (c *Nodes) Containers() []*Container {
 }
 
 // Container returns the container with IdOrName in the cluster
-func (c *Nodes) Container(IdOrName string) *Container {
+func (c *Nodes) Container(IdOrName string) *cluster.Container {
 	// Abort immediately if the name is empty.
 	if len(IdOrName) == 0 {
 		return nil
@@ -118,8 +119,8 @@ func (c *Nodes) Container(IdOrName string) *Container {
 }
 
 // Nodes returns the list of nodes in the cluster
-func (c *Nodes) List() []*Node {
-	nodes := []*Node{}
+func (c *Nodes) List() []*cluster.Node {
+	nodes := []*cluster.Node{}
 	c.RLock()
 	for _, node := range c.nodes {
 		nodes = append(nodes, node)
@@ -128,7 +129,7 @@ func (c *Nodes) List() []*Node {
 	return nodes
 }
 
-func (c *Nodes) Get(addr string) *Node {
+func (c *Nodes) Get(addr string) *cluster.Node {
 	for _, node := range c.nodes {
 		if node.Addr == addr {
 			return node
@@ -137,7 +138,7 @@ func (c *Nodes) Get(addr string) *Node {
 	return nil
 }
 
-func (c *Nodes) Events(h EventHandler) error {
+func (c *Nodes) Events(h cluster.EventHandler) error {
 	c.eventHandlers = append(c.eventHandlers, h)
 	return nil
 }
