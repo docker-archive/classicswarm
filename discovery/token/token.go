@@ -80,9 +80,10 @@ func (s *TokenDiscoveryService) Register(addr string) error {
 
 	resp, err := http.Post(fmt.Sprintf("%s/%s/%s", s.url,
 		"clusters", s.token), "application/json", buf)
-
-	// Force connection close
-	resp.Body.Close()
+	if err == nil {
+		// Force connection close
+		resp.Body.Close()
+	}
 	return err
 }
 
