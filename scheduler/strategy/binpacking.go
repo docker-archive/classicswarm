@@ -18,12 +18,12 @@ func (p *BinPackingPlacementStrategy) Initialize() error {
 	return nil
 }
 
-func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*cluster.Node) (*cluster.Node, error) {
+func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []cluster.Node) (cluster.Node, error) {
 	scores := scores{}
 
 	for _, node := range nodes {
-		nodeMemory := node.UsableMemory()
-		nodeCpus := node.UsableCpus()
+		nodeMemory := node.TotalMemory()
+		nodeCpus := node.TotalCpus()
 
 		// Skip nodes that are smaller than the requested resources.
 		if nodeMemory < int64(config.Memory) || nodeCpus < config.CpuShares {
@@ -36,10 +36,10 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 		)
 
 		if config.CpuShares > 0 {
-			cpuScore = (node.ReservedCpus() + config.CpuShares) * 100 / nodeCpus
+			cpuScore = (node.UsedCpus() + config.CpuShares) * 100 / nodeCpus
 		}
 		if config.Memory > 0 {
-			memoryScore = (node.ReservedMemory() + config.Memory) * 100 / nodeMemory
+			memoryScore = (node.UsedMemory() + config.Memory) * 100 / nodeMemory
 		}
 
 		if cpuScore <= 100 && memoryScore <= 100 {
@@ -57,7 +57,7 @@ func (p *BinPackingPlacementStrategy) PlaceContainer(config *dockerclient.Contai
 }
 
 type score struct {
-	node  *cluster.Node
+	node  cluster.Node
 	score int64
 }
 

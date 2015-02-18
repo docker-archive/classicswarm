@@ -1,4 +1,4 @@
-package cluster
+package swarm
 
 import (
 	"errors"
@@ -65,8 +65,8 @@ func TestNodeCpusMemory(t *testing.T) {
 	assert.True(t, node.IsConnected())
 	assert.True(t, node.IsHealthy())
 
-	assert.Equal(t, node.ReservedCpus(), 0)
-	assert.Equal(t, node.ReservedMemory(), 0)
+	assert.Equal(t, node.UsedCpus(), 0)
+	assert.Equal(t, node.UsedMemory(), 0)
 
 	client.Mock.AssertExpectations(t)
 }
@@ -87,11 +87,11 @@ func TestNodeSpecs(t *testing.T) {
 
 	assert.Equal(t, node.Cpus, mockInfo.NCPU)
 	assert.Equal(t, node.Memory, mockInfo.MemTotal)
-	assert.Equal(t, node.Labels["storagedriver"], mockInfo.Driver)
-	assert.Equal(t, node.Labels["executiondriver"], mockInfo.ExecutionDriver)
-	assert.Equal(t, node.Labels["kernelversion"], mockInfo.KernelVersion)
-	assert.Equal(t, node.Labels["operatingsystem"], mockInfo.OperatingSystem)
-	assert.Equal(t, node.Labels["foo"], "bar")
+	assert.Equal(t, node.Labels()["storagedriver"], mockInfo.Driver)
+	assert.Equal(t, node.Labels()["executiondriver"], mockInfo.ExecutionDriver)
+	assert.Equal(t, node.Labels()["kernelversion"], mockInfo.KernelVersion)
+	assert.Equal(t, node.Labels()["operatingsystem"], mockInfo.OperatingSystem)
+	assert.Equal(t, node.Labels()["foo"], "bar")
 
 	client.Mock.AssertExpectations(t)
 }
@@ -225,22 +225,22 @@ func TestCreateContainer(t *testing.T) {
 	assert.Len(t, node.Containers(), 2)
 }
 
-func TestUsableMemory(t *testing.T) {
+func TestTotalMemory(t *testing.T) {
 	node := NewNode("test", 0.05)
 	node.Memory = 1024
-	assert.Equal(t, node.UsableMemory(), 1024+1024*5/100)
+	assert.Equal(t, node.TotalMemory(), 1024+1024*5/100)
 
 	node = NewNode("test", 0)
 	node.Memory = 1024
-	assert.Equal(t, node.UsableMemory(), 1024)
+	assert.Equal(t, node.TotalMemory(), 1024)
 }
 
-func TestUsableCpus(t *testing.T) {
+func TestTotalCpus(t *testing.T) {
 	node := NewNode("test", 0.05)
 	node.Cpus = 2
-	assert.Equal(t, node.UsableCpus(), 2+2*5/100)
+	assert.Equal(t, node.TotalCpus(), 2+2*5/100)
 
 	node = NewNode("test", 0)
 	node.Cpus = 2
-	assert.Equal(t, node.UsableCpus(), 2)
+	assert.Equal(t, node.TotalCpus(), 2)
 }

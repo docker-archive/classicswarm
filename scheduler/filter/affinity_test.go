@@ -11,59 +11,54 @@ import (
 func TestAffinityFilter(t *testing.T) {
 	var (
 		f     = AffinityFilter{}
-		nodes = []*cluster.Node{
-			cluster.NewNode("node-0", 0),
-			cluster.NewNode("node-1", 0),
-			cluster.NewNode("node-2", 0),
+		nodes = []cluster.Node{
+			&FakeNode{
+				id:   "node-0-id",
+				name: "node-0-name",
+				addr: "node-0",
+				containers: []*cluster.Container{
+					{Container: dockerclient.Container{
+						Id:    "container-n0-0-id",
+						Names: []string{"/container-n0-0-name"},
+					}},
+					{Container: dockerclient.Container{
+						Id:    "container-n0-1-id",
+						Names: []string{"/container-n0-1-name"},
+					}},
+				},
+				images: []*cluster.Image{{Image: dockerclient.Image{
+					Id:       "image-0-id",
+					RepoTags: []string{"image-0:tag1", "image-0:tag2"},
+				}}},
+			},
+			&FakeNode{
+				id:   "node-1-id",
+				name: "node-1-name",
+				addr: "node-1",
+				containers: []*cluster.Container{
+					{Container: dockerclient.Container{
+						Id:    "container-n1-0-id",
+						Names: []string{"/container-n1-0-name"},
+					}},
+					{Container: dockerclient.Container{
+						Id:    "container-n1-1-id",
+						Names: []string{"/container-n1-1-name"},
+					}},
+				},
+				images: []*cluster.Image{{Image: dockerclient.Image{
+					Id:       "image-1-id",
+					RepoTags: []string{"image-1:tag1", "image-0:tag3", "image-1:tag2"},
+				}}},
+			},
+			&FakeNode{
+				id:   "node-2-id",
+				name: "node-2-name",
+				addr: "node-2",
+			},
 		}
-		result []*cluster.Node
+		result []cluster.Node
 		err    error
 	)
-
-	nodes[0].ID = "node-0-id"
-	nodes[0].Name = "node-0-name"
-	nodes[0].AddContainer(&cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container-n0-0-id",
-			Names: []string{"/container-n0-0-name"},
-		},
-	})
-	nodes[0].AddContainer(&cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container-n0-1-id",
-			Names: []string{"/container-n0-1-name"},
-		},
-	})
-	nodes[0].AddImage(&cluster.Image{
-		Image: dockerclient.Image{
-			Id:       "image-0-id",
-			RepoTags: []string{"image-0:tag1", "image-0:tag2"},
-		},
-	})
-
-	nodes[1].ID = "node-1-id"
-	nodes[1].Name = "node-1-name"
-	nodes[1].AddContainer(&cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container-n1-0-id",
-			Names: []string{"/container-n1-0-name"},
-		},
-	})
-	nodes[1].AddContainer(&cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container-n1-1-id",
-			Names: []string{"/container-n1-1-name"},
-		},
-	})
-	nodes[1].AddImage(&cluster.Image{
-		Image: dockerclient.Image{
-			Id:       "image-1-id",
-			RepoTags: []string{"image-1:tag1", "image-0:tag3", "image-1:tag2"},
-		},
-	})
-
-	nodes[2].ID = "node-2-id"
-	nodes[2].Name = "node-2-name"
 
 	// Without constraints we should get the unfiltered list of nodes back.
 	result, err = f.Filter(&dockerclient.ContainerConfig{}, nodes)

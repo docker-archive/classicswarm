@@ -15,6 +15,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/cluster/swarm"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/version"
 	"github.com/gorilla/mux"
@@ -92,7 +93,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if len(accepteds) != 0 {
 			found := false
 			for _, accepted := range accepteds {
-				if accepted == image.Node.Name || accepted == image.Node.ID {
+				if accepted == image.Node.Name() || accepted == image.Node.ID() {
 					found = true
 					break
 				}
@@ -135,14 +136,14 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		// TODO remove the Node Name in the name when we have a good solution
 		tmp.Names = make([]string, len(container.Names))
 		for i, name := range container.Names {
-			tmp.Names[i] = "/" + container.Node.Name + name
+			tmp.Names[i] = "/" + container.Node.Name() + name
 		}
 		// insert node IP
 		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
 		for i, port := range container.Ports {
 			tmp.Ports[i] = port
 			if port.IP == "0.0.0.0" {
-				tmp.Ports[i].IP = container.Node.IP
+				tmp.Ports[i].IP = container.Node.IP()
 			}
 		}
 		out = append(out, &tmp)
@@ -164,7 +165,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	client, scheme := newClientAndScheme(c.tlsConfig)
 
-	resp, err := client.Get(scheme + "://" + container.Node.Addr + "/containers/" + container.Id + "/json")
+	resp, err := client.Get(scheme + "://" + container.Node.Addr() + "/containers/" + container.Id + "/json")
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -190,7 +191,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"Node\":%s,\"Name\":\"/", n)), -1)
 
 	// insert node IP
-	data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node.IP)), -1)
+	data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node.IP())), -1)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
@@ -276,11 +277,13 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 	cb := func(resp *http.Response) {
 		if resp.StatusCode == http.StatusCreated {
 			log.Debugf("[REFRESH CONTAINER] --> %s", container.Id)
-			container.Node.RefreshContainer(container.Id, true)
+			if n, ok := container.Node.(*swarm.Node); ok {
+				n.RefreshContainer(container.Id, true)
+			}
 		}
 	}
 
-	if err := proxyAsync(c.tlsConfig, container.Node.Addr, w, r, cb); err != nil {
+	if err := proxyAsync(c.tlsConfig, container.Node.Addr(), w, r, cb); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -294,7 +297,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := proxy(c.tlsConfig, container.Node.Addr, w, r); err != nil {
+	if err := proxy(c.tlsConfig, container.Node.Addr(), w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -304,7 +307,7 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 
 	if image := c.cluster.Image(name); image != nil {
-		proxy(c.tlsConfig, image.Node.Addr, w, r)
+		proxy(c.tlsConfig, image.Node.Addr(), w, r)
 		return
 	}
 	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
@@ -312,7 +315,7 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to a random node
 func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
-	candidates := []*cluster.Node{}
+	candidates := []cluster.Node{}
 
 	// FIXME: doesn't work if there are no container in the cluster
 	for _, container := range c.cluster.Containers() {
@@ -327,7 +330,7 @@ func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := proxy(c.tlsConfig, accepted[rand.Intn(len(accepted))].Addr, w, r); err != nil {
+	if err := proxy(c.tlsConfig, accepted[rand.Intn(len(accepted))].Addr(), w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -340,7 +343,7 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := hijack(c.tlsConfig, container.Node.Addr, w, r); err != nil {
+	if err := hijack(c.tlsConfig, container.Node.Addr(), w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }

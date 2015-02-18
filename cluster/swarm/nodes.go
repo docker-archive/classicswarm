@@ -17,12 +17,12 @@ type Nodes struct {
 	sync.RWMutex
 
 	eventHandlers []cluster.EventHandler
-	nodes         map[string]*cluster.Node
+	nodes         map[string]*Node
 }
 
 func NewNodes() *Nodes {
 	return &Nodes{
-		nodes: make(map[string]*cluster.Node),
+		nodes: make(map[string]*Node),
 	}
 }
 
@@ -37,7 +37,7 @@ func (c *Nodes) Handle(e *cluster.Event) error {
 
 // Register a node within the cluster. The node must have been already
 // initialized.
-func (c *Nodes) Add(n *cluster.Node) error {
+func (c *Nodes) Add(n *Node) error {
 	if !n.IsConnected() {
 		return ErrNodeNotConnected
 	}
@@ -45,14 +45,14 @@ func (c *Nodes) Add(n *cluster.Node) error {
 	c.Lock()
 	defer c.Unlock()
 
-	if old, exists := c.nodes[n.ID]; exists {
-		if old.IP != n.IP {
-			log.Errorf("ID duplicated. %s shared by %s and %s", n.ID, old.IP, n.IP)
+	if old, exists := c.nodes[n.id]; exists {
+		if old.ip != n.ip {
+			log.Errorf("ID duplicated. %s shared by %s and %s", n.id, old.IP(), n.IP())
 		}
 		return ErrNodeAlreadyRegistered
 	}
 
-	c.nodes[n.ID] = n
+	c.nodes[n.id] = n
 	return n.Events(c)
 }
 
@@ -119,8 +119,8 @@ func (c *Nodes) Container(IdOrName string) *cluster.Container {
 }
 
 // Nodes returns the list of nodes in the cluster
-func (c *Nodes) List() []*cluster.Node {
-	nodes := []*cluster.Node{}
+func (c *Nodes) List() []cluster.Node {
+	nodes := []cluster.Node{}
 	c.RLock()
 	for _, node := range c.nodes {
 		nodes = append(nodes, node)
@@ -129,9 +129,9 @@ func (c *Nodes) List() []*cluster.Node {
 	return nodes
 }
 
-func (c *Nodes) Get(addr string) *cluster.Node {
+func (c *Nodes) Get(addr string) *Node {
 	for _, node := range c.nodes {
-		if node.Addr == addr {
+		if node.addr == addr {
 			return node
 		}
 	}

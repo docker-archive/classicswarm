@@ -4,7 +4,7 @@ import "github.com/samalba/dockerclient"
 
 type Event struct {
 	dockerclient.Event
-	Node *Node
+	Node Node
 }
 
 type EventHandler interface {

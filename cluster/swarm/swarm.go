@@ -65,17 +65,21 @@ func (s *SwarmCluster) CreateContainer(config *dockerclient.ContainerConfig, nam
 		return nil, err
 	}
 
-	container, err := node.Create(config, name, true)
-	if err != nil {
-		return nil, err
+	if n, ok := node.(*Node); ok {
+		container, err := n.Create(config, name, true)
+		if err != nil {
+			return nil, err
+		}
+
+		st := &state.RequestedState{
+			ID:     container.Id,
+			Name:   name,
+			Config: config,
+		}
+		return container, s.store.Add(container.Id, st)
 	}
 
-	st := &state.RequestedState{
-		ID:     container.Id,
-		Name:   name,
-		Config: config,
-	}
-	return container, s.store.Add(container.Id, st)
+	return nil, nil
 }
 
 // Remove a container from the cluster. Containers should always be destroyed
@@ -84,8 +88,10 @@ func (s *SwarmCluster) RemoveContainer(container *cluster.Container, force bool)
 	s.Lock()
 	defer s.Unlock()
 
-	if err := container.Node.Destroy(container, force); err != nil {
-		return err
+	if n, ok := container.Node.(*Node); ok {
+		if err := n.Destroy(container, force); err != nil {
+			return err
+		}
 	}
 
 	if err := s.store.Remove(container.Id); err != nil {
@@ -103,7 +109,7 @@ func (s *SwarmCluster) newEntries(entries []*discovery.Entry) {
 	for _, entry := range entries {
 		go func(m *discovery.Entry) {
 			if s.nodes.Get(m.String()) == nil {
-				n := cluster.NewNode(m.String(), s.options.OvercommitRatio)
+				n := NewNode(m.String(), s.options.OvercommitRatio)
 				if err := n.Connect(s.options.TLSConfig); err != nil {
 					log.Error(err)
 					return
@@ -137,10 +143,10 @@ func (s *SwarmCluster) Info() [][2]string {
 	info := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(s.nodes.List()))}}
 
 	for _, node := range s.nodes.List() {
-		info = append(info, [2]string{node.Name, node.Addr})
+		info = append(info, [2]string{node.Name(), node.Addr()})
 		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(node.Containers()))})
-		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", node.ReservedCpus(), node.Cpus)})
-		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(node.ReservedMemory())), units.BytesSize(float64(node.Memory)))})
+		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", node.UsedCpus(), node.TotalCpus())})
+		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(node.UsedMemory())), units.BytesSize(float64(node.TotalMemory())))})
 	}
 
 	return info

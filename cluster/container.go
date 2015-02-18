@@ -6,5 +6,5 @@ type Container struct {
 	dockerclient.Container
 
 	Info dockerclient.ContainerInfo
-	Node *Node
+	Node Node
 }
