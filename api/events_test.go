@@ -17,6 +17,23 @@ func (fw *FakeWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+type FakeNode struct{}
+
+func (fn *FakeNode) ID() string                            { return "node_id" }
+func (fn *FakeNode) Name() string                          { return "node_name" }
+func (fn *FakeNode) IP() string                            { return "node_ip" }
+func (fn *FakeNode) Addr() string                          { return "node_addr" }
+func (fn *FakeNode) Images() []*cluster.Image              { return nil }
+func (fn *FakeNode) Image(_ string) *cluster.Image         { return nil }
+func (fn *FakeNode) Containers() []*cluster.Container      { return nil }
+func (fn *FakeNode) Container(_ string) *cluster.Container { return nil }
+func (fn *FakeNode) TotalCpus() int64                      { return 0 }
+func (fn *FakeNode) UsedCpus() int64                       { return 0 }
+func (fn *FakeNode) TotalMemory() int64                    { return 0 }
+func (fn *FakeNode) UsedMemory() int64                     { return 0 }
+func (fn *FakeNode) Labels() map[string]string             { return nil }
+func (fn *FakeNode) IsHealthy() bool                       { return true }
+
 func TestHandle(t *testing.T) {
 	eh := NewEventsHandler()
 	assert.Equal(t, eh.Size(), 0)
@@ -27,13 +44,9 @@ func TestHandle(t *testing.T) {
 	assert.Equal(t, eh.Size(), 1)
 
 	event := &cluster.Event{
-		Node: &cluster.Node{
-			Name: "node_name",
-			ID:   "node_id",
-			Addr: "node_addr",
-			IP:   "node_ip",
-		},
+		Node: &FakeNode{},
 	}
+
 	event.Event.Status = "status"
 	event.Event.Id = "id"
 	event.Event.From = "from"

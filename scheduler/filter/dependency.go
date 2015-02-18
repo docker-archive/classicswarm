@@ -12,7 +12,7 @@ import (
 type DependencyFilter struct {
 }
 
-func (f *DependencyFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
+func (f *DependencyFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
@@ -29,7 +29,7 @@ func (f *DependencyFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 		net = append(net, strings.TrimPrefix(config.HostConfig.NetworkMode, "container:"))
 	}
 
-	candidates := []*cluster.Node{}
+	candidates := []cluster.Node{}
 	for _, node := range nodes {
 		if f.check(config.HostConfig.VolumesFrom, node) &&
 			f.check(links, node) &&
@@ -61,7 +61,7 @@ func (f *DependencyFilter) String(config *dockerclient.ContainerConfig) string {
 }
 
 // Ensure that the node contains all dependent containers.
-func (f *DependencyFilter) check(dependencies []string, node *cluster.Node) bool {
+func (f *DependencyFilter) check(dependencies []string, node cluster.Node) bool {
 	for _, dependency := range dependencies {
 		if node.Container(dependency) == nil {
 			return false

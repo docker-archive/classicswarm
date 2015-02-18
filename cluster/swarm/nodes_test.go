@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *cluster.Node {
-	node := cluster.NewNode(ID, 0)
-	node.Name = ID
-	node.ID = ID
+func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *Node {
+	node := NewNode(ID, 0)
+	node.name = ID
+	node.id = ID
 
 	for _, container := range containers {
 		node.AddContainer(&cluster.Container{Container: container, Node: node})
@@ -27,17 +27,17 @@ func TestAdd(t *testing.T) {
 	assert.Nil(t, c.Get("test2"))
 
 	n := createNode(t, "test")
-	c.nodes[n.ID] = n
+	c.nodes[n.ID()] = n
 	assert.Equal(t, len(c.List()), 1)
 	assert.NotNil(t, c.Get("test"))
 
 	n = createNode(t, "test")
-	c.nodes[n.ID] = n
+	c.nodes[n.ID()] = n
 	assert.Equal(t, len(c.List()), 1)
 	assert.NotNil(t, c.Get("test"))
 
 	n = createNode(t, "test2")
-	c.nodes[n.ID] = n
+	c.nodes[n.ID()] = n
 	assert.Equal(t, len(c.List()), 2)
 	assert.NotNil(t, c.Get("test2"))
 }
@@ -50,7 +50,7 @@ func TestContainerLookup(t *testing.T) {
 	}
 
 	n := createNode(t, "test-node", container)
-	c.nodes[n.ID] = n
+	c.nodes[n.ID()] = n
 
 	// Invalid lookup
 	assert.Nil(t, c.Container("invalid-id"))

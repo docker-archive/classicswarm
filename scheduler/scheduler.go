@@ -20,7 +20,7 @@ func New(strategy strategy.PlacementStrategy, filters []filter.Filter) *Schedule
 }
 
 // Find a nice home for our container.
-func (s *Scheduler) SelectNodeForContainer(nodes []*cluster.Node, config *dockerclient.ContainerConfig) (*cluster.Node, error) {
+func (s *Scheduler) SelectNodeForContainer(nodes []cluster.Node, config *dockerclient.ContainerConfig) (cluster.Node, error) {
 	accepted, err := filter.ApplyFilters(s.filters, config, nodes)
 	if err != nil {
 		return nil, err

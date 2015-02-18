@@ -8,46 +8,54 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testFixtures() (nodes []*cluster.Node) {
-	nodes = []*cluster.Node{
-		cluster.NewNode("node-0", 0),
-		cluster.NewNode("node-1", 0),
-		cluster.NewNode("node-2", 0),
-		cluster.NewNode("node-3", 0),
-	}
-	nodes[0].ID = "node-0-id"
-	nodes[0].Name = "node-0-name"
-	nodes[0].Labels = map[string]string{
-		"name":   "node0",
-		"group":  "1",
-		"region": "us-west",
-	}
+func testFixtures() []cluster.Node {
+	return []cluster.Node{
+		&FakeNode{
+			id:   "node-0-id",
+			name: "node-0-name",
+			addr: "node-0",
+			labels: map[string]string{
+				"name":   "node0",
+				"group":  "1",
+				"region": "us-west",
+			},
+		},
 
-	nodes[1].ID = "node-1-id"
-	nodes[1].Name = "node-1-name"
-	nodes[1].Labels = map[string]string{
-		"name":   "node1",
-		"group":  "1",
-		"region": "us-east",
-	}
+		&FakeNode{
+			id:   "node-1-id",
+			name: "node-1-name",
+			addr: "node-1",
+			labels: map[string]string{
+				"name":   "node1",
+				"group":  "1",
+				"region": "us-east",
+			},
+		},
 
-	nodes[2].ID = "node-2-id"
-	nodes[2].Name = "node-2-name"
-	nodes[2].Labels = map[string]string{
-		"name":   "node2",
-		"group":  "2",
-		"region": "eu",
+		&FakeNode{
+			id:   "node-2-id",
+			name: "node-2-name",
+			addr: "node-2",
+			labels: map[string]string{
+				"name":   "node2",
+				"group":  "2",
+				"region": "eu",
+			},
+		},
+
+		&FakeNode{
+			id:   "node-3-id",
+			name: "node-3-name",
+			addr: "node-3",
+		},
 	}
-	nodes[3].ID = "node-3-id"
-	nodes[3].Name = "node-3-name"
-	return
 }
 
 func TestConstrainteFilter(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []*cluster.Node
+		result []cluster.Node
 		err    error
 	)
 
@@ -57,67 +65,49 @@ func TestConstrainteFilter(t *testing.T) {
 	assert.Equal(t, result, nodes)
 
 	// Set a constraint that cannot be fullfilled and expect an error back.
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:does_not_exist==true"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:does_not_exist==true"}}, nodes)
 	assert.Error(t, err)
 
 	// Set a contraint that can only be filled by a single node.
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name==node1"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:name==node1"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
 	// This constraint can only be fullfilled by a subset of nodes.
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:group==1"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:group==1"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[2])
 
 	// Validate node pinning by id.
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:node==node-2-id"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:node==node-2-id"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[2])
 
 	// Validate node pinning by name.
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:node==node-1-name"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:node==node-1-name"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
 	// Make sure constraints are evaluated as logical ANDs.
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name==node0", "constraint:group==1"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:name==node0", "constraint:group==1"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
 	// Check matching
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:region==us"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:region==us"}}, nodes)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:region==us*"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:region==us*"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:region==*us*"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:region==*us*"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 }
@@ -126,35 +116,27 @@ func TestConstraintNotExpr(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []*cluster.Node
+		result []cluster.Node
 		err    error
 	)
 
 	// Check not (!) expression
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name!=node0"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:name!=node0"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 3)
 
 	// Check not does_not_exist. All should be found
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name!=does_not_exist"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:name!=does_not_exist"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 4)
 
 	// Check name must not start with n
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name!=n*"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:name!=n*"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 
 	// Check not with globber pattern
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:region!=us*"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:region!=us*"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 }
@@ -163,35 +145,27 @@ func TestConstraintRegExp(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []*cluster.Node
+		result []cluster.Node
 		err    error
 	)
 
 	// Check with regular expression /node\d/ matches node{0..2}
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name==/node\d/`},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{`constraint:name==/node\d/`}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 3)
 
 	// Check with regular expression /node\d/ matches node{0..2}
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name==/node[12]/`},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{`constraint:name==/node[12]/`}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	// Check with regular expression ! and regexp /node[12]/ matches node[0] and node[3]
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name!=/node[12]/`},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{`constraint:name!=/node[12]/`}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	// Validate node pinning by ! and regexp.
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:node!=/node-[01]-id/"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:node!=/node-[01]-id/"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 }
@@ -200,123 +174,57 @@ func TestFilterRegExpCaseInsensitive(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []*cluster.Node
+		result []cluster.Node
 		err    error
 	)
 
 	// Prepare node with a strange name
-	node3 := cluster.NewNode("node-3", 0)
-	node3.ID = "node-3-id"
-	node3.Name = "node-3-name"
-	node3.Labels = map[string]string{
-		"name":   "aBcDeF",
-		"group":  "2",
-		"region": "eu",
+	if n, ok := nodes[3].(*FakeNode); ok {
+		n.labels = map[string]string{
+			"name":   "aBcDeF",
+			"group":  "2",
+			"region": "eu",
+		}
 	}
-	nodes[3] = node3
 
 	// Case-sensitive, so not match
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name==/abcdef/`},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{`constraint:name==/abcdef/`}}, nodes)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 
 	// Match with case-insensitive
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name==/(?i)abcdef/`},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{`constraint:name==/(?i)abcdef/`}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[3])
-	assert.Equal(t, result[0].Labels["name"], "aBcDeF")
+	assert.Equal(t, result[0].Labels()["name"], "aBcDeF")
 
 	// Test ! filter combined with case insensitive
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:name!=/(?i)abc*/`},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{`constraint:name!=/(?i)abc*/`}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 3)
-}
-
-func TestFilterWithRelativeComparisons(t *testing.T) {
-	t.Skip()
-	var (
-		f      = ConstraintFilter{}
-		nodes  = testFixtures()
-		result []*cluster.Node
-		err    error
-	)
-
-	// Prepare node with a strange name
-	node3 := cluster.NewNode("node-3", 0)
-	node3.ID = "node-3-id"
-	node3.Name = "node-3-name"
-	node3.Labels = map[string]string{
-		"name":   "aBcDeF",
-		"group":  "4",
-		"kernel": "3.1",
-		"region": "eu",
-	}
-	nodes = append(nodes, node3)
-
-	// Check with less than or equal
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:group<=3`},
-	}, nodes)
-	assert.NoError(t, err)
-	assert.Len(t, result, 3)
-
-	// Check with greater than or equal
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:group>=4`},
-	}, nodes)
-	assert.NoError(t, err)
-	assert.Len(t, result, 1)
-
-	// Another gte check with a complex string
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:kernel>=3.0`},
-	}, nodes)
-	assert.NoError(t, err)
-	assert.Len(t, result, 1)
-	assert.Equal(t, result[0], nodes[3])
-	assert.Equal(t, result[0].Labels["kernel"], "3.1")
-
-	// Check with greater than or equal. This should match node-3-id.
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{`constraint:node>=node-3`},
-	}, nodes)
-	assert.NoError(t, err)
-	assert.Len(t, result, 1)
 }
 
 func TestFilterEquals(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []*cluster.Node
+		result []cluster.Node
 		err    error
 	)
 
 	// Check == comparison
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name==node0"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:name==node0"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 
 	// Test == with glob
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:region==us*"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:region==us*"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	// Validate node name with ==
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:node==node-1-name"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:node==node-1-name"}}, nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
@@ -326,19 +234,15 @@ func TestUnsupportedOperators(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []*cluster.Node
+		result []cluster.Node
 		err    error
 	)
 
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name=node0"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:name=node0"}}, nodes)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 
-	result, err = f.Filter(&dockerclient.ContainerConfig{
-		Env: []string{"constraint:name=!node0"},
-	}, nodes)
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:name=!node0"}}, nodes)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 }
