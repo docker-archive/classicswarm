@@ -49,9 +49,7 @@ func (s *TokenDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 		return nil, err
 	}
 
-	if resp.Body != nil {
-		defer resp.Body.Close()
-	}
+	defer resp.Body.Close()
 
 	var addrs []string
 	if resp.StatusCode == http.StatusOK {
@@ -81,9 +79,12 @@ func (s *TokenDiscoveryService) Register(addr string) error {
 	resp, err := http.Post(fmt.Sprintf("%s/%s/%s", s.url,
 		"clusters", s.token), "application/json", buf)
 
-	// Force connection close
+	if err != nil {
+		return err
+	}
+
 	resp.Body.Close()
-	return err
+	return nil
 }
 
 // CreateCluster returns a unique cluster token
