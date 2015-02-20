@@ -4,21 +4,22 @@ page_description: Swarm: a Docker-native clustering system
 page_keywords: docker, swarm, clustering
 ---
 
-# Docker Swarm: a Docker-native clustering system
+# Docker Swarm
 
-Docker `swarm` helps you control a cluster of Docker hosts (known as nodes)
-and expose them as a single "virtual" host.
+Docker Swarm is native clustering for Docker. It turns a pool of Docker hosts
+into a single, virtual host.
 
-The Docker `swarm` manager can be interacted with using the Docker API, which means
-any tool which can communicate with a Docker Daemon using that API, can control
-a Docker swarm transparently: dokku, fig, krane, flynn, deis, docker-ui, shipyard,
-drone.io, Jenkins... and of course the Docker client itself.
+Swarm serves the standard Docker API, so any tool which already communicates
+with a Docker daemon can use Swarm to transparently scale to multiple hosts:
+Dokku, Compose, Krane, Flynn, Deis, DockerUI, Shipyard, Drone, Jenkins... and,
+of course, the Docker client itself.
 
-Like the other Docker projects, `swarm` follows the "batteries included but removable"
-principle. It ships with a simple scheduling backend out of the box, and as initial
-development settles, an API will develop to enable pluggable backends. The goal is
-to provide a smooth out-of-box experience for simple use cases, and allow swapping
-in more powerful backends, like `Mesos`, for large scale production deployments.
+Like other Docker projects, Swarm follows the "batteries included but removable"
+principle. It ships with a simple scheduling backend out of the box, and as
+initial development settles, an API will develop to enable pluggable backends.
+The goal is to provide a smooth out-of-box experience for simple use cases, and
+allow swapping in more powerful backends, like Mesos, for large scale production
+deployments.
 
 ## Installation
 
