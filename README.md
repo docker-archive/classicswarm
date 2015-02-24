@@ -61,7 +61,7 @@ $ docker run --rm swarm create
 $ docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>
 
 # start the manager on any machine or your laptop
-$ docker run -t -p <swarm_port>:2375 -t swarm manage token://<cluster_id>
+$ docker run -d -p <swarm_port>:2375 swarm manage token://<cluster_id>
 
 # use the regular docker cli
 $ docker -H tcp://<swarm_ip:swarm_port> info
