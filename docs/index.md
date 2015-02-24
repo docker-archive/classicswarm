@@ -91,9 +91,9 @@ the certificates.
 
 ## Discovery services
 
-See the [Discovery service](../discovery) document for more information.
+See the [Discovery service](discovery.md) document for more information.
 
 ## Advanced Scheduling
 
-See [filters](../scheduler/filter) and [strategies](../scheduler/strategy) to learn
+See [filters](scheduler/filter.md) and [strategies](scheduler/strategy.md) to learn
 more about advanced scheduling.
