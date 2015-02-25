@@ -43,7 +43,8 @@ func TestCreateEntries(t *testing.T) {
 	assert.Equal(t, entries, []*Entry{})
 	assert.NoError(t, err)
 
-	entries, err = CreateEntries([]string{"127.0.0.1:2375", "127.0.0.2:2375"})
+	entries, err = CreateEntries([]string{"127.0.0.1:2375", "127.0.0.2:2375", ""})
+	assert.Equal(t, len(entries), 2)
 	assert.Equal(t, entries[0].String(), "127.0.0.1:2375")
 	assert.Equal(t, entries[1].String(), "127.0.0.2:2375")
 	assert.NoError(t, err)
