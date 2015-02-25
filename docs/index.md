@@ -97,3 +97,9 @@ See the [Discovery service](discovery.md) document for more information.
 
 See [filters](scheduler/filter.md) and [strategies](scheduler/strategy.md) to learn
 more about advanced scheduling.
+
+## Swarm API
+
+The [Docker Swarm API](API.md) is compatible with the [Docker
+remote API](http://docs.docker.com/reference/api/docker_remote_api/), and extends it
+with some new endpoints.
