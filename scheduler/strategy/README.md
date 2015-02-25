@@ -54,3 +54,11 @@ already. This allows us to start a container requiring 2G of RAM on `node-2`.
 ## Random strategy
 
 The Random strategy, as it's name says, chose a random node, it's used mainly for debug.
+
+## Docker Swarm documentation index
+
+
+- [User guide](./../index.md)
+- [Discovery options](./../discovery.md)
+- [Sheduler filters](./filter.md)
+- [Swarm API](./../API.md)
