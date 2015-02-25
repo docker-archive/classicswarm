@@ -84,6 +84,9 @@ func CreateEntries(addrs []string) ([]*Entry, error) {
 	}
 
 	for _, addr := range addrs {
+		if len(addr) == 0 {
+			continue
+		}
 		entry, err := NewEntry(addr)
 		if err != nil {
 			return nil, err
