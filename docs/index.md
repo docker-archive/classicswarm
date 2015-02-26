@@ -6,6 +6,9 @@ page_keywords: docker, swarm, clustering
 
 # Docker Swarm
 
+> **Note**: Swarm is currently in beta, so things are likely to change. We
+> don't recommend you use it in production yet.
+
 Docker Swarm is native clustering for Docker. It turns a pool of Docker hosts
 into a single, virtual host.
 
