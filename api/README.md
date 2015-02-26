@@ -55,3 +55,10 @@ DELETE "/images/{name:.*}"
 
 * `GET "/containers/json"` : Containers started from the `swarm` official image are hidden by default, use `all=1` to display them.
 
+
+## Docker Swarm documentation index
+
+- [User guide](./index.md)
+- [Discovery options](./discovery.md)
+- [Sheduler strategies](./scheduler/strategy.md)
+- [Sheduler filters](./scheduler/filter.md)
