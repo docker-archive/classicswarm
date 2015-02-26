@@ -258,3 +258,10 @@ different nodes, Swarm will prevent you from scheduling the container.
 ## Health Filter
 
 This filter will prevent scheduling containers on unhealthy nodes.
+
+## Docker Swarm documentation index
+
+- [User guide](./../index.md)
+- [Discovery options](./../discovery.md)
+- [Sheduler strategies](./strategy.md)
+- [Swarm API](./../API.md)

@@ -138,8 +138,8 @@ $ swarm list zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
 ```bash
 # start the manager on any machine or your laptop
 $ swarm manage -H <swarm_ip:swarm_port> nodes://<node_ip1:2375>,<node_ip2:2375>
-#or
-$ swarm manage -H <swarm_ip:swarm_port> nodes://<node_ip1:2375>,<node_ip2:2375>
+# or
+$ swarm manage -H <swarm_ip:swarm_port> <node_ip1:2375>,<node_ip2:2375>
 
 # use the regular docker cli
 $ docker -H <swarm_ip:swarm_port> info
@@ -149,7 +149,7 @@ $ docker -H <swarm_ip:swarm_port> logs ...
 ...
 ```
 
-## Contributing
+## Contributing a new discovery backend
 
 Contributing a new discovery backend is easy,
 simply implements this interface:
@@ -163,17 +163,22 @@ type DiscoveryService interface {
 }
 ```
 
-## Extra tips
-
 ### Initialize
-take the `discovery` without the scheme and a heartbeat (in seconds)
+The parameters are `discovery` location without the scheme and a heartbeat (in seconds)
 
 ### Fetch
-returns the list of all the nodes from the discovery
+Returns the list of all the nodes from the discovery
 
 ### Watch
-triggers an update (`Fetch`),it can happen either via
+Triggers an update (`Fetch`). This can happen either via
 a timer (like `token`) or use backend specific features (like `etcd`)
 
 ### Register
-add a new node to the discovery
+Add a new node to the discovery service.
+
+## Docker Swarm documentation index
+
+- [User guide](./index.md)
+- [Sheduler strategies](./scheduler/strategy.md)
+- [Sheduler filters](./scheduler/filter.md)
+- [Swarm API](./API.md)
