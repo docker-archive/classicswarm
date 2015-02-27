@@ -31,13 +31,21 @@ docker pull swarm
 Alternatively, you can download and install from source instead of using the
 Docker image.
 
-Ensure you have golang and git client installed (e.g. `apt-get install golang git` on Ubuntu).
-You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
-
-The install `swarm` binary to your `$GOPATH` directory.
+Ensure you have golang, godep and git client installed. For example, on Ubuntu you'd run:
 
 ```bash
-go get -u github.com/docker/swarm
+apt-get install golang git
+go get github.com/tools/godep
+```
+
+You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
+
+The install the `swarm` binary:
+
+```bash
+git clone https://github.com/docker/swarm
+cd swarm
+godep go install .
 ```
 
 ###3 - Nodes setup
