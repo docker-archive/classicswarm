@@ -78,8 +78,8 @@ func (client *MockClient) PullImage(name string, auth *dockerclient.AuthConfig) 
 	return args.Error(0)
 }
 
-func (client *MockClient) RemoveContainer(id string, force bool) error {
-	args := client.Mock.Called(id, force)
+func (client *MockClient) RemoveContainer(id string, force, volumes bool) error {
+	args := client.Mock.Called(id, force, volumes)
 	return args.Error(0)
 }
 

@@ -21,7 +21,7 @@ type Client interface {
 	StopAllMonitorEvents()
 	Version() (*Version, error)
 	PullImage(name string, auth *AuthConfig) error
-	RemoveContainer(id string, force bool) error
+	RemoveContainer(id string, force, volumes bool) error
 	ListImages() ([]*Image, error)
 	RemoveImage(name string) error
 	PauseContainer(name string) error
