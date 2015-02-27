@@ -7,5 +7,4 @@ type Options struct {
 	OvercommitRatio float64
 	Discovery       string
 	Heartbeat       int
-	EventsHandler   EventHandler
 }
