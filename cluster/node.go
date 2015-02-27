@@ -365,7 +365,7 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 
 // Destroy and remove a container from the node.
 func (n *Node) Destroy(container *Container, force bool) error {
-	if err := n.client.RemoveContainer(container.Id, force); err != nil {
+	if err := n.client.RemoveContainer(container.Id, force, true); err != nil {
 		return err
 	}
 
