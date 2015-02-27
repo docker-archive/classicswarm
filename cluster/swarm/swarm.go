@@ -16,23 +16,23 @@ import (
 type SwarmCluster struct {
 	sync.RWMutex
 
-	nodes     *Nodes
-	scheduler *scheduler.Scheduler
-	options   *cluster.Options
-	store     *state.Store
+	eventHandler cluster.EventHandler
+	nodes        map[string]*Node
+	scheduler    *scheduler.Scheduler
+	options      *cluster.Options
+	store        *state.Store
 }
 
-func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, options *cluster.Options) cluster.Cluster {
+func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, eventhandler cluster.EventHandler, options *cluster.Options) cluster.Cluster {
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &SwarmCluster{
-		nodes:     NewNodes(),
-		scheduler: scheduler,
-		options:   options,
-		store:     store,
+		eventHandler: eventhandler,
+		nodes:        make(map[string]*Node),
+		scheduler:    scheduler,
+		options:      options,
+		store:        store,
 	}
-
-	cluster.nodes.Events(options.EventsHandler)
 
 	// get the list of entries from the discovery service
 	go func() {
@@ -54,13 +54,21 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, options *clu
 	return cluster
 }
 
+// callback for the events
+func (s *SwarmCluster) Handle(e *cluster.Event) error {
+	if err := s.eventHandler.Handle(e); err != nil {
+		log.Error(err)
+	}
+	return nil
+}
+
 // Schedule a brand new container into the cluster.
 func (s *SwarmCluster) CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error) {
 
 	s.RLock()
 	defer s.RUnlock()
 
-	node, err := s.scheduler.SelectNodeForContainer(s.nodes.List(), config)
+	node, err := s.scheduler.SelectNodeForContainer(s.listNodes(), config)
 	if err != nil {
 		return nil, err
 	}
@@ -108,41 +116,124 @@ func (s *SwarmCluster) RemoveContainer(container *cluster.Container, force bool)
 func (s *SwarmCluster) newEntries(entries []*discovery.Entry) {
 	for _, entry := range entries {
 		go func(m *discovery.Entry) {
-			if s.nodes.Get(m.String()) == nil {
+			if s.getNode(m.String()) == nil {
 				n := NewNode(m.String(), s.options.OvercommitRatio)
 				if err := n.Connect(s.options.TLSConfig); err != nil {
 					log.Error(err)
 					return
 				}
-				if err := s.nodes.Add(n); err != nil {
-					log.Error(err)
+				s.Lock()
+
+				if old, exists := s.nodes[n.id]; exists {
+					s.Unlock()
+					if old.ip != n.ip {
+						log.Errorf("ID duplicated. %s shared by %s and %s", n.id, old.IP(), n.IP())
+					} else {
+						log.Errorf("node %q is already registered", n.id)
+					}
 					return
 				}
+				s.nodes[n.id] = n
+				if err := n.Events(s); err != nil {
+					log.Error(err)
+					s.Unlock()
+					return
+				}
+				s.Unlock()
+
 			}
 		}(entry)
 	}
 }
 
+func (s *SwarmCluster) getNode(addr string) *Node {
+	for _, node := range s.nodes {
+		if node.addr == addr {
+			return node
+		}
+	}
+	return nil
+}
+
+// Containers returns all the images in the cluster.
 func (s *SwarmCluster) Images() []*cluster.Image {
-	return s.nodes.Images()
+	s.RLock()
+	defer s.RUnlock()
+
+	out := []*cluster.Image{}
+	for _, n := range s.nodes {
+		out = append(out, n.Images()...)
+	}
+
+	return out
 }
 
+// Image returns an image with IdOrName in the cluster
 func (s *SwarmCluster) Image(IdOrName string) *cluster.Image {
-	return s.nodes.Image(IdOrName)
+	// Abort immediately if the name is empty.
+	if len(IdOrName) == 0 {
+		return nil
+	}
+
+	s.RLock()
+	defer s.RUnlock()
+	for _, n := range s.nodes {
+		if image := n.Image(IdOrName); image != nil {
+			return image
+		}
+	}
+
+	return nil
 }
 
+// Containers returns all the containers in the cluster.
 func (s *SwarmCluster) Containers() []*cluster.Container {
-	return s.nodes.Containers()
+	s.RLock()
+	defer s.RUnlock()
+
+	out := []*cluster.Container{}
+	for _, n := range s.nodes {
+		out = append(out, n.Containers()...)
+	}
+
+	return out
 }
 
+// Container returns the container with IdOrName in the cluster
 func (s *SwarmCluster) Container(IdOrName string) *cluster.Container {
-	return s.nodes.Container(IdOrName)
+	// Abort immediately if the name is empty.
+	if len(IdOrName) == 0 {
+		return nil
+	}
+
+	s.RLock()
+	defer s.RUnlock()
+	for _, n := range s.nodes {
+		if container := n.Container(IdOrName); container != nil {
+			return container
+		}
+	}
+
+	return nil
+}
+
+// nodes returns all the nodess in the cluster.
+func (s *SwarmCluster) listNodes() []cluster.Node {
+	s.RLock()
+	defer s.RUnlock()
+
+	out := []cluster.Node{}
+	for _, n := range s.nodes {
+		out = append(out, n)
+	}
+
+	return out
 }
 
 func (s *SwarmCluster) Info() [][2]string {
-	info := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(s.nodes.List()))}}
+	info := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(s.nodes))}}
 
-	for _, node := range s.nodes.List() {
+	for _, node := range s.nodes {
 		info = append(info, [2]string{node.Name(), node.Addr()})
 		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(node.Containers()))})
 		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", node.UsedCpus(), node.TotalCpus())})

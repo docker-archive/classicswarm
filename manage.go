@@ -126,14 +126,13 @@ func manage(c *cli.Context) {
 		OvercommitRatio: c.Float64("overcommit"),
 		Discovery:       dflag,
 		Heartbeat:       c.Int("heartbeat"),
-		EventsHandler:   eventsHandler,
 	}
 
 	var cluster cluster.Cluster
 
 	switch c.String("cluster") {
 	case "swarm":
-		cluster = swarm.NewCluster(sched, store, options)
+		cluster = swarm.NewCluster(sched, store, eventsHandler, options)
 	case "mesos":
 		cluster = mesos.NewCluster(sched, options)
 	default:
