@@ -13,7 +13,7 @@ import (
 type AffinityFilter struct {
 }
 
-func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
+func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	affinities, err := parseExprs("affinity", config.Env)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*c
 	for _, affinity := range affinities {
 		log.Debugf("matching affinity: %s%s%s", affinity.key, OPERATORS[affinity.operator], affinity.value)
 
-		candidates := []*cluster.Node{}
+		candidates := []cluster.Node{}
 		for _, node := range nodes {
 			switch affinity.key {
 			case "container":

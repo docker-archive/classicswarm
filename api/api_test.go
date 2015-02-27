@@ -2,20 +2,17 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/version"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/scheduler"
-	"github.com/docker/swarm/version"
-	"github.com/stretchr/testify/assert"
 )
 
-func serveRequest(c *cluster.Cluster, s *scheduler.Scheduler, w http.ResponseWriter, req *http.Request) error {
+func serveRequest(c cluster.Cluster, w http.ResponseWriter, req *http.Request) error {
 	context := &context{
-		cluster:   c,
-		scheduler: s,
+		cluster: c,
 	}
 
 	r := createRouter(context, false)
@@ -28,7 +25,7 @@ func TestGetVersion(t *testing.T) {
 	req, err := http.NewRequest("GET", "/version", nil)
 	assert.NoError(t, err)
 
-	assert.NoError(t, serveRequest(nil, nil, r, req))
+	assert.NoError(t, serveRequest(nil, r, req))
 	assert.Equal(t, r.Code, http.StatusOK)
 
 	v := struct {
