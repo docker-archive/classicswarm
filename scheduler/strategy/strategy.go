@@ -12,7 +12,7 @@ type PlacementStrategy interface {
 	Initialize() error
 	// Given a container configuration and a set of nodes, select the target
 	// node where the container should be scheduled.
-	PlaceContainer(config *dockerclient.ContainerConfig, nodes []*cluster.Node) (*cluster.Node, error)
+	PlaceContainer(config *dockerclient.ContainerConfig, nodes []cluster.Node) (cluster.Node, error)
 }
 
 var (

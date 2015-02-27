@@ -94,4 +94,9 @@ var (
 		Usage: "filter to use [constraint, affinity, health, port, dependency]",
 		Value: &flFilterValue,
 	}
+	flCluster = cli.StringFlag{
+		Name:  "cluster, c",
+		Usage: "cluster to use [swarm, mesos]",
+		Value: "swarm",
+	}
 )

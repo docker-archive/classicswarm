@@ -13,10 +13,10 @@ import (
 type PortFilter struct {
 }
 
-func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []*cluster.Node) ([]*cluster.Node, error) {
+func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	for _, port := range config.HostConfig.PortBindings {
 		for _, binding := range port {
-			candidates := []*cluster.Node{}
+			candidates := []cluster.Node{}
 			for _, node := range nodes {
 				if !p.portAlreadyInUse(node, binding) {
 					candidates = append(candidates, node)
@@ -31,7 +31,7 @@ func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []*clust
 	return nodes, nil
 }
 
-func (p *PortFilter) portAlreadyInUse(node *cluster.Node, requested dockerclient.PortBinding) bool {
+func (p *PortFilter) portAlreadyInUse(node cluster.Node, requested dockerclient.PortBinding) bool {
 	for _, c := range node.Containers() {
 		// HostConfig.PortBindings contains the requested ports.
 		// NetworkSettings.Ports contains the actual ports.

@@ -11,7 +11,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/discovery"
+	"github.com/docker/swarm/cluster/swarm"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
@@ -97,9 +97,6 @@ func manage(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	cluster := cluster.NewCluster(store, tlsConfig, c.Float64("overcommit"))
-	cluster.Events(&logHandler{})
-
 	dflag := getDiscovery(c)
 	if dflag == "" {
 		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
@@ -120,33 +117,22 @@ func manage(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	// get the list of nodes from the discovery service
-	go func() {
-		d, err := discovery.New(dflag, c.Int("heartbeat"))
-		if err != nil {
-			log.Fatal(err)
-		}
+	sched := scheduler.New(s, fs)
 
-		nodes, err := d.Fetch()
-		if err != nil {
-			log.Fatal(err)
+	eventsHandler := api.NewEventsHandler()
+	options := &cluster.Options{
+		TLSConfig:       tlsConfig,
+		OvercommitRatio: c.Float64("overcommit"),
+		Discovery:       dflag,
+		Heartbeat:       c.Int("heartbeat"),
+	}
 
-		}
-		cluster.UpdateNodes(nodes)
-
-		go d.Watch(cluster.UpdateNodes)
-	}()
-
-	sched := scheduler.NewScheduler(
-		cluster,
-		s,
-		fs,
-	)
+	cluster := swarm.NewCluster(sched, store, eventsHandler, options)
 
 	// see https://github.com/codegangsta/cli/issues/160
 	hosts := c.StringSlice("host")
 	if c.IsSet("host") || c.IsSet("H") {
 		hosts = hosts[1:]
 	}
-	log.Fatal(api.ListenAndServe(cluster, sched, hosts, c.Bool("cors"), tlsConfig))
+	log.Fatal(api.ListenAndServe(cluster, hosts, c.Bool("cors"), tlsConfig, eventsHandler))
 }
