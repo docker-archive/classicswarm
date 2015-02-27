@@ -22,6 +22,7 @@ var (
 
 func init() {
 	strategies = map[string]PlacementStrategy{
+		"balanced":   &BalancedPlacementStrategy{},
 		"binpacking": &BinPackingPlacementStrategy{},
 		"random":     &RandomPlacementStrategy{},
 	}

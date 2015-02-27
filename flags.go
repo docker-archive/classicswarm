@@ -81,7 +81,7 @@ var (
 	}
 	flStrategy = cli.StringFlag{
 		Name:  "strategy",
-		Usage: "placement strategy to use [binpacking, random]",
+		Usage: "placement strategy to use [balanced, binpacking, random]",
 		Value: "binpacking",
 	}
 
