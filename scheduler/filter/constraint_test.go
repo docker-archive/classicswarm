@@ -43,7 +43,7 @@ func testFixtures() (nodes []*cluster.Node) {
 	return
 }
 
-func TestConstrainteFilter(t *testing.T) {
+func TestConstraintFilter(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
@@ -320,6 +320,49 @@ func TestFilterEquals(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
+}
+
+func TestConstraintAddr(t *testing.T) {
+	var (
+		f      = ConstraintFilter{}
+		nodes  = testFixtures()
+		result []*cluster.Node
+		err    error
+	)
+
+	node3_0 := cluster.NewNode("node-3", 0)
+	node3_0.ID = "node-3-0-id"
+	node3_0.Name = "node-3-name"
+	node3_0.Labels = map[string]string{
+		"name":   "node3-0",
+		"group":  "2",
+		"region": "eu",
+	}
+	node3_1 := cluster.NewNode("node-3:2375", 0)
+	node3_1.ID = "node-3-1-id"
+	node3_1.Name = "node-3-name"
+	node3_1.Labels = map[string]string{
+		"name":   "node-3-1",
+		"group":  "2",
+		"region": "eu",
+	}
+	nodes = append(nodes, node3_0, node3_1)
+
+	// Validate with exact node addr match
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:node==node-3:2375"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], node3_1)
+
+	// Validate with host/ip part of the node's addr
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"constraint:node==node-3"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, result[0], node3_0)
 }
 
 func TestUnsupportedOperators(t *testing.T) {
