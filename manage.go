@@ -11,7 +11,6 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/cluster/mesos"
 	"github.com/docker/swarm/cluster/swarm"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
@@ -128,16 +127,7 @@ func manage(c *cli.Context) {
 		Heartbeat:       c.Int("heartbeat"),
 	}
 
-	var cluster cluster.Cluster
-
-	switch c.String("cluster") {
-	case "swarm":
-		cluster = swarm.NewCluster(sched, store, eventsHandler, options)
-	case "mesos":
-		cluster = mesos.NewCluster(sched, options)
-	default:
-		log.Fatalf("cluster %q not supported", c.String("cluster"))
-	}
+	cluster := swarm.NewCluster(sched, store, eventsHandler, options)
 
 	// see https://github.com/codegangsta/cli/issues/160
 	hosts := c.StringSlice("host")

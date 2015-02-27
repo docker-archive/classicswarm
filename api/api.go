@@ -318,6 +318,7 @@ func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
 	candidates := []cluster.Node{}
 
 	// FIXME: doesn't work if there are no container in the cluster
+	// remove proxyRandom and implemente the features locally
 	for _, container := range c.cluster.Containers() {
 		candidates = append(candidates, container.Node)
 	}
