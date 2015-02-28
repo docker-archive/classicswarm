@@ -19,8 +19,8 @@ You can choose the strategy you want to use with the `--strategy` flag of `swarm
 ## BinPacking strategy
 
 The BinPacking strategy will rank the nodes using their CPU and RAM available and will return the
-node the most packed already. This avoid fragementation, it will leave room for bigger containers
-on usunsed machines.
+node the most packed already. This avoid fragmentation, it will leave room for bigger containers
+on unused machines.
 
 For instance, let's says that both `node-1` and `node-2` have 2G of RAM:
 
@@ -53,12 +53,12 @@ already. This allows us to start a container requiring 2G of RAM on `node-2`.
 
 ## Random strategy
 
-The Random strategy, as it's name says, chose a random node, it's used mainly for debug.
+The Random strategy, as it's name says, chooses a random node, it's used mainly for debug.
 
 ## Docker Swarm documentation index
 
 
 - [User guide](./../index.md)
 - [Discovery options](./../discovery.md)
-- [Sheduler filters](./filter.md)
+- [Scheduler filters](./filter.md)
 - [Swarm API](./../API.md)
