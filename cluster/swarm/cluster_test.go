@@ -21,7 +21,7 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 }
 
 func TestContainerLookup(t *testing.T) {
-	s := &SwarmCluster{
+	c := &Cluster{
 		nodes: make(map[string]*Node),
 	}
 	container := dockerclient.Container{
@@ -30,19 +30,19 @@ func TestContainerLookup(t *testing.T) {
 	}
 
 	n := createNode(t, "test-node", container)
-	s.nodes[n.ID()] = n
+	c.nodes[n.ID()] = n
 
 	// Invalid lookup
-	assert.Nil(t, s.Container("invalid-id"))
-	assert.Nil(t, s.Container(""))
+	assert.Nil(t, c.Container("invalid-id"))
+	assert.Nil(t, c.Container(""))
 	// Container ID lookup.
-	assert.NotNil(t, s.Container("container-id"))
+	assert.NotNil(t, c.Container("container-id"))
 	// Container ID prefix lookup.
-	assert.NotNil(t, s.Container("container-"))
+	assert.NotNil(t, c.Container("container-"))
 	// Container name lookup.
-	assert.NotNil(t, s.Container("container-name1"))
-	assert.NotNil(t, s.Container("container-name2"))
+	assert.NotNil(t, c.Container("container-name1"))
+	assert.NotNil(t, c.Container("container-name2"))
 	// Container node/name matching.
-	assert.NotNil(t, s.Container("test-node/container-name1"))
-	assert.NotNil(t, s.Container("test-node/container-name2"))
+	assert.NotNil(t, c.Container("test-node/container-name1"))
+	assert.NotNil(t, c.Container("test-node/container-name2"))
 }
