@@ -22,8 +22,8 @@ const (
 	requestTimeout = 10 * time.Second
 )
 
-func NewNode(addr string, overcommitRatio float64) *Node {
-	e := &Node{
+func NewNode(addr string, overcommitRatio float64) *node {
+	e := &node{
 		addr:            addr,
 		labels:          make(map[string]string),
 		ch:              make(chan bool),
@@ -34,7 +34,7 @@ func NewNode(addr string, overcommitRatio float64) *Node {
 	return e
 }
 
-type Node struct {
+type node struct {
 	sync.RWMutex
 
 	id     string
@@ -54,29 +54,29 @@ type Node struct {
 	overcommitRatio int64
 }
 
-func (n *Node) ID() string {
+func (n *node) ID() string {
 	return n.id
 }
 
-func (n *Node) IP() string {
+func (n *node) IP() string {
 	return n.ip
 }
 
-func (n *Node) Addr() string {
+func (n *node) Addr() string {
 	return n.addr
 }
 
-func (n *Node) Name() string {
+func (n *node) Name() string {
 	return n.name
 }
 
-func (n *Node) Labels() map[string]string {
+func (n *node) Labels() map[string]string {
 	return n.labels
 }
 
 // Connect will initialize a connection to the Docker daemon running on the
 // host, gather machine specs (memory, cpu, ...) and monitor state changes.
-func (n *Node) Connect(config *tls.Config) error {
+func (n *node) Connect(config *tls.Config) error {
 	host, _, err := net.SplitHostPort(n.addr)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func (n *Node) Connect(config *tls.Config) error {
 	return n.connectClient(c)
 }
 
-func (n *Node) connectClient(client dockerclient.Client) error {
+func (n *node) connectClient(client dockerclient.Client) error {
 	n.client = client
 
 	// Fetch the engine labels.
@@ -106,7 +106,7 @@ func (n *Node) connectClient(client dockerclient.Client) error {
 	}
 
 	// Force a state update before returning.
-	if err := n.RefreshContainers(true); err != nil {
+	if err := n.refreshContainers(true); err != nil {
 		n.client = nil
 		return err
 	}
@@ -119,7 +119,7 @@ func (n *Node) connectClient(client dockerclient.Client) error {
 	// Start the update loop.
 	go n.refreshLoop()
 
-	// Start monitoring events from the Node.
+	// Start monitoring events from the node.
 	n.client.StartMonitorEvents(n.handler, nil)
 	n.emitEvent("node_connect")
 
@@ -127,16 +127,16 @@ func (n *Node) connectClient(client dockerclient.Client) error {
 }
 
 // IsConnected returns true if the engine is connected to a remote docker API
-func (n *Node) IsConnected() bool {
+func (n *node) IsConnected() bool {
 	return n.client != nil
 }
 
-func (n *Node) IsHealthy() bool {
+func (n *node) IsHealthy() bool {
 	return n.healthy
 }
 
 // Gather node specs (CPU, memory, constraints, ...).
-func (n *Node) updateSpecs() error {
+func (n *node) updateSpecs() error {
 	info, err := n.client.Info()
 	if err != nil {
 		return err
@@ -144,7 +144,7 @@ func (n *Node) updateSpecs() error {
 	// Older versions of Docker don't expose the ID field and are not supported
 	// by Swarm.  Catch the error ASAP and refuse to connect.
 	if len(info.ID) == 0 {
-		return fmt.Errorf("Node %s is running an unsupported version of Docker Engine. Please upgrade.", n.addr)
+		return fmt.Errorf("node %s is running an unsupported version of Docker Engine. Please upgrade.", n.addr)
 	}
 	n.id = info.ID
 	n.name = info.Name
@@ -164,7 +164,7 @@ func (n *Node) updateSpecs() error {
 }
 
 // Refresh the list of images on the node.
-func (n *Node) refreshImages() error {
+func (n *node) refreshImages() error {
 	images, err := n.client.ListImages()
 	if err != nil {
 		return err
@@ -180,7 +180,7 @@ func (n *Node) refreshImages() error {
 
 // Refresh the list and status of containers running on the node. If `full` is
 // true, each container will be inspected.
-func (n *Node) RefreshContainers(full bool) error {
+func (n *node) refreshContainers(full bool) error {
 	containers, err := n.client.ListContainers(true, false, "")
 	if err != nil {
 		return err
@@ -204,7 +204,7 @@ func (n *Node) RefreshContainers(full bool) error {
 
 // Refresh the status of a container running on the node. If `full` is true,
 // the container will be inspected.
-func (n *Node) RefreshContainer(ID string, full bool) error {
+func (n *node) refreshContainer(ID string, full bool) error {
 	containers, err := n.client.ListContainers(true, false, fmt.Sprintf("{%q:[%q]}", "id", ID))
 	if err != nil {
 		return err
@@ -212,7 +212,7 @@ func (n *Node) RefreshContainer(ID string, full bool) error {
 
 	if len(containers) > 1 {
 		// We expect one container, if we get more than one, trigger a full refresh.
-		return n.RefreshContainers(full)
+		return n.refreshContainers(full)
 	}
 
 	if len(containers) == 0 {
@@ -228,7 +228,7 @@ func (n *Node) RefreshContainer(ID string, full bool) error {
 	return err
 }
 
-func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*cluster.Container, full bool) (map[string]*cluster.Container, error) {
+func (n *node) updateContainer(c dockerclient.Container, containers map[string]*cluster.Container, full bool) (map[string]*cluster.Container, error) {
 	var container *cluster.Container
 
 	n.Lock()
@@ -265,18 +265,18 @@ func (n *Node) updateContainer(c dockerclient.Container, containers map[string]*
 	return containers, nil
 }
 
-func (n *Node) RefreshContainersAsync() {
+func (n *node) refreshContainersAsync() {
 	n.ch <- true
 }
 
-func (n *Node) refreshLoop() {
+func (n *node) refreshLoop() {
 	for {
 		var err error
 		select {
 		case <-n.ch:
-			err = n.RefreshContainers(false)
+			err = n.refreshContainers(false)
 		case <-time.After(stateRefreshPeriod):
-			err = n.RefreshContainers(false)
+			err = n.refreshContainers(false)
 		}
 
 		if err == nil {
@@ -304,7 +304,7 @@ func (n *Node) refreshLoop() {
 	}
 }
 
-func (n *Node) emitEvent(event string) {
+func (n *node) emitEvent(event string) {
 	// If there is no event handler registered, abort right now.
 	if n.eventHandler == nil {
 		return
@@ -321,7 +321,7 @@ func (n *Node) emitEvent(event string) {
 }
 
 // Return the sum of memory reserved by containers.
-func (n *Node) UsedMemory() int64 {
+func (n *node) UsedMemory() int64 {
 	var r int64 = 0
 	n.RLock()
 	for _, c := range n.containers {
@@ -332,7 +332,7 @@ func (n *Node) UsedMemory() int64 {
 }
 
 // Return the sum of CPUs reserved by containers.
-func (n *Node) UsedCpus() int64 {
+func (n *node) UsedCpus() int64 {
 	var r int64 = 0
 	n.RLock()
 	for _, c := range n.containers {
@@ -342,15 +342,15 @@ func (n *Node) UsedCpus() int64 {
 	return r
 }
 
-func (n *Node) TotalMemory() int64 {
+func (n *node) TotalMemory() int64 {
 	return n.Memory + (n.Memory * n.overcommitRatio / 100)
 }
 
-func (n *Node) TotalCpus() int64 {
+func (n *node) TotalCpus() int64 {
 	return n.Cpus + (n.Cpus * n.overcommitRatio / 100)
 }
 
-func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*cluster.Container, error) {
+func (n *node) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*cluster.Container, error) {
 	var (
 		err    error
 		id     string
@@ -379,7 +379,7 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
-	n.RefreshContainer(id, true)
+	n.refreshContainer(id, true)
 
 	n.RLock()
 	defer n.RUnlock()
@@ -388,7 +388,7 @@ func (n *Node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 }
 
 // Destroy and remove a container from the node.
-func (n *Node) Destroy(container *cluster.Container, force bool) error {
+func (n *node) Destroy(container *cluster.Container, force bool) error {
 	if err := n.client.RemoveContainer(container.Id, force, true); err != nil {
 		return err
 	}
@@ -402,7 +402,7 @@ func (n *Node) Destroy(container *cluster.Container, force bool) error {
 	return nil
 }
 
-func (n *Node) Pull(image string) error {
+func (n *node) Pull(image string) error {
 	if err := n.client.PullImage(image, nil); err != nil {
 		return err
 	}
@@ -410,7 +410,7 @@ func (n *Node) Pull(image string) error {
 }
 
 // Register an event handler.
-func (n *Node) Events(h cluster.EventHandler) error {
+func (n *node) Events(h cluster.EventHandler) error {
 	if n.eventHandler != nil {
 		return errors.New("event handler already set")
 	}
@@ -419,7 +419,7 @@ func (n *Node) Events(h cluster.EventHandler) error {
 }
 
 // Containers returns all the containers in the node.
-func (n *Node) Containers() []*cluster.Container {
+func (n *node) Containers() []*cluster.Container {
 	containers := []*cluster.Container{}
 	n.RLock()
 	for _, container := range n.containers {
@@ -430,7 +430,7 @@ func (n *Node) Containers() []*cluster.Container {
 }
 
 // Container returns the container with IdOrName in the node.
-func (n *Node) Container(IdOrName string) *cluster.Container {
+func (n *node) Container(IdOrName string) *cluster.Container {
 	// Abort immediately if the name is empty.
 	if len(IdOrName) == 0 {
 		return nil
@@ -456,7 +456,7 @@ func (n *Node) Container(IdOrName string) *cluster.Container {
 	return nil
 }
 
-func (n *Node) Images() []*cluster.Image {
+func (n *node) Images() []*cluster.Image {
 	images := []*cluster.Image{}
 	n.RLock()
 	for _, image := range n.images {
@@ -467,7 +467,7 @@ func (n *Node) Images() []*cluster.Image {
 }
 
 // Image returns the image with IdOrName in the node
-func (n *Node) Image(IdOrName string) *cluster.Image {
+func (n *node) Image(IdOrName string) *cluster.Image {
 	n.RLock()
 	defer n.RUnlock()
 
@@ -485,11 +485,11 @@ func (n *Node) Image(IdOrName string) *cluster.Image {
 	return nil
 }
 
-func (n *Node) String() string {
+func (n *node) String() string {
 	return fmt.Sprintf("node %s addr %s", n.id, n.addr)
 }
 
-func (n *Node) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
+func (n *node) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
 	// Something changed - refresh our internal state.
 	switch ev.Status {
 	case "pull", "untag", "delete":
@@ -499,10 +499,10 @@ func (n *Node) handler(ev *dockerclient.Event, _ chan error, args ...interface{}
 	case "start", "die":
 		// If the container is started or stopped, we have to do an inspect in
 		// order to get the new NetworkSettings.
-		n.RefreshContainer(ev.Id, true)
+		n.refreshContainer(ev.Id, true)
 	default:
 		// Otherwise, do a "soft" refresh of the container.
-		n.RefreshContainer(ev.Id, false)
+		n.refreshContainer(ev.Id, false)
 	}
 
 	// If there is no event handler registered, abort right now.
@@ -519,7 +519,7 @@ func (n *Node) handler(ev *dockerclient.Event, _ chan error, args ...interface{}
 }
 
 // Inject a container into the internal state.
-func (n *Node) AddContainer(container *cluster.Container) error {
+func (n *node) AddContainer(container *cluster.Container) error {
 	n.Lock()
 	defer n.Unlock()
 
@@ -531,7 +531,7 @@ func (n *Node) AddContainer(container *cluster.Container) error {
 }
 
 // Inject an image into the internal state.
-func (n *Node) AddImage(image *cluster.Image) {
+func (n *node) AddImage(image *cluster.Image) {
 	n.Lock()
 	defer n.Unlock()
 
@@ -539,7 +539,7 @@ func (n *Node) AddImage(image *cluster.Image) {
 }
 
 // Remove a container from the internal test.
-func (n *Node) RemoveContainer(container *cluster.Container) error {
+func (n *node) RemoveContainer(container *cluster.Container) error {
 	n.Lock()
 	defer n.Unlock()
 
@@ -551,7 +551,7 @@ func (n *Node) RemoveContainer(container *cluster.Container) error {
 }
 
 // Wipes the internal container state.
-func (n *Node) CleanupContainers() {
+func (n *node) CleanupContainers() {
 	n.Lock()
 	n.containers = make(map[string]*cluster.Container)
 	n.Unlock()

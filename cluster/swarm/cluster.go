@@ -17,7 +17,7 @@ type Cluster struct {
 	sync.RWMutex
 
 	eventHandler cluster.EventHandler
-	nodes        map[string]*Node
+	nodes        map[string]*node
 	scheduler    *scheduler.Scheduler
 	options      *cluster.Options
 	store        *state.Store
@@ -28,7 +28,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, eventhandler
 
 	cluster := &Cluster{
 		eventHandler: eventhandler,
-		nodes:        make(map[string]*Node),
+		nodes:        make(map[string]*node),
 		scheduler:    scheduler,
 		options:      options,
 		store:        store,
@@ -68,13 +68,13 @@ func (c *Cluster) CreateContainer(config *dockerclient.ContainerConfig, name str
 	c.RLock()
 	defer c.RUnlock()
 
-	node, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
 	if err != nil {
 		return nil, err
 	}
 
-	if n, ok := node.(*Node); ok {
-		container, err := n.Create(config, name, true)
+	if nn, ok := n.(*node); ok {
+		container, err := nn.Create(config, name, true)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +96,7 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 	c.Lock()
 	defer c.Unlock()
 
-	if n, ok := container.Node.(*Node); ok {
+	if n, ok := container.Node.(*node); ok {
 		if err := n.Destroy(container, force); err != nil {
 			return err
 		}
@@ -146,7 +146,7 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 	}
 }
 
-func (c *Cluster) getNode(addr string) *Node {
+func (c *Cluster) getNode(addr string) *node {
 	for _, node := range c.nodes {
 		if node.addr == addr {
 			return node
