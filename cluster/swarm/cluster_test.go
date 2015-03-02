@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *Node {
+func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *node {
 	node := NewNode(ID, 0)
 	node.name = ID
 	node.id = ID
@@ -22,7 +22,7 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 
 func TestContainerLookup(t *testing.T) {
 	c := &Cluster{
-		nodes: make(map[string]*Node),
+		nodes: make(map[string]*node),
 	}
 	container := dockerclient.Container{
 		Id:    "container-id",
