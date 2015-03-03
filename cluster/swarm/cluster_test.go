@@ -14,7 +14,7 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 	node.id = ID
 
 	for _, container := range containers {
-		node.AddContainer(&cluster.Container{Container: container, Node: node})
+		node.addContainer(&cluster.Container{Container: container, Node: node})
 	}
 
 	return node

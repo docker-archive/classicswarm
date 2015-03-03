@@ -74,7 +74,7 @@ func (c *Cluster) CreateContainer(config *dockerclient.ContainerConfig, name str
 	}
 
 	if nn, ok := n.(*node); ok {
-		container, err := nn.Create(config, name, true)
+		container, err := nn.create(config, name, true)
 		if err != nil {
 			return nil, err
 		}
@@ -97,7 +97,7 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 	defer c.Unlock()
 
 	if n, ok := container.Node.(*node); ok {
-		if err := n.Destroy(container, force); err != nil {
+		if err := n.destroy(container, force); err != nil {
 			return err
 		}
 	}
@@ -118,7 +118,7 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 		go func(m *discovery.Entry) {
 			if c.getNode(m.String()) == nil {
 				n := NewNode(m.String(), c.options.OvercommitRatio)
-				if err := n.Connect(c.options.TLSConfig); err != nil {
+				if err := n.connect(c.options.TLSConfig); err != nil {
 					log.Error(err)
 					return
 				}
@@ -134,7 +134,7 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 					return
 				}
 				c.nodes[n.id] = n
-				if err := n.Events(c); err != nil {
+				if err := n.events(c); err != nil {
 					log.Error(err)
 					c.Unlock()
 					return
