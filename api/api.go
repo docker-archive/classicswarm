@@ -15,7 +15,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/cluster/swarm"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/version"
 	"github.com/gorilla/mux"
@@ -261,32 +260,50 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 	c.eventsHandler.Wait(r.RemoteAddr)
 }
 
-// GET /_ping
-func ping(c *context, w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte{'O', 'K'})
-}
-
-// Proxy a request to the right node and do a force refresh
-func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Request) {
-	container, err := getContainerFromVars(c, mux.Vars(r))
-	if err != nil {
-		httpError(w, err.Error(), http.StatusNotFound)
+// POST /containers/{name:.*}/exec
+func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+	container := c.cluster.Container(name)
+	if container == nil {
+		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
 		return
 	}
 
-	cb := func(resp *http.Response) {
-		if resp.StatusCode == http.StatusCreated {
-			log.Debugf("[REFRESH CONTAINER] --> %s", container.Id)
-			if n, ok := container.Node.(*swarm.Node); ok {
-				n.RefreshContainer(container.Id, true)
-			}
-		}
-	}
+	client, scheme := newClientAndScheme(c.tlsConfig)
 
-	if err := proxyAsync(c.tlsConfig, container.Node.Addr(), w, r, cb); err != nil {
+	resp, err := client.Post(scheme+"://"+container.Node.Addr()+"/containers/"+container.Id+"/exec", "application/json", r.Body)
+	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
+	// cleanup
+	defer resp.Body.Close()
+	defer closeIdleConnections(client)
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	id := struct{ Id string }{}
+
+	if err := json.Unmarshal(data, &id); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// add execID to the container, so the later exec/start will work
+	container.Info.ExecIDs = append(container.Info.ExecIDs, id.Id)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+}
+
+// GET /_ping
+func ping(c *context, w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte{'O', 'K'})
 }
 
 // Proxy a request to the right node
@@ -415,7 +432,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/containers/{name:.*}/resize":  proxyContainer,
 			"/containers/{name:.*}/attach":  proxyHijack,
 			"/containers/{name:.*}/copy":    proxyContainer,
-			"/containers/{name:.*}/exec":    proxyContainerAndForceRefresh,
+			"/containers/{name:.*}/exec":    postContainersExec,
 			"/exec/{execid:.*}/start":       proxyHijack,
 			"/exec/{execid:.*}/resize":      proxyContainer,
 		},
