@@ -14,7 +14,6 @@ Here are the main differences:
 
 ```
 GET "/images/get"
-GET "/images/{name:.*}/get"
 GET "/containers/{name:.*}/attach/ws"
 
 POST "/commit"
