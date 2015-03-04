@@ -227,7 +227,7 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 }
 
 // DELETE /containers/{name:.*}
-func deleteContainer(c *context, w http.ResponseWriter, r *http.Request) {
+func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -398,7 +398,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/images/viz":                     notImplementedHandler,
 			"/images/search":                  proxyRandom,
 			"/images/get":                     notImplementedHandler,
-			"/images/{name:.*}/get":           notImplementedHandler,
+			"/images/{name:.*}/get":           proxyImage,
 			"/images/{name:.*}/history":       proxyImage,
 			"/images/{name:.*}/json":          proxyImage,
 			"/containers/ps":                  getContainersJSON,
@@ -437,7 +437,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/exec/{execid:.*}/resize":      proxyContainer,
 		},
 		"DELETE": {
-			"/containers/{name:.*}": deleteContainer,
+			"/containers/{name:.*}": deleteContainers,
 			"/images/{name:.*}":     notImplementedHandler,
 		},
 		"OPTIONS": {
