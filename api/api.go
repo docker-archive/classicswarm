@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -89,7 +90,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	accepteds, _ := filters["node"]
 	images := []*cluster.Image{}
 
-	for _, image := range c.cluster.Images() {
+	for _, image := range c.cluster.Images("") {
 		if len(accepteds) != 0 {
 			found := false
 			for _, accepted := range accepteds {
@@ -330,6 +331,69 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+// DELETE /images/{name:.*}
+func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var name = mux.Vars(r)["name"]
+
+	client, scheme := newClientAndScheme(c.tlsConfig)
+	defer closeIdleConnections(client)
+
+	images := c.cluster.Images(name)
+	size := len(images)
+	if size == 0 {
+		httpError(w, fmt.Sprintf("No such image %s", name), http.StatusNotFound)
+		return
+	}
+
+	for i, image := range images {
+		req, err := http.NewRequest("DELETE", scheme+"://"+image.Node.Addr()+"/images/"+name, nil)
+		if err != nil {
+			if size == 1 {
+				httpError(w, err.Error(), http.StatusInternalServerError)
+			}
+			continue
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			if size == 1 {
+				httpError(w, err.Error(), http.StatusInternalServerError)
+			}
+			continue
+		}
+
+		data, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			if size == 1 {
+				httpError(w, err.Error(), http.StatusInternalServerError)
+			}
+			continue
+		}
+		if resp.StatusCode != 200 {
+			if size == 1 {
+				w.WriteHeader(resp.StatusCode)
+				io.Copy(NewWriteFlusher(w), resp.Body)
+			}
+			continue
+		}
+
+		sdata := bytes.NewBuffer(data).String()
+		if i != 0 {
+			w.Header().Set("Content-Type", "application/json")
+			sdata = strings.Replace(sdata, "[", ",", -1)
+		}
+
+		if i != len(images)-1 {
+			sdata = strings.Replace(sdata, "]", "", -1)
+		}
+		fmt.Fprintf(w, sdata)
+	}
+}
+
 // GET /_ping
 func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
@@ -467,7 +531,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 		},
 		"DELETE": {
 			"/containers/{name:.*}": deleteContainers,
-			"/images/{name:.*}":     notImplementedHandler,
+			"/images/{name:.*}":     deleteImages,
 		},
 		"OPTIONS": {
 			"": optionsHandler,

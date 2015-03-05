@@ -22,8 +22,6 @@ POST "/images/create" (pull implemented)
 POST "/images/load"
 POST "/images/{name:.*}/push"
 POST "/images/{name:.*}/tag"
-
-DELETE "/images/{name:.*}"
 ```
 
 ## Endpoints which behave differently

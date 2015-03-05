@@ -459,11 +459,30 @@ func (n *node) Container(IdOrName string) *cluster.Container {
 	return nil
 }
 
-func (n *node) Images() []*cluster.Image {
+func matchImage(image *cluster.Image, IdOrName string) bool {
+	size := len(IdOrName)
+
+	if image.Id == IdOrName || (size > 2 && strings.HasPrefix(image.Id, IdOrName)) {
+		return true
+	}
+	for _, repoTag := range image.RepoTags {
+		if repoTag == IdOrName || (size > 2 && strings.HasPrefix(repoTag, IdOrName)) {
+			return true
+		}
+	}
+	return false
+}
+
+// Images returns a list for images matching name in the node
+// If `name` is empty, returns all the images
+func (n *node) Images(name string) []*cluster.Image {
 	images := []*cluster.Image{}
 	n.RLock()
+
 	for _, image := range n.images {
-		images = append(images, image)
+		if name == "" || matchImage(image, name) {
+			images = append(images, image)
+		}
 	}
 	n.RUnlock()
 	return images
@@ -474,15 +493,9 @@ func (n *node) Image(IdOrName string) *cluster.Image {
 	n.RLock()
 	defer n.RUnlock()
 
-	size := len(IdOrName)
-	for _, image := range n.Images() {
-		if image.Id == IdOrName || (size > 2 && strings.HasPrefix(image.Id, IdOrName)) {
+	for _, image := range n.images {
+		if matchImage(image, IdOrName) {
 			return image
-		}
-		for _, t := range image.RepoTags {
-			if t == IdOrName || (size > 2 && strings.HasPrefix(t, IdOrName)) {
-				return image
-			}
 		}
 	}
 	return nil

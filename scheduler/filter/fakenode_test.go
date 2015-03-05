@@ -11,11 +11,11 @@ type FakeNode struct {
 	labels     map[string]string
 }
 
-func (fn *FakeNode) ID() string               { return fn.id }
-func (fn *FakeNode) Name() string             { return fn.name }
-func (fn *FakeNode) IP() string               { return "" }
-func (fn *FakeNode) Addr() string             { return fn.addr }
-func (fn *FakeNode) Images() []*cluster.Image { return fn.images }
+func (fn *FakeNode) ID() string                       { return fn.id }
+func (fn *FakeNode) Name() string                     { return fn.name }
+func (fn *FakeNode) IP() string                       { return "" }
+func (fn *FakeNode) Addr() string                     { return fn.addr }
+func (fn *FakeNode) Images(_ string) []*cluster.Image { return fn.images }
 func (fn *FakeNode) Image(id string) *cluster.Image {
 	for _, image := range fn.images {
 		if image.Id == id {
