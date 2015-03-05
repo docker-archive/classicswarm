@@ -27,15 +27,15 @@ var (
 
 func TestNodeConnectionFailure(t *testing.T) {
 	node := NewNode("test", 0)
-	assert.False(t, node.IsConnected())
+	assert.False(t, node.isConnected())
 
 	// Always fail.
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(&dockerclient.Info{}, errors.New("fail"))
 
-	// Connect() should fail and IsConnected() return false.
+	// Connect() should fail and isConnected() return false.
 	assert.Error(t, node.connectClient(client))
-	assert.False(t, node.IsConnected())
+	assert.False(t, node.isConnected())
 
 	client.Mock.AssertExpectations(t)
 }
@@ -46,14 +46,14 @@ func TestOutdatedNode(t *testing.T) {
 	client.On("Info").Return(&dockerclient.Info{}, nil)
 
 	assert.Error(t, node.connectClient(client))
-	assert.False(t, node.IsConnected())
+	assert.False(t, node.isConnected())
 
 	client.Mock.AssertExpectations(t)
 }
 
 func TestNodeCpusMemory(t *testing.T) {
 	node := NewNode("test", 0)
-	assert.False(t, node.IsConnected())
+	assert.False(t, node.isConnected())
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
@@ -62,7 +62,7 @@ func TestNodeCpusMemory(t *testing.T) {
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	assert.NoError(t, node.connectClient(client))
-	assert.True(t, node.IsConnected())
+	assert.True(t, node.isConnected())
 	assert.True(t, node.IsHealthy())
 
 	assert.Equal(t, node.UsedCpus(), 0)
@@ -73,7 +73,7 @@ func TestNodeCpusMemory(t *testing.T) {
 
 func TestNodeSpecs(t *testing.T) {
 	node := NewNode("test", 0)
-	assert.False(t, node.IsConnected())
+	assert.False(t, node.isConnected())
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
@@ -82,7 +82,7 @@ func TestNodeSpecs(t *testing.T) {
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	assert.NoError(t, node.connectClient(client))
-	assert.True(t, node.IsConnected())
+	assert.True(t, node.isConnected())
 	assert.True(t, node.IsHealthy())
 
 	assert.Equal(t, node.Cpus, mockInfo.NCPU)
@@ -98,7 +98,7 @@ func TestNodeSpecs(t *testing.T) {
 
 func TestNodeState(t *testing.T) {
 	node := NewNode("test", 0)
-	assert.False(t, node.IsConnected())
+	assert.False(t, node.isConnected())
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
@@ -112,7 +112,7 @@ func TestNodeState(t *testing.T) {
 	client.On("InspectContainer", "two").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
 
 	assert.NoError(t, node.connectClient(client))
-	assert.True(t, node.IsConnected())
+	assert.True(t, node.isConnected())
 
 	// The node should only have a single container at this point.
 	containers := node.Containers()
@@ -137,7 +137,7 @@ func TestNodeState(t *testing.T) {
 
 func TestNodeContainerLookup(t *testing.T) {
 	node := NewNode("test-node", 0)
-	assert.False(t, node.IsConnected())
+	assert.False(t, node.isConnected())
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
@@ -148,7 +148,7 @@ func TestNodeContainerLookup(t *testing.T) {
 	client.On("InspectContainer", "container-id").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
 
 	assert.NoError(t, node.connectClient(client))
-	assert.True(t, node.IsConnected())
+	assert.True(t, node.isConnected())
 
 	// Invalid lookup
 	assert.Nil(t, node.Container("invalid-id"))
@@ -184,7 +184,7 @@ func TestCreateContainer(t *testing.T) {
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 	assert.NoError(t, node.connectClient(client))
-	assert.True(t, node.IsConnected())
+	assert.True(t, node.isConnected())
 
 	mockConfig := *config
 	mockConfig.CpuShares = config.CpuShares * mockInfo.NCPU
@@ -196,7 +196,7 @@ func TestCreateContainer(t *testing.T) {
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: config}, nil).Once()
-	container, err := node.Create(config, name, false)
+	container, err := node.create(config, name, false)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
 	assert.Len(t, node.Containers(), 1)
@@ -205,7 +205,7 @@ func TestCreateContainer(t *testing.T) {
 	name = "test2"
 	mockConfig.CpuShares = config.CpuShares * mockInfo.NCPU
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
-	container, err = node.Create(config, name, false)
+	container, err = node.create(config, name, false)
 	assert.Equal(t, err, dockerclient.ErrNotFound)
 	assert.Nil(t, container)
 
@@ -219,7 +219,7 @@ func TestCreateContainer(t *testing.T) {
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: config}, nil).Once()
-	container, err = node.Create(config, name, true)
+	container, err = node.create(config, name, true)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
 	assert.Len(t, node.Containers(), 2)
