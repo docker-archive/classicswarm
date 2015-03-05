@@ -187,10 +187,18 @@ func (c *Cluster) Image(IdOrName string) *cluster.Image {
 }
 
 func (c *Cluster) Pull(name string, begin, end func(string)) {
-	for _, node := range c.nodes {
-		begin(node.Name())
-		node.Pull(name)
-		end(node.Name())
+	size := len(c.nodes)
+	done := make(chan bool, size)
+	for _, n := range c.nodes {
+		go func(nn *node) {
+			begin(nn.Name())
+			nn.Pull(name)
+			end(nn.Name())
+			done <- true
+		}(n)
+	}
+	for i := 0; i < size; i++ {
+		<-done
 	}
 }
 
