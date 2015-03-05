@@ -76,7 +76,7 @@ func (n *node) Labels() map[string]string {
 
 // Connect will initialize a connection to the Docker daemon running on the
 // host, gather machine specs (memory, cpu, ...) and monitor state changes.
-func (n *node) Connect(config *tls.Config) error {
+func (n *node) connect(config *tls.Config) error {
 	host, _, err := net.SplitHostPort(n.addr)
 	if err != nil {
 		return err
@@ -126,8 +126,8 @@ func (n *node) connectClient(client dockerclient.Client) error {
 	return nil
 }
 
-// IsConnected returns true if the engine is connected to a remote docker API
-func (n *node) IsConnected() bool {
+// isConnected returns true if the engine is connected to a remote docker API
+func (n *node) isConnected() bool {
 	return n.client != nil
 }
 
@@ -350,7 +350,7 @@ func (n *node) TotalCpus() int64 {
 	return n.Cpus + (n.Cpus * n.overcommitRatio / 100)
 }
 
-func (n *node) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*cluster.Container, error) {
+func (n *node) create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*cluster.Container, error) {
 	var (
 		err    error
 		id     string
@@ -368,7 +368,7 @@ func (n *node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
-		if err = n.Pull(config.Image); err != nil {
+		if err = n.pull(config.Image); err != nil {
 			return nil, err
 		}
 		// ...And try again.
@@ -388,7 +388,7 @@ func (n *node) Create(config *dockerclient.ContainerConfig, name string, pullIma
 }
 
 // Destroy and remove a container from the node.
-func (n *node) Destroy(container *cluster.Container, force bool) error {
+func (n *node) destroy(container *cluster.Container, force bool) error {
 	if err := n.client.RemoveContainer(container.Id, force, true); err != nil {
 		return err
 	}
@@ -402,7 +402,7 @@ func (n *node) Destroy(container *cluster.Container, force bool) error {
 	return nil
 }
 
-func (n *node) Pull(image string) error {
+func (n *node) pull(image string) error {
 	if err := n.client.PullImage(image, nil); err != nil {
 		return err
 	}
@@ -410,7 +410,7 @@ func (n *node) Pull(image string) error {
 }
 
 // Register an event handler.
-func (n *node) Events(h cluster.EventHandler) error {
+func (n *node) events(h cluster.EventHandler) error {
 	if n.eventHandler != nil {
 		return errors.New("event handler already set")
 	}
@@ -519,7 +519,7 @@ func (n *node) handler(ev *dockerclient.Event, _ chan error, args ...interface{}
 }
 
 // Inject a container into the internal state.
-func (n *node) AddContainer(container *cluster.Container) error {
+func (n *node) addContainer(container *cluster.Container) error {
 	n.Lock()
 	defer n.Unlock()
 
@@ -531,7 +531,7 @@ func (n *node) AddContainer(container *cluster.Container) error {
 }
 
 // Inject an image into the internal state.
-func (n *node) AddImage(image *cluster.Image) {
+func (n *node) addImage(image *cluster.Image) {
 	n.Lock()
 	defer n.Unlock()
 
@@ -539,7 +539,7 @@ func (n *node) AddImage(image *cluster.Image) {
 }
 
 // Remove a container from the internal test.
-func (n *node) RemoveContainer(container *cluster.Container) error {
+func (n *node) removeContainer(container *cluster.Container) error {
 	n.Lock()
 	defer n.Unlock()
 
@@ -551,7 +551,7 @@ func (n *node) RemoveContainer(container *cluster.Container) error {
 }
 
 // Wipes the internal container state.
-func (n *node) CleanupContainers() {
+func (n *node) cleanupContainers() {
 	n.Lock()
 	n.containers = make(map[string]*cluster.Container)
 	n.Unlock()
