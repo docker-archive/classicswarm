@@ -59,14 +59,14 @@ function start_docker() {
 	local i
 
 	# Start the engines.
-	for ((i=current; i < instances; i++)); do
+	for ((i=current; i < (current + instances); i++)); do
 		local port=$(($BASE_PORT + $i))
 		HOSTS[$i]=127.0.0.1:$port
 		DOCKER_CONTAINERS[$i]=$(docker run -d --name node-$i -h node-$i --privileged -p 127.0.0.1:$port:$port -it ${DOCKER_IMAGE}:${DOCKER_VERSION} docker -d -H 0.0.0.0:$port "$@")
 	done
 
 	# Wait for the engines to be reachable.
-	for ((i=current; i < instances; i++)); do
+	for ((i=current; i < (current + instances); i++)); do
 		wait_until_reachable ${HOSTS[$i]}
 	done
 }
