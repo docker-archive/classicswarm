@@ -263,13 +263,14 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		if tag := r.Form.Get("tag"); tag != "" {
 			image += ":" + tag
 		}
-		begin := func(name string) {
-			fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s...\",%q:{}}", "id", name, "status", image, "progressDetail")
+		callback := func(what, status string) {
+			if status == "" {
+				fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s...\",%q:{}}", "id", what, "status", image, "progressDetail")
+			} else {
+				fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s... : %s\",%q:{}}", "id", what, "status", image, status, "progressDetail")
+			}
 		}
-		end := func(name string) {
-			fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s... : downloaded\",%q:{}}", "id", name, "status", image, "progressDetail")
-		}
-		c.cluster.Pull(image, begin, end)
+		c.cluster.Pull(image, callback)
 	} else { //import
 		httpError(w, "Not supported in clustering mode.", http.StatusNotImplemented)
 	}
