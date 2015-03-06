@@ -14,11 +14,15 @@ SWARM_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 6000 ))
 BASE_PORT=$(( ( RANDOM % 1000 )  + 5000 ))
 
 # Join an array with a given separator.
-function join { local IFS="$1"; shift; echo "$*"; }
+function join() {
+	local IFS="$1"
+	shift
+	echo "$*"
+}
 
 # Run the swarm binary.
 function swarm() {
-	${SWARM_ROOT}/swarm $@
+	${SWARM_ROOT}/swarm "$@"
 }
 
 # Waits until the given docker engine API becomes reachable.
@@ -32,7 +36,7 @@ function wait_until_reachable() {
 
 # Start the swarm manager in background.
 function start_manager() {
-	${SWARM_ROOT}/swarm manage -H $SWARM_HOST $@ `join , ${HOSTS[@]}` &
+	${SWARM_ROOT}/swarm manage -H $SWARM_HOST "$@" `join , ${HOSTS[@]}` &
 	SWARM_PID=$!
 	wait_until_reachable $SWARM_HOST
 }
@@ -44,7 +48,7 @@ function stop_manager() {
 
 # Run the docker CLI against swarm.
 function docker_swarm() {
-	docker -H $SWARM_HOST $@
+	docker -H $SWARM_HOST "$@"
 }
 
 # Start N docker engines.
@@ -52,17 +56,17 @@ function start_docker() {
 	local current=${#DOCKER_CONTAINERS[@]}
 	local instances="$1"
 	shift
-	local args="$@"
+	local i
 
 	# Start the engines.
-	for i in `seq $current $((instances - 1))`; do
+	for ((i=current; i < instances; i++)); do
 		local port=$(($BASE_PORT + $i))
 		HOSTS[$i]=127.0.0.1:$port
-		DOCKER_CONTAINERS[$i]=$(docker run -d --name node-$i -h node-$i --privileged -p 127.0.0.1:$port:$port -it ${DOCKER_IMAGE}:${DOCKER_VERSION} docker -d -H 0.0.0.0:$port $args)
+		DOCKER_CONTAINERS[$i]=$(docker run -d --name node-$i -h node-$i --privileged -p 127.0.0.1:$port:$port -it ${DOCKER_IMAGE}:${DOCKER_VERSION} docker -d -H 0.0.0.0:$port "$@")
 	done
 
 	# Wait for the engines to be reachable.
-	for i in `seq $current $((instances - 1))`; do
+	for ((i=current; i < instances; i++)); do
 		wait_until_reachable ${HOSTS[$i]}
 	done
 }
