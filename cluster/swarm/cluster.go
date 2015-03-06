@@ -186,14 +186,18 @@ func (c *Cluster) Image(IdOrName string) *cluster.Image {
 	return nil
 }
 
-func (c *Cluster) Pull(name string, begin, end func(string)) {
+func (c *Cluster) Pull(name string, callback func(what, status string)) {
 	size := len(c.nodes)
 	done := make(chan bool, size)
 	for _, n := range c.nodes {
 		go func(nn *node) {
-			begin(nn.Name())
-			nn.Pull(name)
-			end(nn.Name())
+			if callback != nil {
+				callback(nn.Name(), "")
+			}
+			nn.pull(name)
+			if callback != nil {
+				callback(nn.Name(), "downloaded")
+			}
 			done <- true
 		}(n)
 	}
