@@ -247,6 +247,35 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// POST  /images/create
+func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	wf := NewWriteFlusher(w)
+
+	if image := r.Form.Get("fromImage"); image != "" { //pull
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+
+		if tag := r.Form.Get("tag"); tag != "" {
+			image += ":" + tag
+		}
+		callback := func(what, status string) {
+			if status == "" {
+				fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s...\",%q:{}}", "id", what, "status", image, "progressDetail")
+			} else {
+				fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s... : %s\",%q:{}}", "id", what, "status", image, status, "progressDetail")
+			}
+		}
+		c.cluster.Pull(image, callback)
+	} else { //import
+		httpError(w, "Not supported in clustering mode.", http.StatusNotImplemented)
+	}
+}
+
 // GET /events
 func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 	c.eventsHandler.Add(r.RemoteAddr, w)
@@ -416,7 +445,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/auth":                         proxyRandom,
 			"/commit":                       notImplementedHandler,
 			"/build":                        notImplementedHandler,
-			"/images/create":                notImplementedHandler,
+			"/images/create":                postImagesCreate,
 			"/images/load":                  notImplementedHandler,
 			"/images/{name:.*}/push":        notImplementedHandler,
 			"/images/{name:.*}/tag":         notImplementedHandler,
