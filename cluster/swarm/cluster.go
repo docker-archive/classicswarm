@@ -186,6 +186,26 @@ func (c *Cluster) Image(IdOrName string) *cluster.Image {
 	return nil
 }
 
+func (c *Cluster) Pull(name string, callback func(what, status string)) {
+	size := len(c.nodes)
+	done := make(chan bool, size)
+	for _, n := range c.nodes {
+		go func(nn *node) {
+			if callback != nil {
+				callback(nn.Name(), "")
+			}
+			nn.pull(name)
+			if callback != nil {
+				callback(nn.Name(), "downloaded")
+			}
+			done <- true
+		}(n)
+	}
+	for i := 0; i < size; i++ {
+		<-done
+	}
+}
+
 // Containers returns all the containers in the cluster.
 func (c *Cluster) Containers() []*cluster.Container {
 	c.RLock()
