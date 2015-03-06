@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load vars
+load helpers
 
 @test "version string should contain a proper number with git commit" {
 	run swarm -v
