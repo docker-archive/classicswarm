@@ -16,13 +16,16 @@ type PlacementStrategy interface {
 }
 
 var (
-	strategies      map[string]PlacementStrategy
-	ErrNotSupported = errors.New("strategy not supported")
+	strategies              map[string]PlacementStrategy
+	ErrNotSupported         = errors.New("strategy not supported")
+	ErrNoResourcesAvailable = errors.New("no resources available to schedule container")
 )
 
 func init() {
 	strategies = map[string]PlacementStrategy{
-		"binpacking": &BinPackingPlacementStrategy{},
+		"binpacking": &BinpackPlacementStrategy{}, //compat
+		"binpack":    &BinpackPlacementStrategy{},
+		"spread":     &SpreadPlacementStrategy{},
 		"random":     &RandomPlacementStrategy{},
 	}
 }
