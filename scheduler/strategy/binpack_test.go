@@ -29,11 +29,11 @@ func createContainer(ID string, config *dockerclient.ContainerConfig) *cluster.C
 }
 
 func TestPlaceContainerMemory(t *testing.T) {
-	s := &BinPackingPlacementStrategy{}
+	s := &BinpackPlacementStrategy{}
 
 	nodes := []cluster.Node{}
 	for i := 0; i < 2; i++ {
-		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 2, 1))
+		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 2, 0))
 	}
 
 	// add 1 container 1G
@@ -44,23 +44,23 @@ func TestPlaceContainerMemory(t *testing.T) {
 	assert.Equal(t, node1.UsedMemory(), 1024*1024*1024)
 
 	// add another container 1G
-	config = createConfig(1, 1)
+	config = createConfig(1, 0)
 	node2, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
 	assert.NoError(t, AddContainer(node2, createContainer("c2", config)))
 	assert.Equal(t, node2.UsedMemory(), int64(2*1024*1024*1024))
 
 	// check that both containers ended on the same node
-	assert.Equal(t, node1.ID(), node2.ID(), "")
+	assert.Equal(t, node1.ID(), node2.ID())
 	assert.Equal(t, len(node1.Containers()), len(node2.Containers()), "")
 }
 
 func TestPlaceContainerCPU(t *testing.T) {
-	s := &BinPackingPlacementStrategy{}
+	s := &BinpackPlacementStrategy{}
 
 	nodes := []cluster.Node{}
 	for i := 0; i < 2; i++ {
-		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 1, 2))
+		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 0, 2))
 	}
 
 	// add 1 container 1CPU
@@ -78,12 +78,12 @@ func TestPlaceContainerCPU(t *testing.T) {
 	assert.Equal(t, node2.UsedCpus(), 2)
 
 	// check that both containers ended on the same node
-	assert.Equal(t, node1.ID, node2.ID, "")
+	assert.Equal(t, node1.ID(), node2.ID())
 	assert.Equal(t, len(node1.Containers()), len(node2.Containers()), "")
 }
 
 func TestPlaceContainerHuge(t *testing.T) {
-	s := &BinPackingPlacementStrategy{}
+	s := &BinpackPlacementStrategy{}
 
 	nodes := []cluster.Node{}
 	for i := 0; i < 100; i++ {
@@ -147,7 +147,7 @@ func TestPlaceContainerOvercommit(t *testing.T) {
 
 // The demo
 func TestPlaceContainerDemo(t *testing.T) {
-	s := &BinPackingPlacementStrategy{}
+	s := &BinpackPlacementStrategy{}
 
 	nodes := []cluster.Node{}
 	for i := 0; i < 3; i++ {
@@ -230,7 +230,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 }
 
 func TestComplexPlacement(t *testing.T) {
-	s := &BinPackingPlacementStrategy{}
+	s := &BinpackPlacementStrategy{}
 
 	nodes := []cluster.Node{}
 	for i := 0; i < 2; i++ {
