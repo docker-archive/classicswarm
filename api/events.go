@@ -36,15 +36,12 @@ func (eh *eventsHandler) Wait(remoteAddr string) {
 func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	eh.RLock()
 
-	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d,%q:%q,%q:%q,%q:%q,%q:%q}",
+	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d,%q:%s}",
 		"status", e.Status,
 		"id", e.Id,
 		"from", e.From+" node:"+e.Node.Name(),
 		"time", e.Time,
-		"node_name", e.Node.Name(),
-		"node_id", e.Node.ID(),
-		"node_addr", e.Node.Addr(),
-		"node_ip", e.Node.IP())
+		"node", cluster.SerializeNode(e.Node))
 
 	for key, w := range eh.ws {
 		if _, err := fmt.Fprintf(w, str); err != nil {
