@@ -23,5 +23,15 @@ func (p *BinpackPlacementStrategy) PlaceContainer(config *dockerclient.Container
 	// sort by highest weight
 	sort.Sort(sort.Reverse(weightedNodes))
 
-	return weightedNodes[0].Node, nil
+	topNode := weightedNodes[0]
+	for _, node := range weightedNodes {
+		if node.Weight != topNode.Weight {
+			break
+		}
+		if len(node.Node.Containers()) > len(topNode.Node.Containers()) {
+			topNode = node
+		}
+	}
+
+	return topNode.Node, nil
 }
