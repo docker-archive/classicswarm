@@ -1,5 +1,7 @@
 package cluster
 
+import "fmt"
+
 type Node interface {
 	ID() string
 	Name() string
@@ -20,4 +22,12 @@ type Node interface {
 	Labels() map[string]string //used by the filters
 
 	IsHealthy() bool
+}
+
+func SerializeNode(node Node) string {
+	return fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%q}",
+		"Name", node.Name(),
+		"Id", node.ID(),
+		"Addr", node.Addr(),
+		"Ip", node.IP())
 }
