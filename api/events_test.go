@@ -54,15 +54,16 @@ func TestHandle(t *testing.T) {
 
 	assert.NoError(t, eh.Handle(event))
 
-	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d,%q:%q,%q:%q,%q:%q,%q:%q}",
+	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d,%q:{%q:%q,%q:%q,%q:%q,%q:%q}}",
 		"status", "status",
 		"id", "id",
 		"from", "from node:node_name",
 		"time", 0,
-		"node_name", "node_name",
-		"node_id", "node_id",
-		"node_addr", "node_addr",
-		"node_ip", "node_ip")
+		"node",
+		"Name", "node_name",
+		"Id", "node_id",
+		"Addr", "node_addr",
+		"Ip", "node_ip")
 
 	assert.Equal(t, str, string(fw.Tmp))
 }
