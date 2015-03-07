@@ -32,18 +32,10 @@ DELETE "/images/{name:.*}"
 
 ```json
 "Node": {
-        "ID": "ODAI:IC6Q:MSBL:TPB5:HIEE:6IKC:VCAM:QRNH:PRGX:ERZT:OK46:PMFX",
-	"IP": "0.0.0.0",
+	"Id": "ODAI:IC6Q:MSBL:TPB5:HIEE:6IKC:VCAM:QRNH:PRGX:ERZT:OK46:PMFX",
+	"Ip": "0.0.0.0",
 	"Addr": "http://0.0.0.0:4243",
 	"Name": "vagrant-ubuntu-saucy-64",
-	"Cpus": 1,
-	"Memory": 2099654656,
-	"Labels": {
-            "executiondriver": "native-0.2",
-            "kernelversion": "3.11.0-15-generic",
-            "operatingsystem": "Ubuntu 13.10",
-            "storagedriver": "aufs"
-	    }
     },
 ```
 * `GET "/containers/{name:.*}/json"`: `HostIP` replaced by the the actual Node's IP if `HostIP` is `0.0.0.0`
