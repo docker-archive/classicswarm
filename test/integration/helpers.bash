@@ -75,6 +75,6 @@ function start_docker() {
 function stop_docker() {
 	for id in ${DOCKER_CONTAINERS[@]}; do
 		echo "Stopping $id"
-		docker rm -f $id > /dev/null;
+		docker rm -f -v $id > /dev/null;
 	done
 }
