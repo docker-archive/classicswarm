@@ -194,8 +194,8 @@ $ docker run -d -p 80:80 nginx
 87c4376856a8
 
 $ docker ps
-CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      prickly_engelbart
+CONTAINER ID    IMAGE               COMMAND         PORTS                       NODE        NAMES
+87c4376856a8    nginx:latest        "nginx"         192.168.0.42:80->80/tcp     node-1      prickly_engelbart
 ```
 
 Docker cluster selects a node where the public `80` port is available and schedules
@@ -209,9 +209,9 @@ $ docker run -d -p 80:80 nginx
 963841b138d8
 
 $ docker ps
-CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.43:80->80/tcp         node-2      dreamy_turing
-87c4376856a8        nginx:latest        "nginx"             Up About a minute        running             192.168.0.42:80->80/tcp         node-1      prickly_engelbart
+CONTAINER ID        IMAGE          COMMAND        PORTS                           NODE        NAMES
+963841b138d8        nginx:latest   "nginx"        192.168.0.43:80->80/tcp         node-2      dreamy_turing
+87c4376856a8        nginx:latest   "nginx"        192.168.0.42:80->80/tcp         node-1      prickly_engelbart
 ```
 
 Again, repeating the same command will result in the selection of `node-3`, since
@@ -222,10 +222,10 @@ $ docker run -d -p 80:80 nginx
 963841b138d8
 
 $ docker ps
-CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-f8b693db9cd6        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.44:80->80/tcp         node-3      stoic_albattani
-963841b138d8        nginx:latest        "nginx"             Up About a minute        running             192.168.0.43:80->80/tcp         node-2      dreamy_turing
-87c4376856a8        nginx:latest        "nginx"             Up About a minute        running             192.168.0.42:80->80/tcp         node-1      prickly_engelbart
+CONTAINER ID   IMAGE               COMMAND        PORTS                           NODE        NAMES
+f8b693db9cd6   nginx:latest        "nginx"        192.168.0.44:80->80/tcp         node-3      stoic_albattani
+963841b138d8   nginx:latest        "nginx"        192.168.0.43:80->80/tcp         node-2      dreamy_turing
+87c4376856a8   nginx:latest        "nginx"        192.168.0.42:80->80/tcp         node-1      prickly_engelbart
 ```
 
 Finally, Docker Cluster will refuse to run another container that requires port
