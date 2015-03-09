@@ -12,5 +12,5 @@ function teardown() {
 	start_manager
 	run docker_swarm info
 	[ "$status" -eq 0 ]
-	[ "${lines[1]}"="Nodes: 3" ]
+	[[ "${lines[1]}" == *"Nodes: 3" ]]
 }
