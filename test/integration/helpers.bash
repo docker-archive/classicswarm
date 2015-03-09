@@ -28,10 +28,12 @@ function swarm() {
 # Waits until the given docker engine API becomes reachable.
 function wait_until_reachable() {
 	local attempts=0
-	until docker -H $1 info &> /dev/null || [ $attempts -ge 10 ]; do
+	local max_attempts=5
+	until docker -H $1 info || [ $attempts -ge $max_attempts ]; do
 		echo "Attempt to connect to ${HOSTS[$i]} failed for the $((++attempts)) time" >&2
 		sleep 0.5
 	done
+	[[ $attempts -lt $max_attempts ]] 
 }
 
 # Start the swarm manager in background.
