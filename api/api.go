@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -117,12 +118,13 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	all := r.Form.Get("all") == "1"
+	limit, _ := strconv.Atoi(r.Form.Get("limit"))
 
 	out := []*dockerclient.Container{}
 	for _, container := range c.cluster.Containers() {
 		tmp := (*container).Container
 		// Skip stopped containers unless -a was specified.
-		if !strings.Contains(tmp.Status, "Up") && !all {
+		if !strings.Contains(tmp.Status, "Up") && !all && limit <= 0 {
 			continue
 		}
 		// Skip swarm containers unless -a was specified.
@@ -151,7 +153,11 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	sort.Sort(sort.Reverse(ContainerSorter(out)))
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(out)
+	if limit > 0 && limit < len(out) {
+		json.NewEncoder(w).Encode(out[:limit])
+	} else {
+		json.NewEncoder(w).Encode(out)
+	}
 }
 
 // GET /containers/{name:.*}/json
