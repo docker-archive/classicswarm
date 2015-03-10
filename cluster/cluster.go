@@ -9,9 +9,8 @@ type Cluster interface {
 	// Remove a container
 	RemoveContainer(container *Container, force bool) error
 
-	// Return all images matching `name`
-	// if `name` == "" return all images in the cluster
-	Images(name string) []*Image
+	// Return all images
+	Images() []*Image
 
 	// Return one image matching `IdOrName`
 	Image(IdOrName string) *Image
