@@ -21,7 +21,7 @@ func (fn *FakeNode) ID() string                            { return fn.id }
 func (fn *FakeNode) Name() string                          { return fn.name }
 func (fn *FakeNode) IP() string                            { return "" }
 func (fn *FakeNode) Addr() string                          { return fn.addr }
-func (fn *FakeNode) Images(_ string) []*cluster.Image      { return nil }
+func (fn *FakeNode) Images() []*cluster.Image              { return nil }
 func (fn *FakeNode) Image(_ string) *cluster.Image         { return nil }
 func (fn *FakeNode) Containers() []*cluster.Container      { return fn.containers }
 func (fn *FakeNode) Container(_ string) *cluster.Container { return nil }

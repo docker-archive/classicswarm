@@ -155,15 +155,14 @@ func (c *Cluster) getNode(addr string) *node {
 	return nil
 }
 
-// Containers returns all the images in the cluster.
-// If `name` is empty, return all the images
-func (c *Cluster) Images(name string) []*cluster.Image {
+// Images returns all the images in the cluster.
+func (c *Cluster) Images() []*cluster.Image {
 	c.RLock()
 	defer c.RUnlock()
 
 	out := []*cluster.Image{}
 	for _, n := range c.nodes {
-		out = append(out, n.Images(name)...)
+		out = append(out, n.Images()...)
 	}
 
 	return out

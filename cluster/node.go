@@ -9,7 +9,7 @@ type Node interface {
 	IP() string   //to inject the actual IP of the machine in docker ps (hostname:port or ip:port)
 	Addr() string //to know where to connect with the proxy
 
-	Images(name string) []*Image          //used by the API
+	Images() []*Image                     //used by the API
 	Image(IdOrName string) *Image         //used by the filters
 	Containers() []*Container             //used by the filters
 	Container(IdOrName string) *Container //used by the filters

@@ -90,7 +90,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	accepteds, _ := filters["node"]
 	images := []*cluster.Image{}
 
-	for _, image := range c.cluster.Images("") {
+	for _, image := range c.cluster.Images() {
 		if len(accepteds) != 0 {
 			found := false
 			for _, accepted := range accepteds {
@@ -342,14 +342,23 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	client, scheme := newClientAndScheme(c.tlsConfig)
 	defer closeIdleConnections(client)
 
-	images := c.cluster.Images(name)
-	size := len(images)
+	matchedImages := []*cluster.Image{}
+	for _, image := range c.cluster.Images() {
+		if image.Match(name) {
+			fmt.Println("matched", image)
+			matchedImages = append(matchedImages, image)
+		}
+	}
+
+	size := len(matchedImages)
 	if size == 0 {
 		httpError(w, fmt.Sprintf("No such image %s", name), http.StatusNotFound)
 		return
 	}
+	wf := NewWriteFlusher(w)
 
-	for i, image := range images {
+	for i, image := range matchedImages {
+		fmt.Println("delete", image)
 		req, err := http.NewRequest("DELETE", scheme+"://"+image.Node.Addr()+"/images/"+name, nil)
 		if err != nil {
 			if size == 1 {
@@ -364,7 +373,6 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 			}
 			continue
 		}
-
 		data, err := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 		if err != nil {
@@ -387,10 +395,10 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 			sdata = strings.Replace(sdata, "[", ",", -1)
 		}
 
-		if i != len(images)-1 {
+		if i != size-1 {
 			sdata = strings.Replace(sdata, "]", "", -1)
 		}
-		fmt.Fprintf(w, sdata)
+		fmt.Fprintf(wf, sdata)
 	}
 }
 
