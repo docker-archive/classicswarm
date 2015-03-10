@@ -81,8 +81,8 @@ var (
 	}
 	flStrategy = cli.StringFlag{
 		Name:  "strategy",
-		Usage: "placement strategy to use [binpacking, random]",
-		Value: "binpacking",
+		Usage: "placement strategy to use [spread, binpack, random]",
+		Value: "spread",
 	}
 
 	// hack for go vet
