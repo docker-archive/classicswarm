@@ -194,9 +194,13 @@ func (c *Cluster) Pull(name string, callback func(what, status string)) {
 			if callback != nil {
 				callback(nn.Name(), "")
 			}
-			nn.pull(name)
+			err := nn.pull(name)
 			if callback != nil {
-				callback(nn.Name(), "downloaded")
+				if err != nil {
+					callback(nn.Name(), err.Error())
+				} else {
+					callback(nn.Name(), "downloaded")
+				}
 			}
 			done <- true
 		}(n)
