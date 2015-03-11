@@ -333,10 +333,17 @@ func (client *DockerClient) ListImages() ([]*Image, error) {
 	return images, nil
 }
 
-func (client *DockerClient) RemoveImage(name string) error {
+func (client *DockerClient) RemoveImage(name string) ([]*ImageDelete, error) {
 	uri := fmt.Sprintf("/%s/images/%s", APIVersion, name)
-	_, err := client.doRequest("DELETE", uri, nil, nil)
-	return err
+	data, err := client.doRequest("DELETE", uri, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var imageDelete []*ImageDelete
+	if err := json.Unmarshal(data, &imageDelete); err != nil {
+		return nil, err
+	}
+	return imageDelete, nil
 }
 
 func (client *DockerClient) PauseContainer(id string) error {
