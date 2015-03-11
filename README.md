@@ -11,9 +11,9 @@ Dokku, Compose, Krane, Flynn, Deis, DockerUI, Shipyard, Drone, Jenkins... and,
 of course, the Docker client itself.
 
 Like other Docker projects, Swarm follows the "batteries included but removable"
-principle. It ships with a simple scheduling backend out of the box, and as
-initial development settles, an API will develop to enable pluggable backends.
-The goal is to provide a smooth out-of-box experience for simple use cases, and
+principle. It ships with a set of simple scheduling backends out of the box, and as
+initial development settles, an API will be developed to enable pluggable backends.
+The goal is to provide a smooth out-of-the-box experience for simple use cases, and
 allow swapping in more powerful backends, like Mesos, for large scale production
 deployments.
 
