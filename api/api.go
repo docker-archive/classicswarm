@@ -345,24 +345,25 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	size := len(matchedImages)
-	if size == 0 {
+	if len(matchedImages) == 0 {
 		httpError(w, fmt.Sprintf("No such image %s", name), http.StatusNotFound)
 		return
 	}
 
 	out := []*dockerclient.ImageDelete{}
+	errs := []string{}
 	for _, image := range matchedImages {
 		content, err := image.Node.DockerClient().RemoveImage(name)
 		if err != nil {
-			out = nil
-			httpError(w, err.Error(), http.StatusInternalServerError)
+			errs = append(errs, fmt.Sprintf("%s: %s", image.Node.Name(), err.Error()))
 			continue
 		}
 		out = append(out, content...)
 	}
 
-	if out != nil {
+	if len(errs) != 0 {
+		httpError(w, strings.Join(errs, ""), http.StatusInternalServerError)
+	} else {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(NewWriteFlusher(w)).Encode(out)
 	}
