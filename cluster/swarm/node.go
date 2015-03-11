@@ -54,6 +54,10 @@ type node struct {
 	overcommitRatio int64
 }
 
+func (n *node) DockerClient() dockerclient.Client {
+	return n.client
+}
+
 func (n *node) ID() string {
 	return n.id
 }

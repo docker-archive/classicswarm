@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -339,13 +338,9 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	var name = mux.Vars(r)["name"]
 
-	client, scheme := newClientAndScheme(c.tlsConfig)
-	defer closeIdleConnections(client)
-
 	matchedImages := []*cluster.Image{}
 	for _, image := range c.cluster.Images() {
 		if image.Match(name) {
-			fmt.Println("matched", image)
 			matchedImages = append(matchedImages, image)
 		}
 	}
@@ -355,51 +350,23 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, fmt.Sprintf("No such image %s", name), http.StatusNotFound)
 		return
 	}
-	wf := NewWriteFlusher(w)
 
-	for i, image := range matchedImages {
-		fmt.Println("delete", image)
-		req, err := http.NewRequest("DELETE", scheme+"://"+image.Node.Addr()+"/images/"+name, nil)
+	out := []*dockerclient.ImageDelete{}
+	for _, image := range matchedImages {
+		content, err := image.Node.DockerClient().RemoveImage(name)
 		if err != nil {
-			if size == 1 {
-				httpError(w, err.Error(), http.StatusInternalServerError)
-			}
+			out = nil
+			httpError(w, err.Error(), http.StatusInternalServerError)
 			continue
 		}
-		resp, err := client.Do(req)
-		if err != nil {
-			if size == 1 {
-				httpError(w, err.Error(), http.StatusInternalServerError)
-			}
-			continue
-		}
-		data, err := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			if size == 1 {
-				httpError(w, err.Error(), http.StatusInternalServerError)
-			}
-			continue
-		}
-		if resp.StatusCode != 200 {
-			if size == 1 {
-				w.WriteHeader(resp.StatusCode)
-				io.Copy(NewWriteFlusher(w), resp.Body)
-			}
-			continue
-		}
-
-		sdata := bytes.NewBuffer(data).String()
-		if i != 0 {
-			w.Header().Set("Content-Type", "application/json")
-			sdata = strings.Replace(sdata, "[", ",", -1)
-		}
-
-		if i != size-1 {
-			sdata = strings.Replace(sdata, "]", "", -1)
-		}
-		fmt.Fprintf(wf, sdata)
+		out = append(out, content...)
 	}
+
+	if out != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(NewWriteFlusher(w)).Encode(out)
+	}
+
 }
 
 // GET /_ping
