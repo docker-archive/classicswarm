@@ -15,12 +15,14 @@ func init() {
 }
 
 func (s *NodesDiscoveryService) Initialize(uris string, _ int) error {
-	for _, ip := range strings.Split(uris, ",") {
-		entry, err := discovery.NewEntry(ip)
-		if err != nil {
-			return err
+	for _, input := range strings.Split(uris, ",") {
+		for _, ip := range discovery.Generate(input) {
+			entry, err := discovery.NewEntry(ip)
+			if err != nil {
+				return err
+			}
+			s.entries = append(s.entries, entry)
 		}
-		s.entries = append(s.entries, entry)
 	}
 
 	return nil
