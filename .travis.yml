@@ -1,5 +1,10 @@
 language: go
 
+os:
+  - linux
+  - osx
+  - windows
+
 go:
   - 1.3
 #  - 1.4
