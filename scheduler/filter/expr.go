@@ -48,7 +48,7 @@ func parseExprs(key string, env []string) ([]expr, error) {
 						// allow leading = in case of using ==
 						// allow * for globbing
 						// allow regexp
-						matched, err := regexp.MatchString(`^(?i)[=!\/]?[a-z0-9:\-_\.\*/\(\)\?\+\[\]\\\^\$]+$`, parts[1])
+						matched, err := regexp.MatchString(`^(?i)[=!\/]?(~)?[a-z0-9:\-_\.\*/\(\)\?\+\[\]\\\^\$]+$`, parts[1])
 						if err != nil {
 							return nil, err
 						}
@@ -74,17 +74,24 @@ func parseExprs(key string, env []string) ([]expr, error) {
 
 func (e *expr) Match(whats ...string) bool {
 	var (
-		pattern string
-		match   bool
-		err     error
+		pattern    string
+		match      bool
+		err        error
+		startIndex int
 	)
 
-	if e.value[0] == '/' && e.value[len(e.value)-1] == '/' {
+	if e.IsSoft() {
+		startIndex = 1
+	} else {
+		startIndex = 0
+	}
+
+	if e.value[startIndex] == '/' && e.value[len(e.value)-1] == '/' {
 		// regexp
-		pattern = e.value[1 : len(e.value)-1]
+		pattern = e.value[startIndex+1 : len(e.value)-1]
 	} else {
 		// simple match, create the regex for globbing (ex: ub*t* -> ^ub.*t.*$) and match.
-		pattern = "^" + strings.Replace(e.value, "*", ".*", -1) + "$"
+		pattern = "^" + strings.Replace(strings.Trim(e.value, "~"), "*", ".*", -1) + "$"
 	}
 
 	for _, what := range whats {
@@ -103,4 +110,12 @@ func (e *expr) Match(whats ...string) bool {
 	}
 
 	return false
+}
+
+func (e *expr) IsSoft() bool {
+	if e.value[0] == '~' {
+		return true
+	} else {
+		return false
+	}
 }
