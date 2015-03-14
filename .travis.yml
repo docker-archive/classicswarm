@@ -12,9 +12,12 @@ install:
   - export GOPATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH
   - export PATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace/bin:$PATH
   - go get code.google.com/p/go.tools/cmd/vet
+  - go get code.google.com/p/go.tools/cmd/cover
+  - go get github.com/mattn/goveralls
 
 script:
   - script/validate-dco
   - script/validate-gofmt
   - go vet ./...
   - go test -v -race ./...
+  - script/coverage
