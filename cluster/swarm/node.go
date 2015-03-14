@@ -20,6 +20,9 @@ const (
 
 	// Timeout for requests sent out to the node.
 	requestTimeout = 10 * time.Second
+
+	// Environment variable to expose the node's ip address
+	nodeAddr = "SWARM_NODE_TCP_ADDR"
 )
 
 func NewNode(addr string, overcommitRatio float64) *node {
@@ -361,6 +364,11 @@ func (n *node) create(config *dockerclient.ContainerConfig, name string, pullIma
 
 	// nb of CPUs -> real CpuShares
 	newConfig.CpuShares = config.CpuShares * 100 / n.Cpus
+
+	// Add an environment variable to expose the node's ip address
+	if n.ip != "" {
+		newConfig.Env = append(newConfig.Env, nodeAddr+"="+n.ip)
+	}
 
 	if id, err = client.CreateContainer(&newConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.
