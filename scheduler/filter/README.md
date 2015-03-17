@@ -124,11 +124,11 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1      logger
 ```
 
-The `logger` container ends up on `node-1` because his affinity with the container `front`.
+The `logger` container ends up on `node-1` because its affinity with the container `front`.
 
 #### Images
 
-You can schedule a container only on nodes where the images is already pulled.
+You can schedule a container only on nodes where the images are already pulled.
 
 ```
 $ docker -H node-1:2375 pull redis
@@ -137,7 +137,7 @@ $ docker -H node-3:2375 pull redis
 ```
 
 Here only `node-1` and `node-3` have the `redis` image. Using `-e affinity:image=redis` we can
-schedule container only on these 2 nodes. You can also use the image ID instead of it's name.
+schedule container only on these 2 nodes. You can also use the image ID instead of its name.
 
 ```
 $ docker run -d --name redis1 -e affinity:image==redis redis
