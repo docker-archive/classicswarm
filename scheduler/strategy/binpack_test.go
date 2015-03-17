@@ -28,6 +28,38 @@ func createContainer(ID string, config *dockerclient.ContainerConfig) *cluster.C
 	return &cluster.Container{Container: dockerclient.Container{Id: ID}, Info: dockerclient.ContainerInfo{Config: config}}
 }
 
+func TestPlaceEqualWeight(t *testing.T) {
+	s := &BinpackPlacementStrategy{}
+
+	nodes := []cluster.Node{}
+	for i := 0; i < 2; i++ {
+		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 4, 0))
+	}
+
+	// add 1 container 2G on node1
+	config := createConfig(2, 0)
+	assert.NoError(t, AddContainer(nodes[0], createContainer("c1", config)))
+	assert.Equal(t, nodes[0].UsedMemory(), 2*1024*1024*1024)
+
+	// add 2 containers 1G on node2
+	config = createConfig(1, 0)
+	assert.NoError(t, AddContainer(nodes[1], createContainer("c2", config)))
+	assert.NoError(t, AddContainer(nodes[1], createContainer("c3", config)))
+	assert.Equal(t, nodes[1].UsedMemory(), int64(2*1024*1024*1024))
+
+	// add another container 1G
+	config = createConfig(1, 0)
+	node, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	assert.NoError(t, AddContainer(node, createContainer("c4", config)))
+	assert.Equal(t, node.UsedMemory(), 3*1024*1024*1024)
+
+	// check that the last container ended on the node with the highest number of containers
+	assert.Equal(t, node.ID(), nodes[1].ID())
+	assert.NotEqual(t, len(nodes[0].Containers()), len(nodes[1].Containers()))
+
+}
+
 func TestPlaceContainerMemory(t *testing.T) {
 	s := &BinpackPlacementStrategy{}
 
@@ -52,7 +84,7 @@ func TestPlaceContainerMemory(t *testing.T) {
 
 	// check that both containers ended on the same node
 	assert.Equal(t, node1.ID(), node2.ID())
-	assert.Equal(t, len(node1.Containers()), len(node2.Containers()), "")
+	assert.Equal(t, len(node1.Containers()), len(node2.Containers()))
 }
 
 func TestPlaceContainerCPU(t *testing.T) {
@@ -79,7 +111,7 @@ func TestPlaceContainerCPU(t *testing.T) {
 
 	// check that both containers ended on the same node
 	assert.Equal(t, node1.ID(), node2.ID())
-	assert.Equal(t, len(node1.Containers()), len(node2.Containers()), "")
+	assert.Equal(t, len(node1.Containers()), len(node2.Containers()))
 }
 
 func TestPlaceContainerHuge(t *testing.T) {
@@ -173,8 +205,8 @@ func TestPlaceContainerDemo(t *testing.T) {
 	assert.NoError(t, AddContainer(node1bis, createContainer("c2", config)))
 
 	// check that both containers ended on the same node
-	assert.Equal(t, node1.ID, node1bis.ID, "")
-	assert.Equal(t, len(node1.Containers()), len(node1bis.Containers()), "")
+	assert.Equal(t, node1.ID(), node1bis.ID())
+	assert.Equal(t, len(node1.Containers()), len(node1bis.Containers()))
 
 	// add another container 2G
 	config = createConfig(2, 0)
@@ -183,7 +215,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 	assert.NoError(t, AddContainer(node2, createContainer("c3", config)))
 
 	// check that it ends up on another node
-	assert.NotEqual(t, node1.ID(), node2.ID(), "")
+	assert.NotEqual(t, node1.ID(), node2.ID())
 
 	// add another container 1G
 	config = createConfig(1, 0)
@@ -192,8 +224,8 @@ func TestPlaceContainerDemo(t *testing.T) {
 	assert.NoError(t, AddContainer(node3, createContainer("c4", config)))
 
 	// check that it ends up on another node
-	assert.NotEqual(t, node1.ID(), node3.ID(), "")
-	assert.NotEqual(t, node2.ID(), node3.ID(), "")
+	assert.NotEqual(t, node1.ID(), node3.ID())
+	assert.NotEqual(t, node2.ID(), node3.ID())
 
 	// add another container 1G
 	config = createConfig(1, 0)
@@ -202,7 +234,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 	assert.NoError(t, AddContainer(node3bis, createContainer("c5", config)))
 
 	// check that it ends up on the same node
-	assert.Equal(t, node3.ID(), node3bis.ID(), "")
+	assert.Equal(t, node3.ID(), node3bis.ID())
 
 	// try to add another container
 	config = createConfig(1, 0)
@@ -225,8 +257,8 @@ func TestPlaceContainerDemo(t *testing.T) {
 	assert.NoError(t, AddContainer(node2bis, createContainer("c6", config)))
 
 	// check it ends up on `node3`
-	assert.Equal(t, node2.ID(), node2bis.ID(), "")
-	assert.Equal(t, len(node2.Containers()), len(node2bis.Containers()), "")
+	assert.Equal(t, node2.ID(), node2bis.ID())
+	assert.Equal(t, len(node2.Containers()), len(node2bis.Containers()))
 }
 
 func TestComplexPlacement(t *testing.T) {

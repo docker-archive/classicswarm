@@ -8,6 +8,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSpreadPlaceEqualWeight(t *testing.T) {
+	s := &SpreadPlacementStrategy{}
+
+	nodes := []cluster.Node{}
+	for i := 0; i < 2; i++ {
+		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 4, 0))
+	}
+
+	// add 1 container 2G on node1
+	config := createConfig(2, 0)
+	assert.NoError(t, AddContainer(nodes[0], createContainer("c1", config)))
+	assert.Equal(t, nodes[0].UsedMemory(), 2*1024*1024*1024)
+
+	// add 2 containers 1G on node2
+	config = createConfig(1, 0)
+	assert.NoError(t, AddContainer(nodes[1], createContainer("c2", config)))
+	assert.NoError(t, AddContainer(nodes[1], createContainer("c3", config)))
+	assert.Equal(t, nodes[1].UsedMemory(), int64(2*1024*1024*1024))
+
+	// add another container 1G
+	config = createConfig(1, 0)
+	node, err := s.PlaceContainer(config, nodes)
+	assert.NoError(t, err)
+	assert.NoError(t, AddContainer(node, createContainer("c4", config)))
+	assert.Equal(t, node.UsedMemory(), 3*1024*1024*1024)
+
+	// check that the last container ended on the node with the lowest number of containers
+	assert.Equal(t, node.ID(), nodes[0].ID())
+	assert.Equal(t, len(nodes[0].Containers()), len(nodes[1].Containers()))
+
+}
+
 func TestSpreadPlaceContainerMemory(t *testing.T) {
 	s := &SpreadPlacementStrategy{}
 
