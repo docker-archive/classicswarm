@@ -200,7 +200,7 @@ If none of the nodes in the cluster has image redis, the scheduler will discard 
 ```
 $ docker run -d --name redis5 -e affinity:container!=~redis* redis
 ```
-The affinity filter is about scheduling a new redis5 container to a different node that doesn't have a container with the name that satisfies redis*. If each node in the cluster has a redis* container the scheduler with discard the affinity rule and schedules according to the strategy. 
+The affinity filter will be used to schedule a new redis5 container to a different node that doesn't have a container with the name that satisfies redis*. If each node in the cluster has a redis* container, the scheduler will discard the affinity rule and schedules according to the strategy. 
 
 ## Port Filter
 
