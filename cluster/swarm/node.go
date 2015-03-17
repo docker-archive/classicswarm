@@ -403,6 +403,9 @@ func (n *node) destroy(container *cluster.Container, force bool) error {
 }
 
 func (n *node) pull(image string) error {
+	if !strings.Contains(image, ":") {
+		image = image + ":latest"
+	}
 	if err := n.client.PullImage(image, nil); err != nil {
 		return err
 	}
