@@ -213,7 +213,7 @@ func TestCreateContainer(t *testing.T) {
 	name = "test3"
 	id = "id3"
 	mockConfig.CpuShares = config.CpuShares * mockInfo.NCPU
-	client.On("PullImage", config.Image, mock.Anything).Return(nil).Once()
+	client.On("PullImage", config.Image+":latest", mock.Anything).Return(nil).Once()
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
 	client.On("CreateContainer", &mockConfig, name).Return(id, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
