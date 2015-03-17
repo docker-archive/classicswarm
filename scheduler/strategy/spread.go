@@ -20,8 +20,18 @@ func (p *SpreadPlacementStrategy) PlaceContainer(config *dockerclient.ContainerC
 		return nil, err
 	}
 
-	// sort by highest weight
+	// sort by lowest weight
 	sort.Sort(weightedNodes)
 
-	return weightedNodes[0].Node, nil
+	bottomNode := weightedNodes[0]
+	for _, node := range weightedNodes {
+		if node.Weight != bottomNode.Weight {
+			break
+		}
+		if len(node.Node.Containers()) < len(bottomNode.Node.Containers()) {
+			bottomNode = node
+		}
+	}
+
+	return bottomNode.Node, nil
 }
