@@ -19,6 +19,7 @@ type expr struct {
 	key      string
 	operator int
 	value    string
+	isSoft   bool
 }
 
 func parseExprs(key string, env []string) ([]expr, error) {
@@ -55,7 +56,7 @@ func parseExprs(key string, env []string) ([]expr, error) {
 						if matched == false {
 							return nil, fmt.Errorf("Value '%s' is invalid", parts[1])
 						}
-						exprs = append(exprs, expr{key: strings.ToLower(parts[0]), operator: i, value: parts[1]})
+						exprs = append(exprs, expr{key: strings.ToLower(parts[0]), operator: i, value: strings.TrimLeft(parts[1], "~"), isSoft: isSoft(parts[1])})
 					} else {
 						exprs = append(exprs, expr{key: strings.ToLower(parts[0]), operator: i})
 					}
@@ -74,24 +75,17 @@ func parseExprs(key string, env []string) ([]expr, error) {
 
 func (e *expr) Match(whats ...string) bool {
 	var (
-		pattern    string
-		match      bool
-		err        error
-		startIndex int
+		pattern string
+		match   bool
+		err     error
 	)
 
-	if e.IsSoft() {
-		startIndex = 1
-	} else {
-		startIndex = 0
-	}
-
-	if e.value[startIndex] == '/' && e.value[len(e.value)-1] == '/' {
+	if e.value[0] == '/' && e.value[len(e.value)-1] == '/' {
 		// regexp
-		pattern = e.value[startIndex+1 : len(e.value)-1]
+		pattern = e.value[1 : len(e.value)-1]
 	} else {
 		// simple match, create the regex for globbing (ex: ub*t* -> ^ub.*t.*$) and match.
-		pattern = "^" + strings.Replace(strings.Trim(e.value, "~"), "*", ".*", -1) + "$"
+		pattern = "^" + strings.Replace(e.value, "*", ".*", -1) + "$"
 	}
 
 	for _, what := range whats {
@@ -112,8 +106,8 @@ func (e *expr) Match(whats ...string) bool {
 	return false
 }
 
-func (e *expr) IsSoft() bool {
-	if e.value[0] == '~' {
+func isSoft(value string) bool {
+	if value[0] == '~' {
 		return true
 	} else {
 		return false

@@ -48,7 +48,7 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []cl
 			}
 		}
 		if len(candidates) == 0 {
-			if affinity.IsSoft() {
+			if affinity.isSoft {
 				return nodes, nil
 			}
 			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", affinity.key, OPERATORS[affinity.operator], affinity.value)

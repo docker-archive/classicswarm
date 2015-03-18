@@ -201,6 +201,12 @@ func TestAffinityFilter(t *testing.T) {
 	assert.Len(t, result, 1)
 
 	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:image==~ima~ge-0:tag3"},
+	}, nodes)
+	assert.Error(t, err)
+	assert.Len(t, result, 0)
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"affinity:image==~image-1:tag3"},
 	}, nodes)
 	assert.NoError(t, err)
