@@ -353,7 +353,7 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	out := []*dockerclient.ImageDelete{}
 	errs := []string{}
 	for _, image := range matchedImages {
-		content, err := image.Node.DockerClient().RemoveImage(name)
+		content, err := c.cluster.RemoveImage(image)
 		if err != nil {
 			errs = append(errs, fmt.Sprintf("%s: %s", image.Node.Name(), err.Error()))
 			continue

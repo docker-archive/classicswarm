@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/docker/swarm/cluster"
-	"github.com/samalba/dockerclient"
 )
 
 type FakeNode struct {
@@ -18,7 +17,6 @@ type FakeNode struct {
 	containers []*cluster.Container
 }
 
-func (fn *FakeNode) DockerClient() dockerclient.Client     { return nil }
 func (fn *FakeNode) ID() string                            { return fn.id }
 func (fn *FakeNode) Name() string                          { return fn.name }
 func (fn *FakeNode) IP() string                            { return "" }

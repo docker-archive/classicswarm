@@ -1,14 +1,8 @@
 package cluster
 
-import (
-	"fmt"
-
-	"github.com/samalba/dockerclient"
-)
+import "fmt"
 
 type Node interface {
-	DockerClient() dockerclient.Client
-
 	ID() string
 	Name() string
 

@@ -15,6 +15,9 @@ type Cluster interface {
 	// Return one image matching `IdOrName`
 	Image(IdOrName string) *Image
 
+	// Remove an image from the cluster
+	RemoveImage(image *Image) ([]*dockerclient.ImageDelete, error)
+
 	// Return all containers
 	Containers() []*Container
 

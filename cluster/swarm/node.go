@@ -54,10 +54,6 @@ type node struct {
 	overcommitRatio int64
 }
 
-func (n *node) DockerClient() dockerclient.Client {
-	return n.client
-}
-
 func (n *node) ID() string {
 	return n.id
 }
@@ -165,6 +161,11 @@ func (n *node) updateSpecs() error {
 		n.labels[kv[0]] = kv[1]
 	}
 	return nil
+}
+
+// Delete an image from the node.
+func (n *node) removeImage(image *cluster.Image) ([]*dockerclient.ImageDelete, error) {
+	return n.client.RemoveImage(image.Id)
 }
 
 // Refresh the list of images on the node.
