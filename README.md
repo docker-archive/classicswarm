@@ -52,6 +52,8 @@ replacing `docker run swarm` with just `swarm`.
 
 We welcome pull requests and patches; come say hi on IRC, #docker-swarm on freenode.
 
+Our planning process and release cycle are detailed on the [wiki](https://github.com/docker/swarm/wiki)
+
 ## Creators
 
 **Andrea Luzzardi**

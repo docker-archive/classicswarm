@@ -33,6 +33,17 @@ In the future, we want to allow third party tools to be plugged into Docker Swar
 of much bigger clusters.
 
 The work has started on defining the "cluster" interface in [#393](https://github.com/docker/swarm/issues/393)
-qThe first integration will be Mesos but other tools will arrive after, like kubernetes.
+
+The first integration will be Mesos but other tools will arrive after, like kubernetes.
 
 * [ ] Cluster Drivers
+
+Project Planning
+================
+
+An [Open-Source Planning Process](https://github.com/docker/swarm/wiki/Open-Source-Planning-Process) is used to define the Roadmap. [Project Pages](https://github.com/docker/swarm/wiki) define the goals for each Milestone and identify current progress.
+
+| Platform Version | Swarm Milestone | Project Page | 
+|------------------|-----------------|--------------|
+| Docker 1.6.0 | [0.2.0](https://github.com/docker/swarm/milestones/0.2.0) | [Project Page](https://github.com/docker/swarm/wiki/0.2.0-Milestone-Project-Page) | 
+| Docker 1.7.0 | [1.0.0](https://github.com/docker/swarm/milestones/1.0.0) | [Project Page](https://github.com/docker/swarm/wiki/1.0.0-Milestone-Project-Page) | 
