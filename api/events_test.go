@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/docker/swarm/cluster"
-	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +19,6 @@ func (fw *FakeWriter) Write(p []byte) (n int, err error) {
 
 type FakeNode struct{}
 
-func (fn *FakeNode) DockerClient() dockerclient.Client     { return nil }
 func (fn *FakeNode) ID() string                            { return "node_id" }
 func (fn *FakeNode) Name() string                          { return "node_name" }
 func (fn *FakeNode) IP() string                            { return "node_ip" }
