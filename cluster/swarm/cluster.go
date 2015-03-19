@@ -67,14 +67,32 @@ func (c *Cluster) CreateContainer(config *dockerclient.ContainerConfig, name str
 
 	c.RLock()
 	defer c.RUnlock()
-
+retry:
+	// FIXME: to prevent a race, we check again after the pull if the node can still handle
+	// the container. We should store the state in the store before pulling and use this to check
+	// all the other container create, but, as we don't have a proper store yet, this temporary solution
+	// was chosen.
 	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
 	if err != nil {
 		return nil, err
 	}
 
 	if nn, ok := n.(*node); ok {
-		container, err := nn.create(config, name, true)
+		container, err := nn.create(config, name, false)
+		if err == dockerclient.ErrNotFound {
+			// image not on the node, try to pull
+			if err = nn.pull(config.Image); err != nil {
+				return nil, err
+			}
+
+			// check if the container can still fit on this node
+			if _, err = c.scheduler.SelectNodeForContainer([]cluster.Node{n}, config); err != nil {
+				// if not, try to find another node
+				log.Debugf("Node %s not available anymore, selecting another one", n.Name())
+				goto retry
+			}
+			container, err = nn.create(config, name, false)
+		}
 		if err != nil {
 			return nil, err
 		}
