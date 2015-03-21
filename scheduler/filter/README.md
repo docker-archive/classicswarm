@@ -183,11 +183,11 @@ For example,
 * `constraint:node==/node\d/` will match all nodes with `node` + 1 digit.
 * `constraint:node!=/node-[01]/` will match all nodes, except `node-0` and `node-1`.
 * `constraint:node!=/foo\[bar\]/` will match all nodes, except `foo[bar]`. You can see the use of escape characters here.
-* `constraint:node==/(?i)node1/` will match node `node1` case-insensitive. So 'NoDe1' or 'NODE1' will also matched.
+* `constraint:node==/(?i)node1/` will match node `node1` case-insensitive. So 'NoDe1' or 'NODE1' will also match.
 
 ## Port Filter
 
-With this filter, `ports` are considered as a unique resource.
+With this filter, `ports` are considered as unique resources.
 
 ```
 $ docker run -d -p 80:80 nginx
