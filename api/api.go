@@ -330,6 +330,46 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+// DELETE /images/{name:.*}
+func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var name = mux.Vars(r)["name"]
+
+	matchedImages := []*cluster.Image{}
+	for _, image := range c.cluster.Images() {
+		if image.Match(name) {
+			matchedImages = append(matchedImages, image)
+		}
+	}
+
+	if len(matchedImages) == 0 {
+		httpError(w, fmt.Sprintf("No such image %s", name), http.StatusNotFound)
+		return
+	}
+
+	out := []*dockerclient.ImageDelete{}
+	errs := []string{}
+	for _, image := range matchedImages {
+		content, err := c.cluster.RemoveImage(image)
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("%s: %s", image.Node.Name(), err.Error()))
+			continue
+		}
+		out = append(out, content...)
+	}
+
+	if len(errs) != 0 {
+		httpError(w, strings.Join(errs, ""), http.StatusInternalServerError)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(NewWriteFlusher(w)).Encode(out)
+	}
+
+}
+
 // GET /_ping
 func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
@@ -467,7 +507,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 		},
 		"DELETE": {
 			"/containers/{name:.*}": deleteContainers,
-			"/images/{name:.*}":     notImplementedHandler,
+			"/images/{name:.*}":     deleteImages,
 		},
 		"OPTIONS": {
 			"": optionsHandler,

@@ -163,6 +163,11 @@ func (n *node) updateSpecs() error {
 	return nil
 }
 
+// Delete an image from the node.
+func (n *node) removeImage(image *cluster.Image) ([]*dockerclient.ImageDelete, error) {
+	return n.client.RemoveImage(image.Id)
+}
+
 // Refresh the list of images on the node.
 func (n *node) refreshImages() error {
 	images, err := n.client.ListImages()
@@ -459,9 +464,11 @@ func (n *node) Container(IdOrName string) *cluster.Container {
 	return nil
 }
 
+// Images returns all the images in the node
 func (n *node) Images() []*cluster.Image {
 	images := []*cluster.Image{}
 	n.RLock()
+
 	for _, image := range n.images {
 		images = append(images, image)
 	}
@@ -474,15 +481,9 @@ func (n *node) Image(IdOrName string) *cluster.Image {
 	n.RLock()
 	defer n.RUnlock()
 
-	size := len(IdOrName)
-	for _, image := range n.Images() {
-		if image.Id == IdOrName || (size > 2 && strings.HasPrefix(image.Id, IdOrName)) {
+	for _, image := range n.images {
+		if image.Match(IdOrName) {
 			return image
-		}
-		for _, t := range image.RepoTags {
-			if t == IdOrName || (size > 2 && strings.HasPrefix(t, IdOrName)) {
-				return image
-			}
 		}
 	}
 	return nil

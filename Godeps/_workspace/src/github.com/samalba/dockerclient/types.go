@@ -166,3 +166,8 @@ type Info struct {
 	Name            string
 	Labels          []string
 }
+
+type ImageDelete struct {
+	Deleted  string
+	Untagged string
+}
