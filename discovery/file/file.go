@@ -23,13 +23,22 @@ func (s *FileDiscoveryService) Initialize(path string, heartbeat int) error {
 	return nil
 }
 
+func parseFileContent(content []byte) []string {
+	result := make([]string, 0)
+	for _, line := range strings.Split(strings.TrimSpace(string(content)), "\n") {
+		for _, ip := range discovery.Generate(line) {
+			result = append(result, ip)
+		}
+	}
+	return result
+}
+
 func (s *FileDiscoveryService) Fetch() ([]*discovery.Entry, error) {
-	data, err := ioutil.ReadFile(s.path)
+	fileContent, err := ioutil.ReadFile(s.path)
 	if err != nil {
 		return nil, err
 	}
-
-	return discovery.CreateEntries(strings.Split(string(data), "\n"))
+	return discovery.CreateEntries(parseFileContent(fileContent))
 }
 
 func (s *FileDiscoveryService) Watch(callback discovery.WatchCallback) {
