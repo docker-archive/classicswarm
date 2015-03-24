@@ -173,7 +173,7 @@ func (c *Cluster) getNode(addr string) *node {
 	return nil
 }
 
-// Containers returns all the images in the cluster.
+// Images returns all the images in the cluster.
 func (c *Cluster) Images() []*cluster.Image {
 	c.RLock()
 	defer c.RUnlock()
@@ -202,6 +202,16 @@ func (c *Cluster) Image(IdOrName string) *cluster.Image {
 	}
 
 	return nil
+}
+
+// RemoveImage removes an image from the cluster
+func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete, error) {
+	c.Lock()
+	defer c.Unlock()
+	if n, ok := image.Node.(*node); ok {
+		return n.removeImage(image)
+	}
+	return nil, nil
 }
 
 func (c *Cluster) Pull(name string, callback func(what, status string)) {
