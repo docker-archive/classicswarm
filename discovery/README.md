@@ -157,9 +157,9 @@ For example,
 
 ```bash
 # file example
-$ echo 10.0.0.[11:100]:2375   >> /tmp/my_cluster
-$ echo 10.0.1.[15:20]:2375    >> /tmp/my_cluster
-$ echo 192.168.1.2:[2:20]375  >> /tmp/my_cluster
+$ echo "10.0.0.[11:100]:2375"   >> /tmp/my_cluster
+$ echo "10.0.1.[15:20]:2375"    >> /tmp/my_cluster
+$ echo "192.168.1.2:[2:20]375"  >> /tmp/my_cluster
 
 # start the manager
 $ swarm manage -H tcp://<swarm_ip:swarm_port> file:///tmp/my_cluster
@@ -167,7 +167,7 @@ $ swarm manage -H tcp://<swarm_ip:swarm_port> file:///tmp/my_cluster
 
 ```bash
 # nodes example
-$ swarm manage -H <swarm_ip:swarm_port> nodes://10.0.0.[10:200]:2375,10.0.1.[2:250]:2375
+$ swarm manage -H <swarm_ip:swarm_port> "nodes://10.0.0.[10:200]:2375,10.0.1.[2:250]:2375"
 ```
 
 ## Contributing a new discovery backend
