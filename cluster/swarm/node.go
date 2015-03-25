@@ -22,6 +22,7 @@ const (
 	requestTimeout = 10 * time.Second
 )
 
+// NewNode is exported
 func NewNode(addr string, overcommitRatio float64) *node {
 	e := &node{
 		addr:            addr,
@@ -144,7 +145,7 @@ func (n *node) updateSpecs() error {
 	// Older versions of Docker don't expose the ID field and are not supported
 	// by Swarm.  Catch the error ASAP and refuse to connect.
 	if len(info.ID) == 0 {
-		return fmt.Errorf("node %s is running an unsupported version of Docker Engine. Please upgrade.", n.addr)
+		return fmt.Errorf("node %s is running an unsupported version of Docker Engine. Please upgrade", n.addr)
 	}
 	n.id = info.ID
 	n.name = info.Name
@@ -327,7 +328,7 @@ func (n *node) emitEvent(event string) {
 
 // Return the sum of memory reserved by containers.
 func (n *node) UsedMemory() int64 {
-	var r int64 = 0
+	var r int64
 	n.RLock()
 	for _, c := range n.containers {
 		r += c.Info.Config.Memory
@@ -338,7 +339,7 @@ func (n *node) UsedMemory() int64 {
 
 // Return the sum of CPUs reserved by containers.
 func (n *node) UsedCpus() int64 {
-	var r int64 = 0
+	var r int64
 	n.RLock()
 	for _, c := range n.containers {
 		r += c.Info.Config.CpuShares
@@ -437,10 +438,10 @@ func (n *node) Containers() []*cluster.Container {
 	return containers
 }
 
-// Container returns the container with IdOrName in the node.
-func (n *node) Container(IdOrName string) *cluster.Container {
+// Container returns the container with IDOrName in the node.
+func (n *node) Container(IDOrName string) *cluster.Container {
 	// Abort immediately if the name is empty.
-	if len(IdOrName) == 0 {
+	if len(IDOrName) == 0 {
 		return nil
 	}
 
@@ -449,13 +450,13 @@ func (n *node) Container(IdOrName string) *cluster.Container {
 
 	for _, container := range n.Containers() {
 		// Match ID prefix.
-		if strings.HasPrefix(container.Id, IdOrName) {
+		if strings.HasPrefix(container.Id, IDOrName) {
 			return container
 		}
 
 		// Match name, /name or engine/name.
 		for _, name := range container.Names {
-			if name == IdOrName || name == "/"+IdOrName || container.Node.ID()+name == IdOrName || container.Node.Name()+name == IdOrName {
+			if name == IDOrName || name == "/"+IDOrName || container.Node.ID()+name == IDOrName || container.Node.Name()+name == IDOrName {
 				return container
 			}
 		}
@@ -476,13 +477,13 @@ func (n *node) Images() []*cluster.Image {
 	return images
 }
 
-// Image returns the image with IdOrName in the node
-func (n *node) Image(IdOrName string) *cluster.Image {
+// Image returns the image with IDOrName in the node
+func (n *node) Image(IDOrName string) *cluster.Image {
 	n.RLock()
 	defer n.RUnlock()
 
 	for _, image := range n.images {
-		if image.Match(IdOrName) {
+		if image.Match(IDOrName) {
 			return image
 		}
 	}

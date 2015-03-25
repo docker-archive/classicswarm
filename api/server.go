@@ -11,6 +11,7 @@ import (
 	"github.com/docker/swarm/cluster"
 )
 
+// DefaultDockerPort is exported
 const DefaultDockerPort = ":2375"
 
 func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error) {
@@ -28,6 +29,7 @@ func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error
 	return l, nil
 }
 
+// ListenAndServe is exported
 func ListenAndServe(c cluster.Cluster, hosts []string, enableCors bool, tlsConfig *tls.Config, eventsHandler *eventsHandler) error {
 	context := &context{
 		cluster:       c,

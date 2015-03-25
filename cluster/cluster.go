@@ -2,6 +2,7 @@ package cluster
 
 import "github.com/samalba/dockerclient"
 
+// Cluster is exported
 type Cluster interface {
 	// Create a container
 	CreateContainer(config *dockerclient.ContainerConfig, name string) (*Container, error)
@@ -12,8 +13,8 @@ type Cluster interface {
 	// Return all images
 	Images() []*Image
 
-	// Return one image matching `IdOrName`
-	Image(IdOrName string) *Image
+	// Return one image matching `IDOrName`
+	Image(IDOrName string) *Image
 
 	// Remove an image from the cluster
 	RemoveImage(image *Image) ([]*dockerclient.ImageDelete, error)
@@ -21,8 +22,8 @@ type Cluster interface {
 	// Return all containers
 	Containers() []*Container
 
-	// Return container the matching `IdOrName`
-	Container(IdOrName string) *Container
+	// Return container the matching `IDOrName`
+	Container(IDOrName string) *Container
 
 	// Pull images
 	// `callback` can be called multiple time

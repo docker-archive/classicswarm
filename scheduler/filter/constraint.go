@@ -12,6 +12,7 @@ import (
 type ConstraintFilter struct {
 }
 
+// Filter is exported
 func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	constraints, err := parseExprs("constraint", config.Env)
 	if err != nil {

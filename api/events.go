@@ -15,6 +15,7 @@ type eventsHandler struct {
 	cs map[string]chan struct{}
 }
 
+// NewEventsHandler is exported
 func NewEventsHandler() *eventsHandler {
 	return &eventsHandler{
 		ws: make(map[string]io.Writer),

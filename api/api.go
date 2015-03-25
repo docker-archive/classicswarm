@@ -22,6 +22,7 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
+// APIVERSION is exported
 const APIVERSION = "1.16"
 
 type context struct {
@@ -55,14 +56,14 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 	version := struct {
 		Version    string
-		ApiVersion string
+		APIVersion string
 		GoVersion  string
 		GitCommit  string
 		Os         string
 		Arch       string
 	}{
 		Version:    "swarm/" + version.VERSION,
-		ApiVersion: APIVERSION,
+		APIVersion: APIVERSION,
 		GoVersion:  runtime.Version(),
 		GitCommit:  version.GITCOMMIT,
 		Os:         runtime.GOOS,
@@ -316,7 +317,7 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := struct{ Id string }{}
+	id := struct{ ID string }{}
 
 	if err := json.Unmarshal(data, &id); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
@@ -324,7 +325,7 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// add execID to the container, so the later exec/start will work
-	container.Info.ExecIDs = append(container.Info.ExecIDs, id.Id)
+	container.Info.ExecIDs = append(container.Info.ExecIDs, id.ID)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
