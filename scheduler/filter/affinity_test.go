@@ -193,6 +193,44 @@ func TestAffinityFilter(t *testing.T) {
 	}, nodes)
 	assert.Error(t, err)
 
+	//Tests for Soft affinity
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:image==~image-0:tag3"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:image==~ima~ge-0:tag3"},
+	}, nodes)
+	assert.Error(t, err)
+	assert.Len(t, result, 0)
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:image==~image-1:tag3"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 3)
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:image==~image-*"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:image!=~image-*"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[2])
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{
+		Env: []string{"affinity:image==~/image-\\d*/"},
+	}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+
 	// Not support = any more
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"affinity:image=image-0:tag3"},
@@ -206,4 +244,5 @@ func TestAffinityFilter(t *testing.T) {
 	}, nodes)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
+
 }

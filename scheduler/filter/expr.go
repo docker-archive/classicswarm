@@ -19,6 +19,7 @@ type expr struct {
 	key      string
 	operator int
 	value    string
+	isSoft   bool
 }
 
 func parseExprs(key string, env []string) ([]expr, error) {
@@ -48,14 +49,14 @@ func parseExprs(key string, env []string) ([]expr, error) {
 						// allow leading = in case of using ==
 						// allow * for globbing
 						// allow regexp
-						matched, err := regexp.MatchString(`^(?i)[=!\/]?[a-z0-9:\-_\.\*/\(\)\?\+\[\]\\\^\$]+$`, parts[1])
+						matched, err := regexp.MatchString(`^(?i)[=!\/]?(~)?[a-z0-9:\-_\.\*/\(\)\?\+\[\]\\\^\$]+$`, parts[1])
 						if err != nil {
 							return nil, err
 						}
 						if matched == false {
 							return nil, fmt.Errorf("Value '%s' is invalid", parts[1])
 						}
-						exprs = append(exprs, expr{key: strings.ToLower(parts[0]), operator: i, value: parts[1]})
+						exprs = append(exprs, expr{key: strings.ToLower(parts[0]), operator: i, value: strings.TrimLeft(parts[1], "~"), isSoft: isSoft(parts[1])})
 					} else {
 						exprs = append(exprs, expr{key: strings.ToLower(parts[0]), operator: i})
 					}
@@ -103,4 +104,12 @@ func (e *expr) Match(whats ...string) bool {
 	}
 
 	return false
+}
+
+func isSoft(value string) bool {
+	if value[0] == '~' {
+		return true
+	} else {
+		return false
+	}
 }
