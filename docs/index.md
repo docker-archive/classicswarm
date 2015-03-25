@@ -43,6 +43,11 @@ Each swarm node will run a swarm node agent which will register the referenced
 Docker daemon, and will then monitor it, updating the discovery backend to its
 status.
 
+> **Note**: In order for the Swarm manager to be able to communicate with the node 
+agent on each node, they must listen to a common network interface. This can be 
+achieved by starting docker with the `-H` flag (e.g. `docker -H tcp://0.0.0.0:2375 -d` 
+on each swarm node).
+
 The following example uses the Docker Hub based `token` discovery service:
 
 ```bash
@@ -69,11 +74,6 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 $ docker run --rm swarm list token://<cluster_id>
 <node_ip:2375>
 ```
-
-> **Note**: In order for the Swarm manager to be able to communicate with the node agent on
-each node, they must listen to a common network interface. This can be achieved
-by starting with the `-H` flag (e.g. `-H tcp://0.0.0.0:2375`).
-
 
 ## TLS
 
