@@ -246,3 +246,35 @@ func TestUnsupportedOperators(t *testing.T) {
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 }
+
+func TestFilterSoftConstraint(t *testing.T) {
+	var (
+		f      = ConstraintFilter{}
+		nodes  = testFixtures()
+		result []cluster.Node
+		err    error
+	)
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:node==~node-1-name"}}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[1])
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{`constraint:name!=~/(?i)abc*/`}}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 4)
+
+	// Check not with globber pattern
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:region!=~us*"}}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:region!=~can*"}}, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 4)
+
+	// Check matching
+	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{"constraint:region==~us~"}}, nodes)
+	assert.Error(t, err)
+	assert.Len(t, result, 0)
+}

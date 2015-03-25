@@ -185,6 +185,36 @@ For example,
 * `constraint:node!=/foo\[bar\]/` will match all nodes, except `foo[bar]`. You can see the use of escape characters here.
 * `constraint:node==/(?i)node1/` will match node `node1` case-insensitive. So 'NoDe1' or 'NODE1' will also match.
 
+#### Soft Affinities/Constraints
+
+By default, affinities and constraints are hard enforced. If an affinity or
+constraint is not met, the container won't be scheduled. With soft
+affinities/constraints the scheduler will try to meet the rule. If it is not
+met, the scheduler will discard the filter and schedule the container according
+to the scheduler's strategy.
+
+soft affinities/constraints are expressed with a **~** in the expression
+Example ,
+```
+$ docker run -d --name redis1 -e affinity:image==~redis redis
+```
+If none of the nodes in the cluster has the image redis, the scheduler will
+discard the affinity and schedules according to the strategy.
+
+```
+$ docker run -d --name redis2 -e constraint:region==~us* redis
+```
+If none of the nodes in the cluster belongs to `us` region, the scheduler will
+discard the constraint and schedules according to the strategy.
+
+```
+$ docker run -d --name redis5 -e affinity:container!=~redis* redis
+```
+The affinity filter will be used to schedule a new `redis5` container to a
+different node that doesn't have a container with the name that satisfies
+`redis*`. If each node in the cluster has a `redis*` container, the scheduler
+will discard the affinity rule and schedules according to the strategy.
+
 ## Port Filter
 
 With this filter, `ports` are considered as unique resources.

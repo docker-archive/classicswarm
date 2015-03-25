@@ -36,6 +36,9 @@ func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 			}
 		}
 		if len(candidates) == 0 {
+			if constraint.isSoft {
+				return nodes, nil
+			}
 			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", constraint.key, OPERATORS[constraint.operator], constraint.value)
 		}
 		nodes = candidates
