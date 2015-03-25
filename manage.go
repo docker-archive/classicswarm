@@ -32,7 +32,7 @@ func (h *logHandler) Handle(e *cluster.Event) error {
 }
 
 // Load the TLS certificates/keys and, if verify is true, the CA.
-func loadTlsConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
+func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 	c, err := tls.LoadX509KeyPair(cert, key)
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't load X509 key pair (%s, %s): %s. Key encrypted?",
@@ -64,7 +64,7 @@ func loadTlsConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 
 func manage(c *cli.Context) {
 	var (
-		tlsConfig *tls.Config = nil
+		tlsConfig *tls.Config
 		err       error
 	)
 
@@ -76,7 +76,7 @@ func manage(c *cli.Context) {
 		if c.Bool("tlsverify") && !c.IsSet("tlscacert") {
 			log.Fatal("--tlscacert must be provided when using --tlsverify")
 		}
-		tlsConfig, err = loadTlsConfig(
+		tlsConfig, err = loadTLSConfig(
 			c.String("tlscacert"),
 			c.String("tlscert"),
 			c.String("tlskey"),
@@ -110,7 +110,7 @@ func manage(c *cli.Context) {
 	// see https://github.com/codegangsta/cli/issues/160
 	names := c.StringSlice("filter")
 	if c.IsSet("filter") || c.IsSet("f") {
-		names = names[DEFAULT_FILTER_NUMBER:]
+		names = names[DefaultFilterNumber:]
 	}
 	fs, err := filter.New(names)
 	if err != nil {

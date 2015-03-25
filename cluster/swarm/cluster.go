@@ -13,6 +13,7 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
+// Cluster is exported
 type Cluster struct {
 	sync.RWMutex
 
@@ -23,6 +24,7 @@ type Cluster struct {
 	store        *state.Store
 }
 
+// NewCluster is exported
 func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, eventhandler cluster.EventHandler, options *cluster.Options) cluster.Cluster {
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
@@ -54,7 +56,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, eventhandler
 	return cluster
 }
 
-// callback for the events
+// Handle callbacks for the events
 func (c *Cluster) Handle(e *cluster.Event) error {
 	if err := c.eventHandler.Handle(e); err != nil {
 		log.Error(err)
@@ -62,7 +64,7 @@ func (c *Cluster) Handle(e *cluster.Event) error {
 	return nil
 }
 
-// Schedule a brand new container into the cluster.
+// CreateContainer aka schedule a brand new container into the cluster.
 func (c *Cluster) CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error) {
 
 	c.RLock()
@@ -108,8 +110,8 @@ retry:
 	return nil, nil
 }
 
-// Remove a container from the cluster. Containers should always be destroyed
-// through the scheduler to guarantee atomicity.
+// RemoveContainer aka Remove a container from the cluster. Containers should
+// always be destroyed through the scheduler to guarantee atomicity.
 func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) error {
 	c.Lock()
 	defer c.Unlock()
@@ -186,17 +188,17 @@ func (c *Cluster) Images() []*cluster.Image {
 	return out
 }
 
-// Image returns an image with IdOrName in the cluster
-func (c *Cluster) Image(IdOrName string) *cluster.Image {
+// Image returns an image with IDOrName in the cluster
+func (c *Cluster) Image(IDOrName string) *cluster.Image {
 	// Abort immediately if the name is empty.
-	if len(IdOrName) == 0 {
+	if len(IDOrName) == 0 {
 		return nil
 	}
 
 	c.RLock()
 	defer c.RUnlock()
 	for _, n := range c.nodes {
-		if image := n.Image(IdOrName); image != nil {
+		if image := n.Image(IDOrName); image != nil {
 			return image
 		}
 	}
@@ -214,6 +216,7 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete
 	return nil, nil
 }
 
+// Pull is exported
 func (c *Cluster) Pull(name string, callback func(what, status string)) {
 	size := len(c.nodes)
 	done := make(chan bool, size)
@@ -251,17 +254,17 @@ func (c *Cluster) Containers() []*cluster.Container {
 	return out
 }
 
-// Container returns the container with IdOrName in the cluster
-func (c *Cluster) Container(IdOrName string) *cluster.Container {
+// Container returns the container with IDOrName in the cluster
+func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	// Abort immediately if the name is empty.
-	if len(IdOrName) == 0 {
+	if len(IDOrName) == 0 {
 		return nil
 	}
 
 	c.RLock()
 	defer c.RUnlock()
 	for _, n := range c.nodes {
-		if container := n.Container(IdOrName); container != nil {
+		if container := n.Container(IDOrName); container != nil {
 			return container
 		}
 	}
@@ -282,6 +285,7 @@ func (c *Cluster) listNodes() []cluster.Node {
 	return out
 }
 
+// Info is exported
 func (c *Cluster) Info() [][2]string {
 	info := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(c.nodes))}}
 

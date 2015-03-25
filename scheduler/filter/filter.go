@@ -8,13 +8,15 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
+// Filter is exported
 type Filter interface {
 	// Return a subset of nodes that were accepted by the filtering policy.
 	Filter(*dockerclient.ContainerConfig, []cluster.Node) ([]cluster.Node, error)
 }
 
 var (
-	filters         map[string]Filter
+	filters map[string]Filter
+	// ErrNotSupported is exported
 	ErrNotSupported = errors.New("filter not supported")
 )
 
@@ -28,6 +30,7 @@ func init() {
 	}
 }
 
+// New is exported
 func New(names []string) ([]Filter, error) {
 	var selectedFilters []Filter
 
@@ -42,7 +45,7 @@ func New(names []string) ([]Filter, error) {
 	return selectedFilters, nil
 }
 
-// Apply a set of filters in batch.
+// ApplyFilters applies a set of filters in batch.
 func ApplyFilters(filters []Filter, config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	var err error
 

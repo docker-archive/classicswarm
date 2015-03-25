@@ -6,9 +6,7 @@ import (
 	"strconv"
 )
 
-//
-// IP generator
-//
+// Generate takes care of IP generation
 func Generate(pattern string) []string {
 	re, _ := regexp.Compile(`\[(.+):(.+)\]`)
 	submatch := re.FindStringSubmatch(pattern)

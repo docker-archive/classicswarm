@@ -11,6 +11,7 @@ import (
 	consul "github.com/hashicorp/consul/api"
 )
 
+// ConsulDiscoveryService is exported
 type ConsulDiscoveryService struct {
 	heartbeat time.Duration
 	client    *consul.Client
@@ -22,6 +23,7 @@ func init() {
 	discovery.Register("consul", &ConsulDiscoveryService{})
 }
 
+// Initialize is exported
 func (s *ConsulDiscoveryService) Initialize(uris string, heartbeat int) error {
 	parts := strings.SplitN(uris, "/", 2)
 	if len(parts) < 2 {
@@ -52,6 +54,8 @@ func (s *ConsulDiscoveryService) Initialize(uris string, heartbeat int) error {
 	s.lastIndex = meta.LastIndex
 	return nil
 }
+
+// Fetch is exported
 func (s *ConsulDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	kv := s.client.KV()
 	pairs, _, err := kv.List(s.prefix, nil)
@@ -70,6 +74,7 @@ func (s *ConsulDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	return discovery.CreateEntries(addrs)
 }
 
+// Watch is exported
 func (s *ConsulDiscoveryService) Watch(callback discovery.WatchCallback) {
 	for _ = range s.waitForChange() {
 		log.WithField("name", "consul").Debug("Discovery watch triggered")
@@ -80,6 +85,7 @@ func (s *ConsulDiscoveryService) Watch(callback discovery.WatchCallback) {
 	}
 }
 
+// Register is exported
 func (s *ConsulDiscoveryService) Register(addr string) error {
 	kv := s.client.KV()
 	p := &consul.KVPair{Key: path.Join(s.prefix, addr), Value: []byte(addr)}

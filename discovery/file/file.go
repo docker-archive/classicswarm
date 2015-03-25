@@ -8,6 +8,7 @@ import (
 	"github.com/docker/swarm/discovery"
 )
 
+// FileDiscoveryService is exported
 type FileDiscoveryService struct {
 	heartbeat int
 	path      string
@@ -17,6 +18,7 @@ func init() {
 	discovery.Register("file", &FileDiscoveryService{})
 }
 
+// Initialize is exported
 func (s *FileDiscoveryService) Initialize(path string, heartbeat int) error {
 	s.path = path
 	s.heartbeat = heartbeat
@@ -33,6 +35,7 @@ func parseFileContent(content []byte) []string {
 	return result
 }
 
+// Fetch is exported
 func (s *FileDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	fileContent, err := ioutil.ReadFile(s.path)
 	if err != nil {
@@ -41,6 +44,7 @@ func (s *FileDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	return discovery.CreateEntries(parseFileContent(fileContent))
 }
 
+// Watch is exported
 func (s *FileDiscoveryService) Watch(callback discovery.WatchCallback) {
 	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
 		entries, err := s.Fetch()
@@ -50,6 +54,7 @@ func (s *FileDiscoveryService) Watch(callback discovery.WatchCallback) {
 	}
 }
 
+// Register is exported
 func (s *FileDiscoveryService) Register(addr string) error {
 	return discovery.ErrNotImplemented
 }
