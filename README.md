@@ -35,6 +35,15 @@ apt-get install golang git
 go get github.com/tools/godep
 ```
 
+For example, on Mac OS X you'd run:
+
+```bash
+brew install go
+export GOPATH=~/go
+export PATH=$PATH:~/go/bin
+go get github.com/tools/godep
+```
+
 You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
 
 Then install the `swarm` binary:
