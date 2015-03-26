@@ -14,7 +14,7 @@ into a single, virtual host.
 
 Swarm serves the standard Docker API, so any tool which already communicates
 with a Docker daemon can use Swarm to transparently scale to multiple hosts:
-Dokku, Compose, Krane, Flynn, Deis, DockerUI, Shipyard, Drone, Jenkins... and,
+Dokku, Compose, Krane, Deis, DockerUI, Shipyard, Drone, Jenkins... and,
 of course, the Docker client itself.
 
 Like other Docker projects, Swarm follows the "batteries included but removable"
