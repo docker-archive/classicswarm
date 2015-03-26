@@ -10,7 +10,7 @@ import (
 type weightedNode struct {
 	Node cluster.Node
 	// Weight is the inherent value of this node.
-	Weight int64
+	Weight float64
 }
 
 type weightedNodeList []*weightedNode
@@ -45,19 +45,19 @@ func weighNodes(config *dockerclient.ContainerConfig, nodes []cluster.Node) (wei
 		}
 
 		var (
-			cpuScore    int64 = 100
-			memoryScore int64 = 100
+			cpuScore    float64 = 100
+			memoryScore int64   = 100
 		)
 
 		if config.CpuShares > 0 {
-			cpuScore = (node.UsedCpus() + config.CpuShares) * 100 / nodeCpus
+			cpuScore = (node.UsedCpus() + float64(config.CpuShares*nodeCpus/1024)) * 100 / float64(nodeCpus)
 		}
 		if config.Memory > 0 {
 			memoryScore = (node.UsedMemory() + config.Memory) * 100 / nodeMemory
 		}
 
 		if cpuScore <= 100 && memoryScore <= 100 {
-			weightedNodes = append(weightedNodes, &weightedNode{Node: node, Weight: cpuScore + memoryScore})
+			weightedNodes = append(weightedNodes, &weightedNode{Node: node, Weight: cpuScore + float64(memoryScore)})
 		}
 	}
 
