@@ -67,6 +67,9 @@ func main() {
 				discovery := &token.TokenDiscoveryService{}
 				discovery.Initialize("", 0)
 				token, err := discovery.CreateCluster()
+				if len(c.Args()) != 0 {
+					log.Fatalf("the `create` command takes no arguments. See '%s create --help'.", c.App.Name)
+				}
 				if err != nil {
 					log.Fatal(err)
 				}
