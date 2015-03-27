@@ -27,7 +27,7 @@ func Generate(pattern string) []string {
 
 	template := re.ReplaceAllString(pattern, "%d")
 
-	result := make([]string, 0)
+	var result []string
 	for val := from; val <= to; val++ {
 		entry := fmt.Sprintf(template, val)
 		result = append(result, entry)
