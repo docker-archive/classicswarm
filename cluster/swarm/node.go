@@ -263,8 +263,6 @@ func (n *node) updateContainer(c dockerclient.Container, containers map[string]*
 			return nil, err
 		}
 		container.Info = *info
-		// real CpuShares -> nb of CPUs
-		container.Info.Config.CpuShares = container.Info.Config.CpuShares
 	}
 
 	return containers, nil
