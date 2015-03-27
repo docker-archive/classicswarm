@@ -40,6 +40,7 @@ You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
 Then install the `swarm` binary:
 
 ```bash
+cd $GOPATH/src/github.com/docker/
 git clone https://github.com/docker/swarm
 cd swarm
 godep go install .
