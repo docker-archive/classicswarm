@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/pkg/ioutils"
 )
 
+// WriteFlusher is exported
 type WriteFlusher struct {
 	sync.Mutex
 	w       io.Writer
@@ -29,6 +30,7 @@ func (wf *WriteFlusher) Flush() {
 	wf.flusher.Flush()
 }
 
+// NewWriteFlusher is exported
 func NewWriteFlusher(w io.Writer) *WriteFlusher {
 	var flusher http.Flusher
 	if f, ok := w.(http.Flusher); ok {

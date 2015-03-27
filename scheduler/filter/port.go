@@ -13,6 +13,7 @@ import (
 type PortFilter struct {
 }
 
+// Filter is exported
 func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	for _, port := range config.HostConfig.PortBindings {
 		for _, binding := range port {

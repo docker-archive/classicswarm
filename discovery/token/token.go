@@ -12,8 +12,10 @@ import (
 	"github.com/docker/swarm/discovery"
 )
 
-const DISCOVERY_URL = "https://discovery-stage.hub.docker.com/v1"
+// DiscoveryUrl is exported
+const DiscoveryURL = "https://discovery-stage.hub.docker.com/v1"
 
+// TokenDiscoveryService is exported
 type TokenDiscoveryService struct {
 	heartbeat int
 	url       string
@@ -24,12 +26,13 @@ func init() {
 	discovery.Register("token", &TokenDiscoveryService{})
 }
 
+// Initialize is exported
 func (s *TokenDiscoveryService) Initialize(urltoken string, heartbeat int) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
 		s.url = "https://" + urltoken[:i]
 		s.token = urltoken[i+1:]
 	} else {
-		s.url = DISCOVERY_URL
+		s.url = DiscoveryURL
 		s.token = urltoken
 	}
 
@@ -63,6 +66,7 @@ func (s *TokenDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	return discovery.CreateEntries(addrs)
 }
 
+// Watch is exported
 func (s *TokenDiscoveryService) Watch(callback discovery.WatchCallback) {
 	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
 		entries, err := s.Fetch()
@@ -72,7 +76,7 @@ func (s *TokenDiscoveryService) Watch(callback discovery.WatchCallback) {
 	}
 }
 
-// RegisterEntry adds a new entry identified by the into the discovery service
+// Register adds a new entry identified by the into the discovery service
 func (s *TokenDiscoveryService) Register(addr string) error {
 	buf := strings.NewReader(addr)
 

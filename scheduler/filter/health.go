@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	// ErrNoHealthyNodeAvailable is exported
 	ErrNoHealthyNodeAvailable = errors.New("No healthy node available in the cluster")
 )
 
@@ -15,6 +16,7 @@ var (
 type HealthFilter struct {
 }
 
+// Filter is exported
 func (f *HealthFilter) Filter(_ *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	result := []cluster.Node{}
 	for _, node := range nodes {

@@ -11,6 +11,7 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
+// ZkDiscoveryService is exported
 type ZkDiscoveryService struct {
 	conn      *zk.Conn
 	path      []string
@@ -39,6 +40,7 @@ func (s *ZkDiscoveryService) createFullpath() error {
 	return nil
 }
 
+// Initialize is exported
 func (s *ZkDiscoveryService) Initialize(uris string, heartbeat int) error {
 	var (
 		// split here because uris can contain multiples ips
@@ -72,6 +74,7 @@ func (s *ZkDiscoveryService) Initialize(uris string, heartbeat int) error {
 	return nil
 }
 
+// Fetch is exported
 func (s *ZkDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	addrs, _, err := s.conn.Children(s.fullpath())
 
@@ -82,6 +85,7 @@ func (s *ZkDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	return discovery.CreateEntries(addrs)
 }
 
+// Watch is exported
 func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 
 	addrs, _, eventChan, err := s.conn.ChildrenW(s.fullpath())
@@ -107,6 +111,7 @@ func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 
 }
 
+// Register is exported
 func (s *ZkDiscoveryService) Register(addr string) error {
 	nodePath := path.Join(s.fullpath(), addr)
 

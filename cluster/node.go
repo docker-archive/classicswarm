@@ -2,6 +2,7 @@ package cluster
 
 import "fmt"
 
+// Node is exported
 type Node interface {
 	ID() string
 	Name() string
@@ -10,9 +11,9 @@ type Node interface {
 	Addr() string //to know where to connect with the proxy
 
 	Images() []*Image                     //used by the API
-	Image(IdOrName string) *Image         //used by the filters
+	Image(IDOrName string) *Image         //used by the filters
 	Containers() []*Container             //used by the filters
-	Container(IdOrName string) *Container //used by the filters
+	Container(IDOrName string) *Container //used by the filters
 
 	TotalCpus() int64   //used by the strategy
 	UsedCpus() int64    //used by the strategy
@@ -24,6 +25,7 @@ type Node interface {
 	IsHealthy() bool
 }
 
+// SerializeNode is exported
 func SerializeNode(node Node) string {
 	return fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%q}",
 		"Name", node.Name(),
