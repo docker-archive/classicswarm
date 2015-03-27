@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Root directory of the repository.
-SWARM_ROOT=${BATS_TEST_DIRNAME}/../..
+SWARM_ROOT=${SWARM_ROOT:-${BATS_TEST_DIRNAME}/../..}
 
 # Docker image and version to use for integration tests.
 DOCKER_IMAGE=${DOCKER_IMAGE:-aluzzardi/docker}
@@ -33,7 +33,7 @@ function wait_until_reachable() {
 		echo "Attempt to connect to ${HOSTS[$i]} failed for the $((++attempts)) time" >&2
 		sleep 0.5
 	done
-	[[ $attempts -lt $max_attempts ]] 
+	[[ $attempts -lt $max_attempts ]]
 }
 
 # Start the swarm manager in background.
