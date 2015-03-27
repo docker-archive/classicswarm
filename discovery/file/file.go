@@ -24,7 +24,7 @@ func (s *FileDiscoveryService) Initialize(path string, heartbeat int) error {
 }
 
 func parseFileContent(content []byte) []string {
-	result := make([]string, 0)
+	var result []string
 	for _, line := range strings.Split(strings.TrimSpace(string(content)), "\n") {
 		for _, ip := range discovery.Generate(line) {
 			result = append(result, ip)
