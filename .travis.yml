@@ -14,10 +14,13 @@ install:
   - go get code.google.com/p/go.tools/cmd/vet
   - go get code.google.com/p/go.tools/cmd/cover
   - go get github.com/mattn/goveralls
+  - go get github.com/golang/lint/golint
+  - go get github.com/GeertJohan/fgt
 
 script:
   - script/validate-dco
   - script/validate-gofmt
   - go vet ./...
+  - fgt golint -min_confidence=0.9 ./...
   - go test -v -race ./...
   - script/coverage
