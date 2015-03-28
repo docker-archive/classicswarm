@@ -15,7 +15,7 @@ func eventCallback(e *dockerclient.Event, ec chan error, args ...interface{}) {
 func waitForInterrupt() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
-	for _ = range sigChan {
+	for range sigChan {
 		os.Exit(0)
 	}
 }

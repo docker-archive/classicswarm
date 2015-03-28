@@ -17,9 +17,9 @@ type PlacementStrategy interface {
 }
 
 var (
-	strategies              map[string]PlacementStrategy
+	strategies map[string]PlacementStrategy
 	// ErrNotSupported is exported
-	ErrNotSupported         = errors.New("strategy not supported")
+	ErrNotSupported = errors.New("strategy not supported")
 	// ErrNoResourcesAvailable is exported
 	ErrNoResourcesAvailable = errors.New("no resources available to schedule container")
 )

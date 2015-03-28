@@ -372,7 +372,7 @@ func TestApp_BeforeFunc(t *testing.T) {
 	}
 
 	app.Commands = []cli.Command{
-		cli.Command{
+		{
 			Name: "sub",
 			Action: func(c *cli.Context) {
 				subcommandRun = true
@@ -484,7 +484,7 @@ func TestAppCommandNotFound(t *testing.T) {
 	}
 
 	app.Commands = []cli.Command{
-		cli.Command{
+		{
 			Name: "bar",
 			Action: func(c *cli.Context) {
 				subcommandRun = true
@@ -507,7 +507,7 @@ func TestGlobalFlagsInSubcommands(t *testing.T) {
 	}
 
 	app.Commands = []cli.Command{
-		cli.Command{
+		{
 			Name: "foo",
 			Subcommands: []cli.Command{
 				{

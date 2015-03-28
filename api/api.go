@@ -22,7 +22,7 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-// APIVERSION is exported
+// The Client API version
 const APIVERSION = "1.16"
 
 type context struct {

@@ -40,9 +40,9 @@ type DiscoveryService interface {
 }
 
 var (
-	discoveries       map[string]DiscoveryService
+	discoveries map[string]DiscoveryService
 	// ErrNotSupported is exported
-	ErrNotSupported   = errors.New("discovery service not supported")
+	ErrNotSupported = errors.New("discovery service not supported")
 	// ErrNotImplemented is exported
 	ErrNotImplemented = errors.New("not implemented in this discovery service")
 )

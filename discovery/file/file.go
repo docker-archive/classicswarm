@@ -46,7 +46,7 @@ func (s *FileDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 
 // Watch is exported
 func (s *FileDiscoveryService) Watch(callback discovery.WatchCallback) {
-	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
+	for range time.Tick(time.Duration(s.heartbeat) * time.Second) {
 		entries, err := s.Fetch()
 		if err == nil {
 			callback(entries)

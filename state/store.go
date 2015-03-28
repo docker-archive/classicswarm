@@ -15,11 +15,11 @@ import (
 
 var (
 	// ErrNotFound is exported
-	ErrNotFound      = errors.New("not found")
+	ErrNotFound = errors.New("not found")
 	// ErrAlreadyExists is exported
 	ErrAlreadyExists = errors.New("already exists")
 	// ErrInvalidKey is exported
-	ErrInvalidKey    = errors.New("invalid key")
+	ErrInvalidKey = errors.New("invalid key")
 )
 
 // Store is a simple key<->RequestedState store.

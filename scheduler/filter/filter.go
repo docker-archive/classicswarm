@@ -15,7 +15,7 @@ type Filter interface {
 }
 
 var (
-	filters         map[string]Filter
+	filters map[string]Filter
 	// ErrNotSupported is exported
 	ErrNotSupported = errors.New("filter not supported")
 )
