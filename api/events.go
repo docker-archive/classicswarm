@@ -15,7 +15,8 @@ type eventsHandler struct {
 	cs map[string]chan struct{}
 }
 
-// NewEventsHandler is exported
+// NewEventsHandler creates a new eventsHandler for a cluster.
+// The new eventsHandler is initialized with no writers or channels.
 func NewEventsHandler() *eventsHandler {
 	return &eventsHandler{
 		ws: make(map[string]io.Writer),
@@ -23,6 +24,7 @@ func NewEventsHandler() *eventsHandler {
 	}
 }
 
+// Add adds the writer and a new channel for the remote address.
 func (eh *eventsHandler) Add(remoteAddr string, w io.Writer) {
 	eh.Lock()
 	eh.ws[remoteAddr] = w
@@ -30,10 +32,13 @@ func (eh *eventsHandler) Add(remoteAddr string, w io.Writer) {
 	eh.Unlock()
 }
 
+// Wait waits on a signal from the remote address.
 func (eh *eventsHandler) Wait(remoteAddr string) {
 	<-eh.cs[remoteAddr]
 }
 
+// Handle writes information about a cluster event to each remote address in the cluster that has been added to the events handler.
+// After a successful write to a remote address, the associated channel is closed and the address is removed from the events handler.
 func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	eh.RLock()
 
@@ -61,6 +66,7 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	return nil
 }
 
+// Size returns the number of remote addresses that the events handler currently contains.
 func (eh *eventsHandler) Size() int {
 	eh.RLock()
 	defer eh.RUnlock()
