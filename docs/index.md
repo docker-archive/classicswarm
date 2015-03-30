@@ -94,15 +94,15 @@ the certificates.
 
 ## Discovery services
 
-See the [Discovery service](discovery.md) document for more information.
+See the [Discovery service](https://docs.docker.com/swarm/discovery/) document for more information.
 
 ## Advanced Scheduling
 
-See [filters](scheduler/filter.md) and [strategies](scheduler/strategy.md) to learn
+See [filters](https://docs.docker.com/swarm/scheduler/filter/) and [strategies](https://docs.docker.com/swarm/scheduler/strategy/) to learn
 more about advanced scheduling.
 
 ## Swarm API
 
-The [Docker Swarm API](API.md) is compatible with the [Docker
+The [Docker Swarm API](https://docs.docker.com/swarm/API/) is compatible with the [Docker
 remote API](http://docs.docker.com/reference/api/docker_remote_api/), and extends it
 with some new endpoints.
