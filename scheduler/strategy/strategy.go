@@ -2,6 +2,8 @@ package strategy
 
 import (
 	"errors"
+	"os"
+	"os/signal"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
@@ -21,7 +23,7 @@ var (
 	ErrNoResourcesAvailable = errors.New("no resources available to schedule container")
 )
 
-func init() {
+func resetStrategyMap() {
 	strategies = map[string]PlacementStrategy{
 		"binpacking": &BinpackPlacementStrategy{}, //compat
 		"binpack":    &BinpackPlacementStrategy{},
@@ -30,12 +32,25 @@ func init() {
 	}
 }
 
+func init() {
+	resetStrategyMap()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
+	go func() {
+		for _ = range sigChan {
+			// handle ^C to stop all plugins
+			log.Debug("Ctrl+C detected, stop all plugins")
+			StopPlugins()
+		}
+	}()
+}
+
 func New(name string) (PlacementStrategy, error) {
 	if strategy, exists := strategies[name]; exists {
 		log.WithField("name", name).Debugf("Initializing strategy")
 		err := strategy.Initialize()
 		return strategy, err
 	}
-
 	return nil, ErrNotSupported
 }

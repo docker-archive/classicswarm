@@ -59,6 +59,10 @@
 			"Rev": "79d28b9baf2be44ada3058263572d3a72ba71d4e"
 		},
 		{
+			"ImportPath": "github.com/natefinch/npipe",
+			"Rev": "0938d701e50e580f5925c773055eb6d6b32a0cbc"
+		},
+		{
 			"ImportPath": "github.com/samalba/dockerclient",
 			"Rev": "0689bcd74173c6abd6394b7ad435df46b0df26f8"
 		},
