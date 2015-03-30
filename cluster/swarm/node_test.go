@@ -187,7 +187,7 @@ func TestCreateContainer(t *testing.T) {
 	assert.True(t, node.isConnected())
 
 	mockConfig := *config
-	mockConfig.CpuShares = config.CpuShares * mockInfo.NCPU
+	mockConfig.CpuShares = config.CpuShares
 
 	// Everything is ok
 	name := "test1"
@@ -203,7 +203,7 @@ func TestCreateContainer(t *testing.T) {
 
 	// Image not found, pullImage == false
 	name = "test2"
-	mockConfig.CpuShares = config.CpuShares * mockInfo.NCPU
+	mockConfig.CpuShares = config.CpuShares
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
 	container, err = node.create(config, name, false)
 	assert.Equal(t, err, dockerclient.ErrNotFound)
@@ -212,7 +212,7 @@ func TestCreateContainer(t *testing.T) {
 	// Image not found, pullImage == true, and the image can be pulled successfully
 	name = "test3"
 	id = "id3"
-	mockConfig.CpuShares = config.CpuShares * mockInfo.NCPU
+	mockConfig.CpuShares = config.CpuShares
 	client.On("PullImage", config.Image+":latest", mock.Anything).Return(nil).Once()
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
 	client.On("CreateContainer", &mockConfig, name).Return(id, nil).Once()
@@ -238,7 +238,7 @@ func TestTotalMemory(t *testing.T) {
 func TestTotalCpus(t *testing.T) {
 	node := NewNode("test", 0.05)
 	node.Cpus = 2
-	assert.Equal(t, node.TotalCpus(), 2+2*5/100)
+	assert.Equal(t, node.TotalCpus(), 2)
 
 	node = NewNode("test", 0)
 	node.Cpus = 2

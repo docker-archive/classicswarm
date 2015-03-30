@@ -263,8 +263,6 @@ func (n *node) updateContainer(c dockerclient.Container, containers map[string]*
 			return nil, err
 		}
 		container.Info = *info
-		// real CpuShares -> nb of CPUs
-		container.Info.Config.CpuShares = container.Info.Config.CpuShares / 100.0 * n.Cpus
 	}
 
 	return containers, nil
@@ -337,14 +335,14 @@ func (n *node) UsedMemory() int64 {
 }
 
 // Return the sum of CPUs reserved by containers.
-func (n *node) UsedCpus() int64 {
+func (n *node) UsedCpus() float64 {
 	var r int64 = 0
 	n.RLock()
 	for _, c := range n.containers {
 		r += c.Info.Config.CpuShares
 	}
 	n.RUnlock()
-	return r
+	return float64(r*n.Cpus) / 1024
 }
 
 func (n *node) TotalMemory() int64 {
@@ -352,7 +350,7 @@ func (n *node) TotalMemory() int64 {
 }
 
 func (n *node) TotalCpus() int64 {
-	return n.Cpus + (n.Cpus * n.overcommitRatio / 100)
+	return n.Cpus
 }
 
 func (n *node) create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*cluster.Container, error) {
@@ -365,7 +363,7 @@ func (n *node) create(config *dockerclient.ContainerConfig, name string, pullIma
 	newConfig := *config
 
 	// nb of CPUs -> real CpuShares
-	newConfig.CpuShares = config.CpuShares * 100 / n.Cpus
+	newConfig.CpuShares = config.CpuShares
 
 	if id, err = client.CreateContainer(&newConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.

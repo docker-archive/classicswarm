@@ -95,15 +95,15 @@ func TestPlaceContainerCPU(t *testing.T) {
 		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 0, 2))
 	}
 
-	// add 1 container 1CPU
-	config := createConfig(0, 1)
+	// add 1 container 512 CPU SHARES
+	config := createConfig(0, 512)
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
 	assert.NoError(t, AddContainer(node1, createContainer("c1", config)))
 	assert.Equal(t, node1.UsedCpus(), 1)
 
-	// add another container 1CPU
-	config = createConfig(0, 1)
+	// add another container 512 CPU SHARES
+	config = createConfig(0, 512)
 	node2, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
 	assert.NoError(t, AddContainer(node2, createContainer("c2", config)))
@@ -122,15 +122,15 @@ func TestPlaceContainerHuge(t *testing.T) {
 		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 1, 1))
 	}
 
-	// add 100 container 1CPU
+	// add 100 container 1024 CPU SHARES
 	for i := 0; i < 100; i++ {
-		node, err := s.PlaceContainer(createConfig(0, 1), nodes)
+		node, err := s.PlaceContainer(createConfig(0, 1024), nodes)
 		assert.NoError(t, err)
-		assert.NoError(t, AddContainer(node, createContainer(fmt.Sprintf("c%d", i), createConfig(0, 1))))
+		assert.NoError(t, AddContainer(node, createContainer(fmt.Sprintf("c%d", i), createConfig(0, 1024))))
 	}
 
-	// try to add another container 1CPU
-	_, err := s.PlaceContainer(createConfig(0, 1), nodes)
+	// try to add another container 1024 CPU SHARES
+	_, err := s.PlaceContainer(createConfig(0, 1024), nodes)
 	assert.Error(t, err)
 
 	// add 100 container 1G

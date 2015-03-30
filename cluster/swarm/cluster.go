@@ -288,7 +288,7 @@ func (c *Cluster) Info() [][2]string {
 	for _, node := range c.nodes {
 		info = append(info, [2]string{node.Name(), node.Addr()})
 		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(node.Containers()))})
-		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", node.UsedCpus(), node.TotalCpus())})
+		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%.3f / %d", node.UsedCpus(), node.TotalCpus())})
 		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(node.UsedMemory())), units.BytesSize(float64(node.TotalMemory())))})
 	}
 

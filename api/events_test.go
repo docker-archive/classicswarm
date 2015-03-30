@@ -28,7 +28,7 @@ func (fn *FakeNode) Image(_ string) *cluster.Image         { return nil }
 func (fn *FakeNode) Containers() []*cluster.Container      { return nil }
 func (fn *FakeNode) Container(_ string) *cluster.Container { return nil }
 func (fn *FakeNode) TotalCpus() int64                      { return 0 }
-func (fn *FakeNode) UsedCpus() int64                       { return 0 }
+func (fn *FakeNode) UsedCpus() float64                     { return 0 }
 func (fn *FakeNode) TotalMemory() int64                    { return 0 }
 func (fn *FakeNode) UsedMemory() int64                     { return 0 }
 func (fn *FakeNode) Labels() map[string]string             { return nil }

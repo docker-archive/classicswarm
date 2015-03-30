@@ -34,7 +34,7 @@ func (fn *FakeNode) Container(id string) *cluster.Container {
 	return nil
 }
 func (fn *FakeNode) TotalCpus() int64          { return 0 }
-func (fn *FakeNode) UsedCpus() int64           { return 0 }
+func (fn *FakeNode) UsedCpus() float64         { return 0 }
 func (fn *FakeNode) TotalMemory() int64        { return 0 }
 func (fn *FakeNode) UsedMemory() int64         { return 0 }
 func (fn *FakeNode) Labels() map[string]string { return fn.labels }
