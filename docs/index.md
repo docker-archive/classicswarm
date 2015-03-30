@@ -63,15 +63,11 @@ The following example uses the Docker Hub based `token` discovery service:
 
     1. Start the docker daemon with the `-H` flag. This ensures that the docker remote API on *Swarm Agents* is available over TCP for the *Swarm Manager*.
 
-        ```bash
-        $ docker -H tcp://0.0.0.0:2375 -d
-        ```
+    		$ docker -H tcp://0.0.0.0:2375 -d
 
     2. Register the Swarm agents to the discovery service. The node's IP must be accessible from the Swarm Manager. Use the following command and replace with the proper `node_ip` and `cluster_id` to start an agent:
 
-        ```bash
-        `docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>`
-        ```
+        	docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>
 
         For example:
 
@@ -82,15 +78,11 @@ The following example uses the Docker Hub based `token` discovery service:
 3. Start the Swarm manager on any machine or your laptop. The following command
 illustrates how to do this:
 
-    ```bash
-    `docker run -d -p <swarm_port>:2375 swarm manage token://<cluster_id>`
-    ```
+    	docker run -d -p <swarm_port>:2375 swarm manage token://<cluster_id>
 
 4. Once the manager is running, check your configuration by running `docker info` as follows:
 
-    ```
-    `docker -H tcp://<manager_ip:manager_port> info`
-    ```
+    	docker -H tcp://<manager_ip:manager_port> info
     
     For example, if you run the manager locally on your machine:
 
@@ -114,19 +106,17 @@ illustrates how to do this:
     
     If you are running a test cluster without TLS enabled, you may get an error. In that case, be sure to unset `DOCKER_TLS_VERIFY` with:
     
-    ```bash
-    $ unset DOCKER_TLS_VERIFY
-    ```
+    	$ unset DOCKER_TLS_VERIFY
 
 ## Using the docker CLI
 
 You can now use the regular `docker` CLI to access your nodes:
 
-```bash
-$ docker -H tcp://<swarm_ip:swarm_port> info
-$ docker -H tcp://<swarm_ip:swarm_port> run ...
-$ docker -H tcp://<swarm_ip:swarm_port> ps
-$ docker -H tcp://<swarm_ip:swarm_port> logs ...
+```
+docker -H tcp://<manager_ip:manager_port> info
+docker -H tcp://<manager_ip:manager_port> run ...
+docker -H tcp://<manager_ip:manager_port> ps
+docker -H tcp://<manager_ip:manager_port> logs ...
 ```
 
 ## List nodes in your cluster
