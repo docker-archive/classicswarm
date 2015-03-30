@@ -9,11 +9,13 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+// Entry is exported
 type Entry struct {
 	Host string
 	Port string
 }
 
+// NewEntry is exported
 func NewEntry(url string) (*Entry, error) {
 	host, port, err := net.SplitHostPort(url)
 	if err != nil {
@@ -26,8 +28,10 @@ func (m Entry) String() string {
 	return fmt.Sprintf("%s:%s", m.Host, m.Port)
 }
 
+// WatchCallback is exported
 type WatchCallback func(entries []*Entry)
 
+// DiscoveryService is exported
 type DiscoveryService interface {
 	Initialize(string, int) error
 	Fetch() ([]*Entry, error)
@@ -36,8 +40,10 @@ type DiscoveryService interface {
 }
 
 var (
-	discoveries       map[string]DiscoveryService
-	ErrNotSupported   = errors.New("discovery service not supported")
+	discoveries map[string]DiscoveryService
+	// ErrNotSupported is exported
+	ErrNotSupported = errors.New("discovery service not supported")
+	// ErrNotImplemented is exported
 	ErrNotImplemented = errors.New("not implemented in this discovery service")
 )
 
@@ -45,6 +51,7 @@ func init() {
 	discoveries = make(map[string]DiscoveryService)
 }
 
+// Register is exported
 func Register(scheme string, d DiscoveryService) error {
 	if _, exists := discoveries[scheme]; exists {
 		return fmt.Errorf("scheme already registered %s", scheme)
@@ -65,6 +72,7 @@ func parse(rawurl string) (string, string) {
 	return parts[0], parts[1]
 }
 
+// New is exported
 func New(rawurl string, heartbeat int) (DiscoveryService, error) {
 	scheme, uri := parse(rawurl)
 
@@ -77,6 +85,7 @@ func New(rawurl string, heartbeat int) (DiscoveryService, error) {
 	return nil, ErrNotSupported
 }
 
+// CreateEntries is exported
 func CreateEntries(addrs []string) ([]*Entry, error) {
 	entries := []*Entry{}
 	if addrs == nil {

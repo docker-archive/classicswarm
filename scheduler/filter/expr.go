@@ -9,10 +9,13 @@ import (
 )
 
 const (
+	// EQ is exported
 	EQ = iota
+	// NOTEQ is exported
 	NOTEQ
 )
 
+// OPERATORS is exported
 var OPERATORS = []string{"==", "!="}
 
 type expr struct {
@@ -109,7 +112,6 @@ func (e *expr) Match(whats ...string) bool {
 func isSoft(value string) bool {
 	if value[0] == '~' {
 		return true
-	} else {
-		return false
 	}
+	return false
 }

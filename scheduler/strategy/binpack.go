@@ -7,13 +7,16 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
+// BinpackPlacementStrategy is exported
 type BinpackPlacementStrategy struct {
 }
 
+// Initialize is exported
 func (p *BinpackPlacementStrategy) Initialize() error {
 	return nil
 }
 
+// PlaceContainer is exported
 func (p *BinpackPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []cluster.Node) (cluster.Node, error) {
 	weightedNodes, err := weighNodes(config, nodes)
 	if err != nil {

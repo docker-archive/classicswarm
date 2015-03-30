@@ -8,6 +8,7 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
+// PlacementStrategy is exported
 type PlacementStrategy interface {
 	Initialize() error
 	// Given a container configuration and a set of nodes, select the target
@@ -16,8 +17,10 @@ type PlacementStrategy interface {
 }
 
 var (
-	strategies              map[string]PlacementStrategy
-	ErrNotSupported         = errors.New("strategy not supported")
+	strategies map[string]PlacementStrategy
+	// ErrNotSupported is exported
+	ErrNotSupported = errors.New("strategy not supported")
+	// ErrNoResourcesAvailable is exported
 	ErrNoResourcesAvailable = errors.New("no resources available to schedule container")
 )
 
@@ -30,6 +33,7 @@ func init() {
 	}
 }
 
+// New is exported
 func New(name string) (PlacementStrategy, error) {
 	if strategy, exists := strategies[name]; exists {
 		log.WithField("name", name).Debugf("Initializing strategy")

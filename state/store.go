@@ -14,12 +14,15 @@ import (
 )
 
 var (
-	ErrNotFound      = errors.New("not found")
+	// ErrNotFound is exported
+	ErrNotFound = errors.New("not found")
+	// ErrAlreadyExists is exported
 	ErrAlreadyExists = errors.New("already exists")
-	ErrInvalidKey    = errors.New("invalid key")
+	// ErrInvalidKey is exported
+	ErrInvalidKey = errors.New("invalid key")
 )
 
-// A simple key<->RequestedState store.
+// Store is a simple key<->RequestedState store.
 type Store struct {
 	RootDir string
 	values  map[string]*RequestedState
@@ -27,6 +30,7 @@ type Store struct {
 	sync.RWMutex
 }
 
+// NewStore is exported
 func NewStore(rootdir string) *Store {
 	return &Store{
 		RootDir: rootdir,
@@ -102,7 +106,7 @@ func (s *Store) load(file string) (*RequestedState, error) {
 	return value, nil
 }
 
-// Retrieves an object from the store keyed by `key`.
+// Get an object from the store keyed by `key`.
 func (s *Store) Get(key string) (*RequestedState, error) {
 	s.RLock()
 	defer s.RUnlock()
@@ -113,7 +117,7 @@ func (s *Store) Get(key string) (*RequestedState, error) {
 	return nil, ErrNotFound
 }
 
-// Return all objects of the store.
+// All objects of the store are returned.
 func (s *Store) All() []*RequestedState {
 	s.RLock()
 	defer s.RUnlock()
@@ -157,7 +161,7 @@ func (s *Store) Add(key string, value *RequestedState) error {
 	return s.set(key, value)
 }
 
-// Replaces an already existing object from the store.
+// Replace an already existing object from the store.
 func (s *Store) Replace(key string, value *RequestedState) error {
 	s.Lock()
 	defer s.Unlock()

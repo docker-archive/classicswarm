@@ -54,23 +54,23 @@ var (
 		Name:  "api-enable-cors, cors",
 		Usage: "enable CORS headers in the remote API",
 	}
-	flTls = cli.BoolFlag{
+	flTLS = cli.BoolFlag{
 		Name:  "tls",
 		Usage: "use TLS; implied by --tlsverify=true",
 	}
-	flTlsCaCert = cli.StringFlag{
+	flTLSCaCert = cli.StringFlag{
 		Name:  "tlscacert",
 		Usage: "trust only remotes providing a certificate signed by the CA given here",
 	}
-	flTlsCert = cli.StringFlag{
+	flTLSCert = cli.StringFlag{
 		Name:  "tlscert",
 		Usage: "path to TLS certificate file",
 	}
-	flTlsKey = cli.StringFlag{
+	flTLSKey = cli.StringFlag{
 		Name:  "tlskey",
 		Usage: "path to TLS key file",
 	}
-	flTlsVerify = cli.BoolFlag{
+	flTLSVerify = cli.BoolFlag{
 		Name:  "tlsverify",
 		Usage: "use TLS and verify the remote",
 	}
@@ -86,8 +86,9 @@ var (
 	}
 
 	// hack for go vet
-	flFilterValue         = cli.StringSlice([]string{"constraint", "affinity", "health", "port", "dependency"})
-	DEFAULT_FILTER_NUMBER = len(flFilterValue)
+	flFilterValue = cli.StringSlice([]string{"constraint", "affinity", "health", "port", "dependency"})
+	// DefaultFilterNumber is exported
+	DefaultFilterNumber = len(flFilterValue)
 
 	flFilter = cli.StringSliceFlag{
 		Name:  "filter, f",

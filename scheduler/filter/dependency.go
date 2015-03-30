@@ -12,6 +12,7 @@ import (
 type DependencyFilter struct {
 }
 
+// Filter is exported
 func (f *DependencyFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	if len(nodes) == 0 {
 		return nodes, nil

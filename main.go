@@ -108,7 +108,7 @@ func main() {
 				flStore, flCluster,
 				flStrategy, flFilter,
 				flHosts, flHeartBeat, flOverCommit,
-				flTls, flTlsCaCert, flTlsCert, flTlsKey, flTlsVerify,
+				flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
 				flEnableCors},
 			Action: manage,
 		},
