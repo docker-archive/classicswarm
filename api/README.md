@@ -18,7 +18,6 @@ GET "/containers/{name:.*}/attach/ws"
 
 POST "/commit"
 POST "/build"
-POST "/images/create" (pull implemented)
 POST "/images/load"
 POST "/images/{name:.*}/push"
 POST "/images/{name:.*}/tag"
@@ -44,6 +43,7 @@ POST "/images/{name:.*}/tag"
 
 * `GET "/containers/json"` : Containers started from the `swarm` official image are hidden by default, use `all=1` to display them.
 
+* `GET "/images/json"` : Use '--filter node=\<Node name\>' to show images of the specific node.
 
 ## Docker Swarm documentation index
 
