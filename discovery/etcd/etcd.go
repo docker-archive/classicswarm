@@ -10,6 +10,7 @@ import (
 	"github.com/docker/swarm/discovery"
 )
 
+// EtcdDiscoveryService is exported
 type EtcdDiscoveryService struct {
 	ttl    uint64
 	client *etcd.Client
@@ -20,6 +21,7 @@ func init() {
 	discovery.Register("etcd", &EtcdDiscoveryService{})
 }
 
+// Initialize is exported
 func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat int) error {
 	var (
 		// split here because uris can contain multiples ips
@@ -51,6 +53,8 @@ func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat int) error {
 	}
 	return nil
 }
+
+// Fetch is exported
 func (s *EtcdDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	resp, err := s.client.Get(s.path, true, true)
 	if err != nil {
@@ -64,6 +68,7 @@ func (s *EtcdDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	return discovery.CreateEntries(addrs)
 }
 
+// Watch is exported
 func (s *EtcdDiscoveryService) Watch(callback discovery.WatchCallback) {
 	watchChan := make(chan *etcd.Response)
 	go s.client.Watch(s.path, 0, true, watchChan, nil)
@@ -76,6 +81,7 @@ func (s *EtcdDiscoveryService) Watch(callback discovery.WatchCallback) {
 	}
 }
 
+// Register is exported
 func (s *EtcdDiscoveryService) Register(addr string) error {
 	_, err := s.client.Set(path.Join(s.path, addr), addr, s.ttl)
 	return err

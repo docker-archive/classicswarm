@@ -7,13 +7,16 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
+// SpreadPlacementStrategy is exported
 type SpreadPlacementStrategy struct {
 }
 
+// Initialize is exported
 func (p *SpreadPlacementStrategy) Initialize() error {
 	return nil
 }
 
+// PlaceContainer is exported
 func (p *SpreadPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []cluster.Node) (cluster.Node, error) {
 	weightedNodes, err := weighNodes(config, nodes)
 	if err != nil {

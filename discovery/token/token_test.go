@@ -11,7 +11,7 @@ func TestInitialize(t *testing.T) {
 	err := discovery.Initialize("token", 0)
 	assert.NoError(t, err)
 	assert.Equal(t, discovery.token, "token")
-	assert.Equal(t, discovery.url, DISCOVERY_URL)
+	assert.Equal(t, discovery.url, DiscoveryURL)
 
 	err = discovery.Initialize("custom/path/token", 0)
 	assert.NoError(t, err)
@@ -23,7 +23,7 @@ func TestInitialize(t *testing.T) {
 }
 
 func TestRegister(t *testing.T) {
-	discovery := &TokenDiscoveryService{token: "TEST_TOKEN", url: DISCOVERY_URL}
+	discovery := &TokenDiscoveryService{token: "TEST_TOKEN", url: DiscoveryURL}
 	expected := "127.0.0.1:2675"
 	assert.NoError(t, discovery.Register(expected))
 

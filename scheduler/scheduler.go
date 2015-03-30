@@ -7,11 +7,13 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
+// Scheduler is exported
 type Scheduler struct {
 	strategy strategy.PlacementStrategy
 	filters  []filter.Filter
 }
 
+// New is exported
 func New(strategy strategy.PlacementStrategy, filters []filter.Filter) *Scheduler {
 	return &Scheduler{
 		strategy: strategy,
@@ -19,7 +21,7 @@ func New(strategy strategy.PlacementStrategy, filters []filter.Filter) *Schedule
 	}
 }
 
-// Find a nice home for our container.
+// SelectNodeForContainer will find a nice home for our container.
 func (s *Scheduler) SelectNodeForContainer(nodes []cluster.Node, config *dockerclient.ContainerConfig) (cluster.Node, error) {
 	accepted, err := filter.ApplyFilters(s.filters, config, nodes)
 	if err != nil {
