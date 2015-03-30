@@ -32,11 +32,10 @@ The builtin scheduler allows you to manage container on approximately hundreds o
 In the future, we want to allow third party tools to be plugged into Docker Swarm to allow management
 of much bigger clusters.
 
-The work has started on defining the "cluster" interface in [#393](https://github.com/docker/swarm/issues/393)
-
 The first integration will be Mesos but other tools will arrive after, like kubernetes.
 
-* [ ] Cluster Drivers
+* [x] Cluster Drivers [#393](https://github.com/docker/swarm/issues/393)
+* [ ] Mesos implementation
 
 Project Planning
 ================
