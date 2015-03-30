@@ -26,6 +26,8 @@ Swarm currently supports around 75% of the Docker API as you can see [here](http
 Our goal is to support 100% of the API, so all the Docker CLI commands would work against Swarm 
 
 * [ ] Bring Swarm API on par with Docker API as much as possible
+* [ ] Use labels instead of env variable for constraints and affinity
+* [ ] Open a few PRs on docker/docker to display labels in `docker ps` and `docker images` 
 
 ####Extensibility
 The builtin scheduler allows you to manage container on approximately hundreds of machines within a cluster.
