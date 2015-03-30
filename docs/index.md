@@ -61,35 +61,35 @@ The following example uses the Docker Hub based `token` discovery service:
 
 2. Log into **each node** and do the following.
 
-    i. Start the docker daemon with the `-H` flag. This ensures that the docker remote API on *Swarm Agents* is available over TCP for the *Swarm Manager*.
+    1. Start the docker daemon with the `-H` flag. This ensures that the docker remote API on *Swarm Agents* is available over TCP for the *Swarm Manager*.
 
-    ```bash
-    $ docker -H tcp://0.0.0.0:2375 -d
-    ```
+        ```bash
+        $ docker -H tcp://0.0.0.0:2375 -d
+        ```
 
-    ii. Register the Swarm agents to the discovery service. The node's IP must be accessible from the Swarm Manager. Use the following command and replace with the proper `node_ip` and `cluster_id` to start an agent:
+    2. Register the Swarm agents to the discovery service. The node's IP must be accessible from the Swarm Manager. Use the following command and replace with the proper `node_ip` and `cluster_id` to start an agent:
 
-    ```bash
-    $ docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>
-    ```
+        ```bash
+        `docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>`
+        ```
 
-    For example:
+        For example:
 
-    ```bash
-    $ docker run -d swarm join --addr=172.31.40.100:2375 token://6856663cdefdec325839a4b7e1de38e8
-    ```
+        ```bash
+        $ docker run -d swarm join --addr=172.31.40.100:2375 token://6856663cdefdec325839a4b7e1de38e8
+        ```
 
 3. Start the Swarm manager on any machine or your laptop. The following command
 illustrates how to do this:
 
     ```bash
-    $ docker run -d -p <swarm_port>:2375 swarm manage token://<cluster_id>
+    `docker run -d -p <swarm_port>:2375 swarm manage token://<cluster_id>`
     ```
 
 4. Once the manager is running, check your configuration by running `docker info` as follows:
 
     ```
-    $ docker -H tcp://<manager_ip:manager_port> info
+    `docker -H tcp://<manager_ip:manager_port> info`
     ```
     
     For example, if you run the manager locally on your machine:
@@ -122,7 +122,7 @@ illustrates how to do this:
 
 You can now use the regular `docker` CLI to access your nodes:
 
-```
+```bash
 $ docker -H tcp://<swarm_ip:swarm_port> info
 $ docker -H tcp://<swarm_ip:swarm_port> run ...
 $ docker -H tcp://<swarm_ip:swarm_port> ps
@@ -134,8 +134,17 @@ $ docker -H tcp://<swarm_ip:swarm_port> logs ...
 You can get a list of all your running nodes using the `swarm list` command:
 
 ```
-$ docker run --rm swarm list token://<cluster_id>
+`docker run --rm swarm list token://<cluster_id>`
 <node_ip:2375>
+```
+
+For example:
+
+```bash
+$ docker run --rm swarm list token://6856663cdefdec325839a4b7e1de38e8
+172.31.40.100:2375
+172.31.40.101:2375
+172.31.40.102:2375
 ```
 
 ## TLS
