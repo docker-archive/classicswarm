@@ -9,12 +9,12 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/discovery"
 	_ "github.com/docker/swarm/discovery/consul"
+	_ "github.com/docker/swarm/discovery/digitalocean"
 	_ "github.com/docker/swarm/discovery/etcd"
 	_ "github.com/docker/swarm/discovery/file"
 	_ "github.com/docker/swarm/discovery/nodes"
 	"github.com/docker/swarm/discovery/token"
 	_ "github.com/docker/swarm/discovery/zookeeper"
-	_ "github.com/docker/swarm/discovery/digitalocean"
 	"github.com/docker/swarm/version"
 )
 
