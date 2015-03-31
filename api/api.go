@@ -432,7 +432,7 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 
 	vars := make(map[string]string)
 	vars["name"] = r.Form.Get("container")
-	
+
 	// get container
 	container, err := getContainerFromVars(c, vars)
 	if err != nil {
