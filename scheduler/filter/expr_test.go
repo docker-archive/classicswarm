@@ -34,6 +34,10 @@ func TestParseExprs(t *testing.T) {
 	// Allow regexp in value
 	_, err = parseExprs("constraint", []string{"constraint:node==/(?i)^[a-b]+c*$/"})
 	assert.NoError(t, err)
+
+	// Allow space in value
+	_, err = parseExprs("constraint", []string{"constraint:node==node 1"})
+	assert.NoError(t, err)
 }
 
 func TestMatch(t *testing.T) {
