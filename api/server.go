@@ -11,7 +11,7 @@ import (
 	"github.com/docker/swarm/cluster"
 )
 
-// DefaultDockerPort is exported
+// The default port to listen on for incoming connections
 const DefaultDockerPort = ":2375"
 
 func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error) {
@@ -29,7 +29,12 @@ func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error
 	return l, nil
 }
 
-// ListenAndServe is exported
+// ListenAndServe starts an HTTP server on each host to listen on its
+// TCP or Unix network address and calls Serve on each host's server
+// to handle requests on incoming connections.
+//
+// The expected format for a host string is [protocol://]address. The protocol
+// must be either "tcp" or "unix", with "tcp" used by default if not specified.
 func ListenAndServe(c cluster.Cluster, hosts []string, enableCors bool, tlsConfig *tls.Config, eventsHandler *eventsHandler) error {
 	context := &context{
 		cluster:       c,
