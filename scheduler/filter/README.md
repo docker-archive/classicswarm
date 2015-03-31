@@ -291,7 +291,7 @@ This filter will prevent scheduling containers on unhealthy nodes.
 
 ## Docker Swarm documentation index
 
-- [User guide](./../index.md)
-- [Discovery options](./../discovery.md)
-- [Sheduler strategies](./strategy.md)
-- [Swarm API](./../API.md)
+- [User guide](https://docs.docker.com/swarm/)
+- [Discovery options](https://docs.docker.com/swarm/discovery/)
+- [Sheduler strategies](https://docs.docker.com/swarm/scheduler/strategy/)
+- [Swarm API](https://docs.docker.com/swarm/API/)

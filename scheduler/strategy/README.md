@@ -57,8 +57,7 @@ The Random strategy, as it's name says, chooses a random node, it's used mainly 
 
 ## Docker Swarm documentation index
 
-
-- [User guide](./../index.md)
-- [Discovery options](./../discovery.md)
-- [Scheduler filters](./filter.md)
-- [Swarm API](./../API.md)
+- [User guide](https://docs.docker.com/swarm/)
+- [Discovery options](https://docs.docker.com/swarm/discovery/)
+- [Scheduler filters](https://docs.docker.com/swarm/scheduler/filter/)
+- [Swarm API](https://docs.docker.com/swarm/API/)
