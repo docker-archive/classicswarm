@@ -9,6 +9,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/discovery"
 	_ "github.com/docker/swarm/discovery/consul"
+	_ "github.com/docker/swarm/discovery/digitalocean"
 	_ "github.com/docker/swarm/discovery/etcd"
 	_ "github.com/docker/swarm/discovery/file"
 	_ "github.com/docker/swarm/discovery/nodes"
