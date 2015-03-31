@@ -423,6 +423,29 @@ func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// POST  /commit
+func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	vars := make(map[string]string)
+	vars["name"] = r.Form.Get("container")
+	
+	// get container
+	container, err := getContainerFromVars(c, vars)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// proxy commit request to the right node
+	if err := proxy(c.tlsConfig, container.Node.Addr(), w, r); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 // Proxy a hijack request to the right node
 func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 	container, err := getContainerFromVars(c, mux.Vars(r))
@@ -484,7 +507,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 		},
 		"POST": {
 			"/auth":                         proxyRandom,
-			"/commit":                       notImplementedHandler,
+			"/commit":                       postCommit,
 			"/build":                        notImplementedHandler,
 			"/images/create":                postImagesCreate,
 			"/images/load":                  notImplementedHandler,
