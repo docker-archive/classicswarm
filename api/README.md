@@ -16,7 +16,6 @@ Some endpoints have not yet been implemented and will return a 404 error.
 GET "/images/get"
 GET "/containers/{name:.*}/attach/ws"
 
-POST "/commit"
 POST "/build"
 POST "/images/load"
 POST "/images/{name:.*}/push"
