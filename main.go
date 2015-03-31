@@ -14,6 +14,7 @@ import (
 	_ "github.com/docker/swarm/discovery/nodes"
 	"github.com/docker/swarm/discovery/token"
 	_ "github.com/docker/swarm/discovery/zookeeper"
+	_ "github.com/docker/swarm/discovery/digitalocean"
 	"github.com/docker/swarm/version"
 )
 
