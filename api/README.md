@@ -18,8 +18,6 @@ GET "/containers/{name:.*}/attach/ws"
 
 POST "/build"
 POST "/images/load"
-POST "/images/{name:.*}/push"
-POST "/images/{name:.*}/tag"
 ```
 
 ## Endpoints which behave differently
