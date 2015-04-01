@@ -40,7 +40,7 @@ func (eh *eventsHandler) Wait(remoteAddr string) {
 // Handle writes information about a cluster event to each remote address in the cluster that has been added to the events handler.
 // After a successful write to a remote address, the associated channel is closed and the address is removed from the events handler.
 func (eh *eventsHandler) Handle(e *cluster.Event) error {
-	eh.RLock()
+	eh.Lock()
 
 	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d,%q:%s}",
 		"status", e.Status,
@@ -62,7 +62,7 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 		}
 
 	}
-	eh.RUnlock()
+	eh.Unlock()
 	return nil
 }
 
