@@ -122,11 +122,9 @@ func (s *Store) All() []*RequestedState {
 	s.RLock()
 	defer s.RUnlock()
 
-	states := make([]*RequestedState, len(s.values))
-	i := 0
+	states := make([]*RequestedState, 0, len(s.values))
 	for _, state := range s.values {
-		states[i] = state
-		i = i + 1
+		states = append(states, state)
 	}
 	return states
 }
