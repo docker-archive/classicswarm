@@ -265,7 +265,7 @@ func (n *node) updateContainer(c dockerclient.Container, containers map[string]*
 		}
 		container.Info = *info
 		// real CpuShares -> nb of CPUs
-		container.Info.Config.CpuShares = container.Info.Config.CpuShares / 100.0 * n.Cpus
+		container.Info.Config.CpuShares = container.Info.Config.CpuShares * 1024.0 / n.Cpus
 	}
 
 	return containers, nil
@@ -366,7 +366,7 @@ func (n *node) create(config *dockerclient.ContainerConfig, name string, pullIma
 	newConfig := *config
 
 	// nb of CPUs -> real CpuShares
-	newConfig.CpuShares = config.CpuShares * 100 / n.Cpus
+	newConfig.CpuShares = config.CpuShares * 1024 / n.Cpus
 
 	if id, err = client.CreateContainer(&newConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.

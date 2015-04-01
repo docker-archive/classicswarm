@@ -171,7 +171,7 @@ func TestCreateContainer(t *testing.T) {
 	var (
 		config = &dockerclient.ContainerConfig{
 			Image:     "busybox",
-			CpuShares: 512,
+			CpuShares: 1,
 			Cmd:       []string{"date"},
 			Tty:       false,
 		}
@@ -187,7 +187,7 @@ func TestCreateContainer(t *testing.T) {
 	assert.True(t, node.isConnected())
 
 	mockConfig := *config
-	mockConfig.CpuShares = config.CpuShares * mockInfo.NCPU
+	mockConfig.CpuShares = config.CpuShares * 1024 / mockInfo.NCPU
 
 	// Everything is ok
 	name := "test1"
@@ -203,7 +203,7 @@ func TestCreateContainer(t *testing.T) {
 
 	// Image not found, pullImage == false
 	name = "test2"
-	mockConfig.CpuShares = config.CpuShares * mockInfo.NCPU
+	mockConfig.CpuShares = config.CpuShares * 1024 / mockInfo.NCPU
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
 	container, err = node.create(config, name, false)
 	assert.Equal(t, err, dockerclient.ErrNotFound)
@@ -212,7 +212,7 @@ func TestCreateContainer(t *testing.T) {
 	// Image not found, pullImage == true, and the image can be pulled successfully
 	name = "test3"
 	id = "id3"
-	mockConfig.CpuShares = config.CpuShares * mockInfo.NCPU
+	mockConfig.CpuShares = config.CpuShares * 1024 / mockInfo.NCPU
 	client.On("PullImage", config.Image+":latest", mock.Anything).Return(nil).Once()
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
 	client.On("CreateContainer", &mockConfig, name).Return(id, nil).Once()
