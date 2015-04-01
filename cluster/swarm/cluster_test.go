@@ -9,12 +9,10 @@ import (
 )
 
 func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *node {
-	node := NewNode(ID, 0)
-	node.name = ID
-	node.id = ID
+	node := &node{Engine: *cluster.NewEngine(ID, ID, 0)}
 
 	for _, container := range containers {
-		node.addContainer(&cluster.Container{Container: container, Node: node})
+		node.AddContainer(&cluster.Container{Container: container, Node: node})
 	}
 
 	return node

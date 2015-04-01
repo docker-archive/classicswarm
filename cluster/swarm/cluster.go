@@ -83,7 +83,7 @@ retry:
 		container, err := nn.create(config, name, false)
 		if err == dockerclient.ErrNotFound {
 			// image not on the node, try to pull
-			if err = nn.pull(config.Image); err != nil {
+			if err = nn.Pull(config.Image); err != nil {
 				return nil, err
 			}
 
@@ -138,23 +138,23 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 		go func(m *discovery.Entry) {
 			if c.getNode(m.String()) == nil {
 				n := NewNode(m.String(), c.options.OvercommitRatio)
-				if err := n.connect(c.options.TLSConfig); err != nil {
+				if err := n.Connect(c.options.TLSConfig); err != nil {
 					log.Error(err)
 					return
 				}
 				c.Lock()
 
-				if old, exists := c.nodes[n.id]; exists {
+				if old, exists := c.nodes[n.ID()]; exists {
 					c.Unlock()
-					if old.ip != n.ip {
-						log.Errorf("ID duplicated. %s shared by %s and %s", n.id, old.IP(), n.IP())
+					if old.IP() != n.IP() {
+						log.Errorf("ID duplicated. %s shared by %s and %s", n.ID(), old.IP(), n.IP())
 					} else {
-						log.Errorf("node %q is already registered", n.id)
+						log.Errorf("node %q is already registered", n.ID())
 					}
 					return
 				}
-				c.nodes[n.id] = n
-				if err := n.events(c); err != nil {
+				c.nodes[n.ID()] = n
+				if err := n.Events(c); err != nil {
 					log.Error(err)
 					c.Unlock()
 					return
@@ -168,7 +168,7 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 
 func (c *Cluster) getNode(addr string) *node {
 	for _, node := range c.nodes {
-		if node.addr == addr {
+		if node.Addr() == addr {
 			return node
 		}
 	}
@@ -211,7 +211,7 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete
 	c.Lock()
 	defer c.Unlock()
 	if n, ok := image.Node.(*node); ok {
-		return n.removeImage(image)
+		return n.RemoveImage(image)
 	}
 	return nil, nil
 }
@@ -225,7 +225,7 @@ func (c *Cluster) Pull(name string, callback func(what, status string)) {
 			if callback != nil {
 				callback(nn.Name(), "")
 			}
-			err := nn.pull(name)
+			err := nn.Pull(name)
 			if callback != nil {
 				if err != nil {
 					callback(nn.Name(), err.Error())
