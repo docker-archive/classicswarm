@@ -40,6 +40,14 @@ func TestStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, c2.Name, ret.Name)
 
+	// Only one item in the store
+	all := store.All()
+	assert.Equal(t, 1, len(all))
+	// The same name
+	assert.Equal(t, c2.Name, all[0].Name)
+	// It's actually the same pointer
+	assert.Equal(t, c2, all[0])
+
 	// Initialize a brand new store and retrieve "foo" again.
 	// This is to ensure data load on initialization works correctly.
 	store = NewStore(dir)
