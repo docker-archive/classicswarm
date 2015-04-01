@@ -21,12 +21,9 @@ func (p *RandomPlacementStrategy) Initialize() error {
 // PlaceContainer is exported
 func (p *RandomPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []cluster.Node) (cluster.Node, error) {
 	if size := len(nodes); size > 0 {
-		n := rand.Intn(len(nodes))
-		for i, node := range nodes {
-			if i == n {
-				return node, nil
-			}
-		}
+		index := rand.Intn(len(nodes))
+		return nodes[index], nil
 	}
+
 	return nil, errors.New("No nodes running in the cluster")
 }
