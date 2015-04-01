@@ -66,35 +66,16 @@ func (c *Cluster) Handle(e *cluster.Event) error {
 
 // CreateContainer aka schedule a brand new container into the cluster.
 func (c *Cluster) CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error) {
+	c.scheduler.Lock()
+	defer c.scheduler.Unlock()
 
-	c.RLock()
-	defer c.RUnlock()
-retry:
-	// FIXME: to prevent a race, we check again after the pull if the node can still handle
-	// the container. We should store the state in the store before pulling and use this to check
-	// all the other container create, but, as we don't have a proper store yet, this temporary solution
-	// was chosen.
 	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
 	if err != nil {
 		return nil, err
 	}
 
 	if nn, ok := n.(*node); ok {
-		container, err := nn.create(config, name, false)
-		if err == dockerclient.ErrNotFound {
-			// image not on the node, try to pull
-			if err = nn.pull(config.Image); err != nil {
-				return nil, err
-			}
-
-			// check if the container can still fit on this node
-			if _, err = c.scheduler.SelectNodeForContainer([]cluster.Node{n}, config); err != nil {
-				// if not, try to find another node
-				log.Debugf("Node %s not available anymore, selecting another one", n.Name())
-				goto retry
-			}
-			container, err = nn.create(config, name, false)
-		}
+		container, err := nn.create(config, name, true)
 		if err != nil {
 			return nil, err
 		}
@@ -113,8 +94,8 @@ retry:
 // RemoveContainer aka Remove a container from the cluster. Containers should
 // always be destroyed through the scheduler to guarantee atomicity.
 func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) error {
-	c.Lock()
-	defer c.Unlock()
+	c.scheduler.Lock()
+	defer c.scheduler.Unlock()
 
 	if n, ok := container.Node.(*node); ok {
 		if err := n.destroy(container, force); err != nil {
@@ -272,7 +253,7 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	return nil
 }
 
-// nodes returns all the nodess in the cluster.
+// nodes returns all the nodes in the cluster.
 func (c *Cluster) listNodes() []cluster.Node {
 	c.RLock()
 	defer c.RUnlock()
