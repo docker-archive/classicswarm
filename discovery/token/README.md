@@ -1,4 +1,4 @@
-#discovery.hub.docker.com
+#discovery-stage.hub.docker.com
 
 Docker Swarm comes with a simple discovery service built into the [Docker Hub](http://hub.docker.com)
 
