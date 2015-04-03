@@ -40,7 +40,8 @@ func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat int) error {
 	}
 
 	s.client = etcd.NewClient(entries)
-	s.ttl = uint64(heartbeat * 3 / 2)
+	// ttl should always be > heartbeat, even if heartbeat = 1 or 0
+	s.ttl = uint64(heartbeat*3/2) + 1
 	s.path = "/" + parts[1] + "/"
 	if _, err := s.client.CreateDir(s.path, s.ttl); err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
