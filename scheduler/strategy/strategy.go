@@ -36,7 +36,7 @@ func init() {
 
 // New is exported
 func New(name string) (PlacementStrategy, error) {
-	if name == "binpacking" { //compat
+	if name == "binpacking" { //TODO: remove this compat
 		name = "binpack"
 	}
 
@@ -51,6 +51,7 @@ func New(name string) (PlacementStrategy, error) {
 	return nil, ErrNotSupported
 }
 
+// List returns the names of all the available strategies
 func List() []string {
 	names := []string{}
 
