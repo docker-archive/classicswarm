@@ -66,6 +66,7 @@ func ApplyFilters(filters []Filter, config *dockerclient.ContainerConfig, nodes 
 	return nodes, nil
 }
 
+// List returns the names of all the available filters
 func List() []string {
 	names := []string{}
 
