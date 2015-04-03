@@ -17,18 +17,18 @@ type Filter interface {
 }
 
 var (
-	filters map[string]Filter
+	filters []Filter
 	// ErrNotSupported is exported
 	ErrNotSupported = errors.New("filter not supported")
 )
 
 func init() {
-	filters = map[string]Filter{
-		"affinity":   &AffinityFilter{},
-		"health":     &HealthFilter{},
-		"constraint": &ConstraintFilter{},
-		"port":       &PortFilter{},
-		"dependency": &DependencyFilter{},
+	filters = []Filter{
+		&AffinityFilter{},
+		&HealthFilter{},
+		&ConstraintFilter{},
+		&PortFilter{},
+		&DependencyFilter{},
 	}
 }
 
@@ -37,10 +37,16 @@ func New(names []string) ([]Filter, error) {
 	var selectedFilters []Filter
 
 	for _, name := range names {
-		if filter, exists := filters[name]; exists {
-			log.WithField("name", name).Debug("Initializing filter")
-			selectedFilters = append(selectedFilters, filter)
-		} else {
+		found := false
+		for _, filter := range filters {
+			if filter.Name() == name {
+				log.WithField("name", name).Debug("Initializing filter")
+				selectedFilters = append(selectedFilters, filter)
+				found = true
+				break
+			}
+		}
+		if !found {
 			return nil, ErrNotSupported
 		}
 	}
@@ -58,4 +64,14 @@ func ApplyFilters(filters []Filter, config *dockerclient.ContainerConfig, nodes 
 		}
 	}
 	return nodes, nil
+}
+
+func List() []string {
+	names := []string{}
+
+	for _, filter := range filters {
+		names = append(names, filter.Name())
+	}
+
+	return names
 }
