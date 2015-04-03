@@ -12,6 +12,11 @@ import (
 type ConstraintFilter struct {
 }
 
+// Name returns the name of the filter
+func (f *ConstraintFilter) Name() string {
+	return "constraint"
+}
+
 // Filter is exported
 func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	constraints, err := parseExprs("constraint", config.Env)

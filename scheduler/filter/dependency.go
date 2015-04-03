@@ -12,6 +12,11 @@ import (
 type DependencyFilter struct {
 }
 
+// Name returns the name of the filter
+func (f *DependencyFilter) Name() string {
+	return "dependency"
+}
+
 // Filter is exported
 func (f *DependencyFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	if len(nodes) == 0 {

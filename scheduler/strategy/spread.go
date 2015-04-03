@@ -16,6 +16,11 @@ func (p *SpreadPlacementStrategy) Initialize() error {
 	return nil
 }
 
+// Name returns the name of the strategy
+func (p *SpreadPlacementStrategy) Name() string {
+	return "spread"
+}
+
 // PlaceContainer is exported
 func (p *SpreadPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []cluster.Node) (cluster.Node, error) {
 	weightedNodes, err := weighNodes(config, nodes)

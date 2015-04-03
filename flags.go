@@ -4,8 +4,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/codegangsta/cli"
+	"github.com/docker/swarm/scheduler/filter"
+	"github.com/docker/swarm/scheduler/strategy"
 )
 
 func homepath(p string) string {
@@ -81,23 +84,24 @@ var (
 	}
 	flStrategy = cli.StringFlag{
 		Name:  "strategy",
-		Usage: "placement strategy to use [spread, binpack, random]",
-		Value: "spread",
+		Usage: "placement strategy to use [" + strings.Join(strategy.List(), ", ") + "]",
+		Value: strategy.List()[0],
 	}
 
 	// hack for go vet
-	flFilterValue = cli.StringSlice([]string{"constraint", "affinity", "health", "port", "dependency"})
+	flFilterValue = cli.StringSlice(filter.List())
 	// DefaultFilterNumber is exported
 	DefaultFilterNumber = len(flFilterValue)
 
 	flFilter = cli.StringSliceFlag{
 		Name:  "filter, f",
-		Usage: "filter to use [constraint, affinity, health, port, dependency]",
+		Usage: "filter to use [" + strings.Join(filter.List(), ", ") + "]",
 		Value: &flFilterValue,
 	}
-	flCluster = cli.StringFlag{
-		Name:  "cluster, c",
-		Usage: "cluster to use [swarm, mesos]",
-		Value: "swarm",
-	}
+
+//	flCluster = cli.StringFlag{
+//		Name:  "cluster, c",
+//		Usage: "cluster to use [swarm, mesos]",
+//		Value: "swarm",
+//	}
 )
