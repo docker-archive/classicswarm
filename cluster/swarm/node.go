@@ -142,6 +142,11 @@ func (n *node) updateSpecs() error {
 	if err != nil {
 		return err
 	}
+
+	if info.NCPU == 0 || info.MemTotal == 0 {
+		return fmt.Errorf("cannot get resources for this node, make sure %s is a Docker Engine, not a Swarm manager", n.addr)
+	}
+
 	// Older versions of Docker don't expose the ID field and are not supported
 	// by Swarm.  Catch the error ASAP and refuse to connect.
 	if len(info.ID) == 0 {
