@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/docker/swarm/cluster"
@@ -33,4 +34,19 @@ func (s *Scheduler) SelectNodeForContainer(nodes []cluster.Node, config *dockerc
 	}
 
 	return s.strategy.PlaceContainer(config, accepted)
+}
+
+// Strategy returns the strategy name
+func (s *Scheduler) Strategy() string {
+	return s.strategy.Name()
+}
+
+// Filters returns the list of filter's name
+func (s *Scheduler) Filters() string {
+	filters := []string{}
+	for _, f := range s.filters {
+		filters = append(filters, f.Name())
+	}
+
+	return strings.Join(filters, ", ")
 }

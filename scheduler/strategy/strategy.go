@@ -10,6 +10,8 @@ import (
 
 // PlacementStrategy is exported
 type PlacementStrategy interface {
+	Name() string
+
 	Initialize() error
 	// Given a container configuration and a set of nodes, select the target
 	// node where the container should be scheduled.
@@ -17,7 +19,7 @@ type PlacementStrategy interface {
 }
 
 var (
-	strategies map[string]PlacementStrategy
+	strategies []PlacementStrategy
 	// ErrNotSupported is exported
 	ErrNotSupported = errors.New("strategy not supported")
 	// ErrNoResourcesAvailable is exported
@@ -25,21 +27,37 @@ var (
 )
 
 func init() {
-	strategies = map[string]PlacementStrategy{
-		"binpacking": &BinpackPlacementStrategy{}, //compat
-		"binpack":    &BinpackPlacementStrategy{},
-		"spread":     &SpreadPlacementStrategy{},
-		"random":     &RandomPlacementStrategy{},
+	strategies = []PlacementStrategy{
+		&SpreadPlacementStrategy{},
+		&BinpackPlacementStrategy{},
+		&RandomPlacementStrategy{},
 	}
 }
 
 // New is exported
 func New(name string) (PlacementStrategy, error) {
-	if strategy, exists := strategies[name]; exists {
-		log.WithField("name", name).Debugf("Initializing strategy")
-		err := strategy.Initialize()
-		return strategy, err
+	if name == "binpacking" { //TODO: remove this compat
+		name = "binpack"
+	}
+
+	for _, strategy := range strategies {
+		if strategy.Name() == name {
+			log.WithField("name", name).Debugf("Initializing strategy")
+			err := strategy.Initialize()
+			return strategy, err
+		}
 	}
 
 	return nil, ErrNotSupported
+}
+
+// List returns the names of all the available strategies
+func List() []string {
+	names := []string{}
+
+	for _, strategy := range strategies {
+		names = append(names, strategy.Name())
+	}
+
+	return names
 }

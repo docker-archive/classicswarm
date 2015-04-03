@@ -18,6 +18,11 @@ func (p *RandomPlacementStrategy) Initialize() error {
 	return nil
 }
 
+// Name returns the name of the strategy
+func (p *RandomPlacementStrategy) Name() string {
+	return "random"
+}
+
 // PlaceContainer is exported
 func (p *RandomPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []cluster.Node) (cluster.Node, error) {
 	if size := len(nodes); size > 0 {
