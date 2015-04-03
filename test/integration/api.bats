@@ -16,24 +16,35 @@ function teardown() {
 }
 
 @test "docker ps -n 3 should return the 3 last containers, including non running one" {
-skip
        start_docker 1
        start_manager
        run docker_swarm run -d busybox sleep 42
        run docker_swarm run -d busybox false
-       run docker_swarm run -d busybox true
-       run docker_swarm ps -a -n 3
+       run docker_swarm ps -n 3
        [ "${#lines[@]}" -eq  3 ]
+
+       run docker_swarm run -d busybox true
+       run docker_swarm ps -n 3
+       [ "${#lines[@]}" -eq  4 ]
+
+       run docker_swarm run -d busybox true
+       run docker_swarm ps -n 3
+       [ "${#lines[@]}" -eq  4 ]
 }
 
 @test "docker ps -l should return the last container, including non running one" {
-skip
        start_docker 1
        start_manager
        run docker_swarm run -d busybox sleep 42
-       run docker_swarm run -d busybox false
+       sleep 1 #sleep so the 2 containers don't start at the same second
        run docker_swarm run -d busybox true
        run docker_swarm ps -l
        [ "${#lines[@]}" -eq  2 ]
        [[ "${lines[1]}" == *"true"* ]]
+
+       sleep 1 #sleep so the container doesn't start at the same second as 'busybox true'
+       run docker_swarm run -d busybox false
+       run docker_swarm ps -l
+       [ "${#lines[@]}" -eq  2 ]
+       [[ "${lines[1]}" == *"false"* ]]
 }
