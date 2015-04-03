@@ -10,6 +10,8 @@ import (
 
 // Filter is exported
 type Filter interface {
+	Name() string
+
 	// Return a subset of nodes that were accepted by the filtering policy.
 	Filter(*dockerclient.ContainerConfig, []cluster.Node) ([]cluster.Node, error)
 }

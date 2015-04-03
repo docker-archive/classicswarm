@@ -13,6 +13,11 @@ import (
 type AffinityFilter struct {
 }
 
+// Name returns the name of the filter
+func (f *AffinityFilter) Name() string {
+	return "affinity"
+}
+
 // Filter is exported
 func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	affinities, err := parseExprs("affinity", config.Env)

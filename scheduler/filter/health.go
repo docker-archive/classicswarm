@@ -16,6 +16,11 @@ var (
 type HealthFilter struct {
 }
 
+// Name returns the name of the filter
+func (f *HealthFilter) Name() string {
+	return "health"
+}
+
 // Filter is exported
 func (f *HealthFilter) Filter(_ *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
 	result := []cluster.Node{}
