@@ -268,7 +268,11 @@ func (c *Cluster) listNodes() []cluster.Node {
 
 // Info is exported
 func (c *Cluster) Info() [][2]string {
-	info := [][2]string{{"\bNodes", fmt.Sprintf("%d", len(c.nodes))}}
+	info := [][2]string{
+		{"\bStrategy", c.scheduler.Strategy()},
+		{"\bFilters", c.scheduler.Filters()},
+		{"\bNodes", fmt.Sprintf("%d", len(c.nodes))},
+	}
 
 	for _, node := range c.nodes {
 		info = append(info, [2]string{node.Name(), node.Addr()})

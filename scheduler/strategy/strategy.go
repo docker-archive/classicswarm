@@ -10,6 +10,8 @@ import (
 
 // PlacementStrategy is exported
 type PlacementStrategy interface {
+	Name() string
+
 	Initialize() error
 	// Given a container configuration and a set of nodes, select the target
 	// node where the container should be scheduled.
