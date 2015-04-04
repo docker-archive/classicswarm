@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,24 +24,24 @@ func makeBinding(ip, port string) map[string][]dockerclient.PortBinding {
 func TestPortFilterNoConflicts(t *testing.T) {
 	var (
 		p     = PortFilter{}
-		nodes = []cluster.Node{
-			&FakeNode{
-				id:   "node-0-id",
-				name: "node-0-name",
-				addr: "node-0",
+		nodes = []*node.Node{
+			{
+				ID:   "node-0-id",
+				Name: "node-0-name",
+				Addr: "node-0",
 			},
-			&FakeNode{
-				id:   "node-1-id",
-				name: "node-1-name",
-				addr: "node-1",
+			{
+				ID:   "node-1-id",
+				Name: "node-1-name",
+				Addr: "node-1",
 			},
-			&FakeNode{
-				id:   "node-2-id",
-				name: "node-2-name",
-				addr: "node-2",
+			{
+				ID:   "node-2-id",
+				Name: "node-2-name",
+				Addr: "node-2",
 			},
 		}
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
@@ -66,9 +67,7 @@ func TestPortFilterNoConflicts(t *testing.T) {
 
 	// Add a container taking a different (4242) port.
 	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{HostConfig: &dockerclient.HostConfig{PortBindings: makeBinding("", "4242")}}}
-	if n, ok := nodes[0].(*FakeNode); ok {
-		assert.NoError(t, n.AddContainer(container))
-	}
+	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Since no node is using port 80, there should be no filter
 	result, err = p.Filter(config, nodes)
@@ -79,32 +78,30 @@ func TestPortFilterNoConflicts(t *testing.T) {
 func TestPortFilterSimple(t *testing.T) {
 	var (
 		p     = PortFilter{}
-		nodes = []cluster.Node{
-			&FakeNode{
-				id:   "node-0-id",
-				name: "node-0-name",
-				addr: "node-0",
+		nodes = []*node.Node{
+			{
+				ID:   "node-0-id",
+				Name: "node-0-name",
+				Addr: "node-0",
 			},
-			&FakeNode{
-				id:   "node-1-id",
-				name: "node-1-name",
-				addr: "node-1",
+			{
+				ID:   "node-1-id",
+				Name: "node-1-name",
+				Addr: "node-1",
 			},
-			&FakeNode{
-				id:   "node-2-id",
-				name: "node-2-name",
-				addr: "node-2",
+			{
+				ID:   "node-2-id",
+				Name: "node-2-name",
+				Addr: "node-2",
 			},
 		}
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
 	// Add a container taking away port 80 to nodes[0].
 	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{HostConfig: &dockerclient.HostConfig{PortBindings: makeBinding("", "80")}}}
-	if n, ok := nodes[0].(*FakeNode); ok {
-		assert.NoError(t, n.AddContainer(container))
-	}
+	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Request port 80.
 	config := &dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
@@ -120,32 +117,30 @@ func TestPortFilterSimple(t *testing.T) {
 func TestPortFilterDifferentInterfaces(t *testing.T) {
 	var (
 		p     = PortFilter{}
-		nodes = []cluster.Node{
-			&FakeNode{
-				id:   "node-0-id",
-				name: "node-0-name",
-				addr: "node-0",
+		nodes = []*node.Node{
+			{
+				ID:   "node-0-id",
+				Name: "node-0-name",
+				Addr: "node-0",
 			},
-			&FakeNode{
-				id:   "node-1-id",
-				name: "node-1-name",
-				addr: "node-1",
+			{
+				ID:   "node-1-id",
+				Name: "node-1-name",
+				Addr: "node-1",
 			},
-			&FakeNode{
-				id:   "node-2-id",
-				name: "node-2-name",
-				addr: "node-2",
+			{
+				ID:   "node-2-id",
+				Name: "node-2-name",
+				Addr: "node-2",
 			},
 		}
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
 	// Add a container taking away port 80 on every interface to nodes[0].
 	container := &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{HostConfig: &dockerclient.HostConfig{PortBindings: makeBinding("", "80")}}}
-	if n, ok := nodes[0].(*FakeNode); ok {
-		assert.NoError(t, n.AddContainer(container))
-	}
+	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Request port 80 for the local interface.
 	config := &dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
@@ -161,9 +156,7 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 	// Add a container taking away port 4242 on the local interface of
 	// nodes[1].
 	container = &cluster.Container{Container: dockerclient.Container{Id: "c1"}, Info: dockerclient.ContainerInfo{HostConfig: &dockerclient.HostConfig{PortBindings: makeBinding("127.0.0.1", "4242")}}}
-	if n, ok := nodes[1].(*FakeNode); ok {
-		assert.NoError(t, n.AddContainer(container))
-	}
+	assert.NoError(t, nodes[1].AddContainer(container))
 	// Request port 4242 on the same interface.
 	config = &dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		PortBindings: makeBinding("127.0.0.1", "4242"),
@@ -206,24 +199,24 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 func TestPortFilterRandomAssignment(t *testing.T) {
 	var (
 		p     = PortFilter{}
-		nodes = []cluster.Node{
-			&FakeNode{
-				id:   "node-0-id",
-				name: "node-0-name",
-				addr: "node-0",
+		nodes = []*node.Node{
+			{
+				ID:   "node-0-id",
+				Name: "node-0-name",
+				Addr: "node-0",
 			},
-			&FakeNode{
-				id:   "node-1-id",
-				name: "node-1-name",
-				addr: "node-1",
+			{
+				ID:   "node-1-id",
+				Name: "node-1-name",
+				Addr: "node-1",
 			},
-			&FakeNode{
-				id:   "node-2-id",
-				name: "node-2-name",
-				addr: "node-2",
+			{
+				ID:   "node-2-id",
+				Name: "node-2-name",
+				Addr: "node-2",
 			},
 		}
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
@@ -261,9 +254,7 @@ func TestPortFilterRandomAssignment(t *testing.T) {
 		},
 	}
 
-	if n, ok := nodes[0].(*FakeNode); ok {
-		assert.NoError(t, n.AddContainer(container))
-	}
+	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Request port 80.
 	config := &dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{

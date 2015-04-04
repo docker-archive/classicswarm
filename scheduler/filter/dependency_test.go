@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
@@ -11,29 +12,29 @@ import (
 func TestDependencyFilterSimple(t *testing.T) {
 	var (
 		f     = DependencyFilter{}
-		nodes = []cluster.Node{
-			&FakeNode{
-				id:         "node-0-id",
-				name:       "node-0-name",
-				addr:       "node-0",
-				containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c0"}}},
+		nodes = []*node.Node{
+			{
+				ID:         "node-0-id",
+				Name:       "node-0-name",
+				Addr:       "node-0",
+				Containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c0"}}},
 			},
 
-			&FakeNode{
-				id:         "node-1-id",
-				name:       "node-1-name",
-				addr:       "node-1",
-				containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c1"}}},
+			{
+				ID:         "node-1-id",
+				Name:       "node-1-name",
+				Addr:       "node-1",
+				Containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c1"}}},
 			},
 
-			&FakeNode{
-				id:         "node-2-id",
-				name:       "node-2-name",
-				addr:       "node-2",
-				containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c2"}}},
+			{
+				ID:         "node-2-id",
+				Name:       "node-2-name",
+				Addr:       "node-2",
+				Containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c2"}}},
 			},
 		}
-		result []cluster.Node
+		result []*node.Node
 		err    error
 		config *dockerclient.ContainerConfig
 	)
@@ -83,34 +84,34 @@ func TestDependencyFilterSimple(t *testing.T) {
 func TestDependencyFilterMulti(t *testing.T) {
 	var (
 		f     = DependencyFilter{}
-		nodes = []cluster.Node{
+		nodes = []*node.Node{
 			// nodes[0] has c0 and c1
-			&FakeNode{
-				id:   "node-0-id",
-				name: "node-0-name",
-				addr: "node-0",
-				containers: []*cluster.Container{
+			{
+				ID:   "node-0-id",
+				Name: "node-0-name",
+				Addr: "node-0",
+				Containers: []*cluster.Container{
 					{Container: dockerclient.Container{Id: "c0"}},
 					{Container: dockerclient.Container{Id: "c1"}},
 				},
 			},
 
 			// nodes[1] has c2
-			&FakeNode{
-				id:         "node-1-id",
-				name:       "node-1-name",
-				addr:       "node-1",
-				containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c2"}}},
+			{
+				ID:         "node-1-id",
+				Name:       "node-1-name",
+				Addr:       "node-1",
+				Containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c2"}}},
 			},
 
 			// nodes[2] has nothing
-			&FakeNode{
-				id:   "node-2-id",
-				name: "node-2-name",
-				addr: "node-2",
+			{
+				ID:   "node-2-id",
+				Name: "node-2-name",
+				Addr: "node-2",
 			},
 		}
-		result []cluster.Node
+		result []*node.Node
 		err    error
 		config *dockerclient.ContainerConfig
 	)
@@ -153,34 +154,34 @@ func TestDependencyFilterMulti(t *testing.T) {
 func TestDependencyFilterChaining(t *testing.T) {
 	var (
 		f     = DependencyFilter{}
-		nodes = []cluster.Node{
+		nodes = []*node.Node{
 			// nodes[0] has c0 and c1
-			&FakeNode{
-				id:   "node-0-id",
-				name: "node-0-name",
-				addr: "node-0",
-				containers: []*cluster.Container{
+			{
+				ID:   "node-0-id",
+				Name: "node-0-name",
+				Addr: "node-0",
+				Containers: []*cluster.Container{
 					{Container: dockerclient.Container{Id: "c0"}},
 					{Container: dockerclient.Container{Id: "c1"}},
 				},
 			},
 
 			// nodes[1] has c2
-			&FakeNode{
-				id:         "node-1-id",
-				name:       "node-1-name",
-				addr:       "node-1",
-				containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c2"}}},
+			{
+				ID:         "node-1-id",
+				Name:       "node-1-name",
+				Addr:       "node-1",
+				Containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c2"}}},
 			},
 
 			// nodes[2] has nothing
-			&FakeNode{
-				id:   "node-2-id",
-				name: "node-2-name",
-				addr: "node-2",
+			{
+				ID:   "node-2-id",
+				Name: "node-2-name",
+				Addr: "node-2",
 			},
 		}
-		result []cluster.Node
+		result []*node.Node
 		err    error
 		config *dockerclient.ContainerConfig
 	)

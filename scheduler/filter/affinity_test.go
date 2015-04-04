@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
@@ -11,12 +12,12 @@ import (
 func TestAffinityFilter(t *testing.T) {
 	var (
 		f     = AffinityFilter{}
-		nodes = []cluster.Node{
-			&FakeNode{
-				id:   "node-0-id",
-				name: "node-0-name",
-				addr: "node-0",
-				containers: []*cluster.Container{
+		nodes = []*node.Node{
+			{
+				ID:   "node-0-id",
+				Name: "node-0-name",
+				Addr: "node-0",
+				Containers: []*cluster.Container{
 					{Container: dockerclient.Container{
 						Id:    "container-n0-0-id",
 						Names: []string{"/container-n0-0-name"},
@@ -26,16 +27,16 @@ func TestAffinityFilter(t *testing.T) {
 						Names: []string{"/container-n0-1-name"},
 					}},
 				},
-				images: []*cluster.Image{{Image: dockerclient.Image{
+				Images: []*cluster.Image{{Image: dockerclient.Image{
 					Id:       "image-0-id",
 					RepoTags: []string{"image-0:tag1", "image-0:tag2"},
 				}}},
 			},
-			&FakeNode{
-				id:   "node-1-id",
-				name: "node-1-name",
-				addr: "node-1",
-				containers: []*cluster.Container{
+			{
+				ID:   "node-1-id",
+				Name: "node-1-name",
+				Addr: "node-1",
+				Containers: []*cluster.Container{
 					{Container: dockerclient.Container{
 						Id:    "container-n1-0-id",
 						Names: []string{"/container-n1-0-name"},
@@ -45,18 +46,18 @@ func TestAffinityFilter(t *testing.T) {
 						Names: []string{"/container-n1-1-name"},
 					}},
 				},
-				images: []*cluster.Image{{Image: dockerclient.Image{
+				Images: []*cluster.Image{{Image: dockerclient.Image{
 					Id:       "image-1-id",
 					RepoTags: []string{"image-1:tag1", "image-0:tag3", "image-1:tag2"},
 				}}},
 			},
-			&FakeNode{
-				id:   "node-2-id",
-				name: "node-2-name",
-				addr: "node-2",
+			{
+				ID:   "node-2-id",
+				Name: "node-2-name",
+				Addr: "node-2",
 			},
 		}
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 

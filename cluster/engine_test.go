@@ -1,4 +1,4 @@
-package swarm
+package cluster
 
 import (
 	"errors"
@@ -26,7 +26,7 @@ var (
 )
 
 func TestNodeConnectionFailure(t *testing.T) {
-	node := NewNode("test", 0)
+	node := NewEngine("test", 0)
 	assert.False(t, node.isConnected())
 
 	// Always fail.
@@ -41,7 +41,7 @@ func TestNodeConnectionFailure(t *testing.T) {
 }
 
 func TestOutdatedNode(t *testing.T) {
-	node := NewNode("test", 0)
+	node := NewEngine("test", 0)
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(&dockerclient.Info{}, nil)
 
@@ -52,7 +52,7 @@ func TestOutdatedNode(t *testing.T) {
 }
 
 func TestNodeCpusMemory(t *testing.T) {
-	node := NewNode("test", 0)
+	node := NewEngine("test", 0)
 	assert.False(t, node.isConnected())
 
 	client := mockclient.NewMockClient()
@@ -72,7 +72,7 @@ func TestNodeCpusMemory(t *testing.T) {
 }
 
 func TestNodeSpecs(t *testing.T) {
-	node := NewNode("test", 0)
+	node := NewEngine("test", 0)
 	assert.False(t, node.isConnected())
 
 	client := mockclient.NewMockClient()
@@ -87,17 +87,17 @@ func TestNodeSpecs(t *testing.T) {
 
 	assert.Equal(t, node.Cpus, mockInfo.NCPU)
 	assert.Equal(t, node.Memory, mockInfo.MemTotal)
-	assert.Equal(t, node.Labels()["storagedriver"], mockInfo.Driver)
-	assert.Equal(t, node.Labels()["executiondriver"], mockInfo.ExecutionDriver)
-	assert.Equal(t, node.Labels()["kernelversion"], mockInfo.KernelVersion)
-	assert.Equal(t, node.Labels()["operatingsystem"], mockInfo.OperatingSystem)
-	assert.Equal(t, node.Labels()["foo"], "bar")
+	assert.Equal(t, node.Labels["storagedriver"], mockInfo.Driver)
+	assert.Equal(t, node.Labels["executiondriver"], mockInfo.ExecutionDriver)
+	assert.Equal(t, node.Labels["kernelversion"], mockInfo.KernelVersion)
+	assert.Equal(t, node.Labels["operatingsystem"], mockInfo.OperatingSystem)
+	assert.Equal(t, node.Labels["foo"], "bar")
 
 	client.Mock.AssertExpectations(t)
 }
 
 func TestNodeState(t *testing.T) {
-	node := NewNode("test", 0)
+	node := NewEngine("test", 0)
 	assert.False(t, node.isConnected())
 
 	client := mockclient.NewMockClient()
@@ -136,7 +136,7 @@ func TestNodeState(t *testing.T) {
 }
 
 func TestNodeContainerLookup(t *testing.T) {
-	node := NewNode("test-node", 0)
+	node := NewEngine("test-node", 0)
 	assert.False(t, node.isConnected())
 
 	client := mockclient.NewMockClient()
@@ -175,7 +175,7 @@ func TestCreateContainer(t *testing.T) {
 			Cmd:       []string{"date"},
 			Tty:       false,
 		}
-		node   = NewNode("test", 0)
+		node   = NewEngine("test", 0)
 		client = mockclient.NewMockClient()
 	)
 
@@ -196,7 +196,7 @@ func TestCreateContainer(t *testing.T) {
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: config}, nil).Once()
-	container, err := node.create(config, name, false)
+	container, err := node.Create(config, name, false)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
 	assert.Len(t, node.Containers(), 1)
@@ -205,7 +205,7 @@ func TestCreateContainer(t *testing.T) {
 	name = "test2"
 	mockConfig.CpuShares = config.CpuShares * 1024 / mockInfo.NCPU
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
-	container, err = node.create(config, name, false)
+	container, err = node.Create(config, name, false)
 	assert.Equal(t, err, dockerclient.ErrNotFound)
 	assert.Nil(t, container)
 
@@ -219,28 +219,28 @@ func TestCreateContainer(t *testing.T) {
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: config}, nil).Once()
-	container, err = node.create(config, name, true)
+	container, err = node.Create(config, name, true)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
 	assert.Len(t, node.Containers(), 2)
 }
 
 func TestTotalMemory(t *testing.T) {
-	node := NewNode("test", 0.05)
+	node := NewEngine("test", 0.05)
 	node.Memory = 1024
 	assert.Equal(t, node.TotalMemory(), 1024+1024*5/100)
 
-	node = NewNode("test", 0)
+	node = NewEngine("test", 0)
 	node.Memory = 1024
 	assert.Equal(t, node.TotalMemory(), 1024)
 }
 
 func TestTotalCpus(t *testing.T) {
-	node := NewNode("test", 0.05)
+	node := NewEngine("test", 0.05)
 	node.Cpus = 2
 	assert.Equal(t, node.TotalCpus(), 2+2*5/100)
 
-	node = NewNode("test", 0)
+	node = NewEngine("test", 0)
 	node.Cpus = 2
 	assert.Equal(t, node.TotalCpus(), 2)
 }

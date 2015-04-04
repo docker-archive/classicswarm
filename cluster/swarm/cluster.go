@@ -10,6 +10,7 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/docker/swarm/state"
 	"github.com/samalba/dockerclient"
 )
@@ -19,7 +20,7 @@ type Cluster struct {
 	sync.RWMutex
 
 	eventHandler cluster.EventHandler
-	nodes        map[string]*node
+	nodes        map[string]*cluster.Engine
 	scheduler    *scheduler.Scheduler
 	options      *cluster.Options
 	store        *state.Store
@@ -31,7 +32,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, eventhandler
 
 	cluster := &Cluster{
 		eventHandler: eventhandler,
-		nodes:        make(map[string]*node),
+		nodes:        make(map[string]*cluster.Engine),
 		scheduler:    scheduler,
 		options:      options,
 		store:        store,
@@ -75,8 +76,8 @@ func (c *Cluster) CreateContainer(config *dockerclient.ContainerConfig, name str
 		return nil, err
 	}
 
-	if nn, ok := n.(*node); ok {
-		container, err := nn.create(config, name, true)
+	if nn, ok := c.nodes[n.ID]; ok {
+		container, err := nn.Create(config, name, true)
 		if err != nil {
 			return nil, err
 		}
@@ -98,10 +99,8 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
-	if n, ok := container.Node.(*node); ok {
-		if err := n.destroy(container, force); err != nil {
-			return err
-		}
+	if err := container.Engine.Destroy(container, force); err != nil {
+		return err
 	}
 
 	if err := c.store.Remove(container.Id); err != nil {
@@ -118,25 +117,25 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 func (c *Cluster) newEntries(entries []*discovery.Entry) {
 	for _, entry := range entries {
 		go func(m *discovery.Entry) {
-			if c.getNode(m.String()) == nil {
-				n := NewNode(m.String(), c.options.OvercommitRatio)
-				if err := n.connect(c.options.TLSConfig); err != nil {
+			if !c.hasNode(m.String()) {
+				n := cluster.NewEngine(m.String(), c.options.OvercommitRatio)
+				if err := n.Connect(c.options.TLSConfig); err != nil {
 					log.Error(err)
 					return
 				}
 				c.Lock()
 
-				if old, exists := c.nodes[n.id]; exists {
+				if old, exists := c.nodes[n.ID]; exists {
 					c.Unlock()
-					if old.ip != n.ip {
-						log.Errorf("ID duplicated. %s shared by %s and %s", n.id, old.IP(), n.IP())
+					if old.IP != n.IP {
+						log.Errorf("ID duplicated. %s shared by %s and %s", n.ID, old.IP, n.IP)
 					} else {
-						log.Errorf("node %q is already registered", n.id)
+						log.Errorf("node %q is already registered", n.ID)
 					}
 					return
 				}
-				c.nodes[n.id] = n
-				if err := n.events(c); err != nil {
+				c.nodes[n.ID] = n
+				if err := n.Events(c); err != nil {
 					log.Error(err)
 					c.Unlock()
 					return
@@ -148,13 +147,13 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 	}
 }
 
-func (c *Cluster) getNode(addr string) *node {
+func (c *Cluster) hasNode(addr string) bool {
 	for _, node := range c.nodes {
-		if node.addr == addr {
-			return node
+		if node.Addr == addr {
+			return true
 		}
 	}
-	return nil
+	return false
 }
 
 // Images returns all the images in the cluster.
@@ -192,10 +191,7 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete, error) {
 	c.Lock()
 	defer c.Unlock()
-	if n, ok := image.Node.(*node); ok {
-		return n.removeImage(image)
-	}
-	return nil, nil
+	return image.Engine.RemoveImage(image)
 }
 
 // Pull is exported
@@ -203,16 +199,16 @@ func (c *Cluster) Pull(name string, callback func(what, status string)) {
 	size := len(c.nodes)
 	done := make(chan bool, size)
 	for _, n := range c.nodes {
-		go func(nn *node) {
+		go func(nn *cluster.Engine) {
 			if callback != nil {
-				callback(nn.Name(), "")
+				callback(nn.Name, "")
 			}
-			err := nn.pull(name)
+			err := nn.Pull(name)
 			if callback != nil {
 				if err != nil {
-					callback(nn.Name(), err.Error())
+					callback(nn.Name, err.Error())
 				} else {
-					callback(nn.Name(), "downloaded")
+					callback(nn.Name, "downloaded")
 				}
 			}
 			done <- true
@@ -254,16 +250,42 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	return nil
 }
 
-// nodes returns all the nodes in the cluster.
-func (c *Cluster) listNodes() []cluster.Node {
+// listNodes returns all the nodes in the cluster.
+func (c *Cluster) listNodes() []*node.Node {
 	c.RLock()
 	defer c.RUnlock()
 
-	out := []cluster.Node{}
+	out := []*node.Node{}
+	for _, n := range c.nodes {
+		out = append(out, &node.Node{
+			ID:          n.ID,
+			IP:          n.IP,
+			Addr:        n.Addr,
+			Name:        n.Name,
+			Cpus:        n.Cpus,
+			Labels:      n.Labels,
+			Containers:  n.Containers(),
+			Images:      n.Images(),
+			UsedMemory:  n.UsedMemory(),
+			UsedCpus:    n.UsedCpus(),
+			TotalMemory: n.TotalMemory(),
+			TotalCpus:   n.TotalCpus(),
+			IsHealthy:   n.IsHealthy(),
+		})
+	}
+
+	return out
+}
+
+// listEngines returns all the engines in the cluster.
+func (c *Cluster) listEngines() []*cluster.Engine {
+	c.RLock()
+	defer c.RUnlock()
+
+	out := []*cluster.Engine{}
 	for _, n := range c.nodes {
 		out = append(out, n)
 	}
-
 	return out
 }
 
@@ -275,11 +297,11 @@ func (c *Cluster) Info() [][2]string {
 		{"\bNodes", fmt.Sprintf("%d", len(c.nodes))},
 	}
 
-	nodes := c.listNodes()
-	sort.Sort(cluster.NodeSorter(nodes))
+	nodes := c.listEngines()
+	sort.Sort(cluster.EngineSorter(nodes))
 
-	for _, node := range nodes {
-		info = append(info, [2]string{node.Name(), node.Addr()})
+	for _, node := range c.nodes {
+		info = append(info, [2]string{node.Name, node.Addr})
 		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(node.Containers()))})
 		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", node.UsedCpus(), node.TotalCpus())})
 		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(node.UsedMemory())), units.BytesSize(float64(node.TotalMemory())))})
