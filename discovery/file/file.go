@@ -28,6 +28,17 @@ func (s *FileDiscoveryService) Initialize(path string, heartbeat int) error {
 func parseFileContent(content []byte) []string {
 	var result []string
 	for _, line := range strings.Split(strings.TrimSpace(string(content)), "\n") {
+		line = strings.TrimSpace(line)
+		// Ignoring line starts with #
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+		// Inlined # comment also ignored.
+		if strings.Contains(line, "#") {
+			line = line[0:strings.Index(line, "#")]
+			// Trim additional spaces caused by above stripping.
+			line = strings.TrimSpace(line)
+		}
 		for _, ip := range discovery.Generate(line) {
 			result = append(result, ip)
 		}
