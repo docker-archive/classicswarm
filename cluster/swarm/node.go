@@ -242,8 +242,7 @@ func (n *node) refreshContainer(ID string, full bool) error {
 func (n *node) updateContainer(c dockerclient.Container, containers map[string]*cluster.Container, full bool) (map[string]*cluster.Container, error) {
 	var container *cluster.Container
 
-	n.Lock()
-
+	n.RLock()
 	if current, exists := n.containers[c.Id]; exists {
 		// The container is already known.
 		container = current
@@ -254,13 +253,11 @@ func (n *node) updateContainer(c dockerclient.Container, containers map[string]*
 		}
 		full = true
 	}
-
-	// Update its internal state.
-	container.Container = c
-	containers[container.Id] = container
-
 	// Release the lock here as the next step is slow.
-	n.Unlock()
+	// Trade-off: If updateContainer() is called concurrently for the same
+	// container, we will end up doing a full refresh twice and the original
+	// container (containers[container.Id]) will get replaced.
+	n.RUnlock()
 
 	// Update ContainerInfo.
 	if full {
@@ -272,6 +269,12 @@ func (n *node) updateContainer(c dockerclient.Container, containers map[string]*
 		// real CpuShares -> nb of CPUs
 		container.Info.Config.CpuShares = container.Info.Config.CpuShares * 1024.0 / n.Cpus
 	}
+
+	// Update its internal state.
+	n.Lock()
+	container.Container = c
+	containers[container.Id] = container
+	n.Unlock()
 
 	return containers, nil
 }
