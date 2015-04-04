@@ -16,7 +16,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/version"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
@@ -94,7 +93,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if len(accepteds) != 0 {
 			found := false
 			for _, accepted := range accepteds {
-				if accepted == image.Node.Name() || accepted == image.Node.ID() {
+				if accepted == image.Engine.Name || accepted == image.Engine.ID {
 					found = true
 					break
 				}
@@ -132,20 +131,20 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if strings.Split(tmp.Image, ":")[0] == "swarm" && !all {
 			continue
 		}
-		if !container.Node.IsHealthy() {
+		if !container.Engine.IsHealthy() {
 			tmp.Status = "Pending"
 		}
 		// TODO remove the Node Name in the name when we have a good solution
 		tmp.Names = make([]string, len(container.Names))
 		for i, name := range container.Names {
-			tmp.Names[i] = "/" + container.Node.Name() + name
+			tmp.Names[i] = "/" + container.Engine.Name + name
 		}
 		// insert node IP
 		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
 		for i, port := range container.Ports {
 			tmp.Ports[i] = port
 			if port.IP == "0.0.0.0" {
-				tmp.Ports[i].IP = container.Node.IP()
+				tmp.Ports[i].IP = container.Engine.IP
 			}
 		}
 		out = append(out, &tmp)
@@ -171,7 +170,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	client, scheme := newClientAndScheme(c.tlsConfig)
 
-	resp, err := client.Get(scheme + "://" + container.Node.Addr() + "/containers/" + container.Id + "/json")
+	resp, err := client.Get(scheme + "://" + container.Engine.Addr + "/containers/" + container.Id + "/json")
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -188,10 +187,10 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// insert Node field
-	data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"Node\":%s,\"Name\":\"/", cluster.SerializeNode(container.Node))), -1)
+	data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"Node\":%s,\"Name\":\"/", container.Engine)), -1)
 
 	// insert node IP
-	data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Node.IP())), -1)
+	data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Engine.IP)), -1)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
@@ -301,7 +300,7 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 
 	client, scheme := newClientAndScheme(c.tlsConfig)
 
-	resp, err := client.Post(scheme+"://"+container.Node.Addr()+"/containers/"+container.Id+"/exec", "application/json", r.Body)
+	resp, err := client.Post(scheme+"://"+container.Engine.Addr+"/containers/"+container.Id+"/exec", "application/json", r.Body)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -356,7 +355,7 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	for _, image := range matchedImages {
 		content, err := c.cluster.RemoveImage(image)
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("%s: %s", image.Node.Name(), err.Error()))
+			errs = append(errs, fmt.Sprintf("%s: %s", image.Engine.Name, err.Error()))
 			continue
 		}
 		out = append(out, content...)
@@ -384,7 +383,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := proxy(c.tlsConfig, container.Node.Addr(), w, r); err != nil {
+	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -394,7 +393,7 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 
 	if image := c.cluster.Image(name); image != nil {
-		proxy(c.tlsConfig, image.Node.Addr(), w, r)
+		proxy(c.tlsConfig, image.Engine.Addr, w, r)
 		return
 	}
 	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
@@ -402,23 +401,24 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to a random node
 func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
-	candidates := []cluster.Node{}
+	candidates := []*cluster.Engine{}
 
 	// FIXME: doesn't work if there are no container in the cluster
 	// remove proxyRandom and implemente the features locally
 	for _, container := range c.cluster.Containers() {
-		candidates = append(candidates, container.Node)
+		candidates = append(candidates, container.Engine)
 	}
 
-	healthFilter := &filter.HealthFilter{}
-	accepted, err := healthFilter.Filter(nil, candidates)
+	// FIXME:
+	// healthFilter := &filter.HealthFilter{}
+	// accepted, err := healthFilter.Filter(nil, candidates)
+	accepted := candidates
+	//if err != nil {
+	//	httpError(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
 
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := proxy(c.tlsConfig, accepted[rand.Intn(len(accepted))].Addr(), w, r); err != nil {
+	if err := proxy(c.tlsConfig, accepted[rand.Intn(len(accepted))].Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -441,7 +441,7 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// proxy commit request to the right node
-	if err := proxy(c.tlsConfig, container.Node.Addr(), w, r); err != nil {
+	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -454,7 +454,7 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := hijack(c.tlsConfig, container.Node.Addr(), w, r); err != nil {
+	if err := hijack(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }

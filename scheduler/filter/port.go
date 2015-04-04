@@ -3,7 +3,7 @@ package filter
 import (
 	"fmt"
 
-	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 )
 
@@ -19,10 +19,10 @@ func (p *PortFilter) Name() string {
 }
 
 // Filter is exported
-func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
+func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	for _, port := range config.HostConfig.PortBindings {
 		for _, binding := range port {
-			candidates := []cluster.Node{}
+			candidates := []*node.Node{}
 			for _, node := range nodes {
 				if !p.portAlreadyInUse(node, binding) {
 					candidates = append(candidates, node)
@@ -37,8 +37,8 @@ func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluste
 	return nodes, nil
 }
 
-func (p *PortFilter) portAlreadyInUse(node cluster.Node, requested dockerclient.PortBinding) bool {
-	for _, c := range node.Containers() {
+func (p *PortFilter) portAlreadyInUse(node *node.Node, requested dockerclient.PortBinding) bool {
+	for _, c := range node.Containers {
 		// HostConfig.PortBindings contains the requested ports.
 		// NetworkSettings.Ports contains the actual ports.
 		//

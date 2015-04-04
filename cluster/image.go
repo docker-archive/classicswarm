@@ -10,7 +10,7 @@ import (
 type Image struct {
 	dockerclient.Image
 
-	Node Node
+	Engine *Engine
 }
 
 // Match is exported

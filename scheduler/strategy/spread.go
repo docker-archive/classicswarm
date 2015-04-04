@@ -3,7 +3,7 @@ package strategy
 import (
 	"sort"
 
-	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 )
 
@@ -22,7 +22,7 @@ func (p *SpreadPlacementStrategy) Name() string {
 }
 
 // PlaceContainer is exported
-func (p *SpreadPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []cluster.Node) (cluster.Node, error) {
+func (p *SpreadPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*node.Node) (*node.Node, error) {
 	weightedNodes, err := weighNodes(config, nodes)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (p *SpreadPlacementStrategy) PlaceContainer(config *dockerclient.ContainerC
 		if node.Weight != bottomNode.Weight {
 			break
 		}
-		if len(node.Node.Containers()) < len(bottomNode.Node.Containers()) {
+		if len(node.Node.Containers) < len(bottomNode.Node.Containers) {
 			bottomNode = node
 		}
 	}

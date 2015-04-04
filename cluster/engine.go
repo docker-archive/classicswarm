@@ -1,4 +1,4 @@
-package swarm
+package cluster
 
 import (
 	"crypto/tls"
@@ -10,7 +10,6 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
 )
 
@@ -22,63 +21,44 @@ const (
 	requestTimeout = 10 * time.Second
 )
 
-// NewNode is exported
-func NewNode(addr string, overcommitRatio float64) *node {
-	e := &node{
-		addr:            addr,
-		labels:          make(map[string]string),
+// NewEngine is exported
+func NewEngine(addr string, overcommitRatio float64) *Engine {
+	e := &Engine{
+		Addr:            addr,
+		Labels:          make(map[string]string),
 		ch:              make(chan bool),
-		containers:      make(map[string]*cluster.Container),
+		containers:      make(map[string]*Container),
 		healthy:         true,
 		overcommitRatio: int64(overcommitRatio * 100),
 	}
 	return e
 }
 
-type node struct {
+// Engine represents a docker engine
+type Engine struct {
 	sync.RWMutex
 
-	id     string
-	ip     string
-	addr   string
-	name   string
+	ID     string
+	IP     string
+	Addr   string
+	Name   string
 	Cpus   int64
 	Memory int64
-	labels map[string]string
+	Labels map[string]string
 
 	ch              chan bool
-	containers      map[string]*cluster.Container
-	images          []*cluster.Image
+	containers      map[string]*Container
+	images          []*Image
 	client          dockerclient.Client
-	eventHandler    cluster.EventHandler
+	eventHandler    EventHandler
 	healthy         bool
 	overcommitRatio int64
 }
 
-func (n *node) ID() string {
-	return n.id
-}
-
-func (n *node) IP() string {
-	return n.ip
-}
-
-func (n *node) Addr() string {
-	return n.addr
-}
-
-func (n *node) Name() string {
-	return n.name
-}
-
-func (n *node) Labels() map[string]string {
-	return n.labels
-}
-
 // Connect will initialize a connection to the Docker daemon running on the
 // host, gather machine specs (memory, cpu, ...) and monitor state changes.
-func (n *node) connect(config *tls.Config) error {
-	host, _, err := net.SplitHostPort(n.addr)
+func (n *Engine) Connect(config *tls.Config) error {
+	host, _, err := net.SplitHostPort(n.Addr)
 	if err != nil {
 		return err
 	}
@@ -87,9 +67,9 @@ func (n *node) connect(config *tls.Config) error {
 	if err != nil {
 		return err
 	}
-	n.ip = addr.IP.String()
+	n.IP = addr.IP.String()
 
-	c, err := dockerclient.NewDockerClientTimeout("tcp://"+n.addr, config, time.Duration(requestTimeout))
+	c, err := dockerclient.NewDockerClientTimeout("tcp://"+n.Addr, config, time.Duration(requestTimeout))
 	if err != nil {
 		return err
 	}
@@ -97,7 +77,7 @@ func (n *node) connect(config *tls.Config) error {
 	return n.connectClient(c)
 }
 
-func (n *node) connectClient(client dockerclient.Client) error {
+func (n *Engine) connectClient(client dockerclient.Client) error {
 	n.client = client
 
 	// Fetch the engine labels.
@@ -120,43 +100,44 @@ func (n *node) connectClient(client dockerclient.Client) error {
 	// Start the update loop.
 	go n.refreshLoop()
 
-	// Start monitoring events from the node.
+	// Start monitoring events from the engine.
 	n.client.StartMonitorEvents(n.handler, nil)
-	n.emitEvent("node_connect")
+	n.emitEvent("engine_connect")
 
 	return nil
 }
 
 // isConnected returns true if the engine is connected to a remote docker API
-func (n *node) isConnected() bool {
+func (n *Engine) isConnected() bool {
 	return n.client != nil
 }
 
-func (n *node) IsHealthy() bool {
+// IsHealthy returns true if the engine is healthy
+func (n *Engine) IsHealthy() bool {
 	return n.healthy
 }
 
-// Gather node specs (CPU, memory, constraints, ...).
-func (n *node) updateSpecs() error {
+// Gather engine specs (CPU, memory, constraints, ...).
+func (n *Engine) updateSpecs() error {
 	info, err := n.client.Info()
 	if err != nil {
 		return err
 	}
 
 	if info.NCPU == 0 || info.MemTotal == 0 {
-		return fmt.Errorf("cannot get resources for this node, make sure %s is a Docker Engine, not a Swarm manager", n.addr)
+		return fmt.Errorf("cannot get resources for this engine, make sure %s is a Docker Engine, not a Swarm manager", n.Addr)
 	}
 
 	// Older versions of Docker don't expose the ID field and are not supported
 	// by Swarm.  Catch the error ASAP and refuse to connect.
 	if len(info.ID) == 0 {
-		return fmt.Errorf("node %s is running an unsupported version of Docker Engine. Please upgrade", n.addr)
+		return fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade", n.Addr)
 	}
-	n.id = info.ID
-	n.name = info.Name
+	n.ID = info.ID
+	n.Name = info.Name
 	n.Cpus = info.NCPU
 	n.Memory = info.MemTotal
-	n.labels = map[string]string{
+	n.Labels = map[string]string{
 		"storagedriver":   info.Driver,
 		"executiondriver": info.ExecutionDriver,
 		"kernelversion":   info.KernelVersion,
@@ -164,18 +145,18 @@ func (n *node) updateSpecs() error {
 	}
 	for _, label := range info.Labels {
 		kv := strings.SplitN(label, "=", 2)
-		n.labels[kv[0]] = kv[1]
+		n.Labels[kv[0]] = kv[1]
 	}
 	return nil
 }
 
-// Delete an image from the node.
-func (n *node) removeImage(image *cluster.Image) ([]*dockerclient.ImageDelete, error) {
+// RemoveImage deletes an image from the engine.
+func (n *Engine) RemoveImage(image *Image) ([]*dockerclient.ImageDelete, error) {
 	return n.client.RemoveImage(image.Id)
 }
 
-// Refresh the list of images on the node.
-func (n *node) refreshImages() error {
+// Refresh the list of images on the engine.
+func (n *Engine) refreshImages() error {
 	images, err := n.client.ListImages()
 	if err != nil {
 		return err
@@ -183,25 +164,25 @@ func (n *node) refreshImages() error {
 	n.Lock()
 	n.images = nil
 	for _, image := range images {
-		n.images = append(n.images, &cluster.Image{Image: *image, Node: n})
+		n.images = append(n.images, &Image{Image: *image, Engine: n})
 	}
 	n.Unlock()
 	return nil
 }
 
-// Refresh the list and status of containers running on the node. If `full` is
+// Refresh the list and status of containers running on the engine. If `full` is
 // true, each container will be inspected.
-func (n *node) refreshContainers(full bool) error {
+func (n *Engine) refreshContainers(full bool) error {
 	containers, err := n.client.ListContainers(true, false, "")
 	if err != nil {
 		return err
 	}
 
-	merged := make(map[string]*cluster.Container)
+	merged := make(map[string]*Container)
 	for _, c := range containers {
 		merged, err = n.updateContainer(c, merged, full)
 		if err != nil {
-			log.WithFields(log.Fields{"name": n.name, "id": n.id}).Errorf("Unable to update state of container %q", c.Id)
+			log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Errorf("Unable to update state of container %q", c.Id)
 		}
 	}
 
@@ -209,13 +190,13 @@ func (n *node) refreshContainers(full bool) error {
 	defer n.Unlock()
 	n.containers = merged
 
-	log.WithFields(log.Fields{"id": n.id, "name": n.name}).Debugf("Updated node state")
+	log.WithFields(log.Fields{"id": n.ID, "name": n.Name}).Debugf("Updated engine state")
 	return nil
 }
 
-// Refresh the status of a container running on the node. If `full` is true,
+// Refresh the status of a container running on the engine. If `full` is true,
 // the container will be inspected.
-func (n *node) refreshContainer(ID string, full bool) error {
+func (n *Engine) refreshContainer(ID string, full bool) error {
 	containers, err := n.client.ListContainers(true, false, fmt.Sprintf("{%q:[%q]}", "id", ID))
 	if err != nil {
 		return err
@@ -227,7 +208,7 @@ func (n *node) refreshContainer(ID string, full bool) error {
 	}
 
 	if len(containers) == 0 {
-		// The container doesn't exist on the node, remove it.
+		// The container doesn't exist on the engine, remove it.
 		n.Lock()
 		delete(n.containers, ID)
 		n.Unlock()
@@ -239,8 +220,8 @@ func (n *node) refreshContainer(ID string, full bool) error {
 	return err
 }
 
-func (n *node) updateContainer(c dockerclient.Container, containers map[string]*cluster.Container, full bool) (map[string]*cluster.Container, error) {
-	var container *cluster.Container
+func (n *Engine) updateContainer(c dockerclient.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
+	var container *Container
 
 	n.RLock()
 	if current, exists := n.containers[c.Id]; exists {
@@ -248,8 +229,8 @@ func (n *node) updateContainer(c dockerclient.Container, containers map[string]*
 		container = current
 	} else {
 		// This is a brand new container. We need to do a full refresh.
-		container = &cluster.Container{
-			Node: n,
+		container = &Container{
+			Engine: n,
 		}
 		full = true
 	}
@@ -279,11 +260,11 @@ func (n *node) updateContainer(c dockerclient.Container, containers map[string]*
 	return containers, nil
 }
 
-func (n *node) refreshContainersAsync() {
+func (n *Engine) refreshContainersAsync() {
 	n.ch <- true
 }
 
-func (n *node) refreshLoop() {
+func (n *Engine) refreshLoop() {
 	for {
 		var err error
 		select {
@@ -299,18 +280,18 @@ func (n *node) refreshLoop() {
 
 		if err != nil {
 			if n.healthy {
-				n.emitEvent("node_disconnect")
+				n.emitEvent("engine_disconnect")
 			}
 			n.healthy = false
-			log.WithFields(log.Fields{"name": n.name, "id": n.id}).Errorf("Flagging node as dead. Updated state failed: %v", err)
+			log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Errorf("Flagging engine as dead. Updated state failed: %v", err)
 		} else {
 			if !n.healthy {
-				log.WithFields(log.Fields{"name": n.name, "id": n.id}).Info("Node came back to life. Hooray!")
+				log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Info("Engine came back to life. Hooray!")
 				n.client.StopAllMonitorEvents()
 				n.client.StartMonitorEvents(n.handler, nil)
-				n.emitEvent("node_reconnect")
+				n.emitEvent("engine_reconnect")
 				if err := n.updateSpecs(); err != nil {
-					log.WithFields(log.Fields{"name": n.name, "id": n.id}).Errorf("Update node specs failed: %v", err)
+					log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Errorf("Update engine specs failed: %v", err)
 				}
 			}
 			n.healthy = true
@@ -318,24 +299,24 @@ func (n *node) refreshLoop() {
 	}
 }
 
-func (n *node) emitEvent(event string) {
+func (n *Engine) emitEvent(event string) {
 	// If there is no event handler registered, abort right now.
 	if n.eventHandler == nil {
 		return
 	}
-	ev := &cluster.Event{
+	ev := &Event{
 		Event: dockerclient.Event{
 			Status: event,
 			From:   "swarm",
 			Time:   time.Now().Unix(),
 		},
-		Node: n,
+		Engine: n,
 	}
 	n.eventHandler.Handle(ev)
 }
 
-// Return the sum of memory reserved by containers.
-func (n *node) UsedMemory() int64 {
+// UsedMemory returns the sum of memory reserved by containers.
+func (n *Engine) UsedMemory() int64 {
 	var r int64
 	n.RLock()
 	for _, c := range n.containers {
@@ -345,8 +326,8 @@ func (n *node) UsedMemory() int64 {
 	return r
 }
 
-// Return the sum of CPUs reserved by containers.
-func (n *node) UsedCpus() int64 {
+// UsedCpus returns the sum of CPUs reserved by containers.
+func (n *Engine) UsedCpus() int64 {
 	var r int64
 	n.RLock()
 	for _, c := range n.containers {
@@ -356,15 +337,18 @@ func (n *node) UsedCpus() int64 {
 	return r
 }
 
-func (n *node) TotalMemory() int64 {
+// TotalMemory returns the total memory + overcommit
+func (n *Engine) TotalMemory() int64 {
 	return n.Memory + (n.Memory * n.overcommitRatio / 100)
 }
 
-func (n *node) TotalCpus() int64 {
+// TotalCpus returns the total cpus + overcommit
+func (n *Engine) TotalCpus() int64 {
 	return n.Cpus + (n.Cpus * n.overcommitRatio / 100)
 }
 
-func (n *node) create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*cluster.Container, error) {
+// Create a new container
+func (n *Engine) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*Container, error) {
 	var (
 		err    error
 		id     string
@@ -382,7 +366,7 @@ func (n *node) create(config *dockerclient.ContainerConfig, name string, pullIma
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
-		if err = n.pull(config.Image); err != nil {
+		if err = n.Pull(config.Image); err != nil {
 			return nil, err
 		}
 		// ...And try again.
@@ -401,8 +385,8 @@ func (n *node) create(config *dockerclient.ContainerConfig, name string, pullIma
 	return n.containers[id], nil
 }
 
-// Destroy and remove a container from the node.
-func (n *node) destroy(container *cluster.Container, force bool) error {
+// Destroy and remove a container from the engine.
+func (n *Engine) Destroy(container *Container, force bool) error {
 	if err := n.client.RemoveContainer(container.Id, force, true); err != nil {
 		return err
 	}
@@ -416,7 +400,8 @@ func (n *node) destroy(container *cluster.Container, force bool) error {
 	return nil
 }
 
-func (n *node) pull(image string) error {
+// Pull an image on the node
+func (n *Engine) Pull(image string) error {
 	if !strings.Contains(image, ":") {
 		image = image + ":latest"
 	}
@@ -426,8 +411,8 @@ func (n *node) pull(image string) error {
 	return nil
 }
 
-// Register an event handler.
-func (n *node) events(h cluster.EventHandler) error {
+// Events register an event handler.
+func (n *Engine) Events(h EventHandler) error {
 	if n.eventHandler != nil {
 		return errors.New("event handler already set")
 	}
@@ -435,9 +420,9 @@ func (n *node) events(h cluster.EventHandler) error {
 	return nil
 }
 
-// Containers returns all the containers in the node.
-func (n *node) Containers() []*cluster.Container {
-	containers := []*cluster.Container{}
+// Containers returns all the containers in the engine.
+func (n *Engine) Containers() []*Container {
+	containers := []*Container{}
 	n.RLock()
 	for _, container := range n.containers {
 		containers = append(containers, container)
@@ -446,8 +431,8 @@ func (n *node) Containers() []*cluster.Container {
 	return containers
 }
 
-// Container returns the container with IDOrName in the node.
-func (n *node) Container(IDOrName string) *cluster.Container {
+// Container returns the container with IDOrName in the engine.
+func (n *Engine) Container(IDOrName string) *Container {
 	// Abort immediately if the name is empty.
 	if len(IDOrName) == 0 {
 		return nil
@@ -464,7 +449,7 @@ func (n *node) Container(IDOrName string) *cluster.Container {
 
 		// Match name, /name or engine/name.
 		for _, name := range container.Names {
-			if name == IDOrName || name == "/"+IDOrName || container.Node.ID()+name == IDOrName || container.Node.Name()+name == IDOrName {
+			if name == IDOrName || name == "/"+IDOrName || container.Engine.ID+name == IDOrName || container.Engine.Name+name == IDOrName {
 				return container
 			}
 		}
@@ -473,9 +458,9 @@ func (n *node) Container(IDOrName string) *cluster.Container {
 	return nil
 }
 
-// Images returns all the images in the node
-func (n *node) Images() []*cluster.Image {
-	images := []*cluster.Image{}
+// Images returns all the images in the engine
+func (n *Engine) Images() []*Image {
+	images := []*Image{}
 	n.RLock()
 
 	for _, image := range n.images {
@@ -485,8 +470,8 @@ func (n *node) Images() []*cluster.Image {
 	return images
 }
 
-// Image returns the image with IDOrName in the node
-func (n *node) Image(IDOrName string) *cluster.Image {
+// Image returns the image with IDOrName in the engine
+func (n *Engine) Image(IDOrName string) *Image {
 	n.RLock()
 	defer n.RUnlock()
 
@@ -498,11 +483,11 @@ func (n *node) Image(IDOrName string) *cluster.Image {
 	return nil
 }
 
-func (n *node) String() string {
-	return fmt.Sprintf("node %s addr %s", n.id, n.addr)
+func (n *Engine) String() string {
+	return fmt.Sprintf("engine %s addr %s", n.ID, n.Addr)
 }
 
-func (n *node) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
+func (n *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
 	// Something changed - refresh our internal state.
 	switch ev.Status {
 	case "pull", "untag", "delete":
@@ -523,16 +508,16 @@ func (n *node) handler(ev *dockerclient.Event, _ chan error, args ...interface{}
 		return
 	}
 
-	event := &cluster.Event{
-		Node:  n,
-		Event: *ev,
+	event := &Event{
+		Engine: n,
+		Event:  *ev,
 	}
 
 	n.eventHandler.Handle(event)
 }
 
-// Inject a container into the internal state.
-func (n *node) addContainer(container *cluster.Container) error {
+// AddContainer inject a container into the internal state.
+func (n *Engine) AddContainer(container *Container) error {
 	n.Lock()
 	defer n.Unlock()
 
@@ -544,7 +529,7 @@ func (n *node) addContainer(container *cluster.Container) error {
 }
 
 // Inject an image into the internal state.
-func (n *node) addImage(image *cluster.Image) {
+func (n *Engine) addImage(image *Image) {
 	n.Lock()
 	defer n.Unlock()
 
@@ -552,7 +537,7 @@ func (n *node) addImage(image *cluster.Image) {
 }
 
 // Remove a container from the internal test.
-func (n *node) removeContainer(container *cluster.Container) error {
+func (n *Engine) removeContainer(container *Container) error {
 	n.Lock()
 	defer n.Unlock()
 
@@ -564,8 +549,8 @@ func (n *node) removeContainer(container *cluster.Container) error {
 }
 
 // Wipes the internal container state.
-func (n *node) cleanupContainers() {
+func (n *Engine) cleanupContainers() {
 	n.Lock()
-	n.containers = make(map[string]*cluster.Container)
+	n.containers = make(map[string]*Container)
 	n.Unlock()
 }

@@ -8,13 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *node {
-	node := NewNode(ID, 0)
-	node.name = ID
-	node.id = ID
+func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *cluster.Engine {
+	node := cluster.NewEngine(ID, 0)
+	node.Name = ID
+	node.ID = ID
 
 	for _, container := range containers {
-		node.addContainer(&cluster.Container{Container: container, Node: node})
+		node.AddContainer(&cluster.Container{Container: container, Engine: node})
 	}
 
 	return node
@@ -22,7 +22,7 @@ func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *
 
 func TestContainerLookup(t *testing.T) {
 	c := &Cluster{
-		nodes: make(map[string]*node),
+		nodes: make(map[string]*cluster.Engine),
 	}
 	container := dockerclient.Container{
 		Id:    "container-id",
@@ -30,7 +30,7 @@ func TestContainerLookup(t *testing.T) {
 	}
 
 	n := createNode(t, "test-node", container)
-	c.nodes[n.ID()] = n
+	c.nodes[n.ID] = n
 
 	// Invalid lookup
 	assert.Nil(t, c.Container("invalid-id"))
