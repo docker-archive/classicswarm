@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNodeSorter(t *testing.T) {
-	nodes := []*Engine{{Name: "name1"}, {Name: "name3"}, {Name: "name2"}}
+func TestEngineSorter(t *testing.T) {
+	engines := []*Engine{{Name: "name1"}, {Name: "name3"}, {Name: "name2"}}
 
-	sort.Sort(EngineSorter(nodes))
+	sort.Sort(EngineSorter(engines))
 
-	assert.Equal(t, nodes[0].Name, "name1")
-	assert.Equal(t, nodes[1].Name, "name2")
-	assert.Equal(t, nodes[2].Name, "name3")
+	assert.Equal(t, engines[0].Name, "name1")
+	assert.Equal(t, engines[1].Name, "name2")
+	assert.Equal(t, engines[2].Name, "name3")
 }

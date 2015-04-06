@@ -8,29 +8,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createNode(t *testing.T, ID string, containers ...dockerclient.Container) *cluster.Engine {
-	node := cluster.NewEngine(ID, 0)
-	node.Name = ID
-	node.ID = ID
+func createEngine(t *testing.T, ID string, containers ...dockerclient.Container) *cluster.Engine {
+	engine := cluster.NewEngine(ID, 0)
+	engine.Name = ID
+	engine.ID = ID
 
 	for _, container := range containers {
-		node.AddContainer(&cluster.Container{Container: container, Engine: node})
+		engine.AddContainer(&cluster.Container{Container: container, Engine: engine})
 	}
 
-	return node
+	return engine
 }
 
 func TestContainerLookup(t *testing.T) {
 	c := &Cluster{
-		nodes: make(map[string]*cluster.Engine),
+		engines: make(map[string]*cluster.Engine),
 	}
 	container := dockerclient.Container{
 		Id:    "container-id",
 		Names: []string{"/container-name1", "/container-name2"},
 	}
 
-	n := createNode(t, "test-node", container)
-	c.nodes[n.ID] = n
+	n := createEngine(t, "test-engine", container)
+	c.engines[n.ID] = n
 
 	// Invalid lookup
 	assert.Nil(t, c.Container("invalid-id"))
@@ -42,7 +42,7 @@ func TestContainerLookup(t *testing.T) {
 	// Container name lookup.
 	assert.NotNil(t, c.Container("container-name1"))
 	assert.NotNil(t, c.Container("container-name2"))
-	// Container node/name matching.
-	assert.NotNil(t, c.Container("test-node/container-name1"))
-	assert.NotNil(t, c.Container("test-node/container-name2"))
+	// Container engine/name matching.
+	assert.NotNil(t, c.Container("test-engine/container-name1"))
+	assert.NotNil(t, c.Container("test-engine/container-name2"))
 }

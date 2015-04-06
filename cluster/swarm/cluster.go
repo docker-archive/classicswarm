@@ -20,7 +20,7 @@ type Cluster struct {
 	sync.RWMutex
 
 	eventHandler cluster.EventHandler
-	nodes        map[string]*cluster.Engine
+	engines      map[string]*cluster.Engine
 	scheduler    *scheduler.Scheduler
 	options      *cluster.Options
 	store        *state.Store
@@ -32,7 +32,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, eventhandler
 
 	cluster := &Cluster{
 		eventHandler: eventhandler,
-		nodes:        make(map[string]*cluster.Engine),
+		engines:      make(map[string]*cluster.Engine),
 		scheduler:    scheduler,
 		options:      options,
 		store:        store,
@@ -76,7 +76,7 @@ func (c *Cluster) CreateContainer(config *dockerclient.ContainerConfig, name str
 		return nil, err
 	}
 
-	if nn, ok := c.nodes[n.ID]; ok {
+	if nn, ok := c.engines[n.ID]; ok {
 		container, err := nn.Create(config, name, true)
 		if err != nil {
 			return nil, err
@@ -113,29 +113,29 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 	return nil
 }
 
-// Entries are Docker Nodes
+// Entries are Docker Engines
 func (c *Cluster) newEntries(entries []*discovery.Entry) {
 	for _, entry := range entries {
 		go func(m *discovery.Entry) {
-			if !c.hasNode(m.String()) {
-				n := cluster.NewEngine(m.String(), c.options.OvercommitRatio)
-				if err := n.Connect(c.options.TLSConfig); err != nil {
+			if !c.hasEngine(m.String()) {
+				engine := cluster.NewEngine(m.String(), c.options.OvercommitRatio)
+				if err := engine.Connect(c.options.TLSConfig); err != nil {
 					log.Error(err)
 					return
 				}
 				c.Lock()
 
-				if old, exists := c.nodes[n.ID]; exists {
+				if old, exists := c.engines[engine.ID]; exists {
 					c.Unlock()
-					if old.IP != n.IP {
-						log.Errorf("ID duplicated. %s shared by %s and %s", n.ID, old.IP, n.IP)
+					if old.IP != engine.IP {
+						log.Errorf("ID duplicated. %s shared by %s and %s", engine.ID, old.IP, engine.IP)
 					} else {
-						log.Errorf("node %q is already registered", n.ID)
+						log.Errorf("node %q is already registered", engine.ID)
 					}
 					return
 				}
-				c.nodes[n.ID] = n
-				if err := n.Events(c); err != nil {
+				c.engines[engine.ID] = engine
+				if err := engine.Events(c); err != nil {
 					log.Error(err)
 					c.Unlock()
 					return
@@ -147,9 +147,9 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 	}
 }
 
-func (c *Cluster) hasNode(addr string) bool {
-	for _, node := range c.nodes {
-		if node.Addr == addr {
+func (c *Cluster) hasEngine(addr string) bool {
+	for _, engine := range c.engines {
+		if engine.Addr == addr {
 			return true
 		}
 	}
@@ -162,7 +162,7 @@ func (c *Cluster) Images() []*cluster.Image {
 	defer c.RUnlock()
 
 	out := []*cluster.Image{}
-	for _, n := range c.nodes {
+	for _, n := range c.engines {
 		out = append(out, n.Images()...)
 	}
 
@@ -178,7 +178,7 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 
 	c.RLock()
 	defer c.RUnlock()
-	for _, n := range c.nodes {
+	for _, n := range c.engines {
 		if image := n.Image(IDOrName); image != nil {
 			return image
 		}
@@ -196,9 +196,9 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete
 
 // Pull is exported
 func (c *Cluster) Pull(name string, callback func(what, status string)) {
-	size := len(c.nodes)
+	size := len(c.engines)
 	done := make(chan bool, size)
-	for _, n := range c.nodes {
+	for _, n := range c.engines {
 		go func(nn *cluster.Engine) {
 			if callback != nil {
 				callback(nn.Name, "")
@@ -225,7 +225,7 @@ func (c *Cluster) Containers() []*cluster.Container {
 	defer c.RUnlock()
 
 	out := []*cluster.Container{}
-	for _, n := range c.nodes {
+	for _, n := range c.engines {
 		out = append(out, n.Containers()...)
 	}
 
@@ -241,7 +241,7 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 
 	c.RLock()
 	defer c.RUnlock()
-	for _, n := range c.nodes {
+	for _, n := range c.engines {
 		if container := n.Container(IDOrName); container != nil {
 			return container
 		}
@@ -250,13 +250,13 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	return nil
 }
 
-// listNodes returns all the nodes in the cluster.
+// listNodes returns all the engines in the cluster.
 func (c *Cluster) listNodes() []*node.Node {
 	c.RLock()
 	defer c.RUnlock()
 
 	out := []*node.Node{}
-	for _, n := range c.nodes {
+	for _, n := range c.engines {
 		out = append(out, node.NewNode(n))
 	}
 
@@ -269,7 +269,7 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 	defer c.RUnlock()
 
 	out := []*cluster.Engine{}
-	for _, n := range c.nodes {
+	for _, n := range c.engines {
 		out = append(out, n)
 	}
 	return out
@@ -280,17 +280,17 @@ func (c *Cluster) Info() [][2]string {
 	info := [][2]string{
 		{"\bStrategy", c.scheduler.Strategy()},
 		{"\bFilters", c.scheduler.Filters()},
-		{"\bNodes", fmt.Sprintf("%d", len(c.nodes))},
+		{"\bNodes", fmt.Sprintf("%d", len(c.engines))},
 	}
 
-	nodes := c.listEngines()
-	sort.Sort(cluster.EngineSorter(nodes))
+	engines := c.listEngines()
+	sort.Sort(cluster.EngineSorter(engines))
 
-	for _, node := range c.nodes {
-		info = append(info, [2]string{node.Name, node.Addr})
-		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(node.Containers()))})
-		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", node.UsedCpus(), node.TotalCpus())})
-		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(node.UsedMemory())), units.BytesSize(float64(node.TotalMemory())))})
+	for _, engine := range engines {
+		info = append(info, [2]string{engine.Name, engine.Addr})
+		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
+		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
+		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
 	}
 
 	return info

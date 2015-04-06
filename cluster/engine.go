@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	// Force-refresh the state of the node this oftee.
+	// Force-refresh the state of the engine this often.
 	stateRefreshPeriod = 30 * time.Second
 
-	// Timeout for requests sent out to the node.
+	// Timeout for requests sent out to the engine.
 	requestTimeout = 10 * time.Second
 )
 
@@ -400,7 +400,7 @@ func (e *Engine) Destroy(container *Container, force bool) error {
 	return nil
 }
 
-// Pull an image on the node
+// Pull an image on the engine
 func (e *Engine) Pull(image string) error {
 	if !strings.Contains(image, ":") {
 		image = image + ":latest"
