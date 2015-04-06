@@ -257,21 +257,7 @@ func (c *Cluster) listNodes() []*node.Node {
 
 	out := []*node.Node{}
 	for _, n := range c.nodes {
-		out = append(out, &node.Node{
-			ID:          n.ID,
-			IP:          n.IP,
-			Addr:        n.Addr,
-			Name:        n.Name,
-			Cpus:        n.Cpus,
-			Labels:      n.Labels,
-			Containers:  n.Containers(),
-			Images:      n.Images(),
-			UsedMemory:  n.UsedMemory(),
-			UsedCpus:    n.UsedCpus(),
-			TotalMemory: n.TotalMemory(),
-			TotalCpus:   n.TotalCpus(),
-			IsHealthy:   n.IsHealthy(),
-		})
+		out = append(out, node.NewNode(n))
 	}
 
 	return out

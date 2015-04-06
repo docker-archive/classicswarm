@@ -25,35 +25,35 @@ var (
 	}
 )
 
-func TestNodeConnectionFailure(t *testing.T) {
-	node := NewEngine("test", 0)
-	assert.False(t, node.isConnected())
+func TestEngineConnectionFailure(t *testing.T) {
+	engine := NewEngine("test", 0)
+	assert.False(t, engine.isConnected())
 
 	// Always fail.
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(&dockerclient.Info{}, errors.New("fail"))
 
 	// Connect() should fail and isConnected() return false.
-	assert.Error(t, node.connectClient(client))
-	assert.False(t, node.isConnected())
+	assert.Error(t, engine.connectClient(client))
+	assert.False(t, engine.isConnected())
 
 	client.Mock.AssertExpectations(t)
 }
 
-func TestOutdatedNode(t *testing.T) {
-	node := NewEngine("test", 0)
+func TestOutdatedEngine(t *testing.T) {
+	engine := NewEngine("test", 0)
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(&dockerclient.Info{}, nil)
 
-	assert.Error(t, node.connectClient(client))
-	assert.False(t, node.isConnected())
+	assert.Error(t, engine.connectClient(client))
+	assert.False(t, engine.isConnected())
 
 	client.Mock.AssertExpectations(t)
 }
 
-func TestNodeCpusMemory(t *testing.T) {
-	node := NewEngine("test", 0)
-	assert.False(t, node.isConnected())
+func TestEngineCpusMemory(t *testing.T) {
+	engine := NewEngine("test", 0)
+	assert.False(t, engine.isConnected())
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
@@ -61,19 +61,19 @@ func TestNodeCpusMemory(t *testing.T) {
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
-	assert.NoError(t, node.connectClient(client))
-	assert.True(t, node.isConnected())
-	assert.True(t, node.IsHealthy())
+	assert.NoError(t, engine.connectClient(client))
+	assert.True(t, engine.isConnected())
+	assert.True(t, engine.IsHealthy())
 
-	assert.Equal(t, node.UsedCpus(), 0)
-	assert.Equal(t, node.UsedMemory(), 0)
+	assert.Equal(t, engine.UsedCpus(), 0)
+	assert.Equal(t, engine.UsedMemory(), 0)
 
 	client.Mock.AssertExpectations(t)
 }
 
-func TestNodeSpecs(t *testing.T) {
-	node := NewEngine("test", 0)
-	assert.False(t, node.isConnected())
+func TestEngineSpecs(t *testing.T) {
+	engine := NewEngine("test", 0)
+	assert.False(t, engine.isConnected())
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
@@ -81,24 +81,24 @@ func TestNodeSpecs(t *testing.T) {
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
-	assert.NoError(t, node.connectClient(client))
-	assert.True(t, node.isConnected())
-	assert.True(t, node.IsHealthy())
+	assert.NoError(t, engine.connectClient(client))
+	assert.True(t, engine.isConnected())
+	assert.True(t, engine.IsHealthy())
 
-	assert.Equal(t, node.Cpus, mockInfo.NCPU)
-	assert.Equal(t, node.Memory, mockInfo.MemTotal)
-	assert.Equal(t, node.Labels["storagedriver"], mockInfo.Driver)
-	assert.Equal(t, node.Labels["executiondriver"], mockInfo.ExecutionDriver)
-	assert.Equal(t, node.Labels["kernelversion"], mockInfo.KernelVersion)
-	assert.Equal(t, node.Labels["operatingsystem"], mockInfo.OperatingSystem)
-	assert.Equal(t, node.Labels["foo"], "bar")
+	assert.Equal(t, engine.Cpus, mockInfo.NCPU)
+	assert.Equal(t, engine.Memory, mockInfo.MemTotal)
+	assert.Equal(t, engine.Labels["storagedriver"], mockInfo.Driver)
+	assert.Equal(t, engine.Labels["executiondriver"], mockInfo.ExecutionDriver)
+	assert.Equal(t, engine.Labels["kernelversion"], mockInfo.KernelVersion)
+	assert.Equal(t, engine.Labels["operatingsystem"], mockInfo.OperatingSystem)
+	assert.Equal(t, engine.Labels["foo"], "bar")
 
 	client.Mock.AssertExpectations(t)
 }
 
-func TestNodeState(t *testing.T) {
-	node := NewEngine("test", 0)
-	assert.False(t, node.isConnected())
+func TestEngineState(t *testing.T) {
+	engine := NewEngine("test", 0)
+	assert.False(t, engine.isConnected())
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
@@ -111,19 +111,19 @@ func TestNodeState(t *testing.T) {
 	client.On("ListContainers", true, false, fmt.Sprintf("{%q:[%q]}", "id", "two")).Return([]dockerclient.Container{{Id: "two"}}, nil).Once()
 	client.On("InspectContainer", "two").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
 
-	assert.NoError(t, node.connectClient(client))
-	assert.True(t, node.isConnected())
+	assert.NoError(t, engine.connectClient(client))
+	assert.True(t, engine.isConnected())
 
-	// The node should only have a single container at this point.
-	containers := node.Containers()
+	// The engine should only have a single container at this point.
+	containers := engine.Containers()
 	assert.Len(t, containers, 1)
 	if containers[0].Id != "one" {
 		t.Fatalf("Missing container: one")
 	}
 
 	// Fake an event which will trigger a refresh. The second container will appear.
-	node.handler(&dockerclient.Event{Id: "two", Status: "created"}, nil)
-	containers = node.Containers()
+	engine.handler(&dockerclient.Event{Id: "two", Status: "created"}, nil)
+	containers = engine.Containers()
 	assert.Len(t, containers, 2)
 	if containers[0].Id != "one" && containers[1].Id != "one" {
 		t.Fatalf("Missing container: one")
@@ -135,9 +135,9 @@ func TestNodeState(t *testing.T) {
 	client.Mock.AssertExpectations(t)
 }
 
-func TestNodeContainerLookup(t *testing.T) {
-	node := NewEngine("test-node", 0)
-	assert.False(t, node.isConnected())
+func TestEngineContainerLookup(t *testing.T) {
+	engine := NewEngine("test-engine", 0)
+	assert.False(t, engine.isConnected())
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
@@ -147,22 +147,22 @@ func TestNodeContainerLookup(t *testing.T) {
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 	client.On("InspectContainer", "container-id").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
 
-	assert.NoError(t, node.connectClient(client))
-	assert.True(t, node.isConnected())
+	assert.NoError(t, engine.connectClient(client))
+	assert.True(t, engine.isConnected())
 
 	// Invalid lookup
-	assert.Nil(t, node.Container("invalid-id"))
-	assert.Nil(t, node.Container(""))
+	assert.Nil(t, engine.Container("invalid-id"))
+	assert.Nil(t, engine.Container(""))
 	// Container ID lookup.
-	assert.NotNil(t, node.Container("container-id"))
+	assert.NotNil(t, engine.Container("container-id"))
 	// Container ID prefix lookup.
-	assert.NotNil(t, node.Container("container-"))
+	assert.NotNil(t, engine.Container("container-"))
 	// Container name lookup.
-	assert.NotNil(t, node.Container("container-name1"))
-	assert.NotNil(t, node.Container("container-name2"))
-	// Container node/name matching.
-	assert.NotNil(t, node.Container("id/container-name1"))
-	assert.NotNil(t, node.Container("id/container-name2"))
+	assert.NotNil(t, engine.Container("container-name1"))
+	assert.NotNil(t, engine.Container("container-name2"))
+	// Container engine/name matching.
+	assert.NotNil(t, engine.Container("id/container-name1"))
+	assert.NotNil(t, engine.Container("id/container-name2"))
 
 	client.Mock.AssertExpectations(t)
 }
@@ -175,7 +175,7 @@ func TestCreateContainer(t *testing.T) {
 			Cmd:       []string{"date"},
 			Tty:       false,
 		}
-		node   = NewEngine("test", 0)
+		engine = NewEngine("test", 0)
 		client = mockclient.NewMockClient()
 	)
 
@@ -183,8 +183,8 @@ func TestCreateContainer(t *testing.T) {
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
-	assert.NoError(t, node.connectClient(client))
-	assert.True(t, node.isConnected())
+	assert.NoError(t, engine.connectClient(client))
+	assert.True(t, engine.isConnected())
 
 	mockConfig := *config
 	mockConfig.CpuShares = config.CpuShares * 1024 / mockInfo.NCPU
@@ -196,16 +196,16 @@ func TestCreateContainer(t *testing.T) {
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: config}, nil).Once()
-	container, err := node.Create(config, name, false)
+	container, err := engine.Create(config, name, false)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
-	assert.Len(t, node.Containers(), 1)
+	assert.Len(t, engine.Containers(), 1)
 
 	// Image not found, pullImage == false
 	name = "test2"
 	mockConfig.CpuShares = config.CpuShares * 1024 / mockInfo.NCPU
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
-	container, err = node.Create(config, name, false)
+	container, err = engine.Create(config, name, false)
 	assert.Equal(t, err, dockerclient.ErrNotFound)
 	assert.Nil(t, container)
 
@@ -219,28 +219,28 @@ func TestCreateContainer(t *testing.T) {
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: config}, nil).Once()
-	container, err = node.Create(config, name, true)
+	container, err = engine.Create(config, name, true)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
-	assert.Len(t, node.Containers(), 2)
+	assert.Len(t, engine.Containers(), 2)
 }
 
 func TestTotalMemory(t *testing.T) {
-	node := NewEngine("test", 0.05)
-	node.Memory = 1024
-	assert.Equal(t, node.TotalMemory(), 1024+1024*5/100)
+	engine := NewEngine("test", 0.05)
+	engine.Memory = 1024
+	assert.Equal(t, engine.TotalMemory(), 1024+1024*5/100)
 
-	node = NewEngine("test", 0)
-	node.Memory = 1024
-	assert.Equal(t, node.TotalMemory(), 1024)
+	engine = NewEngine("test", 0)
+	engine.Memory = 1024
+	assert.Equal(t, engine.TotalMemory(), 1024)
 }
 
 func TestTotalCpus(t *testing.T) {
-	node := NewEngine("test", 0.05)
-	node.Cpus = 2
-	assert.Equal(t, node.TotalCpus(), 2+2*5/100)
+	engine := NewEngine("test", 0.05)
+	engine.Cpus = 2
+	assert.Equal(t, engine.TotalCpus(), 2+2*5/100)
 
-	node = NewEngine("test", 0)
-	node.Cpus = 2
-	assert.Equal(t, node.TotalCpus(), 2)
+	engine = NewEngine("test", 0)
+	engine.Cpus = 2
+	assert.Equal(t, engine.TotalCpus(), 2)
 }
