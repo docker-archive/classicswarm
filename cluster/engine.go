@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	// Force-refresh the state of the node this often.
+	// Force-refresh the state of the node this oftee.
 	stateRefreshPeriod = 30 * time.Second
 
 	// Timeout for requests sent out to the node.
@@ -57,8 +57,8 @@ type Engine struct {
 
 // Connect will initialize a connection to the Docker daemon running on the
 // host, gather machine specs (memory, cpu, ...) and monitor state changes.
-func (n *Engine) Connect(config *tls.Config) error {
-	host, _, err := net.SplitHostPort(n.Addr)
+func (e *Engine) Connect(config *tls.Config) error {
+	host, _, err := net.SplitHostPort(e.Addr)
 	if err != nil {
 		return err
 	}
@@ -67,77 +67,77 @@ func (n *Engine) Connect(config *tls.Config) error {
 	if err != nil {
 		return err
 	}
-	n.IP = addr.IP.String()
+	e.IP = addr.IP.String()
 
-	c, err := dockerclient.NewDockerClientTimeout("tcp://"+n.Addr, config, time.Duration(requestTimeout))
+	c, err := dockerclient.NewDockerClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout))
 	if err != nil {
 		return err
 	}
 
-	return n.connectClient(c)
+	return e.connectClient(c)
 }
 
-func (n *Engine) connectClient(client dockerclient.Client) error {
-	n.client = client
+func (e *Engine) connectClient(client dockerclient.Client) error {
+	e.client = client
 
 	// Fetch the engine labels.
-	if err := n.updateSpecs(); err != nil {
-		n.client = nil
+	if err := e.updateSpecs(); err != nil {
+		e.client = nil
 		return err
 	}
 
 	// Force a state update before returning.
-	if err := n.refreshContainers(true); err != nil {
-		n.client = nil
+	if err := e.refreshContainers(true); err != nil {
+		e.client = nil
 		return err
 	}
 
-	if err := n.refreshImages(); err != nil {
-		n.client = nil
+	if err := e.refreshImages(); err != nil {
+		e.client = nil
 		return err
 	}
 
 	// Start the update loop.
-	go n.refreshLoop()
+	go e.refreshLoop()
 
 	// Start monitoring events from the engine.
-	n.client.StartMonitorEvents(n.handler, nil)
-	n.emitEvent("engine_connect")
+	e.client.StartMonitorEvents(e.handler, nil)
+	e.emitEvent("engine_connect")
 
 	return nil
 }
 
 // isConnected returns true if the engine is connected to a remote docker API
-func (n *Engine) isConnected() bool {
-	return n.client != nil
+func (e *Engine) isConnected() bool {
+	return e.client != nil
 }
 
 // IsHealthy returns true if the engine is healthy
-func (n *Engine) IsHealthy() bool {
-	return n.healthy
+func (e *Engine) IsHealthy() bool {
+	return e.healthy
 }
 
 // Gather engine specs (CPU, memory, constraints, ...).
-func (n *Engine) updateSpecs() error {
-	info, err := n.client.Info()
+func (e *Engine) updateSpecs() error {
+	info, err := e.client.Info()
 	if err != nil {
 		return err
 	}
 
 	if info.NCPU == 0 || info.MemTotal == 0 {
-		return fmt.Errorf("cannot get resources for this engine, make sure %s is a Docker Engine, not a Swarm manager", n.Addr)
+		return fmt.Errorf("cannot get resources for this engine, make sure %s is a Docker Engine, not a Swarm manager", e.Addr)
 	}
 
 	// Older versions of Docker don't expose the ID field and are not supported
 	// by Swarm.  Catch the error ASAP and refuse to connect.
 	if len(info.ID) == 0 {
-		return fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade", n.Addr)
+		return fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade", e.Addr)
 	}
-	n.ID = info.ID
-	n.Name = info.Name
-	n.Cpus = info.NCPU
-	n.Memory = info.MemTotal
-	n.Labels = map[string]string{
+	e.ID = info.ID
+	e.Name = info.Name
+	e.Cpus = info.NCPU
+	e.Memory = info.MemTotal
+	e.Labels = map[string]string{
 		"storagedriver":   info.Driver,
 		"executiondriver": info.ExecutionDriver,
 		"kernelversion":   info.KernelVersion,
@@ -145,92 +145,92 @@ func (n *Engine) updateSpecs() error {
 	}
 	for _, label := range info.Labels {
 		kv := strings.SplitN(label, "=", 2)
-		n.Labels[kv[0]] = kv[1]
+		e.Labels[kv[0]] = kv[1]
 	}
 	return nil
 }
 
 // RemoveImage deletes an image from the engine.
-func (n *Engine) RemoveImage(image *Image) ([]*dockerclient.ImageDelete, error) {
-	return n.client.RemoveImage(image.Id)
+func (e *Engine) RemoveImage(image *Image) ([]*dockerclient.ImageDelete, error) {
+	return e.client.RemoveImage(image.Id)
 }
 
 // Refresh the list of images on the engine.
-func (n *Engine) refreshImages() error {
-	images, err := n.client.ListImages()
+func (e *Engine) refreshImages() error {
+	images, err := e.client.ListImages()
 	if err != nil {
 		return err
 	}
-	n.Lock()
-	n.images = nil
+	e.Lock()
+	e.images = nil
 	for _, image := range images {
-		n.images = append(n.images, &Image{Image: *image, Engine: n})
+		e.images = append(e.images, &Image{Image: *image, Engine: e})
 	}
-	n.Unlock()
+	e.Unlock()
 	return nil
 }
 
 // Refresh the list and status of containers running on the engine. If `full` is
 // true, each container will be inspected.
-func (n *Engine) refreshContainers(full bool) error {
-	containers, err := n.client.ListContainers(true, false, "")
+func (e *Engine) refreshContainers(full bool) error {
+	containers, err := e.client.ListContainers(true, false, "")
 	if err != nil {
 		return err
 	}
 
 	merged := make(map[string]*Container)
 	for _, c := range containers {
-		merged, err = n.updateContainer(c, merged, full)
+		merged, err = e.updateContainer(c, merged, full)
 		if err != nil {
-			log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Errorf("Unable to update state of container %q", c.Id)
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q", c.Id)
 		}
 	}
 
-	n.Lock()
-	defer n.Unlock()
-	n.containers = merged
+	e.Lock()
+	defer e.Unlock()
+	e.containers = merged
 
-	log.WithFields(log.Fields{"id": n.ID, "name": n.Name}).Debugf("Updated engine state")
+	log.WithFields(log.Fields{"id": e.ID, "name": e.Name}).Debugf("Updated engine state")
 	return nil
 }
 
 // Refresh the status of a container running on the engine. If `full` is true,
 // the container will be inspected.
-func (n *Engine) refreshContainer(ID string, full bool) error {
-	containers, err := n.client.ListContainers(true, false, fmt.Sprintf("{%q:[%q]}", "id", ID))
+func (e *Engine) refreshContainer(ID string, full bool) error {
+	containers, err := e.client.ListContainers(true, false, fmt.Sprintf("{%q:[%q]}", "id", ID))
 	if err != nil {
 		return err
 	}
 
 	if len(containers) > 1 {
 		// We expect one container, if we get more than one, trigger a full refresh.
-		return n.refreshContainers(full)
+		return e.refreshContainers(full)
 	}
 
 	if len(containers) == 0 {
 		// The container doesn't exist on the engine, remove it.
-		n.Lock()
-		delete(n.containers, ID)
-		n.Unlock()
+		e.Lock()
+		delete(e.containers, ID)
+		e.Unlock()
 
 		return nil
 	}
 
-	_, err = n.updateContainer(containers[0], n.containers, full)
+	_, err = e.updateContainer(containers[0], e.containers, full)
 	return err
 }
 
-func (n *Engine) updateContainer(c dockerclient.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
+func (e *Engine) updateContainer(c dockerclient.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
 	var container *Container
 
-	n.RLock()
-	if current, exists := n.containers[c.Id]; exists {
-		// The container is already known.
+	e.RLock()
+	if current, exists := e.containers[c.Id]; exists {
+		// The container is already knowe.
 		container = current
 	} else {
 		// This is a brand new container. We need to do a full refresh.
 		container = &Container{
-			Engine: n,
+			Engine: e,
 		}
 		full = true
 	}
@@ -238,70 +238,70 @@ func (n *Engine) updateContainer(c dockerclient.Container, containers map[string
 	// Trade-off: If updateContainer() is called concurrently for the same
 	// container, we will end up doing a full refresh twice and the original
 	// container (containers[container.Id]) will get replaced.
-	n.RUnlock()
+	e.RUnlock()
 
 	// Update ContainerInfo.
 	if full {
-		info, err := n.client.InspectContainer(c.Id)
+		info, err := e.client.InspectContainer(c.Id)
 		if err != nil {
 			return nil, err
 		}
 		container.Info = *info
 		// real CpuShares -> nb of CPUs
-		container.Info.Config.CpuShares = container.Info.Config.CpuShares * 1024.0 / n.Cpus
+		container.Info.Config.CpuShares = container.Info.Config.CpuShares * 1024.0 / e.Cpus
 	}
 
 	// Update its internal state.
-	n.Lock()
+	e.Lock()
 	container.Container = c
 	containers[container.Id] = container
-	n.Unlock()
+	e.Unlock()
 
 	return containers, nil
 }
 
-func (n *Engine) refreshContainersAsync() {
-	n.ch <- true
+func (e *Engine) refreshContainersAsync() {
+	e.ch <- true
 }
 
-func (n *Engine) refreshLoop() {
+func (e *Engine) refreshLoop() {
 	for {
 		var err error
 		select {
-		case <-n.ch:
-			err = n.refreshContainers(false)
+		case <-e.ch:
+			err = e.refreshContainers(false)
 		case <-time.After(stateRefreshPeriod):
-			err = n.refreshContainers(false)
+			err = e.refreshContainers(false)
 		}
 
 		if err == nil {
-			err = n.refreshImages()
+			err = e.refreshImages()
 		}
 
 		if err != nil {
-			if n.healthy {
-				n.emitEvent("engine_disconnect")
+			if e.healthy {
+				e.emitEvent("engine_disconnect")
 			}
-			n.healthy = false
-			log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Errorf("Flagging engine as dead. Updated state failed: %v", err)
+			e.healthy = false
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as dead. Updated state failed: %v", err)
 		} else {
-			if !n.healthy {
-				log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Info("Engine came back to life. Hooray!")
-				n.client.StopAllMonitorEvents()
-				n.client.StartMonitorEvents(n.handler, nil)
-				n.emitEvent("engine_reconnect")
-				if err := n.updateSpecs(); err != nil {
-					log.WithFields(log.Fields{"name": n.Name, "id": n.ID}).Errorf("Update engine specs failed: %v", err)
+			if !e.healthy {
+				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Info("Engine came back to life. Hooray!")
+				e.client.StopAllMonitorEvents()
+				e.client.StartMonitorEvents(e.handler, nil)
+				e.emitEvent("engine_reconnect")
+				if err := e.updateSpecs(); err != nil {
+					log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Update engine specs failed: %v", err)
 				}
 			}
-			n.healthy = true
+			e.healthy = true
 		}
 	}
 }
 
-func (n *Engine) emitEvent(event string) {
+func (e *Engine) emitEvent(event string) {
 	// If there is no event handler registered, abort right now.
-	if n.eventHandler == nil {
+	if e.eventHandler == nil {
 		return
 	}
 	ev := &Event{
@@ -310,55 +310,55 @@ func (n *Engine) emitEvent(event string) {
 			From:   "swarm",
 			Time:   time.Now().Unix(),
 		},
-		Engine: n,
+		Engine: e,
 	}
-	n.eventHandler.Handle(ev)
+	e.eventHandler.Handle(ev)
 }
 
 // UsedMemory returns the sum of memory reserved by containers.
-func (n *Engine) UsedMemory() int64 {
+func (e *Engine) UsedMemory() int64 {
 	var r int64
-	n.RLock()
-	for _, c := range n.containers {
+	e.RLock()
+	for _, c := range e.containers {
 		r += c.Info.Config.Memory
 	}
-	n.RUnlock()
+	e.RUnlock()
 	return r
 }
 
 // UsedCpus returns the sum of CPUs reserved by containers.
-func (n *Engine) UsedCpus() int64 {
+func (e *Engine) UsedCpus() int64 {
 	var r int64
-	n.RLock()
-	for _, c := range n.containers {
+	e.RLock()
+	for _, c := range e.containers {
 		r += c.Info.Config.CpuShares
 	}
-	n.RUnlock()
+	e.RUnlock()
 	return r
 }
 
 // TotalMemory returns the total memory + overcommit
-func (n *Engine) TotalMemory() int64 {
-	return n.Memory + (n.Memory * n.overcommitRatio / 100)
+func (e *Engine) TotalMemory() int64 {
+	return e.Memory + (e.Memory * e.overcommitRatio / 100)
 }
 
 // TotalCpus returns the total cpus + overcommit
-func (n *Engine) TotalCpus() int64 {
-	return n.Cpus + (n.Cpus * n.overcommitRatio / 100)
+func (e *Engine) TotalCpus() int64 {
+	return e.Cpus + (e.Cpus * e.overcommitRatio / 100)
 }
 
 // Create a new container
-func (n *Engine) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*Container, error) {
+func (e *Engine) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*Container, error) {
 	var (
 		err    error
 		id     string
-		client = n.client
+		client = e.client
 	)
 
 	newConfig := *config
 
 	// nb of CPUs -> real CpuShares
-	newConfig.CpuShares = config.CpuShares * 1024 / n.Cpus
+	newConfig.CpuShares = config.CpuShares * 1024 / e.Cpus
 
 	if id, err = client.CreateContainer(&newConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.
@@ -366,10 +366,10 @@ func (n *Engine) Create(config *dockerclient.ContainerConfig, name string, pullI
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
-		if err = n.Pull(config.Image); err != nil {
+		if err = e.Pull(config.Image); err != nil {
 			return nil, err
 		}
-		// ...And try again.
+		// ...And try agaie.
 		if id, err = client.CreateContainer(&newConfig, name); err != nil {
 			return nil, err
 		}
@@ -377,71 +377,71 @@ func (n *Engine) Create(config *dockerclient.ContainerConfig, name string, pullI
 
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
-	n.refreshContainer(id, true)
+	e.refreshContainer(id, true)
 
-	n.RLock()
-	defer n.RUnlock()
+	e.RLock()
+	defer e.RUnlock()
 
-	return n.containers[id], nil
+	return e.containers[id], nil
 }
 
 // Destroy and remove a container from the engine.
-func (n *Engine) Destroy(container *Container, force bool) error {
-	if err := n.client.RemoveContainer(container.Id, force, true); err != nil {
+func (e *Engine) Destroy(container *Container, force bool) error {
+	if err := e.client.RemoveContainer(container.Id, force, true); err != nil {
 		return err
 	}
 
 	// Remove the container from the state. Eventually, the state refresh loop
 	// will rewrite this.
-	n.Lock()
-	defer n.Unlock()
-	delete(n.containers, container.Id)
+	e.Lock()
+	defer e.Unlock()
+	delete(e.containers, container.Id)
 
 	return nil
 }
 
 // Pull an image on the node
-func (n *Engine) Pull(image string) error {
+func (e *Engine) Pull(image string) error {
 	if !strings.Contains(image, ":") {
 		image = image + ":latest"
 	}
-	if err := n.client.PullImage(image, nil); err != nil {
+	if err := e.client.PullImage(image, nil); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Events register an event handler.
-func (n *Engine) Events(h EventHandler) error {
-	if n.eventHandler != nil {
+func (e *Engine) Events(h EventHandler) error {
+	if e.eventHandler != nil {
 		return errors.New("event handler already set")
 	}
-	n.eventHandler = h
+	e.eventHandler = h
 	return nil
 }
 
 // Containers returns all the containers in the engine.
-func (n *Engine) Containers() []*Container {
+func (e *Engine) Containers() []*Container {
 	containers := []*Container{}
-	n.RLock()
-	for _, container := range n.containers {
+	e.RLock()
+	for _, container := range e.containers {
 		containers = append(containers, container)
 	}
-	n.RUnlock()
+	e.RUnlock()
 	return containers
 }
 
 // Container returns the container with IDOrName in the engine.
-func (n *Engine) Container(IDOrName string) *Container {
+func (e *Engine) Container(IDOrName string) *Container {
 	// Abort immediately if the name is empty.
 	if len(IDOrName) == 0 {
 		return nil
 	}
 
-	n.RLock()
-	defer n.RUnlock()
+	e.RLock()
+	defer e.RUnlock()
 
-	for _, container := range n.Containers() {
+	for _, container := range e.Containers() {
 		// Match ID prefix.
 		if strings.HasPrefix(container.Id, IDOrName) {
 			return container
@@ -459,23 +459,23 @@ func (n *Engine) Container(IDOrName string) *Container {
 }
 
 // Images returns all the images in the engine
-func (n *Engine) Images() []*Image {
+func (e *Engine) Images() []*Image {
 	images := []*Image{}
-	n.RLock()
+	e.RLock()
 
-	for _, image := range n.images {
+	for _, image := range e.images {
 		images = append(images, image)
 	}
-	n.RUnlock()
+	e.RUnlock()
 	return images
 }
 
 // Image returns the image with IDOrName in the engine
-func (n *Engine) Image(IDOrName string) *Image {
-	n.RLock()
-	defer n.RUnlock()
+func (e *Engine) Image(IDOrName string) *Image {
+	e.RLock()
+	defer e.RUnlock()
 
-	for _, image := range n.images {
+	for _, image := range e.images {
 		if image.Match(IDOrName) {
 			return image
 		}
@@ -483,74 +483,74 @@ func (n *Engine) Image(IDOrName string) *Image {
 	return nil
 }
 
-func (n *Engine) String() string {
-	return fmt.Sprintf("engine %s addr %s", n.ID, n.Addr)
+func (e *Engine) String() string {
+	return fmt.Sprintf("engine %s addr %s", e.ID, e.Addr)
 }
 
-func (n *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
+func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
 	// Something changed - refresh our internal state.
 	switch ev.Status {
 	case "pull", "untag", "delete":
 		// These events refer to images so there's no need to update
 		// containers.
-		n.refreshImages()
+		e.refreshImages()
 	case "start", "die":
 		// If the container is started or stopped, we have to do an inspect in
 		// order to get the new NetworkSettings.
-		n.refreshContainer(ev.Id, true)
+		e.refreshContainer(ev.Id, true)
 	default:
 		// Otherwise, do a "soft" refresh of the container.
-		n.refreshContainer(ev.Id, false)
+		e.refreshContainer(ev.Id, false)
 	}
 
 	// If there is no event handler registered, abort right now.
-	if n.eventHandler == nil {
+	if e.eventHandler == nil {
 		return
 	}
 
 	event := &Event{
-		Engine: n,
+		Engine: e,
 		Event:  *ev,
 	}
 
-	n.eventHandler.Handle(event)
+	e.eventHandler.Handle(event)
 }
 
 // AddContainer inject a container into the internal state.
-func (n *Engine) AddContainer(container *Container) error {
-	n.Lock()
-	defer n.Unlock()
+func (e *Engine) AddContainer(container *Container) error {
+	e.Lock()
+	defer e.Unlock()
 
-	if _, ok := n.containers[container.Id]; ok {
+	if _, ok := e.containers[container.Id]; ok {
 		return errors.New("container already exists")
 	}
-	n.containers[container.Id] = container
+	e.containers[container.Id] = container
 	return nil
 }
 
 // Inject an image into the internal state.
-func (n *Engine) addImage(image *Image) {
-	n.Lock()
-	defer n.Unlock()
+func (e *Engine) addImage(image *Image) {
+	e.Lock()
+	defer e.Unlock()
 
-	n.images = append(n.images, image)
+	e.images = append(e.images, image)
 }
 
 // Remove a container from the internal test.
-func (n *Engine) removeContainer(container *Container) error {
-	n.Lock()
-	defer n.Unlock()
+func (e *Engine) removeContainer(container *Container) error {
+	e.Lock()
+	defer e.Unlock()
 
-	if _, ok := n.containers[container.Id]; !ok {
+	if _, ok := e.containers[container.Id]; !ok {
 		return errors.New("container not found")
 	}
-	delete(n.containers, container.Id)
+	delete(e.containers, container.Id)
 	return nil
 }
 
 // Wipes the internal container state.
-func (n *Engine) cleanupContainers() {
-	n.Lock()
-	n.containers = make(map[string]*Container)
-	n.Unlock()
+func (e *Engine) cleanupContainers() {
+	e.Lock()
+	e.containers = make(map[string]*Container)
+	e.Unlock()
 }

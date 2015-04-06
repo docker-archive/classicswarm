@@ -16,6 +16,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/filter"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/docker/swarm/version"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
@@ -401,22 +403,20 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to a random node
 func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
-	candidates := []*cluster.Engine{}
+	candidates := []*node.Node{}
 
 	// FIXME: doesn't work if there are no container in the cluster
 	// remove proxyRandom and implemente the features locally
 	for _, container := range c.cluster.Containers() {
-		candidates = append(candidates, container.Engine)
+		candidates = append(candidates, node.NewNode(container.Engine))
 	}
 
-	// FIXME:
-	// healthFilter := &filter.HealthFilter{}
-	// accepted, err := healthFilter.Filter(nil, candidates)
-	accepted := candidates
-	//if err != nil {
-	//	httpError(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
+	healthFilter := &filter.HealthFilter{}
+	accepted, err := healthFilter.Filter(nil, candidates)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	if err := proxy(c.tlsConfig, accepted[rand.Intn(len(accepted))].Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)

@@ -27,6 +27,25 @@ type Node struct {
 	IsHealthy bool
 }
 
+// NewNode creates a node from an engine
+func NewNode(e *cluster.Engine) *Node {
+	return &Node{
+		ID:          e.ID,
+		IP:          e.IP,
+		Addr:        e.Addr,
+		Name:        e.Name,
+		Cpus:        e.Cpus,
+		Labels:      e.Labels,
+		Containers:  e.Containers(),
+		Images:      e.Images(),
+		UsedMemory:  e.UsedMemory(),
+		UsedCpus:    e.UsedCpus(),
+		TotalMemory: e.TotalMemory(),
+		TotalCpus:   e.TotalCpus(),
+		IsHealthy:   e.IsHealthy(),
+	}
+}
+
 // Container returns the container with IDOrName in the engine.
 func (n *Node) Container(IDOrName string) *cluster.Container {
 	// Abort immediately if the name is empty.
