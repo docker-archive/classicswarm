@@ -3,50 +3,50 @@ package filter
 import (
 	"testing"
 
-	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
-func testFixtures() []cluster.Node {
-	return []cluster.Node{
-		&FakeNode{
-			id:   "node-0-id",
-			name: "node-0-name",
-			addr: "node-0",
-			labels: map[string]string{
+func testFixtures() []*node.Node {
+	return []*node.Node{
+		{
+			ID:   "node-0-id",
+			Name: "node-0-name",
+			Addr: "node-0",
+			Labels: map[string]string{
 				"name":   "node0",
 				"group":  "1",
 				"region": "us-west",
 			},
 		},
 
-		&FakeNode{
-			id:   "node-1-id",
-			name: "node-1-name",
-			addr: "node-1",
-			labels: map[string]string{
+		{
+			ID:   "node-1-id",
+			Name: "node-1-name",
+			Addr: "node-1",
+			Labels: map[string]string{
 				"name":   "node1",
 				"group":  "1",
 				"region": "us-east",
 			},
 		},
 
-		&FakeNode{
-			id:   "node-2-id",
-			name: "node-2-name",
-			addr: "node-2",
-			labels: map[string]string{
+		{
+			ID:   "node-2-id",
+			Name: "node-2-name",
+			Addr: "node-2",
+			Labels: map[string]string{
 				"name":   "node2",
 				"group":  "2",
 				"region": "eu",
 			},
 		},
 
-		&FakeNode{
-			id:   "node-3-id",
-			name: "node-3-name",
-			addr: "node-3",
+		{
+			ID:   "node-3-id",
+			Name: "node-3-name",
+			Addr: "node-3",
 		},
 	}
 }
@@ -55,7 +55,7 @@ func TestConstrainteFilter(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
@@ -116,7 +116,7 @@ func TestConstraintNotExpr(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
@@ -145,7 +145,7 @@ func TestConstraintRegExp(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
@@ -174,17 +174,15 @@ func TestFilterRegExpCaseInsensitive(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
 	// Prepare node with a strange name
-	if n, ok := nodes[3].(*FakeNode); ok {
-		n.labels = map[string]string{
-			"name":   "aBcDeF",
-			"group":  "2",
-			"region": "eu",
-		}
+	nodes[3].Labels = map[string]string{
+		"name":   "aBcDeF",
+		"group":  "2",
+		"region": "eu",
 	}
 
 	// Case-sensitive, so not match
@@ -197,7 +195,7 @@ func TestFilterRegExpCaseInsensitive(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[3])
-	assert.Equal(t, result[0].Labels()["name"], "aBcDeF")
+	assert.Equal(t, result[0].Labels["name"], "aBcDeF")
 
 	// Test ! filter combined with case insensitive
 	result, err = f.Filter(&dockerclient.ContainerConfig{Env: []string{`constraint:name!=/(?i)abc*/`}}, nodes)
@@ -209,7 +207,7 @@ func TestFilterEquals(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
@@ -234,7 +232,7 @@ func TestUnsupportedOperators(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
@@ -251,7 +249,7 @@ func TestFilterSoftConstraint(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
