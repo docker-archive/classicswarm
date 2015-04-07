@@ -24,7 +24,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *ConsulDiscoveryService) Initialize(uris string, heartbeat int) error {
+func (s *ConsulDiscoveryService) Initialize(uris string, heartbeat uint64) error {
 	parts := strings.SplitN(uris, "/", 2)
 	if len(parts) < 2 {
 		return fmt.Errorf("invalid format %q, missing <path>", uris)
