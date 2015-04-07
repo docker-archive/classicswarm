@@ -5,18 +5,20 @@ import (
 	"testing"
 
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
-func createNode(ID string, memory int64, cpus int64) cluster.Node {
+func createNode(ID string, memory int64, cpus int64) *node.Node {
 	oc := 0.05
 	memory = int64(float64(memory) + float64(memory)*oc)
-	return &FakeNode{
-		id:     ID,
-		addr:   ID,
-		memory: memory * 1024 * 1024 * 1024,
-		cpus:   cpus,
+	return &node.Node{
+		ID:          ID,
+		IP:          ID,
+		Addr:        ID,
+		TotalMemory: memory * 1024 * 1024 * 1024,
+		TotalCpus:   cpus,
 	}
 }
 
@@ -31,39 +33,39 @@ func createContainer(ID string, config *dockerclient.ContainerConfig) *cluster.C
 func TestPlaceEqualWeight(t *testing.T) {
 	s := &BinpackPlacementStrategy{}
 
-	nodes := []cluster.Node{}
+	nodes := []*node.Node{}
 	for i := 0; i < 2; i++ {
 		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 4, 0))
 	}
 
 	// add 1 container 2G on node1
 	config := createConfig(2, 0)
-	assert.NoError(t, AddContainer(nodes[0], createContainer("c1", config)))
-	assert.Equal(t, nodes[0].UsedMemory(), 2*1024*1024*1024)
+	assert.NoError(t, nodes[0].AddContainer(createContainer("c1", config)))
+	assert.Equal(t, nodes[0].UsedMemory, 2*1024*1024*1024)
 
 	// add 2 containers 1G on node2
 	config = createConfig(1, 0)
-	assert.NoError(t, AddContainer(nodes[1], createContainer("c2", config)))
-	assert.NoError(t, AddContainer(nodes[1], createContainer("c3", config)))
-	assert.Equal(t, nodes[1].UsedMemory(), int64(2*1024*1024*1024))
+	assert.NoError(t, nodes[1].AddContainer(createContainer("c2", config)))
+	assert.NoError(t, nodes[1].AddContainer(createContainer("c3", config)))
+	assert.Equal(t, nodes[1].UsedMemory, int64(2*1024*1024*1024))
 
 	// add another container 1G
 	config = createConfig(1, 0)
 	node, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node, createContainer("c4", config)))
-	assert.Equal(t, node.UsedMemory(), 3*1024*1024*1024)
+	assert.NoError(t, node.AddContainer(createContainer("c4", config)))
+	assert.Equal(t, node.UsedMemory, 3*1024*1024*1024)
 
 	// check that the last container ended on the node with the highest number of containers
-	assert.Equal(t, node.ID(), nodes[1].ID())
-	assert.NotEqual(t, len(nodes[0].Containers()), len(nodes[1].Containers()))
+	assert.Equal(t, node.ID, nodes[1].ID)
+	assert.NotEqual(t, len(nodes[0].Containers), len(nodes[1].Containers))
 
 }
 
 func TestPlaceContainerMemory(t *testing.T) {
 	s := &BinpackPlacementStrategy{}
 
-	nodes := []cluster.Node{}
+	nodes := []*node.Node{}
 	for i := 0; i < 2; i++ {
 		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 2, 0))
 	}
@@ -72,25 +74,25 @@ func TestPlaceContainerMemory(t *testing.T) {
 	config := createConfig(1, 0)
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node1, createContainer("c1", config)))
-	assert.Equal(t, node1.UsedMemory(), 1024*1024*1024)
+	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
+	assert.Equal(t, node1.UsedMemory, 1024*1024*1024)
 
 	// add another container 1G
 	config = createConfig(1, 0)
 	node2, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node2, createContainer("c2", config)))
-	assert.Equal(t, node2.UsedMemory(), int64(2*1024*1024*1024))
+	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
+	assert.Equal(t, node2.UsedMemory, int64(2*1024*1024*1024))
 
 	// check that both containers ended on the same node
-	assert.Equal(t, node1.ID(), node2.ID())
-	assert.Equal(t, len(node1.Containers()), len(node2.Containers()))
+	assert.Equal(t, node1.ID, node2.ID)
+	assert.Equal(t, len(node1.Containers), len(node2.Containers))
 }
 
 func TestPlaceContainerCPU(t *testing.T) {
 	s := &BinpackPlacementStrategy{}
 
-	nodes := []cluster.Node{}
+	nodes := []*node.Node{}
 	for i := 0; i < 2; i++ {
 		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 0, 2))
 	}
@@ -99,25 +101,25 @@ func TestPlaceContainerCPU(t *testing.T) {
 	config := createConfig(0, 1)
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node1, createContainer("c1", config)))
-	assert.Equal(t, node1.UsedCpus(), 1)
+	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
+	assert.Equal(t, node1.UsedCpus, 1)
 
 	// add another container 1CPU
 	config = createConfig(0, 1)
 	node2, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node2, createContainer("c2", config)))
-	assert.Equal(t, node2.UsedCpus(), 2)
+	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
+	assert.Equal(t, node2.UsedCpus, 2)
 
 	// check that both containers ended on the same node
-	assert.Equal(t, node1.ID(), node2.ID())
-	assert.Equal(t, len(node1.Containers()), len(node2.Containers()))
+	assert.Equal(t, node1.ID, node2.ID)
+	assert.Equal(t, len(node1.Containers), len(node2.Containers))
 }
 
 func TestPlaceContainerHuge(t *testing.T) {
 	s := &BinpackPlacementStrategy{}
 
-	nodes := []cluster.Node{}
+	nodes := []*node.Node{}
 	for i := 0; i < 100; i++ {
 		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 1, 1))
 	}
@@ -126,7 +128,7 @@ func TestPlaceContainerHuge(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		node, err := s.PlaceContainer(createConfig(0, 1), nodes)
 		assert.NoError(t, err)
-		assert.NoError(t, AddContainer(node, createContainer(fmt.Sprintf("c%d", i), createConfig(0, 1))))
+		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(0, 1))))
 	}
 
 	// try to add another container 1CPU
@@ -137,7 +139,7 @@ func TestPlaceContainerHuge(t *testing.T) {
 	for i := 100; i < 200; i++ {
 		node, err := s.PlaceContainer(createConfig(1, 0), nodes)
 		assert.NoError(t, err)
-		assert.NoError(t, AddContainer(node, createContainer(fmt.Sprintf("c%d", i), createConfig(1, 0))))
+		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(1, 0))))
 	}
 
 	// try to add another container 1G
@@ -149,7 +151,7 @@ func TestPlaceContainerOvercommit(t *testing.T) {
 	s, err := New("binpacking")
 	assert.NoError(t, err)
 
-	nodes := []cluster.Node{createNode("node-1", 100, 1)}
+	nodes := []*node.Node{createNode("node-1", 100, 1)}
 
 	config := createConfig(0, 0)
 
@@ -181,7 +183,7 @@ func TestPlaceContainerOvercommit(t *testing.T) {
 func TestPlaceContainerDemo(t *testing.T) {
 	s := &BinpackPlacementStrategy{}
 
-	nodes := []cluster.Node{}
+	nodes := []*node.Node{}
 	for i := 0; i < 3; i++ {
 		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 2, 4))
 	}
@@ -197,44 +199,44 @@ func TestPlaceContainerDemo(t *testing.T) {
 	config = createConfig(1, 0)
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node1, createContainer("c1", config)))
+	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 	// add another container 1G
 	config = createConfig(1, 0)
 	node1bis, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node1bis, createContainer("c2", config)))
+	assert.NoError(t, node1bis.AddContainer(createContainer("c2", config)))
 
 	// check that both containers ended on the same node
-	assert.Equal(t, node1.ID(), node1bis.ID())
-	assert.Equal(t, len(node1.Containers()), len(node1bis.Containers()))
+	assert.Equal(t, node1.ID, node1bis.ID)
+	assert.Equal(t, len(node1.Containers), len(node1bis.Containers))
 
 	// add another container 2G
 	config = createConfig(2, 0)
 	node2, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node2, createContainer("c3", config)))
+	assert.NoError(t, node2.AddContainer(createContainer("c3", config)))
 
 	// check that it ends up on another node
-	assert.NotEqual(t, node1.ID(), node2.ID())
+	assert.NotEqual(t, node1.ID, node2.ID)
 
 	// add another container 1G
 	config = createConfig(1, 0)
 	node3, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node3, createContainer("c4", config)))
+	assert.NoError(t, node3.AddContainer(createContainer("c4", config)))
 
 	// check that it ends up on another node
-	assert.NotEqual(t, node1.ID(), node3.ID())
-	assert.NotEqual(t, node2.ID(), node3.ID())
+	assert.NotEqual(t, node1.ID, node3.ID)
+	assert.NotEqual(t, node2.ID, node3.ID)
 
 	// add another container 1G
 	config = createConfig(1, 0)
 	node3bis, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node3bis, createContainer("c5", config)))
+	assert.NoError(t, node3bis.AddContainer(createContainer("c5", config)))
 
 	// check that it ends up on the same node
-	assert.Equal(t, node3.ID(), node3bis.ID())
+	assert.Equal(t, node3.ID, node3bis.ID)
 
 	// try to add another container
 	config = createConfig(1, 0)
@@ -244,27 +246,25 @@ func TestPlaceContainerDemo(t *testing.T) {
 	assert.Error(t, err)
 
 	// remove container in the middle
-	if n, ok := node2.(*FakeNode); ok {
-		n.containers = nil
-		n.usedmemory = 0
-		n.usedcpus = 0
-	}
+	node2.Containers = nil
+	node2.UsedMemory = 0
+	node2.UsedCpus = 0
 
 	// add another container
 	config = createConfig(1, 0)
 	node2bis, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node2bis, createContainer("c6", config)))
+	assert.NoError(t, node2bis.AddContainer(createContainer("c6", config)))
 
 	// check it ends up on `node3`
-	assert.Equal(t, node2.ID(), node2bis.ID())
-	assert.Equal(t, len(node2.Containers()), len(node2bis.Containers()))
+	assert.Equal(t, node2.ID, node2bis.ID)
+	assert.Equal(t, len(node2.Containers), len(node2bis.Containers))
 }
 
 func TestComplexPlacement(t *testing.T) {
 	s := &BinpackPlacementStrategy{}
 
-	nodes := []cluster.Node{}
+	nodes := []*node.Node{}
 	for i := 0; i < 2; i++ {
 		nodes = append(nodes, createNode(fmt.Sprintf("node-%d", i), 4, 4))
 	}
@@ -273,23 +273,23 @@ func TestComplexPlacement(t *testing.T) {
 	config := createConfig(2, 0)
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node1, createContainer("c1", config)))
+	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 
 	// add one container 3G
 	config = createConfig(3, 0)
 	node2, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node2, createContainer("c2", config)))
+	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 
 	// check that they end up on separate nodes
-	assert.NotEqual(t, node1.ID(), node2.ID())
+	assert.NotEqual(t, node1.ID, node2.ID)
 
 	// add one container 1G
 	config = createConfig(1, 0)
 	node3, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
-	assert.NoError(t, AddContainer(node3, createContainer("c3", config)))
+	assert.NoError(t, node3.AddContainer(createContainer("c3", config)))
 
 	// check that it ends up on the same node as the 3G
-	assert.Equal(t, node2.ID(), node3.ID())
+	assert.Equal(t, node2.ID, node3.ID)
 }

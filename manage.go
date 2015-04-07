@@ -27,7 +27,7 @@ func (h *logHandler) Handle(e *cluster.Event) error {
 	if len(id) > 12 {
 		id = id[:12]
 	}
-	log.WithFields(log.Fields{"node": e.Node.Name, "id": id, "from": e.From, "status": e.Status}).Debug("Event received")
+	log.WithFields(log.Fields{"node": e.Engine.Name, "id": id, "from": e.From, "status": e.Status}).Debug("Event received")
 	return nil
 }
 

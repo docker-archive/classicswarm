@@ -3,7 +3,7 @@ package filter
 import (
 	"errors"
 
-	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 )
 
@@ -22,10 +22,10 @@ func (f *HealthFilter) Name() string {
 }
 
 // Filter is exported
-func (f *HealthFilter) Filter(_ *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
-	result := []cluster.Node{}
+func (f *HealthFilter) Filter(_ *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+	result := []*node.Node{}
 	for _, node := range nodes {
-		if node.IsHealthy() {
+		if node.IsHealthy {
 			result = append(result, node)
 		}
 	}

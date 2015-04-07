@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 )
 
@@ -18,7 +18,7 @@ func (f *DependencyFilter) Name() string {
 }
 
 // Filter is exported
-func (f *DependencyFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
+func (f *DependencyFilter) Filter(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
@@ -35,7 +35,7 @@ func (f *DependencyFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 		net = append(net, strings.TrimPrefix(config.HostConfig.NetworkMode, "container:"))
 	}
 
-	candidates := []cluster.Node{}
+	candidates := []*node.Node{}
 	for _, node := range nodes {
 		if f.check(config.HostConfig.VolumesFrom, node) &&
 			f.check(links, node) &&
@@ -67,7 +67,7 @@ func (f *DependencyFilter) String(config *dockerclient.ContainerConfig) string {
 }
 
 // Ensure that the node contains all dependent containers.
-func (f *DependencyFilter) check(dependencies []string, node cluster.Node) bool {
+func (f *DependencyFilter) check(dependencies []string, node *node.Node) bool {
 	for _, dependency := range dependencies {
 		if node.Container(dependency) == nil {
 			return false

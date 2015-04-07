@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 )
 
@@ -19,7 +19,7 @@ func (f *AffinityFilter) Name() string {
 }
 
 // Filter is exported
-func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []cluster.Node) ([]cluster.Node, error) {
+func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	affinities, err := parseExprs("affinity", config.Env)
 	if err != nil {
 		return nil, err
@@ -28,12 +28,12 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []cl
 	for _, affinity := range affinities {
 		log.Debugf("matching affinity: %s%s%s", affinity.key, OPERATORS[affinity.operator], affinity.value)
 
-		candidates := []cluster.Node{}
+		candidates := []*node.Node{}
 		for _, node := range nodes {
 			switch affinity.key {
 			case "container":
 				containers := []string{}
-				for _, container := range node.Containers() {
+				for _, container := range node.Containers {
 					containers = append(containers, container.Id, strings.TrimPrefix(container.Names[0], "/"))
 				}
 				if affinity.Match(containers...) {
@@ -41,7 +41,7 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []cl
 				}
 			case "image":
 				images := []string{}
-				for _, image := range node.Images() {
+				for _, image := range node.Images {
 					images = append(images, image.Id)
 					images = append(images, image.RepoTags...)
 					for _, tag := range image.RepoTags {
