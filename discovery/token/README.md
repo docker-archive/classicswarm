@@ -10,11 +10,11 @@ The discovery service is still in alpha stage and currently hosted at `https://d
 `<- <token>`
 
 #####Add new nodes to a cluster
-`-> POST https://discovery-stage.hub.docker.com/v1/clusters/<token> (data="<ip:port1>")`
+`-> POST https://discovery-stage.hub.docker.com/v1/clusters/<token> Request body: "<ip>:<port1>"`
 
 `<- OK`
 
-`-> POST https://discovery-stage.hub.docker.com/v1/clusters/<token> (data="<ip:port2>")`
+`-> POST https://discovery-stage.hub.docker.com/v1/clusters/<token> Request body: "<ip>:<port2>")`
 
 `<- OK`
 
@@ -22,7 +22,7 @@ The discovery service is still in alpha stage and currently hosted at `https://d
 #####List nodes in a cluster
 `-> GET https://discovery-stage.hub.docker.com/v1/clusters/<token>`
 
-`<- ["<ip:port1>", "<ip:port2>"]`
+`<- ["<ip>:<port1>", "<ip>:<port2>"]`
 
 
 #####Delete a cluster (all the nodes in a cluster)
