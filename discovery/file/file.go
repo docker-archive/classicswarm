@@ -10,7 +10,7 @@ import (
 
 // FileDiscoveryService is exported
 type FileDiscoveryService struct {
-	heartbeat int
+	heartbeat uint64
 	path      string
 }
 
@@ -19,7 +19,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *FileDiscoveryService) Initialize(path string, heartbeat int) error {
+func (s *FileDiscoveryService) Initialize(path string, heartbeat uint64) error {
 	s.path = path
 	s.heartbeat = heartbeat
 	return nil
