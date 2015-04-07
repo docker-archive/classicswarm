@@ -502,7 +502,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			"/containers/{name:.*}/top":       proxyContainer,
 			"/containers/{name:.*}/logs":      proxyContainer,
 			"/containers/{name:.*}/stats":     proxyContainer,
-			"/containers/{name:.*}/attach/ws": notImplementedHandler,
+			"/containers/{name:.*}/attach/ws": proxyHijack,
 			"/exec/{execid:.*}/json":          proxyContainer,
 		},
 		"POST": {
