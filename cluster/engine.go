@@ -422,8 +422,8 @@ func (e *Engine) Events(h EventHandler) error {
 
 // Containers returns all the containers in the engine.
 func (e *Engine) Containers() []*Container {
-	containers := []*Container{}
 	e.RLock()
+	containers := make([]*Container, 0, len(e.containers))
 	for _, container := range e.containers {
 		containers = append(containers, container)
 	}
@@ -437,9 +437,6 @@ func (e *Engine) Container(IDOrName string) *Container {
 	if len(IDOrName) == 0 {
 		return nil
 	}
-
-	e.RLock()
-	defer e.RUnlock()
 
 	for _, container := range e.Containers() {
 		// Match ID prefix.
@@ -460,9 +457,9 @@ func (e *Engine) Container(IDOrName string) *Container {
 
 // Images returns all the images in the engine
 func (e *Engine) Images() []*Image {
-	images := []*Image{}
 	e.RLock()
 
+	images := make([]*Image, 0, len(e.images))
 	for _, image := range e.images {
 		images = append(images, image)
 	}
