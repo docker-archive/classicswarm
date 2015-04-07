@@ -36,9 +36,11 @@ func TestParsingContentsWithComments(t *testing.T) {
 1.1.1.1:1111 # inline comment
 # 2.2.2.2:2222
       ### empty line with comment
+    3.3.3.3:3333
 ### test ###
 `
 	ips := parseFileContent([]byte(data))
-	assert.Equal(t, 1, len(ips))
+	assert.Equal(t, 2, len(ips))
 	assert.Equal(t, "1.1.1.1:1111", ips[0])
+	assert.Equal(t, "3.3.3.3:3333", ips[1])
 }
