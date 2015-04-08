@@ -26,9 +26,10 @@ Full documentation [is available here](http://docs.docker.com/swarm/).
 
 ## Development installation
 
-You can download and install from source instead of using the Docker image.
+You can download and install from source instead of using the Docker image. 
+Ensure you have golang, godep and git client installed. 
 
-Ensure you have golang, godep and git client installed. For example, on Ubuntu you'd run:
+**For example, on Ubuntu you'd run:**
 
 ```bash
 apt-get install golang git
@@ -36,6 +37,16 @@ go get github.com/tools/godep
 ```
 
 You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
+
+
+**For example, on Mac OS X you'd run:**
+
+```bash
+brew install go
+export GOPATH=~/go
+export PATH=$PATH:~/go/bin
+go get github.com/tools/godep
+```
 
 Then install the `swarm` binary:
 
