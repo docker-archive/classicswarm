@@ -199,10 +199,15 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete
 
 // Pull is exported
 func (c *Cluster) Pull(name string, callback func(what, status string)) {
-	size := len(c.engines)
-	done := make(chan bool, size)
+	var wg sync.WaitGroup
+
+	c.RLock()
 	for _, n := range c.engines {
+		wg.Add(1)
+
 		go func(nn *cluster.Engine) {
+			defer wg.Done()
+
 			if callback != nil {
 				callback(nn.Name, "")
 			}
@@ -214,12 +219,11 @@ func (c *Cluster) Pull(name string, callback func(what, status string)) {
 					callback(nn.Name, "downloaded")
 				}
 			}
-			done <- true
 		}(n)
 	}
-	for i := 0; i < size; i++ {
-		<-done
-	}
+	c.RUnlock()
+
+	wg.Wait()
 }
 
 // Containers returns all the containers in the cluster.
