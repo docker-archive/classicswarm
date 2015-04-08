@@ -148,6 +148,9 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 }
 
 func (c *Cluster) hasEngine(addr string) bool {
+	c.RLock()
+	defer c.RUnlock()
+
 	for _, engine := range c.engines {
 		if engine.Addr == addr {
 			return true
@@ -255,7 +258,7 @@ func (c *Cluster) listNodes() []*node.Node {
 	c.RLock()
 	defer c.RUnlock()
 
-	out := []*node.Node{}
+	out := make([]*node.Node, 0, len(c.engines))
 	for _, n := range c.engines {
 		out = append(out, node.NewNode(n))
 	}
@@ -268,7 +271,7 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 	c.RLock()
 	defer c.RUnlock()
 
-	out := []*cluster.Engine{}
+	out := make([]*cluster.Engine, 0, len(c.engines))
 	for _, n := range c.engines {
 		out = append(out, n)
 	}
