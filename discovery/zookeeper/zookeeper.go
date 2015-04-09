@@ -15,7 +15,7 @@ import (
 type ZkDiscoveryService struct {
 	conn      *zk.Conn
 	path      []string
-	heartbeat int
+	heartbeat uint64
 }
 
 func init() {
@@ -41,7 +41,7 @@ func (s *ZkDiscoveryService) createFullpath() error {
 }
 
 // Initialize is exported
-func (s *ZkDiscoveryService) Initialize(uris string, heartbeat int) error {
+func (s *ZkDiscoveryService) Initialize(uris string, heartbeat uint64) error {
 	var (
 		// split here because uris can contain multiples ips
 		// like `zk://192.168.0.1,192.168.0.2,192.168.0.3/path`

@@ -7,5 +7,5 @@ type Options struct {
 	TLSConfig       *tls.Config
 	OvercommitRatio float64
 	Discovery       string
-	Heartbeat       int
+	Heartbeat       uint64
 }

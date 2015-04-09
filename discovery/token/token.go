@@ -17,7 +17,7 @@ const DiscoveryURL = "https://discovery-stage.hub.docker.com/v1"
 
 // TokenDiscoveryService is exported
 type TokenDiscoveryService struct {
-	heartbeat int
+	heartbeat uint64
 	url       string
 	token     string
 }
@@ -27,7 +27,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *TokenDiscoveryService) Initialize(urltoken string, heartbeat int) error {
+func (s *TokenDiscoveryService) Initialize(urltoken string, heartbeat uint64) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
 		s.url = "https://" + urltoken[:i]
 		s.token = urltoken[i+1:]

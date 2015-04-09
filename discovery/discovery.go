@@ -33,7 +33,7 @@ type WatchCallback func(entries []*Entry)
 
 // DiscoveryService is exported
 type DiscoveryService interface {
-	Initialize(string, int) error
+	Initialize(string, uint64) error
 	Fetch() ([]*Entry, error)
 	Watch(WatchCallback)
 	Register(string) error
@@ -73,7 +73,7 @@ func parse(rawurl string) (string, string) {
 }
 
 // New is exported
-func New(rawurl string, heartbeat int) (DiscoveryService, error) {
+func New(rawurl string, heartbeat uint64) (DiscoveryService, error) {
 	scheme, uri := parse(rawurl)
 
 	if discovery, exists := discoveries[scheme]; exists {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"strconv"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -120,11 +121,15 @@ func manage(c *cli.Context) {
 	sched := scheduler.New(s, fs)
 
 	eventsHandler := api.NewEventsHandler()
+	hb, err := strconv.ParseUint(c.String("heartbeat"), 0, 32)
+	if hb < 1 || err != nil {
+		log.Fatal("--heartbeat should be an unsigned integer and greater than 0")
+	}
 	options := &cluster.Options{
 		TLSConfig:       tlsConfig,
 		OvercommitRatio: c.Float64("overcommit"),
 		Discovery:       dflag,
-		Heartbeat:       c.Int("heartbeat"),
+		Heartbeat:       hb,
 	}
 
 	cluster := swarm.NewCluster(sched, store, eventsHandler, options)
