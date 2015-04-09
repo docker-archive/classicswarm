@@ -42,5 +42,5 @@ type Cluster interface {
 
 	// FIXME: remove this method
 	// Return a random engine
-	RandomEngine_() (*Engine, error)
+	RANDOMENGINE() (*Engine, error)
 }

@@ -3,7 +3,6 @@ package swarm
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"sort"
 	"sync"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/scheduler"
-	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/docker/swarm/state"
 	"github.com/samalba/dockerclient"
@@ -310,17 +308,14 @@ func (c *Cluster) Info() [][2]string {
 	return info
 }
 
-// RandomEngine_ returns a random engine.
-func (c *Cluster) RandomEngine_() (*cluster.Engine, error) {
-	healthFilter := &filter.HealthFilter{}
-	accepted, err := healthFilter.Filter(nil, c.listNodes())
+// RANDOMENGINE returns a random engine.
+func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), &dockerclient.ContainerConfig{})
 	if err != nil {
 		return nil, err
 	}
-	if size := len(accepted); size > 0 {
-		if n, ok := c.engines[accepted[rand.Intn(size)].ID]; ok {
-			return n, nil
-		}
+	if n != nil {
+		return c.engines[n.ID], nil
 	}
 	return nil, nil
 }

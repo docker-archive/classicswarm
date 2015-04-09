@@ -395,7 +395,7 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to a random node
 func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
-	engine, err := c.cluster.RandomEngine_()
+	engine, err := c.cluster.RANDOMENGINE()
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
