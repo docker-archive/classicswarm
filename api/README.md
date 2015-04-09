@@ -17,6 +17,7 @@ GET "/images/get"
 
 POST "/build"
 POST "/images/load"
+POST "/images/create" : "docker import" flow not implement
 ```
 
 ## Endpoints which behave differently
