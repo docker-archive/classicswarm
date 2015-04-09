@@ -88,7 +88,7 @@ func (e *Engine) connectClient(client dockerclient.Client) error {
 	}
 
 	// Force a state update before returning.
-	if err := e.refreshContainers(true); err != nil {
+	if err := e.RefreshContainers(true); err != nil {
 		e.client = nil
 		return err
 	}
@@ -180,9 +180,9 @@ func (e *Engine) RefreshImages() error {
 	return nil
 }
 
-// Refresh the list and status of containers running on the engine. If `full` is
+// RefreshContainers will refresh the list and status of containers running on the engine. If `full` is
 // true, each container will be inspected.
-func (e *Engine) refreshContainers(full bool) error {
+func (e *Engine) RefreshContainers(full bool) error {
 	containers, err := e.client.ListContainers(true, false, "")
 	if err != nil {
 		return err
@@ -214,7 +214,7 @@ func (e *Engine) refreshContainer(ID string, full bool) error {
 
 	if len(containers) > 1 {
 		// We expect one container, if we get more than one, trigger a full refresh.
-		return e.refreshContainers(full)
+		return e.RefreshContainers(full)
 	}
 
 	if len(containers) == 0 {
