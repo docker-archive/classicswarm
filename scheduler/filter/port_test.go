@@ -278,24 +278,24 @@ func TestPortFilterRandomAssignment(t *testing.T) {
 func TestPortFilterForHostMode(t *testing.T) {
 	var (
 		p     = PortFilter{}
-		nodes = []cluster.Node{
-			&FakeNode{
-				id:   "node-1-id",
-				name: "node-1-name",
-				addr: "node-1",
+		nodes = []*node.Node{
+			{
+				ID:   "node-1-id",
+				Name: "node-1-name",
+				Addr: "node-1",
 			},
-			&FakeNode{
-				id:   "node-2-id",
-				name: "node-2-name",
-				addr: "node-2",
+			{
+				ID:   "node-2-id",
+				Name: "node-2-name",
+				Addr: "node-2",
 			},
-			&FakeNode{
-				id:   "node-3-id",
-				name: "node-3-name",
-				addr: "node-3",
+			{
+				ID:   "node-3-id",
+				Name: "node-3-name",
+				Addr: "node-3",
 			},
 		}
-		result []cluster.Node
+		result []*node.Node
 		err    error
 	)
 
@@ -312,9 +312,7 @@ func TestPortFilterForHostMode(t *testing.T) {
 		},
 	}
 
-	if n, ok := nodes[0].(*FakeNode); ok {
-		assert.NoError(t, n.AddContainer(container))
-	}
+	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Request port 80 in the host mode
 	config := &dockerclient.ContainerConfig{
