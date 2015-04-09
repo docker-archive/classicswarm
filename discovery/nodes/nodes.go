@@ -16,7 +16,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *NodesDiscoveryService) Initialize(uris string, _ int) error {
+func (s *NodesDiscoveryService) Initialize(uris string, _ uint64) error {
 	for _, input := range strings.Split(uris, ",") {
 		for _, ip := range discovery.Generate(input) {
 			entry, err := discovery.NewEntry(ip)

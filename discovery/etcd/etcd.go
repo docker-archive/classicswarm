@@ -22,7 +22,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat int) error {
+func (s *EtcdDiscoveryService) Initialize(uris string, heartbeat uint64) error {
 	var (
 		// split here because uris can contain multiples ips
 		// like `etcd://192.168.0.1,192.168.0.2,192.168.0.3/path`
