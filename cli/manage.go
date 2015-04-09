@@ -13,6 +13,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/cluster/mesos"
 	"github.com/docker/swarm/cluster/swarm"
 	"github.com/docker/swarm/discovery"
 	kvdiscovery "github.com/docker/swarm/discovery/kv"
@@ -192,6 +193,16 @@ func manage(c *cli.Context) {
 	cluster, err := swarm.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	var cl cluster.Cluster
+	switch c.String("cluster") {
+	case "mesos":
+		cl = mesos.NewCluster(sched, store, eventsHandler, options)
+	case "swarm":
+		cl = swarm.NewCluster(sched, store, eventsHandler, options)
+	default:
+		log.Fatalf("Unsupported cluster %q", c.String("cluster"))
 	}
 
 	// see https://github.com/codegangsta/cli/issues/160
