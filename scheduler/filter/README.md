@@ -266,6 +266,48 @@ $ docker run -d -p 80:80 nginx
 2014/10/29 00:33:20 Error response from daemon: no resources available to schedule container
 ```
 
+### Port filter in Host Mode
+
+Docker in the host mode, running with `--net=host`, differs from the default `bridge` mode as the `host` mode does not perform any port binding. So, it requires to explicitly expose one or more port numbers (using `EXPOSE` in the Dockerfile or `--expose` on the command line). `Swarm` makes use of this information in conjunction with the `host` mode to choose an available node for a new container.
+
+For example, the following commands start `nginx` on 3-node cluster.
+```
+$ docker run -d --expose=80 --net=host nginx
+640297cb29a7
+$ docker run -d --expose=80 --net=host nginx
+7ecf562b1b3f
+$ docker run -d --expose=80 --net=host nginx
+09a92f582bc2
+```
+
+Port binding information will not be available through `ps` command because they are all started in the `host` mode.
+```
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND                CREATED                  STATUS              PORTS               NAMES
+640297cb29a7        nginx:1             "nginx -g 'daemon of   Less than a second ago   Up 30 seconds                           box3/furious_heisenberg
+7ecf562b1b3f        nginx:1             "nginx -g 'daemon of   Less than a second ago   Up 28 seconds                           box2/ecstatic_meitner
+09a92f582bc2        nginx:1             "nginx -g 'daemon of   46 seconds ago           Up 27 seconds                           box1/mad_goldstine
+```
+
+Docker cluster will refuse the operation when trying to instantiate the 4th one.
+```
+$  docker run -d --expose=80 --net=host nginx
+FATA[0000] Error response from daemon: unable to find a node with port 80/tcp available in the Host mode
+```
+
+However port binding to the different value, e.g. 81, is still allowed.
+
+```
+$  docker run -d -p 81:80 nginx:latest
+832f42819adc
+$  docker ps
+CONTAINER ID        IMAGE               COMMAND                CREATED                  STATUS                  PORTS                                 NAMES
+832f42819adc        nginx:1             "nginx -g 'daemon of   Less than a second ago   Up Less than a second   443/tcp, 192.168.136.136:81->80/tcp   box3/thirsty_hawking
+640297cb29a7        nginx:1             "nginx -g 'daemon of   8 seconds ago            Up About a minute                                             box3/furious_heisenberg
+7ecf562b1b3f        nginx:1             "nginx -g 'daemon of   13 seconds ago           Up About a minute                                             box2/ecstatic_meitner
+09a92f582bc2        nginx:1             "nginx -g 'daemon of   About a minute ago       Up About a minute                                             box1/mad_goldstine
+```
+
 ## Dependency Filter
 
 This filter co-schedules dependent containers on the same node.
