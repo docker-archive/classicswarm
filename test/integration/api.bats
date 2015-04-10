@@ -9,7 +9,7 @@ function teardown() {
 
 @test "docker info should return the number of nodes" {
 	start_docker 3
-	start_manager
+	swarm_manage
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${lines[3]}" == *"Nodes: 3" ]]
@@ -17,7 +17,7 @@ function teardown() {
 
 @test "docker ps -n 3 should return the 3 last containers, including non running one" {
        start_docker 1
-       start_manager
+       swarm_manage
        run docker_swarm run -d busybox sleep 42
        run docker_swarm run -d busybox false
        run docker_swarm ps -n 3
@@ -34,7 +34,7 @@ function teardown() {
 
 @test "docker ps -l should return the last container, including non running one" {
        start_docker 1
-       start_manager
+       swarm_manage
        run docker_swarm run -d busybox sleep 42
        sleep 1 #sleep so the 2 containers don't start at the same second
        run docker_swarm run -d busybox true
