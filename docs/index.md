@@ -21,6 +21,34 @@ The goal is to provide a smooth out-of-box experience for simple use cases, and
 allow swapping in more powerful backends, like Mesos, for large scale production
 deployments.
 
+## Release Notes
+
+### Version 0.2.0 (April 16, 2015)
+
+For complete information on this release, see the
+[0.2.0 Milestone project page](https://github.com/docker/swarm/wiki/0.2.0-Milestone-Project-Page).
+In addition to bug fixes and refinements, this release adds the following:
+
+* Increased API coverage. Swarm now supports more of the Docker API. For
+details, see
+[the API README](https://github.com/docker/swarm/blob/master/api/README.md).
+
+* Swarm Scheduler: Spread strategy. Swarm has a new default strategy for
+ranking nodes, called "spread". With this strategy, Swarm will optimize
+for the node with the fewest running containers. For details, see the
+[scheduler strategy README](https://github.com/docker/swarm/blob/master/scheduler/strategy/README.md)
+
+* Swarm Scheduler: Soft affinities. Soft affinities allow Swarm more flexibility
+in applying rules and filters for node selection. If the scheduler can't obey a
+filtering rule, it will discard the filter and fall back to the assigned
+strategy. For details, see the [scheduler filter README](https://github.com/docker/swarm/tree/master/scheduler/filter#soft-affinitiesconstraints).
+
+* Better integration with Compose. Swarm will now schedule inter-dependent
+containers on the same host. For details, see
+[PR #972](https://github.com/docker/compose/pull/972).
+
+
+
 ## Pre-requisites for running Swarm
 
 You must install Docker 1.4.0 or later on all nodes. While each node's IP need not
@@ -156,7 +184,8 @@ the certificates.
 
 ## Discovery services
 
-See the [Discovery service](https://docs.docker.com/swarm/discovery/) document for more information.
+See the [Discovery service](https://docs.docker.com/swarm/discovery/) document
+for more information.
 
 ## Advanced Scheduling
 
@@ -165,6 +194,22 @@ more about advanced scheduling.
 
 ## Swarm API
 
-The [Docker Swarm API](https://docs.docker.com/swarm/API/) is compatible with the [Docker
-remote API](http://docs.docker.com/reference/api/docker_remote_api/), and extends it
-with some new endpoints.
+The [Docker Swarm API](https://docs.docker.com/swarm/API/) is compatible with
+the [Docker
+remote API](http://docs.docker.com/reference/api/docker_remote_api/), and
+extends it with some new endpoints.
+
+
+## Getting help
+
+Docker Swarm is still in its infancy and under active development. If you need
+help, would like to contribute, or simply want to talk about the project with
+like-minded individuals, we have a number of open channels for communication.
+
+* To report bugs or file feature requests: please use the [issue tracker on Github](https://github.com/docker/machine/issues).
+
+* To talk about the project with people in real time: please join the `#docker-swarm` channel on IRC.
+
+* To contribute code or documentation changes: please submit a [pull request on Github](https://github.com/docker/machine/pulls).
+
+For more information and resources, please visit the [Getting Help project page](https://docs.docker.com/project/get-help/).
