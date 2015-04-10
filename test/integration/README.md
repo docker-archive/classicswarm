@@ -63,9 +63,9 @@ load helpers
 	# Additional parameters can be passed to the docker daemon:
 	start_docker 1 --label foo=bar
 
-	# start_manager will start the swarm manager, preconfigured with all engines
+	# swarm_manage will start the swarm manager, preconfigured with all engines
 	# previously started by start_engine:
-	start_manager
+	swarm_manage
 
 	# You can talk with said manager by using the docker_swarm helper:
 	run docker_swarm info
@@ -76,7 +76,7 @@ load helpers
 # teardown is called at the end of every test.
 function teardown() {
 	# This will stop the swarm manager:
-	stop_manager
+	swarm_manage_cleanup
 
 	# This will stop and remove all engines launched by the test:
 	stop_docker

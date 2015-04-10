@@ -3,13 +3,13 @@
 load helpers
 
 function teardown() {
-	stop_manager
+	swarm_manage_cleanup
 	stop_docker
 }
 
 @test "docker should filter port in host mode correctly" {
 	start_docker 2
-	start_manager
+	swarm_manage
 
 	#
 	# Use busybox to save image pulling time for integration test.
