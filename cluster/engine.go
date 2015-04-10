@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+    "os"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/samalba/dockerclient"
@@ -409,6 +410,19 @@ func (e *Engine) Pull(image string) error {
 		return err
 	}
 	return nil
+}
+
+// Load an image on the engine
+func (e *Engine) Load(tarFile string) error {
+    file, err := os.Open(tarFile)
+    if err != nil {
+        return err
+    }
+
+    if err := e.client.LoadImage(file); err != nil {
+        return err
+    }
+    return nil
 }
 
 // RegisterEventHandler registers an event handler.
