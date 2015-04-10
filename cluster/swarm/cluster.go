@@ -238,6 +238,31 @@ func (c *Cluster) Pull(name string, callback func(what, status string)) {
 	wg.Wait()
 }
 
+// Load image
+func (c *Cluster) Load(tarFile string, callback func(what, status string)) {
+    size := len(c.engines)
+    done := make(chan bool, size)
+    for _, n := range c.engines {
+        go func(nn *cluster.Engine) {
+            if callback != nil {
+                callback(nn.Name, "")
+            }
+            err := nn.Load(tarFile)
+            if callback != nil {
+                if err != nil {
+                    callback(nn.Name, err.Error())
+                } else {
+                    callback(nn.Name, "loaded")
+                }
+            }
+            done <- true
+        }(n)
+    }
+    for i := 0; i < size; i++ {
+        <-done
+    }
+}
+
 // Containers returns all the containers in the cluster.
 func (c *Cluster) Containers() []*cluster.Container {
 	c.RLock()
