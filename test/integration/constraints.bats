@@ -3,7 +3,7 @@
 load helpers
 
 function teardown() {
-	stop_manager
+	swarm_manage_cleanup
 	stop_docker
 }
 
