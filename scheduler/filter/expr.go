@@ -52,7 +52,7 @@ func parseExprs(key string, env []string) ([]expr, error) {
 						// allow leading = in case of using ==
 						// allow * for globbing
 						// allow regexp
-						matched, err := regexp.MatchString(`^(?i)[=!\/]?(~)?[a-z0-9:\-_\s\.\*/\(\)\?\+\[\]\\\^\$]+$`, parts[1])
+						matched, err := regexp.MatchString(`^(?i)[=!\/]?(~)?[a-z0-9:\-_\s\.\*/\(\)\?\+\[\]\\\^\$\|]+$`, parts[1])
 						if err != nil {
 							return nil, err
 						}
