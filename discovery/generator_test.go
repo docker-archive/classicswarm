@@ -39,3 +39,17 @@ func TestGeneratorWithPort(t *testing.T) {
 	assert.Equal(t, ips[9], "127.0.0.10:2375")
 	assert.Equal(t, ips[10], "127.0.0.11:2375")
 }
+
+func TestGenerateWithMalformedInputAtRangeStart(t *testing.T) {
+	malformedInput := "127.0.0.[x:11]:2375"
+	ips := Generate(malformedInput)
+	assert.Equal(t, len(ips), 1)
+	assert.Equal(t, ips[0], malformedInput)
+}
+
+func TestGenerateWithMalformedInputAtRangeEnd(t *testing.T) {
+	malformedInput := "127.0.0.[1:x]:2375"
+	ips := Generate(malformedInput)
+	assert.Equal(t, len(ips), 1)
+	assert.Equal(t, ips[0], malformedInput)
+}
