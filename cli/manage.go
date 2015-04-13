@@ -198,9 +198,9 @@ func manage(c *cli.Context) {
 	var cl cluster.Cluster
 	switch c.String("cluster") {
 	case "mesos":
-		cl = mesos.NewCluster(sched, store, eventsHandler, options)
+		cl = mesos.NewCluster(sched, store, options)
 	case "swarm":
-		cl = swarm.NewCluster(sched, store, eventsHandler, options)
+		cl = swarm.NewCluster(sched, store, options)
 	default:
 		log.Fatalf("Unsupported cluster %q", c.String("cluster"))
 	}
