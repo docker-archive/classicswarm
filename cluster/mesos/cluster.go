@@ -1,7 +1,12 @@
 package mesos
 
 import (
+	"errors"
 	"fmt"
+	"net"
+	"os"
+	"sort"
+	"strconv"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
@@ -29,26 +34,56 @@ type Cluster struct {
 }
 
 var (
-	frameworkName = "swarm"
-	user          = ""
+	frameworkName    = "swarm"
+	dockerDaemonPort = "2375"
 )
 
 // NewCluster for mesos Cluster creation
-func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, eventhandler cluster.EventHandler, options *cluster.Options) cluster.Cluster {
+func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, options *cluster.Options) cluster.Cluster {
 	log.WithFields(log.Fields{"name": "mesos"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
-		eventHandler: eventhandler,
-		slaves:       make(map[string]*slave),
-		scheduler:    scheduler,
-		options:      options,
-		store:        store,
+		slaves:    make(map[string]*slave),
+		scheduler: scheduler,
+		options:   options,
+		store:     store,
 	}
+
+	// Empty string is accepted by the scheduler.
+	user := os.Getenv("SWARM_MESOS_USER")
 
 	driverConfig := mesosscheduler.DriverConfig{
 		Scheduler: cluster,
 		Framework: &mesosproto.FrameworkInfo{Name: &frameworkName, User: &user},
 		Master:    options.Discovery,
+	}
+
+	// Changing port for https
+	if options.TLSConfig != nil {
+		dockerDaemonPort = "2376"
+	}
+
+	bindingAddressEnv := os.Getenv("SWARM_MESOS_ADDRESS")
+	bindingPortEnv := os.Getenv("SWARM_MESOS_PORT")
+
+	if bindingPortEnv != "" {
+		log.Debugf("SWARM_MESOS_PORT found, Binding port to %s", bindingPortEnv)
+		bindingPort, err := strconv.ParseUint(bindingPortEnv, 0, 16)
+		if err != nil {
+			log.Errorf("Unable to parse SWARM_MESOS_PORT, error: %s", err)
+			return nil
+		}
+		driverConfig.BindingPort = uint16(bindingPort)
+	}
+
+	if bindingAddressEnv != "" {
+		log.Debugf("SWARM_MESOS_ADDRESS found, Binding address to %s", bindingAddressEnv)
+		bindingAddress := net.ParseIP(bindingAddressEnv)
+		if bindingAddress == nil {
+			log.Error("Unable to parse SWARM_MESOS_ADDRESS")
+			return nil
+		}
+		driverConfig.BindingAddress = bindingAddress
 	}
 
 	driver, err := mesosscheduler.NewMesosSchedulerDriver(driverConfig)
@@ -59,12 +94,21 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, eventhandler
 	cluster.driver = driver
 
 	status, err := driver.Start()
-	log.Debugf("NewCluster %v: %v", status, err)
+	log.Debugf("Mesos driver started, status/err %v: %v", status, err)
 	if err != nil {
 		return nil
 	}
 
 	return cluster
+}
+
+// RegisterEventHandler registers an event handler.
+func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
+	if c.eventHandler != nil {
+		return errors.New("event handler already set")
+	}
+	c.eventHandler = h
+	return nil
 }
 
 // CreateContainer for container creation
@@ -85,12 +129,14 @@ func (c *Cluster) CreateContainer(config *dockerclient.ContainerConfig, name str
 			return nil, fmt.Errorf("Container failed to create")
 		}
 
-		st := &state.RequestedState{
-			ID:     container.Id,
-			Name:   name,
-			Config: config,
-		}
-		return container, c.store.Add(container.Id, st)
+		// TODO: do not store the container as it might be a wrong ContainerID
+		// see TODO in slave.go
+		//st := &state.RequestedState{
+		//ID:     container.Id,
+		//Name:   name,
+		//Config: config,
+		//}
+		return container, nil //c.store.Add(container.Id, st)
 	}
 	return nil, nil
 }
@@ -114,16 +160,16 @@ func (c *Cluster) Images() []*cluster.Image {
 }
 
 // Image returns an image with IdOrName in the cluster
-func (c *Cluster) Image(IdOrName string) *cluster.Image {
+func (c *Cluster) Image(IDOrName string) *cluster.Image {
 	// Abort immediately if the name is empty.
-	if len(IdOrName) == 0 {
+	if len(IDOrName) == 0 {
 		return nil
 	}
 
 	c.RLock()
 	defer c.RUnlock()
 	for _, n := range c.slaves {
-		if image := n.Image(IdOrName); image != nil {
+		if image := n.Image(IDOrName); image != nil {
 			return image
 		}
 	}
@@ -145,16 +191,16 @@ func (c *Cluster) Containers() []*cluster.Container {
 }
 
 // Container returns the container with IdOrName in the cluster
-func (c *Cluster) Container(IdOrName string) *cluster.Container {
+func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	// Abort immediately if the name is empty.
-	if len(IdOrName) == 0 {
+	if len(IDOrName) == 0 {
 		return nil
 	}
 
 	c.RLock()
 	defer c.RUnlock()
 	for _, n := range c.slaves {
-		if container := n.Container(IdOrName); container != nil {
+		if container := n.Container(IDOrName); container != nil {
 			return container
 		}
 	}
@@ -205,9 +251,10 @@ func (c *Cluster) Info() [][2]string {
 		{"\bSlaves", fmt.Sprintf("%d", len(c.slaves))},
 	}
 
-	//sort.Sort(cluster.EngineSorter(nodes))
+	slaves := c.listSlaves()
+	sort.Sort(SlaveSorter(slaves))
 
-	for _, slave := range c.listSlaves() {
+	for _, slave := range slaves {
 		info = append(info, [2]string{slave.Name, slave.Addr})
 		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(slave.Containers()))})
 		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", slave.UsedCpus(), slave.TotalCpus())})
@@ -225,15 +272,18 @@ func (c *Cluster) Info() [][2]string {
 }
 
 // Registered method for registered mesos framework
-func (c *Cluster) Registered(mesosscheduler.SchedulerDriver, *mesosproto.FrameworkID, *mesosproto.MasterInfo) {
+func (c *Cluster) Registered(driver mesosscheduler.SchedulerDriver, fwID *mesosproto.FrameworkID, masterInfo *mesosproto.MasterInfo) {
+	log.Debugf("Swarm is registered with Mesos with framework id: %s", fwID.GetValue())
 }
 
 // Reregistered method for registered mesos framework
 func (c *Cluster) Reregistered(mesosscheduler.SchedulerDriver, *mesosproto.MasterInfo) {
+	log.Debug("Swarm is re-registered with Mesos")
 }
 
 // Disconnected method
 func (c *Cluster) Disconnected(mesosscheduler.SchedulerDriver) {
+	log.Debug("Swarm is disconnectd with Mesos")
 }
 
 // ResourceOffers method
@@ -241,16 +291,16 @@ func (c *Cluster) ResourceOffers(_ mesosscheduler.SchedulerDriver, offers []*mes
 	log.WithFields(log.Fields{"name": "mesos", "offers": len(offers)}).Debug("Offers received")
 
 	for _, offer := range offers {
-		slaveId := offer.SlaveId.GetValue()
-		if slave, ok := c.slaves[slaveId]; ok {
+		slaveID := offer.SlaveId.GetValue()
+		if slave, ok := c.slaves[slaveID]; ok {
 			slave.addOffer(offer)
 		} else {
-			slave := NewSlave(*offer.Hostname+":4242", c.options.OvercommitRatio, offer)
+			slave := newSlave(*offer.Hostname+":"+dockerDaemonPort, c.options.OvercommitRatio, offer)
 			err := slave.Connect(c.options.TLSConfig)
 			if err != nil {
 				log.Error(err)
 			} else {
-				c.slaves[slaveId] = slave
+				c.slaves[slaveID] = slave
 			}
 		}
 	}
@@ -264,16 +314,23 @@ func (c *Cluster) OfferRescinded(mesosscheduler.SchedulerDriver, *mesosproto.Off
 func (c *Cluster) StatusUpdate(_ mesosscheduler.SchedulerDriver, taskStatus *mesosproto.TaskStatus) {
 	log.WithFields(log.Fields{"name": "mesos", "state": taskStatus.State.String()}).Debug("Status update")
 
-	ID := taskStatus.TaskId.GetValue()
-	slaveId := taskStatus.SlaveId.GetValue()
-
-	if slave, ok := c.slaves[slaveId]; ok {
-		fmt.Println("Slave", slaveId, "found")
-		slave.updates[ID] <- taskStatus.State.String()
+	if slave, ok := c.slaves[taskStatus.SlaveId.GetValue()]; ok {
+		if ch, ok := slave.statuses[taskStatus.TaskId.GetValue()]; ok {
+			ch <- taskStatus
+		}
 	} else {
-		fmt.Println("Slave", slaveId, "not found")
+		var reason = ""
+		if taskStatus.Reason != nil {
+			reason = taskStatus.GetReason().String()
+		}
+
+		log.WithFields(log.Fields{
+			"name":    "mesos",
+			"state":   taskStatus.State.String(),
+			"slaveId": taskStatus.SlaveId.GetValue(),
+			"reason":  reason,
+		}).Warn("Status update received for unknown slave")
 	}
-	fmt.Println("end")
 }
 
 // FrameworkMessage method
@@ -291,4 +348,16 @@ func (c *Cluster) ExecutorLost(mesosscheduler.SchedulerDriver, *mesosproto.Execu
 // Error method
 func (c *Cluster) Error(d mesosscheduler.SchedulerDriver, msg string) {
 	log.Error(msg)
+}
+
+// RANDOMENGINE returns a random engine.
+func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), &dockerclient.ContainerConfig{})
+	if err != nil {
+		return nil, err
+	}
+	if n != nil {
+		return &c.slaves[n.ID].Engine, nil
+	}
+	return nil, nil
 }

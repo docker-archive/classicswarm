@@ -3,12 +3,14 @@ package mesos
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
+	"github.com/mesos/mesos-go/mesosutil"
 	mesosscheduler "github.com/mesos/mesos-go/scheduler"
 	"github.com/samalba/dockerclient"
 )
@@ -16,23 +18,23 @@ import (
 type slave struct {
 	cluster.Engine
 
-	slaveID string
-	offers  []*mesosproto.Offer
-	updates map[string]chan string
+	slaveID  *mesosproto.SlaveID
+	offers   []*mesosproto.Offer
+	statuses map[string]chan *mesosproto.TaskStatus
 }
 
 // NewSlave creates mesos slave agent
-func NewSlave(addr string, overcommitRatio float64, offer *mesosproto.Offer) *slave {
+func newSlave(addr string, overcommitRatio float64, offer *mesosproto.Offer) *slave {
 	slave := &slave{Engine: *cluster.NewEngine(addr, overcommitRatio)}
 	slave.offers = []*mesosproto.Offer{offer}
-	slave.slaveID = offer.SlaveId.GetValue()
-	slave.updates = make(map[string]chan string)
+	slave.statuses = make(map[string]chan *mesosproto.TaskStatus)
+	slave.slaveID = offer.SlaveId
 	return slave
 }
 
 func (s *slave) toNode() *node.Node {
 	return &node.Node{
-		ID:          s.slaveID,
+		ID:          s.slaveID.GetValue(),
 		IP:          s.IP,
 		Addr:        s.Addr,
 		Name:        s.Name,
@@ -72,37 +74,40 @@ func (s *slave) UsedCpus() int64 {
 	return s.TotalCpus() - int64(s.scalarResourceValue("cpus"))
 }
 
-func (s *slave) create(driver *mesosscheduler.MesosSchedulerDriver, config *dockerclient.ContainerConfig, name string, pullImage bool) (*cluster.Container, error) {
-
+func generateTaskID() (string, error) {
 	id := make([]byte, 6)
-	nn, err := rand.Read(id)
-	if nn != len(id) || err != nil {
+	if _, err := rand.Read(id); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(id), nil
+}
+
+func (s *slave) create(driver *mesosscheduler.MesosSchedulerDriver, config *dockerclient.ContainerConfig, name string, pullImage bool) (*cluster.Container, error) {
+	ID, err := generateTaskID()
+	if err != nil {
 		return nil, err
 	}
-	ID := hex.EncodeToString(id)
 
-	s.updates[ID] = make(chan string)
+	s.statuses[ID] = make(chan *mesosproto.TaskStatus)
 
-	cpus := "cpus"
-	typ := mesosproto.Value_SCALAR
-	val := 1.0
+	resources := []*mesosproto.Resource{}
+
+	if cpus := config.CpuShares; cpus > 0 {
+		resources = append(resources, mesosutil.NewScalarResource("cpus", float64(cpus)))
+	}
+
+	if mem := config.Memory; mem > 0 {
+		resources = append(resources, mesosutil.NewScalarResource("mem", float64(mem/1024/1024)))
+	}
 
 	taskInfo := &mesosproto.TaskInfo{
 		Name: &name,
 		TaskId: &mesosproto.TaskID{
 			Value: &ID,
 		},
-		SlaveId: s.offers[0].SlaveId,
-		Resources: []*mesosproto.Resource{
-			{
-				Name: &cpus,
-				Type: &typ,
-				Scalar: &mesosproto.Value_Scalar{
-					Value: &val,
-				},
-			},
-		},
-		Command: &mesosproto.CommandInfo{},
+		SlaveId:   s.slaveID,
+		Resources: resources,
+		Command:   &mesosproto.CommandInfo{},
 	}
 
 	if len(config.Cmd) > 0 && config.Cmd[0] != "" {
@@ -137,7 +142,23 @@ func (s *slave) create(driver *mesosscheduler.MesosSchedulerDriver, config *dock
 	s.offers = []*mesosproto.Offer{}
 
 	// block until we get the container
-	<-s.updates[ID]
+
+	taskStatus := <-s.statuses[ID]
+	delete(s.statuses, ID)
+
+	switch taskStatus.GetState() {
+	case mesosproto.TaskState_TASK_STAGING:
+	case mesosproto.TaskState_TASK_STARTING:
+	case mesosproto.TaskState_TASK_RUNNING:
+	case mesosproto.TaskState_TASK_FINISHED:
+	case mesosproto.TaskState_TASK_FAILED:
+		return nil, errors.New(taskStatus.GetMessage())
+	case mesosproto.TaskState_TASK_KILLED:
+	case mesosproto.TaskState_TASK_LOST:
+		return nil, errors.New(taskStatus.GetMessage())
+	case mesosproto.TaskState_TASK_ERROR:
+		return nil, errors.New(taskStatus.GetMessage())
+	}
 
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
