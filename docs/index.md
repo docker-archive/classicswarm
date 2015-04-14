@@ -47,16 +47,15 @@ strategy. For details, see the [scheduler filter README](https://github.com/dock
 containers on the same host. For details, see
 [PR #972](https://github.com/docker/compose/pull/972).
 
-
-
 ## Pre-requisites for running Swarm
 
 You must install Docker 1.4.0 or later on all nodes. While each node's IP need not
 be public, the Swarm manager must be able to access each node across the network.
 
-To enable communication between the Swarm manager and the Swarm node agent on each 
-node, each node must listen to the same network interface (tcp port). Follow the set
-up below to ensure you configure your nodes correctly for this behavior.
+To enable communication between the Swarm manager and the Swarm node agent on
+each node, each node must listen to the same network interface (TCP port).
+Follow the set up below to ensure you configure your nodes correctly for this
+behavior.
 
 > **Note**: Swarm is currently in beta, so things are likely to change. We
 > don't recommend you use it in production yet.
@@ -67,12 +66,12 @@ The easiest way to get started with Swarm is to use the
 [official Docker image](https://registry.hub.docker.com/_/swarm/).
 
 ```bash
-docker pull swarm
+$ docker pull swarm
 ```
 
 ## Set up Swarm nodes
 
-Each swarm node will run a swarm node agent. The agent registers the referenced
+Each Swarm node will run a swarm node agent. The agent registers the referenced
 Docker daemon, monitors it, and updates the discovery backend with the node's status.
 
 The following example uses the Docker Hub based `token` discovery service:
@@ -84,18 +83,22 @@ The following example uses the Docker Hub based `token` discovery service:
     6856663cdefdec325839a4b7e1de38e8 # <- this is your unique <cluster_id>
     ```
 
-    The create command returns a unique cluster id (`cluster_id`). You'll need
-    this id when starting the Swarm agent on a node.
+    The `create` command returns a unique cluster ID (`cluster_id`). You'll need
+    this ID when starting the Swarm agent on a node.
 
 2. Log into **each node** and do the following.
 
-    1. Start the docker daemon with the `-H` flag. This ensures that the docker remote API on *Swarm Agents* is available over TCP for the *Swarm Manager*.
+    1. Start the Docker daemon with the `-H` flag. This ensures that the Docker remote API on *Swarm Agents* is available over TCP for the *Swarm Manager*.
 
+        ```bash
     		$ docker -H tcp://0.0.0.0:2375 -d
+        ```
 
     2. Register the Swarm agents to the discovery service. The node's IP must be accessible from the Swarm Manager. Use the following command and replace with the proper `node_ip` and `cluster_id` to start an agent:
 
-        	docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>
+        ```bash
+        docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>
+        ```
 
         For example:
 
@@ -106,41 +109,47 @@ The following example uses the Docker Hub based `token` discovery service:
 3. Start the Swarm manager on any machine or your laptop. The following command
 illustrates how to do this:
 
+      ```bash
     	docker run -d -p <swarm_port>:2375 swarm manage token://<cluster_id>
+      ```
 
 4. Once the manager is running, check your configuration by running `docker info` as follows:
 
+      ```bash
     	docker -H tcp://<manager_ip:manager_port> info
-    
-    For example, if you run the manager locally on your machine:
+      ```
 
-    ```bash
-    $ docker -H tcp://0.0.0.0:2375 info
-    Containers: 0
-    Nodes: 3
-     agent-2: 172.31.40.102:2375
-      └ Containers: 0
-      └ Reserved CPUs: 0 / 1
-      └ Reserved Memory: 0 B / 514.5 MiB
-     agent-1: 172.31.40.101:2375
-      └ Containers: 0
-      └ Reserved CPUs: 0 / 1
-      └ Reserved Memory: 0 B / 514.5 MiB
-     agent-0: 172.31.40.100:2375
-      └ Containers: 0
-      └ Reserved CPUs: 0 / 1
-      └ Reserved Memory: 0 B / 514.5 MiB
-    ```
-    
+      For example, if you run the manager locally on your machine:
+
+      ```bash
+      $ docker -H tcp://0.0.0.0:2375 info
+      Containers: 0
+      Nodes: 3
+       agent-2: 172.31.40.102:2375
+        └ Containers: 0
+        └ Reserved CPUs: 0 / 1
+        └ Reserved Memory: 0 B / 514.5 MiB
+       agent-1: 172.31.40.101:2375
+        └ Containers: 0
+        └ Reserved CPUs: 0 / 1
+        └ Reserved Memory: 0 B / 514.5 MiB
+       agent-0: 172.31.40.100:2375
+        └ Containers: 0
+        └ Reserved CPUs: 0 / 1
+        └ Reserved Memory: 0 B / 514.5 MiB
+      ```
+
     If you are running a test cluster without TLS enabled, you may get an error. In that case, be sure to unset `DOCKER_TLS_VERIFY` with:
-    
+
+      ```bash
     	$ unset DOCKER_TLS_VERIFY
+      ```
 
 ## Using the docker CLI
 
-You can now use the regular `docker` CLI to access your nodes:
+You can now use the regular Docker CLI to access your nodes:
 
-```
+```bash
 docker -H tcp://<manager_ip:manager_port> info
 docker -H tcp://<manager_ip:manager_port> run ...
 docker -H tcp://<manager_ip:manager_port> ps
@@ -151,8 +160,8 @@ docker -H tcp://<manager_ip:manager_port> logs ...
 
 You can get a list of all your running nodes using the `swarm list` command:
 
-```
-`docker run --rm swarm list token://<cluster_id>`
+```bash
+docker run --rm swarm list token://<cluster_id>
 <node_ip:2375>
 ```
 
@@ -174,13 +183,15 @@ certificates **must** be signed using the same CA-certificate.
 In order to enable TLS for both client and server, the same command line options
 as Docker can be specified:
 
-`swarm manage --tlsverify --tlscacert=<CACERT> --tlscert=<CERT> --tlskey=<KEY> [...]`
+```bash
+swarm manage --tlsverify --tlscacert=<CACERT> --tlscert=<CERT> --tlskey=<KEY> [...]
+```
 
 Please refer to the [Docker documentation](https://docs.docker.com/articles/https/)
 for more information on how to set up TLS authentication on Docker and generating
 the certificates.
 
-> **Note**: Swarm certificates must be generated with`extendedKeyUsage = clientAuth,serverAuth`.
+> **Note**: Swarm certificates must be generated with `extendedKeyUsage = clientAuth,serverAuth`.
 
 ## Discovery services
 
@@ -195,10 +206,9 @@ more about advanced scheduling.
 ## Swarm API
 
 The [Docker Swarm API](https://docs.docker.com/swarm/API/) is compatible with
-the [Docker
-remote API](http://docs.docker.com/reference/api/docker_remote_api/), and
-extends it with some new endpoints.
-
+the [Docker remote
+API](http://docs.docker.com/reference/api/docker_remote_api/), and extends it
+with some new endpoints.
 
 ## Getting help
 
