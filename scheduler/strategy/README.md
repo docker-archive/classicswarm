@@ -33,7 +33,7 @@ nodes at random regardless of their available CPU or RAM.
 
 Using the `spread` strategy results in containers spread thinly over many
 machines. The advantage of this strategy is that if a node goes down you only
-loose a few containers.
+lose a few containers.
 
 The `binpack` strategy avoids fragmentation because it leaves room for bigger
 containers on unused machines. The strategic advantage of `binpack` is that you
