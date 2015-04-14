@@ -24,7 +24,7 @@ strategy uses no computation. It selects a node at random and is primarily
 intended for debugging.
 
 Your goal in choosing a strategy is to best optimize your swarm according to
-your company's needs. 
+your company's needs.
 
 Under the `spread` strategy, Swarm optimizes for the node with the least number
 of running containers. The `binpack` strategy causes Swarm to optimize for the
@@ -33,22 +33,21 @@ nodes at random regardless of their available CPU or RAM.
 
 Using the `spread` strategy results in containers spread thinly over many
 machines. The advantage of this strategy is that if a node goes down you only
-loose a few containers. 
+lose a few containers.
 
 The `binpack` strategy avoids fragmentation because it leaves room for bigger
 containers on unused machines. The strategic advantage of `binpack` is that you
 use fewer machines as Swarm tries to pack as many containers as it can on a
-node. 
+node.
 
 If you do not specify a `--strategy` Swarm uses `spread` by default.
-
 
 ## Spread strategy example
 
 In this example, your swarm is using the `spread` strategy which optimizes for
 nodes that have the fewest containers. In this swarm, both `node-1` and `node-2`
 have 2G of RAM, 2 CPUs, and neither node is running a container. Under this strategy
-`node-1` and `node-2` have the same ranking. 
+`node-1` and `node-2` have the same ranking.
 
 When you run a new container, the system chooses `node-1` at random from the swarm
 of two equally ranked nodes:
@@ -75,16 +74,14 @@ f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute   
 ```
 
 The container `frontend` was started on `node-2` because it was the node the
-least packed already. If two nodes have the same amount of available RAM and
+least loaded already. If two nodes have the same amount of available RAM and
 CPUs, the `spread` strategy prefers the node with least containers running.
-
 
 ## BinPack strategy example
 
 In this example, let's says that both `node-1` and `node-2` have 2G of RAM and
 neither is running a container. Again, the nodes are equal. When you run a new
 container, the system chooses `node-1` at random from the swarm:
-
 
 ```bash
 $ docker run -d -P -m 1G --name db mysql
@@ -113,7 +110,6 @@ of RAM on `node-2`.
 
 If two nodes have the same amount of available RAM and CPUs, the `binpack`
 strategy prefers the node with most containers running.
-
 
 ## Docker Swarm documentation index
 

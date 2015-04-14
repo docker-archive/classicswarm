@@ -57,7 +57,7 @@ tags and will take them into account when scheduling new containers.
 Let's start a MySQL server and make sure it gets good I/O performance by selecting
 nodes with flash drives:
 
-```
+```bash
 $ docker run -d -P -e constraint:storage==ssd --name db mysql
 f8b693db9cd6
 
@@ -70,10 +70,10 @@ In this case, the master selected all nodes that met the `storage=ssd` constrain
 and applied resource management on top of them, as discussed earlier.
 `node-1` was selected in this example since it's the only host running flash.
 
-Now we want to run an `nginx` frontend in our cluster. However, we don't want
+Now we want to run an Nginx frontend in our cluster. However, we don't want
 *flash* drives since we'll mostly write logs to disk.
 
-```
+```bash
 $ docker run -d -P -e constraint:storage==disk --name frontend nginx
 963841b138d8
 
@@ -102,7 +102,7 @@ without specifying them when starting the node. Those tags are sourced from
 
 You can schedule 2 containers and make the container #2 next to the container #1.
 
-```
+```bash
 $ docker run -d -p 80:80 --name front nginx
  87c4376856a8
 
@@ -114,7 +114,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 Using `-e affinity:container==front` will schedule a container next to the container `front`.
 You can also use IDs instead of name: `-e affinity:container==87c4376856a8`
 
-```
+```bash
 $ docker run -d --name logger -e affinity:container==front logger
  87c4376856a8
 
@@ -128,9 +128,9 @@ The `logger` container ends up on `node-1` because its affinity with the contain
 
 #### Images
 
-You can schedule a container only on nodes where the images are already pulled.
+You can schedule a container only on nodes where a specific image is already pulled.
 
-```
+```bash
 $ docker -H node-1:2375 pull redis
 $ docker -H node-2:2375 pull mysql
 $ docker -H node-3:2375 pull redis
@@ -139,7 +139,7 @@ $ docker -H node-3:2375 pull redis
 Here only `node-1` and `node-3` have the `redis` image. Using `-e affinity:image=redis` we can
 schedule container only on these 2 nodes. You can also use the image ID instead of its name.
 
-```
+```bash
 $ docker run -d --name redis1 -e affinity:image==redis redis
 $ docker run -d --name redis2 -e affinity:image==redis redis
 $ docker run -d --name redis3 -e affinity:image==redis redis
@@ -161,7 +161,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 963841b138d8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis8
 ```
 
-As you can see here, the containers were only scheduled on nodes with the redis image already pulled.
+As you can see here, the containers were only scheduled on nodes with the `redis` image already pulled.
 
 #### Expression Syntax
 
@@ -173,7 +173,7 @@ A `value` must be one of the following:
 * A globbing pattern, i.e., `abc*`.
 * A regular expression in the form of `/regexp/`. We support the Go's regular expression syntax.
 
-Current `swarm` supports affinity/constraint operators as the following: `==` and `!=`.
+Currently Swarm supports the following affinity/constraint operators: `==` and `!=`.
 
 For example,
 * `constraint:node==node1` will match node `node1`.
@@ -183,7 +183,7 @@ For example,
 * `constraint:node==/node\d/` will match all nodes with `node` + 1 digit.
 * `constraint:node!=/node-[01]/` will match all nodes, except `node-0` and `node-1`.
 * `constraint:node!=/foo\[bar\]/` will match all nodes, except `foo[bar]`. You can see the use of escape characters here.
-* `constraint:node==/(?i)node1/` will match node `node1` case-insensitive. So 'NoDe1' or 'NODE1' will also match.
+* `constraint:node==/(?i)node1/` will match node `node1` case-insensitive. So `NoDe1` or `NODE1` will also match.
 
 #### Soft Affinities/Constraints
 
@@ -193,33 +193,37 @@ affinities/constraints the scheduler will try to meet the rule. If it is not
 met, the scheduler will discard the filter and schedule the container according
 to the scheduler's strategy.
 
-soft affinities/constraints are expressed with a **~** in the expression
-Example ,
-```
+Soft affinities/constraints are expressed with a **~** in the
+expression, for example:
+
+```bash
 $ docker run -d --name redis1 -e affinity:image==~redis redis
 ```
-If none of the nodes in the cluster has the image redis, the scheduler will
-discard the affinity and schedules according to the strategy.
 
-```
+If none of the nodes in the cluster has the image `redis`, the scheduler will
+discard the affinity and schedule according to the strategy.
+
+```bash
 $ docker run -d --name redis2 -e constraint:region==~us* redis
 ```
-If none of the nodes in the cluster belongs to `us` region, the scheduler will
-discard the constraint and schedules according to the strategy.
 
-```
+If none of the nodes in the cluster belongs to the `us` region, the scheduler will
+discard the constraint and schedule according to the strategy.
+
+```bash
 $ docker run -d --name redis5 -e affinity:container!=~redis* redis
 ```
+
 The affinity filter will be used to schedule a new `redis5` container to a
 different node that doesn't have a container with the name that satisfies
 `redis*`. If each node in the cluster has a `redis*` container, the scheduler
-will discard the affinity rule and schedules according to the strategy.
+will discard the affinity rule and schedule according to the strategy.
 
 ## Port Filter
 
-With this filter, `ports` are considered as unique resources.
+With this filter, `ports` are considered unique resources.
 
-```
+```bash
 $ docker run -d -p 80:80 nginx
 87c4376856a8
 
@@ -232,9 +236,9 @@ Docker cluster selects a node where the public `80` port is available and schedu
 a container on it, in this case `node-1`.
 
 Attempting to run another container with the public `80` port will result in
-clustering selecting a different node, since that port is already occupied on `node-1`:
+the cluster selecting a different node, since that port is already occupied on `node-1`:
 
-```
+```bash
 $ docker run -d -p 80:80 nginx
 963841b138d8
 
@@ -247,7 +251,7 @@ CONTAINER ID        IMAGE          COMMAND        PORTS                         
 Again, repeating the same command will result in the selection of `node-3`, since
 port `80` is neither available on `node-1` nor `node-2`:
 
-```
+```bash
 $ docker run -d -p 80:80 nginx
 963841b138d8
 
@@ -258,20 +262,26 @@ f8b693db9cd6   nginx:latest        "nginx"        192.168.0.44:80->80/tcp       
 87c4376856a8   nginx:latest        "nginx"        192.168.0.42:80->80/tcp         node-1      prickly_engelbart
 ```
 
-Finally, Docker Cluster will refuse to run another container that requires port
+Finally, Docker Swarm will refuse to run another container that requires port
 `80` since not a single node in the cluster has it available:
 
-```
+```bash
 $ docker run -d -p 80:80 nginx
 2014/10/29 00:33:20 Error response from daemon: no resources available to schedule container
 ```
 
 ### Port filter in Host Mode
 
-Docker in the host mode, running with `--net=host`, differs from the default `bridge` mode as the `host` mode does not perform any port binding. So, it requires to explicitly expose one or more port numbers (using `EXPOSE` in the Dockerfile or `--expose` on the command line). `Swarm` makes use of this information in conjunction with the `host` mode to choose an available node for a new container.
+Docker in the host mode, running with `--net=host`, differs from the
+default `bridge` mode as the `host` mode does not perform any port
+binding. So, it require that you  explicitly expose one or more port numbers
+(using `EXPOSE` in the `Dockerfile` or `--expose` on the command line).
+Swarm makes use of this information in conjunction with the `host`
+mode to choose an available node for a new container.
 
 For example, the following commands start `nginx` on 3-node cluster.
-```
+
+```bash
 $ docker run -d --expose=80 --net=host nginx
 640297cb29a7
 $ docker run -d --expose=80 --net=host nginx
@@ -280,8 +290,9 @@ $ docker run -d --expose=80 --net=host nginx
 09a92f582bc2
 ```
 
-Port binding information will not be available through `ps` command because they are all started in the `host` mode.
-```
+Port binding information will not be available through the `docker ps` command because all the nodes are started in the `host` mode.
+
+```bash
 $ docker ps
 CONTAINER ID        IMAGE               COMMAND                CREATED                  STATUS              PORTS               NAMES
 640297cb29a7        nginx:1             "nginx -g 'daemon of   Less than a second ago   Up 30 seconds                           box3/furious_heisenberg
@@ -289,15 +300,16 @@ CONTAINER ID        IMAGE               COMMAND                CREATED          
 09a92f582bc2        nginx:1             "nginx -g 'daemon of   46 seconds ago           Up 27 seconds                           box1/mad_goldstine
 ```
 
-Docker cluster will refuse the operation when trying to instantiate the 4th one.
-```
+The swarm will refuse the operation when trying to instantiate the 4th container.
+
+```bash
 $  docker run -d --expose=80 --net=host nginx
 FATA[0000] Error response from daemon: unable to find a node with port 80/tcp available in the Host mode
 ```
 
-However port binding to the different value, e.g. 81, is still allowed.
+However port binding to the different value, e.g. `81`, is still allowed.
 
-```
+```bash
 $  docker run -d -p 81:80 nginx:latest
 832f42819adc
 $  docker ps
