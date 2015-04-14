@@ -92,7 +92,7 @@ func (e *Engine) connectClient(client dockerclient.Client) error {
 		return err
 	}
 
-	if err := e.refreshImages(); err != nil {
+	if err := e.RefreshImages(); err != nil {
 		e.client = nil
 		return err
 	}
@@ -155,8 +155,8 @@ func (e *Engine) RemoveImage(image *Image) ([]*dockerclient.ImageDelete, error) 
 	return e.client.RemoveImage(image.Id)
 }
 
-// Refresh the list of images on the engine.
-func (e *Engine) refreshImages() error {
+// RefreshImages refreshes the list of images on the engine.
+func (e *Engine) RefreshImages() error {
 	images, err := e.client.ListImages()
 	if err != nil {
 		return err
@@ -275,7 +275,7 @@ func (e *Engine) refreshLoop() {
 		}
 
 		if err == nil {
-			err = e.refreshImages()
+			err = e.RefreshImages()
 		}
 
 		if err != nil {
@@ -490,7 +490,7 @@ func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface
 	case "pull", "untag", "delete":
 		// These events refer to images so there's no need to update
 		// containers.
-		e.refreshImages()
+		e.RefreshImages()
 	case "start", "die":
 		// If the container is started or stopped, we have to do an inspect in
 		// order to get the new NetworkSettings.
