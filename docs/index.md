@@ -71,7 +71,7 @@ $ docker pull swarm
 
 ## Set up Swarm nodes
 
-Each Swarm node will run a swarm node agent. The agent registers the referenced
+Each Swarm node will run a Swarm node agent. The agent registers the referenced
 Docker daemon, monitors it, and updates the discovery backend with the node's status.
 
 The following example uses the Docker Hub based `token` discovery service:
