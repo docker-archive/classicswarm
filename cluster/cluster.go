@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"github.com/samalba/dockerclient"
+	"io"
 )
 
 // Cluster is exported
@@ -37,7 +38,7 @@ type Cluster interface {
 	// `callback` can be called multiple time
 	// `what` is what is being loaded
 	// `status` is the current status, like "", "in progress" or "loaded"
-	Load(tarFile string, callback func(what, status string))
+	Load(imageReader io.Reader, callback func(what, status string))
 
 	// Return some info about the cluster, like nb or containers / images
 	// It is pretty open, so the implementation decides what to return.

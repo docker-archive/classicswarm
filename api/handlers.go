@@ -4,11 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"path"
 	"runtime"
 	"sort"
 	"strconv"
@@ -275,25 +272,6 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /images/load
 func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
-	//cache tar file
-	tmpImageDir, err := ioutil.TempDir("", "docker-import-")
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer os.RemoveAll(tmpImageDir)
-
-	repoTarFile := path.Join(tmpImageDir, "repo.tar")
-	tarFile, err := os.Create(repoTarFile)
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if _, err := io.Copy(tarFile, r.Body); err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	tarFile.Close()
 
 	// call cluster to load image on every node
 	wf := NewWriteFlusher(w)
@@ -304,7 +282,7 @@ func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(wf, "%s:Loading Image... %s\n", what, status)
 		}
 	}
-	c.cluster.Load(repoTarFile, callback)
+	c.cluster.Load(r.Body, callback)
 }
 
 // GET /events

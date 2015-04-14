@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"net"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -413,13 +413,8 @@ func (e *Engine) Pull(image string) error {
 }
 
 // Load an image on the engine
-func (e *Engine) Load(tarFile string) error {
-	file, err := os.Open(tarFile)
-	if err != nil {
-		return err
-	}
-
-	if err := e.client.LoadImage(file); err != nil {
+func (e *Engine) Load(reader io.Reader) error {
+	if err := e.client.LoadImage(reader); err != nil {
 		return err
 	}
 	return nil

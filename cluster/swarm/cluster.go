@@ -3,6 +3,7 @@ package swarm
 import (
 	"errors"
 	"fmt"
+	"io"
 	"sort"
 	"sync"
 
@@ -239,25 +240,51 @@ func (c *Cluster) Pull(name string, callback func(what, status string)) {
 }
 
 // Load image
-func (c *Cluster) Load(tarFile string, callback func(what, status string)) {
+func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)) {
 	size := len(c.engines)
 	done := make(chan bool, size)
+
+	pipeWriters := []*io.PipeWriter{}
+	pipeReaders := []*io.PipeReader{}
 	for _, n := range c.engines {
-		go func(nn *cluster.Engine) {
-			if callback != nil {
-				callback(nn.Name, "")
-			}
-			err := nn.Load(tarFile)
+		pipeReader, pipeWriter := io.Pipe()
+		pipeReaders = append(pipeReaders, pipeReader)
+		pipeWriters = append(pipeWriters, pipeWriter)
+
+		go func(reader *io.PipeReader, nn *cluster.Engine) {
+			// call engine load image
+			err := nn.Load(reader)
 			if callback != nil {
 				if err != nil {
 					callback(nn.Name, err.Error())
-				} else {
-					callback(nn.Name, "loaded")
 				}
 			}
+			// clean up
+			defer reader.Close()
 			done <- true
-		}(n)
+
+		}(pipeReader, n)
 	}
+
+	// create multi-writer
+	listWriter := []io.Writer{}
+	for _, pipeW := range pipeWriters {
+		listWriter = append(listWriter, pipeW)
+	}
+	mutiWriter := io.MultiWriter(listWriter...)
+
+	// copy image-reader to muti-writer
+	_, err := io.Copy(mutiWriter, imageReader)
+	if err != nil {
+		log.Error(err)
+	}
+
+	// close pipe writers
+	for _, pipeW := range pipeWriters {
+		pipeW.Close()
+	}
+
+	// wait all host done
 	for i := 0; i < size; i++ {
 		<-done
 	}
