@@ -6,17 +6,17 @@ import (
 	"github.com/docker/swarm/discovery"
 )
 
-// NodesDiscoveryService is exported
-type NodesDiscoveryService struct {
+// DiscoveryService is exported
+type DiscoveryService struct {
 	entries []*discovery.Entry
 }
 
 func init() {
-	discovery.Register("nodes", &NodesDiscoveryService{})
+	discovery.Register("nodes", &DiscoveryService{})
 }
 
 // Initialize is exported
-func (s *NodesDiscoveryService) Initialize(uris string, _ uint64) error {
+func (s *DiscoveryService) Initialize(uris string, _ uint64) error {
 	for _, input := range strings.Split(uris, ",") {
 		for _, ip := range discovery.Generate(input) {
 			entry, err := discovery.NewEntry(ip)
@@ -31,15 +31,15 @@ func (s *NodesDiscoveryService) Initialize(uris string, _ uint64) error {
 }
 
 // Fetch is exported
-func (s *NodesDiscoveryService) Fetch() ([]*discovery.Entry, error) {
+func (s *DiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	return s.entries, nil
 }
 
 // Watch is exported
-func (s *NodesDiscoveryService) Watch(callback discovery.WatchCallback) {
+func (s *DiscoveryService) Watch(callback discovery.WatchCallback) {
 }
 
 // Register is exported
-func (s *NodesDiscoveryService) Register(addr string) error {
+func (s *DiscoveryService) Register(addr string) error {
 	return discovery.ErrNotImplemented
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func TestInitialize(t *testing.T) {
-	discovery := &TokenDiscoveryService{}
+	discovery := &DiscoveryService{}
 	err := discovery.Initialize("token", 0)
 	assert.NoError(t, err)
 	assert.Equal(t, discovery.token, "token")
@@ -23,7 +23,7 @@ func TestInitialize(t *testing.T) {
 }
 
 func TestRegister(t *testing.T) {
-	discovery := &TokenDiscoveryService{token: "TEST_TOKEN", url: DiscoveryURL}
+	discovery := &DiscoveryService{token: "TEST_TOKEN", url: DiscoveryURL}
 	expected := "127.0.0.1:2675"
 	assert.NoError(t, discovery.Register(expected))
 
