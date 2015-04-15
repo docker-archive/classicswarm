@@ -8,18 +8,18 @@ import (
 	"github.com/docker/swarm/discovery"
 )
 
-// DiscoveryService is exported
-type DiscoveryService struct {
+// Discovery is exported
+type Discovery struct {
 	heartbeat uint64
 	path      string
 }
 
 func init() {
-	discovery.Register("file", &DiscoveryService{})
+	discovery.Register("file", &Discovery{})
 }
 
 // Initialize is exported
-func (s *DiscoveryService) Initialize(path string, heartbeat uint64) error {
+func (s *Discovery) Initialize(path string, heartbeat uint64) error {
 	s.path = path
 	s.heartbeat = heartbeat
 	return nil
@@ -47,7 +47,7 @@ func parseFileContent(content []byte) []string {
 }
 
 // Fetch is exported
-func (s *DiscoveryService) Fetch() ([]*discovery.Entry, error) {
+func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 	fileContent, err := ioutil.ReadFile(s.path)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (s *DiscoveryService) Fetch() ([]*discovery.Entry, error) {
 }
 
 // Watch is exported
-func (s *DiscoveryService) Watch(callback discovery.WatchCallback) {
+func (s *Discovery) Watch(callback discovery.WatchCallback) {
 	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
 		entries, err := s.Fetch()
 		if err == nil {
@@ -66,6 +66,6 @@ func (s *DiscoveryService) Watch(callback discovery.WatchCallback) {
 }
 
 // Register is exported
-func (s *DiscoveryService) Register(addr string) error {
+func (s *Discovery) Register(addr string) error {
 	return discovery.ErrNotImplemented
 }
