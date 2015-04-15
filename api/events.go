@@ -9,23 +9,24 @@ import (
 	"github.com/docker/swarm/cluster"
 )
 
-type eventsHandler struct {
+// EventsHandler broadcasts events to multiple client listeners.
+type EventsHandler struct {
 	sync.RWMutex
 	ws map[string]io.Writer
 	cs map[string]chan struct{}
 }
 
-// NewEventsHandler creates a new eventsHandler for a cluster.
+// NewEventsHandler creates a new EventsHandler for a cluster.
 // The new eventsHandler is initialized with no writers or channels.
-func NewEventsHandler() *eventsHandler {
-	return &eventsHandler{
+func NewEventsHandler() *EventsHandler {
+	return &EventsHandler{
 		ws: make(map[string]io.Writer),
 		cs: make(map[string]chan struct{}),
 	}
 }
 
 // Add adds the writer and a new channel for the remote address.
-func (eh *eventsHandler) Add(remoteAddr string, w io.Writer) {
+func (eh *EventsHandler) Add(remoteAddr string, w io.Writer) {
 	eh.Lock()
 	eh.ws[remoteAddr] = w
 	eh.cs[remoteAddr] = make(chan struct{})
@@ -33,13 +34,13 @@ func (eh *eventsHandler) Add(remoteAddr string, w io.Writer) {
 }
 
 // Wait waits on a signal from the remote address.
-func (eh *eventsHandler) Wait(remoteAddr string) {
+func (eh *EventsHandler) Wait(remoteAddr string) {
 	<-eh.cs[remoteAddr]
 }
 
 // Handle writes information about a cluster event to each remote address in the cluster that has been added to the events handler.
 // After a successful write to a remote address, the associated channel is closed and the address is removed from the events handler.
-func (eh *eventsHandler) Handle(e *cluster.Event) error {
+func (eh *EventsHandler) Handle(e *cluster.Event) error {
 	eh.RLock()
 
 	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d,%q:{%q:%q,%q:%q,%q:%q,%q:%q}}",
@@ -71,7 +72,7 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 }
 
 // Size returns the number of remote addresses that the events handler currently contains.
-func (eh *eventsHandler) Size() int {
+func (eh *EventsHandler) Size() int {
 	eh.RLock()
 	defer eh.RUnlock()
 	return len(eh.ws)
