@@ -1,6 +1,8 @@
 package cluster
 
-import "github.com/samalba/dockerclient"
+import (
+	"github.com/samalba/dockerclient"
+)
 
 // Cluster is exported
 type Cluster interface {
@@ -34,4 +36,7 @@ type Cluster interface {
 	// Return some info about the cluster, like nb or containers / images
 	// It is pretty open, so the implementation decides what to return.
 	Info() [][2]string
+
+	// Register an event handler for cluster-wide events.
+	RegisterEventHandler(h EventHandler) error
 }
