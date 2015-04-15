@@ -10,19 +10,19 @@ import (
 	"github.com/docker/swarm/discovery"
 )
 
-// DiscoveryService is exported
-type DiscoveryService struct {
+// Discovery is exported
+type Discovery struct {
 	ttl    uint64
 	client *etcd.Client
 	path   string
 }
 
 func init() {
-	discovery.Register("etcd", &DiscoveryService{})
+	discovery.Register("etcd", &Discovery{})
 }
 
 // Initialize is exported
-func (s *DiscoveryService) Initialize(uris string, heartbeat uint64) error {
+func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
 	var (
 		// split here because uris can contain multiples ips
 		// like `etcd://192.168.0.1,192.168.0.2,192.168.0.3/path`
@@ -56,7 +56,7 @@ func (s *DiscoveryService) Initialize(uris string, heartbeat uint64) error {
 }
 
 // Fetch is exported
-func (s *DiscoveryService) Fetch() ([]*discovery.Entry, error) {
+func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 	resp, err := s.client.Get(s.path, true, true)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (s *DiscoveryService) Fetch() ([]*discovery.Entry, error) {
 }
 
 // Watch is exported
-func (s *DiscoveryService) Watch(callback discovery.WatchCallback) {
+func (s *Discovery) Watch(callback discovery.WatchCallback) {
 	watchChan := make(chan *etcd.Response)
 	go s.client.Watch(s.path, 0, true, watchChan, nil)
 	for _ = range watchChan {
@@ -83,7 +83,7 @@ func (s *DiscoveryService) Watch(callback discovery.WatchCallback) {
 }
 
 // Register is exported
-func (s *DiscoveryService) Register(addr string) error {
+func (s *Discovery) Register(addr string) error {
 	_, err := s.client.Set(path.Join(s.path, addr), addr, s.ttl)
 	return err
 }
