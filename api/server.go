@@ -35,7 +35,7 @@ func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error
 //
 // The expected format for a host string is [protocol://]address. The protocol
 // must be either "tcp" or "unix", with "tcp" used by default if not specified.
-func ListenAndServe(c cluster.Cluster, hosts []string, enableCors bool, tlsConfig *tls.Config, eventsHandler *eventsHandler) error {
+func ListenAndServe(c cluster.Cluster, hosts []string, enableCors bool, tlsConfig *tls.Config, eventsHandler *EventsHandler) error {
 	context := &context{
 		cluster:       c,
 		eventsHandler: eventsHandler,
