@@ -7,7 +7,7 @@ import (
 )
 
 func TestInitialize(t *testing.T) {
-	service := &ZkDiscoveryService{}
+	service := &DiscoveryService{}
 
 	assert.Equal(t, service.Initialize("127.0.0.1", 0).Error(), "invalid format \"127.0.0.1\", missing <path>")
 

@@ -11,22 +11,22 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
-// ZkDiscoveryService is exported
-type ZkDiscoveryService struct {
+// DiscoveryService is exported
+type DiscoveryService struct {
 	conn      *zk.Conn
 	path      []string
 	heartbeat uint64
 }
 
 func init() {
-	discovery.Register("zk", &ZkDiscoveryService{})
+	discovery.Register("zk", &DiscoveryService{})
 }
 
-func (s *ZkDiscoveryService) fullpath() string {
+func (s *DiscoveryService) fullpath() string {
 	return "/" + strings.Join(s.path, "/")
 }
 
-func (s *ZkDiscoveryService) createFullpath() error {
+func (s *DiscoveryService) createFullpath() error {
 	for i := 1; i <= len(s.path); i++ {
 		newpath := "/" + strings.Join(s.path[:i], "/")
 		_, err := s.conn.Create(newpath, []byte{1}, 0, zk.WorldACL(zk.PermAll))
@@ -41,7 +41,7 @@ func (s *ZkDiscoveryService) createFullpath() error {
 }
 
 // Initialize is exported
-func (s *ZkDiscoveryService) Initialize(uris string, heartbeat uint64) error {
+func (s *DiscoveryService) Initialize(uris string, heartbeat uint64) error {
 	var (
 		// split here because uris can contain multiples ips
 		// like `zk://192.168.0.1,192.168.0.2,192.168.0.3/path`
@@ -75,7 +75,7 @@ func (s *ZkDiscoveryService) Initialize(uris string, heartbeat uint64) error {
 }
 
 // Fetch is exported
-func (s *ZkDiscoveryService) Fetch() ([]*discovery.Entry, error) {
+func (s *DiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	addrs, _, err := s.conn.Children(s.fullpath())
 
 	if err != nil {
@@ -86,7 +86,7 @@ func (s *ZkDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 }
 
 // Watch is exported
-func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
+func (s *DiscoveryService) Watch(callback discovery.WatchCallback) {
 
 	addrs, _, eventChan, err := s.conn.ChildrenW(s.fullpath())
 	if err != nil {
@@ -112,7 +112,7 @@ func (s *ZkDiscoveryService) Watch(callback discovery.WatchCallback) {
 }
 
 // Register is exported
-func (s *ZkDiscoveryService) Register(addr string) error {
+func (s *DiscoveryService) Register(addr string) error {
 	nodePath := path.Join(s.fullpath(), addr)
 
 	// check existing for the parent path first
