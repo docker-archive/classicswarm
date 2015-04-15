@@ -241,7 +241,7 @@ Contributing a new discovery backend is easy, simply implement this
 interface:
 
 ```go
-type DiscoveryService interface {
+type Discovery interface {
      Initialize(string, int) error
      Fetch() ([]string, error)
      Watch(WatchCallback)

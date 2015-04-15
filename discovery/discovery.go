@@ -31,8 +31,8 @@ func (m Entry) String() string {
 // WatchCallback is exported
 type WatchCallback func(entries []*Entry)
 
-// DiscoveryService is exported
-type DiscoveryService interface {
+// Discovery is exported
+type Discovery interface {
 	Initialize(string, uint64) error
 	Fetch() ([]*Entry, error)
 	Watch(WatchCallback)
@@ -40,7 +40,7 @@ type DiscoveryService interface {
 }
 
 var (
-	discoveries map[string]DiscoveryService
+	discoveries map[string]Discovery
 	// ErrNotSupported is exported
 	ErrNotSupported = errors.New("discovery service not supported")
 	// ErrNotImplemented is exported
@@ -48,11 +48,11 @@ var (
 )
 
 func init() {
-	discoveries = make(map[string]DiscoveryService)
+	discoveries = make(map[string]Discovery)
 }
 
 // Register is exported
-func Register(scheme string, d DiscoveryService) error {
+func Register(scheme string, d Discovery) error {
 	if _, exists := discoveries[scheme]; exists {
 		return fmt.Errorf("scheme already registered %s", scheme)
 	}
@@ -73,7 +73,7 @@ func parse(rawurl string) (string, string) {
 }
 
 // New is exported
-func New(rawurl string, heartbeat uint64) (DiscoveryService, error) {
+func New(rawurl string, heartbeat uint64) (Discovery, error) {
 	scheme, uri := parse(rawurl)
 
 	if discovery, exists := discoveries[scheme]; exists {
