@@ -64,7 +64,7 @@ func main() {
 			ShortName: "c",
 			Usage:     "create a cluster",
 			Action: func(c *cli.Context) {
-				discovery := &token.TokenDiscoveryService{}
+				discovery := &token.DiscoveryService{}
 				discovery.Initialize("", 0)
 				token, err := discovery.CreateCluster()
 				if len(c.Args()) != 0 {

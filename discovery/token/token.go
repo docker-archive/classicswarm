@@ -15,19 +15,19 @@ import (
 // DiscoveryUrl is exported
 const DiscoveryURL = "https://discovery-stage.hub.docker.com/v1"
 
-// TokenDiscoveryService is exported
-type TokenDiscoveryService struct {
+// DiscoveryService is exported
+type DiscoveryService struct {
 	heartbeat uint64
 	url       string
 	token     string
 }
 
 func init() {
-	discovery.Register("token", &TokenDiscoveryService{})
+	discovery.Register("token", &DiscoveryService{})
 }
 
 // Initialize is exported
-func (s *TokenDiscoveryService) Initialize(urltoken string, heartbeat uint64) error {
+func (s *DiscoveryService) Initialize(urltoken string, heartbeat uint64) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
 		s.url = "https://" + urltoken[:i]
 		s.token = urltoken[i+1:]
@@ -45,7 +45,7 @@ func (s *TokenDiscoveryService) Initialize(urltoken string, heartbeat uint64) er
 }
 
 // Fetch returns the list of entries for the discovery service at the specified endpoint
-func (s *TokenDiscoveryService) Fetch() ([]*discovery.Entry, error) {
+func (s *DiscoveryService) Fetch() ([]*discovery.Entry, error) {
 
 	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", s.url, "clusters", s.token))
 	if err != nil {
@@ -67,7 +67,7 @@ func (s *TokenDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 }
 
 // Watch is exported
-func (s *TokenDiscoveryService) Watch(callback discovery.WatchCallback) {
+func (s *DiscoveryService) Watch(callback discovery.WatchCallback) {
 	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
 		entries, err := s.Fetch()
 		if err == nil {
@@ -77,7 +77,7 @@ func (s *TokenDiscoveryService) Watch(callback discovery.WatchCallback) {
 }
 
 // Register adds a new entry identified by the into the discovery service
-func (s *TokenDiscoveryService) Register(addr string) error {
+func (s *DiscoveryService) Register(addr string) error {
 	buf := strings.NewReader(addr)
 
 	resp, err := http.Post(fmt.Sprintf("%s/%s/%s", s.url,
@@ -92,7 +92,7 @@ func (s *TokenDiscoveryService) Register(addr string) error {
 }
 
 // CreateCluster returns a unique cluster token
-func (s *TokenDiscoveryService) CreateCluster() (string, error) {
+func (s *DiscoveryService) CreateCluster() (string, error) {
 	resp, err := http.Post(fmt.Sprintf("%s/%s", s.url, "clusters"), "", nil)
 	if err != nil {
 		return "", err
