@@ -7,7 +7,7 @@ import (
 )
 
 func TestInitialize(t *testing.T) {
-	discovery := &ConsulDiscoveryService{}
+	discovery := &DiscoveryService{}
 
 	assert.Equal(t, discovery.Initialize("127.0.0.1", 0).Error(), "invalid format \"127.0.0.1\", missing <path>")
 

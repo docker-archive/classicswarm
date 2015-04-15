@@ -11,8 +11,8 @@ import (
 	consul "github.com/hashicorp/consul/api"
 )
 
-// ConsulDiscoveryService is exported
-type ConsulDiscoveryService struct {
+// DiscoveryService is exported
+type DiscoveryService struct {
 	heartbeat time.Duration
 	client    *consul.Client
 	prefix    string
@@ -20,11 +20,11 @@ type ConsulDiscoveryService struct {
 }
 
 func init() {
-	discovery.Register("consul", &ConsulDiscoveryService{})
+	discovery.Register("consul", &DiscoveryService{})
 }
 
 // Initialize is exported
-func (s *ConsulDiscoveryService) Initialize(uris string, heartbeat uint64) error {
+func (s *DiscoveryService) Initialize(uris string, heartbeat uint64) error {
 	parts := strings.SplitN(uris, "/", 2)
 	if len(parts) < 2 {
 		return fmt.Errorf("invalid format %q, missing <path>", uris)
@@ -56,7 +56,7 @@ func (s *ConsulDiscoveryService) Initialize(uris string, heartbeat uint64) error
 }
 
 // Fetch is exported
-func (s *ConsulDiscoveryService) Fetch() ([]*discovery.Entry, error) {
+func (s *DiscoveryService) Fetch() ([]*discovery.Entry, error) {
 	kv := s.client.KV()
 	pairs, _, err := kv.List(s.prefix, nil)
 	if err != nil {
@@ -75,7 +75,7 @@ func (s *ConsulDiscoveryService) Fetch() ([]*discovery.Entry, error) {
 }
 
 // Watch is exported
-func (s *ConsulDiscoveryService) Watch(callback discovery.WatchCallback) {
+func (s *DiscoveryService) Watch(callback discovery.WatchCallback) {
 	for _ = range s.waitForChange() {
 		log.WithField("name", "consul").Debug("Discovery watch triggered")
 		entries, err := s.Fetch()
@@ -86,14 +86,14 @@ func (s *ConsulDiscoveryService) Watch(callback discovery.WatchCallback) {
 }
 
 // Register is exported
-func (s *ConsulDiscoveryService) Register(addr string) error {
+func (s *DiscoveryService) Register(addr string) error {
 	kv := s.client.KV()
 	p := &consul.KVPair{Key: path.Join(s.prefix, addr), Value: []byte(addr)}
 	_, err := kv.Put(p, nil)
 	return err
 }
 
-func (s *ConsulDiscoveryService) waitForChange() <-chan uint64 {
+func (s *DiscoveryService) waitForChange() <-chan uint64 {
 	c := make(chan uint64)
 	go func() {
 		for {
