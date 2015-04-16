@@ -39,7 +39,7 @@ function wait_until_reachable() {
 # Start the swarm manager in background.
 function swarm_manage() {
 	local discovery
-	if [ $# -ge 0 ]; then
+	if [ $# -eq 0 ]; then
 		discovery=`join , ${HOSTS[@]}`
 	else
 		discovery="$@"
