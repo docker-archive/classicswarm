@@ -314,3 +314,15 @@ func (c *Cluster) Info() [][2]string {
 
 	return info
 }
+
+// RANDOMENGINE returns a random engine.
+func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), &dockerclient.ContainerConfig{})
+	if err != nil {
+		return nil, err
+	}
+	if n != nil {
+		return c.engines[n.ID], nil
+	}
+	return nil, nil
+}

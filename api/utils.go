@@ -63,7 +63,7 @@ func closeIdleConnections(client *http.Client) {
 	}
 }
 
-func proxy(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request) error {
+func proxyAsync(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request, callback func(*http.Response)) error {
 	// Use a new client for each request
 	client, scheme := newClientAndScheme(tlsConfig)
 	// RequestURI may not be sent to client
@@ -86,7 +86,15 @@ func proxy(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Re
 	resp.Body.Close()
 	closeIdleConnections(client)
 
+	if callback != nil {
+		callback(resp)
+	}
+
 	return nil
+}
+
+func proxy(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request) error {
+	return proxyAsync(tlsConfig, addr, w, r, nil)
 }
 
 func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request) error {
