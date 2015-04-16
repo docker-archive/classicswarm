@@ -15,13 +15,16 @@ function teardown() {
     docker pull busybox:latest
     docker save -o $IMAGE_FILE busybox:latest
 
-    start_docker 1
+    start_docker 2
     start_manager
 
     run docker_swarm -i $IMAGE_FILE
     [ "$status" -eq 0 ]
     
     run docker -H  ${HOSTS[0]} images
+    [ "${#lines[@]}" -eq  2 ]
+
+    run docker -H  ${HOSTS[1]} images
     [ "${#lines[@]}" -eq  2 ]
 }
 
