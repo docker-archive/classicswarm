@@ -7,9 +7,20 @@ function teardown() {
 	stop_docker
 }
 
-# FIXME
 @test "docker attach" {
-	skip
+	start_docker 3
+	swarm_manage
+	run docker_swarm run -d --name test_container busybox sleep 100
+	[ "$status" -eq 0 ]
+
+        # make sure container is up
+        run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"Up"* ]]
+
+	# attach to running container
+	run docker_swarm attach test_container
+	[ "$status" -eq 0 ]
 }
 
 @test "docker build" {
@@ -43,9 +54,24 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker diff" {
-	skip
+	start_docker 3
+	swarm_manage
+	run docker_swarm run -d --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+
+	# make sure container is up
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"Up"* ]]
+		
+	# make changes on container's filesystem
+	run docker_swarm exec test_container touch /home/diff.txt
+	[ "$status" -eq 0 ]
+
+	run docker_swarm diff test_container
+	[ "$status" -eq 0 ]
+	[[ "${lines[*]}" ==  *"diff.txt"* ]]
 }
 
 # FIXME
@@ -116,9 +142,19 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker port" {
-	skip
+	start_docker 3
+	swarm_manage
+	run docker_swarm run -d -p 8000 --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+	
+	# make sure container is up
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq  2 ]
+	[[ "${lines[1]}" == *"Up"* ]]
+
+	run docker_swarm port test_container
+	[[ "${lines[*]}" == *"8000"* ]]
 }
 
 # FIXME
@@ -162,9 +198,23 @@ function teardown() {
 	[[ "${lines[1]}" == *"false"* ]]
 }
 
-# FIXME
 @test "docker pull" {
-	skip
+	start_docker 3
+	swarm_manage
+	run docker_swarm pull busybox 
+	[ "$status" -eq 0 ]
+
+	# docker_swarm verify
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${lines[*]}" == *"busybox"* ]]
+
+	# node verify
+	for host in ${HOSTS[@]}; do
+		run docker -H $host images
+		[ "$status" -eq 0 ]
+		[[ "${lines[*]}" == *"busybox"* ]]
+        done	
 }
 
 # FIXME
@@ -227,9 +277,20 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker top" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	run docker_swarm run -d --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+	# make sure container is running
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"Up"* ]]
+
+	run docker_swarm top test_container
+	[ "$status" -eq 0 ]
+	[[ "${lines[0]}" == *"UID"* ]]	
 }
 
 # FIXME
