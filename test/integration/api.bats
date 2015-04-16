@@ -38,9 +38,17 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker create" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	# create
+	run docker_swarm create --name test_container busybox sleep 1000
+        [ "$status" -eq 0 ]
+
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"test_container"* ]]
 }
 
 # FIXME
@@ -91,9 +99,20 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker kill" {
-	skip
+	start_docker 3
+	swarm_manage
+	# run 
+	run docker_swarm run -d --name test_container busybox sleep 1000
+	[ "$status" -eq 0 ]
+
+	# kill
+	run docker_swarm kill test_container
+	[ "$status" -eq 0 ]
+	# verify
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"Exited"* ]]
 }
 
 # FIXME
@@ -177,9 +196,25 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker restart" {
-	skip
+	start_docker 3
+	swarm_manage
+	# run 
+	run docker_swarm run -d --name test_container busybox sleep 1000
+	[ "$status" -eq 0 ]
+
+	# make sure container is up
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"Up"* ]]
+
+	# restart
+	run docker_swarm restart test_container
+	[ "$status" -eq 0 ]
+	# verify
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"Up"* ]]
 }
 
 # FIXME
@@ -207,9 +242,19 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker start" {
-	skip
+	start_docker 3 
+	swarm_manage
+	# create
+	run docker_swarm create --name test_container busybox sleep 1000
+	[ "$status" -eq 0 ]
+
+	# start
+	run docker_swarm start test_container
+	[ "$status" -eq 0 ]
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"Up"* ]]
 }
 
 # FIXME
@@ -217,9 +262,19 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker stop" {
-	skip
+	start_docker 3
+	swarm_manage
+	# run 
+	run docker_swarm run -d --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+
+	# stop
+	run docker_swarm stop test_container
+	[ "$status" -eq 0 ]
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"Exited"* ]]
 }
 
 # FIXME
