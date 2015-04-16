@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/filter"
@@ -25,15 +23,6 @@ import (
 
 // The Client API version
 const APIVERSION = "1.16"
-
-type context struct {
-	cluster       cluster.Cluster
-	eventsHandler *eventsHandler
-	debug         bool
-	tlsConfig     *tls.Config
-}
-
-type handler func(c *context, w http.ResponseWriter, r *http.Request)
 
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
@@ -472,99 +461,4 @@ func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
 
 func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-}
-
-func writeCorsHeaders(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
-	w.Header().Add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
-}
-
-func httpError(w http.ResponseWriter, err string, status int) {
-	log.WithField("status", status).Errorf("HTTP error: %v", err)
-	http.Error(w, err, status)
-}
-
-func createRouter(c *context, enableCors bool) *mux.Router {
-	r := mux.NewRouter()
-	m := map[string]map[string]handler{
-		"GET": {
-			"/_ping":                          ping,
-			"/events":                         getEvents,
-			"/info":                           getInfo,
-			"/version":                        getVersion,
-			"/images/json":                    getImagesJSON,
-			"/images/viz":                     notImplementedHandler,
-			"/images/search":                  proxyRandom,
-			"/images/get":                     notImplementedHandler,
-			"/images/{name:.*}/get":           proxyImage,
-			"/images/{name:.*}/history":       proxyImage,
-			"/images/{name:.*}/json":          proxyImage,
-			"/containers/ps":                  getContainersJSON,
-			"/containers/json":                getContainersJSON,
-			"/containers/{name:.*}/export":    proxyContainer,
-			"/containers/{name:.*}/changes":   proxyContainer,
-			"/containers/{name:.*}/json":      getContainerJSON,
-			"/containers/{name:.*}/top":       proxyContainer,
-			"/containers/{name:.*}/logs":      proxyContainer,
-			"/containers/{name:.*}/stats":     proxyContainer,
-			"/containers/{name:.*}/attach/ws": proxyHijack,
-			"/exec/{execid:.*}/json":          proxyContainer,
-		},
-		"POST": {
-			"/auth":                         proxyRandom,
-			"/commit":                       postCommit,
-			"/build":                        notImplementedHandler,
-			"/images/create":                postImagesCreate,
-			"/images/load":                  notImplementedHandler,
-			"/images/{name:.*}/push":        proxyImage,
-			"/images/{name:.*}/tag":         proxyImage,
-			"/containers/create":            postContainersCreate,
-			"/containers/{name:.*}/kill":    proxyContainer,
-			"/containers/{name:.*}/pause":   proxyContainer,
-			"/containers/{name:.*}/unpause": proxyContainer,
-			"/containers/{name:.*}/rename":  proxyContainer,
-			"/containers/{name:.*}/restart": proxyContainer,
-			"/containers/{name:.*}/start":   proxyContainer,
-			"/containers/{name:.*}/stop":    proxyContainer,
-			"/containers/{name:.*}/wait":    proxyContainer,
-			"/containers/{name:.*}/resize":  proxyContainer,
-			"/containers/{name:.*}/attach":  proxyHijack,
-			"/containers/{name:.*}/copy":    proxyContainer,
-			"/containers/{name:.*}/exec":    postContainersExec,
-			"/exec/{execid:.*}/start":       proxyHijack,
-			"/exec/{execid:.*}/resize":      proxyContainer,
-		},
-		"DELETE": {
-			"/containers/{name:.*}": deleteContainers,
-			"/images/{name:.*}":     deleteImages,
-		},
-		"OPTIONS": {
-			"": optionsHandler,
-		},
-	}
-
-	for method, routes := range m {
-		for route, fct := range routes {
-			log.WithFields(log.Fields{"method": method, "route": route}).Debug("Registering HTTP route")
-
-			// NOTE: scope issue, make sure the variables are local and won't be changed
-			localRoute := route
-			localFct := fct
-			wrap := func(w http.ResponseWriter, r *http.Request) {
-				log.WithFields(log.Fields{"method": r.Method, "uri": r.RequestURI}).Info("HTTP request received")
-				if enableCors {
-					writeCorsHeaders(w, r)
-				}
-				localFct(c, w, r)
-			}
-			localMethod := method
-
-			// add the new route
-			r.Path("/v{version:[0-9.]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
-			r.Path(localRoute).Methods(localMethod).HandlerFunc(wrap)
-		}
-	}
-
-	return r
 }
