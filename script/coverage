@@ -4,7 +4,8 @@ MODE="mode: count"
 ROOT=${TRAVIS_BUILD_DIR:-.}/../../..
 
 # Grab the list of packages.
-PACKAGES=`go list ./...`
+# Exclude the API from coverage as it will be covered by integration tests.
+PACKAGES=`go list ./... | grep -v github.com/docker/swarm/api`
 
 # Create the empty coverage file.
 echo $MODE > goverage.report
