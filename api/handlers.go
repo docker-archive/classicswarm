@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/filter"
@@ -462,9 +461,4 @@ func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
 
 func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-}
-
-func httpError(w http.ResponseWriter, err string, status int) {
-	log.WithField("status", status).Errorf("HTTP error: %v", err)
-	http.Error(w, err, status)
 }
