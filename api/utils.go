@@ -13,6 +13,12 @@ import (
 	"github.com/docker/swarm/cluster"
 )
 
+// Emit an HTTP error and log it.
+func httpError(w http.ResponseWriter, err string, status int) {
+	log.WithField("status", status).Errorf("HTTP error: %v", err)
+	http.Error(w, err, status)
+}
+
 func newClientAndScheme(tlsConfig *tls.Config) (*http.Client, string) {
 	if tlsConfig != nil {
 		return &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}}, "https"
