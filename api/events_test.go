@@ -18,7 +18,7 @@ func (fw *FakeWriter) Write(p []byte) (n int, err error) {
 }
 
 func TestHandle(t *testing.T) {
-	eh := NewEventsHandler()
+	eh := newEventsHandler()
 	assert.Equal(t, eh.Size(), 0)
 
 	fw := &FakeWriter{Tmp: []byte{}}
