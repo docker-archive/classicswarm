@@ -160,6 +160,9 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 }
 
 func (c *Cluster) hasEngine(addr string) bool {
+	c.RLock()
+	defer c.RUnlock()
+
 	for _, engine := range c.engines {
 		if engine.Addr == addr {
 			return true
@@ -208,10 +211,15 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete
 
 // Pull is exported
 func (c *Cluster) Pull(name string, callback func(what, status string)) {
-	size := len(c.engines)
-	done := make(chan bool, size)
+	var wg sync.WaitGroup
+
+	c.RLock()
 	for _, n := range c.engines {
+		wg.Add(1)
+
 		go func(nn *cluster.Engine) {
+			defer wg.Done()
+
 			if callback != nil {
 				callback(nn.Name, "")
 			}
@@ -223,12 +231,11 @@ func (c *Cluster) Pull(name string, callback func(what, status string)) {
 					callback(nn.Name, "downloaded")
 				}
 			}
-			done <- true
 		}(n)
 	}
-	for i := 0; i < size; i++ {
-		<-done
-	}
+	c.RUnlock()
+
+	wg.Wait()
 }
 
 // Containers returns all the containers in the cluster.
@@ -267,7 +274,7 @@ func (c *Cluster) listNodes() []*node.Node {
 	c.RLock()
 	defer c.RUnlock()
 
-	out := []*node.Node{}
+	out := make([]*node.Node, 0, len(c.engines))
 	for _, n := range c.engines {
 		out = append(out, node.NewNode(n))
 	}
@@ -280,7 +287,7 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 	c.RLock()
 	defer c.RUnlock()
 
-	out := []*cluster.Engine{}
+	out := make([]*cluster.Engine, 0, len(c.engines))
 	for _, n := range c.engines {
 		out = append(out, n)
 	}
