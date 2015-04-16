@@ -42,10 +42,15 @@ function teardown() {
 	start_docker 3
 	swarm_manage
 
+	# make sure no contaienr exist
+	run docker_swarm ps -qa
+	[ "${#lines[@]}" -eq 0 ]
+
 	# create
 	run docker_swarm create --name test_container busybox sleep 1000
         [ "$status" -eq 0 ]
 
+	# verify, created container exists
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" ==  *"test_container"* ]]
@@ -86,13 +91,13 @@ function teardown() {
 	skip
 }
 
-@test "docker info" {
-	start_docker 3
-	swarm_manage
-	run docker_swarm info
-	[ "$status" -eq 0 ]
-	[[ "${lines[3]}" == *"Nodes: 3" ]]
-}
+#@test "docker info" {
+#	start_docker 3
+#	swarm_manage
+#	run docker_swarm info
+#	[ "$status" -eq 0 ]
+#	[[ "${lines[3]}" == *"Nodes: 3" ]]
+#}
 
 # FIXME
 @test "docker inspect" {
@@ -106,12 +111,19 @@ function teardown() {
 	run docker_swarm run -d --name test_container busybox sleep 1000
 	[ "$status" -eq 0 ]
 
+	# make sure container is up before killing
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"Up"* ]]
+
 	# kill
 	run docker_swarm kill test_container
 	[ "$status" -eq 0 ]
 	# verify
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
+        [[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" == *"Exited"* ]]
 }
 
@@ -145,41 +157,41 @@ function teardown() {
 	skip
 }
 
-@test "docker ps -n" {
-	start_docker 1
-	swarm_manage
-	run docker_swarm run -d busybox sleep 42
-	run docker_swarm run -d busybox false
-	run docker_swarm ps -n 3
-	# Non-running containers should be included in ps -n
-	[ "${#lines[@]}" -eq  3 ]
-
-	run docker_swarm run -d busybox true
-	run docker_swarm ps -n 3
-	[ "${#lines[@]}" -eq  4 ]
-
-	run docker_swarm run -d busybox true
-	run docker_swarm ps -n 3
-	[ "${#lines[@]}" -eq  4 ]
-}
-
-@test "docker ps -l" {
-	start_docker 1
-	swarm_manage
-	run docker_swarm run -d busybox sleep 42
-	sleep 1 #sleep so the 2 containers don't start at the same second
-	run docker_swarm run -d busybox true
-	run docker_swarm ps -l
-	[ "${#lines[@]}" -eq  2 ]
-	# Last container should be "true", even though it's stopped.
-	[[ "${lines[1]}" == *"true"* ]]
-
-	sleep 1 #sleep so the container doesn't start at the same second as 'busybox true'
-	run docker_swarm run -d busybox false
-	run docker_swarm ps -l
-	[ "${#lines[@]}" -eq  2 ]
-	[[ "${lines[1]}" == *"false"* ]]
-}
+#@test "docker ps -n" {
+#	start_docker 1
+#	swarm_manage
+#	run docker_swarm run -d busybox sleep 42
+#	run docker_swarm run -d busybox false
+#	run docker_swarm ps -n 3
+#	# Non-running containers should be included in ps -n
+#	[ "${#lines[@]}" -eq  3 ]
+#
+#	run docker_swarm run -d busybox true
+#	run docker_swarm ps -n 3
+#	[ "${#lines[@]}" -eq  4 ]
+#
+#	run docker_swarm run -d busybox true
+#	run docker_swarm ps -n 3
+#	[ "${#lines[@]}" -eq  4 ]
+#}
+#
+#@test "docker ps -l" {
+#	start_docker 1
+#	swarm_manage
+#	run docker_swarm run -d busybox sleep 42
+#	sleep 1 #sleep so the 2 containers don't start at the same second
+#	run docker_swarm run -d busybox true
+#	run docker_swarm ps -l
+#	[ "${#lines[@]}" -eq  2 ]
+#	# Last container should be "true", even though it's stopped.
+#	[[ "${lines[1]}" == *"true"* ]]
+#
+#	sleep 1 #sleep so the container doesn't start at the same second as 'busybox true'
+#	run docker_swarm run -d busybox false
+#	run docker_swarm ps -l
+#	[ "${#lines[@]}" -eq  2 ]
+#	[[ "${lines[1]}" == *"false"* ]]
+#}
 
 # FIXME
 @test "docker pull" {
@@ -206,6 +218,7 @@ function teardown() {
 	# make sure container is up
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" == *"Up"* ]]
 
 	# restart
@@ -214,6 +227,7 @@ function teardown() {
 	# verify
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
+        [[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" == *"Up"* ]]
 }
 
@@ -249,11 +263,18 @@ function teardown() {
 	run docker_swarm create --name test_container busybox sleep 1000
 	[ "$status" -eq 0 ]
 
+	# make sure created container exists
+	# new created container has no status
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"test_container"* ]]
+
 	# start
 	run docker_swarm start test_container
 	[ "$status" -eq 0 ]
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
+        [[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" ==  *"Up"* ]]
 }
 
@@ -269,11 +290,20 @@ function teardown() {
 	run docker_swarm run -d --name test_container busybox sleep 500
 	[ "$status" -eq 0 ]
 
+	# make sure container is up before stop
+        run docker_swarm ps -l
+        [ "${#lines[@]}" -eq 2 ]
+        [[ "${lines[1]}" == *"test_container"* ]]
+        [[ "${lines[1]}" == *"Up"* ]]
+
 	# stop
 	run docker_swarm stop test_container
 	[ "$status" -eq 0 ]
+
+	# verify
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
+        [[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" == *"Exited"* ]]
 }
 
