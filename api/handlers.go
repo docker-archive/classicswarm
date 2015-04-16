@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -25,15 +24,6 @@ import (
 
 // The Client API version
 const APIVERSION = "1.16"
-
-type context struct {
-	cluster       cluster.Cluster
-	eventsHandler *eventsHandler
-	debug         bool
-	tlsConfig     *tls.Config
-}
-
-type handler func(c *context, w http.ResponseWriter, r *http.Request)
 
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {

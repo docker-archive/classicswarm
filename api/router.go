@@ -1,11 +1,23 @@
 package api
 
 import (
+	"crypto/tls"
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/swarm/cluster"
 	"github.com/gorilla/mux"
 )
+
+// Router context, used by handlers.
+type context struct {
+	cluster       cluster.Cluster
+	eventsHandler *eventsHandler
+	debug         bool
+	tlsConfig     *tls.Config
+}
+
+type handler func(c *context, w http.ResponseWriter, r *http.Request)
 
 var routes = map[string]map[string]handler{
 	"GET": {
