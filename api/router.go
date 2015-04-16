@@ -46,7 +46,7 @@ var routes = map[string]map[string]handler{
 	"POST": {
 		"/auth":                         proxyRandom,
 		"/commit":                       postCommit,
-		"/build":                        notImplementedHandler,
+		"/build":                        proxyRandomAndForceRefresh,
 		"/images/create":                postImagesCreate,
 		"/images/load":                  notImplementedHandler,
 		"/images/{name:.*}/push":        proxyImage,
