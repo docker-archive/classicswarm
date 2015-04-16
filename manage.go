@@ -120,7 +120,6 @@ func manage(c *cli.Context) {
 
 	sched := scheduler.New(s, fs)
 
-	eventsHandler := api.NewEventsHandler()
 	hb, err := strconv.ParseUint(c.String("heartbeat"), 0, 32)
 	if hb < 1 || err != nil {
 		log.Fatal("--heartbeat should be an unsigned integer and greater than 0")
@@ -132,12 +131,12 @@ func manage(c *cli.Context) {
 		Heartbeat:       hb,
 	}
 
-	cluster := swarm.NewCluster(sched, store, eventsHandler, options)
+	cluster := swarm.NewCluster(sched, store, options)
 
 	// see https://github.com/codegangsta/cli/issues/160
 	hosts := c.StringSlice("host")
 	if c.IsSet("host") || c.IsSet("H") {
 		hosts = hosts[1:]
 	}
-	log.Fatal(api.ListenAndServe(cluster, hosts, c.Bool("cors"), tlsConfig, eventsHandler))
+	log.Fatal(api.ListenAndServe(cluster, hosts, c.Bool("cors"), tlsConfig))
 }

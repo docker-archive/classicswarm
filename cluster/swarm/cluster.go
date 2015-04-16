@@ -1,6 +1,7 @@
 package swarm
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -27,15 +28,14 @@ type Cluster struct {
 }
 
 // NewCluster is exported
-func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, eventhandler cluster.EventHandler, options *cluster.Options) cluster.Cluster {
+func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, options *cluster.Options) cluster.Cluster {
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
-		eventHandler: eventhandler,
-		engines:      make(map[string]*cluster.Engine),
-		scheduler:    scheduler,
-		options:      options,
-		store:        store,
+		engines:   make(map[string]*cluster.Engine),
+		scheduler: scheduler,
+		options:   options,
+		store:     store,
 	}
 
 	// get the list of entries from the discovery service
@@ -60,9 +60,21 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, eventhandler
 
 // Handle callbacks for the events
 func (c *Cluster) Handle(e *cluster.Event) error {
+	if c.eventHandler == nil {
+		return nil
+	}
 	if err := c.eventHandler.Handle(e); err != nil {
 		log.Error(err)
 	}
+	return nil
+}
+
+// RegisterEventHandler registers an event handler.
+func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
+	if c.eventHandler != nil {
+		return errors.New("event handler already set")
+	}
+	c.eventHandler = h
 	return nil
 }
 
@@ -135,7 +147,7 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 					return
 				}
 				c.engines[engine.ID] = engine
-				if err := engine.Events(c); err != nil {
+				if err := engine.RegisterEventHandler(c); err != nil {
 					log.Error(err)
 					c.Unlock()
 					return

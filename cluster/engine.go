@@ -411,8 +411,8 @@ func (e *Engine) Pull(image string) error {
 	return nil
 }
 
-// Events register an event handler.
-func (e *Engine) Events(h EventHandler) error {
+// RegisterEventHandler registers an event handler.
+func (e *Engine) RegisterEventHandler(h EventHandler) error {
 	if e.eventHandler != nil {
 		return errors.New("event handler already set")
 	}

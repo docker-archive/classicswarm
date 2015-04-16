@@ -28,7 +28,7 @@ const APIVERSION = "1.16"
 
 type context struct {
 	cluster       cluster.Cluster
-	eventsHandler *EventsHandler
+	eventsHandler *eventsHandler
 	debug         bool
 	tlsConfig     *tls.Config
 }
