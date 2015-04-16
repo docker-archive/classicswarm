@@ -1,16 +1,20 @@
 #!/bin/bash
 
 MODE="mode: count"
-ROOT=${TRAVIS_BUILD_DIR}/../../..
+ROOT=${TRAVIS_BUILD_DIR:-.}/../../..
+
+# Grab the list of packages.
+PACKAGES=`go list ./...`
 
 # Create the empty coverage file.
 echo $MODE > goverage.report
 
 # Run coverage on every package.
-go list ./... | xargs -L 1 -I{} go test -test.short -covermode=count -coverprofile=$ROOT/{}/coverage.out {}
+for package in $PACKAGES; do
+	output="$ROOT/$package/coverage.out"
 
-# Aggregate.
-go list ./... | xargs -L 1 -I{} cat "$ROOT/{}/coverage.out" | grep -v "$MODE" >> goverage.report
-
-# Push
-goveralls -service=travis-ci -coverprofile=goverage.report
+	go test -test.short -covermode=count -coverprofile=$output $package
+	if [ -f "$output" ] ; then
+		cat "$output" | grep -v "$MODE" >> goverage.report
+	fi
+done
