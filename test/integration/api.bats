@@ -111,9 +111,24 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker logs" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	# run a container with echo command
+	run docker_swarm run -d --name test_container busybox echo hello world
+	[ "$status" -eq 0 ]
+
+	# make sure container exists
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"test_container"* ]]
+
+	# verify
+	run docker_swarm logs test_container
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 1 ]
+	[[ "${lines[0]}" ==  *"hello world"* ]]
 }
 
 # FIXME
@@ -182,19 +197,101 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker rm" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	run docker_swarm run -d --name test_container busybox
+	[ "$status" -eq 0 ]
+
+	# make sure container exsists and is exited
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"Exited"* ]]
+
+	run docker_swarm rm test_container
+	[ "$status" -eq 0 ]
+
+	# verify
+	run docker_swarm ps -aq
+	[ "${#lines[@]}" -eq 0 ]
 }
 
-# FIXME
+@test "docker rm -f" {
+	start_docker 3
+	swarm_manage
+
+	run docker_swarm run -d --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+
+	# make sure container exsists and is up
+	run docker_swarm ps -a
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"Up"* ]]
+
+	# rm -f, remove a running container
+	run docker_swarm rm -f test_container
+	[ "$status" -eq 0 ]
+
+	# verify
+	run docker_swarm ps -aq
+	[ "${#lines[@]}" -eq 0 ]
+}
+
 @test "docker rmi" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	run docker_swarm pull busybox
+	[ "$status" -eq 0 ]
+
+	# make sure image exists
+	# swarm check image
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${lines[*]}" == *"busybox"* ]]
+	# node check image
+	for host in ${HOSTS[@]}; do
+		run docker -H $host images
+		[ "$status" -eq 0 ]
+		[[ "${lines[*]}" == *"busybox"* ]]
+	done
+
+	# this test presupposition: do not run image
+	run docker_swarm rmi busybox
+	[ "$status" -eq 0 ]
+
+	# swarm verify
+	run docker_swarm images -q
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 0 ]
+	# node verify
+	for host in ${HOSTS[@]}; do
+		run docker -H $host images -q
+		[ "$status" -eq 0 ]
+		[ "${#lines[@]}" -eq 0 ]
+	done
 }
 
-# FIXME
 @test "docker run" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	# make sure no container exist
+	run docker_swarm ps -qa
+	[ "${#lines[@]}" -eq 0 ]
+
+	# run
+	run docker_swarm run -d --name test_container busybox sleep 100
+	[ "$status" -eq 0 ]
+
+	# verify, container exists
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[*]}" == *"test_container"* ]]
+	[[ "${lines[*]}" == *"Up"* ]]
 }
 
 # FIXME
