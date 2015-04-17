@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
@@ -310,6 +311,12 @@ func (c *Cluster) Info() [][2]string {
 		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
 		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
 		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
+		labels := make([]string, 0, len(engine.Labels))
+		for k, v := range engine.Labels {
+			labels = append(labels, k+"="+v)
+		}
+		sort.Strings(labels)
+		info = append(info, [2]string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
 	}
 
 	return info
