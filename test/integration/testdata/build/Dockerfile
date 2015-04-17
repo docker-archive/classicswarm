@@ -1,2 +1,2 @@
-FROM busybox
-RUN ls
+FROM scratch
+ENV test integration
