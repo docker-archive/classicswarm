@@ -33,9 +33,31 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker cp" {
-	skip
+	start_docker 3
+	swarm_manage
+	run docker_swarm run -d --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+	temp_file_name="/tmp/cp_file_$RANDOM"
+	# make sure container is up and no comming file
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"Up"* ]]
+	[ ! -f $temp_file_name ]	
+
+	# touch file for cp 
+	run docker_swarm exec test_container touch $temp_file_name
+	[ "$status" -eq 0 ]
+
+	# cp and verify
+	run docker_swarm cp test_container:$temp_file_name /tmp/
+	[ "$status" -eq 0 ]
+
+	# verify: cp file exists
+	[ -f $temp_file_name ]
+	# after ok, delete cp file
+	rm -f $temp_file_name
 }
 
 # FIXME
@@ -58,14 +80,47 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker export" {
-	skip
+	start_docker 3
+	swarm_manage
+	# run a container to export
+	run docker_swarm run -d --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+
+	temp_file_name="/tmp/export_file_$RANDOM.tar"
+	# make sure container exists and no comming file
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"test_container"* ]]
+	[ ! -f $temp_file_name ]
+
+	# export, container->tar
+	run docker_swarm export test_container > $temp_file_name
+	[ "$status" -eq 0 ]
+
+	# verify: exported file exists
+	[ -f $temp_file_name ]
+	# after ok, delete exported tar file
+	rm -f $temp_file_name
 }
 
-# FIXME
 @test "docker history" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	# pull busybox image
+	run docker_swarm pull busybox
+	[ "$status" -eq 0 ]
+
+	# make sure the image of busybox exists
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${lines[*]}" == *"busybox"* ]]
+
+	# history
+	run docker_swarm history busybox
+	[ "$status" -eq 0 ]
+	[[ "${lines[0]}" == *"CREATED BY"* ]]
 }
 
 # FIXME
@@ -197,9 +252,52 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker save" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	run docker_swarm pull busybox
+	[ "$status" -eq 0 ]
+
+	temp_file_name="/tmp/save_file_$RANDOM.tar"
+	# make sure busybox image exists and no comming file in current path
+	run docker_swarm images 
+	[ "$status" -eq 0 ]
+	[[ "${lines[*]}" == *"busybox"* ]]
+	[ ! -f $temp_file_name ]
+
+	# save >, image->tar
+	run docker_swarm save busybox > $temp_file_name
+	[ "$status" -eq 0 ]
+
+	# saved image file exists
+	[ -f $temp_file_name ]
+	# after ok, delete saved tar file
+	rm -f $temp_file_name
+}
+
+@test "docker save -o" {
+	start_docker 3
+	swarm_manage
+
+	run docker_swarm pull busybox
+	[ "$status" -eq 0 ]
+
+	temp_file_name="/tmp/save_o_file_$RANDOM.tar"
+	# make sure busybox image exists and no comming file in current path
+	run docker_swarm images 
+	[ "$status" -eq 0 ]
+	[[ "${lines[*]}" == *"busybox"* ]]
+	[ ! -f $temp_file_name ]
+
+	# save -o, image->tar
+	run docker_swarm save -o $temp_file_name busybox 
+	[ "$status" -eq 0 ]
+
+	# saved image file exists
+	[ -f $temp_file_name ]
+	# after ok, delete saved tar file
+	rm -f $temp_file_name
 }
 
 # FIXME
