@@ -76,7 +76,7 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 
 // Watch is exported
 func (s *Discovery) Watch(callback discovery.WatchCallback) {
-	for _ = range s.waitForChange() {
+	for range s.waitForChange() {
 		log.WithField("name", "consul").Debug("Discovery watch triggered")
 		entries, err := s.Fetch()
 		if err == nil {

@@ -68,7 +68,7 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 
 // Watch is exported
 func (s *Discovery) Watch(callback discovery.WatchCallback) {
-	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
+	for range time.Tick(time.Duration(s.heartbeat) * time.Second) {
 		entries, err := s.Fetch()
 		if err == nil {
 			callback(entries)
