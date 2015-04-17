@@ -96,7 +96,6 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker load" {
 	# temp file for saving image
 	IMAGE_FILE=$(mktemp)
