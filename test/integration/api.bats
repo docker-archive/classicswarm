@@ -87,12 +87,11 @@ function teardown() {
 	run docker_swarm run -d --name test_container busybox sleep 500
 	[ "$status" -eq 0 ]
 
-	temp_file_name="/tmp/export_file_$RANDOM.tar"
-	# make sure container exists and no comming file
+	temp_file_name=$(mktemp)
+	# make sure container exists 
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" ==  *"test_container"* ]]
-	[ ! -f $temp_file_name ]
 
 	# export, container->tar
 	run docker_swarm export test_container > $temp_file_name
@@ -259,12 +258,11 @@ function teardown() {
 	run docker_swarm pull busybox
 	[ "$status" -eq 0 ]
 
-	temp_file_name="/tmp/save_file_$RANDOM.tar"
-	# make sure busybox image exists and no comming file in current path
+	temp_file_name=$(mktemp)
+	# make sure busybox image exists
 	run docker_swarm images 
 	[ "$status" -eq 0 ]
 	[[ "${lines[*]}" == *"busybox"* ]]
-	[ ! -f $temp_file_name ]
 
 	# save >, image->tar
 	run docker_swarm save busybox > $temp_file_name
@@ -283,12 +281,11 @@ function teardown() {
 	run docker_swarm pull busybox
 	[ "$status" -eq 0 ]
 
-	temp_file_name="/tmp/save_o_file_$RANDOM.tar"
-	# make sure busybox image exists and no comming file in current path
+	temp_file_name=$(mktemp)
+	# make sure busybox image exists
 	run docker_swarm images 
 	[ "$status" -eq 0 ]
 	[[ "${lines[*]}" == *"busybox"* ]]
-	[ ! -f $temp_file_name ]
 
 	# save -o, image->tar
 	run docker_swarm save -o $temp_file_name busybox 
