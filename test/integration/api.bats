@@ -48,7 +48,7 @@ function teardown() {
 
 	# create
 	run docker_swarm create --name test_container busybox sleep 1000
-        [ "$status" -eq 0 ]
+	[ "$status" -eq 0 ]
 
 	# verify, created container exists
 	run docker_swarm ps -l
@@ -123,7 +123,7 @@ function teardown() {
 	# verify
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
-        [[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" == *"Exited"* ]]
 }
 
@@ -227,7 +227,7 @@ function teardown() {
 	# verify
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
-        [[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" == *"Up"* ]]
 }
 
@@ -274,7 +274,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
-        [[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" ==  *"Up"* ]]
 }
 
@@ -291,10 +291,10 @@ function teardown() {
 	[ "$status" -eq 0 ]
 
 	# make sure container is up before stop
-        run docker_swarm ps -l
-        [ "${#lines[@]}" -eq 2 ]
-        [[ "${lines[1]}" == *"test_container"* ]]
-        [[ "${lines[1]}" == *"Up"* ]]
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"Up"* ]]
 
 	# stop
 	run docker_swarm stop test_container
@@ -303,7 +303,7 @@ function teardown() {
 	# verify
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
-        [[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" == *"Exited"* ]]
 }
 
