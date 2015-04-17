@@ -241,17 +241,22 @@ func (c *Cluster) Pull(name string, callback func(what, status string)) {
 
 // Load image
 func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)) {
-	size := len(c.engines)
-	done := make(chan bool, size)
+	var wg sync.WaitGroup
 
+	c.RLock()
 	pipeWriters := []*io.PipeWriter{}
 	pipeReaders := []*io.PipeReader{}
 	for _, n := range c.engines {
+		wg.Add(1)
+
 		pipeReader, pipeWriter := io.Pipe()
 		pipeReaders = append(pipeReaders, pipeReader)
 		pipeWriters = append(pipeWriters, pipeWriter)
 
 		go func(reader *io.PipeReader, nn *cluster.Engine) {
+			defer wg.Done()
+			defer reader.Close()
+
 			// call engine load image
 			err := nn.Load(reader)
 			if callback != nil {
@@ -259,10 +264,6 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 					callback(nn.Name, err.Error())
 				}
 			}
-			// clean up
-			defer reader.Close()
-			done <- true
-
 		}(pipeReader, n)
 	}
 
@@ -284,10 +285,9 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 		pipeW.Close()
 	}
 
-	// wait all host done
-	for i := 0; i < size; i++ {
-		<-done
-	}
+	c.RUnlock()
+
+	wg.Wait()
 }
 
 // Containers returns all the containers in the cluster.
