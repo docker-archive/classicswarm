@@ -73,7 +73,7 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 func (s *Discovery) Watch(callback discovery.WatchCallback) {
 	watchChan := make(chan *etcd.Response)
 	go s.client.Watch(s.path, 0, true, watchChan, nil)
-	for _ = range watchChan {
+	for range watchChan {
 		log.WithField("name", "etcd").Debug("Discovery watch triggered")
 		entries, err := s.Fetch()
 		if err == nil {
