@@ -21,12 +21,6 @@ Start by [installing]
 (https://github.com/sstephenson/bats#installing-bats-from-source) *bats* on
 your system.
 
-The tests expect the *swarm* binary to be built and located at the root
-directory of the repo:
-```
-$ godep go build
-```
-
 In order to run all integration tests, pass *bats* the test path:
 ```
 $ bats test/integration
