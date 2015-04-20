@@ -22,7 +22,7 @@ function join() {
 
 # Run the swarm binary.
 function swarm() {
-	${SWARM_ROOT}/swarm "$@"
+	godep go run "${SWARM_ROOT}/main.go" "$@"
 }
 
 # Waits until the given docker engine API becomes reachable.
