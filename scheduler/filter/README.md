@@ -91,6 +91,7 @@ Additionally, a standard set of constraints can be used when scheduling containe
 without specifying them when starting the node. Those tags are sourced from
 `docker info` and currently include:
 
+* node ID or node Name (using key "node")
 * storagedriver
 * executiondriver
 * kernelversion
