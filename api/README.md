@@ -15,7 +15,6 @@ Some endpoints have not yet been implemented and will return a 404 error.
 ```
 GET "/images/get"
 
-POST "/images/load"
 POST "/images/create" : "docker import" flow not implement
 ```
 
