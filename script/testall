@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+
+CURDIR=$(dirname "$BASH_SOURCE")
+
+# validate dco
+${CURDIR}/validate-dco
+
+# validate gofmt
+${CURDIR}/validate-gofmt
+
+# run go vet/ golint
+go vet ./...
+fgt golint ./...
+
+# go test
+go test -v -race ./...
+
+# run bats tests
+mkdir -p ${CURDIR}/results
+${CURDIR}/integration-test ${CURDIR}/results
+
+# test coverage
+${CURDIR}/coverage
+# send to goveralls
+# goveralls -service=jenkins -coverprofile=goverage.report

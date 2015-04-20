@@ -1,0 +1,58 @@
+# Dockerfile for testing swarm
+# How to use:
+#   docker build --rm --force-rm -f Dockerfile.test -t swarm-test .
+#   docker run --rm -it --privileged swarm-test script/testall
+FROM debian:jessie
+
+# compile and runtime deps
+# https://github.com/docker/docker/blob/master/project/PACKAGERS.md#build-dependencies
+# https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        e2fsprogs \
+        gcc \
+        git \
+        iptables \
+        libsqlite3-dev \
+        make \
+        mercurial \
+        procps \
+        xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# install golang
+ENV GO_VERSION 1.4.2
+RUN curl -sSL https://golang.org/dl/go${GO_VERSION}.src.tar.gz | tar -v -C /usr/local -xz \
+    && mkdir -p /go/bin
+ENV PATH /go/bin:/usr/local/go/bin:$PATH
+ENV GOPATH /go
+RUN cd /usr/local/go/src && ./make.bash --no-clean 2>&1
+
+# install bats
+RUN cd /usr/local/src/ \
+    && git clone https://github.com/sstephenson/bats.git \
+    && cd bats \
+    && ./install.sh /usr/local
+
+# install go tools
+RUN go get golang.org/x/tools/cmd/vet
+RUN go get golang.org/x/tools/cmd/cover
+RUN go get github.com/mattn/goveralls
+RUN go get github.com/golang/lint/golint
+RUN go get github.com/GeertJohan/fgt
+
+ENV DOCKER_VERSION 1.6.0
+RUN curl -sSL https://get.docker.com/builds/Linux/x86_64/docker-${DOCKER_VERSION} > /usr/local/bin/docker \
+    && chmod +x /usr/local/bin/docker
+
+COPY . /go/src/github.com/docker/swarm
+WORKDIR /go/src/github.com/docker/swarm
+
+ENV GOPATH /go/src/github.com/docker/swarm/Godeps/_workspace:$GOPATH
+RUN CGO_ENABLED=0 go install -v -a -tags netgo -ldflags "-w -X github.com/docker/swarm/version.GITCOMMIT `git rev-parse --short HEAD`"
+
+ENV SWARM_HOST :2375
+EXPOSE 2375
+
+ENTRYPOINT ["script/dind"]
