@@ -7,9 +7,23 @@ function teardown() {
 	stop_docker
 }
 
-# FIXME
 @test "docker attach" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	# container run in background
+	run docker_swarm run -d --name test_container busybox sleep 100
+	[ "$status" -eq 0 ]
+
+	# make sure container is up
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"test_container"* ]]
+	[[ "${lines[1]}" ==  *"Up"* ]]
+
+	# attach to running container
+	run docker_swarm attach test_container
+	[ "$status" -eq 0 ]
 }
 
 @test "docker build" {
@@ -43,9 +57,30 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker diff" {
-	skip
+	start_docker 3
+	swarm_manage
+	run docker_swarm run -d --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+
+	# make sure container is up
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"test_container"* ]]
+	[[ "${lines[1]}" ==  *"Up"* ]]
+
+	# no changs
+	run docker_swarm diff test_container
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 0 ]
+
+	# make changes on container's filesystem
+	run docker_swarm exec test_container touch /home/diff.txt
+	[ "$status" -eq 0 ]
+	# verify
+	run docker_swarm diff test_container
+	[ "$status" -eq 0 ]
+	[[ "${lines[*]}" ==  *"diff.txt"* ]]
 }
 
 # FIXME
@@ -116,9 +151,22 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker port" {
-	skip
+	start_docker 3
+	swarm_manage
+	run docker_swarm run -d -p 8000 --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+
+	# make sure container is up
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq  2 ]
+	[[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"Up"* ]]
+
+	# port verify
+	run docker_swarm port test_container
+	[ "$status" -eq 0 ]
+	[[ "${lines[*]}" == *"8000"* ]]
 }
 
 # FIXME
@@ -227,9 +275,23 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker top" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	run docker_swarm run -d --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+	# make sure container is running
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"Up"* ]]
+
+	run docker_swarm top test_container
+	[ "$status" -eq 0 ]
+	[[ "${lines[0]}" == *"UID"* ]]
+	[[ "${lines[0]}" == *"CMD"* ]]
+	[[ "${lines[1]}" == *"sleep 500"* ]]
 }
 
 # FIXME
