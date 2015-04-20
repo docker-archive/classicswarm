@@ -417,6 +417,10 @@ func (e *Engine) Load(reader io.Reader) error {
 	if err := e.client.LoadImage(reader); err != nil {
 		return err
 	}
+
+	// force fresh images
+	e.RefreshImages()
+
 	return nil
 }
 
