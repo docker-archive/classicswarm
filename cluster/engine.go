@@ -408,6 +408,10 @@ func (e *Engine) Pull(image string) error {
 	if err := e.client.PullImage(image, nil); err != nil {
 		return err
 	}
+
+	// force refresh images
+	e.RefreshImages()
+
 	return nil
 }
 
