@@ -66,13 +66,13 @@ func TestAffinityFilter(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, result, nodes)
 
-	// Set a constraint that cannot be fullfilled and expect an error back.
+	// Set a constraint that cannot be fulfilled and expect an error back.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"affinity:container==does_not_exsits"},
 	}, nodes)
 	assert.Error(t, err)
 
-	// Set a contraint that can only be filled by a single node.
+	// Set a constraint that can only be filled by a single node.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"affinity:container==container-n0*"},
 	}, nodes)
@@ -80,7 +80,7 @@ func TestAffinityFilter(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
-	// This constraint can only be fullfilled by a subset of nodes.
+	// This constraint can only be fulfilled by a subset of nodes.
 	result, err = f.Filter(&dockerclient.ContainerConfig{
 		Env: []string{"affinity:container==container-*"},
 	}, nodes)
