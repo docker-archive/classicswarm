@@ -19,7 +19,7 @@ func TestSpreadPlaceEqualWeight(t *testing.T) {
 	// add 1 container 2G on node1
 	config := createConfig(2, 0)
 	assert.NoError(t, nodes[0].AddContainer(createContainer("c1", config)))
-	assert.Equal(t, nodes[0].UsedMemory, 2*1024*1024*1024)
+	assert.Equal(t, nodes[0].UsedMemory, int64(2*1024*1024*1024))
 
 	// add 2 containers 1G on node2
 	config = createConfig(1, 0)
@@ -32,7 +32,7 @@ func TestSpreadPlaceEqualWeight(t *testing.T) {
 	node, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
 	assert.NoError(t, node.AddContainer(createContainer("c4", config)))
-	assert.Equal(t, node.UsedMemory, 3*1024*1024*1024)
+	assert.Equal(t, node.UsedMemory, int64(3*1024*1024*1024))
 
 	// check that the last container ended on the node with the lowest number of containers
 	assert.Equal(t, node.ID, nodes[0].ID)
