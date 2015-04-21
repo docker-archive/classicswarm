@@ -182,6 +182,7 @@ func (e *Engine) RefreshImages() error {
 
 // RefreshContainers will refresh the list and status of containers running on the engine. If `full` is
 // true, each container will be inspected.
+// FIXME: unexport this method after mesos scheduler stops using it directly
 func (e *Engine) RefreshContainers(full bool) error {
 	containers, err := e.client.ListContainers(true, false, "")
 	if err != nil {
@@ -285,7 +286,7 @@ func (e *Engine) refreshLoop() {
 			return
 		}
 
-		err = e.refreshContainers(false)
+		err = e.RefreshContainers(false)
 		if err == nil {
 			err = e.RefreshImages()
 		}
