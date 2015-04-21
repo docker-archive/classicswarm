@@ -136,9 +136,68 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker images" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	# no image exist
+	run docker_swarm images 
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 1 ]
+	[[ "${lines[0]}" == *"REPOSITORY"* ]]
+
+	# pull image
+	run docker_swarm pull busybox
+	[ "$status" -eq 0 ]
+
+	# show all node images, including reduplicated
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	# check pull busybox, if download sucessfully, the busybox have one tag(lastest) at least
+	# if there are 3 nodes, the output lines of "docker images" are greater or equal 4(1 header + 3 busybox:latest)
+	# The following(pull/tag) is the same reason.
+	[ "${#lines[@]}" -ge 4 ]
+	# Every line should contain "busybox" exclude the first head line 
+	for((i=1; i<${#lines[@]}; i++)); do
+		[[ "${lines[i]}" == *"busybox"* ]]
+	done
+}
+
+@test "docker images --filter node=<Node name>" {
+	start_docker 3
+	swarm_manage
+
+	# no image exist
+	run docker_swarm images 
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 1 ]
+	[[ "${lines[0]}" == *"REPOSITORY"* ]]
+
+	# make sure every node has no image
+	for((i=0;i<3;i++)); do
+		run docker_swarm images --filter node=node-$i
+		[ "$status" -eq 0 ]
+		[ "${#lines[@]}" -eq 1 ]
+		[[ "${lines[0]}" == *"REPOSITORY"* ]]
+	done
+
+	# pull image
+	run docker_swarm pull busybox
+	[ "$status" -eq 0 ]
+
+	# make sure images have pulled
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -ge 4 ]
+	[[ "${lines[1]}" == *"busybox"* ]]
+
+	# verify
+	for((i=0; i<3; i++)); do 
+		run docker_swarm images --filter node=node-$i
+		[ "$status" -eq 0 ]
+		[ "${#lines[@]}" -ge 2 ]
+		[[ "${lines[1]}" == *"busybox"* ]]
+	done
 }
 
 # FIXME
@@ -279,9 +338,40 @@ function teardown() {
 	[[ "${lines[1]}" == *"false"* ]]
 }
 
-# FIXME
 @test "docker pull" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	# make sure no image exists
+	run docker_swarm images -q
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 0 ]
+
+	for host in ${HOSTS[@]}; do
+		run docker -H $host images -q
+		[ "$status" -eq 0 ]
+		[ "${#lines[@]}" -eq 0 ]
+	done
+
+	run docker_swarm pull busybox
+	[ "$status" -eq 0 ]
+
+	# swarm verify
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -ge 4 ]
+	# every line should contain "busybox" exclude the first head line 
+	for((i=1; i<${#lines[@]}; i++)); do
+		[[ "${lines[i]}" == *"busybox"* ]]
+	done
+
+	# node verify
+	for host in ${HOSTS[@]}; do
+		run docker -H $host images
+		[ "$status" -eq 0 ]
+		[ "${#lines[@]}" -ge 2 ]
+		[[ "${lines[1]}" == *"busybox"* ]]
+	done
 }
 
 # FIXME
@@ -479,9 +569,30 @@ function teardown() {
 	[[ "${lines[1]}" == *"Exited"* ]]
 }
 
-# FIXME
 @test "docker tag" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	run docker_swarm pull busybox
+	[ "$status" -eq 0 ]
+
+	# make sure the image of busybox exists 
+	# the comming image of tag_busybox not exsit
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -ge 2 ]
+	[[ "${lines[*]}" == *"busybox"* ]]
+	[[ "${lines[*]}" != *"tag_busybox"* ]]
+
+	# tag image
+	run docker_swarm tag busybox tag_busybox:test
+	[ "$status" -eq 0 ]
+
+	# verify
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -ge 2 ]
+	[[ "${lines[*]}" == *"tag_busybox"* ]]
 }
 
 @test "docker top" {
