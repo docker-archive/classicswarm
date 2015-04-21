@@ -87,7 +87,6 @@ function teardown() {
 }
 
 @test "docker inspect" {
-skip
 	start_docker 3
 	swarm_manage
 	# run container
@@ -103,10 +102,12 @@ skip
 	run docker_swarm inspect test_container
 	[ "$status" -eq 0 ]
 	[[ "${lines[1]}" == *"AppArmorProfile"* ]]
+	# the specific information of swarm node
+	[[ ${output} == *'"Node": {'* ]]
+	[[ ${output} == *'"Name": "node-'* ]]
 }
 
 @test "docker inspect --format" {
-skip
 	start_docker 3
 	swarm_manage
 	# run container
@@ -118,11 +119,17 @@ skip
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" == *"test_container"* ]]
 
-	# inspect --format, return one line: image name
+	# inspect --format='{{.Config.Image}}', return one line: image name
 	run docker_swarm inspect --format='{{.Config.Image}}' test_container
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 1 ]
 	[[ "${lines[0]}" == "busybox" ]]
+
+	# inspect --format='{{.Node.IP}}', return one line: Node ip
+	run docker_swarm inspect --format='{{.Node.IP}}' test_container
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 1 ]
+	[[ "${lines[0]}" == "127.0.0.1" ]]
 }
 
 # FIXME
@@ -179,6 +186,7 @@ skip
 
 	# if the state of the container is paused, it can't be removed(rm -f)	
 	run docker_swarm unpause test_container
+	[ "$status" -eq 0 ]
 }
 
 @test "docker ps -n" {
@@ -200,7 +208,6 @@ skip
 }
 
 @test "docker ps -l" {
-skip
 	start_docker 1
 	swarm_manage
 	run docker_swarm run -d busybox sleep 42
