@@ -189,20 +189,17 @@ func manage(c *cli.Context) {
 	}
 
 	sched := scheduler.New(s, fs)
-
-	cluster, err := swarm.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	var cl cluster.Cluster
-	switch c.String("cluster") {
+	switch c.String("cluster-driver") {
 	case "mesos":
-		cl = mesos.NewCluster(sched, store, options)
+		cl, err = mesos.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
 	case "swarm":
-		cl = swarm.NewCluster(sched, store, options)
+		cl, err = swarm.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
 	default:
 		log.Fatalf("Unsupported cluster %q", c.String("cluster"))
+	}
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// see https://github.com/codegangsta/cli/issues/160
