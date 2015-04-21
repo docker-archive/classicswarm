@@ -114,11 +114,12 @@ function teardown() {
 }
 
 @test "docker info" {
-	start_docker 3
+	start_docker 1 --label foo=bar
 	swarm_manage
 	run docker_swarm info
 	[ "$status" -eq 0 ]
-	[[ "${lines[3]}" == *"Nodes: 3" ]]
+	[[ "${lines[3]}" == *"Nodes: 1" ]]
+	[[ "${output}" == *"└ Labels:"*"foo=bar"* ]]
 }
 
 # FIXME
