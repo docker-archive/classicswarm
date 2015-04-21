@@ -116,7 +116,7 @@ function teardown() {
 	swarm_manage
 
 	# run a container with echo command
-	run docker_swarm run -d --name test_container busybox echo hello world
+	run docker_swarm run -d --name test_container busybox /bin/sh -c "echo hello world; echo hello docker; echo hello swarm"
 	[ "$status" -eq 0 ]
 
 	# make sure container exists
@@ -127,8 +127,10 @@ function teardown() {
 	# verify
 	run docker_swarm logs test_container
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 1 ]
+	[ "${#lines[@]}" -eq 3 ]
 	[[ "${lines[0]}" ==  *"hello world"* ]]
+	[[ "${lines[1]}" ==  *"hello docker"* ]]
+	[[ "${lines[2]}" ==  *"hello swarm"* ]]
 }
 
 # FIXME
@@ -231,6 +233,10 @@ function teardown() {
 	[[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" == *"Up"* ]]
 
+	# rm, remove a running container, return error
+	run docker_swarm rm test_container
+	[ "$status" -ne 0 ]
+
 	# rm -f, remove a running container
 	run docker_swarm rm -f test_container
 	[ "$status" -eq 0 ]
@@ -251,12 +257,12 @@ function teardown() {
 	# swarm check image
 	run docker_swarm images
 	[ "$status" -eq 0 ]
-	[[ "${lines[*]}" == *"busybox"* ]]
+	[[ "${output}" == *"busybox"* ]]
 	# node check image
 	for host in ${HOSTS[@]}; do
 		run docker -H $host images
 		[ "$status" -eq 0 ]
-		[[ "${lines[*]}" == *"busybox"* ]]
+		[[ "${output}" == *"busybox"* ]]
 	done
 
 	# this test presupposition: do not run image
@@ -290,8 +296,8 @@ function teardown() {
 	# verify, container exists
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[*]}" == *"test_container"* ]]
-	[[ "${lines[*]}" == *"Up"* ]]
+	[[ "${output}" == *"test_container"* ]]
+	[[ "${output}" == *"Up"* ]]
 }
 
 # FIXME
