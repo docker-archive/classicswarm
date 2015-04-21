@@ -155,7 +155,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	# check pull busybox, if download sucessfully, the busybox have one tag(lastest) at least
 	# if there are 3 nodes, the output lines of "docker images" are greater or equal 4(1 header + 3 busybox:latest)
-	# The following(pull/tag) is the same reason.
+	# so use -ge here, the following(pull/tag) is the same reason
 	[ "${#lines[@]}" -ge 4 ]
 	# Every line should contain "busybox" exclude the first head line 
 	for((i=1; i<${#lines[@]}; i++)); do
