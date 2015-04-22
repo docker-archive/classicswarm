@@ -30,9 +30,9 @@ Our goal is to support 100% of the API, so all the Docker CLI commands would wor
 * [ ] Open a few PRs on docker/docker to display labels in `docker ps` and `docker images` 
 
 ####Networking
-Scheduling and container placing is only part of the problem. In order for Swarm to be a good solution for distributed environments, we have to support multi-host networking.
+Scheduling and container placing is only part of the problem. In order for Swarm to be a good solution for distributed environments, we need to support multi-host networking.
 
-* [ ] Integrate Swarm with Docker networking as soon as its available.
+* [ ] Integrate Swarm with [Docker Networking](https://github.com/docker/libnetwork).
 
 ####Extensibility
 The builtin scheduler allows you to manage container on approximately hundreds of machines within a cluster.
