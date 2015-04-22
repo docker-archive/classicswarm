@@ -29,6 +29,11 @@ Our goal is to support 100% of the API, so all the Docker CLI commands would wor
 * [ ] Use labels instead of env variable for constraints and affinity
 * [ ] Open a few PRs on docker/docker to display labels in `docker ps` and `docker images` 
 
+####Networking
+Scheduling and container placing is only part of the problem. In order for Swarm to be a good solution for distributed environments, we have to support multi-host networking.
+
+* [ ] Integrate Swarm with Docker networking as soon as its available.
+
 ####Extensibility
 The builtin scheduler allows you to manage container on approximately hundreds of machines within a cluster.
 In the future, we want to allow third party tools to be plugged into Docker Swarm to allow management
