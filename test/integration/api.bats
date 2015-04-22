@@ -36,28 +36,49 @@ function teardown() {
 @test "docker cp" {
 	start_docker 3
 	swarm_manage
+
+	test_file="/bin/busybox"
+	# create a temporary destination directory
+	temp_dest=`mktemp -d`
+
+	# create the container
 	run docker_swarm run -d --name test_container busybox sleep 500
 	[ "$status" -eq 0 ]
-	temp_file_name="/tmp/cp_file_$RANDOM"
+
 	# make sure container is up and no comming file
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" == *"Up"* ]]
-	[ ! -f $temp_file_name ]	
 
-	# touch file for cp 
-	run docker_swarm exec test_container touch $temp_file_name
+	# grab the checksum of the test file inside the container.
+	# FIXME: if issue #658 solved, use 'exec' instead of 'exec -i'
+	run docker_swarm exec -i test_container md5sum $test_file
 	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -ge 1 ]
 
-	# cp and verify
-	run docker_swarm cp test_container:$temp_file_name /tmp/
+	# get the checksum number
+	container_checksum=`echo ${lines[0]} | awk '{print $1}'`
+
+	# host file
+	host_file=$temp_dest/`basename $test_file`
+	[ ! -f $host_file ]
+
+	# copy the test file from the container to the host.
+	run docker_swarm cp test_container:$test_file $temp_dest
 	[ "$status" -eq 0 ]
+	[ -f $host_file ]
 
-	# verify: cp file exists
-	[ -f $temp_file_name ]
-	# after ok, delete cp file
-	rm -f $temp_file_name
+	# compute the checksum of the copied file.
+	run md5sum $host_file
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -ge 1 ]
+	host_checksum=`echo ${lines[0]} | awk '{print $1}'`
+
+	# Verify that they match.
+	[[ "${container_checksum}" == "${host_checksum}" ]]
+	# after ok, remove temp directory and file 
+	rm -rf $temp_dest
 }
 
 # FIXME
@@ -91,14 +112,19 @@ function teardown() {
 	# make sure container exists 
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[1]}" ==  *"test_container"* ]]
-
+	[[ "${lines[1]}" == *"test_container"* ]]
+	
 	# export, container->tar
-	run docker_swarm export test_container > $temp_file_name
-	[ "$status" -eq 0 ]
+	docker_swarm export test_container > $temp_file_name
 
-	# verify: exported file exists
-	[ -f $temp_file_name ]
+	# verify: exported file exists, not empty and is tar file 
+	[ -s $temp_file_name ]
+	run file $temp_file_name
+	[ "$status" -eq 0 ]
+	echo ${lines[0]}
+	echo $output
+	[[ "$output" == *"tar archive"* ]]
+	
 	# after ok, delete exported tar file
 	rm -f $temp_file_name
 }
@@ -114,7 +140,7 @@ function teardown() {
 	# make sure the image of busybox exists
 	run docker_swarm images
 	[ "$status" -eq 0 ]
-	[[ "${lines[*]}" == *"busybox"* ]]
+	[[ "${output}" == *"busybox"* ]]
 
 	# history
 	run docker_swarm history busybox
@@ -259,42 +285,31 @@ function teardown() {
 	[ "$status" -eq 0 ]
 
 	temp_file_name=$(mktemp)
+	temp_file_name_o=$(mktemp)
 	# make sure busybox image exists
 	run docker_swarm images 
 	[ "$status" -eq 0 ]
-	[[ "${lines[*]}" == *"busybox"* ]]
+	[[ "${output}" == *"busybox"* ]]
 
 	# save >, image->tar
-	run docker_swarm save busybox > $temp_file_name
-	[ "$status" -eq 0 ]
-
-	# saved image file exists
-	[ -f $temp_file_name ]
-	# after ok, delete saved tar file
-	rm -f $temp_file_name
-}
-
-@test "docker save -o" {
-	start_docker 3
-	swarm_manage
-
-	run docker_swarm pull busybox
-	[ "$status" -eq 0 ]
-
-	temp_file_name=$(mktemp)
-	# make sure busybox image exists
-	run docker_swarm images 
-	[ "$status" -eq 0 ]
-	[[ "${lines[*]}" == *"busybox"* ]]
-
+	docker_swarm save busybox > $temp_file_name
 	# save -o, image->tar
-	run docker_swarm save -o $temp_file_name busybox 
+	docker_swarm save -o $temp_file_name_o busybox
+	
+	# saved image file exists, not empty and is tar file 
+	[ -s $temp_file_name ]
+	run file $temp_file_name
 	[ "$status" -eq 0 ]
+	[[ "${output}" == *"tar archive"* ]]
 
-	# saved image file exists
-	[ -f $temp_file_name ]
+	[ -s $temp_file_name_o ]
+	run file $temp_file_name_o
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"tar archive"* ]]
+
 	# after ok, delete saved tar file
 	rm -f $temp_file_name
+	rm -f $temp_file_name_o
 }
 
 # FIXME
