@@ -772,9 +772,8 @@ function teardown() {
 	start_docker 3
 	swarm_manage
 
-	TEMP_NAME=noimage$RANDOM
 	# search image (not exist), the name of images only [a-z0-9-_.] are allowed
-	run docker_swarm search $TEMP_NAME
+	run docker_swarm search does_not_exist
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 1 ]
 	[[ "${lines[0]}" == *"DESCRIPTION"* ]]
@@ -830,9 +829,13 @@ function teardown() {
 	# storage the real time output of stats in TEMP_FILE
 	docker_swarm stats test_container > $TEMP_FILE &
 
+	local attempts=0
+	local max_attempts=5
 	# make sure TEMP_FILE exists and is not empty
-	sleep 3
-	[ -s $TEMP_FILE ]
+	until [ -s $TEMP_FILE ] || [ $attempts -ge $max_attempts ]; do
+		sleep 0.5
+		attempts=$[$attempts+1]
+	done
 
 	# if "CPU %" in TEMP_FILE, status is 0
 	run grep "CPU %" $TEMP_FILE
@@ -958,11 +961,12 @@ function teardown() {
 }
 
 @test "docker wait" {
+	TEMP_FILE=$(mktemp)
 	start_docker 3
 	swarm_manage
-	
-	# run after 10 seconds, test_container will exit
-	run docker_swarm run -d --name test_container busybox sleep 10
+
+	# run after 3 seconds, test_container will exit
+	run docker_swarm run -d --name test_container busybox sleep 3
 	[ "$status" -eq 0 ]
 
 	# make sure container exists and is up
@@ -971,9 +975,20 @@ function teardown() {
 	[[ "${lines[1]}" ==  *"test_container"* ]]
 	[[ "${lines[1]}" ==  *"Up"* ]]
 
-	# wait until exist(after 10 seconds)
-	run docker_swarm wait test_container
+	# wait until exist(after 3 seconds)
+	docker_swarm wait test_container > $TEMP_FILE &
+	WAIT_PID=$!
+
+	# after 5 secondes, cat $TEMP_FILE      
+	sleep 5
+	run cat $TEMP_FILE
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 1 ]
 	[[ "${lines[0]}" == "0" ]]
+
+	# after sucess, if the wait process still exist then kill
+	run ps -p $WAIT_PID
+	if [ "$status" -eq 0 ]; then
+		kill -9 $WAIT_PID
+	fi
 }
