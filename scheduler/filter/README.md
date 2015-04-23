@@ -101,7 +101,7 @@ without specifying them when starting the node. Those tags are sourced from
 
 #### Containers
 
-You can schedule 2 containers and make the container #2 next to the container #1.
+You can schedule 2 containers and make the container #2 next to the container #1 using it's name or ID.
 
 ```bash
 $ docker run -d -p 80:80 --name front nginx
@@ -163,6 +163,33 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 ```
 
 As you can see here, the containers were only scheduled on nodes with the `redis` image already pulled.
+
+#### Labels
+
+You can schedule 2 containers and make the container #2 next to the container #1 using it's labels.
+
+```bash
+$ docker run -d -p 80:80 --label com.example.type=front nginx
+ 87c4376856a8
+
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
+87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      trusting_yonath
+```
+
+Using `-e affinity:com.example.type==front` will schedule a container next to the container with label `front`.
+
+```bash
+$ docker run -d -e affinity:com.example.type==front logger
+ 87c4376856a8
+
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
+87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      trusting_yonath
+963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1      happy_hawking
+```
+
+The `logger` container ends up on `node-1` because its affinity with the container `front`.
 
 #### Expression Syntax
 
