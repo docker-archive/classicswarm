@@ -26,6 +26,10 @@ In order to run all integration tests, pass *bats* the test path:
 $ bats test/integration
 ```
 
+> **Note**: There are known issues running the integration tests using 
+> **devicemapper** as a storage driver, make sure that your docker daemon 
+> is using **aufs** if you want to successfully run the integration tests.
+
 ## Writing integration tests
 
 [helper functions]
