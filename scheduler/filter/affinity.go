@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 )
 
 // AffinityFilter selects only nodes based on other containers on the node.
@@ -19,7 +19,7 @@ func (f *AffinityFilter) Name() string {
 }
 
 // Filter is exported
-func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	affinities, err := parseExprs("affinity", config.Env)
 	if err != nil {
 		return nil, err

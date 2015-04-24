@@ -195,7 +195,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	var (
-		config dockerclient.ContainerConfig
+		config cluster.ContainerConfig
 		name   = r.Form.Get("name")
 	)
 

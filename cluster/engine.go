@@ -349,7 +349,7 @@ func (e *Engine) TotalCpus() int64 {
 }
 
 // Create a new container
-func (e *Engine) Create(config *dockerclient.ContainerConfig, name string, pullImage bool) (*Container, error) {
+func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*Container, error) {
 	var (
 		err    error
 		id     string
@@ -361,7 +361,7 @@ func (e *Engine) Create(config *dockerclient.ContainerConfig, name string, pullI
 	// nb of CPUs -> real CpuShares
 	newConfig.CpuShares = config.CpuShares * 1024 / e.Cpus
 
-	if id, err = client.CreateContainer(&newConfig, name); err != nil {
+	if id, err = client.CreateContainer(&newConfig.ContainerConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.
 		if err != dockerclient.ErrNotFound || !pullImage {
 			return nil, err
@@ -371,7 +371,7 @@ func (e *Engine) Create(config *dockerclient.ContainerConfig, name string, pullI
 			return nil, err
 		}
 		// ...And try agaie.
-		if id, err = client.CreateContainer(&newConfig, name); err != nil {
+		if id, err = client.CreateContainer(&newConfig.ContainerConfig, name); err != nil {
 			return nil, err
 		}
 	}

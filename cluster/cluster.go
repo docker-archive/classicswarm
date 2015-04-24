@@ -9,7 +9,7 @@ import (
 // Cluster is exported
 type Cluster interface {
 	// Create a container
-	CreateContainer(config *dockerclient.ContainerConfig, name string) (*Container, error)
+	CreateContainer(config *ContainerConfig, name string) (*Container, error)
 
 	// Remove a container
 	RemoveContainer(container *Container, force bool) error

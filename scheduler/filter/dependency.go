@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 )
 
 // DependencyFilter co-schedules dependent containers on the same node.
@@ -18,7 +18,7 @@ func (f *DependencyFilter) Name() string {
 }
 
 // Filter is exported
-func (f *DependencyFilter) Filter(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
@@ -52,7 +52,7 @@ func (f *DependencyFilter) Filter(config *dockerclient.ContainerConfig, nodes []
 }
 
 // Get a string representation of the dependencies found in the container config.
-func (f *DependencyFilter) String(config *dockerclient.ContainerConfig) string {
+func (f *DependencyFilter) String(config *cluster.ContainerConfig) string {
 	dependencies := []string{}
 	for _, volume := range config.HostConfig.VolumesFrom {
 		dependencies = append(dependencies, fmt.Sprintf("--volumes-from=%s", volume))
