@@ -3,8 +3,8 @@ package strategy
 import (
 	"sort"
 
+	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 )
 
 // BinpackPlacementStrategy is exported
@@ -22,7 +22,7 @@ func (p *BinpackPlacementStrategy) Name() string {
 }
 
 // PlaceContainer is exported
-func (p *BinpackPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*node.Node) (*node.Node, error) {
+func (p *BinpackPlacementStrategy) PlaceContainer(config *cluster.ContainerConfig, nodes []*node.Node) (*node.Node, error) {
 	weightedNodes, err := weighNodes(config, nodes)
 	if err != nil {
 		return nil, err

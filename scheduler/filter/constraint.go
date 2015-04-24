@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 )
 
 // ConstraintFilter selects only nodes that match certain labels.
@@ -18,7 +18,7 @@ func (f *ConstraintFilter) Name() string {
 }
 
 // Filter is exported
-func (f *ConstraintFilter) Filter(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+func (f *ConstraintFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	constraints, err := parseExprs("constraint", config.Env)
 	if err != nil {
 		return nil, err

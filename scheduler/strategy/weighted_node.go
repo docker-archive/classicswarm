@@ -1,8 +1,8 @@
 package strategy
 
 import (
+	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 )
 
 // WeightedNode represents a node in the cluster with a given weight, typically used for sorting
@@ -32,7 +32,7 @@ func (n weightedNodeList) Less(i, j int) bool {
 	return ip.Weight < jp.Weight
 }
 
-func weighNodes(config *dockerclient.ContainerConfig, nodes []*node.Node) (weightedNodeList, error) {
+func weighNodes(config *cluster.ContainerConfig, nodes []*node.Node) (weightedNodeList, error) {
 	weightedNodes := weightedNodeList{}
 
 	for _, node := range nodes {

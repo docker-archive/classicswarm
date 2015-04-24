@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 )
 
 // PlacementStrategy is exported
@@ -15,7 +15,7 @@ type PlacementStrategy interface {
 	Initialize() error
 	// Given a container configuration and a set of nodes, select the target
 	// node where the container should be scheduled.
-	PlaceContainer(config *dockerclient.ContainerConfig, nodes []*node.Node) (*node.Node, error)
+	PlaceContainer(config *cluster.ContainerConfig, nodes []*node.Node) (*node.Node, error)
 }
 
 var (
