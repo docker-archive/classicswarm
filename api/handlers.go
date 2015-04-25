@@ -270,6 +270,21 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// POST /images/load
+func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
+
+	// call cluster to load image on every node
+	wf := NewWriteFlusher(w)
+	callback := func(what, status string) {
+		if status == "" {
+			fmt.Fprintf(wf, "%s:Loading Image...\n", what)
+		} else {
+			fmt.Fprintf(wf, "%s:Loading Image... %s\n", what, status)
+		}
+	}
+	c.cluster.Load(r.Body, callback)
+}
+
 // GET /events
 func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 	c.eventsHandler.Add(r.RemoteAddr, w)
