@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"sync"
@@ -410,6 +411,18 @@ func (e *Engine) Pull(image string) error {
 	}
 
 	// force refresh images
+	e.RefreshImages()
+
+	return nil
+}
+
+// Load an image on the engine
+func (e *Engine) Load(reader io.Reader) error {
+	if err := e.client.LoadImage(reader); err != nil {
+		return err
+	}
+
+	// force fresh images
 	e.RefreshImages()
 
 	return nil
