@@ -195,7 +195,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	var (
-		config cluster.ContainerConfig
+		config dockerclient.ContainerConfig
 		name   = r.Form.Get("name")
 	)
 
@@ -209,7 +209,7 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	container, err := c.cluster.CreateContainer(&config, name)
+	container, err := c.cluster.CreateContainer(cluster.BuildContainerConfig(&config), name)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
