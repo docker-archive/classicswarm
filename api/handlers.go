@@ -489,6 +489,34 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// POST /containers/{name:.*}/rename
+func postRename(c *context, w http.ResponseWriter, r *http.Request) {
+	container, err := getContainerFromVars(c, mux.Vars(r))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// check new name whether avaliable
+	newName := r.Form.Get("name")
+	if conflictContainer := c.cluster.Container(newName); conflictContainer != nil {
+		httpError(w, fmt.Sprintf("Conflict, The new name %s is already assigned to %s. ", newName, conflictContainer.Id), http.StatusConflict)
+		return
+	}
+
+	// call cluster rename
+	err = c.cluster.Rename(container, newName)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+
+}
+
 // Proxy a hijack request to the right node
 func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 	container, err := getContainerFromVars(c, mux.Vars(r))

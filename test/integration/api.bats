@@ -352,9 +352,27 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker rename" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	run docker_swarm run -d --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+
+	# make sure container exist
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[*]}" == *"test_container"* ]]
+	[[ "${lines[*]}" != *"rename_container"* ]]
+
+	# rename container
+	run docker_swarm rename test_container rename_container
+	[ "$status" -eq 0 ]
+
+	# verify after rename 
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[*]}" == *"rename_container"* ]]
 }
 
 @test "docker restart" {

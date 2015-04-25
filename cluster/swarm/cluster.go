@@ -333,3 +333,24 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 	}
 	return nil, nil
 }
+
+// Rename a container
+func (c *Cluster) Rename(container *cluster.Container, newName string) error {
+	c.RLock()
+	defer c.RUnlock()
+
+	// call engine rename
+	err := container.Engine.Rename(container, newName)
+	if err != nil {
+		return err
+	}
+
+	// update container name in store
+	st, err := c.store.Get(container.Id)
+	if err != nil {
+		return err
+	}
+	st.Name = newName
+	err = c.store.Replace(container.Id, st)
+	return err
+}

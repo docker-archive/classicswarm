@@ -24,6 +24,7 @@ type Client interface {
 	StopAllMonitorEvents()
 	StartMonitorStats(id string, cb StatCallback, ec chan error, args ...interface{})
 	StopAllMonitorStats()
+	TagImage(nameOrID string, repo string, tag string, force bool) error
 	Version() (*Version, error)
 	PullImage(name string, auth *AuthConfig) error
 	LoadImage(reader io.Reader) error
@@ -32,4 +33,5 @@ type Client interface {
 	RemoveImage(name string) ([]*ImageDelete, error)
 	PauseContainer(name string) error
 	UnpauseContainer(name string) error
+	RenameContainer(oldName string, newName string) error
 }
