@@ -20,7 +20,7 @@ func (f *AffinityFilter) Name() string {
 
 // Filter is exported
 func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
-	affinities, err := parseExprs("affinity", config.Env)
+	affinities, err := parseExprs(config.Affinities())
 	if err != nil {
 		return nil, err
 	}

@@ -67,182 +67,128 @@ func TestAffinityFilter(t *testing.T) {
 	assert.Equal(t, result, nodes)
 
 	// Set a constraint that cannot be fulfilled and expect an error back.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:container==does_not_exsits"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container==does_not_exsits"}}), nodes)
 	assert.Error(t, err)
 
 	// Set a constraint that can only be filled by a single node.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:container==container-n0*"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container==container-n0*"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
 	// This constraint can only be fulfilled by a subset of nodes.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:container==container-*"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container==container-*"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[2])
 
 	// Validate by id.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:container==container-n0-0-id"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container==container-n0-0-id"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
 	// Validate by id.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:container!=container-n0-0-id"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n0-0-id"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[0])
 
 	// Validate by id.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:container!=container-n0-1-id"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n0-1-id"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[0])
 
 	// Validate by name.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:container==container-n1-0-name"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container==container-n1-0-name"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
 	// Validate by name.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:container!=container-n1-0-name"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n1-0-name"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[1])
 
 	// Validate by name.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:container!=container-n1-1-name"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n1-1-name"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[1])
 
 	// Validate images by id
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image==image-0-id"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image==image-0-id"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
 	// Validate images by name
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image==image-0:tag3"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image==image-0:tag3"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
 	// Validate images by name
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image!=image-0:tag3"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image!=image-0:tag3"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	// Validate images by name
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image==image-1"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image==image-1"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
 	// Validate images by name
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image!=image-1"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image!=image-1"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	// Ensure that constraints can be chained.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{
-			"affinity:container!=container-n0-1-id",
-			"affinity:container!=container-n1-1-id",
-		},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n0-1-id", "affinity:container!=container-n1-1-id"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[2])
 
 	// Ensure that constraints can be chained.
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{
-			"affinity:container==container-n0-1-id",
-			"affinity:container==container-n1-1-id",
-		},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:container==container-n0-1-id", "affinity:container==container-n1-1-id"}}), nodes)
 	assert.Error(t, err)
 
 	//Tests for Soft affinity
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image==~image-0:tag3"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image==~image-0:tag3"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image==~ima~ge-0:tag3"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image==~ima~ge-0:tag3"}}), nodes)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image==~image-1:tag3"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image==~image-1:tag3"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 3)
 
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image==~image-*"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image==~image-*"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image!=~image-*"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image!=~image-*"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[2])
 
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image==~/image-\\d*/"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image==~/image-\\d*/"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	// Not support = any more
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image=image-0:tag3"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image=image-0:tag3"}}), nodes)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 
 	// Not support =! any more
-	result, err = f.Filter(&cluster.ContainerConfig{dockerclient.ContainerConfig{
-		Env: []string{"affinity:image=!image-0:tag3"},
-	}}, nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image=!image-0:tag3"}}), nodes)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 

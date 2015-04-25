@@ -19,7 +19,7 @@ func (f *ConstraintFilter) Name() string {
 
 // Filter is exported
 func (f *ConstraintFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
-	constraints, err := parseExprs("constraint", config.Env)
+	constraints, err := parseExprs(config.Constraints())
 	if err != nil {
 		return nil, err
 	}
