@@ -43,4 +43,7 @@ type Cluster interface {
 	// FIXME: remove this method
 	// Return a random engine
 	RANDOMENGINE() (*Engine, error)
+
+	// Rename a container
+	Rename(container *Container, newName string) error
 }
