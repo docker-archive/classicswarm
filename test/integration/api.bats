@@ -290,8 +290,6 @@ function teardown() {
 	rm -f $IMAGE_FILE
 }
 
-}
-
 # FIXME
 @test "docker login" {
 	skip
