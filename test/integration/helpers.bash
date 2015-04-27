@@ -45,7 +45,7 @@ function swarm_manage() {
 		discovery="$@"
 	fi
 
-	${SWARM_ROOT}/swarm manage -H $SWARM_HOST $discovery &
+	swarm manage -H $SWARM_HOST $discovery &
 	SWARM_PID=$!
 	wait_until_reachable $SWARM_HOST
 }
@@ -55,7 +55,7 @@ function swarm_join() {
 	local i=0
 	for h in ${HOSTS[@]}; do
 		echo "Swarm join #${i}: $h $@"
-		${SWARM_ROOT}/swarm join --addr=$h "$@" &
+		swarm join --addr=$h "$@" &
 		SWARM_JOIN_PID[$i]=$!
 		((++i))
 	done
