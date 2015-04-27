@@ -97,39 +97,55 @@ without specifying them when starting the node. Those tags are sourced from
 * kernelversion
 * operatingsystem
 
-## Affinity Filter
+## Affinity filter
 
-#### Containers
+You use an `--affinity:<filter>` to create "attractions" between containers. For
+example, you can run a container and instruct it to locate and run next to
+another container based on an identifier, an image, or a label. These
+attractions ensure that containers run on the same network node &mdash; without
+you having to know what each node is running.
 
-You can schedule 2 containers and make the container #2 next to the container #1 using it's name or ID.
+#### Container affinity
+
+You can schedule a new container to run next to another based on a container
+name or  ID.  For example, you can start a container called `frontend` running
+`nginx`:
 
 ```bash
 $ docker run -d -p 80:80 --name front nginx
  87c4376856a8
 
+
 $ docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
 87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      front
 ```
 
-Using `-e affinity:container==front` will schedule a container next to the container `front`.
-You can also use IDs instead of name: `-e affinity:container==87c4376856a8`
+Then, using `-e affinity:container==frontend` flag schedule a second container to
+locate and run next to `frontend`.
 
 ```bash
-$ docker run -d --name logger -e affinity:container==front logger
+$ docker run -d --name logger -e affinity:container==frontend logger
  87c4376856a8
 
 $ docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      front
+87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      frontend
 963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1      logger
 ```
 
-The `logger` container ends up on `node-1` because its affinity with the container `front`.
+Because of name affinity, the  `logger` container ends up on `node-1` along with
+the `frontend` container. Instead of the `frontend` name you could have supplied its
+ID as follows:
 
-#### Images
+```bash
+docker run -d --name logger -e affinity:container==87c4376856a8`
+```
 
-You can schedule a container only on nodes where a specific image is already pulled.
+
+#### Image affinity
+
+You can schedule a container to run only on nodes where a specific image is already pulled.
 
 ```bash
 $ docker -H node-1:2375 pull redis
@@ -137,8 +153,9 @@ $ docker -H node-2:2375 pull mysql
 $ docker -H node-3:2375 pull redis
 ```
 
-Here only `node-1` and `node-3` have the `redis` image. Using `-e affinity:image=redis` we can
-schedule container only on these 2 nodes. You can also use the image ID instead of its name.
+Only `node-1` and `node-3` have the `redis` image. Specify a `-e
+affinity:image=redis` filter to schedule several additional containers to run on
+these nodes.
 
 ```bash
 $ docker run -d --name redis1 -e affinity:image==redis redis
@@ -162,25 +179,37 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 963841b138d8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis8
 ```
 
-As you can see here, the containers were only scheduled on nodes with the `redis` image already pulled.
-
-#### Labels
-
-You can schedule 2 containers and make the container #2 next to the container #1 using it's labels.
+As you can see here, the containers were only scheduled on nodes that had the
+`redis` image. Instead of the image name, you could have specified the image ID.
 
 ```bash
-$ docker run -d -p 80:80 --label com.example.type=front nginx
+$ docker images
+REPOSITORY                         TAG                       IMAGE ID            CREATED             VIRTUAL SIZE
+redis                              latest                    06a1f75304ba        2 days ago          111.1 MB
+
+$ docker run -d --name redis1 -e affinity:image==06a1f75304ba redis
+```
+
+
+#### Label affinity
+
+Label affinity allows you to set up an attraction based on a container's label.
+For example, you can run a `nginx` container with the `com.example.type=frontend` label.
+
+```bash
+$ docker run -d -p 80:80 --label com.example.type=frontend nginx
  87c4376856a8
 
-$ docker ps
+$ docker ps  --filter "label=com.example.type=front"
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
 87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      trusting_yonath
 ```
 
-Using `-e affinity:com.example.type==front` will schedule a container next to the container with label `front`.
+Then, use  `-e affinity:com.example.type==frontend` to schedule a container next to
+the container with the `com.example.type==frontend` label.
 
 ```bash
-$ docker run -d -e affinity:com.example.type==front logger
+$ docker run -d -e affinity:com.example.type==frontend logger
  87c4376856a8
 
 $ docker ps
@@ -189,7 +218,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1      happy_hawking
 ```
 
-The `logger` container ends up on `node-1` because its affinity with the container `front`.
+The `logger` container ends up on `node-1` because its affinity with the `com.example.type==frontend` label.
 
 #### Expression Syntax
 
