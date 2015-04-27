@@ -51,6 +51,15 @@ func (f *AffinityFilter) Filter(config *dockerclient.ContainerConfig, nodes []*n
 				if affinity.Match(images...) {
 					candidates = append(candidates, node)
 				}
+			default:
+				labels := []string{}
+				for _, container := range node.Containers {
+					labels = append(labels, container.Labels[affinity.key])
+				}
+				if affinity.Match(labels...) {
+					candidates = append(candidates, node)
+				}
+
 			}
 		}
 		if len(candidates) == 0 {

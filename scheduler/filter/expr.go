@@ -38,7 +38,7 @@ func parseExprs(key string, env []string) ([]expr, error) {
 
 					// validate key
 					// allow alpha-numeric
-					matched, err := regexp.MatchString(`^(?i)[a-z_][a-z0-9\-_]+$`, parts[0])
+					matched, err := regexp.MatchString(`^(?i)[a-z_][a-z0-9\-_.]+$`, parts[0])
 					if err != nil {
 						return nil, err
 					}

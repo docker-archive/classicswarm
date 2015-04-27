@@ -130,6 +130,7 @@ type Container struct {
 	Ports      []Port
 	SizeRw     int64
 	SizeRootFs int64
+	Labels     map[string]string
 }
 
 type Event struct {
