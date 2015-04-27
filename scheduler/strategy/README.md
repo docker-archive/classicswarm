@@ -28,7 +28,7 @@ your company's needs.
 
 Under the `spread` strategy, Swarm optimizes for the node with the least number
 of running containers. The `binpack` strategy causes Swarm to optimize for the
-container which is most packed. The `random` strategy, like it sounds, chooses
+node which is most packed. The `random` strategy, like it sounds, chooses
 nodes at random regardless of their available CPU or RAM.
 
 Using the `spread` strategy results in containers spread thinly over many
