@@ -15,13 +15,21 @@ func TestParseExprs(t *testing.T) {
 	_, err = parseExprs("constraint", []string{"constraint:node ==node1"})
 	assert.Error(t, err)
 
-	// Cannot use dot in key
-	_, err = parseExprs("constraint", []string{"constraint:no.de==node1"})
-	assert.Error(t, err)
-
 	// Cannot use * in key
 	_, err = parseExprs("constraint", []string{"constraint:no*de==node1"})
 	assert.Error(t, err)
+
+	// Cannot use $ in key
+	_, err = parseExprs("constraint", []string{"constraint:no$de==node1"})
+	assert.Error(t, err)
+
+	// Allow CAPS in key
+	_, err = parseExprs("constraint", []string{"constraint:NoDe==node1"})
+	assert.NoError(t, err)
+
+	// Allow dot in key
+	_, err = parseExprs("constraint", []string{"constraint:no.de==node1"})
+	assert.NoError(t, err)
 
 	// Allow leading underscore
 	_, err = parseExprs("constraint", []string{"constraint:_node==_node1"})

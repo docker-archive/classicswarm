@@ -4,8 +4,8 @@
 SWARM_ROOT=${SWARM_ROOT:-${BATS_TEST_DIRNAME}/../..}
 
 # Docker image and version to use for integration tests.
-DOCKER_IMAGE=${DOCKER_IMAGE:-aluzzardi/docker}
-DOCKER_VERSION=${DOCKER_VERSION:-1.5}
+DOCKER_IMAGE=${DOCKER_IMAGE:-dockerswarm/docker}
+DOCKER_VERSION=${DOCKER_VERSION:-1.6}
 
 # Host on which the manager will listen to (random port between 6000 and 7000).
 SWARM_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 6000 ))
