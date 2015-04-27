@@ -30,7 +30,7 @@ function wait_until_reachable() {
 	local attempts=0
 	local max_attempts=5
 	until docker -H $1 info || [ $attempts -ge $max_attempts ]; do
-		echo "Attempt to connect to ${HOSTS[$i]} failed for the $((++attempts)) time" >&2
+		echo "Attempt to connect to $1 failed for the $((++attempts)) time" >&2
 		sleep 0.5
 	done
 	[[ $attempts -lt $max_attempts ]]
