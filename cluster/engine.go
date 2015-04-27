@@ -568,3 +568,16 @@ func (e *Engine) cleanupContainers() {
 	e.containers = make(map[string]*Container)
 	e.Unlock()
 }
+
+// RenameContainer rename a container
+func (e *Engine) RenameContainer(container *Container, newName string) error {
+	// send rename request
+	err := e.client.RenameContainer(container.Id, newName)
+	if err != nil {
+		return err
+	}
+
+	// refresh container
+	err = e.refreshContainer(container.Id, true)
+	return err
+}
