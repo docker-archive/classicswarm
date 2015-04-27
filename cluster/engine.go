@@ -556,8 +556,8 @@ func (e *Engine) cleanupContainers() {
 	e.Unlock()
 }
 
-// Rename a container
-func (e *Engine) Rename(container *Container, newName string) error {
+// RenameContainer rename a container
+func (e *Engine) RenameContainer(container *Container, newName string) error {
 	// send rename request
 	err := e.client.RenameContainer(container.Id, newName)
 	if err != nil {

@@ -44,6 +44,6 @@ type Cluster interface {
 	// Return a random engine
 	RANDOMENGINE() (*Engine, error)
 
-	// Rename a container
-	Rename(container *Container, newName string) error
+	// RenameContainer rename a container
+	RenameContainer(container *Container, newName string) error
 }
