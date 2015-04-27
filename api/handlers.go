@@ -504,6 +504,29 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// POST /containers/{name:.*}/rename
+func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
+	container, err := getContainerFromVars(c, mux.Vars(r))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	newName := r.Form.Get("name")
+
+	// call cluster rename container
+	err = c.cluster.RenameContainer(container, newName)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+
+}
+
 // Proxy a hijack request to the right node
 func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 	container, err := getContainerFromVars(c, mux.Vars(r))

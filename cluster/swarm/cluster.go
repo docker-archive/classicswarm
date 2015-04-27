@@ -385,3 +385,29 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 	}
 	return nil, nil
 }
+
+// RenameContainer rename a container
+func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
+	c.RLock()
+	defer c.RUnlock()
+
+	// check new name whether avaliable
+	if conflictContainer := c.Container(newName); conflictContainer != nil {
+		return fmt.Errorf("Error when allocating new name: Conflict. The name %q is already in use by container %s. You have to delete (or rename) that container to be able to reuse that name.", newName, conflictContainer.Id)
+	}
+
+	// call engine rename
+	err := container.Engine.RenameContainer(container, newName)
+	if err != nil {
+		return err
+	}
+
+	// update container name in store
+	st, err := c.store.Get(container.Id)
+	if err != nil {
+		return err
+	}
+	st.Name = newName
+	err = c.store.Replace(container.Id, st)
+	return err
+}
