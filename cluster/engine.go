@@ -367,7 +367,7 @@ func (e *Engine) Create(config *dockerclient.ContainerConfig, name string, pullI
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
-		if err = e.Pull(config.Image); err != nil {
+		if err = e.Pull(config.Image, nil); err != nil {
 			return nil, err
 		}
 		// ...And try agaie.
@@ -402,11 +402,11 @@ func (e *Engine) Destroy(container *Container, force bool) error {
 }
 
 // Pull an image on the engine
-func (e *Engine) Pull(image string) error {
+func (e *Engine) Pull(image string, authConfig *dockerclient.AuthConfig) error {
 	if !strings.Contains(image, ":") {
 		image = image + ":latest"
 	}
-	if err := e.client.PullImage(image, nil); err != nil {
+	if err := e.client.PullImage(image, authConfig); err != nil {
 		return err
 	}
 

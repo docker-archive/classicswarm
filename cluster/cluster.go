@@ -1,8 +1,9 @@
 package cluster
 
 import (
-	"github.com/samalba/dockerclient"
 	"io"
+
+	"github.com/samalba/dockerclient"
 )
 
 // Cluster is exported
@@ -32,7 +33,7 @@ type Cluster interface {
 	// `callback` can be called multiple time
 	//  `what` is what is being pulled
 	//  `status` is the current status, like "", "in progress" or "downloaded
-	Pull(name string, callback func(what, status string))
+	Pull(name string, authConfig *dockerclient.AuthConfig, callback func(what, status string))
 
 	// Load images
 	// `callback` can be called multiple time
