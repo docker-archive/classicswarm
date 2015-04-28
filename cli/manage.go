@@ -69,6 +69,7 @@ func manage(c *cli.Context) {
 		err       error
 	)
 
+	tls := &cluster.TLSConfig{}
 	// If either --tls or --tlsverify are specified, load the certificates.
 	if c.Bool("tls") || c.Bool("tlsverify") {
 		if !c.IsSet("tlscert") || !c.IsSet("tlskey") {
@@ -82,6 +83,7 @@ func manage(c *cli.Context) {
 			c.String("tlscert"),
 			c.String("tlskey"),
 			c.Bool("tlsverify"))
+		tls.Config = tlsConfig
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -125,7 +127,7 @@ func manage(c *cli.Context) {
 		log.Fatal("--heartbeat should be an unsigned integer and greater than 0")
 	}
 	options := &cluster.Options{
-		TLSConfig:       tlsConfig,
+		TLS:             tls,
 		OvercommitRatio: c.Float64("overcommit"),
 		Discovery:       dflag,
 		Heartbeat:       hb,

@@ -27,7 +27,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(urltoken string, heartbeat uint64) error {
+func (s *Discovery) Initialize(urltoken string, heartbeat uint64, _ *discovery.TLS) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
 		s.url = "https://" + urltoken[:i]
 		s.token = urltoken[i+1:]
@@ -54,16 +54,16 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 
 	defer resp.Body.Close()
 
-	var addrs []string
+	var entries []string
 	if resp.StatusCode == http.StatusOK {
-		if err := json.NewDecoder(resp.Body).Decode(&addrs); err != nil {
+		if err := json.NewDecoder(resp.Body).Decode(&entries); err != nil {
 			return nil, err
 		}
 	} else {
 		return nil, fmt.Errorf("Failed to fetch entries, Discovery service returned %d HTTP status code", resp.StatusCode)
 	}
 
-	return discovery.CreateEntries(addrs)
+	return discovery.CreateEntries(entries)
 }
 
 // Watch is exported

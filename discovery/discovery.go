@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -13,6 +14,11 @@ import (
 type Entry struct {
 	Host string
 	Port string
+}
+
+// TLS is exported
+type TLS struct {
+	TLSConfig *tls.Config
 }
 
 // NewEntry is exported
@@ -33,7 +39,7 @@ type WatchCallback func(entries []*Entry)
 
 // Discovery is exported
 type Discovery interface {
-	Initialize(string, uint64) error
+	Initialize(string, uint64, *TLS) error
 	Fetch() ([]*Entry, error)
 	Watch(WatchCallback)
 	Register(string) error
@@ -73,12 +79,12 @@ func parse(rawurl string) (string, string) {
 }
 
 // New is exported
-func New(rawurl string, heartbeat uint64) (Discovery, error) {
+func New(rawurl string, heartbeat uint64, tls *TLS) (Discovery, error) {
 	scheme, uri := parse(rawurl)
 
 	if discovery, exists := discoveries[scheme]; exists {
 		log.WithFields(log.Fields{"name": scheme, "uri": uri}).Debug("Initializing discovery service")
-		err := discovery.Initialize(uri, heartbeat)
+		err := discovery.Initialize(uri, heartbeat, tls)
 		return discovery, err
 	}
 

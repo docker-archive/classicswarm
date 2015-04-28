@@ -64,7 +64,7 @@ func Run() {
 					log.Fatalf("the `create` command takes no arguments. See '%s create --help'.", c.App.Name)
 				}
 				discovery := &token.Discovery{}
-				discovery.Initialize("", 0)
+				discovery.Initialize("", 0, nil)
 				token, err := discovery.CreateCluster()
 				if err != nil {
 					log.Fatal(err)
@@ -82,7 +82,9 @@ func Run() {
 					log.Fatalf("discovery required to list a cluster. See '%s list --help'.", c.App.Name)
 				}
 
-				d, err := discovery.New(dflag, 0)
+				// FIXME fill TLS struct
+				tls := &discovery.TLS{}
+				d, err := discovery.New(dflag, 0, tls)
 				if err != nil {
 					log.Fatal(err)
 				}

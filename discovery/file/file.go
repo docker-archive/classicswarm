@@ -19,7 +19,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(path string, heartbeat uint64) error {
+func (s *Discovery) Initialize(path string, heartbeat uint64, _ *discovery.TLS) error {
 	s.path = path
 	s.heartbeat = heartbeat
 	return nil
