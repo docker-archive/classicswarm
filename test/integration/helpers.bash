@@ -3,6 +3,9 @@
 # Root directory of the repository.
 SWARM_ROOT=${SWARM_ROOT:-${BATS_TEST_DIRNAME}/../..}
 
+# Path of the Swarm binary.
+SWARM_BINARY=`mktemp`
+
 # Docker image and version to use for integration tests.
 DOCKER_IMAGE=${DOCKER_IMAGE:-dockerswarm/docker}
 DOCKER_VERSION=${DOCKER_VERSION:-1.6}
@@ -20,9 +23,17 @@ function join() {
 	echo "$*"
 }
 
-# Run the swarm binary.
+# Build the Swarm binary (if not already built)
+function build_swarm() {
+	[ -x $SWARM_BINARY ] || (cd $SWARM_ROOT && godep go build -o $SWARM_BINARY)
+}
+
+# Run the swarm binary. You must NOT fork this command (swarm foo &) as the PID
+# ($!) will be the one of the subshell instead of swarm and you won't be able
+# to kill it.
 function swarm() {
-	godep go run "${SWARM_ROOT}/main.go" "$@"
+	build_swarm
+	"$SWARM_BINARY" "$@"
 }
 
 # Waits until the given docker engine API becomes reachable.
@@ -38,6 +49,8 @@ function wait_until_reachable() {
 
 # Start the swarm manager in background.
 function swarm_manage() {
+	build_swarm
+
 	local discovery
 	if [ $# -eq 0 ]; then
 		discovery=`join , ${HOSTS[@]}`
@@ -45,17 +58,19 @@ function swarm_manage() {
 		discovery="$@"
 	fi
 
-	swarm manage -H $SWARM_HOST $discovery &
+	$SWARM_BINARY manage -H $SWARM_HOST $discovery &
 	SWARM_PID=$!
 	wait_until_reachable $SWARM_HOST
 }
 
 # Start swarm join for every engine with the discovery as parameter
 function swarm_join() {
+	build_swarm
+
 	local i=0
 	for h in ${HOSTS[@]}; do
 		echo "Swarm join #${i}: $h $@"
-		swarm join --addr=$h "$@" &
+		$SWARM_BINARY join --addr=$h "$@" &
 		SWARM_JOIN_PID[$i]=$!
 		((++i))
 	done
