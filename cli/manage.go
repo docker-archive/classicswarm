@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path"
 	"strconv"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -78,9 +79,9 @@ func manage(c *cli.Context) {
 			log.Fatal("--tlscacert must be provided when using --tlsverify")
 		}
 		tlsConfig, err = loadTLSConfig(
-			c.String("tlscacert"),
-			c.String("tlscert"),
-			c.String("tlskey"),
+			strings.Trim(c.String("tlscacert"), `"`),
+			strings.Trim(c.String("tlscert"), `"`),
+			strings.Trim(c.String("tlskey"), `"`),
 			c.Bool("tlsverify"))
 		if err != nil {
 			log.Fatal(err)
