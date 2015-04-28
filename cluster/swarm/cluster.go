@@ -408,6 +408,5 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 		return err
 	}
 	st.Name = newName
-	err = c.store.Replace(container.Id, st)
-	return err
+	return c.store.Replace(container.Id, st)
 }
