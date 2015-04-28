@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -251,6 +252,11 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	wf := NewWriteFlusher(w)
 
 	if image := r.Form.Get("fromImage"); image != "" { //pull
+		authConfig := dockerclient.AuthConfig{}
+		buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
+		if err == nil {
+			json.Unmarshal(buf, &authConfig)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 
@@ -264,7 +270,7 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 				fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s... : %s\",%q:{}}", "id", what, "status", image, status, "progressDetail")
 			}
 		}
-		c.cluster.Pull(image, callback)
+		c.cluster.Pull(image, &authConfig, callback)
 	} else { //import
 		httpError(w, "Not supported in clustering mode.", http.StatusNotImplemented)
 	}
