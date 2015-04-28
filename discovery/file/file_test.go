@@ -8,7 +8,7 @@ import (
 
 func TestInitialize(t *testing.T) {
 	discovery := &Discovery{}
-	discovery.Initialize("/path/to/file", 0)
+	discovery.Initialize("/path/to/file", 0, nil)
 	assert.Equal(t, discovery.path, "/path/to/file")
 }
 

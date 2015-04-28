@@ -8,17 +8,17 @@ import (
 
 func TestInitialize(t *testing.T) {
 	discovery := &Discovery{}
-	err := discovery.Initialize("token", 0)
+	err := discovery.Initialize("token", 0, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, discovery.token, "token")
 	assert.Equal(t, discovery.url, DiscoveryURL)
 
-	err = discovery.Initialize("custom/path/token", 0)
+	err = discovery.Initialize("custom/path/token", 0, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, discovery.token, "token")
 	assert.Equal(t, discovery.url, "https://custom/path")
 
-	err = discovery.Initialize("", 0)
+	err = discovery.Initialize("", 0, nil)
 	assert.Error(t, err)
 }
 
