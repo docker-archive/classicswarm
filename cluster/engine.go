@@ -578,6 +578,5 @@ func (e *Engine) RenameContainer(container *Container, newName string) error {
 	}
 
 	// refresh container
-	err = e.refreshContainer(container.Id, true)
-	return err
+	return e.refreshContainer(container.Id, true)
 }
