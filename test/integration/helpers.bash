@@ -25,7 +25,7 @@ function join() {
 
 # Build the Swarm binary (if not already built)
 function build_swarm() {
-	[ -x $SWARM_BINARY ] || (cd $SWARM_ROOT && godep go build -o $SWARM_BINARY)
+	[ -x $SWARM_BINARY ] || (rm -f $SWARM_BINARY && cd $SWARM_ROOT && godep go build -o $SWARM_BINARY)
 }
 
 # Run the swarm binary. You must NOT fork this command (swarm foo &) as the PID
