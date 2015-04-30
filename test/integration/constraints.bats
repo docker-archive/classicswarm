@@ -17,7 +17,9 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	run docker_swarm run --name c3 -e constraint:node==node-1 -d busybox:latest sh
 	[ "$status" -eq 0 ]
-
+	run docker_swarm run --name c4 --label 'com.docker.swarm.constraints=["node==node-1"]' -d busybox:latest sh
+	[ "$status" -eq 0 ]
+	
 	run docker_swarm inspect c1
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-0"'* ]]
@@ -27,6 +29,10 @@ function teardown() {
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 
 	run docker_swarm inspect c3
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
+
+	run docker_swarm inspect c4
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 }
@@ -42,6 +48,8 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	run docker_swarm run --name c3 -e constraint:foo==b -d busybox:latest sh
 	[ "$status" -eq 0 ]
+	run docker_swarm run --name c4 --label 'com.docker.swarm.constraints=["foo==b"]' -d busybox:latest sh
+	[ "$status" -eq 0 ]
 
 	run docker_swarm inspect c1
 	[ "$status" -eq 0 ]
@@ -52,6 +60,10 @@ function teardown() {
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 
 	run docker_swarm inspect c3
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
+
+	run docker_swarm inspect c4
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 }

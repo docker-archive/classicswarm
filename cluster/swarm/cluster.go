@@ -81,7 +81,7 @@ func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 }
 
 // CreateContainer aka schedule a brand new container into the cluster.
-func (c *Cluster) CreateContainer(config *dockerclient.ContainerConfig, name string) (*cluster.Container, error) {
+func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) (*cluster.Container, error) {
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
@@ -376,7 +376,7 @@ func (c *Cluster) Info() [][2]string {
 
 // RANDOMENGINE returns a random engine.
 func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), &dockerclient.ContainerConfig{})
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), &cluster.ContainerConfig{})
 	if err != nil {
 		return nil, err
 	}

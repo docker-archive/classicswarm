@@ -3,6 +3,7 @@ package filter
 import (
 	"fmt"
 
+	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 )
@@ -19,7 +20,7 @@ func (p *PortFilter) Name() string {
 }
 
 // Filter is exported
-func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+func (p *PortFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	if config.HostConfig.NetworkMode == "host" {
 		return p.filterHost(config, nodes)
 	}
@@ -27,7 +28,7 @@ func (p *PortFilter) Filter(config *dockerclient.ContainerConfig, nodes []*node.
 	return p.filterBridge(config, nodes)
 }
 
-func (p *PortFilter) filterHost(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+func (p *PortFilter) filterHost(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	for port := range config.ExposedPorts {
 		candidates := []*node.Node{}
 		for _, node := range nodes {
@@ -43,7 +44,7 @@ func (p *PortFilter) filterHost(config *dockerclient.ContainerConfig, nodes []*n
 	return nodes, nil
 }
 
-func (p *PortFilter) filterBridge(config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+func (p *PortFilter) filterBridge(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	for _, port := range config.HostConfig.PortBindings {
 		for _, binding := range port {
 			candidates := []*node.Node{}

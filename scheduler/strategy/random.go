@@ -5,8 +5,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 )
 
 // RandomPlacementStrategy randomly places the container into the cluster.
@@ -24,7 +24,7 @@ func (p *RandomPlacementStrategy) Name() string {
 }
 
 // PlaceContainer is exported
-func (p *RandomPlacementStrategy) PlaceContainer(config *dockerclient.ContainerConfig, nodes []*node.Node) (*node.Node, error) {
+func (p *RandomPlacementStrategy) PlaceContainer(config *cluster.ContainerConfig, nodes []*node.Node) (*node.Node, error) {
 	if size := len(nodes); size > 0 {
 		return nodes[rand.Intn(size)], nil
 	}
