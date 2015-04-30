@@ -25,3 +25,9 @@ func TestCheckAddrFormat(t *testing.T) {
 	assert.True(t, checkAddrFormat("hostname:1111"))
 	assert.True(t, checkAddrFormat("host-name_42:1111"))
 }
+
+func TestCheckAddrValidity(t *testing.T) {
+	assert.False(t, checkAddrValidity("a.b.c.d:1234"))
+	assert.True(t, checkAddrValidity("localhost:1234"))
+	assert.True(t, checkAddrValidity("127.0.0.1:1234"))
+}

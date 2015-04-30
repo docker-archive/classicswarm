@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"net"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -13,6 +15,26 @@ import (
 func checkAddrFormat(addr string) bool {
 	m, _ := regexp.MatchString("^[0-9a-zA-Z._-]+:[0-9]{1,5}$", addr)
 	return m
+}
+
+func checkAddrValidity(addr string) bool {
+	newip := strings.Split(addr, ":")
+	// Handle loopback interface as a special case
+	if strings.EqualFold(newip[0], "localhost") {
+		return true
+	}
+	// Compare host's network interface addresses with requested address
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, val := range addrs {
+		ipval := strings.Split(val.String(), "/")
+		if strings.EqualFold(newip[0], ipval[0]) {
+			return true
+		}
+	}
+	return false
 }
 
 func join(c *cli.Context) {
@@ -35,6 +57,10 @@ func join(c *cli.Context) {
 
 	if !checkAddrFormat(addr) {
 		log.Fatal("--addr should be of the form ip:port or hostname:port")
+	}
+
+	if !checkAddrValidity(addr) {
+		log.Fatalf("requested address %s not associated with any network interface", addr)
 	}
 
 	if err := d.Register(addr); err != nil {
