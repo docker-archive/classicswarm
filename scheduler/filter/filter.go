@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 )
 
 // Filter is exported
@@ -13,7 +13,7 @@ type Filter interface {
 	Name() string
 
 	// Return a subset of nodes that were accepted by the filtering policy.
-	Filter(*dockerclient.ContainerConfig, []*node.Node) ([]*node.Node, error)
+	Filter(*cluster.ContainerConfig, []*node.Node) ([]*node.Node, error)
 }
 
 var (
@@ -54,7 +54,7 @@ func New(names []string) ([]Filter, error) {
 }
 
 // ApplyFilters applies a set of filters in batch.
-func ApplyFilters(filters []Filter, config *dockerclient.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+func ApplyFilters(filters []Filter, config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	var err error
 
 	for _, filter := range filters {

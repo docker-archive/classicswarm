@@ -169,12 +169,12 @@ func TestEngineContainerLookup(t *testing.T) {
 
 func TestCreateContainer(t *testing.T) {
 	var (
-		config = &dockerclient.ContainerConfig{
+		config = &ContainerConfig{dockerclient.ContainerConfig{
 			Image:     "busybox",
 			CpuShares: 1,
 			Cmd:       []string{"date"},
 			Tty:       false,
-		}
+		}}
 		engine = NewEngine("test", 0)
 		client = mockclient.NewMockClient()
 	)
@@ -186,7 +186,7 @@ func TestCreateContainer(t *testing.T) {
 	assert.NoError(t, engine.connectClient(client))
 	assert.True(t, engine.isConnected())
 
-	mockConfig := *config
+	mockConfig := config.ContainerConfig
 	mockConfig.CpuShares = config.CpuShares * 1024 / mockInfo.NCPU
 
 	// Everything is ok
@@ -195,7 +195,7 @@ func TestCreateContainer(t *testing.T) {
 	client.On("CreateContainer", &mockConfig, name).Return(id, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
-	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: config}, nil).Once()
+	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: &config.ContainerConfig}, nil).Once()
 	container, err := engine.Create(config, name, false)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
@@ -218,7 +218,7 @@ func TestCreateContainer(t *testing.T) {
 	client.On("CreateContainer", &mockConfig, name).Return(id, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
-	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: config}, nil).Once()
+	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: &config.ContainerConfig}, nil).Once()
 	container, err = engine.Create(config, name, true)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
