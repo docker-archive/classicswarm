@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"container/list"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -31,6 +32,7 @@ func NewEngine(addr string, overcommitRatio float64) *Engine {
 		containers:      make(map[string]*Container),
 		healthy:         true,
 		overcommitRatio: int64(overcommitRatio * 100),
+		ScheduleQueue:   list.New(),
 	}
 	return e
 }
@@ -54,6 +56,14 @@ type Engine struct {
 	eventHandler    EventHandler
 	healthy         bool
 	overcommitRatio int64
+	ScheduleQueue   *list.List
+}
+
+//ScheduledItem FIX ME : works for affinities as it needs the conatainer name and Image
+//Need to add more types to support all filters
+type ScheduledItem struct {
+	Image     string
+	Container string
 }
 
 // Connect will initialize a connection to the Docker daemon running on the
@@ -348,6 +358,23 @@ func (e *Engine) TotalCpus() int64 {
 	return e.Cpus + (e.Cpus * e.overcommitRatio / 100)
 }
 
+//AddtoQueue adds a scheduled item to scheduled queue
+func (e *Engine) AddtoQueue(config *dockerclient.ContainerConfig, name string) {
+	item := &ScheduledItem{
+		Image:     config.Image,
+		Container: name,
+	}
+	e.ScheduleQueue.PushFront(*item)
+}
+
+func (e *Engine) removeFromQueue(config *dockerclient.ContainerConfig, name string) {
+	for i := e.ScheduleQueue.Back(); i != nil; i = i.Prev() {
+		if i.Value.(ScheduledItem).Container == name && i.Value.(ScheduledItem).Image == config.Image {
+			e.ScheduleQueue.Remove(i)
+		}
+	}
+}
+
 // Create a new container
 func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*Container, error) {
 	var (
@@ -357,7 +384,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	)
 
 	newConfig := *config
-
+	defer e.removeFromQueue(config, name)
 	// nb of CPUs -> real CpuShares
 	newConfig.CpuShares = config.CpuShares * 1024 / e.Cpus
 
@@ -379,7 +406,6 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
 	e.refreshContainer(id, true)
-
 	e.RLock()
 	defer e.RUnlock()
 

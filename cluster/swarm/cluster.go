@@ -83,14 +83,16 @@ func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 // CreateContainer aka schedule a brand new container into the cluster.
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) (*cluster.Container, error) {
 	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
 
 	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
 	if err != nil {
+		c.scheduler.Unlock()
 		return nil, err
 	}
 
 	if nn, ok := c.engines[n.ID]; ok {
+		nn.AddtoQueue(config, name)
+		c.scheduler.Unlock()
 		container, err := nn.Create(config, name, true)
 		if err != nil {
 			return nil, err

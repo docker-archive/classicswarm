@@ -1,6 +1,7 @@
 package node
 
 import (
+	"container/list"
 	"errors"
 	"strings"
 
@@ -24,25 +25,27 @@ type Node struct {
 	TotalMemory int64
 	TotalCpus   int64
 
-	IsHealthy bool
+	IsHealthy     bool
+	ScheduleQueue *list.List
 }
 
 // NewNode creates a node from an engine
 func NewNode(e *cluster.Engine) *Node {
 	return &Node{
-		ID:          e.ID,
-		IP:          e.IP,
-		Addr:        e.Addr,
-		Name:        e.Name,
-		Cpus:        e.Cpus,
-		Labels:      e.Labels,
-		Containers:  e.Containers(),
-		Images:      e.Images(),
-		UsedMemory:  e.UsedMemory(),
-		UsedCpus:    e.UsedCpus(),
-		TotalMemory: e.TotalMemory(),
-		TotalCpus:   e.TotalCpus(),
-		IsHealthy:   e.IsHealthy(),
+		ID:            e.ID,
+		IP:            e.IP,
+		Addr:          e.Addr,
+		Name:          e.Name,
+		Cpus:          e.Cpus,
+		Labels:        e.Labels,
+		Containers:    e.Containers(),
+		Images:        e.Images(),
+		UsedMemory:    e.UsedMemory(),
+		UsedCpus:      e.UsedCpus(),
+		TotalMemory:   e.TotalMemory(),
+		TotalCpus:     e.TotalCpus(),
+		IsHealthy:     e.IsHealthy(),
+		ScheduleQueue: e.ScheduleQueue,
 	}
 }
 
@@ -67,6 +70,27 @@ func (n *Node) Container(IDOrName string) *cluster.Container {
 		}
 	}
 
+	return nil
+}
+
+//ScheduledList returns a list of scheduled items but not created according to the query
+func (n *Node) ScheduledList(query string) []string {
+	if n.ScheduleQueue == nil {
+		return nil
+	}
+	candidate := make([]string, 1)
+	if query == "container" {
+		for e := n.ScheduleQueue.Back(); e != nil; e = e.Prev() {
+			candidate = append(candidate, e.Value.(cluster.ScheduledItem).Container)
+		}
+		return candidate
+	}
+	if query == "image" {
+		for e := n.ScheduleQueue.Back(); e != nil; e = e.Prev() {
+			candidate = append(candidate, e.Value.(cluster.ScheduledItem).Image)
+		}
+		return candidate
+	}
 	return nil
 }
 
