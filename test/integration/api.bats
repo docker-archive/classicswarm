@@ -62,9 +62,31 @@ function teardown() {
       [ "${#lines[@]}" -eq 1 ]
 }
 
-# FIXME
 @test "docker commit" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	run docker_swarm run -d --name test_container busybox sleep 500
+	[ "$status" -eq 0 ]
+
+	# make sure container exists
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"test_container"* ]]
+
+	# no comming name before commit 
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${output}" != *"commit_image_busybox"* ]]
+
+	# commit container
+	run docker_swarm commit test_container commit_image_busybox
+	[ "$status" -eq 0 ]
+
+	# verify after commit 
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"commit_image_busybox"* ]]
 }
 
 # FIXME
@@ -121,9 +143,25 @@ function teardown() {
 	skip
 }
 
-# FIXME
 @test "docker exec" {
-	skip
+	start_docker 3
+	swarm_manage
+	run docker_swarm run -d --name test_container busybox sleep 100
+	[ "$status" -eq 0 ]
+
+	# make sure container is up and not paused
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"Up"* ]]
+	[[ "${lines[1]}" != *"Paused"* ]]	
+
+	# FIXME: if issue #658 solved, use 'exec' instead of 'exec -i'
+	run docker_swarm exec -i test_container ls
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -ge 2 ]
+	[[ "${lines[0]}" == *"bin"* ]]
+	[[ "${lines[1]}" == *"dev"* ]]
 }
 
 # FIXME
