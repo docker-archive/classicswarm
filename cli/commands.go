@@ -8,7 +8,15 @@ var (
 			Name:      "create",
 			ShortName: "c",
 			Usage:     "Create a cluster",
+			Flags:     []cli.Flag{flUsername, flPassword},
 			Action:    create,
+		},
+		{
+			Name:      "destroy",
+			ShortName: "d",
+			Usage:     "Destroy a cluster",
+			Flags:     []cli.Flag{flUsername, flPassword},
+			Action:    destroy,
 		},
 		{
 			Name:      "list",

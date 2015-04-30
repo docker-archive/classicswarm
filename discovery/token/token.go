@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 )
 
 // DiscoveryUrl is exported
-const DiscoveryURL = "https://discovery-stage.hub.docker.com/v1"
+const DiscoveryURL = "https://discovery-stage.hub.docker.com/v2"
 
 // Discovery is exported
 type Discovery struct {
@@ -119,9 +120,9 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 func (s *Discovery) Register(addr string) error {
 	buf := strings.NewReader(addr)
 
-	resp, err := http.Post(fmt.Sprintf("%s/%s/%s", s.url,
-		"clusters", s.token), "application/json", buf)
-
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/%s/%s", s.url, "clusters", s.token), buf)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -130,14 +131,143 @@ func (s *Discovery) Register(addr string) error {
 	return nil
 }
 
-// CreateCluster returns a unique cluster token
-func (s *Discovery) CreateCluster() (string, error) {
-	resp, err := http.Post(fmt.Sprintf("%s/%s", s.url, "clusters"), "", nil)
+func getAuthToken(realm, service, username, password string) (string, error) {
+	tokenURL, _ := url.Parse(realm)
+	params := url.Values{}
+	params.Set("service", service)
+	tokenURL.RawQuery = params.Encode()
+	req, err := http.NewRequest("GET", tokenURL.String(), nil)
 	if err != nil {
 		return "", err
 	}
-
+	req.SetBasicAuth(username, password)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		rawJSON, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return "", err
+		}
+		tokenJSON := struct{ Token string }{}
+		if err := json.Unmarshal(rawJSON, &tokenJSON); err != nil {
+			return "", err
+		}
+		return tokenJSON.Token, nil
+	}
+	if resp.StatusCode == http.StatusUnauthorized {
+		rawJSON, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return "", err
+		}
+		detailsJSON := struct{ Details string }{}
+		if err := json.Unmarshal(rawJSON, &detailsJSON); err != nil {
+			return "", err
+		}
+		if detailsJSON.Details != "" {
+			return "", errors.New(detailsJSON.Details)
+		}
+	}
+
+	return "", errors.New(http.StatusText(resp.StatusCode))
+}
+
+// do a POST request to create a token, use authToken if provided
+func (s *Discovery) create(authToken, username string) (string, string, error) {
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s/%s", s.url, "clusters", username), nil)
+	if err != nil {
+		return "", "", err
+	}
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return "", resp.Header.Get("Www-Authenticate"), nil
+	} else if resp.StatusCode != http.StatusOK {
+		return "", "", errors.New(http.StatusText(resp.StatusCode))
+	}
+
 	token, err := ioutil.ReadAll(resp.Body)
-	return string(token), err
+	return string(token), "", err
+}
+
+// CreateCluster returns a unique cluster token
+func (s *Discovery) CreateCluster(username, password string) (string, error) {
+	token, authHeader, err := s.create("", username)
+	if err != nil {
+		return "", err
+	}
+	if authHeader != "" {
+		var (
+			realm   string
+			service string
+		)
+		_, err := fmt.Sscanf(authHeader, "Bearer realm=%q,service=%q", &realm, &service)
+		if err != nil {
+			return "", err
+		}
+
+		authToken, err := getAuthToken(realm, service, username, password)
+		if err != nil {
+			return "", err
+		}
+		token, _, err = s.create(authToken, username)
+		return token, err
+	}
+	return token, nil
+}
+
+// Destroy do a DELETE request to delete a token, use authToken if provided
+func (s *Discovery) destroy(authToken string) (string, error) {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/%s/%s", s.url, "clusters", s.token), nil)
+	if err != nil {
+		return "", err
+	}
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return resp.Header.Get("Www-Authenticate"), nil
+	} else if resp.StatusCode != http.StatusOK {
+		return "", errors.New(http.StatusText(resp.StatusCode))
+	}
+	return "", err
+}
+
+// DestroyCluster deletes a cluster token
+func (s *Discovery) DestroyCluster() (string, error) {
+	return s.destroy("")
+}
+
+// DestroySecureCluster deletes a secure cluster token
+func (s *Discovery) DestroySecureCluster(authHeader, username, password string) error {
+	var (
+		realm   string
+		service string
+	)
+	_, err := fmt.Sscanf(authHeader, "Bearer realm=%q,service=%q", &realm, &service)
+	if err != nil {
+		return err
+	}
+
+	authToken, err := getAuthToken(realm, service, username, password)
+	if err != nil {
+		return err
+	}
+	_, err = s.destroy(authToken)
+	return err
 }

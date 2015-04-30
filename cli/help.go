@@ -28,7 +28,7 @@ Run '{{.Name}} COMMAND --help' for more information on a command.
 `
 
 	// See https://github.com/codegangsta/cli/pull/171/files
-	cli.CommandHelpTemplate = `{{$DISCOVERY := or (eq .Name "manage") (eq .Name "join") (eq .Name "list")}}Usage: ` + path.Base(os.Args[0]) + ` {{.Name}}{{if .Flags}} [OPTIONS]{{end}} {{if $DISCOVERY}}<discovery>{{end}}
+	cli.CommandHelpTemplate = `{{$DISCOVERY := or (eq .Name "manage") (eq .Name "join") (eq .Name "list")}}{{$TOKEN := (eq .Name "destroy")}}Usage: ` + path.Base(os.Args[0]) + ` {{.Name}}{{if .Flags}} [OPTIONS]{{end}} {{if $DISCOVERY}}<discovery>{{end}}{{if $TOKEN}}<token>{{end}}
 
 {{.Usage}}{{if $DISCOVERY}}
 
