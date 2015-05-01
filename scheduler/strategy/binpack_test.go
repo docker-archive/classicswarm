@@ -27,7 +27,11 @@ func createConfig(memory int64, cpus int64) *cluster.ContainerConfig {
 }
 
 func createContainer(ID string, config *cluster.ContainerConfig) *cluster.Container {
-	return &cluster.Container{Container: dockerclient.Container{Id: ID}, Info: dockerclient.ContainerInfo{Config: &config.ContainerConfig}}
+	return &cluster.Container{
+		Container: dockerclient.Container{Id: ID},
+		Config:    config,
+		Info:      dockerclient.ContainerInfo{Config: &config.ContainerConfig},
+	}
 }
 
 func TestPlaceEqualWeight(t *testing.T) {
