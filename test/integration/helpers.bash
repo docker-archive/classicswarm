@@ -36,15 +36,29 @@ function swarm() {
 	"$SWARM_BINARY" "$@"
 }
 
+# Retry a command $1 times until it succeeds. Wait $2 seconds between retries.
+function retry() {
+	local attempts=$1
+	shift
+	local delay=$1
+	shift
+	local i
+
+	for ((i=0; i < attempts; i++)); do
+		run "$@"
+		if [[ "$status" -eq 0 ]] ; then
+			return 0
+		fi
+		sleep $delay
+	done
+
+	echo "Command \"$@\" failed $attempts times. Output: $output"
+	[[ false ]]
+}
+
 # Waits until the given docker engine API becomes reachable.
 function wait_until_reachable() {
-	local attempts=0
-	local max_attempts=5
-	until docker -H $1 info || [ $attempts -ge $max_attempts ]; do
-		echo "Attempt to connect to $1 failed for the $((++attempts)) time" >&2
-		sleep 0.5
-	done
-	[[ $attempts -lt $max_attempts ]]
+	retry 10 1 docker -H $1 info
 }
 
 # Start the swarm manager in background.
