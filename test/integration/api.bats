@@ -32,7 +32,7 @@ function teardown() {
 	swarm_manage
 
 	#create a container
-        run docker_swarm run -d --name test_container busybox sleep 1000
+	run docker_swarm run -d --name test_container busybox sleep 1000
 
 	# test attach-ws api
 	# jimmyxian/centos7-wssh is an image with websocket CLI(WSSH) wirtten in Nodejs
@@ -47,19 +47,19 @@ function teardown() {
 }
 
 @test "docker build" {
-      start_docker 3
-      swarm_manage
-      
-      run docker_swarm images -q
-      [ "$status" -eq 0 ]
-      [ "${#lines[@]}" -eq 0 ]
+	start_docker 3
+	swarm_manage
 
-      run docker_swarm build -t test $BATS_TEST_DIRNAME/testdata/build
-      [ "$status" -eq 0 ]
+	run docker_swarm images -q
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 0 ]
 
-      run docker_swarm images -q
-      [ "$status" -eq 0 ]
-      [ "${#lines[@]}" -eq 1 ]
+	run docker_swarm build -t test $BATS_TEST_DIRNAME/testdata/build
+	[ "$status" -eq 0 ]
+
+	run docker_swarm images -q
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 1 ]
 }
 
 @test "docker commit" {
@@ -386,7 +386,7 @@ function teardown() {
 	docker save -o $IMAGE_FILE busybox:latest
 
 	start_docker 2
-        swarm_manage
+	swarm_manage
 
 	run docker_swarm images -q
 	[ "$status" -eq 0 ]
