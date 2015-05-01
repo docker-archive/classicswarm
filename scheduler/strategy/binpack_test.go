@@ -23,7 +23,7 @@ func createNode(ID string, memory int64, cpus int64) *node.Node {
 }
 
 func createConfig(memory int64, cpus int64) *cluster.ContainerConfig {
-	return &cluster.ContainerConfig{dockerclient.ContainerConfig{Memory: memory * 1024 * 1024 * 1024, CpuShares: cpus}}
+	return cluster.BuildContainerConfig(dockerclient.ContainerConfig{Memory: memory * 1024 * 1024 * 1024, CpuShares: cpus})
 }
 
 func createContainer(ID string, config *cluster.ContainerConfig) *cluster.Container {
