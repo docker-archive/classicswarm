@@ -17,14 +17,19 @@ Integration tests are written in *bash* using the
 
 ## Running integration tests
 
-Start by [installing]
-(https://github.com/sstephenson/bats#installing-bats-from-source) *bats* on
-your system.
+The easiest way to run integration tests is with Docker:
+```
+$ test/integration/run.sh
+```
 
-In order to run all integration tests, pass *bats* the test path:
+Alternatively, you can run integration tests directly on your host:
+
 ```
 $ bats test/integration
 ```
+
+In order to do that, you will need to setup a full development environmnet plus
+[bats](https://github.com/sstephenson/bats#installing-bats-from-source)
 
 > **Note**: There are known issues running the integration tests using 
 > **devicemapper** as a storage driver, make sure that your docker daemon 
