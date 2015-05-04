@@ -16,6 +16,10 @@ SWARM_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 6000 ))
 # Use a random base port (for engines) between 5000 and 6000.
 BASE_PORT=$(( ( RANDOM % 1000 )  + 5000 ))
 
+# Drivers to use for Docker engines the tests are going to create.
+STORAGE_DRIVER=${STORAGE_DRIVER:-vfs}
+EXEC_DRIVER=${EXEC_DRIVER:-native}
+
 # Join an array with a given separator.
 function join() {
 	local IFS="$1"
@@ -136,7 +140,12 @@ function start_docker() {
 	for ((i=current; i < (current + instances); i++)); do
 		local port=$(($BASE_PORT + $i))
 		HOSTS[$i]=127.0.0.1:$port
-		DOCKER_CONTAINERS[$i]=$(docker run -d --name node-$i -h node-$i --privileged -p 127.0.0.1:$port:$port -it ${DOCKER_IMAGE}:${DOCKER_VERSION} docker -d -H 0.0.0.0:$port "$@")
+		DOCKER_CONTAINERS[$i]=$(docker run -d --name node-$i -h node-$i --privileged \
+			-p 127.0.0.1:$port:$port -it \
+			${DOCKER_IMAGE}:${DOCKER_VERSION} \
+			docker -d -H 0.0.0.0:$port \
+			--storage-driver=$STORAGE_DRIVER --exec-driver=$EXEC_DRIVER \
+			"$@")
 	done
 
 	# Wait for the engines to be reachable.
