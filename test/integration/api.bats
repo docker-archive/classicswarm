@@ -108,8 +108,7 @@ function teardown() {
 	[[ "${lines[1]}" == *"Up"* ]]
 
 	# grab the checksum of the test file inside the container.
-	# FIXME: if issue #658 solved, use 'exec' instead of 'exec -i'
-	run docker_swarm exec -i test_container md5sum $test_file
+	run docker_swarm exec test_container md5sum $test_file
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -ge 1 ]
 
@@ -199,8 +198,7 @@ function teardown() {
 	[[ "${lines[1]}" == *"Up"* ]]
 	[[ "${lines[1]}" != *"Paused"* ]]	
 
-	# FIXME: if issue #658 solved, use 'exec' instead of 'exec -i'
-	run docker_swarm exec -i test_container ls
+	run docker_swarm exec test_container ls
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -ge 2 ]
 	[[ "${lines[0]}" == *"bin"* ]]

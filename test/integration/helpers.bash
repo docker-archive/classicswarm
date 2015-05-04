@@ -140,12 +140,18 @@ function start_docker() {
 	for ((i=current; i < (current + instances); i++)); do
 		local port=$(($BASE_PORT + $i))
 		HOSTS[$i]=127.0.0.1:$port
-		DOCKER_CONTAINERS[$i]=$(docker run -d --name node-$i -h node-$i --privileged \
-			-p 127.0.0.1:$port:$port -it \
+
+		# We have to manually call `hostname` since --hostname and --net cannot
+		# be used together.
+		DOCKER_CONTAINERS[$i]=$(
+			docker run -d --name node-$i --privileged -it --net=host \
 			${DOCKER_IMAGE}:${DOCKER_VERSION} \
-			docker -d -H 0.0.0.0:$port \
-			--storage-driver=$STORAGE_DRIVER --exec-driver=$EXEC_DRIVER \
-			"$@")
+			bash -c "\
+				hostname node-$i && \
+				docker -d -H 127.0.0.1:$port \
+					--storage-driver=$STORAGE_DRIVER --exec-driver=$EXEC_DRIVER \
+					`join ' ' $@` \
+		")
 	done
 
 	# Wait for the engines to be reachable.
