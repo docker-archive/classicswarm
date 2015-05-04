@@ -188,6 +188,7 @@ function teardown() {
 	swarm_manage
 
 	# start events, report real time events to TEMP_FILE
+	# it will stop automatically when manager stop
 	docker_swarm events > $TEMP_FILE &
 
 	# events: create container on node-0
@@ -196,9 +197,6 @@ function teardown() {
 	# events: start container
 	run docker_swarm start test_container
 	[ "$status" -eq 0 ]
-
-	# make sure $TEMP_FILE exists and is not empty
-	[ -s $TEMP_FILE ]
 
 	# verify
 	run cat $TEMP_FILE
@@ -820,7 +818,7 @@ function teardown() {
 	TEMP_FILE=$(mktemp)
 	start_docker 3
 	swarm_manage
-        
+
 	# stats running container 
 	run docker_swarm run -d --name test_container busybox sleep 50
 	[ "$status" -eq 0 ]
@@ -832,9 +830,10 @@ function teardown() {
 	[[ "${lines[1]}" == *"Up"* ]]
 
 	# storage the stats output in TEMP_FILE
+	# it will stop automatically when manager stop
 	docker_swarm stats test_container > $TEMP_FILE &
 
-	# retry until TEMP_FILE is not empty 
+	# retry until TEMP_FILE is not empty
 	retry 5 1 [ -s $TEMP_FILE ]
 
 	# if "CPU %" in TEMP_FILE, status is 0
@@ -978,10 +977,7 @@ function teardown() {
 	[[ "${lines[1]}" ==  *"Up"* ]]
 
 	# wait until exist(after 1 seconds)
-	docker_swarm wait test_container > $TEMP_FILE &
-
-	# retry until $TEMP_FILE is not empty     
-	retry 5 1 [ -s $TEMP_FILE ]
+	timeout 5 docker -H $SWARM_HOST wait test_container > $TEMP_FILE
 
 	run cat $TEMP_FILE
 	[ "${#lines[@]}" -eq 1 ]
