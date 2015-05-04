@@ -14,6 +14,12 @@ function execute() {
 # Tests to run. Defaults to all.
 TESTS=${@:-.}
 
+# Generate a temporary binary for the tests.
+export SWARM_BINARY=`mktemp`
+
+# Build Swarm.
+execute go build -o "$SWARM_BINARY" ../..
+
 # Start the docker engine.
 execute docker --daemon --log-level=panic \
 	--storage-driver="$STORAGE_DRIVER" --exec-driver="$EXEC_DRIVER" &
