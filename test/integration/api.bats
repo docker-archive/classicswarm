@@ -12,18 +12,17 @@ function teardown() {
 	swarm_manage
 
 	# container run in background
-	run docker_swarm run -d --name test_container busybox sleep 100
+	run docker_swarm run -d -i --name test_container busybox sh -c "head -n 1; echo output"
 	[ "$status" -eq 0 ]
 
-	# make sure container is up
-	run docker_swarm ps -l
-	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[1]}" ==  *"test_container"* ]]
-	[[ "${lines[1]}" ==  *"Up"* ]]
-
-	# attach to running container
-	run docker_swarm attach test_container
+	# inject input into the container
+	attach_output=`echo input | docker_swarm attach test_container`
+	# unfortunately, we cannot test `attach_output` because attach is not
+	# properly returning the output (see docker/docker#12974)
+	run docker_swarm logs test_container
 	[ "$status" -eq 0 ]
+	[[ "${output}" == *"input"* ]]
+	[[ "${output}" == *"output"* ]]
 }
 
 @test "docker attach through websocket" {
