@@ -423,6 +423,7 @@ func proxyImageAndForceRefresh(c *context, w http.ResponseWriter, r *http.Reques
 
 	if image == nil {
 		httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
+		return
 	}
 
 	cb := func(resp *http.Response) {
