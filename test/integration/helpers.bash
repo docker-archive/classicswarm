@@ -4,7 +4,7 @@
 SWARM_ROOT=${SWARM_ROOT:-${BATS_TEST_DIRNAME}/../..}
 
 # Path of the Swarm binary.
-SWARM_BINARY=`mktemp`
+SWARM_BINARY=${SWARM_BINARY:-${SWARM_ROOT}/swarm}
 
 # Docker image and version to use for integration tests.
 DOCKER_IMAGE=${DOCKER_IMAGE:-dockerswarm/dind}
@@ -27,16 +27,10 @@ function join() {
 	echo "$*"
 }
 
-# Build the Swarm binary (if not already built)
-function build_swarm() {
-	[ -x $SWARM_BINARY ] || (rm -f $SWARM_BINARY && cd $SWARM_ROOT && godep go build -o $SWARM_BINARY)
-}
-
 # Run the swarm binary. You must NOT fork this command (swarm foo &) as the PID
 # ($!) will be the one of the subshell instead of swarm and you won't be able
 # to kill it.
 function swarm() {
-	build_swarm
 	"$SWARM_BINARY" "$@"
 }
 
@@ -67,8 +61,6 @@ function wait_until_reachable() {
 
 # Start the swarm manager in background.
 function swarm_manage() {
-	build_swarm
-
 	local discovery
 	if [ $# -eq 0 ]; then
 		discovery=`join , ${HOSTS[@]}`
@@ -83,8 +75,6 @@ function swarm_manage() {
 
 # Start swarm join for every engine with the discovery as parameter
 function swarm_join() {
-	build_swarm
-
 	local i=0
 	for h in ${HOSTS[@]}; do
 		echo "Swarm join #${i}: $h $@"
