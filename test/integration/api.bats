@@ -820,6 +820,7 @@ function teardown() {
 	TEMP_FILE=$(mktemp)
 	start_docker 3
 	swarm_manage
+        
 	# stats running container 
 	run docker_swarm run -d --name test_container busybox sleep 50
 	[ "$status" -eq 0 ]
@@ -830,22 +831,19 @@ function teardown() {
 	[[ "${lines[1]}" == *"test_container"* ]]
 	[[ "${lines[1]}" == *"Up"* ]]
 
-	# storage the real time output of stats in TEMP_FILE
+	# storage the stats output in TEMP_FILE
 	docker_swarm stats test_container > $TEMP_FILE &
 
-	local attempts=0
-	local max_attempts=5
-	# make sure TEMP_FILE exists and is not empty
-	until [ -s $TEMP_FILE ] || [ $attempts -ge $max_attempts ]; do
-		sleep 0.5
-		attempts=$[$attempts+1]
-	done
+	# retry until TEMP_FILE is not empty 
+	retry 5 1 [ -s $TEMP_FILE ]
 
 	# if "CPU %" in TEMP_FILE, status is 0
 	run grep "CPU %" $TEMP_FILE
 	[ "$status" -eq 0 ]
 	run grep "MEM USAGE/LIMIT" $TEMP_FILE
 	[ "$status" -eq 0 ]
+
+	rm -f $TEMP_FILE
 }
 
 @test "docker stop" {
@@ -969,8 +967,8 @@ function teardown() {
 	start_docker 3
 	swarm_manage
 
-	# run after 3 seconds, test_container will exit
-	run docker_swarm run -d --name test_container busybox sleep 3
+	# run after 1 seconds, test_container will exit
+	run docker_swarm run -d --name test_container busybox sleep 1
 	[ "$status" -eq 0 ]
 
 	# make sure container exists and is up
@@ -979,20 +977,15 @@ function teardown() {
 	[[ "${lines[1]}" ==  *"test_container"* ]]
 	[[ "${lines[1]}" ==  *"Up"* ]]
 
-	# wait until exist(after 3 seconds)
+	# wait until exist(after 1 seconds)
 	docker_swarm wait test_container > $TEMP_FILE &
-	WAIT_PID=$!
 
-	# after 5 secondes, cat $TEMP_FILE      
-	sleep 5
+	# retry until $TEMP_FILE is not empty     
+	retry 5 1 [ -s $TEMP_FILE ]
+
 	run cat $TEMP_FILE
-	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 1 ]
-	[[ "${lines[0]}" == "0" ]]
+	[[ "${output}" == "0" ]]
 
-	# after sucess, if the wait process still exist then kill
-	run ps -p $WAIT_PID
-	if [ "$status" -eq 0 ]; then
-		kill -9 $WAIT_PID
-	fi
+	rm -f $TEMP_FILE
 }
