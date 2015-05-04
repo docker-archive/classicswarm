@@ -410,3 +410,17 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	st.Name = newName
 	return c.store.Replace(container.Id, st)
 }
+
+// TagImage tag an image
+func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
+	c.RLock()
+	defer c.RUnlock()
+
+	// check image
+	image := c.Image(IDOrName)
+	if image == nil {
+		return fmt.Errorf("could not find image: no such id: %s", IDOrName)
+	}
+
+	return image.Engine.TagImage(IDOrName, repo, tag, force)
+}

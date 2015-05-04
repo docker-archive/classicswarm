@@ -54,4 +54,7 @@ type Cluster interface {
 
 	// RenameContainer rename a container
 	RenameContainer(container *Container, newName string) error
+
+	// TagImage tag an image
+	TagImage(IDOrName string, repo string, tag string, force bool) error
 }

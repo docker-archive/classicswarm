@@ -356,6 +356,28 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+// POST /images/{name:.*}/tag
+func postImageTag(c *context, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	repo := r.Form.Get("repo")
+	tag := r.Form.Get("tag")
+	force := boolValue(r, "force")
+
+	// call cluster tag image
+	err := c.cluster.TagImage(name, repo, tag, force)
+
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+
+}
+
 // DELETE /images/{name:.*}
 func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -423,30 +445,6 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
-}
-
-// Proxy a request to the right node and force refresh
-func proxyImageAndForceRefresh(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
-
-	// get image by name
-	image := c.cluster.Image(name)
-
-	if image == nil {
-		httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
-		return
-	}
-
-	cb := func(resp *http.Response) {
-		if resp.StatusCode == http.StatusCreated {
-			image.Engine.RefreshImages()
-		}
-	}
-
-	if err := proxyAsync(c.tlsConfig, image.Engine.Addr, w, r, cb); err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-	}
-
 }
 
 // Proxy a request to a random node
