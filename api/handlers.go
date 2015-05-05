@@ -325,6 +325,17 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 	defer closeIdleConnections(client)
 
+	// check status code
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		httpError(w, string(body), http.StatusInternalServerError)
+		return
+	}
+
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
