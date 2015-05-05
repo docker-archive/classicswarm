@@ -23,7 +23,7 @@ function teardown() {
 	stop_zk
 }
 
-@test "zk discovery should be working correctly" {
+@test "zk discovery" {
 	start_zk
 	start_docker 1
 
@@ -31,5 +31,5 @@ function teardown() {
 	swarm_join   zk://${ZK_HOST}/test
 
 	run docker_swarm info
-	[[ "${lines[3]}" == *"Nodes: 1"* ]]
+	[[ "$output" == *"Nodes: 1 "* ]]
 }

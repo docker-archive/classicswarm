@@ -12,7 +12,7 @@ function teardown() {
 	stop_docker
 }
 
-@test "token discovery should be working properly" {
+@test "token discovery" {
 	start_docker 2
 
 	TOKEN=$(swarm create)
@@ -23,7 +23,7 @@ function teardown() {
 	swarm_join   token://$TOKEN
 
 	run docker_swarm info
-	[[ "${lines[3]}" == *"Nodes: 2"* ]]
+	[[ "$output" == *"Nodes: 2 "* ]]
 
 	token_cleanup $TOKEN
 }
