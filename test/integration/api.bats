@@ -955,14 +955,13 @@ function teardown() {
 	[ "${#lines[@]}" -ge 8 ]
 
 	# verify
-	client_reg='^Client version: [0-9]+\.[0-9]+\.[0-9]+$'
-	server_reg='^Server version: swarm/[0-9]+\.[0-9]+\.[0-9]+$'
+	client_reg='^Client version: [0-9]+\.[0-9]+\.[0-9]+.*$'
+	server_reg='^Server version: swarm/[0-9]+\.[0-9]+\.[0-9]+.*$'
 	[[ "${lines[0]}" =~ $client_reg ]]
 	[[ "${lines[5]}" =~ $server_reg ]]
 }
 
 @test "docker wait" {
-	TEMP_FILE=$(mktemp)
 	start_docker 3
 	swarm_manage
 
@@ -977,11 +976,8 @@ function teardown() {
 	[[ "${lines[1]}" ==  *"Up"* ]]
 
 	# wait until exist(after 1 seconds)
-	timeout 5 docker -H $SWARM_HOST wait test_container > $TEMP_FILE
+	run timeout 5 docker -H $SWARM_HOST wait test_container
 
-	run cat $TEMP_FILE
 	[ "${#lines[@]}" -eq 1 ]
 	[[ "${output}" == "0" ]]
-
-	rm -f $TEMP_FILE
 }
