@@ -9,11 +9,18 @@ ZK_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 7000 ))
 ZK_CONTAINER_NAME=swarm_integration_zk
 
 function start_zk() {
-	docker_host run --name $ZK_CONTAINER_NAME -p $ZK_HOST:2181 -d jplock/zookeeper
+	run docker run --name $ZK_CONTAINER_NAME -p $ZK_HOST:2181 -d jplock/zookeeper
+	[ "$status" -eq 0 ]
 }
 
 function stop_zk() {
-	docker_host rm -f -v $ZK_CONTAINER_NAME > /dev/null
+	run docker rm -f -v $ZK_CONTAINER_NAME
+	[ "$status" -eq 0 ]
+}
+
+function setup() {
+	start_zk
+	start_docker 2
 }
 
 function teardown() {
@@ -23,13 +30,10 @@ function teardown() {
 	stop_zk
 }
 
-@test "zk discovery" {
-	start_zk
-	start_docker 1
-
+@test "zookeeperk discovery" {
 	swarm_manage zk://${ZK_HOST}/test
 	swarm_join   zk://${ZK_HOST}/test
 
 	run docker_swarm info
-	[[ "$output" == *"Nodes: 1"* ]]
+	[[ "$output" == *"Nodes: 2"* ]]
 }

@@ -105,7 +105,7 @@ function swarm_join() {
 
 # Stops the manager.
 function swarm_manage_cleanup() {
-	kill $SWARM_PID
+	kill $SWARM_PID || true
 }
 
 # Clean up Swarm join processes
