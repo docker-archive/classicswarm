@@ -17,12 +17,12 @@ function setup_file_discovery() {
 	done
 }
 
-@test "docker info should return the number of nodes with file discovery" {
+@test "file discovery" {
 	start_docker 2
 	setup_file_discovery
 	swarm_manage file://$DISCOVERY_FILE
 
 	run docker_swarm info
 	[ "$status" -eq 0 ]
-	[[ "${lines[3]}" == *"Nodes: 2" ]]
+	[[ "$output" == *"Nodes: 2 "* ]]
 }
