@@ -13,8 +13,6 @@ type Node struct {
 	IP         string
 	Addr       string
 	Name       string
-	Cpus       int64
-	Memory     int64
 	Labels     map[string]string
 	Containers []*cluster.Container
 	Images     []*cluster.Image
@@ -34,7 +32,6 @@ func NewNode(e *cluster.Engine) *Node {
 		IP:          e.IP,
 		Addr:        e.Addr,
 		Name:        e.Name,
-		Cpus:        e.Cpus,
 		Labels:      e.Labels,
 		Containers:  e.Containers(),
 		Images:      e.Images(),
