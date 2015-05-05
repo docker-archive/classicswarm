@@ -40,6 +40,11 @@ function docker_host() {
 	command docker "$@"
 }
 
+# Run the docker CLI against swarm.
+function docker_swarm() {
+	docker -H $SWARM_HOST "$@"
+}
+
 # Run the swarm binary. You must NOT fork this command (swarm foo &) as the PID
 # ($!) will be the one of the subshell instead of swarm and you won't be able
 # to kill it.
@@ -108,11 +113,6 @@ function swarm_join_cleanup() {
 	for pid in ${SWARM_JOIN_PID[@]}; do
 		kill $pid
 	done
-}
-
-# Run the docker CLI against swarm.
-function docker_swarm() {
-	docker -H $SWARM_HOST "$@"
 }
 
 # Start N docker engines.
