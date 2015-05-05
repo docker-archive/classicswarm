@@ -9,6 +9,7 @@ SWARM_BINARY=${SWARM_BINARY:-${SWARM_ROOT}/swarm}
 # Docker image and version to use for integration tests.
 DOCKER_IMAGE=${DOCKER_IMAGE:-dockerswarm/dind}
 DOCKER_VERSION=${DOCKER_VERSION:-1.6.0}
+DOCKER_BINARY=${DOCKER_BINARY:-`command -v docker`}
 
 # Host on which the manager will listen to (random port between 6000 and 7000).
 SWARM_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 6000 ))
@@ -25,6 +26,18 @@ function join() {
 	local IFS="$1"
 	shift
 	echo "$*"
+}
+
+# Run docker using the binary specified by $DOCKER_BINARY.
+# This must ONLY be run on engines created with `start_docker`.
+function docker() {
+	"$DOCKER_BINARY" "$@"
+}
+
+# Communicate with Docker on the host machine.
+# Should rarely use this.
+function docker_host() {
+	command docker "$@"
 }
 
 # Run the swarm binary. You must NOT fork this command (swarm foo &) as the PID
@@ -117,7 +130,7 @@ function start_docker() {
 		# We have to manually call `hostname` since --hostname and --net cannot
 		# be used together.
 		DOCKER_CONTAINERS[$i]=$(
-			docker run -d --name node-$i --privileged -it --net=host \
+			docker_host run -d --name node-$i --privileged -it --net=host \
 			${DOCKER_IMAGE}:${DOCKER_VERSION} \
 			bash -c "\
 				hostname node-$i && \
@@ -137,6 +150,6 @@ function start_docker() {
 function stop_docker() {
 	for id in ${DOCKER_CONTAINERS[@]}; do
 		echo "Stopping $id"
-		docker rm -f -v $id > /dev/null;
+		docker_host rm -f -v $id > /dev/null;
 	done
 }

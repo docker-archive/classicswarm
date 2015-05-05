@@ -41,7 +41,7 @@ function teardown() {
 	# if connected successfull, it returns two lines, "Session Open" and "Session Closed"
 	# Note: with stdout=1&stdin=1&stream=1: it can be used as SSH
 	URL="ws://${SWARM_HOST}/${CLIENT_API_VERSION}/containers/test_container/attach/ws?stderr=1"
-	run docker run --rm --net=host jimmyxian/centos7-wssh wssh $URL
+	run docker_host run --rm --net=host jimmyxian/centos7-wssh wssh $URL
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[0]}" == *"Session Open"* ]]
@@ -382,8 +382,8 @@ function teardown() {
 	IMAGE_FILE=$(mktemp)
 
 	# create a tar file
-	docker pull busybox:latest
-	docker save -o $IMAGE_FILE busybox:latest
+	docker_host pull busybox:latest
+	docker_host save -o $IMAGE_FILE busybox:latest
 
 	start_docker 2
 	swarm_manage
