@@ -31,5 +31,5 @@ function teardown() {
 	swarm_join   zk://${ZK_HOST}/test
 
 	run docker_swarm info
-	[[ "$output" == *"Nodes: 1 "* ]]
+	[[ "$output" == *"Nodes: 1"* ]]
 }
