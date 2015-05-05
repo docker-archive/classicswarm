@@ -321,7 +321,7 @@ function teardown() {
 	swarm_manage
 	run docker_swarm info
 	[ "$status" -eq 0 ]
-	[[ "${lines[3]}" == *"Nodes: 1" ]]
+	[[ "${output}" == *"Nodes: 1 "* ]]
 	[[ "${output}" == *"└ Labels:"*"foo=bar"* ]]
 }
 
@@ -340,13 +340,16 @@ function teardown() {
 	# inspect and verify 
 	run docker_swarm inspect test_container
 	[ "$status" -eq 0 ]
-	[[ "${lines[1]}" == *"AppArmorProfile"* ]]
+	[[ "${output}" == *"NetworkSettings"* ]]
 	# the specific information of swarm node
-	[[ ${output} == *'"Node": {'* ]]
-	[[ ${output} == *'"Name": "node-'* ]]
+	[[ "${output}" == *'"Node": {'* ]]
+	[[ "${output}" == *'"Name": "node-'* ]]
 }
 
 @test "docker inspect --format" {
+	# FIXME: Broken in docker master. See #717
+	skip
+
 	start_docker 3
 	swarm_manage
 	# run container
