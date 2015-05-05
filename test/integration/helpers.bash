@@ -17,7 +17,7 @@ SWARM_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 6000 ))
 BASE_PORT=$(( ( RANDOM % 1000 )  + 5000 ))
 
 # Drivers to use for Docker engines the tests are going to create.
-STORAGE_DRIVER=${STORAGE_DRIVER:-vfs}
+STORAGE_DRIVER=${STORAGE_DRIVER:-aufs}
 EXEC_DRIVER=${EXEC_DRIVER:-native}
 
 # Join an array with a given separator.
