@@ -7,6 +7,23 @@ function teardown() {
 	stop_docker
 }
 
+# Ensure that the client and server are running the same version.
+@test "api version" {
+	start_docker 1
+	run docker -H "${HOSTS[0]}" version
+	[ "$status" -eq 0 ]
+
+	# First line should contain the client version.
+	[[ "${lines[0]}" == "Client version: "* ]]
+	local cli_version=`echo "${lines[0]}" | cut -d':' -f2`
+	[[ "${output}" == *"Server version:$cli_version"* ]]
+
+	# Second line should be client API version.
+	[[ "${lines[1]}" == "Client API version: "* ]]
+	local cli_api_version=`echo "${lines[1]}" | cut -d':' -f2`
+	[[ "${output}" == *"Server API version:$cli_api_version"* ]]
+}
+
 @test "docker attach" {
 	start_docker 3
 	swarm_manage
@@ -41,7 +58,7 @@ function teardown() {
 	# if connected successfull, it returns two lines, "Session Open" and "Session Closed"
 	# Note: with stdout=1&stdin=1&stream=1: it can be used as SSH
 	URL="ws://${SWARM_HOST}/${CLIENT_API_VERSION}/containers/test_container/attach/ws?stderr=1"
-	run docker run --rm --net=host jimmyxian/centos7-wssh wssh $URL
+	run docker_host run --rm --net=host jimmyxian/centos7-wssh wssh $URL
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[0]}" == *"Session Open"* ]]
@@ -304,7 +321,8 @@ function teardown() {
 	swarm_manage
 	run docker_swarm info
 	[ "$status" -eq 0 ]
-	[[ "${lines[3]}" == *"Nodes: 1" ]]
+	echo $output
+	[[ "${output}" == *"Nodes: 1"* ]]
 	[[ "${output}" == *"└ Labels:"*"foo=bar"* ]]
 }
 
@@ -323,13 +341,16 @@ function teardown() {
 	# inspect and verify 
 	run docker_swarm inspect test_container
 	[ "$status" -eq 0 ]
-	[[ "${lines[1]}" == *"AppArmorProfile"* ]]
+	[[ "${output}" == *"NetworkSettings"* ]]
 	# the specific information of swarm node
-	[[ ${output} == *'"Node": {'* ]]
-	[[ ${output} == *'"Name": "node-'* ]]
+	[[ "${output}" == *'"Node": {'* ]]
+	[[ "${output}" == *'"Name": "node-'* ]]
 }
 
 @test "docker inspect --format" {
+	# FIXME: Broken in docker master. See #717
+	skip
+
 	start_docker 3
 	swarm_manage
 	# run container
@@ -382,8 +403,8 @@ function teardown() {
 	IMAGE_FILE=$(mktemp)
 
 	# create a tar file
-	docker pull busybox:latest
-	docker save -o $IMAGE_FILE busybox:latest
+	docker_host pull busybox:latest
+	docker_host save -o $IMAGE_FILE busybox:latest
 
 	start_docker 2
 	swarm_manage

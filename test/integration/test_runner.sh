@@ -18,7 +18,7 @@ TESTS=${@:-.}
 export SWARM_BINARY=`mktemp`
 
 # Build Swarm.
-execute go build -o "$SWARM_BINARY" ../..
+execute time go build -o "$SWARM_BINARY" ../..
 
 # Start the docker engine.
 execute docker --daemon --log-level=panic \
@@ -38,6 +38,13 @@ done
 
 # Pre-fetch the test image.
 execute time docker pull ${DOCKER_IMAGE}:${DOCKER_VERSION} > /dev/null
+
+# Run the tests using the same client provided by the test image.
+id=`execute docker create ${DOCKER_IMAGE}:${DOCKER_VERSION}`
+tmp=`mktemp -d`
+execute docker cp "${id}:/usr/local/bin/docker" "$tmp"
+execute docker rm -f "$id" > /dev/null
+export DOCKER_BINARY="${tmp}/docker"
 
 # Run the tests.
 execute time bats -p $TESTS
