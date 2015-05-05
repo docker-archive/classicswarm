@@ -8,6 +8,9 @@ function teardown() {
 }
 
 @test "shared volumes dependency" {
+	# FIXME: docker inspect --format is broken in docker master. See #717
+	skip
+
 	start_docker 2
 	swarm_manage
 
@@ -33,6 +36,9 @@ function teardown() {
 }
 
 @test "links dependency" {
+	# FIXME: docker inspect --format is broken in docker master. See #717
+	skip
+
 	start_docker 2
 	swarm_manage
 
@@ -58,6 +64,9 @@ function teardown() {
 }
 
 @test "shared network stack dependency" {
+	# FIXME: docker inspect --format is broken in docker master. See #717
+	skip
+
 	start_docker 2
 	swarm_manage
 
