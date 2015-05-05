@@ -42,3 +42,31 @@ function teardown() {
 	rm -f $temp_file_name
 	rm -f $temp_file_name_o
 }
+
+@test "docker save muti-images" {
+	start_docker_with_busybox 1
+	start_docker 1
+	swarm_manage
+	
+	# tag busybox
+	run docker_swarm tag busybox testimage
+	[ "$status" -eq 0 ]	
+
+	# make sure image exists
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"busybox"* ]]
+	[[ "${output}" == *"testimage"* ]]
+
+	temp_file_name=$(mktemp)
+
+	docker_swarm save busybox testimage > $temp_file_name
+
+	# saved image file exists, not empty and is tar file
+	[ -s $temp_file_name ]
+	run file $temp_file_name
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"tar archive"* ]]
+
+	rm -f $temp_file_name
+}

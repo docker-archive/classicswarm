@@ -28,7 +28,7 @@ var routes = map[string]map[string]handler{
 		"/images/json":                    getImagesJSON,
 		"/images/viz":                     notImplementedHandler,
 		"/images/search":                  proxyRandom,
-		"/images/get":                     notImplementedHandler,
+		"/images/get":                     getImages,
 		"/images/{name:.*}/get":           proxyImage,
 		"/images/{name:.*}/history":       proxyImage,
 		"/images/{name:.*}/json":          proxyImage,
