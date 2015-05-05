@@ -7,8 +7,8 @@ SWARM_ROOT=${SWARM_ROOT:-${BATS_TEST_DIRNAME}/../..}
 SWARM_BINARY=${SWARM_BINARY:-${SWARM_ROOT}/swarm}
 
 # Docker image and version to use for integration tests.
-DOCKER_IMAGE=${DOCKER_IMAGE:-dockerswarm/dind}
-DOCKER_VERSION=${DOCKER_VERSION:-1.6.0}
+DOCKER_IMAGE=${DOCKER_IMAGE:-dockerswarm/dind-master}
+DOCKER_VERSION=${DOCKER_VERSION:-latest}
 DOCKER_BINARY=${DOCKER_BINARY:-`command -v docker`}
 
 # Host on which the manager will listen to (random port between 6000 and 7000).
