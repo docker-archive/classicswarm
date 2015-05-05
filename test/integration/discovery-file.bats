@@ -5,10 +5,14 @@ load helpers
 # create a blank temp file for discovery
 DISCOVERY_FILE=$(mktemp)
 
+function setup() {
+	start_docker 2
+}
+
 function teardown() {
 	swarm_manage_cleanup
-	rm -f $DISCOVERY_FILE
 	stop_docker
+	rm -f $DISCOVERY_FILE
 }
 
 function setup_file_discovery() {
@@ -18,7 +22,6 @@ function setup_file_discovery() {
 }
 
 @test "file discovery" {
-	start_docker 2
 	setup_file_discovery
 	swarm_manage file://$DISCOVERY_FILE
 
