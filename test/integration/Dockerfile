@@ -7,6 +7,7 @@ FROM dockerswarm/dind:1.6.0
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         file \
+        git \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install golang
