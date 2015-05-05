@@ -100,7 +100,7 @@ function swarm_join() {
 		SWARM_JOIN_PID[$i]=$!
 		((++i))
 	done
-	retry 30 1 [ `docker_swarm info | grep -q "Nodes: $i"` -eq 0 ]
+	retry 30 1 [ -n $(docker_swarm info | grep -q "Nodes: $i") ]
 }
 
 # Stops the manager.
