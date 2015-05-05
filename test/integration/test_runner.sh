@@ -41,8 +41,3 @@ execute time docker pull ${DOCKER_IMAGE}:${DOCKER_VERSION} > /dev/null
 
 # Run the tests.
 execute time bats -p $TESTS
-
-# Cleanup.
-execute kill $DOCKER_PID
-execute wait $DOCKER_PID
-execute ps faxw
