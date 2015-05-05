@@ -24,5 +24,5 @@ function setup_file_discovery() {
 
 	run docker_swarm info
 	[ "$status" -eq 0 ]
-	[[ "$output" == *"Nodes: 2 "* ]]
+	[[ "$output" == *"Nodes: 2"* ]]
 }

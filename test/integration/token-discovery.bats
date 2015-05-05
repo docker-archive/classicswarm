@@ -23,7 +23,8 @@ function teardown() {
 	swarm_join   token://$TOKEN
 
 	run docker_swarm info
-	[[ "$output" == *"Nodes: 2 "* ]]
+	echo $output
+	[[ "$output" == *"Nodes: 2"* ]]
 
 	token_cleanup $TOKEN
 }
