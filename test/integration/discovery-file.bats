@@ -24,11 +24,11 @@ function setup_file_discovery() {
 	start_docker 2
 	setup_file_discovery
 	swarm_manage "file://$DISCOVERY_FILE"
-	all_nodes_registered_in_swarm
+	check_swarm_nodes
 
 	# Add another engine to the cluster, update the discovery file and make
 	# sure it's picked up by swarm.
 	start_docker 1
 	setup_file_discovery
-	retry 10 1 all_nodes_registered_in_swarm
+	retry 10 1 check_swarm_nodes
 }
