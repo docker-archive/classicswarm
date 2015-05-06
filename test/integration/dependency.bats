@@ -8,9 +8,6 @@ function teardown() {
 }
 
 @test "shared volumes dependency" {
-	# FIXME: docker inspect --format is broken in docker master. See #717
-	skip
-
 	start_docker 2
 	swarm_manage
 
@@ -26,19 +23,16 @@ function teardown() {
 	[[ "${output}" == *"[/b1]"* ]]
 
 	# check if both containers are started on the same node
-	run docker_swarm inspect -f "{{ .Node.Name }}" b1
+	run docker_swarm inspect b1
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"node-0"* ]]
+	[[ "${output}" == *'"Name": "node-0"'* ]]
 
-	run docker_swarm inspect -f "{{ .Node.Name }}" b2
+	run docker_swarm inspect b2
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"node-0"* ]]
+	[[ "${output}" == *'"Name": "node-0"'* ]]
 }
 
 @test "links dependency" {
-	# FIXME: docker inspect --format is broken in docker master. See #717
-	skip
-
 	start_docker 2
 	swarm_manage
 
@@ -54,19 +48,16 @@ function teardown() {
 	[[ "${output}" == *"[/b1:/b2/foo]"* ]]
 	
 	# check if both containers are started on the same node
-	run docker_swarm inspect -f "{{ .Node.Name }}" b1
+	run docker_swarm inspect b1
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"node-1"* ]]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
 
-	run docker_swarm inspect -f "{{ .Node.Name }}" b2
+	run docker_swarm inspect b2
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"node-1"* ]]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
 }
 
 @test "shared network stack dependency" {
-	# FIXME: docker inspect --format is broken in docker master. See #717
-	skip
-
 	start_docker 2
 	swarm_manage
 
@@ -82,11 +73,11 @@ function teardown() {
 	[[ "${output}" == *"container:/b1"* ]]
 
 	# check if both containers are started on the same node
-	run docker_swarm inspect -f "{{ .Node.Name }}" b1
+	run docker_swarm inspect b1
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"node-0"* ]]
+	[[ "${output}" == *'"Name": "node-0"'* ]]
 
-	run docker_swarm inspect -f "{{ .Node.Name }}" b2
+	run docker_swarm inspect b2
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"node-0"* ]]	
+	[[ "${output}" == *'"Name": "node-0"'* ]]
 }
