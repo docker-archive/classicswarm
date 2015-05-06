@@ -8,8 +8,9 @@ function teardown() {
 }
 
 @test "docker ps -n" {
-	start_docker 1
+	start_docker_with_busybox 2
 	swarm_manage
+
 	run docker_swarm run -d busybox sleep 42
 	run docker_swarm run -d busybox false
 	run docker_swarm ps -n 3
@@ -26,8 +27,9 @@ function teardown() {
 }
 
 @test "docker ps -l" {
-	start_docker 1
+	start_docker_with_busybox 2
 	swarm_manage
+
 	run docker_swarm run -d busybox sleep 42
 	sleep 1 #sleep so the 2 containers don't start at the same second
 	run docker_swarm run -d busybox true

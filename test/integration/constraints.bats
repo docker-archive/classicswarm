@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "node constraint" {
-	start_docker 2
+	start_docker_with_busybox 2
 	swarm_manage
 
 	run docker_swarm run --name c1 -e constraint:node==node-0 -d busybox:latest sh
@@ -38,8 +38,8 @@ function teardown() {
 }
 
 @test "label constraints" {
-	start_docker 1 --label foo=a
-	start_docker 1 --label foo=b
+	start_docker_with_busybox 1 --label foo=a
+	start_docker_with_busybox 1 --label foo=b
 	swarm_manage
 
 	run docker_swarm run --name c1 -e constraint:foo==a -d busybox:latest sh

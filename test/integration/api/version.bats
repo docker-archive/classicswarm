@@ -8,7 +8,8 @@ function teardown() {
 }
 
 @test "docker version" {
-	start_docker 3
+	# FIXME: No reason here to start docker.
+	start_docker 1
 	swarm_manage
 
 	# version

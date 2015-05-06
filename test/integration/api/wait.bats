@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker wait" {
-	start_docker 3
+	start_docker_with_busybox 2
 	swarm_manage
 
 	# run after 1 seconds, test_container will exit

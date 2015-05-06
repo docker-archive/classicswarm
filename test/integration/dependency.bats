@@ -8,11 +8,11 @@ function teardown() {
 }
 
 @test "shared volumes dependency" {
-	start_docker 2
+	start_docker_with_busybox 2
 	swarm_manage
 
 	# Running the second container with shared volumes.
-	run docker_swarm run --name b1 -e constraint:node==node-0 -d busybox:latest sleep 500
+	run docker_swarm run --name b1 -e constraint:node==node-1 -d busybox:latest sleep 500
 	[ "$status" -eq 0 ]
 	run docker_swarm run --name b2 --volumes-from=/b1 -d busybox:latest sh
 	[ "$status" -eq 0 ]
@@ -25,15 +25,15 @@ function teardown() {
 	# check if both containers are started on the same node
 	run docker_swarm inspect b1
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
 
 	run docker_swarm inspect b2
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
 }
 
 @test "links dependency" {
-	start_docker 2
+	start_docker_with_busybox 2
 	swarm_manage
 
 	# Running the second container with link dependency.
@@ -58,11 +58,11 @@ function teardown() {
 }
 
 @test "shared network stack dependency" {
-	start_docker 2
+	start_docker_with_busybox 2
 	swarm_manage
 
 	# Running the second container with network stack dependency.
-	run docker_swarm run --name b1 -e constraint:node==node-0 -d busybox:latest sleep 500
+	run docker_swarm run --name b1 -e constraint:node==node-1 -d busybox:latest sleep 500
 	[ "$status" -eq 0 ]
 	run docker_swarm run --name b2 --net=container:/b1 -d busybox:latest sh
 	[ "$status" -eq 0 ]
@@ -75,9 +75,9 @@ function teardown() {
 	# check if both containers are started on the same node
 	run docker_swarm inspect b1
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
 
 	run docker_swarm inspect b2
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
 }
