@@ -44,20 +44,23 @@ function teardown() {
 }
 
 @test "image affinity" {
-	#FIXME: Broken
-	skip
 	start_docker 2
 	swarm_manage
 
-	run docker -H ${HOSTS[0]} pull busybox
+	run docker -H ${HOSTS[0]}  build -t test $BATS_TEST_DIRNAME/testdata/build
 	[ "$status" -eq 0 ]
-	run docker_swarm run --name c1 -e affinity:image==busybox -d busybox:latest sh
+
+	# pull busybox to force the refresh images
+	run docker_swarm pull busybox
 	[ "$status" -eq 0 ]
-	run docker_swarm run --name c2 -e affinity:image!=busybox -d busybox:latest sh
+
+	run docker_swarm run --name c1 -e affinity:image==test -d busybox:latest sh
 	[ "$status" -eq 0 ]
-	run docker_swarm run --name c3 --label 'com.docker.swarm.affinities=["image==busybox"]' -d busybox:latest sh
+	run docker_swarm run --name c2 -e affinity:image!=test -d busybox:latest sh
 	[ "$status" -eq 0 ]
-	run docker_swarm run --name c4 --label 'com.docker.swarm.affinities=["image\!=busybox"]' -d busybox:latest sh
+	run docker_swarm run --name c3 --label 'com.docker.swarm.affinities=["image==test"]' -d busybox:latest sh
+	[ "$status" -eq 0 ]
+	run docker_swarm run --name c4 --label 'com.docker.swarm.affinities=["image\!=test"]' -d busybox:latest sh
 	[ "$status" -eq 0 ]
 
 	run docker_swarm inspect c1
