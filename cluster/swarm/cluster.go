@@ -141,10 +141,10 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 
 				if old, exists := c.engines[engine.ID]; exists {
 					c.Unlock()
-					if old.IP != engine.IP {
-						log.Errorf("ID duplicated. %s shared by %s and %s", engine.ID, old.IP, engine.IP)
+					if old.Addr != engine.Addr {
+						log.Errorf("ID duplicated. %s shared by %s and %s", engine.ID, old.Addr, engine.Addr)
 					} else {
-						log.Errorf("node %q with IP %q is  already registered", engine.Name, engine.IP)
+						log.Debugf("node %q (name: %q) with address %q is already registered", engine.ID, engine.Name, engine.Addr)
 					}
 					return
 				}
