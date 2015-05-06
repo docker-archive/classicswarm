@@ -85,6 +85,11 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
+	// check new name whether avaliable
+	if cID := c.getIDFromName(name); cID != "" {
+		return nil, fmt.Errorf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, cID, name)
+	}
+
 	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
 	if err != nil {
 		return nil, err
@@ -304,6 +309,26 @@ func (c *Cluster) Containers() []*cluster.Container {
 	return out
 }
 
+func (c *Cluster) getIDFromName(name string) string {
+	// Abort immediately if the name is empty.
+	if len(name) == 0 {
+		return ""
+	}
+
+	c.RLock()
+	defer c.RUnlock()
+	for _, n := range c.engines {
+		for _, c := range n.Containers() {
+			for _, cname := range c.Names {
+				if cname == name || cname == "/"+name {
+					return c.Id
+				}
+			}
+		}
+	}
+	return ""
+}
+
 // Container returns the container with IDOrName in the cluster
 func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	// Abort immediately if the name is empty.
@@ -392,8 +417,8 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	defer c.RUnlock()
 
 	// check new name whether avaliable
-	if conflictContainer := c.Container(newName); conflictContainer != nil {
-		return fmt.Errorf("Error when allocating new name: Conflict. The name %q is already in use by container %s. You have to delete (or rename) that container to be able to reuse that name.", newName, conflictContainer.Id)
+	if cID := c.getIDFromName(newName); cID != "" {
+		return fmt.Errorf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, cID, newName)
 	}
 
 	// call engine rename
