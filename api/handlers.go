@@ -72,43 +72,41 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 
 	// find an engine which has all images
 	// Engine.Addr : [found names]
-	dict := make(map[string][]string)
-	bFoundEngine := false
+	imageMap := make(map[string][]string)
 	var foundEngineAddr string
 	for _, image := range c.cluster.Images() {
 		for _, name := range names {
 			if image.Match(name) {
 				// check if engine addr already exists
-				value, exists := dict[image.Engine.Addr]
+				value, exists := imageMap[image.Engine.Addr]
 				if exists {
 					// check if name already exists
-					found := false
+					nameAlreadyExisted := false
 					for _, tempName := range value {
 						if tempName == name {
-							found = true
+							nameAlreadyExisted = true
 						}
 					}
-					if found == false {
-						dict[image.Engine.Addr] = append(value, name)
-						if len(names) == len(dict[image.Engine.Addr]) {
-							bFoundEngine = true
+					if nameAlreadyExisted == false {
+						imageMap[image.Engine.Addr] = append(value, name)
+						if len(names) == len(imageMap[image.Engine.Addr]) {
 							foundEngineAddr = image.Engine.Addr
 						}
 					}
 				} else {
-					dict[image.Engine.Addr] = []string{name}
+					imageMap[image.Engine.Addr] = []string{name}
 				}
 			}
-			if bFoundEngine {
+			if foundEngineAddr != "" {
 				break
 			}
 		}
-		if bFoundEngine {
+		if foundEngineAddr != "" {
 			break
 		}
 	}
 
-	if bFoundEngine {
+	if foundEngineAddr != "" {
 		proxy(c.tlsConfig, foundEngineAddr, w, r)
 	} else {
 		httpError(w, fmt.Sprintf("Not found an engine which has all images: %s", names), http.StatusNotFound)
