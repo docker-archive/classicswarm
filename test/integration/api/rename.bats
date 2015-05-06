@@ -1,3 +1,12 @@
+#!/usr/bin/env bats
+
+load ../helpers
+
+function teardown() {
+	swarm_manage_cleanup
+	stop_docker
+}
+
 @test "docker rename" {
 	start_docker 3
 	swarm_manage
