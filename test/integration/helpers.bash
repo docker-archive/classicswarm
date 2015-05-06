@@ -69,12 +69,16 @@ function retry() {
 	done
 
 	echo "Command \"$@\" failed $attempts times. Output: $output"
-	[[ false ]]
+	false
 }
 
 # Waits until the given docker engine API becomes reachable.
 function wait_until_reachable() {
 	retry 10 1 docker -H $1 info
+}
+
+function all_nodes_registered_in_swarm() {
+	docker_swarm info | grep -q "Nodes: ${#HOSTS[@]}"
 }
 
 # Start the swarm manager in background.
@@ -86,38 +90,44 @@ function swarm_manage() {
 		discovery="$@"
 	fi
 
-	$SWARM_BINARY manage -H $SWARM_HOST $discovery &
+	"$SWARM_BINARY" manage -H "$SWARM_HOST" --heartbeat=1 "$discovery" &
 	SWARM_PID=$!
-	wait_until_reachable $SWARM_HOST
+	wait_until_reachable "$SWARM_HOST"
+	retry 10 1 all_nodes_registered_in_swarm
 }
 
-# Start swarm join for every engine with the discovery as parameter
+# swarm join every engine created with `start_docker`.
+#
+# It will wait until all nodes are visible in discovery (`swarm list`) before
+# returning and will fail if that's not the case after a certain time.
+#
+# It can be called multiple times and will only join new engines started with
+# `start_docker` since the last `swarm_join` call.
 function swarm_join() {
-	local i=0
-	for h in ${HOSTS[@]}; do
-		echo "Swarm join #${i}: $h $@"
-		$SWARM_BINARY join --addr=$h "$@" &
+	local current=${#SWARM_JOIN_PID[@]}
+	local nodes=${#HOSTS[@]}
+	local addr="$1"
+	shift
+
+	# Start the engines.
+	local i
+	echo "current: $current | nodes: $nodes" > log
+	for ((i=current; i < nodes; i++)); do
+		local h="${HOSTS[$i]}"
+		echo "Swarm join #${i}: $h $addr"
+		"$SWARM_BINARY" join --addr="$h" "$addr" &
 		SWARM_JOIN_PID[$i]=$!
-		((++i))
 	done
-	wait_until_swarm_joined $i
+	retry 10 0.5 all_nodes_registered_in_discovery "$addr"
 }
 
-# Wait until a swarm instance joins the cluster.
-# Parameter $1 is number of nodes to check.
-function wait_until_swarm_joined {
-	local attempts=0
-	local max_attempts=10
+# Returns true if all nodes have joined the discovery.
+function all_nodes_registered_in_discovery() {
+	local joined=`swarm list "$1" | wc -l`
+	local total=${#HOSTS[@]}
 
-	until [ $attempts -ge $max_attempts ]; do
-		run docker -H $SWARM_HOST info
-		if [[ "${lines[3]}" == *"Nodes: $1"* ]]; then
-			break
-		fi 
-		echo "Checking if joined successfully for the $((++attempts)) time" >&2
-		sleep 1
-	done
-	[[ $attempts -lt $max_attempts ]]
+	echo "${joined} out of ${total} hosts joined discovery"
+	[ "$joined" -eq "$total" ]
 }
 
 # Stops the manager.
@@ -128,7 +138,7 @@ function swarm_manage_cleanup() {
 # Clean up Swarm join processes
 function swarm_join_cleanup() {
 	for pid in ${SWARM_JOIN_PID[@]}; do
-		kill $pid
+		kill $pid || true
 	done
 }
 
@@ -159,7 +169,7 @@ function start_docker() {
 
 	# Wait for the engines to be reachable.
 	for ((i=current; i < (current + instances); i++)); do
-		wait_until_reachable ${HOSTS[$i]}
+		wait_until_reachable "${HOSTS[$i]}"
 	done
 }
 
