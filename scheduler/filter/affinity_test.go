@@ -233,22 +233,22 @@ func TestAffinityFilterLabels(t *testing.T) {
 		err    error
 	)
 
-	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image==image-1"}}), nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==image-1"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
-	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image!=image-1"}}), nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image!=image-1"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
-	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Labels: map[string]string{"com.docker.swarm.affinities": "[\"image==image-1\"]"}}), nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Labels: map[string]string{"com.docker.swarm.affinities": "[\"image==image-1\"]"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
-	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Labels: map[string]string{"com.docker.swarm.affinities": "[\"image!=image-1\"]"}}), nodes)
+	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Labels: map[string]string{"com.docker.swarm.affinities": "[\"image!=image-1\"]"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
