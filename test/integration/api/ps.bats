@@ -1,3 +1,12 @@
+#!/usr/bin/env bats
+
+load ../helpers
+
+function teardown() {
+	swarm_manage_cleanup
+	stop_docker
+}
+
 @test "docker ps -n" {
 	start_docker 1
 	swarm_manage
