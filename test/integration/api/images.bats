@@ -26,7 +26,6 @@ function teardown() {
 	
 	# Try with --filter.
 	run docker_swarm images --filter node=node-0
-	echo $output
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 1 ]
 

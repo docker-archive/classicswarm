@@ -27,8 +27,6 @@ function teardown() {
 	[ -s $temp_file_name ]
 	run file $temp_file_name
 	[ "$status" -eq 0 ]
-	echo ${lines[0]}
-	echo $output
 	[[ "$output" == *"tar archive"* ]]
 	
 	# after ok, delete exported tar file
