@@ -24,7 +24,7 @@ func parseEnv(e string) (bool, string, string) {
 }
 
 // BuildContainerConfig creates a cluster.ContainerConfig from a dockerclient.ContainerConfig
-func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
+func BuildContainerConfig(c *dockerclient.ContainerConfig) *ContainerConfig {
 	var (
 		affinities  []string
 		constraints []string
@@ -74,7 +74,7 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 		}
 	}
 
-	return &ContainerConfig{c}
+	return &ContainerConfig{*c}
 }
 
 func (c *ContainerConfig) extractExprs(key string) []string {
