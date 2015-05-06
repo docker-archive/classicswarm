@@ -9,31 +9,37 @@ ZK_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 7000 ))
 ZK_CONTAINER_NAME=swarm_integration_zk
 
 function start_zk() {
-	run docker run --name $ZK_CONTAINER_NAME -p $ZK_HOST:2181 -d jplock/zookeeper
+	run docker_host run --name $ZK_CONTAINER_NAME -p $ZK_HOST:2181 -d jplock/zookeeper
 	[ "$status" -eq 0 ]
 }
 
 function stop_zk() {
-	run docker rm -f -v $ZK_CONTAINER_NAME
+	run docker_host rm -f -v $ZK_CONTAINER_NAME
 	[ "$status" -eq 0 ]
 }
 
 function setup() {
 	start_zk
-	start_docker 2
 }
 
 function teardown() {
-	swarm_join_cleanup
 	swarm_manage_cleanup
+	swarm_join_cleanup
 	stop_docker
 	stop_zk
 }
 
-@test "zookeeperk discovery" {
-	swarm_manage zk://${ZK_HOST}/test
-	swarm_join   zk://${ZK_HOST}/test
+@test "zookeeper discovery" {
+	# Start 2 engines and make them join the cluster.
+	start_docker 2
+	swarm_join   "zk://${ZK_HOST}/test"
 
-	run docker_swarm info
-	[[ "$output" == *"Nodes: 2"* ]]
+	# Start a manager and ensure it sees all the engines.
+	swarm_manage "zk://${ZK_HOST}/test"
+	all_nodes_registered_in_swarm
+
+	# Add another engine to the cluster and make sure it's picked up by swarm.
+	start_docker 1
+	swarm_join   "zk://${ZK_HOST}/test"
+	retry 30 1 all_nodes_registered_in_swarm
 }
