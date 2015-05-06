@@ -100,7 +100,24 @@ function swarm_join() {
 		SWARM_JOIN_PID[$i]=$!
 		((++i))
 	done
-	retry 30 1 [ -n "$(docker_swarm info | grep -q 'Nodes: $i')" ]
+	wait_until_swarm_joined $i
+}
+
+# Wait until a swarm instance joins the cluster.
+# Parameter $1 is number of nodes to check.
+function wait_until_swarm_joined {
+	local attempts=0
+	local max_attempts=10
+
+	until [ $attempts -ge $max_attempts ]; do
+		run docker -H $SWARM_HOST info
+		if [[ "${lines[3]}" == *"Nodes: $1"* ]]; then
+			break
+		fi 
+		echo "Checking if joined successfully for the $((++attempts)) time" >&2
+		sleep 1
+	done
+	[[ $attempts -lt $max_attempts ]]
 }
 
 # Stops the manager.
