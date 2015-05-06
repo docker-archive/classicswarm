@@ -2,32 +2,38 @@
 
 load helpers
 
-function token_cleanup() {
-	curl -X DELETE https://discovery-stage.hub.docker.com/v1/clusters/$1
-}
+TOKEN=""
 
-function setup() {
-	start_docker 2
+function token_cleanup() {
+	[ -z "$TOKEN" ] && return
+	echo "Removing $TOKEN"
+	curl -X DELETE "https://discovery-stage.hub.docker.com/v1/clusters/$TOKEN"
 }
 
 function teardown() {
-	swarm_join_cleanup
 	swarm_manage_cleanup
+	swarm_join_cleanup
 	stop_docker
+	token_cleanup
 }
 
 @test "token discovery" {
+	# Create a cluster and validate the token.
 	run swarm create
 	[ "$status" -eq 0 ]
 	[[ "$output" =~ ^[0-9a-f]{32}$ ]]
 	TOKEN="$output"
 
-	swarm_manage "token://$TOKEN"
+	# Start 2 engines and make them join the cluster.
+	start_docker 2
 	swarm_join   "token://$TOKEN"
 
-	run docker_swarm info
-	echo $output
-	[[ "$output" == *"Nodes: 2"* ]]
+	# Start a manager and ensure it sees all the engines.
+	swarm_manage "token://$TOKEN"
+	all_nodes_registered_in_swarm
 
-	token_cleanup "$TOKEN"
+	# Add another engine to the cluster and make sure it's picked up by swarm.
+	start_docker 1
+	swarm_join   "token://$TOKEN"
+	retry 10 1 all_nodes_registered_in_swarm
 }
