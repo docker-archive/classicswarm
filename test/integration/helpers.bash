@@ -153,8 +153,8 @@ function swarm_join_cleanup() {
 
 function start_docker_with_busybox() {
 	# Preload busybox if not available.
-	[ "$(docker_host images -q busybox)" ] || docker_host pull busybox
-	[ -f "$BUSYBOX_IMAGE" ] || docker_host save -o "$BUSYBOX_IMAGE" busybox
+	[ "$(docker_host images -q busybox)" ] || docker_host pull busybox:latest
+	[ -f "$BUSYBOX_IMAGE" ] || docker_host save -o "$BUSYBOX_IMAGE" busybox:latest
 
 	# Start the docker instances.
 	local current=${#DOCKER_CONTAINERS[@]}
