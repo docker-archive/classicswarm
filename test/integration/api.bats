@@ -43,15 +43,13 @@ function teardown() {
 }
 
 @test "docker attach through websocket" {
-	#FIXME: Broken
-	skip
-
 	CLIENT_API_VERSION="v1.17"
 	start_docker 2
 	swarm_manage
 
 	#create a container
 	run docker_swarm run -d --name test_container busybox sleep 1000
+	[ "$status" -eq 0 ]
 
 	# test attach-ws api
 	# jimmyxian/centos7-wssh is an image with websocket CLI(WSSH) wirtten in Nodejs
@@ -60,9 +58,8 @@ function teardown() {
 	URL="ws://${SWARM_HOST}/${CLIENT_API_VERSION}/containers/test_container/attach/ws?stderr=1"
 	run docker_host run --rm --net=host jimmyxian/centos7-wssh wssh $URL
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[0]}" == *"Session Open"* ]]
-	[[ "${lines[1]}" == *"Session Closed"* ]]
+	[[ "${output}" == *"Session Open"* ]]
+	[[ "${output}" == *"Session Closed"* ]]
 }
 
 @test "docker build" {
