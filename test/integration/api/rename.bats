@@ -27,7 +27,7 @@ function teardown() {
 	# rename container, conflict and fail
 	run docker_swarm rename test_container another_container
 	[ "$status" -ne 0 ]
-	[[ "${output}" == *"Error when allocating new name: Conflict."* ]]
+	[[ "${output}" == *"Conflict,"* ]]
 
 	# rename container, sucessful
 	run docker_swarm rename test_container rename_container
