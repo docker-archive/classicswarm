@@ -6,6 +6,7 @@ import "github.com/samalba/dockerclient"
 type Container struct {
 	dockerclient.Container
 
+	Config *ContainerConfig
 	Info   dockerclient.ContainerInfo
 	Engine *Engine
 }
