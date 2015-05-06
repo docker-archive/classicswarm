@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker create" {
-	start_docker 3
+	start_docker_with_busybox 2
 	swarm_manage
 
 	# make sure no contaienr exist

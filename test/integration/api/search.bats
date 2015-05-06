@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker search" {
-	start_docker 3
+	start_docker 2
 	swarm_manage
 
 	# search image (not exist), the name of images only [a-z0-9-_.] are allowed

@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker exec" {
-	start_docker 3
+	start_docker_with_busybox 2
 	swarm_manage
 	run docker_swarm create --name test_container busybox sleep 100
 	[ "$status" -eq 0 ]

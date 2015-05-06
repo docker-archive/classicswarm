@@ -2,12 +2,12 @@
 
 load helpers
 
-@test "create doesn't accept any arugments" {
+@test "swarm create doesn't accept any arguments" {
 	run swarm create derpderpderp
 	[ "$status" -ne 0 ]
 }
 
-@test "version string should contain a proper number with git commit" {
+@test "swarm version" {
 	run swarm -v
 
 	[ "$status" -eq 0 ]

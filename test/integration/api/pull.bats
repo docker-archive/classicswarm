@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker pull" {
-	start_docker 3
+	start_docker 2
 	swarm_manage
 
 	# make sure no image exists
@@ -19,16 +19,16 @@ function teardown() {
 	run docker_swarm pull busybox
 	[ "$status" -eq 0 ]
 
-	# swarm verify
+	# we should get 2 busyboxes, plus the header.
 	run docker_swarm images
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -ge 4 ]
+	[ "${#lines[@]}" -eq 3 ]
 	# every line should contain "busybox" exclude the first head line 
 	for((i=1; i<${#lines[@]}; i++)); do
 		[[ "${lines[i]}" == *"busybox"* ]]
 	done
 
-	# node verify
+	# verify on the nodes
 	for host in ${HOSTS[@]}; do
 		run docker -H $host images
 		[ "$status" -eq 0 ]
