@@ -196,9 +196,31 @@ function teardown() {
 	[[ "${lines[*]}" ==  *"diff.txt"* ]]
 }
 
-# FIXME
 @test "docker events" {
-	skip
+	TEMP_FILE=$(mktemp)
+	start_docker 3
+	swarm_manage
+
+	# start events, report real time events to TEMP_FILE
+	# it will stop automatically when manager stop
+	docker_swarm events > $TEMP_FILE &
+
+	# events: create container on node-0
+	run docker_swarm create --name test_container -e constraint:node==node-0 busybox sleep 100 
+	[ "$status" -eq 0 ]
+	# events: start container
+	run docker_swarm start test_container
+	[ "$status" -eq 0 ]
+
+	# verify
+	run cat $TEMP_FILE
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"node:node-0"* ]]
+	[[ "${output}" == *"create"* ]]
+	[[ "${output}" == *"start"* ]]
+	
+	# after ok, remove the $TEMP_FILE
+	rm -f $TEMP_FILE
 }
 
 @test "docker exec" {
@@ -774,9 +796,26 @@ function teardown() {
 	rm -f $temp_file_name_o
 }
 
-# FIXME
 @test "docker search" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	# search image (not exist), the name of images only [a-z0-9-_.] are allowed
+	run docker_swarm search does_not_exist
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 1 ]
+	[[ "${lines[0]}" == *"DESCRIPTION"* ]]
+
+	# search busybox (image exist)
+	run docker_swarm search busybox
+	[ "$status" -eq 0 ]
+
+	# search existed image, output: latest + header at least
+	[ "${#lines[@]}" -ge 2 ]
+	# Every line should contain "busybox" exclude the first head line 
+	for((i=1; i<${#lines[@]}; i++)); do
+		[[ "${lines[i]}" == *"busybox"* ]]
+	done
 }
 
 @test "docker start" {
@@ -801,9 +840,35 @@ function teardown() {
 	[[ "${lines[1]}" ==  *"Up"* ]]
 }
 
-# FIXME
 @test "docker stats" {
-	skip
+	TEMP_FILE=$(mktemp)
+	start_docker 3
+	swarm_manage
+
+	# stats running container 
+	run docker_swarm run -d --name test_container busybox sleep 50
+	[ "$status" -eq 0 ]
+
+	# make sure container is up
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"test_container"* ]]
+	[[ "${lines[1]}" == *"Up"* ]]
+
+	# storage the stats output in TEMP_FILE
+	# it will stop automatically when manager stop
+	docker_swarm stats test_container > $TEMP_FILE &
+
+	# retry until TEMP_FILE is not empty
+	retry 5 1 [ -s $TEMP_FILE ]
+
+	# if "CPU %" in TEMP_FILE, status is 0
+	run grep "CPU %" $TEMP_FILE
+	[ "$status" -eq 0 ]
+	run grep "MEM USAGE/LIMIT" $TEMP_FILE
+	[ "$status" -eq 0 ]
+
+	rm -f $TEMP_FILE
 }
 
 @test "docker stop" {
@@ -906,12 +971,39 @@ function teardown() {
 	[[ "${lines[1]}" != *"Paused"* ]]
 }
 
-# FIXME
 @test "docker version" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	# version
+	run docker_swarm version
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -ge 8 ]
+
+	# verify
+	client_reg='^Client version: [0-9]+\.[0-9]+\.[0-9]+.*$'
+	server_reg='^Server version: swarm/[0-9]+\.[0-9]+\.[0-9]+.*$'
+	[[ "${lines[0]}" =~ $client_reg ]]
+	[[ "${lines[5]}" =~ $server_reg ]]
 }
 
-# FIXME
 @test "docker wait" {
-	skip
+	start_docker 3
+	swarm_manage
+
+	# run after 1 seconds, test_container will exit
+	run docker_swarm run -d --name test_container busybox sleep 1
+	[ "$status" -eq 0 ]
+
+	# make sure container exists and is up
+	run docker_swarm ps -l
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" ==  *"test_container"* ]]
+	[[ "${lines[1]}" ==  *"Up"* ]]
+
+	# wait until exist(after 1 seconds)
+	run timeout 5 docker -H $SWARM_HOST wait test_container
+
+	[ "${#lines[@]}" -eq 1 ]
+	[[ "${output}" == "0" ]]
 }
