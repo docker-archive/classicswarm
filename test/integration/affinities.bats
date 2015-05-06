@@ -47,7 +47,7 @@ function teardown() {
 	start_docker 2
 	swarm_manage
 
-	run docker -H ${HOSTS[0]}  build -t test $BATS_TEST_DIRNAME/testdata/build
+	run docker -H ${HOSTS[0]}  build -t test $TESTDATA/build
 	[ "$status" -eq 0 ]
 
 	# pull busybox to force the refresh images

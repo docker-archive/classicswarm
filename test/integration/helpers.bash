@@ -1,7 +1,13 @@
 #!/bin/bash
 
+# Root directory of integration tests.
+INTEGRATION_ROOT=$(dirname "$(readlink -f "$BASH_SOURCE")")
+
+# Test data path.
+TESTDATA="${INTEGRATION_ROOT}/testdata"
+
 # Root directory of the repository.
-SWARM_ROOT=${SWARM_ROOT:-${BATS_TEST_DIRNAME}/../..}
+SWARM_ROOT=${SWARM_ROOT:-$(cd "$INTEGRATION_ROOT/../.."; pwd -P)}
 
 # Path of the Swarm binary.
 SWARM_BINARY=${SWARM_BINARY:-${SWARM_ROOT}/swarm}
