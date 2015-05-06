@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker run" {
-	start_docker 3
+	start_docker_with_busybox 2
 	swarm_manage
 
 	# make sure no container exist

@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker build" {
-	start_docker 3
+	start_docker 2
 	swarm_manage
 
 	run docker_swarm images -q

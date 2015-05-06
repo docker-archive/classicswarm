@@ -48,7 +48,7 @@ function wait_containers_exit {
 
 @test "spawning $CONTAINERS containers on $NODES nodes" {
 	# Start N engines.
-	start_docker $NODES
+	start_docker_with_busybox $NODES
 
 	# Start the manager and wait until all nodes join the cluster.
 	swarm_manage

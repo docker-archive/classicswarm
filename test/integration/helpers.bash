@@ -27,6 +27,8 @@ BASE_PORT=$(( ( RANDOM % 1000 )  + 5000 ))
 STORAGE_DRIVER=${STORAGE_DRIVER:-aufs}
 EXEC_DRIVER=${EXEC_DRIVER:-native}
 
+BUSYBOX_IMAGE="$BATS_TMPDIR/busybox.tgz"
+
 # Join an array with a given separator.
 function join() {
 	local IFS="$1"
@@ -146,6 +148,22 @@ function swarm_manage_cleanup() {
 function swarm_join_cleanup() {
 	for pid in ${SWARM_JOIN_PID[@]}; do
 		kill $pid || true
+	done
+}
+
+function start_docker_with_busybox() {
+	# Preload busybox if not available.
+	[ "$(docker_host images -q busybox)" ] || docker_host pull busybox:latest
+	[ -f "$BUSYBOX_IMAGE" ] || docker_host save -o "$BUSYBOX_IMAGE" busybox:latest
+
+	# Start the docker instances.
+	local current=${#DOCKER_CONTAINERS[@]}
+	start_docker "$@"
+	local new=${#DOCKER_CONTAINERS[@]}
+
+	# Load busybox on the new instances.
+	for ((i=current; i < new; i++)); do
+		docker -H ${HOSTS[$i]} load -i "$BUSYBOX_IMAGE"
 	done
 }
 

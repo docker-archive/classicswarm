@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker cp" {
-	start_docker 3
+	start_docker_with_busybox 2
 	swarm_manage
 
 	test_file="/bin/busybox"

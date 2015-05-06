@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker inspect" {
-	start_docker 3
+	start_docker_with_busybox 2
 	swarm_manage
 	# run container
 	run docker_swarm run -d --name test_container busybox sleep 500
@@ -32,7 +32,7 @@ function teardown() {
 	# FIXME: Broken in docker master. See #717
 	skip
 
-	start_docker 3
+	start_docker_with_busybox 2
 	swarm_manage
 	# run container
 	run docker_swarm run -d --name test_container busybox sleep 500
