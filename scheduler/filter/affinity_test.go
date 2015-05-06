@@ -193,3 +193,63 @@ func TestAffinityFilter(t *testing.T) {
 	assert.Len(t, result, 0)
 
 }
+
+func TestAffinityFilterLabels(t *testing.T) {
+	var (
+		f     = AffinityFilter{}
+		nodes = []*node.Node{
+			{
+				ID:   "node-0-id",
+				Name: "node-0-name",
+				Addr: "node-0",
+				Containers: []*cluster.Container{
+					{Container: dockerclient.Container{
+						Id:    "container-n0-id",
+						Names: []string{"/container-n0-name"},
+					}},
+				},
+				Images: []*cluster.Image{{Image: dockerclient.Image{
+					Id:       "image-0-id",
+					RepoTags: []string{"image-0:tag0"},
+				}}},
+			},
+			{
+				ID:   "node-1-id",
+				Name: "node-1-name",
+				Addr: "node-1",
+				Containers: []*cluster.Container{
+					{Container: dockerclient.Container{
+						Id:    "container-n1-id",
+						Names: []string{"/container-n1-name"},
+					}},
+				},
+				Images: []*cluster.Image{{Image: dockerclient.Image{
+					Id:       "image-1-id",
+					RepoTags: []string{"image-1:tag1"},
+				}}},
+			},
+		}
+		result []*node.Node
+		err    error
+	)
+
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image==image-1"}}), nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[1])
+
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Env: []string{"affinity:image!=image-1"}}), nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[0])
+
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Labels: map[string]string{"com.docker.swarm.affinities": "[\"image==image-1\"]"}}), nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[1])
+
+	result, err = f.Filter(cluster.BuildContainerConfig(&dockerclient.ContainerConfig{Labels: map[string]string{"com.docker.swarm.affinities": "[\"image!=image-1\"]"}}), nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[0])
+}
