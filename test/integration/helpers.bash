@@ -77,7 +77,8 @@ function wait_until_reachable() {
 	retry 10 1 docker -H $1 info
 }
 
-function all_nodes_registered_in_swarm() {
+# Returns true if all nodes have joined the swarm.
+function check_swarm_nodes() {
 	docker_swarm info | grep -q "Nodes: ${#HOSTS[@]}"
 }
 
@@ -93,7 +94,7 @@ function swarm_manage() {
 	"$SWARM_BINARY" manage -H "$SWARM_HOST" --heartbeat=1 "$discovery" &
 	SWARM_PID=$!
 	wait_until_reachable "$SWARM_HOST"
-	retry 10 1 all_nodes_registered_in_swarm
+	retry 10 1 check_swarm_nodes
 }
 
 # swarm join every engine created with `start_docker`.
@@ -118,11 +119,11 @@ function swarm_join() {
 		"$SWARM_BINARY" join --addr="$h" "$addr" &
 		SWARM_JOIN_PID[$i]=$!
 	done
-	retry 10 0.5 all_nodes_registered_in_discovery "$addr"
+	retry 10 0.5 check_discovery_nodes "$addr"
 }
 
 # Returns true if all nodes have joined the discovery.
-function all_nodes_registered_in_discovery() {
+function check_discovery_nodes() {
 	local joined=`swarm list "$1" | wc -l`
 	local total=${#HOSTS[@]}
 

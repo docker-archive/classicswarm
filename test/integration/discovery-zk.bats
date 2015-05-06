@@ -32,14 +32,14 @@ function teardown() {
 @test "zookeeper discovery" {
 	# Start 2 engines and make them join the cluster.
 	start_docker 2
-	swarm_join   "zk://${ZK_HOST}/test"
+	swarm_join "zk://${ZK_HOST}/test"
 
 	# Start a manager and ensure it sees all the engines.
 	swarm_manage "zk://${ZK_HOST}/test"
-	all_nodes_registered_in_swarm
+	check_swarm_nodes
 
 	# Add another engine to the cluster and make sure it's picked up by swarm.
 	start_docker 1
-	swarm_join   "zk://${ZK_HOST}/test"
-	retry 30 1 all_nodes_registered_in_swarm
+	swarm_join "zk://${ZK_HOST}/test"
+	retry 30 1 check_swarm_nodes
 }

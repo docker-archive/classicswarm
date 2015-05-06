@@ -26,14 +26,14 @@ function teardown() {
 
 	# Start 2 engines and make them join the cluster.
 	start_docker 2
-	swarm_join   "token://$TOKEN"
+	swarm_join "token://$TOKEN"
 
 	# Start a manager and ensure it sees all the engines.
 	swarm_manage "token://$TOKEN"
-	all_nodes_registered_in_swarm
+	check_swarm_nodes
 
 	# Add another engine to the cluster and make sure it's picked up by swarm.
 	start_docker 1
-	swarm_join   "token://$TOKEN"
-	retry 10 1 all_nodes_registered_in_swarm
+	swarm_join "token://$TOKEN"
+	retry 10 1 check_swarm_nodes
 }
