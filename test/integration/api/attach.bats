@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker attach" {
-	start_docker 3
+	start_docker_with_busybox 2
 	swarm_manage
 
 	# container run in background
@@ -27,7 +27,7 @@ function teardown() {
 
 @test "docker attach through websocket" {
 	CLIENT_API_VERSION="v1.17"
-	start_docker 2
+	start_docker_with_busybox 2
 	swarm_manage
 
 	#create a container

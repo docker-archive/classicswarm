@@ -9,7 +9,7 @@ function teardown() {
 
 @test "docker stats" {
 	TEMP_FILE=$(mktemp)
-	start_docker 3
+	start_docker_with_busybox 2
 	swarm_manage
 
 	# stats running container 

@@ -8,41 +8,35 @@ function teardown() {
 }
 
 @test "docker images" {
-	start_docker 3
+	# Start one empty host and two with busybox to ensure swarm selects the
+	# right ones.
+	start_docker 1
+	start_docker_with_busybox 2
 	swarm_manage
 
-	# no image exist
-	run docker_swarm images -q 
-	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 0 ]
-	# make sure every node has no image
-	for((i=0; i<3; i++)); do
-		run docker_swarm images --filter node=node-$i -q
-		[ "$status" -eq 0 ]
-		[ "${#lines[@]}" -eq 0 ]
-	done
 
-	# pull image
-	run docker_swarm pull busybox
-	[ "$status" -eq 0 ]
-
-	# show all node images, including reduplicated
+	# we should get 2 busyboxes, plus the header.
 	run docker_swarm images
 	[ "$status" -eq 0 ]
-	# check pull busybox, if download sucessfully, the busybox have one tag(lastest) at least
-	# if there are 3 nodes, the output lines of "docker images" are greater or equal 4(1 header + 3 busybox:latest)
-	# so use -ge here, the following(pull/tag) is the same reason
-	[ "${#lines[@]}" -ge 4 ]
-	# Every line should contain "busybox" exclude the first head line 
+	[ "${#lines[@]}" -eq 3 ]
+	# Every line should contain "busybox" except for the header
 	for((i=1; i<${#lines[@]}; i++)); do
 		[[ "${lines[i]}" == *"busybox"* ]]
 	done
 	
-	# verify
-	for((i=0; i<3; i++)); do
-		run docker_swarm images --filter node=node-$i
-		[ "$status" -eq 0 ]
-		[ "${#lines[@]}" -ge 2 ]
-		[[ "${lines[1]}" == *"busybox"* ]]
-	done
+	# Try with --filter.
+	run docker_swarm images --filter node=node-0
+	echo $output
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 1 ]
+
+	run docker_swarm images --filter node=node-1
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"busybox"* ]]
+
+	run docker_swarm images --filter node=node-2
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"busybox"* ]]
 }

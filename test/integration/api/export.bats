@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "docker export" {
-	start_docker 3
+	start_docker_with_busybox 2
 	swarm_manage
 	# run a container to export
 	run docker_swarm run -d --name test_container busybox sleep 500

@@ -8,18 +8,19 @@ function teardown() {
 }
 
 @test "docker save" {
-	start_docker 3
+	# Start one empty host and one with busybox to ensure swarm selects the
+	# right one (and not one at random).
+	start_docker 1
+	start_docker_with_busybox 1
 	swarm_manage
 
-	run docker_swarm pull busybox
-	[ "$status" -eq 0 ]
-
-	temp_file_name=$(mktemp)
-	temp_file_name_o=$(mktemp)
 	# make sure busybox image exists
 	run docker_swarm images 
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"busybox"* ]]
+
+	temp_file_name=$(mktemp)
+	temp_file_name_o=$(mktemp)
 
 	# save >, image->tar
 	docker_swarm save busybox > $temp_file_name
