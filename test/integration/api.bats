@@ -49,12 +49,14 @@ function teardown() {
 
 	#create a container
 	run docker_swarm run -d --name test_container busybox sleep 1000
+	[ "$status" -eq 0 ]
 
 	# test attach-ws api
 	# jimmyxian/centos7-wssh is an image with websocket CLI(WSSH) wirtten in Nodejs
 	# if connected successfull, it returns two lines, "Session Open" and "Session Closed"
 	# Note: with stdout=1&stdin=1&stream=1: it can be used as SSH
 	docker_host pull jimmyxian/centos7-wssh
+	[ "$status" -eq 0 ]
 
 	URL="ws://${SWARM_HOST}/${CLIENT_API_VERSION}/containers/test_container/attach/ws?stderr=1"
 	run docker_host run --rm --net=host jimmyxian/centos7-wssh wssh $URL
