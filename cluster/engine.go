@@ -247,13 +247,9 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 		if err != nil {
 			return nil, err
 		}
-		// Convert the ContainerConfig from inspect into our own
-		// cluster.ContainerConfig.
-		container.Config = BuildContainerConfig(*info.Config)
-		container.Config.CpuShares = container.Config.CpuShares * 1024.0 / e.Cpus
-
-		// Save the entire inspect back into the container.
 		container.Info = *info
+		// real CpuShares -> nb of CPUs
+		container.Info.Config.CpuShares = container.Info.Config.CpuShares * 1024.0 / e.Cpus
 	}
 
 	// Update its internal state.
@@ -325,7 +321,7 @@ func (e *Engine) UsedMemory() int64 {
 	var r int64
 	e.RLock()
 	for _, c := range e.containers {
-		r += c.Config.Memory
+		r += c.Info.Config.Memory
 	}
 	e.RUnlock()
 	return r
@@ -336,7 +332,7 @@ func (e *Engine) UsedCpus() int64 {
 	var r int64
 	e.RLock()
 	for _, c := range e.containers {
-		r += c.Config.CpuShares
+		r += c.Info.Config.CpuShares
 	}
 	e.RUnlock()
 	return r
@@ -360,15 +356,12 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 		client = e.client
 	)
 
-	// Convert our internal ContainerConfig into something Docker will
-	// understand.  Start by making a copy of the internal ContainerConfig as
-	// we don't want to mess with the original.
-	dockerConfig := config.ContainerConfig
+	newConfig := *config
 
 	// nb of CPUs -> real CpuShares
-	dockerConfig.CpuShares = config.CpuShares * 1024 / e.Cpus
+	newConfig.CpuShares = config.CpuShares * 1024 / e.Cpus
 
-	if id, err = client.CreateContainer(&dockerConfig, name); err != nil {
+	if id, err = client.CreateContainer(&newConfig.ContainerConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.
 		if err != dockerclient.ErrNotFound || !pullImage {
 			return nil, err
@@ -378,7 +371,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 			return nil, err
 		}
 		// ...And try agaie.
-		if id, err = client.CreateContainer(&dockerConfig, name); err != nil {
+		if id, err = client.CreateContainer(&newConfig.ContainerConfig, name); err != nil {
 			return nil, err
 		}
 	}
