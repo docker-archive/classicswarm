@@ -44,3 +44,57 @@ function teardown() {
 	[ "${#lines[@]}" -eq  2 ]
 	[[ "${lines[1]}" == *"false"* ]]
 }
+
+@test "docker ps --filter" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	# Running
+	firstID=$(docker_swarm run -d --name name1 --label "match=me" --label "second=tag" busybox sleep 10000)
+	# Exited - successfull
+	secondID=$(docker_swarm run -d --name name2 --label "match=me too" busybox true)
+	# Exited - error
+	thirdID=$(docker_swarm run -d --name name3 --label "nomatch=me" busybox false)
+
+	# status
+	run docker_swarm ps -q --no-trunc --filter=status=exited
+	[ "${#lines[@]}" -eq  2 ]
+	[[ "$output" != *"$firstID"* ]]
+	[[ "$output" == *"$secondID"* ]]
+	[[ "$output" == *"$thirdID"* ]]
+	run docker_swarm ps -q -a --no-trunc --filter=status=running
+	[[ "$output" == "$firstID" ]]
+
+	# id
+	run docker_swarm ps -a -q --no-trunc --filter=id="$secondID"
+	[[ "$output" == "$secondID" ]]
+	run docker_swarm ps -a -q --no-trunc --filter=id="bogusID"
+	[ "${#lines[@]}" -eq  0 ]
+
+	# name
+	run docker_swarm ps -a -q --no-trunc --filter=name=name3
+	[[ "$output" == "$thirdID" ]]
+	run docker_swarm ps -a -q --no-trunc --filter=name=badname
+	[ "${#lines[@]}" -eq  0 ]
+
+	# exit code
+	run docker_swarm ps -a -q --no-trunc --filter=exited=0
+	[[ "$output" == "$secondID" ]]
+	run docker_swarm ps -a -q --no-trunc --filter=exited=1
+	[[ "$output" == "$thirdID" ]]
+	run docker_swarm ps -a -q --no-trunc --filter=exited=99
+	[ "${#lines[@]}" -eq  0 ]
+
+	# labels
+	run docker_swarm ps -a -q --no-trunc --filter=label=match=me
+	[[ "$output" == "$firstID" ]]
+	run docker_swarm ps -a -q --no-trunc --filter=label=match=me --filter=label=second=tag
+	[[ "$output" == "$firstID" ]]
+	run docker_swarm ps -a -q --no-trunc --filter=label=match=me --filter=label=second=tag-no
+	[ "${#lines[@]}" -eq  0 ]
+	run docker_swarm ps -a -q --no-trunc --filter=label=match
+	[ "${#lines[@]}" -eq  2 ]
+	[[ "$output" == *"$firstID"* ]]
+	[[ "$output" == *"$secondID"* ]]
+	[[ "$output" != *"$thirdID"* ]]
+}
