@@ -53,8 +53,11 @@ function teardown() {
 	firstID=$(docker_swarm run -d --name name1 --label "match=me" --label "second=tag" busybox sleep 10000)
 	# Exited - successfull
 	secondID=$(docker_swarm run -d --name name2 --label "match=me too" busybox true)
+	docker_swarm wait "$secondID"
 	# Exited - error
 	thirdID=$(docker_swarm run -d --name name3 --label "nomatch=me" busybox false)
+	docker_swarm wait "$thirdID"
+	# Exited - error
 
 	# status
 	run docker_swarm ps -q --no-trunc --filter=status=exited
