@@ -275,14 +275,13 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if container := c.cluster.Container(name); container != nil {
-		httpError(w, fmt.Sprintf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, container.Id, name), http.StatusConflict)
-		return
-	}
-
 	container, err := c.cluster.CreateContainer(cluster.BuildContainerConfig(config), name)
 	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
+		if strings.HasPrefix(err.Error(), "Conflict") {
+			httpError(w, err.Error(), http.StatusConflict)
+		} else {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -606,12 +605,12 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newName := r.Form.Get("name")
-
-	// call cluster rename container
-	err = c.cluster.RenameContainer(container, newName)
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
+	if err = c.cluster.RenameContainer(container, r.Form.Get("name")); err != nil {
+		if strings.HasPrefix(err.Error(), "Conflict") {
+			httpError(w, err.Error(), http.StatusConflict)
+		} else {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
 }
