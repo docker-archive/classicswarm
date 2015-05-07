@@ -58,6 +58,7 @@ function teardown() {
 
 	# status
 	run docker_swarm ps -q --no-trunc --filter=status=exited
+	echo $output
 	[ "${#lines[@]}" -eq  2 ]
 	[[ "$output" != *"$firstID"* ]]
 	[[ "$output" == *"$secondID"* ]]
