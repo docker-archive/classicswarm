@@ -106,28 +106,104 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse flags.
 	all := r.Form.Get("all") == "1"
 	limit, _ := strconv.Atoi(r.Form.Get("limit"))
 
-	out := []*dockerclient.Container{}
+	// Parse filters.
+	filters, err := dockerfilters.FromParam(r.Form.Get("filters"))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	filtExited := []int{}
+	if i, ok := filters["exited"]; ok {
+		for _, value := range i {
+			code, err := strconv.Atoi(value)
+			if err != nil {
+				httpError(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			filtExited = append(filtExited, code)
+		}
+	}
+	if i, ok := filters["status"]; ok {
+		for _, value := range i {
+			if value == "exited" {
+				all = true
+			}
+		}
+	}
+
+	// Filtering: select the containers we want to return.
+	candidates := []*cluster.Container{}
 	for _, container := range c.cluster.Containers() {
-		tmp := (*container).Container
 		// Skip stopped containers unless -a was specified.
-		if !strings.Contains(tmp.Status, "Up") && !all && limit <= 0 {
+		if !container.Info.State.Running && !all && limit <= 0 {
 			continue
 		}
+
 		// Skip swarm containers unless -a was specified.
-		if strings.Split(tmp.Image, ":")[0] == "swarm" && !all {
+		if strings.Split(container.Image, ":")[0] == "swarm" && !all {
 			continue
 		}
+
+		// Apply filters.
+		if !filters.Match("name", strings.TrimPrefix(container.Names[0], "/")) {
+			continue
+		}
+		if !filters.Match("id", container.Id) {
+			continue
+		}
+		if !filters.MatchKVList("label", container.Config.Labels) {
+			continue
+		}
+		if !filters.Match("status", container.StateString()) {
+			continue
+		}
+
+		if len(filtExited) > 0 {
+			shouldSkip := true
+			for _, code := range filtExited {
+				if code == container.Info.State.ExitCode && !container.Info.State.Running {
+					shouldSkip = false
+					break
+				}
+			}
+			if shouldSkip {
+				continue
+			}
+		}
+
+		candidates = append(candidates, container)
+	}
+
+	// Sort the candidates and apply limits.
+	sort.Sort(sort.Reverse(ContainerSorter(candidates)))
+	if limit > 0 && limit < len(candidates) {
+		candidates = candidates[:limit]
+	}
+
+	// Convert cluster.Container back into dockerclient.Container.
+	out := []*dockerclient.Container{}
+	for _, container := range candidates {
+		// Create a copy of the underlying dockerclient.Container so we can
+		// make changes without messing with cluster.Container.
+		tmp := (*container).Container
+
+		// Update the Status. The one we have is stale from the last `docker ps` the engine sent.
+		// `Status()` will generate a new one
+		tmp.Status = container.Status()
 		if !container.Engine.IsHealthy() {
 			tmp.Status = "Pending"
 		}
+
 		// TODO remove the Node Name in the name when we have a good solution
 		tmp.Names = make([]string, len(container.Names))
 		for i, name := range container.Names {
 			tmp.Names[i] = "/" + container.Engine.Name + name
 		}
+
 		// insert node IP
 		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
 		for i, port := range container.Ports {
@@ -139,14 +215,9 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		out = append(out, &tmp)
 	}
 
-	sort.Sort(sort.Reverse(ContainerSorter(out)))
-
+	// Finally, send them back to the CLI.
 	w.Header().Set("Content-Type", "application/json")
-	if limit > 0 && limit < len(out) {
-		json.NewEncoder(w).Encode(out[:limit])
-	} else {
-		json.NewEncoder(w).Encode(out)
-	}
+	json.NewEncoder(w).Encode(out)
 }
 
 // GET /containers/{name:.*}/json
