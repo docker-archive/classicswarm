@@ -515,9 +515,9 @@ func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface
 		// These events refer to images so there's no need to update
 		// containers.
 		e.RefreshImages()
-	case "start", "die":
-		// If the container is started or stopped, we have to do an inspect in
-		// order to get the new NetworkSettings.
+	case "die", "kill", "oom", "pause", "start", "stop", "unpause":
+		// If the container state changes, we have to do an inspect in
+		// order to update container.Info and get the new NetworkSettings.
 		e.refreshContainer(ev.Id, true)
 	default:
 		// Otherwise, do a "soft" refresh of the container.

@@ -1,12 +1,10 @@
 package api
 
-import (
-	"github.com/samalba/dockerclient"
-)
+import "github.com/docker/swarm/cluster"
 
 // ContainerSorter implements the Sort interface to sort Docker containers.
 // It is not guaranteed to be a stable sort.
-type ContainerSorter []*dockerclient.Container
+type ContainerSorter []*cluster.Container
 
 // Len returns the number of containers to be sorted.
 func (s ContainerSorter) Len() int {
@@ -21,5 +19,5 @@ func (s ContainerSorter) Swap(i, j int) {
 // Less reports whether the container with index i should sort before the container with index j.
 // Containers are sorted chronologically by when they were created.
 func (s ContainerSorter) Less(i, j int) bool {
-	return s[i].Created < s[j].Created
+	return s[i].Info.Created < s[j].Info.Created
 }

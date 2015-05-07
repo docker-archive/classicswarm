@@ -32,18 +32,18 @@
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/ioutils",
-			"Comment": "v1.4.1-216-g12fef2d",
-			"Rev": "12fef2d8df4e5da024418e324f7e3c3e82220a27"
+			"Comment": "v1.4.1-3245-g443437f",
+			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/parsers/filters",
-			"Comment": "v1.4.1-216-g12fef2d",
-			"Rev": "12fef2d8df4e5da024418e324f7e3c3e82220a27"
+			"Comment": "v1.4.1-3245-g443437f",
+			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/units",
-			"Comment": "v1.4.1-216-g12fef2d",
-			"Rev": "12fef2d8df4e5da024418e324f7e3c3e82220a27"
+			"Comment": "v1.4.1-3245-g443437f",
+			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
@@ -60,7 +60,7 @@
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
-			"Rev": "8b9427265e82fddde577648b986fbe78d816b333"
+			"Rev": "5e5020b90dd4657c33d446356556481182d2d66b"
 		},
 		{
 			"ImportPath": "github.com/samuel/go-zookeeper/zk",
