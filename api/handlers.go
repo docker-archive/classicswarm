@@ -198,6 +198,11 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			tmp.Status = "Pending"
 		}
 
+		// Overwrite labels with the ones we have in the config.
+		// This ensures that we can freely manipulate them in the codebase and
+		// they will be properly exported back (for instance Swarm IDs).
+		tmp.Labels = container.Config.Labels
+
 		// TODO remove the Node Name in the name when we have a good solution
 		tmp.Names = make([]string, len(container.Names))
 		for i, name := range container.Names {
@@ -250,6 +255,32 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	// Compatibility: Inject the Swarm ID label if not available.
+	// This **must** be done before inserting the `Node` field since it too has
+	// a `Label` field.
+	if !bytes.Contains(data, []byte("\"com.docker.swarm.id\":")) {
+		label := fmt.Sprintf("%q:%q", "com.docker.swarm.id", container.Config.SwarmID())
+		switch {
+		// No `Labels` section at all
+		case !bytes.Contains(data, []byte("\"Labels\":")):
+			data = bytes.Replace(data,
+				[]byte("\"Image\":"),
+				[]byte("\"Labels\":{"+label+"},\"Image\":"),
+				1)
+		// Empty `Labels` section
+		case bytes.Contains(data, []byte("\"Labels\":{}")):
+			data = bytes.Replace(data,
+				[]byte("\"Labels\":{}"),
+				[]byte("\"Labels\":{"+label+"}"),
+				1)
+		// `Labels` section with labels in it
+		case bytes.Contains(data, []byte("\"Labels\":{")):
+			data = bytes.Replace(data,
+				[]byte("\"Labels\":{"),
+				[]byte("\"Labels\":{"+label+","),
+				1)
+		}
 	}
 
 	// insert Node field

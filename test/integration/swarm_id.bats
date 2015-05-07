@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "swarm id generation" {
-	start_docker_with_busybox 2
+	start_docker_with_busybox 1
 	swarm_manage
 
 	# Create a dummy container just so we interfere with the tests.
@@ -25,6 +25,30 @@ function teardown() {
 
 	# API operations should work with Swarm IDs as well as Container IDs.
 	[[ $(docker_swarm inspect -f "{{ .Id }}" "$swarm_id") == "$id" ]]
+
+	# `docker ps` should be able to filter by Swarm ID using the label.
+	[[ $(docker_swarm ps -a -q --no-trunc --filter="label=com.docker.swarm.id=$swarm_id") == "$id" ]]
+}
+
+@test "swarm id compatbility" {
+	start_docker_with_busybox 1
+	swarm_manage
+
+	# Create a dummy container just so we interfere with the tests.
+	# This one won't be used.
+	docker -H "${HOSTS[0]}" run -d busybox true
+
+	# Create a container directly on the node.
+	id=$(docker -H "${HOSTS[0]}" run -d busybox true)
+
+	# Wait a few seconds for Swarm to detect the container.
+	retry 10 0.5 docker_swarm inspect "$id"
+
+	# Fetch its Swarm ID
+	swarm_id=$(docker_swarm inspect -f '{{ index .Config.Labels "com.docker.swarm.id" }}' "$id")
+
+	# Make sure it's the same as the Container ID.
+	[[ "$id" == "$swarm_id" ]]
 
 	# `docker ps` should be able to filter by Swarm ID using the label.
 	[[ $(docker_swarm ps -a -q --no-trunc --filter="label=com.docker.swarm.id=$swarm_id") == "$id" ]]
