@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/docker/swarm",
-	"GoVersion": "go1.3.1",
+	"GoVersion": "go1.3.3",
 	"Packages": [
 		"./..."
 	],
@@ -37,6 +37,11 @@
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/parsers/filters",
+			"Comment": "v1.4.1-3245-g443437f",
+			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/stringid",
 			"Comment": "v1.4.1-3245-g443437f",
 			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
 		},
