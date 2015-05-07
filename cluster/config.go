@@ -87,6 +87,17 @@ func (c *ContainerConfig) extractExprs(key string) []string {
 	return exprs
 }
 
+// SwarmID extracts the Swarm ID from the Config.
+// May return an empty string if not set.
+func (c *ContainerConfig) SwarmID() string {
+	return c.Labels[namespace+".id"]
+}
+
+// SetSwarmID sets or overrides the Swarm ID in the Config.
+func (c *ContainerConfig) SetSwarmID(id string) {
+	c.Labels[namespace+".id"] = id
+}
+
 // Affinities returns all the affinities from the ContainerConfig
 func (c *ContainerConfig) Affinities() []string {
 	return c.extractExprs("affinities")
