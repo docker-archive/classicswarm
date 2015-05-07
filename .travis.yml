@@ -20,7 +20,6 @@ install:
   - go get github.com/GeertJohan/fgt
 
 script:
-  - script/validate-dco
   - script/validate-gofmt
   - go vet ./...
   - fgt golint ./...
