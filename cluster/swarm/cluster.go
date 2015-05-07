@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/docker/pkg/units"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
@@ -80,15 +81,28 @@ func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 	return nil
 }
 
+// Generate a globally (across the cluster) unique ID.
+func (c *Cluster) generateUniqueID() string {
+	for {
+		id := stringid.GenerateRandomID()
+		if c.Container(id) == nil {
+			return id
+		}
+	}
+}
+
 // CreateContainer aka schedule a brand new container into the cluster.
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) (*cluster.Container, error) {
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
-	// check new name whether avaliable
+	// Ensure the name is avaliable
 	if cID := c.getIDFromName(name); cID != "" {
 		return nil, fmt.Errorf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, cID, name)
 	}
+
+	// Associate a Swarm ID to the container we are creating.
+	config.SetSwarmID(c.generateUniqueID())
 
 	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
 	if err != nil {
