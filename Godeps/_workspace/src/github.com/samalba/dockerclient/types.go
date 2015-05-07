@@ -1,6 +1,11 @@
 package dockerclient
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	"github.com/docker/docker/pkg/units"
+)
 
 type ContainerConfig struct {
 	Hostname        string
@@ -78,27 +83,74 @@ type PortBinding struct {
 	HostPort string
 }
 
-type ContainerInfo struct {
-	Id      string
-	Created string
-	Path    string
-	Name    string
-	Args    []string
-	ExecIDs []string
-	Config  *ContainerConfig
-	State   struct {
-		Running    bool
-		Paused     bool
-		Restarting bool
-		OOMKilled  bool
-		Dead       bool
-		Pid        int
-		ExitCode   int
-		Error      string // contains last known error when starting the container
-		StartedAt  time.Time
-		FinishedAt time.Time
-		Ghost      bool
+type State struct {
+	Running    bool
+	Paused     bool
+	Restarting bool
+	OOMKilled  bool
+	Dead       bool
+	Pid        int
+	ExitCode   int
+	Error      string // contains last known error when starting the container
+	StartedAt  time.Time
+	FinishedAt time.Time
+	Ghost      bool
+}
+
+// String returns a human-readable description of the state
+// Stoken from docker/docker/daemon/state.go
+func (s *State) String() string {
+	if s.Running {
+		if s.Paused {
+			return fmt.Sprintf("Up %s (Paused)", units.HumanDuration(time.Now().UTC().Sub(s.StartedAt)))
+		}
+		if s.Restarting {
+			return fmt.Sprintf("Restarting (%d) %s ago", s.ExitCode, units.HumanDuration(time.Now().UTC().Sub(s.FinishedAt)))
+		}
+
+		return fmt.Sprintf("Up %s", units.HumanDuration(time.Now().UTC().Sub(s.StartedAt)))
 	}
+
+	if s.Dead {
+		return "Dead"
+	}
+
+	if s.FinishedAt.IsZero() {
+		return ""
+	}
+
+	return fmt.Sprintf("Exited (%d) %s ago", s.ExitCode, units.HumanDuration(time.Now().UTC().Sub(s.FinishedAt)))
+}
+
+// StateString returns a single string to describe state
+// Stoken from docker/docker/daemon/state.go
+func (s *State) StateString() string {
+	if s.Running {
+		if s.Paused {
+			return "paused"
+		}
+		if s.Restarting {
+			return "restarting"
+		}
+		return "running"
+	}
+
+	if s.Dead {
+		return "dead"
+	}
+
+	return "exited"
+}
+
+type ContainerInfo struct {
+	Id              string
+	Created         string
+	Path            string
+	Name            string
+	Args            []string
+	ExecIDs         []string
+	Config          *ContainerConfig
+	State           *State
 	Image           string
 	NetworkSettings struct {
 		IPAddress   string `json:"IpAddress"`

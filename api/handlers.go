@@ -158,7 +158,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if !filters.MatchKVList("label", container.Config.Labels) {
 			continue
 		}
-		if !filters.Match("status", container.StateString()) {
+		if !filters.Match("status", container.Info.State.StateString()) {
 			continue
 		}
 
@@ -193,7 +193,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 
 		// Update the Status. The one we have is stale from the last `docker ps` the engine sent.
 		// `Status()` will generate a new one
-		tmp.Status = container.Status()
+		tmp.Status = container.Info.State.String()
 		if !container.Engine.IsHealthy() {
 			tmp.Status = "Pending"
 		}
