@@ -370,10 +370,12 @@ func postImageTag(c *context, w http.ResponseWriter, r *http.Request) {
 	force := boolValue(r, "force")
 
 	// call cluster tag image
-	err := c.cluster.TagImage(name, repo, tag, force)
-
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
+	if err := c.cluster.TagImage(name, repo, tag, force); err != nil {
+		if strings.HasPrefix(err.Error(), "No such image") {
+			httpError(w, err.Error(), http.StatusNotFound)
+		} else {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
 }

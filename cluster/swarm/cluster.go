@@ -419,7 +419,7 @@ func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool)
 	// check image
 	image := c.Image(IDOrName)
 	if image == nil {
-		return fmt.Errorf("could not find image: no such id: %s", IDOrName)
+		return fmt.Errorf("No such image: %s", IDOrName)
 	}
 
 	return image.Engine.TagImage(IDOrName, repo, tag, force)
