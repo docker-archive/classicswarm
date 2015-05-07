@@ -11,11 +11,9 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	run docker_swarm run -d --name test_container busybox sleep 500
-	[ "$status" -eq 0 ]
+	docker_swarm run -d --name test_container busybox sleep 500
 
-	run docker_swarm run -d --name another_container busybox sleep 500
-	[ "$status" -eq 0 ]
+	docker_swarm run -d --name another_container busybox sleep 500
 
 	# make sure container exist
 	run docker_swarm ps -a
@@ -30,8 +28,7 @@ function teardown() {
 	[[ "${output}" == *"Conflict,"* ]]
 
 	# rename container, sucessful
-	run docker_swarm rename test_container rename_container
-	[ "$status" -eq 0 ]
+	docker_swarm rename test_container rename_container
 
 	# verify after, rename 
 	run docker_swarm ps -a
@@ -39,4 +36,16 @@ function teardown() {
 	[[ "${output}" == *"rename_container"* ]]
 	[[ "${output}" == *"another_container"* ]]
 	[[ "${output}" != *"test_container"* ]]
+}
+
+@test "docker rename conflict" {
+	start_docker_with_busybox 1
+	swarm_manage
+
+	id=$(docker_swarm create busybox)
+	prefix=$(printf "$id" | cut -c 1-4)
+	docker_swarm create --name test busybox
+	docker_swarm rename test "$prefix"
+	run docker_swarm rename test "$id"
+	[ "$status" -eq 1 ]
 }
