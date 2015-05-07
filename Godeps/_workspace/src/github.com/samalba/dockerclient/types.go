@@ -46,6 +46,8 @@ type HostConfig struct {
 	SecurityOpt     []string
 	NetworkMode     string
 	RestartPolicy   RestartPolicy
+	Ulimits         []Ulimit
+	LogConfig       LogConfig
 }
 
 type ExecConfig struct {
@@ -88,8 +90,11 @@ type ContainerInfo struct {
 		Running    bool
 		Paused     bool
 		Restarting bool
+		OOMKilled  bool
+		Dead       bool
 		Pid        int
 		ExitCode   int
+		Error      string // contains last known error when starting the container
 		StartedAt  time.Time
 		FinishedAt time.Time
 		Ghost      bool
@@ -255,4 +260,15 @@ type Stats struct {
 	CpuStats     CpuStats     `json:"cpu_stats,omitempty"`
 	MemoryStats  MemoryStats  `json:"memory_stats,omitempty"`
 	BlkioStats   BlkioStats   `json:"blkio_stats,omitempty"`
+}
+
+type Ulimit struct {
+	Name string `json:"name"`
+	Soft uint64 `json:"soft"`
+	Hard uint64 `json:"hard"`
+}
+
+type LogConfig struct {
+	Type   string            `json:"type"`
+	Config map[string]string `json:"config"`
 }

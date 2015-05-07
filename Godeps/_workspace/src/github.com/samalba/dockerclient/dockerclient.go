@@ -66,7 +66,25 @@ func NewDockerClientTimeout(daemonUrl string, tlsConfig *tls.Config, timeout tim
 
 func (client *DockerClient) doRequest(method string, path string, body []byte, headers map[string]string) ([]byte, error) {
 	b := bytes.NewBuffer(body)
-	req, err := http.NewRequest(method, client.URL.String()+path, b)
+
+	reader, err := client.doStreamRequest(method, path, b, headers)
+	if err != nil {
+		return nil, err
+	}
+
+	defer reader.Close()
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (client *DockerClient) doStreamRequest(method string, path string, in io.Reader, headers map[string]string) (io.ReadCloser, error) {
+	if (method == "POST" || method == "PUT") && in == nil {
+		in = bytes.NewReader(nil)
+	}
+	req, err := http.NewRequest(method, client.URL.String()+path, in)
 	if err != nil {
 		return nil, err
 	}
@@ -83,18 +101,19 @@ func (client *DockerClient) doRequest(method string, path string, body []byte, h
 		}
 		return nil, err
 	}
-	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
 	if resp.StatusCode == 404 {
 		return nil, ErrNotFound
 	}
 	if resp.StatusCode >= 400 {
+		defer resp.Body.Close()
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
 		return nil, Error{StatusCode: resp.StatusCode, Status: resp.Status, msg: string(data)}
 	}
-	return data, nil
+
+	return resp.Body, nil
 }
 
 func (client *DockerClient) Info() (*Info, error) {
@@ -463,4 +482,26 @@ func (client *DockerClient) RenameContainer(oldName string, newName string) erro
 	uri := fmt.Sprintf("/containers/%s/rename?name=%s", oldName, newName)
 	_, err := client.doRequest("POST", uri, nil, nil)
 	return err
+}
+
+func (client *DockerClient) ImportImage(source string, repository string, tag string, tar io.Reader) (io.ReadCloser, error) {
+	var fromSrc string
+	v := &url.Values{}
+	if source == "" {
+		fromSrc = "-"
+	} else {
+		fromSrc = source
+	}
+
+	v.Set("fromSrc", fromSrc)
+	v.Set("repo", repository)
+	if tag != "" {
+		v.Set("tag", tag)
+	}
+
+	var in io.Reader
+	if fromSrc == "-" {
+		in = tar
+	}
+	return client.doStreamRequest("POST", "/images/create?"+v.Encode(), in, nil)
 }

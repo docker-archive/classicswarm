@@ -135,3 +135,8 @@ func (client *MockClient) RenameContainer(oldName string, newName string) error 
 	args := client.Mock.Called(oldName, newName)
 	return args.Error(0)
 }
+
+func (client *MockClient) ImportImage(source string, repository string, tag string, tar io.Reader) (io.ReadCloser, error) {
+	args := client.Mock.Called(source, repository, tag, tar)
+	return args.Get(0).(io.ReadCloser), args.Error(1)
+}
