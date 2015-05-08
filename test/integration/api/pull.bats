@@ -16,8 +16,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 0 ]
 
-	run docker_swarm pull busybox
-	[ "$status" -eq 0 ]
+	docker_swarm pull busybox
 
 	# we should get 2 busyboxes, plus the header.
 	run docker_swarm images

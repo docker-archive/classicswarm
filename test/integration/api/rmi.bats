@@ -33,8 +33,7 @@ function teardown() {
 
 
 	# wipe busybox.
-	run docker_swarm rmi busybox
-	[ "$status" -eq 0 ]
+	docker_swarm rmi busybox
 
 	# swarm verify
 	run docker_swarm images -q

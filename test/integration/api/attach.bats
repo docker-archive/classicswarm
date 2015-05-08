@@ -12,8 +12,7 @@ function teardown() {
 	swarm_manage
 
 	# container run in background
-	run docker_swarm run -d -i --name test_container busybox sh -c "head -n 1; echo output"
-	[ "$status" -eq 0 ]
+	docker_swarm run -d -i --name test_container busybox sh -c "head -n 1; echo output"
 
 	# inject input into the container
 	attach_output=`echo input | docker_swarm attach test_container`
@@ -31,8 +30,7 @@ function teardown() {
 	swarm_manage
 
 	#create a container
-	run docker_swarm run -d --name test_container busybox sleep 1000
-	[ "$status" -eq 0 ]
+	docker_swarm run -d --name test_container busybox sleep 1000
 
 	# test attach-ws api
 	# jimmyxian/centos7-wssh is an image with websocket CLI(WSSH) wirtten in Nodejs

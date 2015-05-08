@@ -16,8 +16,7 @@ function teardown() {
 	[ "${#lines[@]}" -eq 0 ]
 
 	# run
-	run docker_swarm run -d --name test_container busybox sleep 100
-	[ "$status" -eq 0 ]
+	docker_swarm run -d --name test_container busybox sleep 100
 
 	# verify, container exists
 	run docker_swarm ps -l

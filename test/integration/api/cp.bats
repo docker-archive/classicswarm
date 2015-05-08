@@ -16,8 +16,7 @@ function teardown() {
 	temp_dest=`mktemp -d`
 
 	# create the container
-	run docker_swarm run -d --name test_container busybox sleep 500
-	[ "$status" -eq 0 ]
+	docker_swarm run -d --name test_container busybox sleep 500
 
 	# make sure container is up and no comming file
 	run docker_swarm ps -l
@@ -38,8 +37,7 @@ function teardown() {
 	[ ! -f $host_file ]
 
 	# copy the test file from the container to the host.
-	run docker_swarm cp test_container:$test_file $temp_dest
-	[ "$status" -eq 0 ]
+	docker_swarm cp test_container:$test_file $temp_dest
 	[ -f $host_file ]
 
 	# compute the checksum of the copied file.

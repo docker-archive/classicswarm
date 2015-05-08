@@ -10,8 +10,7 @@ function teardown() {
 @test "docker port" {
 	start_docker_with_busybox 2
 	swarm_manage
-	run docker_swarm run -d -p 8000 --name test_container busybox sleep 500
-	[ "$status" -eq 0 ]
+	docker_swarm run -d -p 8000 --name test_container busybox sleep 500
 
 	# make sure container is up
 	run docker_swarm ps -l

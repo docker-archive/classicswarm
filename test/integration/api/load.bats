@@ -21,8 +21,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq  0 ]
 
-	run docker_swarm load -i $IMAGE_FILE
-	[ "$status" -eq 0 ]
+	docker_swarm load -i $IMAGE_FILE
 
 	# and now swarm should have cought the image just loaded.
 	run docker_swarm images -q
