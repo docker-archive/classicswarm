@@ -12,8 +12,7 @@ function teardown() {
 	swarm_manage
 
 	# run after 1 seconds, test_container will exit
-	run docker_swarm run -d --name test_container busybox sleep 1
-	[ "$status" -eq 0 ]
+	docker_swarm run -d --name test_container busybox sleep 1
 
 	# make sure container exists and is up
 	run docker_swarm ps -l

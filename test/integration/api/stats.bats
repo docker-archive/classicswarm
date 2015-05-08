@@ -13,8 +13,7 @@ function teardown() {
 	swarm_manage
 
 	# stats running container 
-	run docker_swarm run -d --name test_container busybox sleep 50
-	[ "$status" -eq 0 ]
+	docker_swarm run -d --name test_container busybox sleep 50
 
 	# make sure container is up
 	run docker_swarm ps -l

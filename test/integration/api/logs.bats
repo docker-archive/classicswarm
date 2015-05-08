@@ -12,8 +12,7 @@ function teardown() {
 	swarm_manage
 
 	# run a container with echo command
-	run docker_swarm run -d --name test_container busybox /bin/sh -c "echo hello world; echo hello docker; echo hello swarm"
-	[ "$status" -eq 0 ]
+	docker_swarm run -d --name test_container busybox /bin/sh -c "echo hello world; echo hello docker; echo hello swarm"
 
 	# make sure container exists
 	run docker_swarm ps -l
