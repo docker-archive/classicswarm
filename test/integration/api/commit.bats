@@ -11,8 +11,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	run docker_swarm run -d --name test_container busybox sleep 500
-	[ "$status" -eq 0 ]
+	docker_swarm run -d --name test_container busybox sleep 500
 
 	# make sure container exists
 	run docker_swarm ps -l
@@ -25,8 +24,7 @@ function teardown() {
 	[[ "${output}" != *"commit_image_busybox"* ]]
 
 	# commit container
-	run docker_swarm commit test_container commit_image_busybox
-	[ "$status" -eq 0 ]
+	docker_swarm commit test_container commit_image_busybox
 
 	# verify after commit 
 	run docker_swarm images

@@ -15,8 +15,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 0 ]
 
-	run docker_swarm build -t test $TESTDATA/build
-	[ "$status" -eq 0 ]
+	docker_swarm build -t test $TESTDATA/build
 
 	run docker_swarm images -q
 	[ "$status" -eq 0 ]

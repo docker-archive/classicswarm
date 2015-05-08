@@ -11,8 +11,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 	# create
-	run docker_swarm create --name test_container busybox sleep 1000
-	[ "$status" -eq 0 ]
+	docker_swarm create --name test_container busybox sleep 1000
 
 	# make sure created container exists
 	# new created container has no status

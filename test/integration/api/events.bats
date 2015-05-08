@@ -17,11 +17,10 @@ function teardown() {
 	docker_swarm events > $TEMP_FILE &
 
 	# events: create container on node-0
-	run docker_swarm create --name test_container -e constraint:node==node-0 busybox sleep 100 
-	[ "$status" -eq 0 ]
+	docker_swarm create --name test_container -e constraint:node==node-0 busybox sleep 100 
+	
 	# events: start container
-	run docker_swarm start test_container
-	[ "$status" -eq 0 ]
+	docker_swarm start test_container
 
 	# verify
 	run cat $TEMP_FILE
