@@ -70,47 +70,34 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	names := r.Form["names"]
 
-	// find an engine which has all images
-	// Engine.Addr : [found names]
-	imageMap := make(map[string][]string)
-	var foundEngineAddr string
+	// Create a map of engine address to the list of images it holds.
+	engineImages := make(map[string][]*cluster.Image)
 	for _, image := range c.cluster.Images() {
+		engineImages[image.Engine.Addr] = append(engineImages[image.Engine.Addr], image)
+	}
+
+	// Look for an engine that has all the images we need.
+	for engine, images := range engineImages {
+		matchedImages := 0
+
+		// Count how many images we need it has.
 		for _, name := range names {
-			if image.Match(name) {
-				// check if engine addr already exists
-				value, exists := imageMap[image.Engine.Addr]
-				if exists {
-					// check if name already exists
-					nameAlreadyExisted := false
-					for _, tempName := range value {
-						if tempName == name {
-							nameAlreadyExisted = true
-						}
-					}
-					if nameAlreadyExisted == false {
-						imageMap[image.Engine.Addr] = append(value, name)
-						if len(names) == len(imageMap[image.Engine.Addr]) {
-							foundEngineAddr = image.Engine.Addr
-						}
-					}
-				} else {
-					imageMap[image.Engine.Addr] = []string{name}
+			for _, image := range images {
+				if image.Match(name) {
+					matchedImages = matchedImages + 1
+					break
 				}
 			}
-			if foundEngineAddr != "" {
-				break
-			}
 		}
-		if foundEngineAddr != "" {
-			break
+
+		// If the engine has all images, stop our search here.
+		if matchedImages == len(names) {
+			proxy(c.tlsConfig, engine, w, r)
+			return
 		}
 	}
 
-	if foundEngineAddr != "" {
-		proxy(c.tlsConfig, foundEngineAddr, w, r)
-	} else {
-		httpError(w, fmt.Sprintf("Not found an engine which has all images: %s", names), http.StatusNotFound)
-	}
+	httpError(w, fmt.Sprintf("Not found an engine which has all images: %s", names), http.StatusNotFound)
 }
 
 // GET /images/json
