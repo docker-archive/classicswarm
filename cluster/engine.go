@@ -274,9 +274,9 @@ func (e *Engine) refreshLoop() {
 		var err error
 		select {
 		case <-e.ch:
-			err = e.refreshContainers(false)
+			err = e.refreshContainers(true)
 		case <-time.After(stateRefreshPeriod):
-			err = e.refreshContainers(false)
+			err = e.refreshContainers(true)
 		}
 
 		if err == nil {
@@ -391,6 +391,14 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	defer e.RUnlock()
 
 	return e.containers[id], nil
+}
+
+//Start starts a docker container
+func (e *Engine) Start(name string) error {
+	if err := e.client.StartContainer(name, nil); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Destroy and remove a container from the engine.
