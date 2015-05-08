@@ -23,8 +23,7 @@ function teardown() {
 	[[ "${output}" != *"tag_busybox"* ]]
 
 	# tag image
-	run docker_swarm tag busybox tag_busybox:test
-	[ "$status" -eq 0 ]
+	docker_swarm tag busybox tag_busybox:test
 
 	# verify
 	run docker_swarm images tag_busybox

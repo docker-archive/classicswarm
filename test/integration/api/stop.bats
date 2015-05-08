@@ -11,8 +11,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 	# run 
-	run docker_swarm run -d --name test_container busybox sleep 500
-	[ "$status" -eq 0 ]
+	docker_swarm run -d --name test_container busybox sleep 500
 
 	# make sure container is up before stop
 	run docker_swarm ps -l
@@ -21,8 +20,7 @@ function teardown() {
 	[[ "${lines[1]}" == *"Up"* ]]
 
 	# stop
-	run docker_swarm stop test_container
-	[ "$status" -eq 0 ]
+	docker_swarm stop test_container
 
 	# verify
 	run docker_swarm ps -l
