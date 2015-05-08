@@ -97,7 +97,7 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	httpError(w, fmt.Sprintf("Not found an engine which has all images: %s", names), http.StatusNotFound)
+	httpError(w, fmt.Sprintf("Unable to find an engine containing all images: %s", names), http.StatusNotFound)
 }
 
 // GET /images/json
