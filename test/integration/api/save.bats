@@ -45,7 +45,6 @@ function teardown() {
 
 @test "docker save multi-images" {
 	start_docker_with_busybox 2
-	start_docker 1
 	# tag busybox
 	docker -H ${HOSTS[0]} tag busybox test1
 	docker -H ${HOSTS[1]} tag busybox test2
@@ -60,15 +59,15 @@ function teardown() {
 	[[ "${output}" == *"test1"* ]]
 	[[ "${output}" == *"test2"* ]]
 
-	temp_file_name=$(mktemp)
+	local temp_file_name=$(mktemp)
 
 	# do not support save images which are on multi machine
-	run docker_swarm save busybox test1 test2 > $temp_file_name
+	run docker_swarm save -o "$temp_file_name" busybox test1 test2
 	[ "$status" -ne 0 ]
-	[[ "${output}" == *"Not found an engine which has all images"* ]]
+	[[ "${output}" == *"Unable to find an engine containing all images"* ]]
 
 	# save images which are on same machine
-	docker_swarm save busybox test1 > $temp_file_name
+	docker_swarm save -o "$temp_file_name" busybox test1
 
 	# saved image file exists, not empty and is tar file
 	[ -s $temp_file_name ]
@@ -76,9 +75,12 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"tar archive"* ]]
 
-	# load image on node-3
-	docker -H ${HOSTS[2]} load < $temp_file_name
-	# check image
+	# Try to load our image back on an empty docker engine.
+	start_docker 1
+	run docker -H "${HOSTS[2]}" images -q
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 0 ]
+	docker -H "${HOSTS[2]}" load -i "$temp_file_name"
 	run docker -H ${HOSTS[2]} images
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"busybox"* ]]
