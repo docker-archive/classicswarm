@@ -3,6 +3,8 @@
 load ../helpers
 
 function teardown() {
+	# if the state of the container is paused, it can't be removed(rm -f)
+	run docker_swarm unpause test_container
 	swarm_manage_cleanup
 	stop_docker
 }
@@ -22,9 +24,6 @@ function teardown() {
 
 	# verify
 	# FIXME(#748): Retry required because of race condition.
-	retry 5 0.5 eval "[ $(docker_swarm inspect -f '{{ .State.Paused }}' test_container) == 'true ']"
+	retry 5 0.5 eval "[ $(docker_swarm inspect -f '{{ .State.Paused }}' test_container) == 'true']"
 	[ docker_swarm inspect -f '{{ .State.Running }}' test_container == 'false' ]
-
-	# if the state of the container is paused, it can't be removed(rm -f)	
-	docker_swarm unpause test_container
 }
