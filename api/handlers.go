@@ -62,6 +62,57 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(version)
 }
 
+// GET /images/get
+func getImages(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	names := r.Form["names"]
+
+	// find an engine which has all images
+	// Engine.Addr : [found names]
+	imageMap := make(map[string][]string)
+	var foundEngineAddr string
+	for _, image := range c.cluster.Images() {
+		for _, name := range names {
+			if image.Match(name) {
+				// check if engine addr already exists
+				value, exists := imageMap[image.Engine.Addr]
+				if exists {
+					// check if name already exists
+					nameAlreadyExisted := false
+					for _, tempName := range value {
+						if tempName == name {
+							nameAlreadyExisted = true
+						}
+					}
+					if nameAlreadyExisted == false {
+						imageMap[image.Engine.Addr] = append(value, name)
+						if len(names) == len(imageMap[image.Engine.Addr]) {
+							foundEngineAddr = image.Engine.Addr
+						}
+					}
+				} else {
+					imageMap[image.Engine.Addr] = []string{name}
+				}
+			}
+			if foundEngineAddr != "" {
+				break
+			}
+		}
+		if foundEngineAddr != "" {
+			break
+		}
+	}
+
+	if foundEngineAddr != "" {
+		proxy(c.tlsConfig, foundEngineAddr, w, r)
+	} else {
+		httpError(w, fmt.Sprintf("Not found an engine which has all images: %s", names), http.StatusNotFound)
+	}
+}
+
 // GET /images/json
 func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
