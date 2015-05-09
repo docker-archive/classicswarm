@@ -17,13 +17,11 @@ function teardown() {
 
 	# make sure container is up
 	# FIXME(#748): Retry required because of race condition.
-	retry 5 0.5 eval "[ $(docker_swarm inspect -f '{{ .State.Running }}' test_container) == 'true' ]"
-	[ $(docker_swarm inspect -f '{{ .State.Paused }}' test_container) == 'false' ]
+	retry 5 0.5 eval "[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]"
 
 	docker_swarm pause test_container
 
 	# verify
 	# FIXME(#748): Retry required because of race condition.
-	retry 5 0.5 eval "[ $(docker_swarm inspect -f '{{ .State.Paused }}' test_container) == 'true']"
-	[ docker_swarm inspect -f '{{ .State.Running }}' test_container == 'false' ]
+	retry 5 0.5 eval "[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=paused) ]"
 }

@@ -14,7 +14,7 @@ function teardown() {
 
 	# make sure container is up
 	# FIXME(#748): Retry required because of race condition.
-	retry 5 0.5 eval "[ $(docker_swarm inspect -f '{{ .State.Running }}' test_container) == 'true' ]"
+	retry 5 0.5 eval "[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]"
 
 	# port verify
 	run docker_swarm port test_container
