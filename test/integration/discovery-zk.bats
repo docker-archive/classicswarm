@@ -8,9 +8,15 @@ ZK_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 7000 ))
 # Container name for integration test
 ZK_CONTAINER_NAME=swarm_integration_zk
 
+function check_zk_started() {
+	docker_host logs $ZK_CONTAINER_NAME | grep "binding to port 0.0.0.0/0.0.0.0:2181"
+}
+
 function start_zk() {
 	run docker_host run --name $ZK_CONTAINER_NAME -p $ZK_HOST:2181 -d jplock/zookeeper
 	[ "$status" -eq 0 ]
+
+	retry 30 1 check_zk_started
 }
 
 function stop_zk() {
