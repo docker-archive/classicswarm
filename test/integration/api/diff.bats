@@ -13,12 +13,10 @@ function teardown() {
 	docker_swarm run -d --name test_container busybox sleep 500
 
 	# make sure container is up
-	run docker_swarm ps -l
-	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[1]}" ==  *"test_container"* ]]
-	[[ "${lines[1]}" ==  *"Up"* ]]
+	# FIXME(#748): Retry required because of race condition.
+	retry 5 0.5 eval "[ $(docker_swarm inspect -f '{{ .State.Running }}' test_container) == 'true' ]"
 
-	# no changs
+	# no changes
 	run docker_swarm diff test_container
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 0 ]
@@ -29,5 +27,5 @@ function teardown() {
 	# verify
 	run docker_swarm diff test_container
 	[ "$status" -eq 0 ]
-	[[ "${lines[*]}" ==  *"diff.txt"* ]]
+	[[ "${output}" ==  *"diff.txt"* ]]
 }

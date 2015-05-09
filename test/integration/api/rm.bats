@@ -32,10 +32,8 @@ function teardown() {
 	docker_swarm run -d --name test_container busybox sleep 500
 
 	# make sure container exsists and is up
-	run docker_swarm ps -a
-	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[1]}" == *"test_container"* ]]
-	[[ "${lines[1]}" == *"Up"* ]]
+	# FIXME(#748): Retry required because of race condition.
+	retry 5 0.5 eval "[ $(docker_swarm inspect -f '{{ .State.Running }}' test_container) == 'true' ]"
 
 	# rm, remove a running container, return error
 	run docker_swarm rm test_container
