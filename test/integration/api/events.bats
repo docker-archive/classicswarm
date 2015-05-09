@@ -8,27 +8,31 @@ function teardown() {
 }
 
 @test "docker events" {
-	TEMP_FILE=$(mktemp)
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# start events, report real time events to TEMP_FILE
-	# it will stop automatically when manager stop
-	docker_swarm events > $TEMP_FILE &
+	# start events, report real time events to $log_file
+	local log_file=$(mktemp)
+	docker_swarm events > "$log_file" &
+	local events_pid="$!"
 
-	# events: create container on node-0
-	docker_swarm create --name test_container -e constraint:node==node-0 busybox sleep 100 
-	
-	# events: start container
-	docker_swarm start test_container
+	# This should emit 3 events: create, start, die.
+	docker_swarm run --name test_container -e constraint:node==node-0 busybox true
+
+	# events might take a little big to show up, wait until we get the last one.
+	retry 5 0.5 grep -q "die" "$log_file"
+
+	# clean up `docker events`
+	kill "$events_pid"
 
 	# verify
-	run cat $TEMP_FILE
+	run cat "$log_file"
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"node:node-0"* ]]
 	[[ "${output}" == *"create"* ]]
 	[[ "${output}" == *"start"* ]]
+	[[ "${output}" == *"die"* ]]
 	
-	# after ok, remove the $TEMP_FILE
-	rm -f $TEMP_FILE
+	# after ok, remove the log file
+	rm -f "$log_file"
 }
