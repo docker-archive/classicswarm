@@ -478,11 +478,14 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to the right node
 func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
-	container, err := getContainerFromVars(c, mux.Vars(r))
+	name, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
+	// Set the full container ID in the proxied URL path.
+	r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
 
 	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
@@ -579,11 +582,13 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	vars["name"] = r.Form.Get("container")
 
 	// get container
-	container, err := getContainerFromVars(c, vars)
+	name, container, err := getContainerFromVars(c, vars)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	// Set the full container ID in the proxied URL path.
+	r.URL.RawQuery = strings.Replace(r.URL.RawQuery, name, container.Id, 1)
 
 	cb := func(resp *http.Response) {
 		if resp.StatusCode == http.StatusCreated {
@@ -599,7 +604,7 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /containers/{name:.*}/rename
 func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
-	container, err := getContainerFromVars(c, mux.Vars(r))
+	_, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
 		return
@@ -622,11 +627,13 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a hijack request to the right node
 func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
-	container, err := getContainerFromVars(c, mux.Vars(r))
+	name, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	// Set the full container ID in the proxied URL path.
+	r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
 
 	if err := hijack(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
