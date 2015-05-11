@@ -20,10 +20,9 @@ function teardown() {
 	[[ "${lines[1]}" ==  *"test_container"* ]]
 
 	# start
-	run docker_swarm start test_container
-	[ "$status" -eq 0 ]
-	run docker_swarm ps -l
-	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[1]}" == *"test_container"* ]]
-	[[ "${lines[1]}" ==  *"Up"* ]]
+	docker_swarm start test_container
+
+	# Verify
+	# FIXME(#748): Retry required because of race condition.
+	retry 5 0.5 eval "[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]"
 }

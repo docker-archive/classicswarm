@@ -16,23 +16,19 @@ function teardown() {
 	docker_swarm run -d --name test_container busybox sleep 50
 
 	# make sure container is up
-	run docker_swarm ps -l
-	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[1]}" == *"test_container"* ]]
-	[[ "${lines[1]}" == *"Up"* ]]
+	# FIXME(#748): Retry required because of race condition.
+	retry 5 0.5 eval "[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]"
 
 	# storage the stats output in TEMP_FILE
 	# it will stop automatically when manager stop
 	docker_swarm stats test_container > $TEMP_FILE &
 
 	# retry until TEMP_FILE is not empty
-	retry 5 1 [ -s $TEMP_FILE ]
+	retry 5 1 eval "[ -s $TEMP_FILE ]"
 
-	# if "CPU %" in TEMP_FILE, status is 0
-	run grep "CPU %" $TEMP_FILE
-	[ "$status" -eq 0 ]
-	run grep "MEM USAGE/LIMIT" $TEMP_FILE
-	[ "$status" -eq 0 ]
+	# verify content
+	grep -q "CPU %" "$TEMP_FILE"
+	grep -q "MEM USAGE/LIMIT" "$TEMP_FILE"
 
 	rm -f $TEMP_FILE
 }
