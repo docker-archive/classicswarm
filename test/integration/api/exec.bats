@@ -20,15 +20,10 @@ function teardown() {
 	docker_swarm start test_container
 
 	# make sure container is up and not paused
-	run docker_swarm ps -l
-	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[1]}" == *"test_container"* ]]
-	[[ "${lines[1]}" == *"Up"* ]]
-	[[ "${lines[1]}" != *"Paused"* ]]	
+	# FIXME(#748): Retry required because of race condition.
+	retry 5 0.5 eval "[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]"
 
-	run docker_swarm exec test_container ls
+	run docker_swarm exec test_container echo foobar
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -ge 2 ]
-	[[ "${lines[0]}" == *"bin"* ]]
-	[[ "${lines[1]}" == *"dev"* ]]
+	[ "$output" == "foobar" ]
 }
