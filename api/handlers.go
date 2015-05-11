@@ -256,32 +256,6 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// Compatibility: Inject the Swarm ID label if not available.
-	// This **must** be done before inserting the `Node` field since it too has
-	// a `Label` field.
-	if !bytes.Contains(data, []byte("\"com.docker.swarm.id\":")) {
-		label := fmt.Sprintf("%q:%q", "com.docker.swarm.id", container.Config.SwarmID())
-		switch {
-		// No `Labels` section at all
-		case !bytes.Contains(data, []byte("\"Labels\":")):
-			data = bytes.Replace(data,
-				[]byte("\"Image\":"),
-				[]byte("\"Labels\":{"+label+"},\"Image\":"),
-				1)
-		// Empty `Labels` section
-		case bytes.Contains(data, []byte("\"Labels\":{}")):
-			data = bytes.Replace(data,
-				[]byte("\"Labels\":{}"),
-				[]byte("\"Labels\":{"+label+"}"),
-				1)
-		// `Labels` section with labels in it
-		case bytes.Contains(data, []byte("\"Labels\":{")):
-			data = bytes.Replace(data,
-				[]byte("\"Labels\":{"),
-				[]byte("\"Labels\":{"+label+","),
-				1)
-		}
-	}
 
 	// insert Node field
 	data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"Node\":%s,\"Name\":\"/", n)), -1)
