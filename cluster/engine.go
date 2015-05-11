@@ -252,13 +252,6 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 		container.Config = BuildContainerConfig(*info.Config)
 		container.Config.CpuShares = container.Config.CpuShares * 1024.0 / e.Cpus
 
-		// Compatibility: Containers created with Swarm<0.3.0 or directly on
-		// the host without going through Swarm don't have a Swarm ID. We are
-		// going to fake it by using the Container ID.
-		if container.Config.SwarmID() == "" {
-			container.Config.SetSwarmID(c.Id)
-		}
-
 		// Save the entire inspect back into the container.
 		container.Info = *info
 	}
