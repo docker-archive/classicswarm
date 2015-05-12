@@ -54,16 +54,16 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 
 	defer resp.Body.Close()
 
-	var entries []string
+	var addrs []string
 	if resp.StatusCode == http.StatusOK {
-		if err := json.NewDecoder(resp.Body).Decode(&entries); err != nil {
+		if err := json.NewDecoder(resp.Body).Decode(&addrs); err != nil {
 			return nil, err
 		}
 	} else {
 		return nil, fmt.Errorf("Failed to fetch entries, Discovery service returned %d HTTP status code", resp.StatusCode)
 	}
 
-	return discovery.CreateEntries(entries)
+	return discovery.CreateEntries(addrs)
 }
 
 // Watch is exported
