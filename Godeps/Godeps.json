@@ -6,6 +6,11 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "code.google.com/p/goauth2/oauth",
+			"Comment": "weekly-56",
+			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
+		},
+		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.6.4-6-g539d4dc",
 			"Rev": "539d4dc034c079a7188b5d4ca9650632d73c66e8"
@@ -31,6 +36,11 @@
 			"Rev": "b7c233e2ef9be1016c63f66145161b317165ad7e"
 		},
 		{
+			"ImportPath": "github.com/digitalocean/godo",
+			"Comment": "v0.7.0-10-g006aa44",
+			"Rev": "006aa44e95dc947d5be136070ac4228be914c138"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/ioutils",
 			"Comment": "v1.4.1-3245-g443437f",
 			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
@@ -44,6 +54,10 @@
 			"ImportPath": "github.com/docker/docker/pkg/units",
 			"Comment": "v1.4.1-3245-g443437f",
 			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
+		},
+		{
+			"ImportPath": "github.com/google/go-querystring/query",
+			"Rev": "d8840cbb2baa915f4836edda4750050a2c0b7aea"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
@@ -77,6 +91,10 @@
 		{
 			"ImportPath": "github.com/stretchr/testify/mock",
 			"Rev": "43d0eed2455ed136d33e9426cf52119371ca4596"
+		},
+		{
+			"ImportPath": "github.com/tent/http-link-go",
+			"Rev": "ac974c61c2f990f4115b119354b5e0b47550e888"
 		}
 	]
 }
