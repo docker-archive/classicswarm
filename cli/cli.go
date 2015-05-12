@@ -84,7 +84,7 @@ func Run() {
 
 				// FIXME fill TLS struct
 				tls := &discovery.TLS{}
-				d, err := discovery.New(dflag, 0, tls)
+				d, err := discovery.New(dflag, 10, tls)
 				if err != nil {
 					log.Fatal(err)
 				}

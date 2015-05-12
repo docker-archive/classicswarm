@@ -49,7 +49,7 @@ func (s *Discovery) Initialize(uris string, heartbeat uint64, tls *discovery.TLS
 	s.store, err = store.CreateStore(
 		s.name, // name of the store
 		addrs,
-		store.Timeout(time.Duration(heartbeat)*time.Second),
+		store.Timeout(s.heartbeat),
 		store.TLSConfig(tls.TLSConfig),
 	)
 	if err != nil {
