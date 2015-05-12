@@ -23,6 +23,8 @@ function teardown() {
 	[ "$status" -eq 0 ]
 
 	run docker_swarm inspect c1
+	# FIXME: This will help debugging the failing test.
+	echo $output
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 
@@ -66,6 +68,8 @@ function teardown() {
 	[ "$status" -eq 0 ]
 
 	run docker_swarm inspect c1
+	# FIXME: This will help debugging the failing test.
+	echo $output
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 
