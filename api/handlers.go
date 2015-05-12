@@ -236,6 +236,11 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			tmp.Status = "Pending"
 		}
 
+		// Overwrite labels with the ones we have in the config.
+		// This ensures that we can freely manipulate them in the codebase and
+		// they will be properly exported back (for instance Swarm IDs).
+		tmp.Labels = container.Config.Labels
+
 		// TODO remove the Node Name in the name when we have a good solution
 		tmp.Names = make([]string, len(container.Names))
 		for i, name := range container.Names {
@@ -511,10 +516,15 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to the right node
 func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
-	container, err := getContainerFromVars(c, mux.Vars(r))
+	name, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
 		return
+	}
+
+	// Set the full container ID in the proxied URL path.
+	if name != "" {
+		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
 	}
 
 	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
@@ -612,10 +622,14 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	vars["name"] = r.Form.Get("container")
 
 	// get container
-	container, err := getContainerFromVars(c, vars)
+	name, container, err := getContainerFromVars(c, vars)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
 		return
+	}
+	// Set the full container ID in the proxied URL path.
+	if name != "" {
+		r.URL.RawQuery = strings.Replace(r.URL.RawQuery, name, container.Id, 1)
 	}
 
 	cb := func(resp *http.Response) {
@@ -632,7 +646,7 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /containers/{name:.*}/rename
 func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
-	container, err := getContainerFromVars(c, mux.Vars(r))
+	_, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
 		return
@@ -655,10 +669,14 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a hijack request to the right node
 func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
-	container, err := getContainerFromVars(c, mux.Vars(r))
+	name, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
 		return
+	}
+	// Set the full container ID in the proxied URL path.
+	if name != "" {
+		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
 	}
 
 	if err := hijack(c.tlsConfig, container.Engine.Addr, w, r); err != nil {

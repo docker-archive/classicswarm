@@ -463,8 +463,13 @@ func (e *Engine) Container(IDOrName string) *Container {
 	}
 
 	for _, container := range e.Containers() {
-		// Match ID prefix.
+		// Match Container ID prefix.
 		if strings.HasPrefix(container.Id, IDOrName) {
+			return container
+		}
+
+		// Match Swarm ID prefix.
+		if strings.HasPrefix(container.Config.SwarmID(), IDOrName) {
 			return container
 		}
 
