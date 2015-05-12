@@ -62,6 +62,44 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(version)
 }
 
+// GET /images/get
+func getImages(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	names := r.Form["names"]
+
+	// Create a map of engine address to the list of images it holds.
+	engineImages := make(map[string][]*cluster.Image)
+	for _, image := range c.cluster.Images() {
+		engineImages[image.Engine.Addr] = append(engineImages[image.Engine.Addr], image)
+	}
+
+	// Look for an engine that has all the images we need.
+	for engine, images := range engineImages {
+		matchedImages := 0
+
+		// Count how many images we need it has.
+		for _, name := range names {
+			for _, image := range images {
+				if image.Match(name) {
+					matchedImages = matchedImages + 1
+					break
+				}
+			}
+		}
+
+		// If the engine has all images, stop our search here.
+		if matchedImages == len(names) {
+			proxy(c.tlsConfig, engine, w, r)
+			return
+		}
+	}
+
+	httpError(w, fmt.Sprintf("Unable to find an engine containing all images: %s", names), http.StatusNotFound)
+}
+
 // GET /images/json
 func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
