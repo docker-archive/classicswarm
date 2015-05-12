@@ -587,3 +587,15 @@ func (e *Engine) RenameContainer(container *Container, newName string) error {
 	// refresh container
 	return e.refreshContainer(container.Id, true)
 }
+
+// TagImage tag an image
+func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) error {
+	// send tag request
+	err := e.client.TagImage(IDOrName, repo, tag, force)
+	if err != nil {
+		return err
+	}
+
+	// refresh image
+	return e.RefreshImages()
+}

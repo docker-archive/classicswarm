@@ -150,3 +150,8 @@ func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.R
 
 	return nil
 }
+
+func boolValue(r *http.Request, k string) bool {
+	s := strings.ToLower(strings.TrimSpace(r.FormValue(k)))
+	return !(s == "" || s == "0" || s == "no" || s == "false" || s == "none")
+}
