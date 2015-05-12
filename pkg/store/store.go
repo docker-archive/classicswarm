@@ -8,7 +8,7 @@ import (
 
 // WatchCallback is used for watch methods on keys
 // and is triggered on key change
-type WatchCallback func(value [][]byte)
+type WatchCallback func(value ...Entry)
 
 // Initialize creates a new Store object, initializing the client
 type Initialize func(addrs []string, options Config) (Store, error)
@@ -19,10 +19,10 @@ type Initialize func(addrs []string, options Config) (Store, error)
 // backend for libkv
 type Store interface {
 	// Put a value at the specified key
-	Put(key string, value []byte) error
+	Put(key string, value Entry) error
 
 	// Get a value given its key
-	Get(key string) (value []byte, lastIndex uint64, err error)
+	Get(key string) (value Entry, lastIndex uint64, err error)
 
 	// Delete the value at the specified key
 	Delete(key string) error
@@ -37,13 +37,13 @@ type Store interface {
 	CancelWatch(key string) error
 
 	// Acquire the lock at key
-	Acquire(key string, value []byte) (string, error)
+	Acquire(key string, value Entry) (string, error)
 
 	// Release the lock at key
 	Release(session string) error
 
 	// Get range of keys based on prefix
-	GetRange(prefix string) (value [][]byte, err error)
+	GetRange(prefix string) (values []Entry, err error)
 
 	// Delete range of keys based on prefix
 	DeleteRange(prefix string) error
@@ -55,10 +55,17 @@ type Store interface {
 	CancelWatchRange(prefix string) error
 
 	// Atomic operation on a single value
-	AtomicPut(key string, oldValue []byte, newValue []byte, index uint64) (bool, error)
+	AtomicPut(key string, oldValue Entry, newValue Entry, index uint64) (bool, error)
 
 	// Atomic delete of a single value
-	AtomicDelete(key string, oldValue []byte, index uint64) (bool, error)
+	AtomicDelete(key string, oldValue Entry, index uint64) (bool, error)
+}
+
+// Entry represents a common type for all the K/V
+type Entry []byte
+
+func (e Entry) String() string {
+	return string(e)
 }
 
 var (

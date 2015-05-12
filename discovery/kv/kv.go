@@ -71,7 +71,7 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 
 // Watch is exported
 func (s *Discovery) Watch(callback discovery.WatchCallback) {
-	s.store.WatchRange(s.prefix, "", s.heartbeat, func(kvalues [][]byte) {
+	s.store.WatchRange(s.prefix, "", s.heartbeat, func(kvalues ...store.Entry) {
 		// Traduce byte array entries to discovery.Entry
 		entries, _ := discovery.CreateEntries(convertToStringArray(kvalues))
 		callback(entries)
@@ -84,9 +84,9 @@ func (s *Discovery) Register(addr string) error {
 	return err
 }
 
-func convertToStringArray(entries [][]byte) (addrs []string) {
+func convertToStringArray(entries []store.Entry) (addrs []string) {
 	for _, entry := range entries {
-		addrs = append(addrs, string(entry))
+		addrs = append(addrs, entry.String())
 	}
 	return addrs
 }

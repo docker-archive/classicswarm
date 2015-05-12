@@ -43,7 +43,7 @@ func (s *Zookeeper) setTimeout(time time.Duration) {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Zookeeper) Get(key string) (value []byte, lastIndex uint64, err error) {
+func (s *Zookeeper) Get(key string) (value Entry, lastIndex uint64, err error) {
 	resp, meta, err := s.client.Get(format(key))
 	if err != nil {
 		return nil, 0, err
@@ -58,7 +58,7 @@ func (s *Zookeeper) Get(key string) (value []byte, lastIndex uint64, err error) 
 func (s *Zookeeper) createFullpath(path []string) error {
 	for i := 1; i <= len(path); i++ {
 		newpath := "/" + strings.Join(path[:i], "/")
-		_, err := s.client.Create(newpath, []byte{1}, 0, zk.WorldACL(zk.PermAll))
+		_, err := s.client.Create(newpath, Entry{1}, 0, zk.WorldACL(zk.PermAll))
 		if err != nil {
 			// Skip if node already exists
 			if err != zk.ErrNodeExists {
@@ -70,7 +70,7 @@ func (s *Zookeeper) createFullpath(path []string) error {
 }
 
 // Put a value at "key"
-func (s *Zookeeper) Put(key string, value []byte) error {
+func (s *Zookeeper) Put(key string, value Entry) error {
 	fkey := format(key)
 	exists, err := s.Exists(key)
 	if err != nil {
@@ -113,9 +113,8 @@ func (s *Zookeeper) Watch(key string, _ time.Duration, callback WatchCallback) e
 		if e.Type == zk.EventNodeChildrenChanged {
 			log.WithField("name", "zk").Debug("Discovery watch triggered")
 			entry, _, err := s.Get(key)
-			value := [][]byte{[]byte(entry)}
 			if err == nil {
-				callback(value)
+				callback(entry)
 			}
 		}
 	}
@@ -137,7 +136,7 @@ func (s *Zookeeper) CancelWatch(key string) error {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Zookeeper) GetRange(prefix string) (values [][]byte, err error) {
+func (s *Zookeeper) GetRange(prefix string) (values []Entry, err error) {
 	prefix = format(prefix)
 	entries, _, err := s.client.Children(prefix)
 	if err != nil {
@@ -145,7 +144,7 @@ func (s *Zookeeper) GetRange(prefix string) (values [][]byte, err error) {
 		return nil, err
 	}
 	for _, item := range entries {
-		values = append(values, []byte(item))
+		values = append(values, Entry(item))
 	}
 	return values, err
 }
@@ -172,7 +171,7 @@ func (s *Zookeeper) WatchRange(prefix string, filter string, _ time.Duration, ca
 			log.WithField("name", "zk").Debug("Discovery watch triggered")
 			values, err := s.GetRange(prefix)
 			if err == nil {
-				callback(values)
+				callback(values...)
 			}
 		}
 	}
@@ -188,19 +187,19 @@ func (s *Zookeeper) CancelWatchRange(prefix string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicPut(key string, oldValue []byte, newValue []byte, index uint64) (bool, error) {
+func (s *Zookeeper) AtomicPut(key string, oldValue Entry, newValue Entry, index uint64) (bool, error) {
 	// Use index of Set method to implement CAS
 	return false, ErrNotImplemented
 }
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicDelete(key string, oldValue []byte, index uint64) (bool, error) {
+func (s *Zookeeper) AtomicDelete(key string, oldValue Entry, index uint64) (bool, error) {
 	return false, ErrNotImplemented
 }
 
 // Acquire the lock for "key"/"directory"
-func (s *Zookeeper) Acquire(path string, value []byte) (string, error) {
+func (s *Zookeeper) Acquire(path string, value Entry) (string, error) {
 	// lock := zk.NewLock(s.client, path, nil)
 	// locks[path] = lock
 	// lock.Lock()
