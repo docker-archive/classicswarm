@@ -115,14 +115,14 @@ func (s *Zookeeper) Exists(key string) (bool, error) {
 
 // Watch a single key for modifications
 func (s *Zookeeper) Watch(key string, _ time.Duration, callback WatchCallback) error {
-	key = format(key)
-	_, _, eventChan, err := s.client.GetW(key)
+	fkey := format(key)
+	_, _, eventChan, err := s.client.GetW(fkey)
 	if err != nil {
 		return err
 	}
 
 	// Create a new Watch entry with eventChan
-	s.watches[key] = eventChan
+	s.watches[fkey] = eventChan
 
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
@@ -173,14 +173,14 @@ func (s *Zookeeper) DeleteRange(prefix string) error {
 
 // WatchRange triggers a watch on a range of values at "directory"
 func (s *Zookeeper) WatchRange(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
-	prefix = format(prefix)
-	_, _, eventChan, err := s.client.ChildrenW(prefix)
+	fprefix := format(prefix)
+	_, _, eventChan, err := s.client.ChildrenW(fprefix)
 	if err != nil {
 		return err
 	}
 
 	// Create a new Watch entry with eventChan
-	s.watches[prefix] = eventChan
+	s.watches[fprefix] = eventChan
 
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
