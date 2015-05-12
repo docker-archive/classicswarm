@@ -1,6 +1,7 @@
 package token
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,7 +28,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(urltoken string, heartbeat uint64, _ *discovery.TLS) error {
+func (s *Discovery) Initialize(urltoken string, heartbeat uint64, _ *tls.Config) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
 		s.url = "https://" + urltoken[:i]
 		s.token = urltoken[i+1:]

@@ -16,11 +16,6 @@ type Entry struct {
 	Port string
 }
 
-// TLS is exported
-type TLS struct {
-	TLSConfig *tls.Config
-}
-
 // NewEntry is exported
 func NewEntry(url string) (*Entry, error) {
 	host, port, err := net.SplitHostPort(url)
@@ -39,7 +34,7 @@ type WatchCallback func(entries []*Entry)
 
 // Discovery is exported
 type Discovery interface {
-	Initialize(string, uint64, *TLS) error
+	Initialize(string, uint64, *tls.Config) error
 	Fetch() ([]*Entry, error)
 	Watch(WatchCallback)
 	Register(string) error
@@ -79,7 +74,7 @@ func parse(rawurl string) (string, string) {
 }
 
 // New is exported
-func New(rawurl string, heartbeat uint64, tls *TLS) (Discovery, error) {
+func New(rawurl string, heartbeat uint64, tls *tls.Config) (Discovery, error) {
 	scheme, uri := parse(rawurl)
 
 	if discovery, exists := discoveries[scheme]; exists {

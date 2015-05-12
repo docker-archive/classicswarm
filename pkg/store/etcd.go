@@ -19,62 +19,49 @@ type Etcd struct {
 
 // InitializeEtcd creates a new Etcd client given
 // a list of endpoints and optional tls config
-func InitializeEtcd(addrs []string, options ...interface{}) (Store, error) {
+func InitializeEtcd(addrs []string, options Config) (Store, error) {
 	s := &Etcd{}
 	s.watches = make(map[string]chan<- bool)
 
 	entries := createEndpoints(addrs, "http")
 	s.client = etcd.NewClient(entries)
-	s.SetOptions(options...)
-	return s, nil
-}
 
-// SetOptions sets the options for Etcd
-func (s *Etcd) SetOptions(options ...interface{}) {
-	for _, opt := range options {
-
-		switch opt := opt.(type) {
-
-		case *tls.Config:
-			s.SetTLS(opt)
-
-		case time.Duration:
-			s.SetTimeout(opt)
-
-		default:
-			// ignore
-
-		}
+	if options.TLS != nil {
+		s.setTLS(options.TLS)
 	}
+
+	if options.Timeout != 0 {
+		s.setTimeout(options.Timeout)
+	}
+
+	return s, nil
 }
 
 // SetTLS sets the tls configuration given the path
 // of certificate files
-func (s *Etcd) SetTLS(tls *tls.Config) {
-	if tls != nil {
-		// Change to https scheme
-		var addrs []string
-		entries := s.client.GetCluster()
-		for _, entry := range entries {
-			addrs = append(addrs, strings.Replace(entry, "http", "https", -1))
-		}
-		s.client.SetCluster(addrs)
-
-		// Set transport
-		t := http.Transport{
-			Dial: (&net.Dialer{
-				Timeout:   30 * time.Second, // default timeout
-				KeepAlive: 30 * time.Second,
-			}).Dial,
-			TLSHandshakeTimeout: 10 * time.Second,
-			TLSClientConfig:     tls,
-		}
-		s.client.SetTransport(&t)
+func (s *Etcd) setTLS(tls *tls.Config) {
+	// Change to https scheme
+	var addrs []string
+	entries := s.client.GetCluster()
+	for _, entry := range entries {
+		addrs = append(addrs, strings.Replace(entry, "http", "https", -1))
 	}
+	s.client.SetCluster(addrs)
+
+	// Set transport
+	t := http.Transport{
+		Dial: (&net.Dialer{
+			Timeout:   30 * time.Second, // default timeout
+			KeepAlive: 30 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 10 * time.Second,
+		TLSClientConfig:     tls,
+	}
+	s.client.SetTransport(&t)
 }
 
 // SetTimeout sets the timeout used for connecting to the store
-func (s *Etcd) SetTimeout(time time.Duration) {
+func (s *Etcd) setTimeout(time time.Duration) {
 	s.client.SetDialTimeout(time)
 }
 
