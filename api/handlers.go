@@ -485,7 +485,9 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set the full container ID in the proxied URL path.
-	r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
+	if name != "" {
+		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
+	}
 
 	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
@@ -588,7 +590,9 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Set the full container ID in the proxied URL path.
-	r.URL.RawQuery = strings.Replace(r.URL.RawQuery, name, container.Id, 1)
+	if name != "" {
+		r.URL.RawQuery = strings.Replace(r.URL.RawQuery, name, container.Id, 1)
+	}
 
 	cb := func(resp *http.Response) {
 		if resp.StatusCode == http.StatusCreated {
@@ -633,7 +637,9 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Set the full container ID in the proxied URL path.
-	r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
+	if name != "" {
+		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
+	}
 
 	if err := hijack(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
