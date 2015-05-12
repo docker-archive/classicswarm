@@ -13,8 +13,6 @@ The Docker Swarm API is mostly compatible with the [Docker Remote API](https://d
 Some endpoints have not yet been implemented and will return a 404 error.
 
 ```
-GET "/images/get"
-
 POST "/images/create" : "docker import" flow not implement
 ```
 
