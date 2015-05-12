@@ -1,7 +1,6 @@
 package discovery
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -34,7 +33,7 @@ type WatchCallback func(entries []*Entry)
 
 // Discovery is exported
 type Discovery interface {
-	Initialize(string, uint64, *tls.Config) error
+	Initialize(string, uint64) error
 	Fetch() ([]*Entry, error)
 	Watch(WatchCallback)
 	Register(string) error
@@ -74,12 +73,12 @@ func parse(rawurl string) (string, string) {
 }
 
 // New is exported
-func New(rawurl string, heartbeat uint64, tls *tls.Config) (Discovery, error) {
+func New(rawurl string, heartbeat uint64) (Discovery, error) {
 	scheme, uri := parse(rawurl)
 
 	if discovery, exists := discoveries[scheme]; exists {
 		log.WithFields(log.Fields{"name": scheme, "uri": uri}).Debug("Initializing discovery service")
-		err := discovery.Initialize(uri, heartbeat, tls)
+		err := discovery.Initialize(uri, heartbeat)
 		return discovery, err
 	}
 
