@@ -1,7 +1,6 @@
 package kv
 
 import (
-	"crypto/tls"
 	"fmt"
 	"path"
 	"strings"
@@ -26,7 +25,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(uris string, heartbeat uint64, tls *tls.Config) error {
+func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
 	var (
 		parts = strings.SplitN(uris, "/", 2)
 		ips   = strings.Split(parts[0], ",")
@@ -51,7 +50,6 @@ func (s *Discovery) Initialize(uris string, heartbeat uint64, tls *tls.Config) e
 		s.name, // name of the store
 		addrs,
 		store.Config{
-			TLS:     tls,
 			Timeout: s.heartbeat,
 		},
 	)

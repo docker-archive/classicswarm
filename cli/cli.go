@@ -64,7 +64,7 @@ func Run() {
 					log.Fatalf("the `create` command takes no arguments. See '%s create --help'.", c.App.Name)
 				}
 				discovery := &token.Discovery{}
-				discovery.Initialize("", 0, nil)
+				discovery.Initialize("", 0)
 				token, err := discovery.CreateCluster()
 				if err != nil {
 					log.Fatal(err)
@@ -82,7 +82,7 @@ func Run() {
 					log.Fatalf("discovery required to list a cluster. See '%s list --help'.", c.App.Name)
 				}
 
-				d, err := discovery.New(dflag, 10, nil)
+				d, err := discovery.New(dflag, 10)
 				if err != nil {
 					log.Fatal(err)
 				}

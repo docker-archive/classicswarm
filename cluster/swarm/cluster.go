@@ -42,7 +42,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, options *clu
 
 	// get the list of entries from the discovery service
 	go func() {
-		d, err := discovery.New(options.Discovery, options.Heartbeat, options.TLS)
+		d, err := discovery.New(options.Discovery, options.Heartbeat)
 		if err != nil {
 			log.Fatal(err)
 		}

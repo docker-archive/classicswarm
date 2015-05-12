@@ -26,8 +26,7 @@ func join(c *cli.Context) {
 		log.Fatal("--heartbeat should be an unsigned integer and greater than 0")
 	}
 
-	// TODO Add TLS on join
-	d, err := discovery.New(dflag, hb, nil)
+	d, err := discovery.New(dflag, hb)
 	if err != nil {
 		log.Fatal(err)
 	}
