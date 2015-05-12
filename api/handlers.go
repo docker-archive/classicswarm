@@ -378,6 +378,8 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	wf := NewWriteFlusher(w)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 
 	if image := r.Form.Get("fromImage"); image != "" { //pull
 		authConfig := dockerclient.AuthConfig{}
@@ -385,8 +387,6 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			json.Unmarshal(buf, &authConfig)
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
 
 		if tag := r.Form.Get("tag"); tag != "" {
 			image += ":" + tag
@@ -400,7 +400,14 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 		c.cluster.Pull(image, &authConfig, callback)
 	} else { //import
-		httpError(w, "Not supported in clustering mode.", http.StatusNotImplemented)
+		source := r.Form.Get("fromSrc")
+		repo := r.Form.Get("repo")
+		tag := r.Form.Get("tag")
+
+		callback := func(what, status string) {
+			fmt.Fprintf(wf, "{%q:%q,%q:\"%s\"}", "id", what, "status", status)
+		}
+		c.cluster.Import(source, repo, tag, r.Body, callback)
 	}
 }
 
