@@ -28,12 +28,11 @@ type Consul struct {
 type Watch struct {
 	LastIndex uint64
 	Interval  time.Duration
-	EventChan interface{}
 }
 
 // InitializeConsul creates a new Consul client given
 // a list of endpoints and optional tls config
-func InitializeConsul(endpoints []string, options ...interface{}) (Store, error) {
+func InitializeConsul(endpoints []string, options Config) (Store, error) {
 	s := &Consul{}
 	s.sessions = make(map[string]*api.Session)
 	s.watches = make(map[string]*Watch)
@@ -45,8 +44,13 @@ func InitializeConsul(endpoints []string, options ...interface{}) (Store, error)
 	config.Address = endpoints[0]
 	config.Scheme = "http"
 
-	// Sets all the options
-	s.SetOptions(options...)
+	if options.TLS != nil {
+		s.setTLS(options.TLS)
+	}
+
+	if options.Timeout != 0 {
+		s.setTimeout(options.Timeout)
+	}
 
 	// Creates a new client
 	client, err := api.NewClient(config)
@@ -59,37 +63,16 @@ func InitializeConsul(endpoints []string, options ...interface{}) (Store, error)
 	return s, nil
 }
 
-// SetOptions sets the options for Consul
-func (s *Consul) SetOptions(options ...interface{}) {
-	for _, opt := range options {
-
-		switch opt := opt.(type) {
-
-		case *tls.Config:
-			s.SetTLS(opt)
-
-		case time.Duration:
-			s.SetTimeout(opt)
-
-		default:
-			// ignore
-
-		}
-	}
-}
-
 // SetTLS sets Consul TLS options
-func (s *Consul) SetTLS(tls *tls.Config) {
-	if tls != nil {
-		s.config.HttpClient.Transport = &http.Transport{
-			TLSClientConfig: tls,
-		}
-		s.config.Scheme = "https"
+func (s *Consul) setTLS(tls *tls.Config) {
+	s.config.HttpClient.Transport = &http.Transport{
+		TLSClientConfig: tls,
 	}
+	s.config.Scheme = "https"
 }
 
 // SetTimeout sets the timout for connecting to Consul
-func (s *Consul) SetTimeout(time time.Duration) {
+func (s *Consul) setTimeout(time time.Duration) {
 	s.config.WaitTime = time
 }
 
@@ -137,6 +120,9 @@ func (s *Consul) GetRange(prefix string) (values [][]byte, err error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(pairs) == 0 {
+		return nil, ErrKeyNotFound
+	}
 	for _, pair := range pairs {
 		if pair.Key == prefix {
 			continue
@@ -154,17 +140,24 @@ func (s *Consul) DeleteRange(prefix string) error {
 
 // Watch a single key for modifications
 func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallback) error {
-	key = partialFormat(key)
-	interval := heartbeat
-	eventChan := s.waitForChange(key)
-	s.watches[key] = &Watch{Interval: interval, EventChan: eventChan}
+	fkey := partialFormat(key)
+
+	// We get the last index first
+	_, meta, err := s.client.KV().Get(fkey, nil)
+	if err != nil {
+		return err
+	}
+
+	// Add watch to map
+	s.watches[fkey] = &Watch{LastIndex: meta.LastIndex, Interval: heartbeat}
+	eventChan := s.waitForChange(fkey)
 
 	for _ = range eventChan {
 		log.WithField("name", "consul").Debug("Key watch triggered")
 		entry, _, err := s.Get(key)
 		if err != nil {
-			log.Error("Cannot refresh the key: ", key, ", cancelling watch")
-			s.watches[key] = nil
+			log.Error("Cannot refresh the key: ", fkey, ", cancelling watch")
+			s.watches[fkey] = nil
 			return err
 		}
 
@@ -190,6 +183,7 @@ func (s *Consul) CancelWatch(key string) error {
 // Internal function to check if a key has changed
 func (s *Consul) waitForChange(key string) <-chan uint64 {
 	ch := make(chan uint64)
+	kv := s.client.KV()
 	go func() {
 		for {
 			watch, ok := s.watches[key]
@@ -199,8 +193,9 @@ func (s *Consul) waitForChange(key string) <-chan uint64 {
 			}
 			option := &api.QueryOptions{
 				WaitIndex: watch.LastIndex,
-				WaitTime:  watch.Interval}
-			_, meta, err := s.client.KV().Get(key, option)
+				WaitTime:  watch.Interval,
+			}
+			_, meta, err := kv.List(key, option)
 			if err != nil {
 				log.WithField("name", "consul").Errorf("Discovery error: %v", err)
 				break
@@ -215,17 +210,24 @@ func (s *Consul) waitForChange(key string) <-chan uint64 {
 
 // WatchRange triggers a watch on a range of values at "directory"
 func (s *Consul) WatchRange(prefix string, filter string, heartbeat time.Duration, callback WatchCallback) error {
-	prefix = partialFormat(prefix)
-	interval := heartbeat
-	eventChan := s.waitForChange(prefix)
-	s.watches[prefix] = &Watch{Interval: interval, EventChan: eventChan}
+	fprefix := partialFormat(prefix)
+
+	// We get the last index first
+	_, meta, err := s.client.KV().Get(prefix, nil)
+	if err != nil {
+		return err
+	}
+
+	// Add watch to map
+	s.watches[fprefix] = &Watch{LastIndex: meta.LastIndex, Interval: heartbeat}
+	eventChan := s.waitForChange(fprefix)
 
 	for _ = range eventChan {
 		log.WithField("name", "consul").Debug("Key watch triggered")
 		values, err := s.GetRange(prefix)
 		if err != nil {
-			log.Error("Cannot refresh keys with prefix: ", prefix, ", cancelling watch")
-			s.watches[prefix] = nil
+			log.Error("Cannot refresh keys with prefix: ", fprefix, ", cancelling watch")
+			s.watches[fprefix] = nil
 			return err
 		}
 		callback(values)

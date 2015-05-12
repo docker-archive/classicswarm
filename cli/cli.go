@@ -82,9 +82,7 @@ func Run() {
 					log.Fatalf("discovery required to list a cluster. See '%s list --help'.", c.App.Name)
 				}
 
-				// FIXME fill TLS struct
-				tls := &discovery.TLS{}
-				d, err := discovery.New(dflag, 10, tls)
+				d, err := discovery.New(dflag, 10, nil)
 				if err != nil {
 					log.Fatal(err)
 				}

@@ -35,12 +35,8 @@ const (
 	ZOOKEEPER = "zookeeper"
 )
 
-// TLSConfig takes a built tls.Config object
-func TLSConfig(tls *tls.Config) interface{} {
-	return tls
-}
-
-// Timeout takes a timout for client Initialization
-func Timeout(time time.Duration) interface{} {
-	return time
+// Config contains the options for a storage client
+type Config struct {
+	TLS     *tls.Config
+	Timeout time.Duration
 }

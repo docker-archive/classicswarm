@@ -42,9 +42,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, options *clu
 
 	// get the list of entries from the discovery service
 	go func() {
-		discoveryTLS := &discovery.TLS{TLSConfig: options.TLS.Config}
-		log.Info("options TLS: ", options.TLS.Config)
-		d, err := discovery.New(options.Discovery, options.Heartbeat, discoveryTLS)
+		d, err := discovery.New(options.Discovery, options.Heartbeat, options.TLS)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -140,7 +138,7 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 		go func(m *discovery.Entry) {
 			if !c.hasEngine(m.String()) {
 				engine := cluster.NewEngine(m.String(), c.options.OvercommitRatio)
-				if err := engine.Connect(c.options.TLS.Config); err != nil {
+				if err := engine.Connect(c.options.TLS); err != nil {
 					log.Error(err)
 					return
 				}

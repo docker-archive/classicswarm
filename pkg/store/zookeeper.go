@@ -18,13 +18,14 @@ type Zookeeper struct {
 
 // InitializeZookeeper creates a new Zookeeper client
 // given a list of endpoints and optional tls config
-func InitializeZookeeper(endpoints []string, options ...interface{}) (Store, error) {
+func InitializeZookeeper(endpoints []string, options Config) (Store, error) {
 	s := &Zookeeper{}
 	s.watches = make(map[string]<-chan zk.Event)
 	s.timeout = 5 * time.Second // default timeout
 
-	// Sets options
-	s.SetOptions(options...)
+	if options.Timeout != 0 {
+		s.setTimeout(options.Timeout)
+	}
 
 	conn, _, err := zk.Connect(endpoints, s.timeout)
 	if err != nil {
@@ -35,24 +36,8 @@ func InitializeZookeeper(endpoints []string, options ...interface{}) (Store, err
 	return s, nil
 }
 
-// SetOptions sets the options for Zookeeper
-func (s *Zookeeper) SetOptions(options ...interface{}) {
-	for _, opt := range options {
-
-		switch opt := opt.(type) {
-
-		case time.Duration:
-			s.SetTimeout(opt)
-
-		default:
-			// ignore
-
-		}
-	}
-}
-
 // SetTimeout sets the timout for connecting to Zookeeper
-func (s *Zookeeper) SetTimeout(time time.Duration) {
+func (s *Zookeeper) setTimeout(time time.Duration) {
 	s.timeout = time
 }
 
