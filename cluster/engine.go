@@ -443,6 +443,18 @@ func (e *Engine) Load(reader io.Reader) error {
 	return nil
 }
 
+// Import image
+func (e *Engine) Import(source string, repository string, tar string, imageReader io.Reader) error {
+	if _, err := e.client.ImportImage(source, repository, tar, imageReader); err != nil {
+		return err
+	}
+
+	// force fresh images
+	e.RefreshImages()
+
+	return nil
+}
+
 // RegisterEventHandler registers an event handler.
 func (e *Engine) RegisterEventHandler(h EventHandler) error {
 	if e.eventHandler != nil {
