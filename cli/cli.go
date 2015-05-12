@@ -82,7 +82,8 @@ func Run() {
 					log.Fatalf("discovery required to list a cluster. See '%s list --help'.", c.App.Name)
 				}
 
-				d, err := discovery.New(dflag, 0)
+				// FIXME Add and use separate timeout flag instead of forcing it
+				d, err := discovery.New(dflag, 10)
 				if err != nil {
 					log.Fatal(err)
 				}
