@@ -1,12 +1,6 @@
----
-page_title: Docker Swarm storage
-page_description: Swarm storage
-page_keywords: docker, swarm, clustering, storage, metadata
----
-
 # Storage
 
-Docker Swarm comes with multiple Key/Value storage backends. This package is used by the discovery service to register machines inside the cluster. It is also used to store cluster's metadata.
+This package is used by the discovery service to register machines inside the cluster. It is also used to store cluster's metadata.
 
 ## Example of usage
 
@@ -32,7 +26,9 @@ func main() {
 	kv, err := store.CreateStore(
 		store.Consul,
 		[]string{client},
-		store.Timeout(10*time.Second),
+		store.Config{
+		    Timeout: 10*time.Second
+		},
 	)
 	if err != nil {
 		log.Error("Cannot create store consul")
@@ -81,11 +77,3 @@ type Store interface {
 To be elligible as a **discovery backend** only, a K/V store implementation should at least offer `Get`, `Put`, `WatchRange`, `GetRange`.
 
 You can get inspiration from existing backends to create a new one. This interface could be subject to changes to improve the experience of using the library and contributing to a new backend.
-
-
-## Docker Swarm documentation index
-
-- [User guide](./index.md)
-- [Sheduler strategies](./scheduler/strategy.md)
-- [Sheduler filters](./scheduler/filter.md)
-- [Swarm API](./API.md)
