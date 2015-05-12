@@ -78,7 +78,7 @@ func (s *Consul) setTimeout(time time.Duration) {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Consul) Get(key string) (value []byte, lastIndex uint64, err error) {
+func (s *Consul) Get(key string) (value Entry, lastIndex uint64, err error) {
 	pair, meta, err := s.client.KV().Get(partialFormat(key), nil)
 	if err != nil {
 		return nil, 0, err
@@ -90,7 +90,7 @@ func (s *Consul) Get(key string) (value []byte, lastIndex uint64, err error) {
 }
 
 // Put a value at "key"
-func (s *Consul) Put(key string, value []byte) error {
+func (s *Consul) Put(key string, value Entry) error {
 	p := &api.KVPair{Key: partialFormat(key), Value: value}
 	if s.client == nil {
 		log.Error("Error initializing client")
@@ -115,7 +115,7 @@ func (s *Consul) Exists(key string) (bool, error) {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Consul) GetRange(prefix string) (values [][]byte, err error) {
+func (s *Consul) GetRange(prefix string) (values []Entry, err error) {
 	pairs, _, err := s.client.KV().List(partialFormat(prefix), nil)
 	if err != nil {
 		return nil, err
@@ -160,9 +160,7 @@ func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallba
 			s.watches[fkey] = nil
 			return err
 		}
-
-		value := [][]byte{[]byte(entry)}
-		callback(value)
+		callback(entry)
 	}
 
 	return nil
@@ -230,7 +228,7 @@ func (s *Consul) WatchRange(prefix string, filter string, heartbeat time.Duratio
 			s.watches[fprefix] = nil
 			return err
 		}
-		callback(values)
+		callback(values...)
 	}
 
 	return nil
@@ -243,7 +241,7 @@ func (s *Consul) CancelWatchRange(prefix string) error {
 }
 
 // Acquire the lock for "key"/"directory"
-func (s *Consul) Acquire(key string, value []byte) (string, error) {
+func (s *Consul) Acquire(key string, value Entry) (string, error) {
 	key = partialFormat(key)
 	session := s.client.Session()
 	id, _, err := session.CreateNoChecks(nil, nil)
@@ -278,7 +276,7 @@ func (s *Consul) Release(id string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Consul) AtomicPut(key string, _ []byte, newValue []byte, index uint64) (bool, error) {
+func (s *Consul) AtomicPut(key string, _ Entry, newValue Entry, index uint64) (bool, error) {
 	p := &api.KVPair{Key: partialFormat(key), Value: newValue, ModifyIndex: index}
 	if work, _, err := s.client.KV().CAS(p, nil); err != nil {
 		return false, err
@@ -290,7 +288,7 @@ func (s *Consul) AtomicPut(key string, _ []byte, newValue []byte, index uint64) 
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
-func (s *Consul) AtomicDelete(key string, oldValue []byte, index uint64) (bool, error) {
+func (s *Consul) AtomicDelete(key string, _ Entry, index uint64) (bool, error) {
 	p := &api.KVPair{Key: partialFormat(key), ModifyIndex: index}
 	if work, _, err := s.client.KV().DeleteCAS(p, nil); err != nil {
 		return false, err

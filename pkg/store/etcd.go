@@ -82,7 +82,7 @@ func (s *Etcd) createDirectory(path string) error {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Etcd) Get(key string) (value []byte, lastIndex uint64, err error) {
+func (s *Etcd) Get(key string) (value Entry, lastIndex uint64, err error) {
 	result, err := s.client.Get(format(key), false, false)
 	if err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
@@ -93,11 +93,11 @@ func (s *Etcd) Get(key string) (value []byte, lastIndex uint64, err error) {
 		}
 		return nil, 0, err
 	}
-	return []byte(result.Node.Value), result.Node.ModifiedIndex, nil
+	return Entry(result.Node.Value), result.Node.ModifiedIndex, nil
 }
 
 // Put a value at "key"
-func (s *Etcd) Put(key string, value []byte) error {
+func (s *Etcd) Put(key string, value Entry) error {
 	if _, err := s.client.Set(key, string(value), 0); err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			if etcdError.ErrorCode == 104 { // Not a directory
@@ -153,8 +153,7 @@ func (s *Etcd) Watch(key string, _ time.Duration, callback WatchCallback) error 
 			s.watches[key] = nil
 			return err
 		}
-		value := [][]byte{[]byte(entry)}
-		callback(value)
+		callback(entry)
 	}
 	return nil
 }
@@ -175,7 +174,7 @@ func (s *Etcd) CancelWatch(key string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Etcd) AtomicPut(key string, oldValue []byte, newValue []byte, index uint64) (bool, error) {
+func (s *Etcd) AtomicPut(key string, oldValue Entry, newValue Entry, index uint64) (bool, error) {
 	resp, err := s.client.CompareAndSwap(format(key), string(newValue), 5, string(oldValue), 0)
 	if err != nil {
 		return false, err
@@ -191,7 +190,7 @@ func (s *Etcd) AtomicPut(key string, oldValue []byte, newValue []byte, index uin
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
-func (s *Etcd) AtomicDelete(key string, oldValue []byte, index uint64) (bool, error) {
+func (s *Etcd) AtomicDelete(key string, oldValue Entry, index uint64) (bool, error) {
 	resp, err := s.client.CompareAndDelete(format(key), string(oldValue), 0)
 	if err != nil {
 		return false, err
@@ -203,14 +202,14 @@ func (s *Etcd) AtomicDelete(key string, oldValue []byte, index uint64) (bool, er
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Etcd) GetRange(prefix string) (value [][]byte, err error) {
+func (s *Etcd) GetRange(prefix string) (value []Entry, err error) {
 	resp, err := s.client.Get(format(prefix), true, true)
 	if err != nil {
 		return nil, err
 	}
-	values := [][]byte{}
+	values := []Entry{}
 	for _, n := range resp.Node.Nodes {
-		values = append(values, []byte(n.Value))
+		values = append(values, Entry(n.Value))
 	}
 	return values, nil
 }
@@ -242,7 +241,7 @@ func (s *Etcd) WatchRange(prefix string, filter string, _ time.Duration, callbac
 			s.watches[prefix] = nil
 			return err
 		}
-		callback(values)
+		callback(values...)
 	}
 	return nil
 }
@@ -254,7 +253,7 @@ func (s *Etcd) CancelWatchRange(prefix string) error {
 }
 
 // Acquire the lock for "key"/"directory"
-func (s *Etcd) Acquire(key string, value []byte) (string, error) {
+func (s *Etcd) Acquire(key string, value Entry) (string, error) {
 	return "", ErrNotImplemented
 }
 
