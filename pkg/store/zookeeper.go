@@ -45,8 +45,7 @@ func (s *Zookeeper) SetOptions(options ...interface{}) {
 			s.SetTimeout(opt)
 
 		default:
-			// TODO give more meaningful information to print
-			log.Error("store: option unsupported for zookeeper")
+			// ignore
 
 		}
 	}
@@ -154,7 +153,8 @@ func (s *Zookeeper) CancelWatch(key string) error {
 
 // GetRange gets a range of values at "directory"
 func (s *Zookeeper) GetRange(prefix string) (values [][]byte, err error) {
-	entries, _, err := s.client.Children(format(prefix))
+	prefix = format(prefix)
+	entries, _, err := s.client.Children(prefix)
 	if err != nil {
 		log.Error("Cannot fetch range of keys beginning with prefix: ", prefix)
 		return nil, err

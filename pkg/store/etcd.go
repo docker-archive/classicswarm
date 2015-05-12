@@ -42,8 +42,7 @@ func (s *Etcd) SetOptions(options ...interface{}) {
 			s.SetTimeout(opt)
 
 		default:
-			// TODO give more meaningful information to print
-			log.Info("store: option unsupported for etcd")
+			// ignore
 
 		}
 	}
