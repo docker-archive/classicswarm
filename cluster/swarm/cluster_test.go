@@ -8,13 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createEngine(t *testing.T, ID string, containers ...dockerclient.Container) *cluster.Engine {
+func createEngine(t *testing.T, ID string, containers ...*cluster.Container) *cluster.Engine {
 	engine := cluster.NewEngine(ID, 0)
 	engine.Name = ID
 	engine.ID = ID
 
 	for _, container := range containers {
-		engine.AddContainer(&cluster.Container{Container: container, Engine: engine})
+		container.Engine = engine
+		engine.AddContainer(container)
 	}
 
 	return engine
@@ -24,9 +25,16 @@ func TestContainerLookup(t *testing.T) {
 	c := &Cluster{
 		engines: make(map[string]*cluster.Engine),
 	}
-	container := dockerclient.Container{
-		Id:    "container-id",
-		Names: []string{"/container-name1", "/container-name2"},
+	container := &cluster.Container{
+		Container: dockerclient.Container{
+			Id:    "container-id",
+			Names: []string{"/container-name1", "/container-name2"},
+		},
+		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
+			Labels: map[string]string{
+				"com.docker.swarm.id": "swarm-id",
+			},
+		}),
 	}
 
 	n := createEngine(t, "test-engine", container)
@@ -45,4 +53,8 @@ func TestContainerLookup(t *testing.T) {
 	// Container engine/name matching.
 	assert.NotNil(t, c.Container("test-engine/container-name1"))
 	assert.NotNil(t, c.Container("test-engine/container-name2"))
+	// Swarm ID lookup.
+	assert.NotNil(t, c.Container("swarm-id"))
+	// Swarm ID prefix lookup.
+	assert.NotNil(t, c.Container("swarm-"))
 }

@@ -29,6 +29,18 @@ func TestBuildContainerConfig(t *testing.T) {
 	assert.Len(t, config.Labels, 2)
 }
 
+func TestSwarmID(t *testing.T) {
+	// Getter / Setter
+	config := BuildContainerConfig(dockerclient.ContainerConfig{})
+	assert.Empty(t, config.SwarmID())
+	config.SetSwarmID("foo")
+	assert.Equal(t, config.SwarmID(), "foo")
+
+	// Retrieve an existing ID.
+	config = BuildContainerConfig(dockerclient.ContainerConfig{Labels: map[string]string{namespace + ".id": "test"}})
+	assert.Equal(t, config.SwarmID(), "test")
+}
+
 func TestConstraints(t *testing.T) {
 	config := BuildContainerConfig(dockerclient.ContainerConfig{})
 	assert.Empty(t, config.Constraints())

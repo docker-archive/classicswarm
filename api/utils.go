@@ -26,25 +26,24 @@ func newClientAndScheme(tlsConfig *tls.Config) (*http.Client, string) {
 	return &http.Client{}, "http"
 }
 
-func getContainerFromVars(c *context, vars map[string]string) (*cluster.Container, error) {
+func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.Container, error) {
 	if name, ok := vars["name"]; ok {
 		if container := c.cluster.Container(name); container != nil {
-			return container, nil
+			return name, container, nil
 		}
-		return nil, fmt.Errorf("No such container: %s", name)
-
+		return name, nil, fmt.Errorf("No such container: %s", name)
 	}
 	if ID, ok := vars["execid"]; ok {
 		for _, container := range c.cluster.Containers() {
 			for _, execID := range container.Info.ExecIDs {
 				if ID == execID {
-					return container, nil
+					return "", container, nil
 				}
 			}
 		}
-		return nil, fmt.Errorf("Exec %s not found", ID)
+		return "", nil, fmt.Errorf("Exec %s not found", ID)
 	}
-	return nil, errors.New("Not found")
+	return "", nil, errors.New("Not found")
 }
 
 // from https://github.com/golang/go/blob/master/src/net/http/httputil/reverseproxy.go#L82
