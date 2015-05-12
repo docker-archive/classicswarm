@@ -125,7 +125,7 @@ func manage(c *cli.Context) {
 		log.Fatal("--heartbeat should be an unsigned integer and greater than 0")
 	}
 	options := &cluster.Options{
-		TLS:             tlsConfig,
+		TLSConfig:       tlsConfig,
 		OvercommitRatio: c.Float64("overcommit"),
 		Discovery:       dflag,
 		Heartbeat:       hb,

@@ -138,7 +138,7 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 		go func(m *discovery.Entry) {
 			if !c.hasEngine(m.String()) {
 				engine := cluster.NewEngine(m.String(), c.options.OvercommitRatio)
-				if err := engine.Connect(c.options.TLS); err != nil {
+				if err := engine.Connect(c.options.TLSConfig); err != nil {
 					log.Error(err)
 					return
 				}
