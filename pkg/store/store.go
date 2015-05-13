@@ -36,11 +36,10 @@ type Store interface {
 	// Cancel watch key
 	CancelWatch(key string) error
 
-	// Acquire the lock at key
-	Acquire(key string, value []byte) (string, error)
-
-	// Release the lock at key
-	Release(session string) error
+	// CreateLock for a given key.
+	// The returned Locker is not held and must be acquired with `.Lock`.
+	// value is optional.
+	CreateLock(key string, value []byte) (Locker, error)
 
 	// Get range of keys based on prefix
 	GetRange(prefix string) ([]KVEntry, error)
@@ -66,6 +65,13 @@ type KVEntry interface {
 	Key() string
 	Value() []byte
 	LastIndex() uint64
+}
+
+// Locker provides locking mechanism on top of the store.
+// Similar to `sync.Lock` except it may return errors.
+type Locker interface {
+	Lock() error
+	Unlock() error
 }
 
 var (
