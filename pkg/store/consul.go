@@ -115,7 +115,7 @@ func (s *Consul) Exists(key string) (bool, error) {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Consul) GetRange(prefix string) (values [][]byte, err error) {
+func (s *Consul) GetRange(prefix string) (kvi []KVEntry, err error) {
 	pairs, _, err := s.client.KV().List(partialFormat(prefix), nil)
 	if err != nil {
 		return nil, err
@@ -127,9 +127,9 @@ func (s *Consul) GetRange(prefix string) (values [][]byte, err error) {
 		if pair.Key == prefix {
 			continue
 		}
-		values = append(values, pair.Value)
+		kvi = append(kvi, &kviTuple{pair.Key, pair.Value, pair.ModifyIndex})
 	}
-	return values, nil
+	return kvi, nil
 }
 
 // DeleteRange deletes a range of values at "directory"
@@ -154,14 +154,14 @@ func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallba
 
 	for _ = range eventChan {
 		log.WithField("name", "consul").Debug("Key watch triggered")
-		entry, _, err := s.Get(key)
+		entry, index, err := s.Get(key)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", fkey, ", cancelling watch")
 			s.watches[fkey] = nil
 			return err
 		}
 
-		value := [][]byte{[]byte(entry)}
+		value := []KVEntry{&kviTuple{key, entry, index}}
 		callback(value)
 	}
 
@@ -224,13 +224,13 @@ func (s *Consul) WatchRange(prefix string, filter string, heartbeat time.Duratio
 
 	for _ = range eventChan {
 		log.WithField("name", "consul").Debug("Key watch triggered")
-		values, err := s.GetRange(prefix)
+		kvi, err := s.GetRange(prefix)
 		if err != nil {
 			log.Error("Cannot refresh keys with prefix: ", fprefix, ", cancelling watch")
 			s.watches[fprefix] = nil
 			return err
 		}
-		callback(values)
+		callback(kvi)
 	}
 
 	return nil
