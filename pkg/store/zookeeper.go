@@ -113,9 +113,8 @@ func (s *Zookeeper) Watch(key string, _ time.Duration, callback WatchCallback) e
 		if e.Type == zk.EventNodeChildrenChanged {
 			log.WithField("name", "zk").Debug("Discovery watch triggered")
 			entry, index, err := s.Get(key)
-			kvi := []KVEntry{&kviTuple{key, []byte(entry), index}}
 			if err == nil {
-				callback(kvi)
+				callback(&kviTuple{key, []byte(entry), index})
 			}
 		}
 	}
@@ -172,7 +171,7 @@ func (s *Zookeeper) WatchRange(prefix string, filter string, _ time.Duration, ca
 			log.WithField("name", "zk").Debug("Discovery watch triggered")
 			kvi, err := s.GetRange(prefix)
 			if err == nil {
-				callback(kvi)
+				callback(kvi...)
 			}
 		}
 	}
