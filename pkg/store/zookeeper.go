@@ -48,7 +48,7 @@ func (s *Zookeeper) setTimeout(time time.Duration) {
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
 func (s *Zookeeper) Get(key string) (value []byte, lastIndex uint64, err error) {
-	resp, meta, err := s.client.Get(format(key))
+	resp, meta, err := s.client.Get(normalize(key))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -75,7 +75,7 @@ func (s *Zookeeper) createFullpath(path []string) error {
 
 // Put a value at "key"
 func (s *Zookeeper) Put(key string, value []byte) error {
-	fkey := format(key)
+	fkey := normalize(key)
 	exists, err := s.Exists(key)
 	if err != nil {
 		return err
@@ -89,13 +89,13 @@ func (s *Zookeeper) Put(key string, value []byte) error {
 
 // Delete a value at "key"
 func (s *Zookeeper) Delete(key string) error {
-	err := s.client.Delete(format(key), -1)
+	err := s.client.Delete(normalize(key), -1)
 	return err
 }
 
 // Exists checks if the key exists inside the store
 func (s *Zookeeper) Exists(key string) (bool, error) {
-	exists, _, err := s.client.Exists(format(key))
+	exists, _, err := s.client.Exists(normalize(key))
 	if err != nil {
 		return false, err
 	}
@@ -104,7 +104,7 @@ func (s *Zookeeper) Exists(key string) (bool, error) {
 
 // Watch a single key for modifications
 func (s *Zookeeper) Watch(key string, _ time.Duration, callback WatchCallback) error {
-	fkey := format(key)
+	fkey := normalize(key)
 	_, _, eventChan, err := s.client.GetW(fkey)
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func (s *Zookeeper) Watch(key string, _ time.Duration, callback WatchCallback) e
 // CancelWatch cancels a watch, sends a signal to the appropriate
 // stop channel
 func (s *Zookeeper) CancelWatch(key string) error {
-	key = format(key)
+	key = normalize(key)
 	if _, ok := s.watches[key]; !ok {
 		log.Error("Chan does not exist for key: ", key)
 		return ErrWatchDoesNotExist
@@ -141,7 +141,7 @@ func (s *Zookeeper) CancelWatch(key string) error {
 
 // GetRange gets a range of values at "directory"
 func (s *Zookeeper) GetRange(prefix string) (kvi []KVEntry, err error) {
-	prefix = format(prefix)
+	prefix = normalize(prefix)
 	entries, stat, err := s.client.Children(prefix)
 	if err != nil {
 		log.Error("Cannot fetch range of keys beginning with prefix: ", prefix)
@@ -155,13 +155,13 @@ func (s *Zookeeper) GetRange(prefix string) (kvi []KVEntry, err error) {
 
 // DeleteRange deletes a range of values at "directory"
 func (s *Zookeeper) DeleteRange(prefix string) error {
-	err := s.client.Delete(format(prefix), -1)
+	err := s.client.Delete(normalize(prefix), -1)
 	return err
 }
 
 // WatchRange triggers a watch on a range of values at "directory"
 func (s *Zookeeper) WatchRange(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
-	fprefix := format(prefix)
+	fprefix := normalize(prefix)
 	_, _, eventChan, err := s.client.ChildrenW(fprefix)
 	if err != nil {
 		return err
@@ -207,7 +207,7 @@ func (s *Zookeeper) AtomicDelete(key string, oldValue []byte, index uint64) (boo
 func (s *Zookeeper) CreateLock(key string, value []byte) (Locker, error) {
 	// FIXME: `value` is not being used since there is no support in zk.NewLock().
 	return &zookeeperLock{
-		lock: zk.NewLock(s.client, format(key), zk.WorldACL(zk.PermAll)),
+		lock: zk.NewLock(s.client, normalize(key), zk.WorldACL(zk.PermAll)),
 	}, nil
 }
 
