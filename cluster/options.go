@@ -4,8 +4,8 @@ import "crypto/tls"
 
 // Options is exported
 type Options struct {
-	TLSConfig       *tls.Config
-	OvercommitRatio float64
-	Discovery       string
-	Heartbeat       uint64
+	TLSConfig *tls.Config
+	Opts      []string
+	Discovery string
+	Heartbeat uint64
 }
