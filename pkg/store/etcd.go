@@ -147,14 +147,14 @@ func (s *Etcd) Watch(key string, _ time.Duration, callback WatchCallback) error 
 
 	for _ = range watchChan {
 		log.WithField("name", "etcd").Debug("Discovery watch triggered")
-		entry, _, err := s.Get(key)
+		entry, index, err := s.Get(key)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", key, ", cancelling watch")
 			s.watches[key] = nil
 			return err
 		}
-		value := [][]byte{[]byte(entry)}
-		callback(value)
+		kvi := []KVEntry{&kviTuple{key, entry, index}}
+		callback(kvi)
 	}
 	return nil
 }
@@ -203,16 +203,16 @@ func (s *Etcd) AtomicDelete(key string, oldValue []byte, index uint64) (bool, er
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Etcd) GetRange(prefix string) (value [][]byte, err error) {
+func (s *Etcd) GetRange(prefix string) ([]KVEntry, error) {
 	resp, err := s.client.Get(format(prefix), true, true)
 	if err != nil {
 		return nil, err
 	}
-	values := [][]byte{}
-	for _, n := range resp.Node.Nodes {
-		values = append(values, []byte(n.Value))
+	kvi := make([]KVEntry, len(resp.Node.Nodes))
+	for i, n := range resp.Node.Nodes {
+		kvi[i] = &kviTuple{n.Key, []byte(n.Value), n.ModifiedIndex}
 	}
-	return values, nil
+	return kvi, nil
 }
 
 // DeleteRange deletes a range of values at "directory"
@@ -236,13 +236,13 @@ func (s *Etcd) WatchRange(prefix string, filter string, _ time.Duration, callbac
 	go s.client.Watch(prefix, 0, true, watchChan, stopChan)
 	for _ = range watchChan {
 		log.WithField("name", "etcd").Debug("Discovery watch triggered")
-		values, err := s.GetRange(prefix)
+		kvi, err := s.GetRange(prefix)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", prefix, ", cancelling watch")
 			s.watches[prefix] = nil
 			return err
 		}
-		callback(values)
+		callback(kvi)
 	}
 	return nil
 }
