@@ -47,3 +47,12 @@ function teardown() {
 		[ "${#lines[@]}" -eq 0 ]
 	done
 }
+
+@test "docker rmi prefix" {
+	start_docker_with_busybox 1
+	swarm_manage
+
+	run docker_swarm rmi bus
+	[ "$status" -ne 0 ]
+	[[ "${output}" == *"No such image"* ]]
+}
