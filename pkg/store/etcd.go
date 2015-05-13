@@ -252,12 +252,8 @@ func (s *Etcd) CancelWatchRange(prefix string) error {
 	return s.CancelWatch(format(prefix))
 }
 
-// Acquire the lock for "key"/"directory"
-func (s *Etcd) Acquire(key string, value []byte) (string, error) {
-	return "", ErrNotImplemented
-}
-
-// Release the lock for "key"/"directory"
-func (s *Etcd) Release(session string) error {
-	return ErrNotImplemented
+// CreateLock returns a handle to a lock struct which can be used
+// to acquire and release the mutex.
+func (s *Etcd) CreateLock(key string, value []byte) (Locker, error) {
+	return nil, ErrNotImplemented
 }
