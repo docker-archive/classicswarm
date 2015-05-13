@@ -16,6 +16,10 @@ type Zookeeper struct {
 	watches map[string]<-chan zk.Event
 }
 
+type zookeeperLock struct {
+	lock *zk.Lock
+}
+
 // InitializeZookeeper creates a new Zookeeper client
 // given a list of endpoints and optional tls config
 func InitializeZookeeper(endpoints []string, options Config) (Store, error) {
@@ -198,15 +202,22 @@ func (s *Zookeeper) AtomicDelete(key string, oldValue []byte, index uint64) (boo
 	return false, ErrNotImplemented
 }
 
-// Acquire the lock for "key"/"directory"
-func (s *Zookeeper) Acquire(path string, value []byte) (string, error) {
-	// lock := zk.NewLock(s.client, path, nil)
-	// locks[path] = lock
-	// lock.Lock()
-	return "", ErrNotImplemented
+// CreateLock returns a handle to a lock struct which can be used
+// to acquire and release the mutex.
+func (s *Zookeeper) CreateLock(key string, value []byte) (Locker, error) {
+	// FIXME: `value` is not being used since there is no support in zk.NewLock().
+	return &zookeeperLock{
+		lock: zk.NewLock(s.client, format(key), zk.WorldACL(zk.PermAll)),
+	}, nil
 }
 
-// Release the lock for "key"/"directory"
-func (s *Zookeeper) Release(session string) error {
-	return ErrNotImplemented
+// Lock attempts to acquire the lock and blocks while doing so.
+func (l *zookeeperLock) Lock() error {
+	return l.lock.Lock()
+}
+
+// Unlock released the lock. It is an error to call this
+// if the lock is not currently held.
+func (l *zookeeperLock) Unlock() error {
+	return l.lock.Unlock()
 }
