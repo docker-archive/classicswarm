@@ -52,7 +52,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		cluster.overcommitRatio = val
 	}
 
-	if cluster.heartbeat, _ = options.Uint("swarm.heartbeat"); cluster.heartbeat < 1 {
+	if cluster.heartbeat, _ = options.Uint("swarm.discovery.heartbeat"); cluster.heartbeat < 1 {
 		return nil, errors.New("heartbeat should be an unsigned integer and greater than 0")
 	}
 

@@ -26,7 +26,7 @@ ARGUMENTS:
 OPTIONS:
    {{range .Flags}}{{.}}
    {{end}}{{if (eq .Name "manage")}}{{printf "\t * swarm.overcommit=0.05\tovercommit to apply on resources"}}
-                                    {{printf "\t * swarm.heartbeat=25\ttime in second between each heartbeat"}}{{end}}{{ end }}
+                                    {{printf "\t * swarm.discovery.heartbeat=25\ttime in second between each heartbeat"}}{{end}}{{ end }}
 `
 
 }
