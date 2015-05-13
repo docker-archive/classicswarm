@@ -77,11 +77,6 @@ var (
 		Name:  "tlsverify",
 		Usage: "use TLS and verify the remote",
 	}
-	flOverCommit = cli.Float64Flag{
-		Name:  "overcommit, oc",
-		Usage: "overcommit to apply on resources",
-		Value: 0.05,
-	}
 	flStrategy = cli.StringFlag{
 		Name:  "strategy",
 		Usage: "placement strategy to use [" + strings.Join(strategy.List(), ", ") + "]",
@@ -99,9 +94,14 @@ var (
 		Value: &flFilterValue,
 	}
 
-//	flCluster = cli.StringFlag{
-//		Name:  "cluster, c",
-//		Usage: "cluster to use [swarm, mesos]",
-//		Value: "swarm",
-//	}
+	flCluster = cli.StringFlag{
+		Name:  "cluster-driver, c",
+		Usage: "cluster driver to use [swarm]",
+		Value: "swarm",
+	}
+	flClusterOpt = cli.StringSliceFlag{
+		Name:  "cluster-opt",
+		Usage: "cluster driver options",
+		Value: &cli.StringSlice{},
+	}
 )
