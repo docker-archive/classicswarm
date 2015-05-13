@@ -25,7 +25,8 @@ ARGUMENTS:
             {{printf "\t"}} * <ip1>,<ip2>{{end}}{{if .Flags}}
 OPTIONS:
    {{range .Flags}}{{.}}
-   {{end}}{{ end }}
+   {{end}}{{if (eq .Name "manage")}}{{printf "\t * swarm.overcommit=0.05\tovercommit to apply on resources"}}
+                                    {{printf "\t * swarm.discovery.heartbeat=25\ttime in second between each heartbeat"}}{{end}}{{ end }}
 `
 
 }
