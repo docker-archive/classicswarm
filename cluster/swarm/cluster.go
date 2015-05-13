@@ -44,6 +44,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		scheduler:       scheduler,
 		store:           store,
 		overcommitRatio: 0.05,
+		heartbeat:       25,
 		discovery:       dflag,
 		TLSConfig:       TLSConfig,
 	}
@@ -52,8 +53,11 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		cluster.overcommitRatio = val
 	}
 
-	if cluster.heartbeat, _ = options.Uint("swarm.discovery.heartbeat"); cluster.heartbeat < 1 {
-		return nil, errors.New("heartbeat should be an unsigned integer and greater than 0")
+	if heartbeat, ok := options.Uint("swarm.discovery.heartbeat"); ok {
+		cluster.heartbeat = heartbeat
+		if cluster.heartbeat < 1 {
+			return nil, errors.New("heartbeat should be an unsigned integer and greater than 0")
+		}
 	}
 
 	// get the list of entries from the discovery service
