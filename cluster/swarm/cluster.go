@@ -1,11 +1,11 @@
 package swarm
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -24,43 +24,41 @@ import (
 type Cluster struct {
 	sync.RWMutex
 
-	eventHandler    cluster.EventHandler
-	engines         map[string]*cluster.Engine
-	scheduler       *scheduler.Scheduler
-	options         *cluster.Options
-	store           *state.Store
+	eventHandler cluster.EventHandler
+	engines      map[string]*cluster.Engine
+	scheduler    *scheduler.Scheduler
+	store        *state.Store
+
 	overcommitRatio float64
+	discovery       string
+	heartbeat       uint64
+	TLSConfig       *tls.Config
 }
 
 // NewCluster is exported
-func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, options *cluster.Options) (cluster.Cluster, error) {
+func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *tls.Config, dflag string, options cluster.DriverOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
 		engines:         make(map[string]*cluster.Engine),
 		scheduler:       scheduler,
-		options:         options,
 		store:           store,
 		overcommitRatio: 0.05,
+		discovery:       dflag,
+		TLSConfig:       TLSConfig,
 	}
 
-	for _, opt := range options.Opts {
-		kv := strings.SplitN(opt, "=", 2)
-		switch kv[0] {
-		case "swarm.overcommit":
-			overcommit, err := strconv.ParseFloat(kv[1], 64)
-			if err != nil {
-				return nil, err
-			}
-			cluster.overcommitRatio = overcommit
-		default:
-			return nil, fmt.Errorf("unsuported opt %q", kv[0])
-		}
+	if val, ok := options.Float("swarm.overcommit"); ok {
+		cluster.overcommitRatio = val
+	}
+
+	if cluster.heartbeat, _ = options.Uint("swarm.heartbeat"); cluster.heartbeat < 1 {
+		return nil, errors.New("heartbeat should be an unsigned integer and greater than 0")
 	}
 
 	// get the list of entries from the discovery service
 	go func() {
-		d, err := discovery.New(options.Discovery, options.Heartbeat)
+		d, err := discovery.New(cluster.discovery, cluster.heartbeat)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -169,7 +167,7 @@ func (c *Cluster) newEntries(entries []*discovery.Entry) {
 		go func(m *discovery.Entry) {
 			if !c.hasEngine(m.String()) {
 				engine := cluster.NewEngine(m.String(), c.overcommitRatio)
-				if err := engine.Connect(c.options.TLSConfig); err != nil {
+				if err := engine.Connect(c.TLSConfig); err != nil {
 					log.Error(err)
 					return
 				}
