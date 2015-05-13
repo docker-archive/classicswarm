@@ -153,8 +153,7 @@ func (s *Etcd) Watch(key string, _ time.Duration, callback WatchCallback) error 
 			s.watches[key] = nil
 			return err
 		}
-		kvi := []KVEntry{&kviTuple{key, entry, index}}
-		callback(kvi)
+		callback(&kviTuple{key, entry, index})
 	}
 	return nil
 }
@@ -242,7 +241,7 @@ func (s *Etcd) WatchRange(prefix string, filter string, _ time.Duration, callbac
 			s.watches[prefix] = nil
 			return err
 		}
-		callback(kvi)
+		callback(kvi...)
 	}
 	return nil
 }
