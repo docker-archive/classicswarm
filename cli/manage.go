@@ -125,13 +125,16 @@ func manage(c *cli.Context) {
 		log.Fatal("--heartbeat should be an unsigned integer and greater than 0")
 	}
 	options := &cluster.Options{
-		TLSConfig:       tlsConfig,
-		OvercommitRatio: c.Float64("overcommit"),
-		Discovery:       dflag,
-		Heartbeat:       hb,
+		TLSConfig: tlsConfig,
+		Opts:      c.StringSlice("cluster-opt"),
+		Discovery: dflag,
+		Heartbeat: hb,
 	}
 
-	cluster := swarm.NewCluster(sched, store, options)
+	cluster, err := swarm.NewCluster(sched, store, options)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// see https://github.com/codegangsta/cli/issues/160
 	hosts := c.StringSlice("host")
