@@ -15,12 +15,15 @@ var (
 	ErrSessionUndefined = errors.New("Session does not exist")
 )
 
-// Consul embeds the client and watches/lock sessions
+// Consul embeds the client and watches
 type Consul struct {
-	config   *api.Config
-	client   *api.Client
-	sessions map[string]*api.Session
-	watches  map[string]*Watch
+	config  *api.Config
+	client  *api.Client
+	watches map[string]*Watch
+}
+
+type consulLock struct {
+	lock *api.Lock
 }
 
 // Watch embeds the event channel and the
@@ -34,7 +37,6 @@ type Watch struct {
 // a list of endpoints and optional tls config
 func InitializeConsul(endpoints []string, options Config) (Store, error) {
 	s := &Consul{}
-	s.sessions = make(map[string]*api.Session)
 	s.watches = make(map[string]*Watch)
 
 	// Create Consul client
@@ -240,38 +242,30 @@ func (s *Consul) CancelWatchRange(prefix string) error {
 	return s.CancelWatch(prefix)
 }
 
-// Acquire the lock for "key"/"directory"
-func (s *Consul) Acquire(key string, value []byte) (string, error) {
-	key = partialFormat(key)
-	session := s.client.Session()
-	id, _, err := session.CreateNoChecks(nil, nil)
+// CreateLock returns a handle to a lock struct which can be used
+// to acquire and release the mutex.
+func (s *Consul) CreateLock(key string, value []byte) (Locker, error) {
+	l, err := s.client.LockOpts(&api.LockOptions{
+		Key:   partialFormat(key),
+		Value: value,
+	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	// Add session to map
-	s.sessions[id] = session
-
-	p := &api.KVPair{Key: key, Value: value, Session: id}
-	if work, _, err := s.client.KV().Acquire(p, nil); err != nil {
-		return "", err
-	} else if !work {
-		return "", ErrCannotLock
-	}
-
-	return id, nil
+	return &consulLock{lock: l}, nil
 }
 
-// Release the lock for "key"/"directory"
-func (s *Consul) Release(id string) error {
-	if _, ok := s.sessions[id]; !ok {
-		log.Error("Lock session does not exist")
-		return ErrSessionUndefined
-	}
-	session := s.sessions[id]
-	session.Destroy(id, nil)
-	s.sessions[id] = nil
-	return nil
+// Lock attempts to acquire the lock and blocks while doing so.
+func (l *consulLock) Lock() error {
+	// FIXME: Locks may be lost and we should watch for the returned channel.
+	_, err := l.lock.Lock(nil)
+	return err
+}
+
+// Unlock released the lock. It is an error to call this
+// if the lock is not currently held.
+func (l *consulLock) Unlock() error {
+	return l.lock.Unlock()
 }
 
 // AtomicPut put a value at "key" if the key has not been
