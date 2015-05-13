@@ -70,7 +70,7 @@ func (s *Etcd) setTimeout(time time.Duration) {
 // Create the entire path for a directory that does not exist
 func (s *Etcd) createDirectory(path string) error {
 	// TODO Handle TTL at key/dir creation -> use K/V struct for key infos?
-	if _, err := s.client.CreateDir(format(path), 10); err != nil {
+	if _, err := s.client.CreateDir(normalize(path), 10); err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			if etcdError.ErrorCode != 105 { // Skip key already exists
 				return err
@@ -85,7 +85,7 @@ func (s *Etcd) createDirectory(path string) error {
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
 func (s *Etcd) Get(key string) (value []byte, lastIndex uint64, err error) {
-	result, err := s.client.Get(format(key), false, false)
+	result, err := s.client.Get(normalize(key), false, false)
 	if err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			// Not a Directory or Not a file
@@ -104,7 +104,7 @@ func (s *Etcd) Put(key string, value []byte) error {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			if etcdError.ErrorCode == 104 { // Not a directory
 				// Remove the last element (the actual key) and set the prefix as a dir
-				err = s.createDirectory(getDir(key))
+				err = s.createDirectory(getDirectory(key, false))
 				if _, err := s.client.Set(key, string(value), 0); err != nil {
 					return err
 				}
@@ -117,7 +117,7 @@ func (s *Etcd) Put(key string, value []byte) error {
 
 // Delete a value at "key"
 func (s *Etcd) Delete(key string) error {
-	if _, err := s.client.Delete(format(key), false); err != nil {
+	if _, err := s.client.Delete(normalize(key), false); err != nil {
 		return err
 	}
 	return nil
@@ -137,7 +137,7 @@ func (s *Etcd) Exists(key string) (bool, error) {
 
 // Watch a single key for modifications
 func (s *Etcd) Watch(key string, _ time.Duration, callback WatchCallback) error {
-	key = format(key)
+	key = normalize(key)
 	watchChan := make(chan *etcd.Response)
 	stopChan := make(chan bool)
 
@@ -163,7 +163,7 @@ func (s *Etcd) Watch(key string, _ time.Duration, callback WatchCallback) error 
 // CancelWatch cancels a watch, sends a signal to the appropriate
 // stop channel
 func (s *Etcd) CancelWatch(key string) error {
-	key = format(key)
+	key = normalize(key)
 	if _, ok := s.watches[key]; !ok {
 		log.Error("Chan does not exist for key: ", key)
 		return ErrWatchDoesNotExist
@@ -177,7 +177,7 @@ func (s *Etcd) CancelWatch(key string) error {
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
 func (s *Etcd) AtomicPut(key string, oldValue []byte, newValue []byte, index uint64) (bool, error) {
-	resp, err := s.client.CompareAndSwap(format(key), string(newValue), 5, string(oldValue), 0)
+	resp, err := s.client.CompareAndSwap(normalize(key), string(newValue), 5, string(oldValue), 0)
 	if err != nil {
 		return false, err
 	}
@@ -193,7 +193,7 @@ func (s *Etcd) AtomicPut(key string, oldValue []byte, newValue []byte, index uin
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
 func (s *Etcd) AtomicDelete(key string, oldValue []byte, index uint64) (bool, error) {
-	resp, err := s.client.CompareAndDelete(format(key), string(oldValue), 0)
+	resp, err := s.client.CompareAndDelete(normalize(key), string(oldValue), 0)
 	if err != nil {
 		return false, err
 	}
@@ -205,7 +205,7 @@ func (s *Etcd) AtomicDelete(key string, oldValue []byte, index uint64) (bool, er
 
 // GetRange gets a range of values at "directory"
 func (s *Etcd) GetRange(prefix string) ([]KVEntry, error) {
-	resp, err := s.client.Get(format(prefix), true, true)
+	resp, err := s.client.Get(normalize(prefix), true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func (s *Etcd) GetRange(prefix string) ([]KVEntry, error) {
 
 // DeleteRange deletes a range of values at "directory"
 func (s *Etcd) DeleteRange(prefix string) error {
-	if _, err := s.client.Delete(format(prefix), true); err != nil {
+	if _, err := s.client.Delete(normalize(prefix), true); err != nil {
 		return err
 	}
 	return nil
@@ -226,7 +226,7 @@ func (s *Etcd) DeleteRange(prefix string) error {
 
 // WatchRange triggers a watch on a range of values at "directory"
 func (s *Etcd) WatchRange(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
-	prefix = format(prefix)
+	prefix = normalize(prefix)
 	watchChan := make(chan *etcd.Response)
 	stopChan := make(chan bool)
 
@@ -251,7 +251,7 @@ func (s *Etcd) WatchRange(prefix string, filter string, _ time.Duration, callbac
 // CancelWatchRange stops the watch on the range of values, sends
 // a signal to the appropriate stop channel
 func (s *Etcd) CancelWatchRange(prefix string) error {
-	return s.CancelWatch(format(prefix))
+	return s.CancelWatch(normalize(prefix))
 }
 
 // CreateLock returns a handle to a lock struct which can be used
