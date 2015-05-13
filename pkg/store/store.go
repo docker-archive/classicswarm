@@ -8,7 +8,7 @@ import (
 
 // WatchCallback is used for watch methods on keys
 // and is triggered on key change
-type WatchCallback func(value [][]byte)
+type WatchCallback func(kviTuple []KVEntry)
 
 // Initialize creates a new Store object, initializing the client
 type Initialize func(addrs []string, options Config) (Store, error)
@@ -43,7 +43,7 @@ type Store interface {
 	Release(session string) error
 
 	// Get range of keys based on prefix
-	GetRange(prefix string) (value [][]byte, err error)
+	GetRange(prefix string) ([]KVEntry, error)
 
 	// Delete range of keys based on prefix
 	DeleteRange(prefix string) error
@@ -59,6 +59,13 @@ type Store interface {
 
 	// Atomic delete of a single value
 	AtomicDelete(key string, oldValue []byte, index uint64) (bool, error)
+}
+
+// KVEntry represents {Key, Value, Lastindex} tuple
+type KVEntry interface {
+	Key() string
+	Value() []byte
+	LastIndex() uint64
 }
 
 var (
