@@ -160,9 +160,7 @@ func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallba
 			s.watches[fkey] = nil
 			return err
 		}
-
-		value := []KVEntry{&kviTuple{key, entry, index}}
-		callback(value)
+		callback(&kviTuple{key, entry, index})
 	}
 
 	return nil
@@ -230,7 +228,7 @@ func (s *Consul) WatchRange(prefix string, filter string, heartbeat time.Duratio
 			s.watches[fprefix] = nil
 			return err
 		}
-		callback(kvi)
+		callback(kvi...)
 	}
 
 	return nil

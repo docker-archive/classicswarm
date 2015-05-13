@@ -8,7 +8,7 @@ import (
 
 // WatchCallback is used for watch methods on keys
 // and is triggered on key change
-type WatchCallback func(kviTuple []KVEntry)
+type WatchCallback func(kviTuple ...KVEntry)
 
 // Initialize creates a new Store object, initializing the client
 type Initialize func(addrs []string, options Config) (Store, error)
