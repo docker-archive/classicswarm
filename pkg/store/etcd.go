@@ -34,6 +34,8 @@ func InitializeEtcd(addrs []string, options Config) (Store, error) {
 		s.setTimeout(options.Timeout)
 	}
 
+	// FIXME sync on each operation?
+	s.client.SyncCluster()
 	return s, nil
 }
 
