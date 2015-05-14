@@ -21,7 +21,8 @@ func (image *Image) Match(IDOrName string) bool {
 		return true
 	}
 	for _, repoTag := range image.RepoTags {
-		if repoTag == IDOrName || (size > 2 && strings.HasPrefix(repoTag, IDOrName)) {
+		parts := strings.SplitN(repoTag, ":", 2)
+		if repoTag == IDOrName || parts[0] == IDOrName {
 			return true
 		}
 	}
