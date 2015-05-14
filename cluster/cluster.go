@@ -20,8 +20,8 @@ type Cluster interface {
 	// Return one image matching `IDOrName`
 	Image(IDOrName string) *Image
 
-	// Remove an image from the cluster
-	RemoveImage(image *Image) ([]*dockerclient.ImageDelete, error)
+	// Remove images from the cluster
+	RemoveImages(name string) ([]*dockerclient.ImageDelete, error)
 
 	// Return all containers
 	Containers() []*Container
