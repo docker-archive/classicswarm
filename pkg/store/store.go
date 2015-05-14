@@ -11,7 +11,7 @@ import (
 type WatchCallback func(kviTuple ...KVEntry)
 
 // Initialize creates a new Store object, initializing the client
-type Initialize func(addrs []string, options Config) (Store, error)
+type Initialize func(addrs []string, options *Config) (Store, error)
 
 // Store represents the backend K/V storage
 // Each store should support every call listed
@@ -87,7 +87,7 @@ func init() {
 }
 
 // CreateStore creates a an instance of store
-func CreateStore(store string, addrs []string, options Config) (Store, error) {
+func CreateStore(store string, addrs []string, options *Config) (Store, error) {
 
 	if init, exists := stores[store]; exists {
 		log.WithFields(log.Fields{"store": store}).Debug("Initializing store service")

@@ -49,7 +49,7 @@ func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
 	s.store, err = store.CreateStore(
 		s.name, // name of the store
 		addrs,
-		store.Config{
+		&store.Config{
 			Timeout: s.heartbeat,
 		},
 	)
