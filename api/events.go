@@ -54,11 +54,12 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 		"Addr", e.Engine.Addr,
 		"Ip", e.Engine.IP)
 
+	var failed []string
+
 	for key, w := range eh.ws {
 		if _, err := fmt.Fprintf(w, str); err != nil {
-			close(eh.cs[key])
-			delete(eh.ws, key)
-			delete(eh.cs, key)
+			// collect them to handle later under Lock
+			failed = append(failed, key)
 			continue
 		}
 
@@ -67,7 +68,24 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 		}
 
 	}
+
 	eh.RUnlock()
+
+	if len(failed) > 0 {
+		eh.Lock()
+
+		for _, key := range failed {
+			if ch, ok := eh.cs[key]; ok {
+				close(ch)
+				// the maps are expected to have the same keys
+				delete(eh.cs, key)
+				delete(eh.ws, key)
+			}
+		}
+
+		eh.Unlock()
+	}
+
 	return nil
 }
 
