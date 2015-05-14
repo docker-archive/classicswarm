@@ -2,17 +2,11 @@ package store
 
 import (
 	"crypto/tls"
-	"errors"
 	"net/http"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	api "github.com/hashicorp/consul/api"
-)
-
-var (
-	// ErrSessionUndefined is exported
-	ErrSessionUndefined = errors.New("Session does not exist")
 )
 
 // Consul embeds the client and watches
@@ -35,7 +29,7 @@ type Watch struct {
 
 // InitializeConsul creates a new Consul client given
 // a list of endpoints and optional tls config
-func InitializeConsul(endpoints []string, options Config) (Store, error) {
+func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 	s := &Consul{}
 	s.watches = make(map[string]*Watch)
 
