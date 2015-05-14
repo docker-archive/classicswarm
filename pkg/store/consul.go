@@ -35,7 +35,7 @@ type Watch struct {
 
 // InitializeConsul creates a new Consul client given
 // a list of endpoints and optional tls config
-func InitializeConsul(endpoints []string, options Config) (Store, error) {
+func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 	s := &Consul{}
 	s.watches = make(map[string]*Watch)
 

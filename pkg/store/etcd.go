@@ -19,7 +19,7 @@ type Etcd struct {
 
 // InitializeEtcd creates a new Etcd client given
 // a list of endpoints and optional tls config
-func InitializeEtcd(addrs []string, options Config) (Store, error) {
+func InitializeEtcd(addrs []string, options *Config) (Store, error) {
 	s := &Etcd{}
 	s.watches = make(map[string]chan<- bool)
 
