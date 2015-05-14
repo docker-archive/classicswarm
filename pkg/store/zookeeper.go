@@ -22,7 +22,7 @@ type zookeeperLock struct {
 
 // InitializeZookeeper creates a new Zookeeper client
 // given a list of endpoints and optional tls config
-func InitializeZookeeper(endpoints []string, options Config) (Store, error) {
+func InitializeZookeeper(endpoints []string, options *Config) (Store, error) {
 	s := &Zookeeper{}
 	s.watches = make(map[string]<-chan zk.Event)
 	s.timeout = 5 * time.Second // default timeout
