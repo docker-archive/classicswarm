@@ -24,7 +24,7 @@ func normalize(key string) string {
 //
 //     /path/to/
 //
-func getDirectory(key string, omit bool) string {
+func getDirectory(key string) string {
 	parts := splitKey(key)
 	parts = parts[:len(parts)-1]
 	return "/" + join(parts)

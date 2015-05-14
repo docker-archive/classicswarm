@@ -104,7 +104,7 @@ func (s *Etcd) Put(key string, value []byte) error {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			if etcdError.ErrorCode == 104 { // Not a directory
 				// Remove the last element (the actual key) and set the prefix as a dir
-				err = s.createDirectory(getDirectory(key, false))
+				err = s.createDirectory(getDirectory(key))
 				if _, err := s.client.Set(key, string(value), 0); err != nil {
 					return err
 				}
