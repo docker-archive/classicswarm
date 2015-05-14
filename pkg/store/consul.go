@@ -2,17 +2,11 @@ package store
 
 import (
 	"crypto/tls"
-	"errors"
 	"net/http"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	api "github.com/hashicorp/consul/api"
-)
-
-var (
-	// ErrSessionUndefined is exported
-	ErrSessionUndefined = errors.New("Session does not exist")
 )
 
 // Consul embeds the client and watches
