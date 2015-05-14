@@ -9,13 +9,13 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-// Entry is exported
+// An Entry represents a swarm host.
 type Entry struct {
 	Host string
 	Port string
 }
 
-// NewEntry is exported
+// NewEntry creates a new entry.
 func NewEntry(url string) (*Entry, error) {
 	host, port, err := net.SplitHostPort(url)
 	if err != nil {
@@ -24,14 +24,17 @@ func NewEntry(url string) (*Entry, error) {
 	return &Entry{host, port}, nil
 }
 
+// String returns the string form of an entry.
 func (m Entry) String() string {
 	return fmt.Sprintf("%s:%s", m.Host, m.Port)
 }
 
-// WatchCallback is exported
+// WatchCallback is the type of the function called to monitor entries
+// on a discovery endpoint.
 type WatchCallback func(entries []*Entry)
 
-// Discovery is exported
+// The Discovery interface is implemented by Discovery backends which
+// manage swarm host entries.
 type Discovery interface {
 	Initialize(string, uint64) error
 	Fetch() ([]*Entry, error)
@@ -41,9 +44,10 @@ type Discovery interface {
 
 var (
 	discoveries map[string]Discovery
-	// ErrNotSupported is exported
+	// ErrNotSupported is returned when a discovery service is not supported.
 	ErrNotSupported = errors.New("discovery service not supported")
-	// ErrNotImplemented is exported
+	// ErrNotImplemented is returned when discovery feature is not implemented
+	// by discovery backend.
 	ErrNotImplemented = errors.New("not implemented in this discovery service")
 )
 
@@ -51,7 +55,8 @@ func init() {
 	discoveries = make(map[string]Discovery)
 }
 
-// Register is exported
+// Register makes a discovery backend available by the provided scheme.
+// If Register is called twice with the same scheme an error is returned.
 func Register(scheme string, d Discovery) error {
 	if _, exists := discoveries[scheme]; exists {
 		return fmt.Errorf("scheme already registered %s", scheme)
@@ -72,7 +77,8 @@ func parse(rawurl string) (string, string) {
 	return parts[0], parts[1]
 }
 
-// New is exported
+// New returns a new Discovery given a URL and heartbeat settings.
+// Returns an error if the URL scheme is not supported.
 func New(rawurl string, heartbeat uint64) (Discovery, error) {
 	scheme, uri := parse(rawurl)
 
@@ -85,7 +91,7 @@ func New(rawurl string, heartbeat uint64) (Discovery, error) {
 	return nil, ErrNotSupported
 }
 
-// CreateEntries is exported
+// CreateEntries returns an array of entries based on the given addresses.
 func CreateEntries(addrs []string) ([]*Entry, error) {
 	entries := []*Entry{}
 	if addrs == nil {
