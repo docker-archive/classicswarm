@@ -44,7 +44,7 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 	version := struct {
 		Version    string
-		APIVersion string
+		APIVersion string `json:"ApiVersion"`
 		GoVersion  string
 		GitCommit  string
 		Os         string
