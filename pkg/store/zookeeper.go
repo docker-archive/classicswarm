@@ -155,7 +155,7 @@ func (s *Zookeeper) List(prefix string) ([]*KVEntry, error) {
 }
 
 // DeleteRange deletes a range of values at "directory"
-func (s *Zookeeper) DeleteRange(prefix string) error {
+func (s *Zookeeper) DeleteTree(prefix string) error {
 	err := s.client.Delete(normalize(prefix), -1)
 	return err
 }

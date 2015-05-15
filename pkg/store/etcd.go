@@ -208,7 +208,7 @@ func (s *Etcd) List(prefix string) ([]*KVEntry, error) {
 }
 
 // DeleteRange deletes a range of values at "directory"
-func (s *Etcd) DeleteRange(prefix string) error {
+func (s *Etcd) DeleteTree(prefix string) error {
 	if _, err := s.client.Delete(normalize(prefix), true); err != nil {
 		return err
 	}

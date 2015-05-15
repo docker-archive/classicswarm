@@ -57,7 +57,7 @@ type Store interface {
 	List(prefix string) ([]*KVEntry, error)
 
 	// Delete range of keys based on prefix
-	DeleteRange(prefix string) error
+	DeleteTree(prefix string) error
 
 	// Watch key namespaces
 	WatchRange(prefix string, filter string, heartbeat time.Duration, callback WatchCallback) error

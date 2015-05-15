@@ -137,7 +137,7 @@ func (s *Consul) List(prefix string) ([]*KVEntry, error) {
 }
 
 // DeleteRange deletes a range of values at "directory"
-func (s *Consul) DeleteRange(prefix string) error {
+func (s *Consul) DeleteTree(prefix string) error {
 	_, err := s.client.KV().DeleteTree(s.normalize(prefix), nil)
 	return err
 }
