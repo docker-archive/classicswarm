@@ -12,16 +12,16 @@ import (
 
 // Discovery is exported
 type Discovery struct {
+	backend   store.Backend
 	store     store.Store
-	name      string
 	heartbeat time.Duration
 	prefix    string
 }
 
 func init() {
-	discovery.Register("zk", &Discovery{name: "zk"})
-	discovery.Register("consul", &Discovery{name: "consul"})
-	discovery.Register("etcd", &Discovery{name: "etcd"})
+	discovery.Register("zk", &Discovery{backend: store.ZK})
+	discovery.Register("consul", &Discovery{backend: store.CONSUL})
+	discovery.Register("etcd", &Discovery{backend: store.ETCD})
 }
 
 // Initialize is exported
@@ -47,7 +47,7 @@ func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
 	// Creates a new store, will ignore options given
 	// if not supported by the chosen store
 	s.store, err = store.CreateStore(
-		s.name, // name of the store
+		s.backend,
 		addrs,
 		&store.Config{
 			Timeout: s.heartbeat,

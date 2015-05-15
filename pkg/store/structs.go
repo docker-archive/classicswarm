@@ -23,18 +23,6 @@ var (
 	ErrKeyNotFound = errors.New("Key not found in store")
 )
 
-// KV represents the different supported K/V
-type KV string
-
-const (
-	// CONSUL is exported
-	CONSUL KV = "consul"
-	// ETCD is exported
-	ETCD = "etcd"
-	// ZOOKEEPER is exported
-	ZOOKEEPER = "zookeeper"
-)
-
 // Config contains the options for a storage client
 type Config struct {
 	TLS     *tls.Config
