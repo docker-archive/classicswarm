@@ -19,8 +19,7 @@ function teardown() {
 	docker_swarm run -d --name test_container busybox sleep 500
 
 	# make sure container is up
-	# FIXME(#748): Retry required because of race condition.
-	retry 5 0.5 eval "[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]"
+	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
 
 	# grab the checksum of the test file inside the container.
 	run docker_swarm exec test_container md5sum $test_file

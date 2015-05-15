@@ -14,8 +14,7 @@ function teardown() {
 	docker_swarm run -d --name test_container busybox sleep 500
 
 	# make sure container is running
-	# FIXME(#748): Retry required because of race condition.
-	retry 5 0.5 eval "[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]"
+	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
 
 	run docker_swarm top test_container
 	[ "$status" -eq 0 ]
