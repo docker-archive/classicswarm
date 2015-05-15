@@ -54,7 +54,7 @@ type Store interface {
 	CreateLock(key string, value []byte) (Locker, error)
 
 	// Get range of keys based on prefix
-	GetRange(prefix string) ([]*KVEntry, error)
+	List(prefix string) ([]*KVEntry, error)
 
 	// Delete range of keys based on prefix
 	DeleteRange(prefix string) error
