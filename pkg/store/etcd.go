@@ -84,18 +84,18 @@ func (s *Etcd) createDirectory(path string) error {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Etcd) Get(key string) (value []byte, lastIndex uint64, err error) {
+func (s *Etcd) Get(key string) (*KVPair, error) {
 	result, err := s.client.Get(normalize(key), false, false)
 	if err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			// Not a Directory or Not a file
 			if etcdError.ErrorCode == 102 || etcdError.ErrorCode == 104 {
-				return nil, 0, ErrKeyNotFound
+				return nil, ErrKeyNotFound
 			}
 		}
-		return nil, 0, err
+		return nil, err
 	}
-	return []byte(result.Node.Value), result.Node.ModifiedIndex, nil
+	return &KVPair{result.Node.Key, []byte(result.Node.Value), result.Node.ModifiedIndex}, nil
 }
 
 // Put a value at "key"
@@ -125,9 +125,9 @@ func (s *Etcd) Delete(key string) error {
 
 // Exists checks if the key exists inside the store
 func (s *Etcd) Exists(key string) (bool, error) {
-	value, _, err := s.Get(key)
+	entry, err := s.Get(key)
 	if err != nil {
-		if err == ErrKeyNotFound || value == nil {
+		if err == ErrKeyNotFound || entry.Value == nil {
 			return false, nil
 		}
 		return false, err
@@ -136,7 +136,7 @@ func (s *Etcd) Exists(key string) (bool, error) {
 }
 
 // Watch a single key for modifications
-func (s *Etcd) Watch(key string, _ time.Duration, callback WatchCallback) error {
+func (s *Etcd) Watch(key string, callback WatchCallback) error {
 	key = normalize(key)
 	watchChan := make(chan *etcd.Response)
 	stopChan := make(chan bool)
@@ -148,14 +148,13 @@ func (s *Etcd) Watch(key string, _ time.Duration, callback WatchCallback) error 
 	go s.client.Watch(key, 0, false, watchChan, stopChan)
 
 	for _ = range watchChan {
-		log.WithField("name", "etcd").Debug("Discovery watch triggered")
-		entry, index, err := s.Get(key)
+		entry, err := s.Get(key)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", key, ", cancelling watch")
 			s.watches[key] = nil
 			return err
 		}
-		callback(&kviTuple{key, entry, index})
+		callback(entry)
 	}
 	return nil
 }
@@ -176,56 +175,47 @@ func (s *Etcd) CancelWatch(key string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Etcd) AtomicPut(key string, oldValue []byte, newValue []byte, index uint64) (bool, error) {
-	resp, err := s.client.CompareAndSwap(normalize(key), string(newValue), 5, string(oldValue), 0)
+func (s *Etcd) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
+	_, err := s.client.CompareAndSwap(normalize(key), string(value), 0, "", previous.LastIndex)
 	if err != nil {
 		return false, err
-	}
-	if !(resp.Node.Value == string(newValue) && resp.Node.Key == key && resp.Node.TTL == 5) {
-		return false, ErrKeyModified
-	}
-	if !(resp.PrevNode.Value == string(newValue) && resp.PrevNode.Key == key && resp.PrevNode.TTL == 5) {
-		return false, ErrKeyModified
 	}
 	return true, nil
 }
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
-func (s *Etcd) AtomicDelete(key string, oldValue []byte, index uint64) (bool, error) {
-	resp, err := s.client.CompareAndDelete(normalize(key), string(oldValue), 0)
+func (s *Etcd) AtomicDelete(key string, previous *KVPair) (bool, error) {
+	_, err := s.client.CompareAndDelete(normalize(key), "", previous.LastIndex)
 	if err != nil {
 		return false, err
-	}
-	if !(resp.PrevNode.Value == string(oldValue) && resp.PrevNode.Key == key && resp.PrevNode.TTL == 5) {
-		return false, ErrKeyModified
 	}
 	return true, nil
 }
 
-// GetRange gets a range of values at "directory"
-func (s *Etcd) GetRange(prefix string) ([]KVEntry, error) {
+// List a range of values at "directory"
+func (s *Etcd) List(prefix string) ([]*KVPair, error) {
 	resp, err := s.client.Get(normalize(prefix), true, true)
 	if err != nil {
 		return nil, err
 	}
-	kvi := make([]KVEntry, len(resp.Node.Nodes))
-	for i, n := range resp.Node.Nodes {
-		kvi[i] = &kviTuple{n.Key, []byte(n.Value), n.ModifiedIndex}
+	kv := []*KVPair{}
+	for _, n := range resp.Node.Nodes {
+		kv = append(kv, &KVPair{n.Key, []byte(n.Value), n.ModifiedIndex})
 	}
-	return kvi, nil
+	return kv, nil
 }
 
-// DeleteRange deletes a range of values at "directory"
-func (s *Etcd) DeleteRange(prefix string) error {
+// DeleteTree deletes a range of values at "directory"
+func (s *Etcd) DeleteTree(prefix string) error {
 	if _, err := s.client.Delete(normalize(prefix), true); err != nil {
 		return err
 	}
 	return nil
 }
 
-// WatchRange triggers a watch on a range of values at "directory"
-func (s *Etcd) WatchRange(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
+// WatchTree triggers a watch on a range of values at "directory"
+func (s *Etcd) WatchTree(prefix string, callback WatchCallback) error {
 	prefix = normalize(prefix)
 	watchChan := make(chan *etcd.Response)
 	stopChan := make(chan bool)
@@ -236,8 +226,7 @@ func (s *Etcd) WatchRange(prefix string, filter string, _ time.Duration, callbac
 	// Start watch
 	go s.client.Watch(prefix, 0, true, watchChan, stopChan)
 	for _ = range watchChan {
-		log.WithField("name", "etcd").Debug("Discovery watch triggered")
-		kvi, err := s.GetRange(prefix)
+		kvi, err := s.List(prefix)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", prefix, ", cancelling watch")
 			s.watches[prefix] = nil
