@@ -18,7 +18,7 @@ func TestMatch(t *testing.T) {
 	assert.False(t, img.Match("37"))
 
 	assert.True(t, img.Match("name:latest"))
-	assert.True(t, img.Match("name"))
+	assert.False(t, img.Match("name"))
 	assert.False(t, img.Match("nam"))
 	assert.False(t, img.Match("na"))
 }

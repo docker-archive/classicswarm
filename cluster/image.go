@@ -21,8 +21,10 @@ func (image *Image) Match(IDOrName string) bool {
 		return true
 	}
 	for _, repoTag := range image.RepoTags {
-		parts := strings.SplitN(repoTag, ":", 2)
-		if repoTag == IDOrName || parts[0] == IDOrName {
+		if len(strings.SplitN(repoTag, ":", 2)) == 1 {
+			repoTag = repoTag + ":latest"
+		}
+		if repoTag == IDOrName {
 			return true
 		}
 	}
