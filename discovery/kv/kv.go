@@ -6,22 +6,23 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/pkg/store"
 )
 
 // Discovery is exported
 type Discovery struct {
+	backend   store.Backend
 	store     store.Store
-	name      string
 	heartbeat time.Duration
 	prefix    string
 }
 
 func init() {
-	discovery.Register("zk", &Discovery{name: "zk"})
-	discovery.Register("consul", &Discovery{name: "consul"})
-	discovery.Register("etcd", &Discovery{name: "etcd"})
+	discovery.Register("zk", &Discovery{backend: store.ZK})
+	discovery.Register("consul", &Discovery{backend: store.CONSUL})
+	discovery.Register("etcd", &Discovery{backend: store.ETCD})
 }
 
 // Initialize is exported
@@ -47,7 +48,7 @@ func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
 	// Creates a new store, will ignore options given
 	// if not supported by the chosen store
 	s.store, err = store.CreateStore(
-		s.name, // name of the store
+		s.backend,
 		addrs,
 		&store.Config{
 			Timeout: s.heartbeat,
@@ -62,7 +63,7 @@ func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
 
 // Fetch is exported
 func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
-	addrs, err := s.store.GetRange(s.prefix)
+	addrs, err := s.store.List(s.prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -71,9 +72,10 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 
 // Watch is exported
 func (s *Discovery) Watch(callback discovery.WatchCallback) {
-	s.store.WatchRange(s.prefix, "", s.heartbeat, func(kvalues ...store.KVEntry) {
+	s.store.WatchTree(s.prefix, func(kv ...*store.KVPair) {
+		log.WithField("name", s.backend).Debug("Discovery watch triggered")
 		// Traduce byte array entries to discovery.Entry
-		entries, _ := discovery.CreateEntries(convertToStringArray(kvalues))
+		entries, _ := discovery.CreateEntries(convertToStringArray(kv))
 		callback(entries)
 	})
 }
@@ -84,9 +86,9 @@ func (s *Discovery) Register(addr string) error {
 	return err
 }
 
-func convertToStringArray(entries []store.KVEntry) (addrs []string) {
+func convertToStringArray(entries []*store.KVPair) (addrs []string) {
 	for _, entry := range entries {
-		addrs = append(addrs, string(entry.Value()))
+		addrs = append(addrs, string(entry.Value))
 	}
 	return addrs
 }

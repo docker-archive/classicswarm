@@ -47,15 +47,15 @@ func (s *Zookeeper) setTimeout(time time.Duration) {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Zookeeper) Get(key string) (value []byte, lastIndex uint64, err error) {
+func (s *Zookeeper) Get(key string) (*KVPair, error) {
 	resp, meta, err := s.client.Get(normalize(key))
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	if resp == nil {
-		return nil, 0, ErrKeyNotFound
+		return nil, ErrKeyNotFound
 	}
-	return resp, uint64(meta.Mzxid), nil
+	return &KVPair{key, resp, uint64(meta.Mzxid)}, nil
 }
 
 // Create the entire path for a directory that does not exist
@@ -103,7 +103,7 @@ func (s *Zookeeper) Exists(key string) (bool, error) {
 }
 
 // Watch a single key for modifications
-func (s *Zookeeper) Watch(key string, _ time.Duration, callback WatchCallback) error {
+func (s *Zookeeper) Watch(key string, callback WatchCallback) error {
 	fkey := normalize(key)
 	_, _, eventChan, err := s.client.GetW(fkey)
 	if err != nil {
@@ -115,10 +115,9 @@ func (s *Zookeeper) Watch(key string, _ time.Duration, callback WatchCallback) e
 
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
-			log.WithField("name", "zk").Debug("Discovery watch triggered")
-			entry, index, err := s.Get(key)
+			entry, err := s.Get(key)
 			if err == nil {
-				callback(&kviTuple{key, []byte(entry), index})
+				callback(entry)
 			}
 		}
 	}
@@ -139,28 +138,29 @@ func (s *Zookeeper) CancelWatch(key string) error {
 	return nil
 }
 
-// GetRange gets a range of values at "directory"
-func (s *Zookeeper) GetRange(prefix string) (kvi []KVEntry, err error) {
+// List a range of values at "directory"
+func (s *Zookeeper) List(prefix string) ([]*KVPair, error) {
 	prefix = normalize(prefix)
 	entries, stat, err := s.client.Children(prefix)
 	if err != nil {
 		log.Error("Cannot fetch range of keys beginning with prefix: ", prefix)
 		return nil, err
 	}
+	kv := []*KVPair{}
 	for _, item := range entries {
-		kvi = append(kvi, &kviTuple{prefix, []byte(item), uint64(stat.Mzxid)})
+		kv = append(kv, &KVPair{prefix, []byte(item), uint64(stat.Mzxid)})
 	}
-	return kvi, err
+	return kv, err
 }
 
-// DeleteRange deletes a range of values at "directory"
-func (s *Zookeeper) DeleteRange(prefix string) error {
+// DeleteTree deletes a range of values at "directory"
+func (s *Zookeeper) DeleteTree(prefix string) error {
 	err := s.client.Delete(normalize(prefix), -1)
 	return err
 }
 
-// WatchRange triggers a watch on a range of values at "directory"
-func (s *Zookeeper) WatchRange(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
+// WatchTree triggers a watch on a range of values at "directory"
+func (s *Zookeeper) WatchTree(prefix string, callback WatchCallback) error {
 	fprefix := normalize(prefix)
 	_, _, eventChan, err := s.client.ChildrenW(fprefix)
 	if err != nil {
@@ -172,8 +172,7 @@ func (s *Zookeeper) WatchRange(prefix string, filter string, _ time.Duration, ca
 
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
-			log.WithField("name", "zk").Debug("Discovery watch triggered")
-			kvi, err := s.GetRange(prefix)
+			kvi, err := s.List(prefix)
 			if err == nil {
 				callback(kvi...)
 			}
@@ -191,14 +190,14 @@ func (s *Zookeeper) CancelWatchRange(prefix string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicPut(key string, oldValue []byte, newValue []byte, index uint64) (bool, error) {
+func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
 	// Use index of Set method to implement CAS
 	return false, ErrNotImplemented
 }
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicDelete(key string, oldValue []byte, index uint64) (bool, error) {
+func (s *Zookeeper) AtomicDelete(key string, previous *KVPair) (bool, error) {
 	return false, ErrNotImplemented
 }
 

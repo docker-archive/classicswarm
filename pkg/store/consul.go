@@ -25,7 +25,6 @@ type consulLock struct {
 // refresh interval
 type Watch struct {
 	LastIndex uint64
-	Interval  time.Duration
 }
 
 // InitializeConsul creates a new Consul client given
@@ -81,15 +80,15 @@ func (s *Consul) normalize(key string) string {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Consul) Get(key string) (value []byte, lastIndex uint64, err error) {
+func (s *Consul) Get(key string) (*KVPair, error) {
 	pair, meta, err := s.client.KV().Get(s.normalize(key), nil)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	if pair == nil {
-		return nil, 0, ErrKeyNotFound
+		return nil, ErrKeyNotFound
 	}
-	return pair.Value, meta.LastIndex, nil
+	return &KVPair{pair.Key, pair.Value, meta.LastIndex}, nil
 }
 
 // Put a value at "key"
@@ -110,15 +109,15 @@ func (s *Consul) Delete(key string) error {
 
 // Exists checks that the key exists inside the store
 func (s *Consul) Exists(key string) (bool, error) {
-	_, _, err := s.Get(key)
+	_, err := s.Get(key)
 	if err != nil && err == ErrKeyNotFound {
 		return false, err
 	}
 	return true, nil
 }
 
-// GetRange gets a range of values at "directory"
-func (s *Consul) GetRange(prefix string) (kvi []KVEntry, err error) {
+// List values at "directory"
+func (s *Consul) List(prefix string) ([]*KVPair, error) {
 	pairs, _, err := s.client.KV().List(s.normalize(prefix), nil)
 	if err != nil {
 		return nil, err
@@ -126,23 +125,24 @@ func (s *Consul) GetRange(prefix string) (kvi []KVEntry, err error) {
 	if len(pairs) == 0 {
 		return nil, ErrKeyNotFound
 	}
+	kv := []*KVPair{}
 	for _, pair := range pairs {
 		if pair.Key == prefix {
 			continue
 		}
-		kvi = append(kvi, &kviTuple{pair.Key, pair.Value, pair.ModifyIndex})
+		kv = append(kv, &KVPair{pair.Key, pair.Value, pair.ModifyIndex})
 	}
-	return kvi, nil
+	return kv, nil
 }
 
-// DeleteRange deletes a range of values at "directory"
-func (s *Consul) DeleteRange(prefix string) error {
+// DeleteTree deletes a range of values at "directory"
+func (s *Consul) DeleteTree(prefix string) error {
 	_, err := s.client.KV().DeleteTree(s.normalize(prefix), nil)
 	return err
 }
 
 // Watch a single key for modifications
-func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallback) error {
+func (s *Consul) Watch(key string, callback WatchCallback) error {
 	fkey := s.normalize(key)
 
 	// We get the last index first
@@ -152,18 +152,17 @@ func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallba
 	}
 
 	// Add watch to map
-	s.watches[fkey] = &Watch{LastIndex: meta.LastIndex, Interval: heartbeat}
+	s.watches[fkey] = &Watch{LastIndex: meta.LastIndex}
 	eventChan := s.waitForChange(fkey)
 
 	for _ = range eventChan {
-		log.WithField("name", "consul").Debug("Key watch triggered")
-		entry, index, err := s.Get(key)
+		entry, err := s.Get(key)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", fkey, ", cancelling watch")
 			s.watches[fkey] = nil
 			return err
 		}
-		callback(&kviTuple{key, entry, index})
+		callback(entry)
 	}
 
 	return nil
@@ -194,11 +193,10 @@ func (s *Consul) waitForChange(key string) <-chan uint64 {
 			}
 			option := &api.QueryOptions{
 				WaitIndex: watch.LastIndex,
-				WaitTime:  watch.Interval,
 			}
 			_, meta, err := kv.List(key, option)
 			if err != nil {
-				log.WithField("name", "consul").Errorf("Discovery error: %v", err)
+				log.WithField("name", "consul").Error(err)
 				break
 			}
 			watch.LastIndex = meta.LastIndex
@@ -209,8 +207,8 @@ func (s *Consul) waitForChange(key string) <-chan uint64 {
 	return ch
 }
 
-// WatchRange triggers a watch on a range of values at "directory"
-func (s *Consul) WatchRange(prefix string, filter string, heartbeat time.Duration, callback WatchCallback) error {
+// WatchTree triggers a watch on a range of values at "directory"
+func (s *Consul) WatchTree(prefix string, callback WatchCallback) error {
 	fprefix := s.normalize(prefix)
 
 	// We get the last index first
@@ -220,12 +218,11 @@ func (s *Consul) WatchRange(prefix string, filter string, heartbeat time.Duratio
 	}
 
 	// Add watch to map
-	s.watches[fprefix] = &Watch{LastIndex: meta.LastIndex, Interval: heartbeat}
+	s.watches[fprefix] = &Watch{LastIndex: meta.LastIndex}
 	eventChan := s.waitForChange(fprefix)
 
 	for _ = range eventChan {
-		log.WithField("name", "consul").Debug("Key watch triggered")
-		kvi, err := s.GetRange(prefix)
+		kvi, err := s.List(prefix)
 		if err != nil {
 			log.Error("Cannot refresh keys with prefix: ", fprefix, ", cancelling watch")
 			s.watches[fprefix] = nil
@@ -270,8 +267,8 @@ func (l *consulLock) Unlock() error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Consul) AtomicPut(key string, _ []byte, newValue []byte, index uint64) (bool, error) {
-	p := &api.KVPair{Key: s.normalize(key), Value: newValue, ModifyIndex: index}
+func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
+	p := &api.KVPair{Key: s.normalize(key), Value: value, ModifyIndex: previous.LastIndex}
 	if work, _, err := s.client.KV().CAS(p, nil); err != nil {
 		return false, err
 	} else if !work {
@@ -282,8 +279,8 @@ func (s *Consul) AtomicPut(key string, _ []byte, newValue []byte, index uint64) 
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
-func (s *Consul) AtomicDelete(key string, oldValue []byte, index uint64) (bool, error) {
-	p := &api.KVPair{Key: s.normalize(key), ModifyIndex: index}
+func (s *Consul) AtomicDelete(key string, previous *KVPair) (bool, error) {
+	p := &api.KVPair{Key: s.normalize(key), ModifyIndex: previous.LastIndex}
 	if work, _, err := s.client.KV().DeleteCAS(p, nil); err != nil {
 		return false, err
 	} else if !work {
