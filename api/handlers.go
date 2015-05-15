@@ -532,6 +532,27 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Proxy a request to the right node and force refresh container
+func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Request) {
+	name, container, err := getContainerFromVars(c, mux.Vars(r))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// Set the full container ID in the proxied URL path.
+	if name != "" {
+		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
+	}
+
+	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	// force fresh container
+	container.Refresh()
+}
+
 // Proxy a request to the right node
 func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
