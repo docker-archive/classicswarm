@@ -193,7 +193,7 @@ func (s *Etcd) AtomicDelete(key string, previous *KVPair) (bool, error) {
 	return true, nil
 }
 
-// GetRange gets a range of values at "directory"
+// List a range of values at "directory"
 func (s *Etcd) List(prefix string) ([]*KVPair, error) {
 	resp, err := s.client.Get(normalize(prefix), true, true)
 	if err != nil {
@@ -206,7 +206,7 @@ func (s *Etcd) List(prefix string) ([]*KVPair, error) {
 	return kv, nil
 }
 
-// DeleteRange deletes a range of values at "directory"
+// DeleteTree deletes a range of values at "directory"
 func (s *Etcd) DeleteTree(prefix string) error {
 	if _, err := s.client.Delete(normalize(prefix), true); err != nil {
 		return err
@@ -214,7 +214,7 @@ func (s *Etcd) DeleteTree(prefix string) error {
 	return nil
 }
 
-// WatchRange triggers a watch on a range of values at "directory"
+// WatchTree triggers a watch on a range of values at "directory"
 func (s *Etcd) WatchTree(prefix string, callback WatchCallback) error {
 	prefix = normalize(prefix)
 	watchChan := make(chan *etcd.Response)
