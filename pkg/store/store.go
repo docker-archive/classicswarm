@@ -1,10 +1,6 @@
 package store
 
-import (
-	"time"
-
-	log "github.com/Sirupsen/logrus"
-)
+import log "github.com/Sirupsen/logrus"
 
 // Backend represents a KV Store Backend
 type Backend string
@@ -40,7 +36,7 @@ type Store interface {
 	Exists(key string) (bool, error)
 
 	// Watch changes on a key
-	Watch(key string, heartbeat time.Duration, callback WatchCallback) error
+	Watch(key string, callback WatchCallback) error
 
 	// Cancel watch key
 	CancelWatch(key string) error
@@ -57,7 +53,7 @@ type Store interface {
 	DeleteTree(prefix string) error
 
 	// Watch key namespaces
-	WatchTree(prefix string, filter string, heartbeat time.Duration, callback WatchCallback) error
+	WatchTree(prefix string, callback WatchCallback) error
 
 	// Cancel watch key range
 	CancelWatchRange(prefix string) error
