@@ -20,7 +20,7 @@ const (
 
 // WatchCallback is used for watch methods on keys
 // and is triggered on key change
-type WatchCallback func(kviTuple ...KVEntry)
+type WatchCallback func(entries ...*KVEntry)
 
 // Initialize creates a new Store object, initializing the client
 type Initialize func(addrs []string, options *Config) (Store, error)
@@ -54,7 +54,7 @@ type Store interface {
 	CreateLock(key string, value []byte) (Locker, error)
 
 	// Get range of keys based on prefix
-	GetRange(prefix string) ([]KVEntry, error)
+	GetRange(prefix string) ([]*KVEntry, error)
 
 	// Delete range of keys based on prefix
 	DeleteRange(prefix string) error
@@ -73,10 +73,10 @@ type Store interface {
 }
 
 // KVEntry represents {Key, Value, Lastindex} tuple
-type KVEntry interface {
-	Key() string
-	Value() []byte
-	LastIndex() uint64
+type KVEntry struct {
+	Key       string
+	Value     []byte
+	LastIndex uint64
 }
 
 // Locker provides locking mechanism on top of the store.
