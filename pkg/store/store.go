@@ -20,7 +20,7 @@ const (
 
 // WatchCallback is used for watch methods on keys
 // and is triggered on key change
-type WatchCallback func(entries ...*KVEntry)
+type WatchCallback func(entries ...*KVPair)
 
 // Initialize creates a new Store object, initializing the client
 type Initialize func(addrs []string, options *Config) (Store, error)
@@ -34,7 +34,7 @@ type Store interface {
 	Put(key string, value []byte) error
 
 	// Get a value given its key
-	Get(key string) (*KVEntry, error)
+	Get(key string) (*KVPair, error)
 
 	// Delete the value at the specified key
 	Delete(key string) error
@@ -54,7 +54,7 @@ type Store interface {
 	CreateLock(key string, value []byte) (Locker, error)
 
 	// Get range of keys based on prefix
-	List(prefix string) ([]*KVEntry, error)
+	List(prefix string) ([]*KVPair, error)
 
 	// Delete range of keys based on prefix
 	DeleteTree(prefix string) error
@@ -66,14 +66,14 @@ type Store interface {
 	CancelWatchRange(prefix string) error
 
 	// Atomic operation on a single value
-	AtomicPut(key string, value []byte, previous *KVEntry) (bool, error)
+	AtomicPut(key string, value []byte, previous *KVPair) (bool, error)
 
 	// Atomic delete of a single value
-	AtomicDelete(key string, previous *KVEntry) (bool, error)
+	AtomicDelete(key string, previous *KVPair) (bool, error)
 }
 
-// KVEntry represents {Key, Value, Lastindex} tuple
-type KVEntry struct {
+// KVPair represents {Key, Value, Lastindex} tuple
+type KVPair struct {
 	Key       string
 	Value     []byte
 	LastIndex uint64

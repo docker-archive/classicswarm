@@ -47,7 +47,7 @@ func (s *Zookeeper) setTimeout(time time.Duration) {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Zookeeper) Get(key string) (*KVEntry, error) {
+func (s *Zookeeper) Get(key string) (*KVPair, error) {
 	resp, meta, err := s.client.Get(normalize(key))
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (s *Zookeeper) Get(key string) (*KVEntry, error) {
 	if resp == nil {
 		return nil, ErrKeyNotFound
 	}
-	return &KVEntry{key, resp, uint64(meta.Mzxid)}, nil
+	return &KVPair{key, resp, uint64(meta.Mzxid)}, nil
 }
 
 // Create the entire path for a directory that does not exist
@@ -140,16 +140,16 @@ func (s *Zookeeper) CancelWatch(key string) error {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Zookeeper) List(prefix string) ([]*KVEntry, error) {
+func (s *Zookeeper) List(prefix string) ([]*KVPair, error) {
 	prefix = normalize(prefix)
 	entries, stat, err := s.client.Children(prefix)
 	if err != nil {
 		log.Error("Cannot fetch range of keys beginning with prefix: ", prefix)
 		return nil, err
 	}
-	kv := []*KVEntry{}
+	kv := []*KVPair{}
 	for _, item := range entries {
-		kv = append(kv, &KVEntry{prefix, []byte(item), uint64(stat.Mzxid)})
+		kv = append(kv, &KVPair{prefix, []byte(item), uint64(stat.Mzxid)})
 	}
 	return kv, err
 }
@@ -192,14 +192,14 @@ func (s *Zookeeper) CancelWatchRange(prefix string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVEntry) (bool, error) {
+func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
 	// Use index of Set method to implement CAS
 	return false, ErrNotImplemented
 }
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicDelete(key string, previous *KVEntry) (bool, error) {
+func (s *Zookeeper) AtomicDelete(key string, previous *KVPair) (bool, error) {
 	return false, ErrNotImplemented
 }
 

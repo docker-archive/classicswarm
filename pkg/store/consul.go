@@ -81,7 +81,7 @@ func (s *Consul) normalize(key string) string {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Consul) Get(key string) (*KVEntry, error) {
+func (s *Consul) Get(key string) (*KVPair, error) {
 	pair, meta, err := s.client.KV().Get(s.normalize(key), nil)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (s *Consul) Get(key string) (*KVEntry, error) {
 	if pair == nil {
 		return nil, ErrKeyNotFound
 	}
-	return &KVEntry{pair.Key, pair.Value, meta.LastIndex}, nil
+	return &KVPair{pair.Key, pair.Value, meta.LastIndex}, nil
 }
 
 // Put a value at "key"
@@ -118,7 +118,7 @@ func (s *Consul) Exists(key string) (bool, error) {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Consul) List(prefix string) ([]*KVEntry, error) {
+func (s *Consul) List(prefix string) ([]*KVPair, error) {
 	pairs, _, err := s.client.KV().List(s.normalize(prefix), nil)
 	if err != nil {
 		return nil, err
@@ -126,12 +126,12 @@ func (s *Consul) List(prefix string) ([]*KVEntry, error) {
 	if len(pairs) == 0 {
 		return nil, ErrKeyNotFound
 	}
-	kv := []*KVEntry{}
+	kv := []*KVPair{}
 	for _, pair := range pairs {
 		if pair.Key == prefix {
 			continue
 		}
-		kv = append(kv, &KVEntry{pair.Key, pair.Value, pair.ModifyIndex})
+		kv = append(kv, &KVPair{pair.Key, pair.Value, pair.ModifyIndex})
 	}
 	return kv, nil
 }
@@ -271,7 +271,7 @@ func (l *consulLock) Unlock() error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Consul) AtomicPut(key string, value []byte, previous *KVEntry) (bool, error) {
+func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
 	p := &api.KVPair{Key: s.normalize(key), Value: value, ModifyIndex: previous.LastIndex}
 	if work, _, err := s.client.KV().CAS(p, nil); err != nil {
 		return false, err
@@ -283,7 +283,7 @@ func (s *Consul) AtomicPut(key string, value []byte, previous *KVEntry) (bool, e
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
-func (s *Consul) AtomicDelete(key string, previous *KVEntry) (bool, error) {
+func (s *Consul) AtomicDelete(key string, previous *KVPair) (bool, error) {
 	p := &api.KVPair{Key: s.normalize(key), ModifyIndex: previous.LastIndex}
 	if work, _, err := s.client.KV().DeleteCAS(p, nil); err != nil {
 		return false, err

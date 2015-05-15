@@ -84,7 +84,7 @@ func (s *Etcd) createDirectory(path string) error {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Etcd) Get(key string) (*KVEntry, error) {
+func (s *Etcd) Get(key string) (*KVPair, error) {
 	result, err := s.client.Get(normalize(key), false, false)
 	if err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
@@ -95,7 +95,7 @@ func (s *Etcd) Get(key string) (*KVEntry, error) {
 		}
 		return nil, err
 	}
-	return &KVEntry{result.Node.Key, []byte(result.Node.Value), result.Node.ModifiedIndex}, nil
+	return &KVPair{result.Node.Key, []byte(result.Node.Value), result.Node.ModifiedIndex}, nil
 }
 
 // Put a value at "key"
@@ -176,7 +176,7 @@ func (s *Etcd) CancelWatch(key string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Etcd) AtomicPut(key string, value []byte, previous *KVEntry) (bool, error) {
+func (s *Etcd) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
 	_, err := s.client.CompareAndSwap(normalize(key), string(value), 0, "", previous.LastIndex)
 	if err != nil {
 		return false, err
@@ -186,7 +186,7 @@ func (s *Etcd) AtomicPut(key string, value []byte, previous *KVEntry) (bool, err
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
-func (s *Etcd) AtomicDelete(key string, previous *KVEntry) (bool, error) {
+func (s *Etcd) AtomicDelete(key string, previous *KVPair) (bool, error) {
 	_, err := s.client.CompareAndDelete(normalize(key), "", previous.LastIndex)
 	if err != nil {
 		return false, err
@@ -195,14 +195,14 @@ func (s *Etcd) AtomicDelete(key string, previous *KVEntry) (bool, error) {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Etcd) List(prefix string) ([]*KVEntry, error) {
+func (s *Etcd) List(prefix string) ([]*KVPair, error) {
 	resp, err := s.client.Get(normalize(prefix), true, true)
 	if err != nil {
 		return nil, err
 	}
-	kv := []*KVEntry{}
+	kv := []*KVPair{}
 	for _, n := range resp.Node.Nodes {
-		kv = append(kv, &KVEntry{n.Key, []byte(n.Value), n.ModifiedIndex})
+		kv = append(kv, &KVPair{n.Key, []byte(n.Value), n.ModifiedIndex})
 	}
 	return kv, nil
 }
