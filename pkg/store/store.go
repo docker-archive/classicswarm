@@ -66,10 +66,10 @@ type Store interface {
 	CancelWatchRange(prefix string) error
 
 	// Atomic operation on a single value
-	AtomicPut(key string, oldValue []byte, newValue []byte, index uint64) (bool, error)
+	AtomicPut(key string, value []byte, previous *KVEntry) (bool, error)
 
 	// Atomic delete of a single value
-	AtomicDelete(key string, oldValue []byte, index uint64) (bool, error)
+	AtomicDelete(key string, previous *KVEntry) (bool, error)
 }
 
 // KVEntry represents {Key, Value, Lastindex} tuple

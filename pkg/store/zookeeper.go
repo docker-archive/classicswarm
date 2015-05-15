@@ -192,14 +192,14 @@ func (s *Zookeeper) CancelWatchRange(prefix string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicPut(key string, oldValue []byte, newValue []byte, index uint64) (bool, error) {
+func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVEntry) (bool, error) {
 	// Use index of Set method to implement CAS
 	return false, ErrNotImplemented
 }
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicDelete(key string, oldValue []byte, index uint64) (bool, error) {
+func (s *Zookeeper) AtomicDelete(key string, previous *KVEntry) (bool, error) {
 	return false, ErrNotImplemented
 }
 
