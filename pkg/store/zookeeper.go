@@ -114,6 +114,8 @@ func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, e
 	// Catch zk notifications and fire changes into the channel.
 	watchCh := make(chan *KVPair)
 	go func() {
+		defer close(watchCh)
+
 		// GetW returns the current value before setting the watch.
 		watchCh <- &KVPair{key, resp, uint64(meta.Mzxid)}
 		for {
@@ -148,6 +150,8 @@ func (s *Zookeeper) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*
 	// Catch zk notifications and fire changes into the channel.
 	watchCh := make(chan []*KVPair)
 	go func() {
+		defer close(watchCh)
+
 		// GetW returns the current value before setting the watch.
 		kv := []*KVPair{}
 		for _, item := range entries {

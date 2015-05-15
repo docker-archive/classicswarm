@@ -138,7 +138,12 @@ func (s *Etcd) Exists(key string) (bool, error) {
 // Providing a non-nil stopCh can be used to stop watching.
 func (s *Etcd) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error) {
 	key = normalize(key)
-	watchCh := make(chan *KVPair)
+
+	// Get the current value
+	current, err := s.Get(key)
+	if err != nil {
+		return nil, err
+	}
 
 	// Start an etcd watch.
 	// Note: etcd will send the current value through the channel.
@@ -148,11 +153,13 @@ func (s *Etcd) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error)
 
 	// Adapter goroutine: The goal here is to convert wathever format etcd is
 	// using into our interface.
+	watchCh := make(chan *KVPair)
 	go func() {
+		defer close(watchCh)
+
 		// Push the current value through the channel.
-		if v, err := s.Get(key); err != nil {
-			watchCh <- v
-		}
+		watchCh <- current
+
 		for {
 			select {
 			case result := <-etcdWatchCh:
@@ -176,7 +183,12 @@ func (s *Etcd) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error)
 // Providing a non-nil stopCh can be used to stop watching.
 func (s *Etcd) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPair, error) {
 	prefix = normalize(prefix)
-	watchCh := make(chan []*KVPair)
+
+	// Get the current value
+	current, err := s.List(prefix)
+	if err != nil {
+		return nil, err
+	}
 
 	// Start an etcd watch.
 	etcdWatchCh := make(chan *etcd.Response)
@@ -185,11 +197,13 @@ func (s *Etcd) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPai
 
 	// Adapter goroutine: The goal here is to convert wathever format etcd is
 	// using into our interface.
+	watchCh := make(chan []*KVPair)
 	go func() {
+		defer close(watchCh)
+
 		// Push the current value through the channel.
-		if list, err := s.List(prefix); err != nil {
-			watchCh <- list
-		}
+		watchCh <- current
+
 		for {
 			select {
 			case <-etcdWatchCh:
