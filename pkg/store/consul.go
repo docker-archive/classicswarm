@@ -116,7 +116,7 @@ func (s *Consul) Exists(key string) (bool, error) {
 	return true, nil
 }
 
-// GetRange gets a range of values at "directory"
+// List values at "directory"
 func (s *Consul) List(prefix string) ([]*KVPair, error) {
 	pairs, _, err := s.client.KV().List(s.normalize(prefix), nil)
 	if err != nil {
@@ -135,7 +135,7 @@ func (s *Consul) List(prefix string) ([]*KVPair, error) {
 	return kv, nil
 }
 
-// DeleteRange deletes a range of values at "directory"
+// DeleteTree deletes a range of values at "directory"
 func (s *Consul) DeleteTree(prefix string) error {
 	_, err := s.client.KV().DeleteTree(s.normalize(prefix), nil)
 	return err
@@ -207,7 +207,7 @@ func (s *Consul) waitForChange(key string) <-chan uint64 {
 	return ch
 }
 
-// WatchRange triggers a watch on a range of values at "directory"
+// WatchTree triggers a watch on a range of values at "directory"
 func (s *Consul) WatchTree(prefix string, callback WatchCallback) error {
 	fprefix := s.normalize(prefix)
 

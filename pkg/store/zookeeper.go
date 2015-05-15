@@ -138,7 +138,7 @@ func (s *Zookeeper) CancelWatch(key string) error {
 	return nil
 }
 
-// GetRange gets a range of values at "directory"
+// List a range of values at "directory"
 func (s *Zookeeper) List(prefix string) ([]*KVPair, error) {
 	prefix = normalize(prefix)
 	entries, stat, err := s.client.Children(prefix)
@@ -153,13 +153,13 @@ func (s *Zookeeper) List(prefix string) ([]*KVPair, error) {
 	return kv, err
 }
 
-// DeleteRange deletes a range of values at "directory"
+// DeleteTree deletes a range of values at "directory"
 func (s *Zookeeper) DeleteTree(prefix string) error {
 	err := s.client.Delete(normalize(prefix), -1)
 	return err
 }
 
-// WatchRange triggers a watch on a range of values at "directory"
+// WatchTree triggers a watch on a range of values at "directory"
 func (s *Zookeeper) WatchTree(prefix string, callback WatchCallback) error {
 	fprefix := normalize(prefix)
 	_, _, eventChan, err := s.client.ChildrenW(fprefix)
