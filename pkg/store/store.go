@@ -22,9 +22,6 @@ const (
 // and is triggered on key change
 type WatchCallback func(entries ...*KVPair)
 
-// Initialize creates a new Store object, initializing the client
-type Initialize func(addrs []string, options *Config) (Store, error)
-
 // Store represents the backend K/V storage
 // Each store should support every call listed
 // here. Or it couldn't be implemented as a K/V
@@ -85,6 +82,9 @@ type Locker interface {
 	Lock() (<-chan struct{}, error)
 	Unlock() error
 }
+
+// Initialize creates a new Store object, initializing the client
+type Initialize func(addrs []string, options *Config) (Store, error)
 
 var (
 	// Backend initializers
