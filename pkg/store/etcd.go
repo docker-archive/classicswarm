@@ -177,16 +177,9 @@ func (s *Etcd) CancelWatch(key string) error {
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
 func (s *Etcd) AtomicPut(key string, value []byte, previous *KVEntry) (bool, error) {
-	resp, err := s.client.CompareAndSwap(normalize(key), string(value), 5, string(previous.Value), 0)
+	_, err := s.client.CompareAndSwap(normalize(key), string(value), 0, "", previous.LastIndex)
 	if err != nil {
 		return false, err
-	}
-	// FIXME: Why do we do the check like this? Why is the TTL hardcoded to 5?
-	if !(resp.Node.Value == string(value) && resp.Node.Key == key && resp.Node.TTL == 5) {
-		return false, ErrKeyModified
-	}
-	if !(resp.PrevNode.Value == string(previous.Value) && resp.PrevNode.Key == key && resp.PrevNode.TTL == 5) {
-		return false, ErrKeyModified
 	}
 	return true, nil
 }
@@ -194,12 +187,9 @@ func (s *Etcd) AtomicPut(key string, value []byte, previous *KVEntry) (bool, err
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
 func (s *Etcd) AtomicDelete(key string, previous *KVEntry) (bool, error) {
-	resp, err := s.client.CompareAndDelete(normalize(key), string(previous.Value), 0)
+	_, err := s.client.CompareAndDelete(normalize(key), "", previous.LastIndex)
 	if err != nil {
 		return false, err
-	}
-	if !(resp.PrevNode.Value == string(previous.Value) && resp.PrevNode.Key == key && resp.PrevNode.TTL == 5) {
-		return false, ErrKeyModified
 	}
 	return true, nil
 }
