@@ -216,7 +216,7 @@ func (s *Etcd) DeleteTree(prefix string) error {
 }
 
 // WatchRange triggers a watch on a range of values at "directory"
-func (s *Etcd) WatchRange(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
+func (s *Etcd) WatchTree(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
 	prefix = normalize(prefix)
 	watchChan := make(chan *etcd.Response)
 	stopChan := make(chan bool)
