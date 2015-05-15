@@ -22,6 +22,11 @@ func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	// Volumes
+	volumes := []string{}
+	for _, volume := range config.HostConfig.VolumesFrom {
+		volumes = append(volumes, strings.SplitN(volume, ":", 2)[0])
+	}
 
 	// Extract containers from links.
 	links := []string{}
@@ -37,7 +42,7 @@ func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 
 	candidates := []*node.Node{}
 	for _, node := range nodes {
-		if f.check(config.HostConfig.VolumesFrom, node) &&
+		if f.check(volumes, node) &&
 			f.check(links, node) &&
 			f.check(net, node) {
 			candidates = append(candidates, node)
