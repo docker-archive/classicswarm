@@ -81,15 +81,15 @@ func (s *Consul) normalize(key string) string {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Consul) Get(key string) (value []byte, lastIndex uint64, err error) {
+func (s *Consul) Get(key string) (*KVEntry, error) {
 	pair, meta, err := s.client.KV().Get(s.normalize(key), nil)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	if pair == nil {
-		return nil, 0, ErrKeyNotFound
+		return nil, ErrKeyNotFound
 	}
-	return pair.Value, meta.LastIndex, nil
+	return &KVEntry{pair.Key, pair.Value, meta.LastIndex}, nil
 }
 
 // Put a value at "key"
@@ -110,7 +110,7 @@ func (s *Consul) Delete(key string) error {
 
 // Exists checks that the key exists inside the store
 func (s *Consul) Exists(key string) (bool, error) {
-	_, _, err := s.Get(key)
+	_, err := s.Get(key)
 	if err != nil && err == ErrKeyNotFound {
 		return false, err
 	}
@@ -158,13 +158,13 @@ func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallba
 
 	for _ = range eventChan {
 		log.WithField("name", "consul").Debug("Key watch triggered")
-		entry, index, err := s.Get(key)
+		entry, err := s.Get(key)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", fkey, ", cancelling watch")
 			s.watches[fkey] = nil
 			return err
 		}
-		callback(&KVEntry{key, entry, index})
+		callback(entry)
 	}
 
 	return nil

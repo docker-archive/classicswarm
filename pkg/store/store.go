@@ -34,7 +34,7 @@ type Store interface {
 	Put(key string, value []byte) error
 
 	// Get a value given its key
-	Get(key string) (value []byte, lastIndex uint64, err error)
+	Get(key string) (*KVEntry, error)
 
 	// Delete the value at the specified key
 	Delete(key string) error
