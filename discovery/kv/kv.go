@@ -72,12 +72,17 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 
 // Watch is exported
 func (s *Discovery) Watch(callback discovery.WatchCallback) {
-	s.store.WatchTree(s.prefix, func(kv ...*store.KVPair) {
-		log.WithField("name", s.backend).Debug("Discovery watch triggered")
+	ch, err := s.store.WatchTree(s.prefix, nil)
+	if err != nil {
+		log.WithField("discovery", s.backend).Errorf("Watch failed: %v", err)
+		return
+	}
+	for kv := range ch {
+		log.WithField("discovery", s.backend).Debug("Watch triggered")
 		// Traduce byte array entries to discovery.Entry
 		entries, _ := discovery.CreateEntries(convertToStringArray(kv))
 		callback(entries)
-	})
+	}
 }
 
 // Register is exported

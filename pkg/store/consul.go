@@ -12,26 +12,18 @@ import (
 
 // Consul embeds the client and watches
 type Consul struct {
-	config  *api.Config
-	client  *api.Client
-	watches map[string]*Watch
+	config *api.Config
+	client *api.Client
 }
 
 type consulLock struct {
 	lock *api.Lock
 }
 
-// Watch embeds the event channel and the
-// refresh interval
-type Watch struct {
-	LastIndex uint64
-}
-
 // InitializeConsul creates a new Consul client given
 // a list of endpoints and optional tls config
 func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 	s := &Consul{}
-	s.watches = make(map[string]*Watch)
 
 	// Create Consul client
 	config := api.DefaultConfig()
@@ -116,7 +108,7 @@ func (s *Consul) Exists(key string) (bool, error) {
 	return true, nil
 }
 
-// List values at "directory"
+// List the content of a given prefix
 func (s *Consul) List(prefix string) ([]*KVPair, error) {
 	pairs, _, err := s.client.KV().List(s.normalize(prefix), nil)
 	if err != nil {
@@ -135,109 +127,89 @@ func (s *Consul) List(prefix string) ([]*KVPair, error) {
 	return kv, nil
 }
 
-// DeleteTree deletes a range of values at "directory"
+// DeleteTree deletes a range of keys based on prefix
 func (s *Consul) DeleteTree(prefix string) error {
 	_, err := s.client.KV().DeleteTree(s.normalize(prefix), nil)
 	return err
 }
 
-// Watch a single key for modifications
-func (s *Consul) Watch(key string, callback WatchCallback) error {
-	fkey := s.normalize(key)
-
-	// We get the last index first
-	_, meta, err := s.client.KV().Get(fkey, nil)
-	if err != nil {
-		return err
-	}
-
-	// Add watch to map
-	s.watches[fkey] = &Watch{LastIndex: meta.LastIndex}
-	eventChan := s.waitForChange(fkey)
-
-	for _ = range eventChan {
-		entry, err := s.Get(key)
-		if err != nil {
-			log.Error("Cannot refresh the key: ", fkey, ", cancelling watch")
-			s.watches[fkey] = nil
-			return err
-		}
-		callback(entry)
-	}
-
-	return nil
-}
-
-// CancelWatch cancels a watch, sends a signal to the appropriate
-// stop channel
-func (s *Consul) CancelWatch(key string) error {
+// Watch changes on a key.
+// Returns a channel that will receive changes or an error.
+// Upon creating a watch, the current value will be sent to the channel.
+// Providing a non-nil stopCh can be used to stop watching.
+func (s *Consul) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error) {
 	key = s.normalize(key)
-	if _, ok := s.watches[key]; !ok {
-		log.Error("Chan does not exist for key: ", key)
-		return ErrWatchDoesNotExist
-	}
-	s.watches[key] = nil
-	return nil
-}
-
-// Internal function to check if a key has changed
-func (s *Consul) waitForChange(key string) <-chan uint64 {
-	ch := make(chan uint64)
 	kv := s.client.KV()
+	watchCh := make(chan *KVPair)
+
 	go func() {
+		opts := &api.QueryOptions{}
 		for {
-			watch, ok := s.watches[key]
-			if !ok {
-				log.Error("Cannot access last index for key: ", key, " closing channel")
-				break
+			// Check if we should quit
+			select {
+			case <-stopCh:
+				return
+			default:
 			}
-			option := &api.QueryOptions{
-				WaitIndex: watch.LastIndex,
-			}
-			_, meta, err := kv.List(key, option)
+
+			pair, meta, err := kv.Get(key, opts)
 			if err != nil {
 				log.WithField("name", "consul").Error(err)
-				break
+				return
 			}
-			watch.LastIndex = meta.LastIndex
-			ch <- watch.LastIndex
+			if pair == nil {
+				log.WithField("name", "consul").Errorf("Key %s does not exist", key)
+				return
+			}
+			opts.WaitIndex = meta.LastIndex
+			watchCh <- &KVPair{pair.Key, pair.Value, pair.ModifyIndex}
 		}
-		close(ch)
 	}()
-	return ch
+
+	return watchCh, nil
 }
 
-// WatchTree triggers a watch on a range of values at "directory"
-func (s *Consul) WatchTree(prefix string, callback WatchCallback) error {
-	fprefix := s.normalize(prefix)
+// WatchTree watches changes on a "directory"
+// Returns a channel that will receive changes or an error.
+// Upon creating a watch, the current value will be sent to the channel.
+// Providing a non-nil stopCh can be used to stop watching.
+func (s *Consul) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPair, error) {
+	prefix = s.normalize(prefix)
+	kv := s.client.KV()
+	watchCh := make(chan []*KVPair)
 
-	// We get the last index first
-	_, meta, err := s.client.KV().Get(prefix, nil)
-	if err != nil {
-		return err
-	}
+	go func() {
+		opts := &api.QueryOptions{}
+		for {
+			// Check if we should quit
+			select {
+			case <-stopCh:
+				return
+			default:
+			}
 
-	// Add watch to map
-	s.watches[fprefix] = &Watch{LastIndex: meta.LastIndex}
-	eventChan := s.waitForChange(fprefix)
-
-	for _ = range eventChan {
-		kvi, err := s.List(prefix)
-		if err != nil {
-			log.Error("Cannot refresh keys with prefix: ", fprefix, ", cancelling watch")
-			s.watches[fprefix] = nil
-			return err
+			pairs, meta, err := kv.List(prefix, opts)
+			if err != nil {
+				log.WithField("name", "consul").Error(err)
+				return
+			}
+			if len(pairs) == 0 {
+				log.WithField("name", "consul").Errorf("Key %s does not exist", prefix)
+				return
+			}
+			kv := []*KVPair{}
+			for _, pair := range pairs {
+				if pair.Key == prefix {
+					continue
+				}
+				kv = append(kv, &KVPair{pair.Key, pair.Value, pair.ModifyIndex})
+			}
+			opts.WaitIndex = meta.LastIndex
+			watchCh <- kv
 		}
-		callback(kvi...)
-	}
+	}()
 
-	return nil
-}
-
-// CancelWatchRange stops the watch on the range of values, sends
-// a signal to the appropriate stop channel
-func (s *Consul) CancelWatchRange(prefix string) error {
-	return s.CancelWatch(prefix)
+	return watchCh, nil
 }
 
 // CreateLock returns a handle to a lock struct which can be used
