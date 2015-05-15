@@ -84,18 +84,18 @@ func (s *Etcd) createDirectory(path string) error {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Etcd) Get(key string) (value []byte, lastIndex uint64, err error) {
+func (s *Etcd) Get(key string) (*KVEntry, error) {
 	result, err := s.client.Get(normalize(key), false, false)
 	if err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			// Not a Directory or Not a file
 			if etcdError.ErrorCode == 102 || etcdError.ErrorCode == 104 {
-				return nil, 0, ErrKeyNotFound
+				return nil, ErrKeyNotFound
 			}
 		}
-		return nil, 0, err
+		return nil, err
 	}
-	return []byte(result.Node.Value), result.Node.ModifiedIndex, nil
+	return &KVEntry{result.Node.Key, []byte(result.Node.Value), result.Node.ModifiedIndex}, nil
 }
 
 // Put a value at "key"
@@ -125,9 +125,9 @@ func (s *Etcd) Delete(key string) error {
 
 // Exists checks if the key exists inside the store
 func (s *Etcd) Exists(key string) (bool, error) {
-	value, _, err := s.Get(key)
+	entry, err := s.Get(key)
 	if err != nil {
-		if err == ErrKeyNotFound || value == nil {
+		if err == ErrKeyNotFound || entry.Value == nil {
 			return false, nil
 		}
 		return false, err
@@ -149,13 +149,13 @@ func (s *Etcd) Watch(key string, _ time.Duration, callback WatchCallback) error 
 
 	for _ = range watchChan {
 		log.WithField("name", "etcd").Debug("Discovery watch triggered")
-		entry, index, err := s.Get(key)
+		entry, err := s.Get(key)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", key, ", cancelling watch")
 			s.watches[key] = nil
 			return err
 		}
-		callback(&KVEntry{key, entry, index})
+		callback(entry)
 	}
 	return nil
 }

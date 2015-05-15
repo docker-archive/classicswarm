@@ -47,15 +47,15 @@ func (s *Zookeeper) setTimeout(time time.Duration) {
 
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
-func (s *Zookeeper) Get(key string) (value []byte, lastIndex uint64, err error) {
+func (s *Zookeeper) Get(key string) (*KVEntry, error) {
 	resp, meta, err := s.client.Get(normalize(key))
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	if resp == nil {
-		return nil, 0, ErrKeyNotFound
+		return nil, ErrKeyNotFound
 	}
-	return resp, uint64(meta.Mzxid), nil
+	return &KVEntry{key, resp, uint64(meta.Mzxid)}, nil
 }
 
 // Create the entire path for a directory that does not exist
@@ -116,9 +116,9 @@ func (s *Zookeeper) Watch(key string, _ time.Duration, callback WatchCallback) e
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
 			log.WithField("name", "zk").Debug("Discovery watch triggered")
-			entry, index, err := s.Get(key)
+			entry, err := s.Get(key)
 			if err == nil {
-				callback(&KVEntry{key, []byte(entry), index})
+				callback(entry)
 			}
 		}
 	}
