@@ -143,6 +143,8 @@ func (s *Consul) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, erro
 	watchCh := make(chan *KVPair)
 
 	go func() {
+		defer close(watchCh)
+
 		opts := &api.QueryOptions{}
 		for {
 			// Check if we should quit
@@ -153,7 +155,7 @@ func (s *Consul) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, erro
 			}
 			pair, meta, err := kv.Get(key, opts)
 			if err != nil {
-				log.WithField("backend", "consul").Error(err)
+				log.Errorf("consul: %v", err)
 				return
 			}
 			opts.WaitIndex = meta.LastIndex
@@ -177,6 +179,8 @@ func (s *Consul) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVP
 	watchCh := make(chan []*KVPair)
 
 	go func() {
+		defer close(watchCh)
+
 		opts := &api.QueryOptions{}
 		for {
 			// Check if we should quit
@@ -188,7 +192,7 @@ func (s *Consul) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVP
 
 			pairs, meta, err := kv.List(prefix, opts)
 			if err != nil {
-				log.WithField("name", "consul").Error(err)
+				log.Errorf("consul: %v", err)
 				return
 			}
 			kv := []*KVPair{}
