@@ -78,7 +78,7 @@ func (s *Discovery) Watch(callback discovery.WatchCallback) {
 		return
 	}
 	for kv := range ch {
-		log.WithField("discovery", s.backend).Debug("Watch triggered")
+		log.WithField("discovery", s.backend).Debugf("Watch triggered with %d nodes", len(kv))
 		// Traduce byte array entries to discovery.Entry
 		entries, _ := discovery.CreateEntries(convertToStringArray(kv))
 		callback(entries)

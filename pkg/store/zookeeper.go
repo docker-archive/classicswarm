@@ -119,8 +119,8 @@ func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, e
 		for {
 			select {
 			case e := <-eventCh:
-				if e.Type == zk.EventNodeChildrenChanged {
-					if entry, err := s.Get(key); err != nil {
+				if e.Type == zk.EventNodeDataChanged {
+					if entry, err := s.Get(key); err == nil {
 						watchCh <- entry
 					}
 				}
@@ -159,7 +159,7 @@ func (s *Zookeeper) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*
 			select {
 			case e := <-eventCh:
 				if e.Type == zk.EventNodeChildrenChanged {
-					if kv, err := s.List(prefix); err != nil {
+					if kv, err := s.List(prefix); err == nil {
 						watchCh <- kv
 					}
 				}

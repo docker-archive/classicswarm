@@ -154,11 +154,11 @@ func (s *Consul) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, erro
 
 			pair, meta, err := kv.Get(key, opts)
 			if err != nil {
-				log.WithField("name", "consul").Error(err)
+				log.WithField("backend", "consul").Error(err)
 				return
 			}
 			if pair == nil {
-				log.WithField("name", "consul").Errorf("Key %s does not exist", key)
+				log.WithField("backend", "consul").Errorf("Key %s does not exist", key)
 				return
 			}
 			opts.WaitIndex = meta.LastIndex
