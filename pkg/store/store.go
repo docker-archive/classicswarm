@@ -6,6 +6,18 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+// Backend represents a KV Store Backend
+type Backend string
+
+const (
+	// CONSUL backend
+	CONSUL Backend = "consul"
+	// ETCD backend
+	ETCD = "etcd"
+	// ZK backend
+	ZK = "zk"
+)
+
 // WatchCallback is used for watch methods on keys
 // and is triggered on key change
 type WatchCallback func(kviTuple ...KVEntry)
@@ -75,22 +87,18 @@ type Locker interface {
 }
 
 var (
-	// List of Store services
-	stores map[string]Initialize
+	// Backend initializers
+	initializers = map[Backend]Initialize{
+		CONSUL: InitializeConsul,
+		ETCD:   InitializeEtcd,
+		ZK:     InitializeZookeeper,
+	}
 )
 
-func init() {
-	stores = make(map[string]Initialize)
-	stores["consul"] = InitializeConsul
-	stores["etcd"] = InitializeEtcd
-	stores["zk"] = InitializeZookeeper
-}
-
 // CreateStore creates a an instance of store
-func CreateStore(store string, addrs []string, options *Config) (Store, error) {
-
-	if init, exists := stores[store]; exists {
-		log.WithFields(log.Fields{"store": store}).Debug("Initializing store service")
+func CreateStore(backend Backend, addrs []string, options *Config) (Store, error) {
+	if init, exists := initializers[backend]; exists {
+		log.WithFields(log.Fields{"backend": backend}).Debug("Initializing store service")
 		return init(addrs, options)
 	}
 
