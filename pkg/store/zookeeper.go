@@ -115,7 +115,6 @@ func (s *Zookeeper) Watch(key string, callback WatchCallback) error {
 
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
-			log.WithField("name", "zk").Debug("Discovery watch triggered")
 			entry, err := s.Get(key)
 			if err == nil {
 				callback(entry)
@@ -173,7 +172,6 @@ func (s *Zookeeper) WatchTree(prefix string, callback WatchCallback) error {
 
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
-			log.WithField("name", "zk").Debug("Discovery watch triggered")
 			kvi, err := s.List(prefix)
 			if err == nil {
 				callback(kvi...)

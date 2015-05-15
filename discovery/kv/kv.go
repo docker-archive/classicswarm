@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/pkg/store"
 )
@@ -72,6 +73,7 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 // Watch is exported
 func (s *Discovery) Watch(callback discovery.WatchCallback) {
 	s.store.WatchTree(s.prefix, func(kv ...*store.KVPair) {
+		log.WithField("name", s.backend).Debug("Discovery watch triggered")
 		// Traduce byte array entries to discovery.Entry
 		entries, _ := discovery.CreateEntries(convertToStringArray(kv))
 		callback(entries)

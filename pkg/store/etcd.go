@@ -148,7 +148,6 @@ func (s *Etcd) Watch(key string, callback WatchCallback) error {
 	go s.client.Watch(key, 0, false, watchChan, stopChan)
 
 	for _ = range watchChan {
-		log.WithField("name", "etcd").Debug("Discovery watch triggered")
 		entry, err := s.Get(key)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", key, ", cancelling watch")
@@ -227,7 +226,6 @@ func (s *Etcd) WatchTree(prefix string, callback WatchCallback) error {
 	// Start watch
 	go s.client.Watch(prefix, 0, true, watchChan, stopChan)
 	for _ = range watchChan {
-		log.WithField("name", "etcd").Debug("Discovery watch triggered")
 		kvi, err := s.List(prefix)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", prefix, ", cancelling watch")

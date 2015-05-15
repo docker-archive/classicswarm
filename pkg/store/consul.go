@@ -156,7 +156,6 @@ func (s *Consul) Watch(key string, callback WatchCallback) error {
 	eventChan := s.waitForChange(fkey)
 
 	for _ = range eventChan {
-		log.WithField("name", "consul").Debug("Key watch triggered")
 		entry, err := s.Get(key)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", fkey, ", cancelling watch")
@@ -197,7 +196,7 @@ func (s *Consul) waitForChange(key string) <-chan uint64 {
 			}
 			_, meta, err := kv.List(key, option)
 			if err != nil {
-				log.WithField("name", "consul").Errorf("Discovery error: %v", err)
+				log.WithField("name", "consul").Error(err)
 				break
 			}
 			watch.LastIndex = meta.LastIndex
@@ -223,7 +222,6 @@ func (s *Consul) WatchTree(prefix string, callback WatchCallback) error {
 	eventChan := s.waitForChange(fprefix)
 
 	for _ = range eventChan {
-		log.WithField("name", "consul").Debug("Key watch triggered")
 		kvi, err := s.List(prefix)
 		if err != nil {
 			log.Error("Cannot refresh keys with prefix: ", fprefix, ", cancelling watch")
