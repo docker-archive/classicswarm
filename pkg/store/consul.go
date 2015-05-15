@@ -19,8 +19,9 @@ const (
 
 // Consul embeds the client and watches
 type Consul struct {
-	config *api.Config
-	client *api.Client
+	config           *api.Config
+	client           *api.Client
+	ephemeralSession string
 }
 
 type consulLock struct {
@@ -39,12 +40,14 @@ func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 	config.Address = endpoints[0]
 	config.Scheme = "http"
 
-	if options.TLS != nil {
-		s.setTLS(options.TLS)
-	}
-
-	if options.Timeout != 0 {
-		s.setTimeout(options.Timeout)
+	// Set options
+	if options != nil {
+		if options.TLS != nil {
+			s.setTLS(options.TLS)
+		}
+		if options.ConnectionTimeout != 0 {
+			s.setTimeout(options.ConnectionTimeout)
+		}
 	}
 
 	// Creates a new client
@@ -54,6 +57,17 @@ func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 		return nil, err
 	}
 	s.client = client
+
+	// Create global ephemeral keys session
+	entry := &api.SessionEntry{
+		Behavior: api.SessionBehaviorDelete,
+		TTL:      time.Duration(EphemeralTTL * time.Second).String(),
+	}
+	session, _, err := s.client.Session().Create(entry, nil)
+	if err != nil {
+		return nil, err
+	}
+	s.ephemeralSession = session
 
 	return s, nil
 }
@@ -91,11 +105,37 @@ func (s *Consul) Get(key string) (*KVPair, error) {
 }
 
 // Put a value at "key"
-func (s *Consul) Put(key string, value []byte) error {
-	p := &api.KVPair{Key: s.normalize(key), Value: value}
-	if s.client == nil {
-		log.Error("Error initializing client")
+func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
+	p := &api.KVPair{
+		Key:   s.normalize(key),
+		Value: value,
 	}
+
+	if opts != nil && opts.Ephemeral {
+		p.Session = s.ephemeralSession
+
+		// Create lock option with the
+		// EphemeralSession
+		lockOpts := &api.LockOptions{
+			Key:     key,
+			Session: s.ephemeralSession,
+		}
+
+		// Lock and ignore if lock is held
+		// It's just a placeholder for the
+		// ephemeral behavior
+		lock, _ := s.client.LockOpts(lockOpts)
+		if lock != nil {
+			lock.Lock(nil)
+		}
+
+		// Try to renew the session
+		_, _, err := s.client.Session().Renew(p.Session, nil)
+		if err != nil {
+			return err
+		}
+	}
+
 	_, err := s.client.KV().Put(p, nil)
 	return err
 }
@@ -258,7 +298,7 @@ func (l *consulLock) Unlock() error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
+func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, error) {
 	p := &api.KVPair{Key: s.normalize(key), Value: value, ModifyIndex: previous.LastIndex}
 	if work, _, err := s.client.KV().CAS(p, nil); err != nil {
 		return false, err
