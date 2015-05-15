@@ -118,7 +118,7 @@ func (s *Consul) Exists(key string) (bool, error) {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Consul) GetRange(prefix string) (kvi []KVEntry, err error) {
+func (s *Consul) GetRange(prefix string) ([]*KVEntry, error) {
 	pairs, _, err := s.client.KV().List(s.normalize(prefix), nil)
 	if err != nil {
 		return nil, err
@@ -126,13 +126,14 @@ func (s *Consul) GetRange(prefix string) (kvi []KVEntry, err error) {
 	if len(pairs) == 0 {
 		return nil, ErrKeyNotFound
 	}
+	kv := []*KVEntry{}
 	for _, pair := range pairs {
 		if pair.Key == prefix {
 			continue
 		}
-		kvi = append(kvi, &kviTuple{pair.Key, pair.Value, pair.ModifyIndex})
+		kv = append(kv, &KVEntry{pair.Key, pair.Value, pair.ModifyIndex})
 	}
-	return kvi, nil
+	return kv, nil
 }
 
 // DeleteRange deletes a range of values at "directory"
@@ -163,7 +164,7 @@ func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallba
 			s.watches[fkey] = nil
 			return err
 		}
-		callback(&kviTuple{key, entry, index})
+		callback(&KVEntry{key, entry, index})
 	}
 
 	return nil

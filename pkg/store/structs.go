@@ -28,21 +28,3 @@ type Config struct {
 	TLS     *tls.Config
 	Timeout time.Duration
 }
-
-type kviTuple struct {
-	key       string
-	value     []byte
-	lastIndex uint64
-}
-
-func (kvi *kviTuple) Key() string {
-	return kvi.key
-}
-
-func (kvi *kviTuple) Value() []byte {
-	return kvi.value
-}
-
-func (kvi *kviTuple) LastIndex() uint64 {
-	return kvi.lastIndex
-}

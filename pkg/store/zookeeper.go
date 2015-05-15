@@ -118,7 +118,7 @@ func (s *Zookeeper) Watch(key string, _ time.Duration, callback WatchCallback) e
 			log.WithField("name", "zk").Debug("Discovery watch triggered")
 			entry, index, err := s.Get(key)
 			if err == nil {
-				callback(&kviTuple{key, []byte(entry), index})
+				callback(&KVEntry{key, []byte(entry), index})
 			}
 		}
 	}
@@ -140,17 +140,18 @@ func (s *Zookeeper) CancelWatch(key string) error {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Zookeeper) GetRange(prefix string) (kvi []KVEntry, err error) {
+func (s *Zookeeper) GetRange(prefix string) ([]*KVEntry, error) {
 	prefix = normalize(prefix)
 	entries, stat, err := s.client.Children(prefix)
 	if err != nil {
 		log.Error("Cannot fetch range of keys beginning with prefix: ", prefix)
 		return nil, err
 	}
+	kv := []*KVEntry{}
 	for _, item := range entries {
-		kvi = append(kvi, &kviTuple{prefix, []byte(item), uint64(stat.Mzxid)})
+		kv = append(kv, &KVEntry{prefix, []byte(item), uint64(stat.Mzxid)})
 	}
-	return kvi, err
+	return kv, err
 }
 
 // DeleteRange deletes a range of values at "directory"

@@ -155,7 +155,7 @@ func (s *Etcd) Watch(key string, _ time.Duration, callback WatchCallback) error 
 			s.watches[key] = nil
 			return err
 		}
-		callback(&kviTuple{key, entry, index})
+		callback(&KVEntry{key, entry, index})
 	}
 	return nil
 }
@@ -204,16 +204,16 @@ func (s *Etcd) AtomicDelete(key string, oldValue []byte, index uint64) (bool, er
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Etcd) GetRange(prefix string) ([]KVEntry, error) {
+func (s *Etcd) GetRange(prefix string) ([]*KVEntry, error) {
 	resp, err := s.client.Get(normalize(prefix), true, true)
 	if err != nil {
 		return nil, err
 	}
-	kvi := make([]KVEntry, len(resp.Node.Nodes))
-	for i, n := range resp.Node.Nodes {
-		kvi[i] = &kviTuple{n.Key, []byte(n.Value), n.ModifiedIndex}
+	kv := []*KVEntry{}
+	for _, n := range resp.Node.Nodes {
+		kv = append(kv, &KVEntry{n.Key, []byte(n.Value), n.ModifiedIndex})
 	}
-	return kvi, nil
+	return kv, nil
 }
 
 // DeleteRange deletes a range of values at "directory"
