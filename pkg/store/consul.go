@@ -3,6 +3,7 @@ package store
 import (
 	"crypto/tls"
 	"net/http"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -72,10 +73,16 @@ func (s *Consul) setTimeout(time time.Duration) {
 	s.config.WaitTime = time
 }
 
+// Normalize the key for usage in Consul
+func (s *Consul) normalize(key string) string {
+	key = normalize(key)
+	return strings.TrimPrefix(key, "/")
+}
+
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
 func (s *Consul) Get(key string) (value []byte, lastIndex uint64, err error) {
-	pair, meta, err := s.client.KV().Get(partialFormat(key), nil)
+	pair, meta, err := s.client.KV().Get(s.normalize(key), nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -87,7 +94,7 @@ func (s *Consul) Get(key string) (value []byte, lastIndex uint64, err error) {
 
 // Put a value at "key"
 func (s *Consul) Put(key string, value []byte) error {
-	p := &api.KVPair{Key: partialFormat(key), Value: value}
+	p := &api.KVPair{Key: s.normalize(key), Value: value}
 	if s.client == nil {
 		log.Error("Error initializing client")
 	}
@@ -97,7 +104,7 @@ func (s *Consul) Put(key string, value []byte) error {
 
 // Delete a value at "key"
 func (s *Consul) Delete(key string) error {
-	_, err := s.client.KV().Delete(partialFormat(key), nil)
+	_, err := s.client.KV().Delete(s.normalize(key), nil)
 	return err
 }
 
@@ -112,7 +119,7 @@ func (s *Consul) Exists(key string) (bool, error) {
 
 // GetRange gets a range of values at "directory"
 func (s *Consul) GetRange(prefix string) (kvi []KVEntry, err error) {
-	pairs, _, err := s.client.KV().List(partialFormat(prefix), nil)
+	pairs, _, err := s.client.KV().List(s.normalize(prefix), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -130,13 +137,13 @@ func (s *Consul) GetRange(prefix string) (kvi []KVEntry, err error) {
 
 // DeleteRange deletes a range of values at "directory"
 func (s *Consul) DeleteRange(prefix string) error {
-	_, err := s.client.KV().DeleteTree(partialFormat(prefix), nil)
+	_, err := s.client.KV().DeleteTree(s.normalize(prefix), nil)
 	return err
 }
 
 // Watch a single key for modifications
 func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallback) error {
-	fkey := partialFormat(key)
+	fkey := s.normalize(key)
 
 	// We get the last index first
 	_, meta, err := s.client.KV().Get(fkey, nil)
@@ -165,7 +172,7 @@ func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallba
 // CancelWatch cancels a watch, sends a signal to the appropriate
 // stop channel
 func (s *Consul) CancelWatch(key string) error {
-	key = partialFormat(key)
+	key = s.normalize(key)
 	if _, ok := s.watches[key]; !ok {
 		log.Error("Chan does not exist for key: ", key)
 		return ErrWatchDoesNotExist
@@ -204,7 +211,7 @@ func (s *Consul) waitForChange(key string) <-chan uint64 {
 
 // WatchRange triggers a watch on a range of values at "directory"
 func (s *Consul) WatchRange(prefix string, filter string, heartbeat time.Duration, callback WatchCallback) error {
-	fprefix := partialFormat(prefix)
+	fprefix := s.normalize(prefix)
 
 	// We get the last index first
 	_, meta, err := s.client.KV().Get(prefix, nil)
@@ -240,7 +247,7 @@ func (s *Consul) CancelWatchRange(prefix string) error {
 // to acquire and release the mutex.
 func (s *Consul) CreateLock(key string, value []byte) (Locker, error) {
 	l, err := s.client.LockOpts(&api.LockOptions{
-		Key:   partialFormat(key),
+		Key:   s.normalize(key),
 		Value: value,
 	})
 	if err != nil {
@@ -265,7 +272,7 @@ func (l *consulLock) Unlock() error {
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
 func (s *Consul) AtomicPut(key string, _ []byte, newValue []byte, index uint64) (bool, error) {
-	p := &api.KVPair{Key: partialFormat(key), Value: newValue, ModifyIndex: index}
+	p := &api.KVPair{Key: s.normalize(key), Value: newValue, ModifyIndex: index}
 	if work, _, err := s.client.KV().CAS(p, nil); err != nil {
 		return false, err
 	} else if !work {
@@ -277,7 +284,7 @@ func (s *Consul) AtomicPut(key string, _ []byte, newValue []byte, index uint64) 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
 func (s *Consul) AtomicDelete(key string, oldValue []byte, index uint64) (bool, error) {
-	p := &api.KVPair{Key: partialFormat(key), ModifyIndex: index}
+	p := &api.KVPair{Key: s.normalize(key), ModifyIndex: index}
 	if work, _, err := s.client.KV().DeleteCAS(p, nil); err != nil {
 		return false, err
 	} else if !work {
