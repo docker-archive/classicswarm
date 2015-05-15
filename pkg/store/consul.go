@@ -151,18 +151,16 @@ func (s *Consul) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, erro
 				return
 			default:
 			}
-
 			pair, meta, err := kv.Get(key, opts)
 			if err != nil {
 				log.WithField("backend", "consul").Error(err)
 				return
 			}
-			if pair == nil {
-				log.WithField("backend", "consul").Errorf("Key %s does not exist", key)
-				return
-			}
 			opts.WaitIndex = meta.LastIndex
-			watchCh <- &KVPair{pair.Key, pair.Value, pair.ModifyIndex}
+			// FIXME: What happens when a key is deleted?
+			if pair != nil {
+				watchCh <- &KVPair{pair.Key, pair.Value, pair.ModifyIndex}
+			}
 		}
 	}()
 
@@ -191,10 +189,6 @@ func (s *Consul) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVP
 			pairs, meta, err := kv.List(prefix, opts)
 			if err != nil {
 				log.WithField("name", "consul").Error(err)
-				return
-			}
-			if len(pairs) == 0 {
-				log.WithField("name", "consul").Errorf("Key %s does not exist", prefix)
 				return
 			}
 			kv := []*KVPair{}
