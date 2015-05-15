@@ -118,7 +118,7 @@ func (s *Consul) Exists(key string) (bool, error) {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Consul) GetRange(prefix string) ([]*KVEntry, error) {
+func (s *Consul) List(prefix string) ([]*KVEntry, error) {
 	pairs, _, err := s.client.KV().List(s.normalize(prefix), nil)
 	if err != nil {
 		return nil, err
@@ -226,7 +226,7 @@ func (s *Consul) WatchRange(prefix string, filter string, heartbeat time.Duratio
 
 	for _ = range eventChan {
 		log.WithField("name", "consul").Debug("Key watch triggered")
-		kvi, err := s.GetRange(prefix)
+		kvi, err := s.List(prefix)
 		if err != nil {
 			log.Error("Cannot refresh keys with prefix: ", fprefix, ", cancelling watch")
 			s.watches[fprefix] = nil

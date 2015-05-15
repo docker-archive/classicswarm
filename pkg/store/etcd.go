@@ -195,7 +195,7 @@ func (s *Etcd) AtomicDelete(key string, previous *KVEntry) (bool, error) {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Etcd) GetRange(prefix string) ([]*KVEntry, error) {
+func (s *Etcd) List(prefix string) ([]*KVEntry, error) {
 	resp, err := s.client.Get(normalize(prefix), true, true)
 	if err != nil {
 		return nil, err
@@ -228,7 +228,7 @@ func (s *Etcd) WatchRange(prefix string, filter string, _ time.Duration, callbac
 	go s.client.Watch(prefix, 0, true, watchChan, stopChan)
 	for _ = range watchChan {
 		log.WithField("name", "etcd").Debug("Discovery watch triggered")
-		kvi, err := s.GetRange(prefix)
+		kvi, err := s.List(prefix)
 		if err != nil {
 			log.Error("Cannot refresh the key: ", prefix, ", cancelling watch")
 			s.watches[prefix] = nil

@@ -62,7 +62,7 @@ func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
 
 // Fetch is exported
 func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
-	addrs, err := s.store.GetRange(s.prefix)
+	addrs, err := s.store.List(s.prefix)
 	if err != nil {
 		return nil, err
 	}

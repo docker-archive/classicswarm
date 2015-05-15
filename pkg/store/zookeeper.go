@@ -140,7 +140,7 @@ func (s *Zookeeper) CancelWatch(key string) error {
 }
 
 // GetRange gets a range of values at "directory"
-func (s *Zookeeper) GetRange(prefix string) ([]*KVEntry, error) {
+func (s *Zookeeper) List(prefix string) ([]*KVEntry, error) {
 	prefix = normalize(prefix)
 	entries, stat, err := s.client.Children(prefix)
 	if err != nil {
@@ -174,7 +174,7 @@ func (s *Zookeeper) WatchRange(prefix string, filter string, _ time.Duration, ca
 	for e := range eventChan {
 		if e.Type == zk.EventNodeChildrenChanged {
 			log.WithField("name", "zk").Debug("Discovery watch triggered")
-			kvi, err := s.GetRange(prefix)
+			kvi, err := s.List(prefix)
 			if err == nil {
 				callback(kvi...)
 			}
