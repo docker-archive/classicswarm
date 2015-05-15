@@ -136,7 +136,7 @@ func (s *Etcd) Exists(key string) (bool, error) {
 }
 
 // Watch a single key for modifications
-func (s *Etcd) Watch(key string, _ time.Duration, callback WatchCallback) error {
+func (s *Etcd) Watch(key string, callback WatchCallback) error {
 	key = normalize(key)
 	watchChan := make(chan *etcd.Response)
 	stopChan := make(chan bool)
@@ -216,7 +216,7 @@ func (s *Etcd) DeleteTree(prefix string) error {
 }
 
 // WatchRange triggers a watch on a range of values at "directory"
-func (s *Etcd) WatchTree(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
+func (s *Etcd) WatchTree(prefix string, callback WatchCallback) error {
 	prefix = normalize(prefix)
 	watchChan := make(chan *etcd.Response)
 	stopChan := make(chan bool)

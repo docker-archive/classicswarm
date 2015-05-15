@@ -103,7 +103,7 @@ func (s *Zookeeper) Exists(key string) (bool, error) {
 }
 
 // Watch a single key for modifications
-func (s *Zookeeper) Watch(key string, _ time.Duration, callback WatchCallback) error {
+func (s *Zookeeper) Watch(key string, callback WatchCallback) error {
 	fkey := normalize(key)
 	_, _, eventChan, err := s.client.GetW(fkey)
 	if err != nil {
@@ -161,7 +161,7 @@ func (s *Zookeeper) DeleteTree(prefix string) error {
 }
 
 // WatchRange triggers a watch on a range of values at "directory"
-func (s *Zookeeper) WatchTree(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
+func (s *Zookeeper) WatchTree(prefix string, callback WatchCallback) error {
 	fprefix := normalize(prefix)
 	_, _, eventChan, err := s.client.ChildrenW(fprefix)
 	if err != nil {

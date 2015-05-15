@@ -71,7 +71,7 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 
 // Watch is exported
 func (s *Discovery) Watch(callback discovery.WatchCallback) {
-	s.store.WatchTree(s.prefix, "", s.heartbeat, func(kv ...*store.KVPair) {
+	s.store.WatchTree(s.prefix, func(kv ...*store.KVPair) {
 		// Traduce byte array entries to discovery.Entry
 		entries, _ := discovery.CreateEntries(convertToStringArray(kv))
 		callback(entries)

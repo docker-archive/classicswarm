@@ -25,7 +25,6 @@ type consulLock struct {
 // refresh interval
 type Watch struct {
 	LastIndex uint64
-	Interval  time.Duration
 }
 
 // InitializeConsul creates a new Consul client given
@@ -143,7 +142,7 @@ func (s *Consul) DeleteTree(prefix string) error {
 }
 
 // Watch a single key for modifications
-func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallback) error {
+func (s *Consul) Watch(key string, callback WatchCallback) error {
 	fkey := s.normalize(key)
 
 	// We get the last index first
@@ -153,7 +152,7 @@ func (s *Consul) Watch(key string, heartbeat time.Duration, callback WatchCallba
 	}
 
 	// Add watch to map
-	s.watches[fkey] = &Watch{LastIndex: meta.LastIndex, Interval: heartbeat}
+	s.watches[fkey] = &Watch{LastIndex: meta.LastIndex}
 	eventChan := s.waitForChange(fkey)
 
 	for _ = range eventChan {
@@ -195,7 +194,6 @@ func (s *Consul) waitForChange(key string) <-chan uint64 {
 			}
 			option := &api.QueryOptions{
 				WaitIndex: watch.LastIndex,
-				WaitTime:  watch.Interval,
 			}
 			_, meta, err := kv.List(key, option)
 			if err != nil {
@@ -211,7 +209,7 @@ func (s *Consul) waitForChange(key string) <-chan uint64 {
 }
 
 // WatchRange triggers a watch on a range of values at "directory"
-func (s *Consul) WatchTree(prefix string, filter string, heartbeat time.Duration, callback WatchCallback) error {
+func (s *Consul) WatchTree(prefix string, callback WatchCallback) error {
 	fprefix := s.normalize(prefix)
 
 	// We get the last index first
@@ -221,7 +219,7 @@ func (s *Consul) WatchTree(prefix string, filter string, heartbeat time.Duration
 	}
 
 	// Add watch to map
-	s.watches[fprefix] = &Watch{LastIndex: meta.LastIndex, Interval: heartbeat}
+	s.watches[fprefix] = &Watch{LastIndex: meta.LastIndex}
 	eventChan := s.waitForChange(fprefix)
 
 	for _ = range eventChan {
