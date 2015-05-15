@@ -24,8 +24,11 @@ func InitializeZookeeper(endpoints []string, options *Config) (Store, error) {
 	s := &Zookeeper{}
 	s.timeout = 5 * time.Second // default timeout
 
-	if options.Timeout != 0 {
-		s.setTimeout(options.Timeout)
+	// Set options
+	if options != nil {
+		if options.ConnectionTimeout != 0 {
+			s.setTimeout(options.ConnectionTimeout)
+		}
 	}
 
 	conn, _, err := zk.Connect(endpoints, s.timeout)
@@ -56,9 +59,13 @@ func (s *Zookeeper) Get(key string) (*KVPair, error) {
 }
 
 // Create the entire path for a directory that does not exist
-func (s *Zookeeper) createFullpath(path []string) error {
+func (s *Zookeeper) createFullpath(path []string, ephemeral bool) error {
 	for i := 1; i <= len(path); i++ {
 		newpath := "/" + strings.Join(path[:i], "/")
+		if i == len(path) && ephemeral {
+			_, err := s.client.Create(newpath, []byte{1}, zk.FlagEphemeral, zk.WorldACL(zk.PermAll))
+			return err
+		}
 		_, err := s.client.Create(newpath, []byte{1}, 0, zk.WorldACL(zk.PermAll))
 		if err != nil {
 			// Skip if node already exists
@@ -71,14 +78,18 @@ func (s *Zookeeper) createFullpath(path []string) error {
 }
 
 // Put a value at "key"
-func (s *Zookeeper) Put(key string, value []byte) error {
+func (s *Zookeeper) Put(key string, value []byte, opts *WriteOptions) error {
 	fkey := normalize(key)
 	exists, err := s.Exists(key)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		s.createFullpath(splitKey(key))
+		if opts != nil && opts.Ephemeral {
+			s.createFullpath(splitKey(key), opts.Ephemeral)
+		} else {
+			s.createFullpath(splitKey(key), false)
+		}
 	}
 	_, err = s.client.Set(fkey, value, -1)
 	return err
@@ -198,7 +209,7 @@ func (s *Zookeeper) DeleteTree(prefix string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
+func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, error) {
 	// Use index of Set method to implement CAS
 	return false, ErrNotImplemented
 }

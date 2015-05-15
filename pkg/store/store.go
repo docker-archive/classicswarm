@@ -41,8 +41,8 @@ var (
 
 // Config contains the options for a storage client
 type Config struct {
-	TLS     *tls.Config
-	Timeout time.Duration
+	TLS               *tls.Config
+	ConnectionTimeout time.Duration
 }
 
 // Store represents the backend K/V storage
@@ -51,7 +51,7 @@ type Config struct {
 // backend for libkv
 type Store interface {
 	// Put a value at the specified key
-	Put(key string, value []byte) error
+	Put(key string, value []byte, options *WriteOptions) error
 
 	// Get a value given its key
 	Get(key string) (*KVPair, error)
@@ -86,17 +86,34 @@ type Store interface {
 	DeleteTree(prefix string) error
 
 	// Atomic operation on a single value
-	AtomicPut(key string, value []byte, previous *KVPair) (bool, error)
+	AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, error)
 
 	// Atomic delete of a single value
 	AtomicDelete(key string, previous *KVPair) (bool, error)
 }
+
+const (
+	// DefaultTTL is the default time used for a node
+	// to be removed, it is set to 0 to explain
+	// that there is no expiration
+	DefaultTTL = 0
+
+	// EphemeralTTL is used for the ephemeral node
+	// behavior. If the node session is not renewed
+	// before the ttl expires, the node is removed
+	EphemeralTTL = 60
+)
 
 // KVPair represents {Key, Value, Lastindex} tuple
 type KVPair struct {
 	Key       string
 	Value     []byte
 	LastIndex uint64
+}
+
+// WriteOptions contains optional request parameters
+type WriteOptions struct {
+	Ephemeral bool
 }
 
 // WatchCallback is used for watch methods on keys
