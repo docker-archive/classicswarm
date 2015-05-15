@@ -212,8 +212,12 @@ func (s *Zookeeper) CreateLock(key string, value []byte) (Locker, error) {
 }
 
 // Lock attempts to acquire the lock and blocks while doing so.
-func (l *zookeeperLock) Lock() error {
-	return l.lock.Lock()
+// Returns a channel that is closed if our lock is lost or an error.
+func (l *zookeeperLock) Lock() (<-chan struct{}, error) {
+	if err := l.lock.Lock(); err != nil {
+		return nil, err
+	}
+	return make(<-chan struct{}), nil
 }
 
 // Unlock released the lock. It is an error to call this

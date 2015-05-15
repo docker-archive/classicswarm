@@ -70,7 +70,7 @@ type KVEntry interface {
 // Locker provides locking mechanism on top of the store.
 // Similar to `sync.Lock` except it may return errors.
 type Locker interface {
-	Lock() error
+	Lock() (<-chan struct{}, error)
 	Unlock() error
 }
 
