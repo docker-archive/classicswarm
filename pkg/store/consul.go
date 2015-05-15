@@ -211,7 +211,7 @@ func (s *Consul) waitForChange(key string) <-chan uint64 {
 }
 
 // WatchRange triggers a watch on a range of values at "directory"
-func (s *Consul) WatchRange(prefix string, filter string, heartbeat time.Duration, callback WatchCallback) error {
+func (s *Consul) WatchTree(prefix string, filter string, heartbeat time.Duration, callback WatchCallback) error {
 	fprefix := s.normalize(prefix)
 
 	// We get the last index first

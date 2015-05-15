@@ -60,7 +60,7 @@ type Store interface {
 	DeleteTree(prefix string) error
 
 	// Watch key namespaces
-	WatchRange(prefix string, filter string, heartbeat time.Duration, callback WatchCallback) error
+	WatchTree(prefix string, filter string, heartbeat time.Duration, callback WatchCallback) error
 
 	// Cancel watch key range
 	CancelWatchRange(prefix string) error

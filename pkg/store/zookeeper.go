@@ -161,7 +161,7 @@ func (s *Zookeeper) DeleteTree(prefix string) error {
 }
 
 // WatchRange triggers a watch on a range of values at "directory"
-func (s *Zookeeper) WatchRange(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
+func (s *Zookeeper) WatchTree(prefix string, filter string, _ time.Duration, callback WatchCallback) error {
 	fprefix := normalize(prefix)
 	_, _, eventChan, err := s.client.ChildrenW(fprefix)
 	if err != nil {
