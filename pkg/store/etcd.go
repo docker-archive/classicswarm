@@ -149,6 +149,10 @@ func (s *Etcd) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error)
 	// Adapter goroutine: The goal here is to convert wathever format etcd is
 	// using into our interface.
 	go func() {
+		// Push the current value through the channel.
+		if v, err := s.Get(key); err != nil {
+			watchCh <- v
+		}
 		for {
 			select {
 			case result := <-etcdWatchCh:
@@ -175,7 +179,6 @@ func (s *Etcd) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPai
 	watchCh := make(chan []*KVPair)
 
 	// Start an etcd watch.
-	// Note: etcd will send the current value through the channel.
 	etcdWatchCh := make(chan *etcd.Response)
 	etcdStopCh := make(chan bool)
 	go s.client.Watch(prefix, 0, true, etcdWatchCh, etcdStopCh)
@@ -183,14 +186,18 @@ func (s *Etcd) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPai
 	// Adapter goroutine: The goal here is to convert wathever format etcd is
 	// using into our interface.
 	go func() {
+		// Push the current value through the channel.
+		if list, err := s.List(prefix); err != nil {
+			watchCh <- list
+		}
 		for {
 			select {
-			case result := <-etcdWatchCh:
-				kv := []*KVPair{}
-				for _, n := range result.Node.Nodes {
-					kv = append(kv, &KVPair{n.Key, []byte(n.Value), n.ModifiedIndex})
+			case <-etcdWatchCh:
+				// FIXME: We should probably use the value pushed by the channel.
+				// However, .Node.Nodes seems to be empty.
+				if list, err := s.List(prefix); err == nil {
+					watchCh <- list
 				}
-				watchCh <- kv
 			case <-stopCh:
 				etcdStopCh <- true
 				return
