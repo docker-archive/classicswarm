@@ -257,10 +257,9 @@ func (s *Consul) CreateLock(key string, value []byte) (Locker, error) {
 }
 
 // Lock attempts to acquire the lock and blocks while doing so.
-func (l *consulLock) Lock() error {
-	// FIXME: Locks may be lost and we should watch for the returned channel.
-	_, err := l.lock.Lock(nil)
-	return err
+// Returns a channel that is closed if our lock is lost or an error.
+func (l *consulLock) Lock() (<-chan struct{}, error) {
+	return l.lock.Lock(nil)
 }
 
 // Unlock released the lock. It is an error to call this
