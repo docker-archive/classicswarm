@@ -17,7 +17,7 @@ import (
 func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
-	app.Usage = "a Docker-native clustering system"
+	app.Usage = "A Docker-native clustering system"
 	app.Version = version.VERSION + " (" + version.GITCOMMIT + ")"
 
 	app.Author = ""
@@ -59,7 +59,7 @@ func Run() {
 		{
 			Name:      "create",
 			ShortName: "c",
-			Usage:     "create a cluster",
+			Usage:     "Create a cluster",
 			Action: func(c *cli.Context) {
 				if len(c.Args()) != 0 {
 					log.Fatalf("the `create` command takes no arguments. See '%s create --help'.", c.App.Name)
@@ -76,7 +76,7 @@ func Run() {
 		{
 			Name:      "list",
 			ShortName: "l",
-			Usage:     "list nodes in a cluster",
+			Usage:     "List nodes in a cluster",
 			Flags:     []cli.Flag{flTimeout},
 			Action: func(c *cli.Context) {
 				dflag := getDiscovery(c)
@@ -109,7 +109,7 @@ func Run() {
 		{
 			Name:      "manage",
 			ShortName: "m",
-			Usage:     "manage a docker cluster",
+			Usage:     "Manage a docker cluster",
 			Flags: []cli.Flag{
 				flStore,
 				flStrategy, flFilter,
@@ -122,7 +122,7 @@ func Run() {
 		{
 			Name:      "join",
 			ShortName: "j",
-			Usage:     "join a docker cluster",
+			Usage:     "Join a docker cluster",
 			Flags:     []cli.Flag{flAddr, flHeartBeat},
 			Action:    join,
 		},
