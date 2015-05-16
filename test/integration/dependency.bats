@@ -11,62 +11,27 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# Running the second container with shared volumes.
-	run docker_swarm run --name b1 -e constraint:node==node-1 -d busybox:latest sleep 500
-	[ "$status" -eq 0 ]
-	run docker_swarm run --name b2 --volumes-from=/b1 -d busybox:latest sh
-	[ "$status" -eq 0 ]
+	docker_swarm run --name b1 -e constraint:node==node-1 -d busybox:latest sleep 500
+
+	# Running container with shared volumes.
+	docker_swarm run --name b2 --volumes-from=/b1 -d busybox:latest sh
+
+	# Running container with shared volumes(rw).
+	docker_swarm run --name b3 --volumes-from=/b1:rw -d busybox:latest sh
+
+	# Running container with shared volumes(ro).
+	docker_swarm run --name b4 --volumes-from=/b1:ro -d busybox:latest sh
 
 	# check if containers share volume.
 	run docker_swarm inspect -f "{{ .HostConfig.VolumesFrom }}" b2
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"[/b1]"* ]]
 
-	# check if both containers are started on the same node
-	run docker_swarm inspect b1
-	[ "$status" -eq 0 ]
-	[[ "${output}" == *'"Name": "node-1"'* ]]
-
-	run docker_swarm inspect b2
-	[ "$status" -eq 0 ]
-	[[ "${output}" == *'"Name": "node-1"'* ]]
-}
-
-@test "shared volumes(rw) dependency" {
-	start_docker_with_busybox 2
-	swarm_manage
-
-	# Running the second container with shared volumes.
-	docker_swarm run --name b1 -e constraint:node==node-1 -d busybox:latest sleep 500
-
-	docker_swarm run --name b2 --volumes-from=/b1:rw -d busybox:latest sh
-
-	# check if containers share volume.
-	run docker_swarm inspect -f "{{ .HostConfig.VolumesFrom }}" b2
+	run docker_swarm inspect -f "{{ .HostConfig.VolumesFrom }}" b3
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"[/b1:rw]"* ]]
 
-	# check if both containers are started on the same node
-	run docker_swarm inspect b1
-	[ "$status" -eq 0 ]
-	[[ "${output}" == *'"Name": "node-1"'* ]]
-
-	run docker_swarm inspect b2
-	[ "$status" -eq 0 ]
-	[[ "${output}" == *'"Name": "node-1"'* ]]
-}
-
-@test "shared volumes(ro) dependency" {
-	start_docker_with_busybox 2
-	swarm_manage
-
-	# Running the second container with shared volumes.
-	docker_swarm run --name b1 -e constraint:node==node-1 -d busybox:latest sleep 500
-
-	docker_swarm run --name b2 --volumes-from=/b1:ro -d busybox:latest sh
-
-	# check if containers share volume.
-	run docker_swarm inspect -f "{{ .HostConfig.VolumesFrom }}" b2
+	run docker_swarm inspect -f "{{ .HostConfig.VolumesFrom }}" b4
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"[/b1:ro]"* ]]
 
@@ -76,6 +41,14 @@ function teardown() {
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 
 	run docker_swarm inspect b2
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
+
+	run docker_swarm inspect b3
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
+
+	run docker_swarm inspect b4
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 }
