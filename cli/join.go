@@ -41,10 +41,10 @@ func join(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	hbval := time.Duration(hb)
+	hbval := time.Duration(hb) * time.Second
 	for {
-		log.WithFields(log.Fields{"addr": addr, "discovery": dflag}).Infof("Registering on the discovery service every %d seconds...", hbval)
-		time.Sleep(hbval * time.Second)
+		log.WithFields(log.Fields{"addr": addr, "discovery": dflag}).Infof("Registering on the discovery service every %s...", hbval)
+		time.Sleep(hbval)
 		if err := d.Register(addr); err != nil {
 			log.Error(err)
 		}

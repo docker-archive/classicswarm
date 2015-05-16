@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/discovery"
 )
 
@@ -46,23 +47,49 @@ func parseFileContent(content []byte) []string {
 	return result
 }
 
-// Fetch is exported
-func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
+func (s *Discovery) fetch() (discovery.Entries, error) {
 	fileContent, err := ioutil.ReadFile(s.path)
 	if err != nil {
+		log.WithField("discovery", "file").Errorf("Failed to read '%s': %v", s.path, err)
 		return nil, err
 	}
 	return discovery.CreateEntries(parseFileContent(fileContent))
 }
 
 // Watch is exported
-func (s *Discovery) Watch(callback discovery.WatchCallback) {
-	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
-		entries, err := s.Fetch()
+func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, error) {
+	ch := make(chan discovery.Entries)
+	ticker := time.NewTicker(time.Duration(s.heartbeat) * time.Second)
+
+	go func() {
+		// Send the initial entries if available.
+		currentEntries, err := s.fetch()
 		if err == nil {
-			callback(entries)
+			ch <- currentEntries
 		}
-	}
+
+		// Periodically send updates.
+		for {
+			select {
+			case <-ticker.C:
+				newEntries, err := s.fetch()
+				if err != nil {
+					continue
+				}
+
+				// Check if the file has really changed.
+				if !newEntries.Equals(currentEntries) {
+					ch <- newEntries
+				}
+				currentEntries = newEntries
+			case <-stopCh:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
+	return ch, nil
 }
 
 // Register is exported

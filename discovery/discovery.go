@@ -25,20 +25,41 @@ func NewEntry(url string) (*Entry, error) {
 }
 
 // String returns the string form of an entry.
-func (m Entry) String() string {
+func (m *Entry) String() string {
 	return fmt.Sprintf("%s:%s", m.Host, m.Port)
 }
 
-// WatchCallback is the type of the function called to monitor entries
-// on a discovery endpoint.
-type WatchCallback func(entries []*Entry)
+func (a *Entry) Equals(b *Entry) bool {
+	return a.Host == b.Host && a.Port == b.Port
+}
+
+type Entries []*Entry
+
+func (a Entries) Equals(b Entries) bool {
+	// Check if the file has really changed.
+	if len(a) != len(b) {
+		return false
+	}
+	for i, _ := range a {
+		if !a[i].Equals(b[i]) {
+			return false
+		}
+	}
+	return true
+}
 
 // The Discovery interface is implemented by Discovery backends which
 // manage swarm host entries.
 type Discovery interface {
+	// Initialize the discovery with URIs and a heartbeat.
 	Initialize(string, uint64) error
-	Fetch() ([]*Entry, error)
-	Watch(WatchCallback)
+
+	// Watch the discovery for entry changes.
+	// Returns a channel that will receive changes or an error.
+	// Providing a non-nil stopCh can be used to stop watching.
+	Watch(stopCh <-chan struct{}) (<-chan Entries, error)
+
+	// Register to the discovery
 	Register(string) error
 }
 
@@ -92,8 +113,8 @@ func New(rawurl string, heartbeat uint64) (Discovery, error) {
 }
 
 // CreateEntries returns an array of entries based on the given addresses.
-func CreateEntries(addrs []string) ([]*Entry, error) {
-	entries := []*Entry{}
+func CreateEntries(addrs []string) (Entries, error) {
+	entries := Entries{}
 	if addrs == nil {
 		return entries, nil
 	}

@@ -40,7 +40,7 @@ func TestParse(t *testing.T) {
 
 func TestCreateEntries(t *testing.T) {
 	entries, err := CreateEntries(nil)
-	assert.Equal(t, entries, []*Entry{})
+	assert.Equal(t, entries, Entries{})
 	assert.NoError(t, err)
 
 	entries, err = CreateEntries([]string{"127.0.0.1:2375", "127.0.0.2:2375", ""})
