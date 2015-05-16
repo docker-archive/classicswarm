@@ -8,17 +8,8 @@ CONSUL_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 8000 ))
 # Container name for integration test
 CONTAINER_NAME=swarm_consul
 
-function check_leader() {
-	# Confirm Cluster leader election
-	docker_host logs $CONTAINER_NAME | grep "New leader elected"
-	# Check member state
-	docker_host logs $CONTAINER_NAME | grep "consul: member '$CONTAINER_NAME' joined, marking health alive"
-}
-
 function start_consul() {
 	docker_host run --name=$CONTAINER_NAME -h $CONTAINER_NAME -p $CONSUL_HOST:8500 -d progrium/consul -server -bootstrap-expect 1 -data-dir /test
-	# Check if consul cluster leader is elected
-	retry 30 1 check_leader
 }
 
 function stop_consul() {
