@@ -37,16 +37,12 @@ func join(c *cli.Context) {
 		log.Fatal("--addr should be of the form ip:port or hostname:port")
 	}
 
-	if err := d.Register(addr); err != nil {
-		log.Fatal(err)
-	}
-
 	hbval := time.Duration(hb) * time.Second
 	for {
 		log.WithFields(log.Fields{"addr": addr, "discovery": dflag}).Infof("Registering on the discovery service every %s...", hbval)
-		time.Sleep(hbval)
 		if err := d.Register(addr); err != nil {
 			log.Error(err)
 		}
+		time.Sleep(hbval)
 	}
 }
