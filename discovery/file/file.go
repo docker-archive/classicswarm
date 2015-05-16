@@ -1,11 +1,11 @@
 package file
 
 import (
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/discovery"
 )
 
@@ -50,15 +50,15 @@ func parseFileContent(content []byte) []string {
 func (s *Discovery) fetch() (discovery.Entries, error) {
 	fileContent, err := ioutil.ReadFile(s.path)
 	if err != nil {
-		log.WithField("discovery", "file").Errorf("Failed to read '%s': %v", s.path, err)
-		return nil, err
+		return nil, fmt.Errorf("failed to read '%s': %v", s.path, err)
 	}
 	return discovery.CreateEntries(parseFileContent(fileContent))
 }
 
 // Watch is exported
-func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, error) {
+func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
 	ch := make(chan discovery.Entries)
+	errCh := make(chan error)
 	ticker := time.NewTicker(time.Duration(s.heartbeat) * time.Second)
 
 	go func() {
@@ -74,6 +74,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, err
 			case <-ticker.C:
 				newEntries, err := s.fetch()
 				if err != nil {
+					errCh <- err
 					continue
 				}
 
@@ -89,7 +90,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, err
 		}
 	}()
 
-	return ch, nil
+	return ch, errCh
 }
 
 // Register is exported

@@ -68,11 +68,8 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 	if err != nil {
 		log.Fatal(err)
 	}
-	discoveryCh, err := cluster.discovery.Watch(nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	go cluster.monitorDiscovery(discoveryCh)
+	discoveryCh, errCh := cluster.discovery.Watch(nil)
+	go cluster.monitorDiscovery(discoveryCh, errCh)
 
 	return cluster, nil
 }
@@ -211,17 +208,19 @@ func (c *Cluster) addEngine(addr string) bool {
 }
 
 // Entries are Docker Engines
-func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries) {
-	// Watch for changes in the discovery channel.
-	log.Error("starting monitor")
-	for entries := range ch {
-		log.Errorf("got %v from monitor", entries)
-
-		// Attempt to add every engine. `addEngine` will take care of duplicates.
-		// Since `addEngine` can be very slow (it has to connect to the
-		// engine), we are going to launch them in parallel.
-		for _, entry := range entries {
-			go c.addEngine(entry.String())
+func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan error) {
+	// Watch changes on the discovery channel.
+	for {
+		select {
+		case entries := <-ch:
+			// Attempt to add every engine. `addEngine` will take care of duplicates.
+			// Since `addEngine` can be very slow (it has to connect to the
+			// engine), we are going to launch them in parallel.
+			for _, entry := range entries {
+				go c.addEngine(entry.String())
+			}
+		case err := <-errCh:
+			log.Errorf("Discovery error: %v", err)
 		}
 	}
 }

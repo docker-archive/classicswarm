@@ -31,7 +31,7 @@ func (s *Discovery) Initialize(uris string, _ uint64) error {
 }
 
 // Watch is exported
-func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, error) {
+func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
 	ch := make(chan discovery.Entries)
 	go func() {
 		ch <- s.entries

@@ -1,7 +1,6 @@
 package token
 
 import (
-	"log"
 	"testing"
 	"time"
 
@@ -35,13 +34,13 @@ func TestRegister(t *testing.T) {
 	assert.NoError(t, d.Register(expected))
 
 	// Watch
-	ch, err := d.Watch(nil)
-	assert.NoError(t, err)
+	ch, errCh := d.Watch(nil)
 	select {
 	case entries := <-ch:
-		log.Printf("%v %v", entries, expectedEntries)
 		assert.True(t, entries.Equals(expectedEntries))
-	case <-time.After(2 * time.Second):
+	case err := <-errCh:
+		t.Fatal(err)
+	case <-time.After(5 * time.Second):
 		t.Fatal("Timed out")
 	}
 

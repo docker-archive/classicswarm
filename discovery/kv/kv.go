@@ -63,7 +63,7 @@ func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
 
 // Watch the store until either there's a store error or we receive a stop request.
 // Returns false if we shouldn't attempt watching the store anymore (stop request received).
-func (s *Discovery) watchOnce(stopCh <-chan struct{}, watchCh <-chan []*store.KVPair, discoveryCh chan discovery.Entries) bool {
+func (s *Discovery) watchOnce(stopCh <-chan struct{}, watchCh <-chan []*store.KVPair, discoveryCh chan discovery.Entries, errCh chan error) bool {
 	for {
 		select {
 		case pairs := <-watchCh:
@@ -79,7 +79,10 @@ func (s *Discovery) watchOnce(stopCh <-chan struct{}, watchCh <-chan []*store.KV
 				addrs = append(addrs, string(pair.Value))
 			}
 
-			if entries, err := discovery.CreateEntries(addrs); err == nil {
+			entries, err := discovery.CreateEntries(addrs)
+			if err != nil {
+				errCh <- err
+			} else {
 				discoveryCh <- entries
 			}
 		case <-stopCh:
@@ -90,8 +93,10 @@ func (s *Discovery) watchOnce(stopCh <-chan struct{}, watchCh <-chan []*store.KV
 }
 
 // Watch is exported
-func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, error) {
+func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
 	ch := make(chan discovery.Entries)
+	errCh := make(chan error)
+
 	go func() {
 		// Forever: Create a store watch, watch until we get an error and then try again.
 		// Will only stop if we receive a stopCh request.
@@ -99,22 +104,20 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, err
 			// Set up a watch.
 			watchCh, err := s.store.WatchTree(s.prefix, stopCh)
 			if err != nil {
-				log.WithField("discovery", s.backend).Errorf("Unable to set up a watch: %v", err)
+				errCh <- err
 			} else {
-				if !s.watchOnce(stopCh, watchCh, ch) {
-					log.WithField("discovery", s.backend).Infof("Shutting down")
+				if !s.watchOnce(stopCh, watchCh, ch, errCh) {
 					return
 				}
 			}
 
 			// If we get here it means the store watch channel was closed. This
 			// is unexpected so let's retry later.
-			log.WithField("discovery", s.backend).Errorf("Unexpected watch error. Retrying in %s", time.Duration(s.heartbeat))
+			errCh <- fmt.Errorf("Unexpected watch error")
 			time.Sleep(s.heartbeat)
 		}
 	}()
-
-	return ch, nil
+	return ch, errCh
 }
 
 // Register is exported

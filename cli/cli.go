@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -77,28 +78,36 @@ func Run() {
 			Name:      "list",
 			ShortName: "l",
 			Usage:     "list nodes in a cluster",
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:  "timeout",
+					Value: 10,
+				},
+			},
 			Action: func(c *cli.Context) {
 				dflag := getDiscovery(c)
 				if dflag == "" {
 					log.Fatalf("discovery required to list a cluster. See '%s list --help'.", c.App.Name)
 				}
+				timeout, err := strconv.ParseUint(c.String("timeout"), 0, 32)
+				if timeout < 1 || err != nil {
+					log.Fatal("--timeout should be an unsigned integer and greater than 0")
+				}
 
-				// FIXME Add and use separate timeout flag instead of forcing it
-				d, err := discovery.New(dflag, 10)
+				d, err := discovery.New(dflag, timeout)
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				ch, err := d.Watch(nil)
-				if err != nil {
-					log.Fatal(err)
-				}
+				ch, errCh := d.Watch(nil)
 				select {
 				case entries := <-ch:
 					for _, entry := range entries {
 						fmt.Println(entry)
 					}
-				case <-time.After(10 * time.Second):
+				case err := <-errCh:
+					log.Fatal(err)
+				case <-time.After(time.Duration(timeout) * time.Second):
 					log.Fatal("Timed out")
 				}
 			},
