@@ -1,43 +1,81 @@
 #!/usr/bin/env bats
 
-load ../helpers
+load discovery_helpers
 
-# Address on which Zookeeper will listen (random port between 7000 and 8000).
-ZK_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 7000 ))
+# Address on which the store will listen (random port between 8000 and 9000).
+STORE_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 7000 ))
+
+# Discovery parameter for Swarm
+DISCOVERY="zk://${STORE_HOST}/test"
 
 # Container name for integration test
-ZK_CONTAINER_NAME=swarm_integration_zk
+CONTAINER_NAME=swarm_integration_zk
 
-function start_zk() {
-	docker_host run --name $ZK_CONTAINER_NAME -p $ZK_HOST:2181 -d jplock/zookeeper
+function start_store() {
+	docker_host run --name $CONTAINER_NAME -p $STORE_HOST:2181 -d jplock/zookeeper
 }
 
-function stop_zk() {
-	docker_host rm -f -v $ZK_CONTAINER_NAME
-}
-
-function setup() {
-	start_zk
+function stop_store() {
+	docker_host rm -f -v $CONTAINER_NAME
 }
 
 function teardown() {
 	swarm_manage_cleanup
 	swarm_join_cleanup
 	stop_docker
-	stop_zk
+	stop_store
 }
 
-@test "zookeeper discovery" {
+@test "zk discovery: recover engines" {
+	# The goal of this test is to ensure swarm can see engines that joined
+	# while the manager was stopped.
+
+	# Start the store
+	start_store
+
 	# Start 2 engines and make them join the cluster.
 	start_docker 2
-	swarm_join "zk://${ZK_HOST}/test"
+	swarm_join "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
 
-	# Start a manager and ensure it sees all the engines.
-	swarm_manage "zk://${ZK_HOST}/test"
-	check_swarm_nodes
+	# Then, start a manager and ensure it sees all the engines.
+	swarm_manage "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
+}
 
-	# Add another engine to the cluster and make sure it's picked up by swarm.
-	start_docker 1
-	swarm_join "zk://${ZK_HOST}/test"
-	retry 30 1 check_swarm_nodes
+@test "zk discovery: watch for changes" {
+	# The goal of this test is to ensure swarm can see new nodes as they join
+	# the cluster.
+	start_store
+
+	# Start a manager with no engines.
+	swarm_manage "$DISCOVERY"
+	retry 10 1 discovery_check_swarm_info
+
+	# Add engines to the cluster and make sure it's picked up by swarm.
+	start_docker 2
+	swarm_join "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
+}
+
+@test "zk discovery: failure" {
+	# The goal of this test is to simulate a store failure and ensure discovery
+	# is resilient to it.
+
+	# At this point, the store is not yet started.
+	
+	# Start 2 engines and join the cluster. They should keep retrying
+	start_docker 2
+	swarm_join "$DISCOVERY"
+
+	# Start a manager. It should keep retrying
+	swarm_manage "$DISCOVERY"
+
+	# Now start the store
+	start_store
+
+	# After a while, `join` and `manage` should reach the store.
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
 }

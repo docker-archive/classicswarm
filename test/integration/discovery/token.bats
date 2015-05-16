@@ -1,13 +1,20 @@
 #!/usr/bin/env bats
 
-load ../helpers
+load discovery_helpers
 
 TOKEN=""
+DISCOVERY=""
 
 function token_cleanup() {
 	[ -z "$TOKEN" ] && return
 	echo "Removing $TOKEN"
 	curl -X DELETE "https://discovery-stage.hub.docker.com/v1/clusters/$TOKEN"
+}
+
+function setup() {
+	TOKEN=$(swarm create)
+	[[ "$TOKEN" =~ ^[0-9a-f]{32}$ ]]
+	DISCOVERY="token://$TOKEN"
 }
 
 function teardown() {
@@ -17,23 +24,31 @@ function teardown() {
 	token_cleanup
 }
 
-@test "token discovery" {
-	# Create a cluster and validate the token.
-	run swarm create
-	[ "$status" -eq 0 ]
-	[[ "$output" =~ ^[0-9a-f]{32}$ ]]
-	TOKEN="$output"
+@test "token discovery: recover engines" {
+	# The goal of this test is to ensure swarm can see engines that joined
+	# while the manager was stopped.
 
 	# Start 2 engines and make them join the cluster.
 	start_docker 2
-	swarm_join "token://$TOKEN"
+	swarm_join "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
 
-	# Start a manager and ensure it sees all the engines.
-	swarm_manage "token://$TOKEN"
-	check_swarm_nodes
+	# Then, start a manager and ensure it sees all the engines.
+	swarm_manage "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
+}
 
-	# Add another engine to the cluster and make sure it's picked up by swarm.
-	start_docker 1
-	swarm_join "token://$TOKEN"
-	retry 10 1 check_swarm_nodes
+@test "token discovery: watch for changes" {
+	# The goal of this test is to ensure swarm can see new nodes as they join
+	# the cluster.
+
+	# Start a manager with no engines.
+	swarm_manage "$DISCOVERY"
+	retry 10 1 discovery_check_swarm_info
+
+	# Add engines to the cluster and make sure it's picked up by swarm.
+	start_docker 2
+	swarm_join "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
 }

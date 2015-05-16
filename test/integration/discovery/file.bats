@@ -1,9 +1,15 @@
 #!/usr/bin/env bats
 
-load ../helpers
+load discovery_helpers
 
-# create a blank temp file for discovery
-DISCOVERY_FILE=$(mktemp)
+DISCOVERY_FILE=""
+DISCOVERY=""
+
+function setup() {
+	# create a blank temp file for discovery
+	DISCOVERY_FILE=$(mktemp)
+	DISCOVERY="file://$DISCOVERY_FILE"
+}
 
 function teardown() {
 	swarm_manage_cleanup
@@ -11,24 +17,59 @@ function teardown() {
 	rm -f "$DISCOVERY_FILE"
 }
 
-function setup_file_discovery() {
+function setup_discovery_file() {
 	rm -f "$DISCOVERY_FILE"
 	for host in ${HOSTS[@]}; do
 		echo "$host" >> $DISCOVERY_FILE
 	done
 }
 
-@test "file discovery" {
-	# Start 2 engines, register them in a file, then start swarm and make sure
-	# it sees them.
-	start_docker 2
-	setup_file_discovery
-	swarm_manage "file://$DISCOVERY_FILE"
-	check_swarm_nodes
+@test "file discovery: recover engines" {
+	# The goal of this test is to ensure swarm can see engines that joined
+	# while the manager was stopped.
 
-	# Add another engine to the cluster, update the discovery file and make
-	# sure it's picked up by swarm.
-	start_docker 1
-	setup_file_discovery
-	retry 10 1 check_swarm_nodes
+	# Start 2 engines and register them in the file.
+	start_docker 2
+	setup_discovery_file
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+
+	# Then, start a manager and ensure it sees all the engines.
+	swarm_manage "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
+}
+
+@test "file discovery: watch for changes" {
+	# The goal of this test is to ensure swarm can see new nodes as they join
+	# the cluster.
+
+	# Start a manager with no engines.
+	swarm_manage "$DISCOVERY"
+	retry 10 1 discovery_check_swarm_info
+
+	# Add engines to the cluster and make sure it's picked up by swarm.
+	start_docker 2
+	setup_discovery_file
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
+}
+
+@test "file discovery: failure" {
+	# The goal of this test is to simulate a failure (file not available) and ensure discovery
+	# is resilient to it.
+
+	# Wipe out the discovery file.
+	rm -f "$DISCOVERY_FILE"
+	
+	# Start 2 engines.
+	start_docker 2
+
+	# Start a manager. It should keep retrying
+	swarm_manage "$DISCOVERY"
+
+	# Now create the discovery file.
+	setup_discovery_file
+
+	# After a while, `join` and `manage` should see the file.
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
 }
