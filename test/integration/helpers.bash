@@ -99,7 +99,7 @@ function swarm_manage() {
 		discovery="$@"
 	fi
 
-	"$SWARM_BINARY" manage -H "$SWARM_HOST" --cluster-opt "swarm.discovery.heartbeat=1" "$discovery" &
+	"$SWARM_BINARY" manage -H "$SWARM_HOST" --cluster-opt "swarm.discovery.heartbeat=1s" "$discovery" &
 	SWARM_PID=$!
 	wait_until_reachable "$SWARM_HOST"
 	retry 10 1 check_swarm_nodes
@@ -124,7 +124,7 @@ function swarm_join() {
 	for ((i=current; i < nodes; i++)); do
 		local h="${HOSTS[$i]}"
 		echo "Swarm join #${i}: $h $addr"
-		"$SWARM_BINARY" join --heartbeat=1 --addr="$h" "$addr" &
+		"$SWARM_BINARY" join --heartbeat=1s --addr="$h" "$addr" &
 		SWARM_JOIN_PID[$i]=$!
 	done
 	retry 10 0.5 check_discovery_nodes "$addr"

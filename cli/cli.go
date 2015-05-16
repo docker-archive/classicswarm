@@ -106,7 +106,7 @@ func Run() {
 					}
 				case err := <-errCh:
 					log.Fatal(err)
-				case <-time.After(time.Duration(timeout) * time.Second):
+				case <-time.After(timeout):
 					log.Fatal("Timed out")
 				}
 			},
