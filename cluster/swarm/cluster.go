@@ -371,8 +371,42 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 
 	c.RLock()
 	defer c.RUnlock()
-	for _, n := range c.engines {
-		if container := n.Container(IDOrName); container != nil {
+
+	containers := c.Containers()
+
+	// Match exact or short Container ID.
+	for _, container := range containers {
+		if container.Id == IDOrName || stringid.TruncateID(container.Id) == IDOrName {
+			return container
+		}
+	}
+
+	// Match exact Swarm ID.
+	for _, container := range containers {
+		if swarmID := container.Config.SwarmID(); swarmID == IDOrName || stringid.TruncateID(swarmID) == IDOrName {
+			return container
+		}
+	}
+
+	// Match name, /name or engine/name.
+	for _, container := range containers {
+		for _, name := range container.Names {
+			if name == IDOrName || name == "/"+IDOrName || container.Engine.ID+name == IDOrName || container.Engine.Name+name == IDOrName {
+				return container
+			}
+		}
+	}
+
+	// Match Container ID prefix.
+	for _, container := range containers {
+		if strings.HasPrefix(container.Id, IDOrName) {
+			return container
+		}
+	}
+
+	// Match Swarm ID prefix.
+	for _, container := range containers {
+		if strings.HasPrefix(container.Config.SwarmID(), IDOrName) {
 			return container
 		}
 	}

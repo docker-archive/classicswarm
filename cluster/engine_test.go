@@ -135,38 +135,6 @@ func TestEngineState(t *testing.T) {
 	client.Mock.AssertExpectations(t)
 }
 
-func TestEngineContainerLookup(t *testing.T) {
-	engine := NewEngine("test-engine", 0)
-	assert.False(t, engine.isConnected())
-
-	client := mockclient.NewMockClient()
-	client.On("Info").Return(mockInfo, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
-
-	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "container-id", Names: []string{"/container-name1", "/container-name2"}}}, nil).Once()
-	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
-	client.On("InspectContainer", "container-id").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
-
-	assert.NoError(t, engine.connectClient(client))
-	assert.True(t, engine.isConnected())
-
-	// Invalid lookup
-	assert.Nil(t, engine.Container("invalid-id"))
-	assert.Nil(t, engine.Container(""))
-	// Container ID lookup.
-	assert.NotNil(t, engine.Container("container-id"))
-	// Container ID prefix lookup.
-	assert.NotNil(t, engine.Container("container-"))
-	// Container name lookup.
-	assert.NotNil(t, engine.Container("container-name1"))
-	assert.NotNil(t, engine.Container("container-name2"))
-	// Container engine/name matching.
-	assert.NotNil(t, engine.Container("id/container-name1"))
-	assert.NotNil(t, engine.Container("id/container-name2"))
-
-	client.Mock.AssertExpectations(t)
-}
-
 func TestCreateContainer(t *testing.T) {
 	var (
 		config = &ContainerConfig{dockerclient.ContainerConfig{
