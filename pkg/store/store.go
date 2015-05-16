@@ -60,28 +60,28 @@ type Store interface {
 	// Verify if a Key exists in the store
 	Exists(key string) (bool, error)
 
-	// Watch changes on a key
-	Watch(key string, callback WatchCallback) error
+	// Watch changes on a key.
+	// Returns a channel that will receive changes or an error.
+	// Upon creating a watch, the current value will be sent to the channel.
+	// Providing a non-nil stopCh can be used to stop watching.
+	Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error)
 
-	// Cancel watch key
-	CancelWatch(key string) error
+	// WatchTree watches changes on a "directory"
+	// Returns a channel that will receive changes or an error.
+	// Upon creating a watch, the current value will be sent to the channel.
+	// Providing a non-nil stopCh can be used to stop watching.
+	WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPair, error)
 
 	// CreateLock for a given key.
 	// The returned Locker is not held and must be acquired with `.Lock`.
 	// value is optional.
 	CreateLock(key string, value []byte) (Locker, error)
 
-	// Get range of keys based on prefix
+	// List the content of a given prefix
 	List(prefix string) ([]*KVPair, error)
 
-	// Delete range of keys based on prefix
+	// DeleteTree deletes a range of keys based on prefix
 	DeleteTree(prefix string) error
-
-	// Watch key namespaces
-	WatchTree(prefix string, callback WatchCallback) error
-
-	// Cancel watch key range
-	CancelWatchRange(prefix string) error
 
 	// Atomic operation on a single value
 	AtomicPut(key string, value []byte, previous *KVPair) (bool, error)
