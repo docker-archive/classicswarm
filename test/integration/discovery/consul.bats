@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load helpers
+load ../helpers
 
 # Address on which Consul will listen (random port between 8000 and 9000).
 CONSUL_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 8000 ))
