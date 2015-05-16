@@ -124,7 +124,7 @@ function swarm_join() {
 	for ((i=current; i < nodes; i++)); do
 		local h="${HOSTS[$i]}"
 		echo "Swarm join #${i}: $h $addr"
-		"$SWARM_BINARY" join --addr="$h" "$addr" &
+		"$SWARM_BINARY" join --heartbeat=1 --addr="$h" "$addr" &
 		SWARM_JOIN_PID[$i]=$!
 	done
 	retry 10 0.5 check_discovery_nodes "$addr"

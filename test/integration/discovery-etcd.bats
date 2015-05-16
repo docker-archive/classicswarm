@@ -8,17 +8,8 @@ ETCD_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 9000 ))
 # Container name for integration test
 CONTAINER_NAME=swarm_etcd
 
-function check_leader() {
-	# Confirm Cluster leader election
-	docker_host logs $CONTAINER_NAME | grep "state changed from 'follower' to 'leader'"
-	# Check leader event
-	docker_host logs $CONTAINER_NAME | grep "leader changed from '' to"
-}
-
 function start_etcd() {
 	docker_host run -p $ETCD_HOST:4001 --name=$CONTAINER_NAME -d coreos/etcd
-	# Check if etcd cluster leader is elected
-	retry 30 1 check_leader
 }
 
 function stop_etcd() {
