@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load helpers
+load ../helpers
 
 # create a blank temp file for discovery
 DISCOVERY_FILE=$(mktemp)

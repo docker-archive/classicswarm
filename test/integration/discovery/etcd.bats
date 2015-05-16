@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load helpers
+load ../helpers
 
 # Address on which Etcd will listen (random port between 9000 and 10,000).
 ETCD_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 9000 ))

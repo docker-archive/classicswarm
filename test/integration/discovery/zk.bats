@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load helpers
+load ../helpers
 
 # Address on which Zookeeper will listen (random port between 7000 and 8000).
 ZK_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 7000 ))
