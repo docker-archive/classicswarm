@@ -48,10 +48,10 @@ var (
 		Usage:  "ip/socket to listen on",
 		EnvVar: "SWARM_HOST",
 	}
-	flHeartBeat = cli.IntFlag{
+	flHeartBeat = cli.StringFlag{
 		Name:  "heartbeat, hb",
-		Value: 25,
-		Usage: "time in seconds between each heartbeat",
+		Value: "25s",
+		Usage: "period between each heartbeat",
 	}
 	flEnableCors = cli.BoolFlag{
 		Name:  "api-enable-cors, cors",

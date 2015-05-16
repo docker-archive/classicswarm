@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -79,9 +78,9 @@ func Run() {
 			ShortName: "l",
 			Usage:     "list nodes in a cluster",
 			Flags: []cli.Flag{
-				cli.IntFlag{
+				cli.StringFlag{
 					Name:  "timeout",
-					Value: 10,
+					Value: "10s",
 				},
 			},
 			Action: func(c *cli.Context) {
@@ -89,9 +88,9 @@ func Run() {
 				if dflag == "" {
 					log.Fatalf("discovery required to list a cluster. See '%s list --help'.", c.App.Name)
 				}
-				timeout, err := strconv.ParseUint(c.String("timeout"), 0, 32)
-				if timeout < 1 || err != nil {
-					log.Fatal("--timeout should be an unsigned integer and greater than 0")
+				timeout, err := time.ParseDuration(c.String("timeout"))
+				if err != nil {
+					log.Fatalf("invalid --timeout: %v", err)
 				}
 
 				d, err := discovery.New(dflag, timeout)

@@ -26,7 +26,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
+func (s *Discovery) Initialize(uris string, heartbeat time.Duration) error {
 	var (
 		parts = strings.SplitN(uris, "/", 2)
 		ips   = strings.Split(parts[0], ",")
@@ -42,7 +42,7 @@ func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
 		addrs = append(addrs, ip)
 	}
 
-	s.heartbeat = time.Duration(heartbeat) * time.Second
+	s.heartbeat = heartbeat
 	s.prefix = parts[1]
 
 	// Creates a new store, will ignore options given
