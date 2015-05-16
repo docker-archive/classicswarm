@@ -57,7 +57,7 @@ type Discovery interface {
 	// Watch the discovery for entry changes.
 	// Returns a channel that will receive changes or an error.
 	// Providing a non-nil stopCh can be used to stop watching.
-	Watch(stopCh <-chan struct{}) (<-chan Entries, error)
+	Watch(stopCh <-chan struct{}) (<-chan Entries, <-chan error)
 
 	// Register to the discovery
 	Register(string) error

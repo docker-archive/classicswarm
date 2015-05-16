@@ -51,7 +51,7 @@ var (
 	flHeartBeat = cli.IntFlag{
 		Name:  "heartbeat, hb",
 		Value: 25,
-		Usage: "time in second between each heartbeat",
+		Usage: "time in seconds between each heartbeat",
 	}
 	flEnableCors = cli.BoolFlag{
 		Name:  "api-enable-cors, cors",

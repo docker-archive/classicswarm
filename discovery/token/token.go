@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/discovery"
 )
 
@@ -57,27 +56,27 @@ func (s *Discovery) fetch() (discovery.Entries, error) {
 	var addrs []string
 	if resp.StatusCode == http.StatusOK {
 		if err := json.NewDecoder(resp.Body).Decode(&addrs); err != nil {
-			log.WithField("discovery", "token").Errorf("Failed to decode response: %v", err)
-			return nil, err
+			return nil, fmt.Errorf("Failed to decode response: %v", err)
 		}
 	} else {
-		err := fmt.Errorf("Failed to fetch entries, Discovery service returned %d HTTP status code", resp.StatusCode)
-		log.WithField("discovery", "token").Error(err)
-		return nil, err
+		return nil, fmt.Errorf("Failed to fetch entries, Discovery service returned %d HTTP status code", resp.StatusCode)
 	}
 
 	return discovery.CreateEntries(addrs)
 }
 
 // Watch is exported
-func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, error) {
+func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
 	ch := make(chan discovery.Entries)
 	ticker := time.NewTicker(time.Duration(s.heartbeat) * time.Second)
+	errCh := make(chan error)
 
 	go func() {
 		// Send the initial entries if available.
 		currentEntries, err := s.fetch()
-		if err == nil {
+		if err != nil {
+			errCh <- err
+		} else {
 			ch <- currentEntries
 		}
 
@@ -87,6 +86,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, err
 			case <-ticker.C:
 				newEntries, err := s.fetch()
 				if err != nil {
+					errCh <- err
 					continue
 				}
 
