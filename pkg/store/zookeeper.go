@@ -13,7 +13,6 @@ import (
 type Zookeeper struct {
 	timeout time.Duration
 	client  *zk.Conn
-	watches map[string]<-chan zk.Event
 }
 
 type zookeeperLock struct {
@@ -24,7 +23,6 @@ type zookeeperLock struct {
 // given a list of endpoints and optional tls config
 func InitializeZookeeper(endpoints []string, options *Config) (Store, error) {
 	s := &Zookeeper{}
-	s.watches = make(map[string]<-chan zk.Event)
 	s.timeout = 5 * time.Second // default timeout
 
 	if options.Timeout != 0 {
@@ -102,48 +100,88 @@ func (s *Zookeeper) Exists(key string) (bool, error) {
 	return exists, nil
 }
 
-// Watch a single key for modifications
-func (s *Zookeeper) Watch(key string, callback WatchCallback) error {
+// Watch changes on a key.
+// Returns a channel that will receive changes or an error.
+// Upon creating a watch, the current value will be sent to the channel.
+// Providing a non-nil stopCh can be used to stop watching.
+func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error) {
 	fkey := normalize(key)
-	_, _, eventChan, err := s.client.GetW(fkey)
+	resp, meta, eventCh, err := s.client.GetW(fkey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Create a new Watch entry with eventChan
-	s.watches[fkey] = eventChan
+	// Catch zk notifications and fire changes into the channel.
+	watchCh := make(chan *KVPair)
+	go func() {
+		defer close(watchCh)
 
-	for e := range eventChan {
-		if e.Type == zk.EventNodeChildrenChanged {
-			entry, err := s.Get(key)
-			if err == nil {
-				callback(entry)
+		// GetW returns the current value before setting the watch.
+		watchCh <- &KVPair{key, resp, uint64(meta.Mzxid)}
+		for {
+			select {
+			case e := <-eventCh:
+				if e.Type == zk.EventNodeDataChanged {
+					if entry, err := s.Get(key); err == nil {
+						watchCh <- entry
+					}
+				}
+			case <-stopCh:
+				// There is no way to stop GetW so just quit
+				return
 			}
 		}
-	}
+	}()
 
-	return nil
+	return watchCh, nil
 }
 
-// CancelWatch cancels a watch, sends a signal to the appropriate
-// stop channel
-func (s *Zookeeper) CancelWatch(key string) error {
-	key = normalize(key)
-	if _, ok := s.watches[key]; !ok {
-		log.Error("Chan does not exist for key: ", key)
-		return ErrWatchDoesNotExist
+// WatchTree watches changes on a "directory"
+// Returns a channel that will receive changes or an error.
+// Upon creating a watch, the current value will be sent to the channel.
+// Providing a non-nil stopCh can be used to stop watching.
+func (s *Zookeeper) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPair, error) {
+	fprefix := normalize(prefix)
+	entries, stat, eventCh, err := s.client.ChildrenW(fprefix)
+	if err != nil {
+		return nil, err
 	}
-	// Just remove the entry on watches key
-	s.watches[key] = nil
-	return nil
+
+	// Catch zk notifications and fire changes into the channel.
+	watchCh := make(chan []*KVPair)
+	go func() {
+		defer close(watchCh)
+
+		// GetW returns the current value before setting the watch.
+		kv := []*KVPair{}
+		for _, item := range entries {
+			kv = append(kv, &KVPair{prefix, []byte(item), uint64(stat.Mzxid)})
+		}
+		watchCh <- kv
+
+		for {
+			select {
+			case e := <-eventCh:
+				if e.Type == zk.EventNodeChildrenChanged {
+					if kv, err := s.List(prefix); err == nil {
+						watchCh <- kv
+					}
+				}
+			case <-stopCh:
+				// There is no way to stop GetW so just quit
+				return
+			}
+		}
+	}()
+
+	return watchCh, nil
 }
 
-// List a range of values at "directory"
+// List the content of a given prefix
 func (s *Zookeeper) List(prefix string) ([]*KVPair, error) {
 	prefix = normalize(prefix)
 	entries, stat, err := s.client.Children(prefix)
 	if err != nil {
-		log.Error("Cannot fetch range of keys beginning with prefix: ", prefix)
 		return nil, err
 	}
 	kv := []*KVPair{}
@@ -153,39 +191,10 @@ func (s *Zookeeper) List(prefix string) ([]*KVPair, error) {
 	return kv, err
 }
 
-// DeleteTree deletes a range of values at "directory"
+// DeleteTree deletes a range of keys based on prefix
 func (s *Zookeeper) DeleteTree(prefix string) error {
 	err := s.client.Delete(normalize(prefix), -1)
 	return err
-}
-
-// WatchTree triggers a watch on a range of values at "directory"
-func (s *Zookeeper) WatchTree(prefix string, callback WatchCallback) error {
-	fprefix := normalize(prefix)
-	_, _, eventChan, err := s.client.ChildrenW(fprefix)
-	if err != nil {
-		return err
-	}
-
-	// Create a new Watch entry with eventChan
-	s.watches[fprefix] = eventChan
-
-	for e := range eventChan {
-		if e.Type == zk.EventNodeChildrenChanged {
-			kvi, err := s.List(prefix)
-			if err == nil {
-				callback(kvi...)
-			}
-		}
-	}
-
-	return nil
-}
-
-// CancelWatchRange stops the watch on the range of values, sends
-// a signal to the appropriate stop channel
-func (s *Zookeeper) CancelWatchRange(prefix string) error {
-	return s.CancelWatch(prefix)
 }
 
 // AtomicPut put a value at "key" if the key has not been

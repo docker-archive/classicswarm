@@ -7,21 +7,18 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	etcd "github.com/coreos/go-etcd/etcd"
 )
 
 // Etcd embeds the client
 type Etcd struct {
-	client  *etcd.Client
-	watches map[string]chan<- bool
+	client *etcd.Client
 }
 
 // InitializeEtcd creates a new Etcd client given
 // a list of endpoints and optional tls config
 func InitializeEtcd(addrs []string, options *Config) (Store, error) {
 	s := &Etcd{}
-	s.watches = make(map[string]chan<- bool)
 
 	entries := createEndpoints(addrs, "http")
 	s.client = etcd.NewClient(entries)
@@ -135,42 +132,93 @@ func (s *Etcd) Exists(key string) (bool, error) {
 	return true, nil
 }
 
-// Watch a single key for modifications
-func (s *Etcd) Watch(key string, callback WatchCallback) error {
+// Watch changes on a key.
+// Returns a channel that will receive changes or an error.
+// Upon creating a watch, the current value will be sent to the channel.
+// Providing a non-nil stopCh can be used to stop watching.
+func (s *Etcd) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error) {
 	key = normalize(key)
-	watchChan := make(chan *etcd.Response)
-	stopChan := make(chan bool)
 
-	// Create new Watch entry
-	s.watches[key] = stopChan
-
-	// Start watch
-	go s.client.Watch(key, 0, false, watchChan, stopChan)
-
-	for _ = range watchChan {
-		entry, err := s.Get(key)
-		if err != nil {
-			log.Error("Cannot refresh the key: ", key, ", cancelling watch")
-			s.watches[key] = nil
-			return err
-		}
-		callback(entry)
+	// Get the current value
+	current, err := s.Get(key)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	// Start an etcd watch.
+	// Note: etcd will send the current value through the channel.
+	etcdWatchCh := make(chan *etcd.Response)
+	etcdStopCh := make(chan bool)
+	go s.client.Watch(key, 0, false, etcdWatchCh, etcdStopCh)
+
+	// Adapter goroutine: The goal here is to convert wathever format etcd is
+	// using into our interface.
+	watchCh := make(chan *KVPair)
+	go func() {
+		defer close(watchCh)
+
+		// Push the current value through the channel.
+		watchCh <- current
+
+		for {
+			select {
+			case result := <-etcdWatchCh:
+				watchCh <- &KVPair{
+					result.Node.Key,
+					[]byte(result.Node.Value),
+					result.Node.ModifiedIndex,
+				}
+			case <-stopCh:
+				etcdStopCh <- true
+				return
+			}
+		}
+	}()
+	return watchCh, nil
 }
 
-// CancelWatch cancels a watch, sends a signal to the appropriate
-// stop channel
-func (s *Etcd) CancelWatch(key string) error {
-	key = normalize(key)
-	if _, ok := s.watches[key]; !ok {
-		log.Error("Chan does not exist for key: ", key)
-		return ErrWatchDoesNotExist
+// WatchTree watches changes on a "directory"
+// Returns a channel that will receive changes or an error.
+// Upon creating a watch, the current value will be sent to the channel.
+// Providing a non-nil stopCh can be used to stop watching.
+func (s *Etcd) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPair, error) {
+	prefix = normalize(prefix)
+
+	// Get the current value
+	current, err := s.List(prefix)
+	if err != nil {
+		return nil, err
 	}
-	// Send stop signal to event chan
-	s.watches[key] <- true
-	s.watches[key] = nil
-	return nil
+
+	// Start an etcd watch.
+	etcdWatchCh := make(chan *etcd.Response)
+	etcdStopCh := make(chan bool)
+	go s.client.Watch(prefix, 0, true, etcdWatchCh, etcdStopCh)
+
+	// Adapter goroutine: The goal here is to convert wathever format etcd is
+	// using into our interface.
+	watchCh := make(chan []*KVPair)
+	go func() {
+		defer close(watchCh)
+
+		// Push the current value through the channel.
+		watchCh <- current
+
+		for {
+			select {
+			case <-etcdWatchCh:
+				// FIXME: We should probably use the value pushed by the channel.
+				// However, .Node.Nodes seems to be empty.
+				if list, err := s.List(prefix); err == nil {
+					watchCh <- list
+				}
+			case <-stopCh:
+				etcdStopCh <- true
+				return
+			}
+		}
+	}()
+	return watchCh, nil
 }
 
 // AtomicPut put a value at "key" if the key has not been
@@ -193,7 +241,7 @@ func (s *Etcd) AtomicDelete(key string, previous *KVPair) (bool, error) {
 	return true, nil
 }
 
-// List a range of values at "directory"
+// List the content of a given prefix
 func (s *Etcd) List(prefix string) ([]*KVPair, error) {
 	resp, err := s.client.Get(normalize(prefix), true, true)
 	if err != nil {
@@ -206,41 +254,12 @@ func (s *Etcd) List(prefix string) ([]*KVPair, error) {
 	return kv, nil
 }
 
-// DeleteTree deletes a range of values at "directory"
+// DeleteTree deletes a range of keys based on prefix
 func (s *Etcd) DeleteTree(prefix string) error {
 	if _, err := s.client.Delete(normalize(prefix), true); err != nil {
 		return err
 	}
 	return nil
-}
-
-// WatchTree triggers a watch on a range of values at "directory"
-func (s *Etcd) WatchTree(prefix string, callback WatchCallback) error {
-	prefix = normalize(prefix)
-	watchChan := make(chan *etcd.Response)
-	stopChan := make(chan bool)
-
-	// Create new Watch entry
-	s.watches[prefix] = stopChan
-
-	// Start watch
-	go s.client.Watch(prefix, 0, true, watchChan, stopChan)
-	for _ = range watchChan {
-		kvi, err := s.List(prefix)
-		if err != nil {
-			log.Error("Cannot refresh the key: ", prefix, ", cancelling watch")
-			s.watches[prefix] = nil
-			return err
-		}
-		callback(kvi...)
-	}
-	return nil
-}
-
-// CancelWatchRange stops the watch on the range of values, sends
-// a signal to the appropriate stop channel
-func (s *Etcd) CancelWatchRange(prefix string) error {
-	return s.CancelWatch(normalize(prefix))
 }
 
 // CreateLock returns a handle to a lock struct which can be used
