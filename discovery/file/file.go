@@ -11,7 +11,7 @@ import (
 
 // Discovery is exported
 type Discovery struct {
-	heartbeat uint64
+	heartbeat time.Duration
 	path      string
 }
 
@@ -20,7 +20,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(path string, heartbeat uint64) error {
+func (s *Discovery) Initialize(path string, heartbeat time.Duration) error {
 	s.path = path
 	s.heartbeat = heartbeat
 	return nil
@@ -59,7 +59,7 @@ func (s *Discovery) fetch() (discovery.Entries, error) {
 func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
 	ch := make(chan discovery.Entries)
 	errCh := make(chan error)
-	ticker := time.NewTicker(time.Duration(s.heartbeat) * time.Second)
+	ticker := time.NewTicker(s.heartbeat)
 
 	go func() {
 		// Send the initial entries if available.

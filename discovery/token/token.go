@@ -17,7 +17,7 @@ const DiscoveryURL = "https://discovery-stage.hub.docker.com/v1"
 
 // Discovery is exported
 type Discovery struct {
-	heartbeat uint64
+	heartbeat time.Duration
 	url       string
 	token     string
 }
@@ -27,7 +27,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(urltoken string, heartbeat uint64) error {
+func (s *Discovery) Initialize(urltoken string, heartbeat time.Duration) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
 		s.url = "https://" + urltoken[:i]
 		s.token = urltoken[i+1:]
@@ -68,7 +68,7 @@ func (s *Discovery) fetch() (discovery.Entries, error) {
 // Watch is exported
 func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
 	ch := make(chan discovery.Entries)
-	ticker := time.NewTicker(time.Duration(s.heartbeat) * time.Second)
+	ticker := time.NewTicker(s.heartbeat)
 	errCh := make(chan error)
 
 	go func() {

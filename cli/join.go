@@ -2,7 +2,6 @@ package cli
 
 import (
 	"regexp"
-	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -21,11 +20,13 @@ func join(c *cli.Context) {
 		log.Fatalf("discovery required to join a cluster. See '%s join --help'.", c.App.Name)
 	}
 
-	hb, err := strconv.ParseUint(c.String("heartbeat"), 0, 32)
-	if hb < 1 || err != nil {
-		log.Fatal("--heartbeat should be an unsigned integer and greater than 0")
+	hb, err := time.ParseDuration(c.String("heartbeat"))
+	if err != nil {
+		log.Fatalf("invalid --heartbeat: %v", err)
 	}
-
+	if hb < 1*time.Second {
+		log.Fatal("--heartbeat should be at least one second")
+	}
 	d, err := discovery.New(dflag, hb)
 	if err != nil {
 		log.Fatal(err)

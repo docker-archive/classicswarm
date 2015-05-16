@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -52,7 +53,7 @@ func (a Entries) Equals(b Entries) bool {
 // manage swarm host entries.
 type Discovery interface {
 	// Initialize the discovery with URIs and a heartbeat.
-	Initialize(string, uint64) error
+	Initialize(string, time.Duration) error
 
 	// Watch the discovery for entry changes.
 	// Returns a channel that will receive changes or an error.
@@ -100,7 +101,7 @@ func parse(rawurl string) (string, string) {
 
 // New returns a new Discovery given a URL and heartbeat settings.
 // Returns an error if the URL scheme is not supported.
-func New(rawurl string, heartbeat uint64) (Discovery, error) {
+func New(rawurl string, heartbeat time.Duration) (Discovery, error) {
 	scheme, uri := parse(rawurl)
 
 	if discovery, exists := discoveries[scheme]; exists {

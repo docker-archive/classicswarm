@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"strings"
+	"time"
 
 	"github.com/docker/swarm/discovery"
 )
@@ -16,7 +17,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(uris string, _ uint64) error {
+func (s *Discovery) Initialize(uris string, _ time.Duration) error {
 	for _, input := range strings.Split(uris, ",") {
 		for _, ip := range discovery.Generate(input) {
 			entry, err := discovery.NewEntry(ip)

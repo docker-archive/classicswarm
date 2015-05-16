@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
@@ -54,14 +55,14 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		cluster.overcommitRatio = val
 	}
 
-	heartbeat := uint64(25)
-	if opt, ok := options.Uint("swarm.discovery.heartbeat"); ok {
-		if opt < 1 {
-			return nil, errors.New("heartbeat should be an unsigned integer and greater than 0")
+	heartbeat := 25 * time.Second
+	if opt, ok := options.String("swarm.discovery.heartbeat"); ok {
+		h, err := time.ParseDuration(opt)
+		if err != nil {
+			return nil, err
 		}
-		heartbeat = opt
+		heartbeat = h
 	}
-	log.Errorf("chb: %d", heartbeat)
 
 	// Set up discovery.
 	cluster.discovery, err = discovery.New(dflag, heartbeat)
