@@ -455,35 +455,6 @@ func (e *Engine) Containers() []*Container {
 	return containers
 }
 
-// Container returns the container with IDOrName in the engine.
-func (e *Engine) Container(IDOrName string) *Container {
-	// Abort immediately if the name is empty.
-	if len(IDOrName) == 0 {
-		return nil
-	}
-
-	for _, container := range e.Containers() {
-		// Match Container ID prefix.
-		if strings.HasPrefix(container.Id, IDOrName) {
-			return container
-		}
-
-		// Match Swarm ID prefix.
-		if strings.HasPrefix(container.Config.SwarmID(), IDOrName) {
-			return container
-		}
-
-		// Match name, /name or engine/name.
-		for _, name := range container.Names {
-			if name == IDOrName || name == "/"+IDOrName || container.Engine.ID+name == IDOrName || container.Engine.Name+name == IDOrName {
-				return container
-			}
-		}
-	}
-
-	return nil
-}
-
 // Images returns all the images in the engine
 func (e *Engine) Images() []*Image {
 	e.RLock()
