@@ -28,10 +28,9 @@ type Cluster struct {
 	engines      map[string]*cluster.Engine
 	scheduler    *scheduler.Scheduler
 	store        *state.Store
+	discovery    discovery.Discovery
 
 	overcommitRatio float64
-	discovery       string
-	heartbeat       uint64
 	TLSConfig       *tls.Config
 }
 
@@ -39,13 +38,15 @@ type Cluster struct {
 func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *tls.Config, dflag string, options cluster.DriverOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
+	var (
+		err error
+	)
+
 	cluster := &Cluster{
 		engines:         make(map[string]*cluster.Engine),
 		scheduler:       scheduler,
 		store:           store,
 		overcommitRatio: 0.05,
-		heartbeat:       25,
-		discovery:       dflag,
 		TLSConfig:       TLSConfig,
 	}
 
@@ -53,29 +54,25 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		cluster.overcommitRatio = val
 	}
 
-	if heartbeat, ok := options.Uint("swarm.discovery.heartbeat"); ok {
-		cluster.heartbeat = heartbeat
-		if cluster.heartbeat < 1 {
+	heartbeat := uint64(25)
+	if opt, ok := options.Uint("swarm.discovery.heartbeat"); ok {
+		if opt < 1 {
 			return nil, errors.New("heartbeat should be an unsigned integer and greater than 0")
 		}
+		heartbeat = opt
 	}
+	log.Errorf("chb: %d", heartbeat)
 
-	// get the list of entries from the discovery service
-	go func() {
-		d, err := discovery.New(cluster.discovery, cluster.heartbeat)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		entries, err := d.Fetch()
-		if err != nil {
-			log.Fatal(err)
-
-		}
-		cluster.newEntries(entries)
-
-		go d.Watch(cluster.newEntries)
-	}()
+	// Set up discovery.
+	cluster.discovery, err = discovery.New(dflag, heartbeat)
+	if err != nil {
+		log.Fatal(err)
+	}
+	discoveryCh, err := cluster.discovery.Watch(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	go cluster.monitorDiscovery(discoveryCh)
 
 	return cluster, nil
 }
@@ -165,40 +162,6 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 	return nil
 }
 
-// Entries are Docker Engines
-func (c *Cluster) newEntries(entries []*discovery.Entry) {
-	for _, entry := range entries {
-		go func(m *discovery.Entry) {
-			if !c.hasEngine(m.String()) {
-				engine := cluster.NewEngine(m.String(), c.overcommitRatio)
-				if err := engine.Connect(c.TLSConfig); err != nil {
-					log.Error(err)
-					return
-				}
-				c.Lock()
-
-				if old, exists := c.engines[engine.ID]; exists {
-					c.Unlock()
-					if old.Addr != engine.Addr {
-						log.Errorf("ID duplicated. %s shared by %s and %s", engine.ID, old.Addr, engine.Addr)
-					} else {
-						log.Debugf("node %q (name: %q) with address %q is already registered", engine.ID, engine.Name, engine.Addr)
-					}
-					return
-				}
-				c.engines[engine.ID] = engine
-				if err := engine.RegisterEventHandler(c); err != nil {
-					log.Error(err)
-					c.Unlock()
-					return
-				}
-				c.Unlock()
-
-			}
-		}(entry)
-	}
-}
-
 func (c *Cluster) hasEngine(addr string) bool {
 	c.RLock()
 	defer c.RUnlock()
@@ -209,6 +172,58 @@ func (c *Cluster) hasEngine(addr string) bool {
 		}
 	}
 	return false
+}
+
+func (c *Cluster) addEngine(addr string) bool {
+	// Check the engine is already registered by address.
+	if c.hasEngine(addr) {
+		return false
+	}
+
+	// Attempt a connection to the engine. Since this is slow, don't get a hold
+	// of the lock yet.
+	engine := cluster.NewEngine(addr, c.overcommitRatio)
+	if err := engine.Connect(c.TLSConfig); err != nil {
+		log.Error(err)
+		return false
+	}
+
+	// The following is critical and fast. Grab a lock.
+	c.Lock()
+	defer c.Unlock()
+
+	// Make sure the engine ID is unique.
+	if old, exists := c.engines[engine.ID]; exists {
+		if old.Addr != engine.Addr {
+			log.Errorf("ID duplicated. %s shared by %s and %s", engine.ID, old.Addr, engine.Addr)
+		} else {
+			log.Debugf("node %q (name: %q) with address %q is already registered", engine.ID, engine.Name, engine.Addr)
+		}
+		return false
+	}
+
+	// Finally register the engine.
+	c.engines[engine.ID] = engine
+	if err := engine.RegisterEventHandler(c); err != nil {
+		log.Error(err)
+	}
+	return true
+}
+
+// Entries are Docker Engines
+func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries) {
+	// Watch for changes in the discovery channel.
+	log.Error("starting monitor")
+	for entries := range ch {
+		log.Errorf("got %v from monitor", entries)
+
+		// Attempt to add every engine. `addEngine` will take care of duplicates.
+		// Since `addEngine` can be very slow (it has to connect to the
+		// engine), we are going to launch them in parallel.
+		for _, entry := range entries {
+			go c.addEngine(entry.String())
+		}
+	}
 }
 
 // Images returns all the images in the cluster.

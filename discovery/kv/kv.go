@@ -61,39 +61,63 @@ func (s *Discovery) Initialize(uris string, heartbeat uint64) error {
 	return nil
 }
 
-// Fetch is exported
-func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
-	addrs, err := s.store.List(s.prefix)
-	if err != nil {
-		return nil, err
+// Watch the store until either there's a store error or we receive a stop request.
+// Returns false if we shouldn't attempt watching the store anymore (stop request received).
+func (s *Discovery) watchOnce(stopCh <-chan struct{}, watchCh <-chan []*store.KVPair, discoveryCh chan discovery.Entries) bool {
+	for {
+		select {
+		case pairs := <-watchCh:
+			if pairs == nil {
+				return true
+			}
+
+			log.WithField("discovery", s.backend).Debugf("Watch triggered with %d nodes", len(pairs))
+
+			// Convert `KVPair` into `discovery.Entry`.
+			addrs := make([]string, len(pairs))
+			for _, pair := range pairs {
+				addrs = append(addrs, string(pair.Value))
+			}
+
+			if entries, err := discovery.CreateEntries(addrs); err == nil {
+				discoveryCh <- entries
+			}
+		case <-stopCh:
+			// We were requested to stop watching.
+			return false
+		}
 	}
-	return discovery.CreateEntries(convertToStringArray(addrs))
 }
 
 // Watch is exported
-func (s *Discovery) Watch(callback discovery.WatchCallback) {
-	ch, err := s.store.WatchTree(s.prefix, nil)
-	if err != nil {
-		log.WithField("discovery", s.backend).Errorf("Watch failed: %v", err)
-		return
-	}
-	for kv := range ch {
-		log.WithField("discovery", s.backend).Debugf("Watch triggered with %d nodes", len(kv))
-		// Traduce byte array entries to discovery.Entry
-		entries, _ := discovery.CreateEntries(convertToStringArray(kv))
-		callback(entries)
-	}
+func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, error) {
+	ch := make(chan discovery.Entries)
+	go func() {
+		// Forever: Create a store watch, watch until we get an error and then try again.
+		// Will only stop if we receive a stopCh request.
+		for {
+			// Set up a watch.
+			watchCh, err := s.store.WatchTree(s.prefix, stopCh)
+			if err != nil {
+				log.WithField("discovery", s.backend).Errorf("Unable to set up a watch: %v", err)
+			} else {
+				if !s.watchOnce(stopCh, watchCh, ch) {
+					log.WithField("discovery", s.backend).Infof("Shutting down")
+					return
+				}
+			}
+
+			// If we get here it means the store watch channel was closed. This
+			// is unexpected so let's retry later.
+			log.WithField("discovery", s.backend).Errorf("Unexpected watch error. Retrying in %s", time.Duration(s.heartbeat))
+			time.Sleep(s.heartbeat)
+		}
+	}()
+
+	return ch, nil
 }
 
 // Register is exported
 func (s *Discovery) Register(addr string) error {
-	err := s.store.Put(path.Join(s.prefix, addr), []byte(addr))
-	return err
-}
-
-func convertToStringArray(entries []*store.KVPair) (addrs []string) {
-	for _, entry := range entries {
-		addrs = append(addrs, string(entry.Value))
-	}
-	return addrs
+	return s.store.Put(path.Join(s.prefix, addr), []byte(addr))
 }

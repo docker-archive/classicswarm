@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -88,12 +89,17 @@ func Run() {
 					log.Fatal(err)
 				}
 
-				nodes, err := d.Fetch()
+				ch, err := d.Watch(nil)
 				if err != nil {
 					log.Fatal(err)
 				}
-				for _, node := range nodes {
-					fmt.Println(node)
+				select {
+				case entries := <-ch:
+					for _, entry := range entries {
+						fmt.Println(entry)
+					}
+				case <-time.After(10 * time.Second):
+					log.Fatal("Timed out")
 				}
 			},
 		},

@@ -8,7 +8,7 @@ import (
 
 // Discovery is exported
 type Discovery struct {
-	entries []*discovery.Entry
+	entries discovery.Entries
 }
 
 func init() {
@@ -30,13 +30,14 @@ func (s *Discovery) Initialize(uris string, _ uint64) error {
 	return nil
 }
 
-// Fetch is exported
-func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
-	return s.entries, nil
-}
-
 // Watch is exported
-func (s *Discovery) Watch(callback discovery.WatchCallback) {
+func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, error) {
+	ch := make(chan discovery.Entries)
+	go func() {
+		ch <- s.entries
+		<-stopCh
+	}()
+	return ch, nil
 }
 
 // Register is exported
