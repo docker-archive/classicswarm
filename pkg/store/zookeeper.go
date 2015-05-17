@@ -9,7 +9,6 @@ import (
 )
 
 // Zookeeper embeds the zookeeper client
-// and list of watches
 type Zookeeper struct {
 	timeout time.Duration
 	client  *zk.Conn

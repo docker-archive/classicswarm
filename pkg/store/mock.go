@@ -6,15 +6,17 @@ import "github.com/stretchr/testify/mock"
 type Mock struct {
 	mock.Mock
 
-	endpoints []string
-	options   *Config
+	// Endpoints passed to InitializeMock
+	Endpoints []string
+	// Options passed to InitializeMock
+	Options *Config
 }
 
 // InitializeMock creates a Mock store.
 func InitializeMock(endpoints []string, options *Config) (Store, error) {
 	s := &Mock{}
-	s.endpoints = endpoints
-	s.options = options
+	s.Endpoints = endpoints
+	s.Options = options
 	return s, nil
 }
 
