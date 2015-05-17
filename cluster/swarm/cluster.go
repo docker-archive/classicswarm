@@ -167,6 +167,27 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 
 // Entries are Docker Engines
 func (c *Cluster) newEntries(entries []*discovery.Entry) {
+	var removed []*node
+SKIP:
+	for _, node := range c.nodes {
+		for _, entry := range entries {
+			if node.Addr() == entry.String() {
+				continue SKIP
+			}
+		}
+		removed = append(removed, node)
+	}
+
+	for _, node := range removed {
+		log.Printf("node[%s] agent is disconnected", node.Addr())
+		// If the swarm agent is dead, we have to check the docker node is still available.
+		// etcd(or doozerd) discovery has no ephemeral node like zookeeper.
+		// So swarm uses TTL and renews the node. This can lead redundant calls to refreshLoop().
+		if node.IsHealthy() {
+			node.refreshContainersAsync()
+		}
+	}
+
 	for _, entry := range entries {
 		go func(m *discovery.Entry) {
 			if !c.hasEngine(m.String()) {
