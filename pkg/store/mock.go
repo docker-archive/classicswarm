@@ -53,7 +53,7 @@ func (s *Mock) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error)
 // WatchTree mock
 func (s *Mock) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPair, error) {
 	args := s.Mock.Called(prefix, stopCh)
-	return args.Get(0).(<-chan []*KVPair), args.Error(1)
+	return args.Get(0).(chan []*KVPair), args.Error(1)
 }
 
 // CreateLock mock

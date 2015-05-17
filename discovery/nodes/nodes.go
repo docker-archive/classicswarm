@@ -35,6 +35,7 @@ func (s *Discovery) Initialize(uris string, _ time.Duration) error {
 func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
 	ch := make(chan discovery.Entries)
 	go func() {
+		defer close(ch)
 		ch <- s.entries
 		<-stopCh
 	}()

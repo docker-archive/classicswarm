@@ -54,11 +54,7 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration) error {
 			Timeout: s.heartbeat,
 		},
 	)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // Watch the store until either there's a store error or we receive a stop request.
@@ -98,6 +94,9 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 	errCh := make(chan error)
 
 	go func() {
+		defer close(ch)
+		defer close(errCh)
+
 		// Forever: Create a store watch, watch until we get an error and then try again.
 		// Will only stop if we receive a stopCh request.
 		for {
