@@ -233,7 +233,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		// `Status()` will generate a new one
 		tmp.Status = container.Info.State.String()
 		if !container.Engine.IsHealthy() {
-			tmp.Status = "Pending"
+			tmp.Status = "Host Down"
 		}
 
 		// Overwrite labels with the ones we have in the config.
