@@ -31,7 +31,7 @@ function setup_discovery_file() {
 	# Start 2 engines and register them in the file.
 	start_docker 2
 	setup_discovery_file
-	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	discovery_check_swarm_list "$DISCOVERY"
 
 	# Then, start a manager and ensure it sees all the engines.
 	swarm_manage "$DISCOVERY"
@@ -49,8 +49,26 @@ function setup_discovery_file() {
 	# Add engines to the cluster and make sure it's picked up by swarm.
 	start_docker 2
 	setup_discovery_file
-	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	discovery_check_swarm_list "$DISCOVERY"
 	retry 5 1 discovery_check_swarm_info
+}
+
+@test "file discovery: node removal" {
+	# The goal of this test is to ensure swarm can handle node removal.
+
+	# Start 2 engines and register them in the file.
+	start_docker 2
+	setup_discovery_file
+	discovery_check_swarm_list "$DISCOVERY"
+
+	# Then, start a manager and ensure it sees all the engines.
+	swarm_manage "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
+
+	# Update the file with only one engine and see if swarm picks it up.
+	echo ${HOSTS[0]} > $DISCOVERY_FILE
+	discovery_check_swarm_list "$DISCOVERY" 1
+	retry 5 1 discovery_check_swarm_info 1
 }
 
 @test "file discovery: failure" {
@@ -70,6 +88,6 @@ function setup_discovery_file() {
 	setup_discovery_file
 
 	# After a while, `join` and `manage` should see the file.
-	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	discovery_check_swarm_list "$DISCOVERY"
 	retry 5 1 discovery_check_swarm_info
 }
