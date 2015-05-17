@@ -91,7 +91,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 			localRoute := route
 			localFct := fct
 			wrap := func(w http.ResponseWriter, r *http.Request) {
-				log.WithFields(log.Fields{"method": r.Method, "uri": r.RequestURI}).Info("HTTP request received")
+				log.WithFields(log.Fields{"method": r.Method, "uri": r.RequestURI}).Debug("HTTP request received")
 				if enableCors {
 					writeCorsHeaders(w, r)
 				}
