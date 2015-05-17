@@ -163,21 +163,25 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 	return nil
 }
 
-func (c *Cluster) hasEngine(addr string) bool {
+func (c *Cluster) getEngineByAddr(addr string) *cluster.Engine {
 	c.RLock()
 	defer c.RUnlock()
 
 	for _, engine := range c.engines {
 		if engine.Addr == addr {
-			return true
+			return engine
 		}
 	}
-	return false
+	return nil
+}
+
+func (c *Cluster) hasEngineByAddr(addr string) bool {
+	return c.getEngineByAddr(addr) != nil
 }
 
 func (c *Cluster) addEngine(addr string) bool {
 	// Check the engine is already registered by address.
-	if c.hasEngine(addr) {
+	if c.hasEngineByAddr(addr) {
 		return false
 	}
 
@@ -208,19 +212,45 @@ func (c *Cluster) addEngine(addr string) bool {
 	if err := engine.RegisterEventHandler(c); err != nil {
 		log.Error(err)
 	}
+
+	log.Infof("Registered Engine %s at %s", engine.Name, addr)
+	return true
+}
+
+func (c *Cluster) removeEngine(addr string) bool {
+	engine := c.getEngineByAddr(addr)
+	if engine == nil {
+		return false
+	}
+	c.Lock()
+	defer c.Unlock()
+
+	engine.Disconnect()
+	delete(c.engines, engine.ID)
+	log.Infof("Removed Engine %s", engine.Name)
 	return true
 }
 
 // Entries are Docker Engines
 func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan error) {
 	// Watch changes on the discovery channel.
+	currentEntries := discovery.Entries{}
 	for {
 		select {
 		case entries := <-ch:
-			// Attempt to add every engine. `addEngine` will take care of duplicates.
+			added, removed := currentEntries.Diff(entries)
+			currentEntries = entries
+
+			// Remove engines first. `addEngine` will refuse to add an engine
+			// if there's already an engine with the same ID.  If an engine
+			// changes address, we have to first remove it then add it back.
+			for _, entry := range removed {
+				c.removeEngine(entry.String())
+			}
+
 			// Since `addEngine` can be very slow (it has to connect to the
-			// engine), we are going to launch them in parallel.
-			for _, entry := range entries {
+			// engine), we are going to do the adds in parallel.
+			for _, entry := range added {
 				go c.addEngine(entry.String())
 			}
 		case err := <-errCh:
