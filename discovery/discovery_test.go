@@ -80,3 +80,34 @@ func TestEntriesEquality(t *testing.T) {
 		&Entry{Host: "127.0.0.42", Port: "2375"},
 	}))
 }
+
+func TestEntriesDiff(t *testing.T) {
+	entry1 := &Entry{Host: "1.1.1.1", Port: "1111"}
+	entry2 := &Entry{Host: "2.2.2.2", Port: "2222"}
+	entry3 := &Entry{Host: "3.3.3.3", Port: "3333"}
+	entries := Entries{entry1, entry2}
+
+	// No diff
+	added, removed := entries.Diff(Entries{entry2, entry1})
+	assert.Empty(t, added)
+	assert.Empty(t, removed)
+
+	// Add
+	added, removed = entries.Diff(Entries{entry2, entry3, entry1})
+	assert.Len(t, added, 1)
+	assert.True(t, added.Contains(entry3))
+	assert.Empty(t, removed)
+
+	// Remove
+	added, removed = entries.Diff(Entries{entry2})
+	assert.Empty(t, added)
+	assert.Len(t, removed, 1)
+	assert.True(t, removed.Contains(entry1))
+
+	// Add and remove
+	added, removed = entries.Diff(Entries{entry1, entry3})
+	assert.Len(t, added, 1)
+	assert.True(t, added.Contains(entry3))
+	assert.Len(t, removed, 1)
+	assert.True(t, removed.Contains(entry2))
+}
