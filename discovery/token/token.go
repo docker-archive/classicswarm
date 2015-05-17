@@ -72,6 +72,9 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 	errCh := make(chan error)
 
 	go func() {
+		defer close(ch)
+		defer close(errCh)
+
 		// Send the initial entries if available.
 		currentEntries, err := s.fetch()
 		if err != nil {

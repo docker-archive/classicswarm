@@ -62,9 +62,14 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 	ticker := time.NewTicker(s.heartbeat)
 
 	go func() {
+		defer close(errCh)
+		defer close(ch)
+
 		// Send the initial entries if available.
 		currentEntries, err := s.fetch()
-		if err == nil {
+		if err != nil {
+			errCh <- err
+		} else {
 			ch <- currentEntries
 		}
 
