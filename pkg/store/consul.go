@@ -11,6 +11,9 @@ import (
 )
 
 const (
+	// DefaultWatchWaitTime is how long we block for at a time to check if the
+	// watched key has changed.  This affects the minimum time it takes to
+	// cancel a watch.
 	DefaultWatchWaitTime = 15 * time.Second
 )
 

@@ -26,23 +26,26 @@ func NewEntry(url string) (*Entry, error) {
 }
 
 // String returns the string form of an entry.
-func (m *Entry) String() string {
-	return fmt.Sprintf("%s:%s", m.Host, m.Port)
+func (e *Entry) String() string {
+	return fmt.Sprintf("%s:%s", e.Host, e.Port)
 }
 
-func (a *Entry) Equals(b *Entry) bool {
-	return a.Host == b.Host && a.Port == b.Port
+// Equals returns true if cmp contains the same data.
+func (e *Entry) Equals(cmp *Entry) bool {
+	return e.Host == cmp.Host && e.Port == cmp.Port
 }
 
+// Entries is a list of *Entry with some helpers.
 type Entries []*Entry
 
-func (a Entries) Equals(b Entries) bool {
+// Equals returns true if cmp contains the same data.
+func (e Entries) Equals(cmp Entries) bool {
 	// Check if the file has really changed.
-	if len(a) != len(b) {
+	if len(e) != len(cmp) {
 		return false
 	}
-	for i, _ := range a {
-		if !a[i].Equals(b[i]) {
+	for i := range e {
+		if !e[i].Equals(cmp[i]) {
 			return false
 		}
 	}
