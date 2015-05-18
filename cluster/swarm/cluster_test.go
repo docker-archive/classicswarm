@@ -27,24 +27,24 @@ func TestContainerLookup(t *testing.T) {
 	}
 	container1 := &cluster.Container{
 		Container: dockerclient.Container{
-			Id:    "container-id1",
+			Id:    "container1-id",
 			Names: []string{"/container1-name1", "/container1-name2"},
 		},
 		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
 			Labels: map[string]string{
-				"com.docker.swarm.id": "swarm-id1",
+				"com.docker.swarm.id": "swarm1-id",
 			},
 		}),
 	}
 
 	container2 := &cluster.Container{
 		Container: dockerclient.Container{
-			Id:    "container-id2",
+			Id:    "container2-id",
 			Names: []string{"/con"},
 		},
 		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
 			Labels: map[string]string{
-				"com.docker.swarm.id": "swarm-id2",
+				"com.docker.swarm.id": "swarm2-id",
 			},
 		}),
 	}
@@ -56,9 +56,10 @@ func TestContainerLookup(t *testing.T) {
 	assert.Nil(t, c.Container("invalid-id"))
 	assert.Nil(t, c.Container(""))
 	// Container ID lookup.
-	assert.NotNil(t, c.Container("container-id1"))
+	assert.NotNil(t, c.Container("container1-id"))
 	// Container ID prefix lookup.
-	assert.NotNil(t, c.Container("container-"))
+	assert.NotNil(t, c.Container("container1-"))
+	assert.Nil(t, c.Container("container"))
 	// Container name lookup.
 	assert.NotNil(t, c.Container("container1-name1"))
 	assert.NotNil(t, c.Container("container1-name2"))
@@ -66,11 +67,12 @@ func TestContainerLookup(t *testing.T) {
 	assert.NotNil(t, c.Container("test-engine/container1-name1"))
 	assert.NotNil(t, c.Container("test-engine/container1-name2"))
 	// Swarm ID lookup.
-	assert.NotNil(t, c.Container("swarm-id1"))
+	assert.NotNil(t, c.Container("swarm1-id"))
 	// Swarm ID prefix lookup.
-	assert.NotNil(t, c.Container("swarm-"))
+	assert.NotNil(t, c.Container("swarm1-"))
+	assert.Nil(t, c.Container("swarm"))
 	// Match name before ID prefix
 	cc := c.Container("con")
 	assert.NotNil(t, cc)
-	assert.Equal(t, cc.Id, "container-id2")
+	assert.Equal(t, cc.Id, "container2-id")
 }
