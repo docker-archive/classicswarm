@@ -545,12 +545,14 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
 	}
 
-	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
+	cb := func(resp *http.Response) {
+		// force fresh container
+		container.Refresh()
 	}
 
-	// force fresh container
-	container.Refresh()
+	if err := proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // Proxy a request to the right node
