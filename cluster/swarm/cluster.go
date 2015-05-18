@@ -388,6 +388,8 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 		}
 	}
 
+	candidates := []*cluster.Container{}
+
 	// Match name, /name or engine/name.
 	for _, container := range containers {
 		for _, name := range container.Names {
@@ -397,18 +399,28 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 		}
 	}
 
+	if size := len(candidates); size == 1 {
+		return candidates[0]
+	} else if size > 1 {
+		return nil
+	}
+
 	// Match Container ID prefix.
 	for _, container := range containers {
 		if strings.HasPrefix(container.Id, IDOrName) {
-			return container
+			candidates = append(candidates, container)
 		}
 	}
 
 	// Match Swarm ID prefix.
 	for _, container := range containers {
 		if strings.HasPrefix(container.Config.SwarmID(), IDOrName) {
-			return container
+			candidates = append(candidates, container)
 		}
+	}
+
+	if len(candidates) == 1 {
+		return candidates[0]
 	}
 
 	return nil
