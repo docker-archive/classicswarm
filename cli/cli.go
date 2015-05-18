@@ -77,12 +77,7 @@ func Run() {
 			Name:      "list",
 			ShortName: "l",
 			Usage:     "list nodes in a cluster",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "timeout",
-					Value: "10s",
-				},
-			},
+			Flags:     []cli.Flag{flTimeout},
 			Action: func(c *cli.Context) {
 				dflag := getDiscovery(c)
 				if dflag == "" {
