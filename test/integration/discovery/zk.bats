@@ -36,11 +36,11 @@ function teardown() {
 	# Start 2 engines and make them join the cluster.
 	start_docker 2
 	swarm_join "$DISCOVERY"
-	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 10 1 discovery_check_swarm_list "$DISCOVERY"
 
 	# Then, start a manager and ensure it sees all the engines.
 	swarm_manage "$DISCOVERY"
-	retry 5 1 discovery_check_swarm_info
+	retry 10 1 discovery_check_swarm_info
 }
 
 @test "zk discovery: watch for changes" {
@@ -55,8 +55,8 @@ function teardown() {
 	# Add engines to the cluster and make sure it's picked up by swarm.
 	start_docker 2
 	swarm_join "$DISCOVERY"
-	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
-	retry 5 1 discovery_check_swarm_info
+	retry 10 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 10 1 discovery_check_swarm_info
 }
 
 @test "zk discovery: failure" {
@@ -76,6 +76,6 @@ function teardown() {
 	start_store
 
 	# After a while, `join` and `manage` should reach the store.
-	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
-	retry 5 1 discovery_check_swarm_info
+	retry 10 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 10 1 discovery_check_swarm_info
 }
