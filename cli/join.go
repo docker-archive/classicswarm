@@ -2,7 +2,6 @@ package cli
 
 import (
 	"regexp"
-	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -21,11 +20,13 @@ func join(c *cli.Context) {
 		log.Fatalf("discovery required to join a cluster. See '%s join --help'.", c.App.Name)
 	}
 
-	hb, err := strconv.ParseUint(c.String("heartbeat"), 0, 32)
-	if hb < 1 || err != nil {
-		log.Fatal("--heartbeat should be an unsigned integer and greater than 0")
+	hb, err := time.ParseDuration(c.String("heartbeat"))
+	if err != nil {
+		log.Fatalf("invalid --heartbeat: %v", err)
 	}
-
+	if hb < 1*time.Second {
+		log.Fatal("--heartbeat should be at least one second")
+	}
 	d, err := discovery.New(dflag, hb)
 	if err != nil {
 		log.Fatal(err)
@@ -37,16 +38,11 @@ func join(c *cli.Context) {
 		log.Fatal("--addr should be of the form ip:port or hostname:port")
 	}
 
-	if err := d.Register(addr); err != nil {
-		log.Fatal(err)
-	}
-
-	hbval := time.Duration(hb)
 	for {
-		log.WithFields(log.Fields{"addr": addr, "discovery": dflag}).Infof("Registering on the discovery service every %d seconds...", hbval)
-		time.Sleep(hbval * time.Second)
+		log.WithFields(log.Fields{"addr": addr, "discovery": dflag}).Infof("Registering on the discovery service every %s...", hb)
 		if err := d.Register(addr); err != nil {
 			log.Error(err)
 		}
+		time.Sleep(hb)
 	}
 }

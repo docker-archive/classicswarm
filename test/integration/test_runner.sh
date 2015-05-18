@@ -12,7 +12,7 @@ function execute() {
 }
 
 # Tests to run. Defaults to all.
-TESTS=${@:-. api}
+TESTS=${@:-. discovery api}
 
 # Generate a temporary binary for the tests.
 export SWARM_BINARY=`mktemp`

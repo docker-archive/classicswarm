@@ -17,7 +17,7 @@ const DiscoveryURL = "https://discovery-stage.hub.docker.com/v1"
 
 // Discovery is exported
 type Discovery struct {
-	heartbeat uint64
+	heartbeat time.Duration
 	url       string
 	token     string
 }
@@ -27,7 +27,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(urltoken string, heartbeat uint64) error {
+func (s *Discovery) Initialize(urltoken string, heartbeat time.Duration) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
 		s.url = "https://" + urltoken[:i]
 		s.token = urltoken[i+1:]
@@ -45,8 +45,7 @@ func (s *Discovery) Initialize(urltoken string, heartbeat uint64) error {
 }
 
 // Fetch returns the list of entries for the discovery service at the specified endpoint
-func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
-
+func (s *Discovery) fetch() (discovery.Entries, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", s.url, "clusters", s.token))
 	if err != nil {
 		return nil, err
@@ -57,7 +56,7 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 	var addrs []string
 	if resp.StatusCode == http.StatusOK {
 		if err := json.NewDecoder(resp.Body).Decode(&addrs); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed to decode response: %v", err)
 		}
 	} else {
 		return nil, fmt.Errorf("Failed to fetch entries, Discovery service returned %d HTTP status code", resp.StatusCode)
@@ -67,13 +66,46 @@ func (s *Discovery) Fetch() ([]*discovery.Entry, error) {
 }
 
 // Watch is exported
-func (s *Discovery) Watch(callback discovery.WatchCallback) {
-	for _ = range time.Tick(time.Duration(s.heartbeat) * time.Second) {
-		entries, err := s.Fetch()
-		if err == nil {
-			callback(entries)
+func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
+	ch := make(chan discovery.Entries)
+	ticker := time.NewTicker(s.heartbeat)
+	errCh := make(chan error)
+
+	go func() {
+		defer close(ch)
+		defer close(errCh)
+
+		// Send the initial entries if available.
+		currentEntries, err := s.fetch()
+		if err != nil {
+			errCh <- err
+		} else {
+			ch <- currentEntries
 		}
-	}
+
+		// Periodically send updates.
+		for {
+			select {
+			case <-ticker.C:
+				newEntries, err := s.fetch()
+				if err != nil {
+					errCh <- err
+					continue
+				}
+
+				// Check if the file has really changed.
+				if !newEntries.Equals(currentEntries) {
+					ch <- newEntries
+				}
+				currentEntries = newEntries
+			case <-stopCh:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
+	return ch, nil
 }
 
 // Register adds a new entry identified by the into the discovery service
