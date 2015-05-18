@@ -61,6 +61,9 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		if err != nil {
 			return nil, err
 		}
+		if h < 1*time.Second {
+			return nil, fmt.Errorf("invalid heartbeat %s: must be at least 1s", opt)
+		}
 		heartbeat = h
 	}
 

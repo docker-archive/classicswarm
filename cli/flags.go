@@ -53,6 +53,11 @@ var (
 		Value: "25s",
 		Usage: "period between each heartbeat",
 	}
+	flTimeout = cli.StringFlag{
+		Name:  "timeout",
+		Value: "10s",
+		Usage: "timeout period",
+	}
 	flEnableCors = cli.BoolFlag{
 		Name:  "api-enable-cors, cors",
 		Usage: "enable CORS headers in the remote API",
