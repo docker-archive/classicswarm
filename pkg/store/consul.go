@@ -10,6 +10,13 @@ import (
 	api "github.com/hashicorp/consul/api"
 )
 
+const (
+	// DefaultWatchWaitTime is how long we block for at a time to check if the
+	// watched key has changed.  This affects the minimum time it takes to
+	// cancel a watch.
+	DefaultWatchWaitTime = 15 * time.Second
+)
+
 // Consul embeds the client and watches
 type Consul struct {
 	config *api.Config
@@ -145,7 +152,9 @@ func (s *Consul) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, erro
 	go func() {
 		defer close(watchCh)
 
-		opts := &api.QueryOptions{}
+		// Use a wait time in order to check if we should quit from time to
+		// time.
+		opts := &api.QueryOptions{WaitTime: DefaultWatchWaitTime}
 		for {
 			// Check if we should quit
 			select {
@@ -157,6 +166,11 @@ func (s *Consul) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, erro
 			if err != nil {
 				log.Errorf("consul: %v", err)
 				return
+			}
+			// If LastIndex didn't change then it means `Get` returned because
+			// of the WaitTime and the key didn't change.
+			if opts.WaitIndex == meta.LastIndex {
+				continue
 			}
 			opts.WaitIndex = meta.LastIndex
 			// FIXME: What happens when a key is deleted?
@@ -181,7 +195,9 @@ func (s *Consul) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVP
 	go func() {
 		defer close(watchCh)
 
-		opts := &api.QueryOptions{}
+		// Use a wait time in order to check if we should quit from time to
+		// time.
+		opts := &api.QueryOptions{WaitTime: DefaultWatchWaitTime}
 		for {
 			// Check if we should quit
 			select {
@@ -195,6 +211,12 @@ func (s *Consul) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVP
 				log.Errorf("consul: %v", err)
 				return
 			}
+			// If LastIndex didn't change then it means `Get` returned because
+			// of the WaitTime and the key didn't change.
+			if opts.WaitIndex == meta.LastIndex {
+				continue
+			}
+			opts.WaitIndex = meta.LastIndex
 			kv := []*KVPair{}
 			for _, pair := range pairs {
 				if pair.Key == prefix {
@@ -202,7 +224,6 @@ func (s *Consul) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVP
 				}
 				kv = append(kv, &KVPair{pair.Key, pair.Value, pair.ModifyIndex})
 			}
-			opts.WaitIndex = meta.LastIndex
 			watchCh <- kv
 		}
 	}()

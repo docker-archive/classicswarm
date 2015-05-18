@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -76,24 +77,32 @@ func Run() {
 			Name:      "list",
 			ShortName: "l",
 			Usage:     "list nodes in a cluster",
+			Flags:     []cli.Flag{flTimeout},
 			Action: func(c *cli.Context) {
 				dflag := getDiscovery(c)
 				if dflag == "" {
 					log.Fatalf("discovery required to list a cluster. See '%s list --help'.", c.App.Name)
 				}
+				timeout, err := time.ParseDuration(c.String("timeout"))
+				if err != nil {
+					log.Fatalf("invalid --timeout: %v", err)
+				}
 
-				// FIXME Add and use separate timeout flag instead of forcing it
-				d, err := discovery.New(dflag, 10)
+				d, err := discovery.New(dflag, timeout)
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				nodes, err := d.Fetch()
-				if err != nil {
+				ch, errCh := d.Watch(nil)
+				select {
+				case entries := <-ch:
+					for _, entry := range entries {
+						fmt.Println(entry)
+					}
+				case err := <-errCh:
 					log.Fatal(err)
-				}
-				for _, node := range nodes {
-					fmt.Println(node)
+				case <-time.After(timeout):
+					log.Fatal("Timed out")
 				}
 			},
 		},

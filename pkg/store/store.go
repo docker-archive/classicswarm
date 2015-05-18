@@ -12,8 +12,10 @@ import (
 type Backend string
 
 const (
+	// MOCK backend
+	MOCK Backend = "mock"
 	// CONSUL backend
-	CONSUL Backend = "consul"
+	CONSUL = "consul"
 	// ETCD backend
 	ETCD = "etcd"
 	// ZK backend
@@ -114,6 +116,7 @@ type Initialize func(addrs []string, options *Config) (Store, error)
 var (
 	// Backend initializers
 	initializers = map[Backend]Initialize{
+		MOCK:   InitializeMock,
 		CONSUL: InitializeConsul,
 		ETCD:   InitializeEtcd,
 		ZK:     InitializeZookeeper,

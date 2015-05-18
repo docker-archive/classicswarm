@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -25,20 +26,44 @@ func NewEntry(url string) (*Entry, error) {
 }
 
 // String returns the string form of an entry.
-func (m Entry) String() string {
-	return fmt.Sprintf("%s:%s", m.Host, m.Port)
+func (e *Entry) String() string {
+	return fmt.Sprintf("%s:%s", e.Host, e.Port)
 }
 
-// WatchCallback is the type of the function called to monitor entries
-// on a discovery endpoint.
-type WatchCallback func(entries []*Entry)
+// Equals returns true if cmp contains the same data.
+func (e *Entry) Equals(cmp *Entry) bool {
+	return e.Host == cmp.Host && e.Port == cmp.Port
+}
+
+// Entries is a list of *Entry with some helpers.
+type Entries []*Entry
+
+// Equals returns true if cmp contains the same data.
+func (e Entries) Equals(cmp Entries) bool {
+	// Check if the file has really changed.
+	if len(e) != len(cmp) {
+		return false
+	}
+	for i := range e {
+		if !e[i].Equals(cmp[i]) {
+			return false
+		}
+	}
+	return true
+}
 
 // The Discovery interface is implemented by Discovery backends which
 // manage swarm host entries.
 type Discovery interface {
-	Initialize(string, uint64) error
-	Fetch() ([]*Entry, error)
-	Watch(WatchCallback)
+	// Initialize the discovery with URIs and a heartbeat.
+	Initialize(string, time.Duration) error
+
+	// Watch the discovery for entry changes.
+	// Returns a channel that will receive changes or an error.
+	// Providing a non-nil stopCh can be used to stop watching.
+	Watch(stopCh <-chan struct{}) (<-chan Entries, <-chan error)
+
+	// Register to the discovery
 	Register(string) error
 }
 
@@ -79,7 +104,7 @@ func parse(rawurl string) (string, string) {
 
 // New returns a new Discovery given a URL and heartbeat settings.
 // Returns an error if the URL scheme is not supported.
-func New(rawurl string, heartbeat uint64) (Discovery, error) {
+func New(rawurl string, heartbeat time.Duration) (Discovery, error) {
 	scheme, uri := parse(rawurl)
 
 	if discovery, exists := discoveries[scheme]; exists {
@@ -92,8 +117,8 @@ func New(rawurl string, heartbeat uint64) (Discovery, error) {
 }
 
 // CreateEntries returns an array of entries based on the given addresses.
-func CreateEntries(addrs []string) ([]*Entry, error) {
-	entries := []*Entry{}
+func CreateEntries(addrs []string) (Entries, error) {
+	entries := Entries{}
 	if addrs == nil {
 		return entries, nil
 	}
