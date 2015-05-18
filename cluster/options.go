@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -48,4 +49,12 @@ func (do DriverOpts) Float(key, env string) (float64, bool) {
 		return v, true
 	}
 	return 0.0, false
+}
+
+// IP returns an IP address from the driver options
+func (do DriverOpts) IP(key, env string) (net.IP, bool) {
+	if value, ok := do.String(key, env); ok {
+		return net.ParseIP(value), true
+	}
+	return nil, false
 }

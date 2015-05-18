@@ -1,13 +1,14 @@
 package cluster
 
 import (
+	"net"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-var opts = DriverOpts{"foo1=bar", "foo2=-5", "foo3=7", "foo4=0.6"}
+var opts = DriverOpts{"foo1=bar", "foo2=-5", "foo3=7", "foo4=0.6", "foo5=127.0.0.1"}
 
 func TestString(t *testing.T) {
 	os.Setenv("FOO_4", "bar")
@@ -124,4 +125,21 @@ func TestFloat(t *testing.T) {
 	val, ok = opts.Float("invalid", "")
 	assert.False(t, ok)
 	assert.Equal(t, val, 0.0)
+}
+
+func TestIP(t *testing.T) {
+	os.Setenv("FOO_4", "0.0.0.0")
+	defer os.Setenv("FOO_4", "")
+
+	val, ok := opts.IP("foo5", "")
+	assert.True(t, ok)
+	assert.Equal(t, val, net.ParseIP("127.0.0.1"))
+
+	val, ok = opts.IP("", "FOO_4")
+	assert.True(t, ok)
+	assert.Equal(t, val, net.ParseIP("0.0.0.0"))
+
+	val, ok = opts.IP("invalid", "")
+	assert.False(t, ok)
+	assert.Equal(t, val, net.IP(nil))
 }
