@@ -1,11 +1,38 @@
 package swarm
 
 import (
-	"testing"
-
+	"bytes"
+	"fmt"
 	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
+	"github.com/samalba/dockerclient/mockclient"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"io"
+	"testing"
+)
+
+type nopCloser struct {
+	io.Reader
+}
+
+// Close
+func (nopCloser) Close() error {
+	return nil
+}
+
+var (
+	mockInfo = &dockerclient.Info{
+		ID:              "id",
+		Name:            "name",
+		NCPU:            10,
+		MemTotal:        20,
+		Driver:          "driver-test",
+		ExecutionDriver: "execution-driver-test",
+		KernelVersion:   "1.2.3",
+		OperatingSystem: "golang",
+		Labels:          []string{"foo=bar"},
+	}
 )
 
 func createEngine(t *testing.T, ID string, containers ...*cluster.Container) *cluster.Engine {
@@ -75,4 +102,51 @@ func TestContainerLookup(t *testing.T) {
 	cc := c.Container("con")
 	assert.NotNil(t, cc)
 	assert.Equal(t, cc.Id, "container2-id")
+}
+
+func TestImportImage(t *testing.T) {
+	// create cluster
+	c := &Cluster{
+		engines: make(map[string]*cluster.Engine),
+	}
+
+	// create engione
+	id := "test-engine"
+	engine := cluster.NewEngine(id, 0)
+	engine.Name = id
+	engine.ID = id
+
+	// create mock client
+	client := mockclient.NewMockClient()
+	client.On("Info").Return(mockInfo, nil)
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
+	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
+
+	// connect client
+	engine.ConnectWithClient(client)
+
+	// add engine to cluster
+	c.engines[engine.ID] = engine
+
+	// import success
+	readCloser := nopCloser{bytes.NewBufferString("ok")}
+	client.On("ImportImage", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(readCloser, nil).Once()
+
+	callback := func(what, status string) {
+		// import success
+		assert.Equal(t, status, "Import success")
+	}
+	c.Import("-", "testImageOK", "latest", bytes.NewReader(nil), callback)
+
+	// import error
+	readCloser = nopCloser{bytes.NewBufferString("error")}
+	err := fmt.Errorf("Import error")
+	client.On("ImportImage", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(readCloser, err).Once()
+
+	callback = func(what, status string) {
+		// import error
+		assert.Equal(t, status, "Import error")
+	}
+	c.Import("-", "testImageError", "latest", bytes.NewReader(nil), callback)
 }

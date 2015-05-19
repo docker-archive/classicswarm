@@ -34,7 +34,7 @@ func TestEngineConnectionFailure(t *testing.T) {
 	client.On("Info").Return(&dockerclient.Info{}, errors.New("fail"))
 
 	// Connect() should fail and isConnected() return false.
-	assert.Error(t, engine.connectClient(client))
+	assert.Error(t, engine.ConnectWithClient(client))
 	assert.False(t, engine.isConnected())
 
 	client.Mock.AssertExpectations(t)
@@ -45,7 +45,7 @@ func TestOutdatedEngine(t *testing.T) {
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(&dockerclient.Info{}, nil)
 
-	assert.Error(t, engine.connectClient(client))
+	assert.Error(t, engine.ConnectWithClient(client))
 	assert.False(t, engine.isConnected())
 
 	client.Mock.AssertExpectations(t)
@@ -61,7 +61,7 @@ func TestEngineCpusMemory(t *testing.T) {
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
-	assert.NoError(t, engine.connectClient(client))
+	assert.NoError(t, engine.ConnectWithClient(client))
 	assert.True(t, engine.isConnected())
 	assert.True(t, engine.IsHealthy())
 
@@ -81,7 +81,7 @@ func TestEngineSpecs(t *testing.T) {
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
-	assert.NoError(t, engine.connectClient(client))
+	assert.NoError(t, engine.ConnectWithClient(client))
 	assert.True(t, engine.isConnected())
 	assert.True(t, engine.IsHealthy())
 
@@ -111,7 +111,7 @@ func TestEngineState(t *testing.T) {
 	client.On("ListContainers", true, false, fmt.Sprintf("{%q:[%q]}", "id", "two")).Return([]dockerclient.Container{{Id: "two"}}, nil).Once()
 	client.On("InspectContainer", "two").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
 
-	assert.NoError(t, engine.connectClient(client))
+	assert.NoError(t, engine.ConnectWithClient(client))
 	assert.True(t, engine.isConnected())
 
 	// The engine should only have a single container at this point.
@@ -151,7 +151,7 @@ func TestCreateContainer(t *testing.T) {
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
-	assert.NoError(t, engine.connectClient(client))
+	assert.NoError(t, engine.ConnectWithClient(client))
 	assert.True(t, engine.isConnected())
 
 	mockConfig := config.ContainerConfig
