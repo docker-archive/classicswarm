@@ -52,6 +52,35 @@ func (e Entries) Equals(cmp Entries) bool {
 	return true
 }
 
+// Contains returns true if the Entries contain a given Entry.
+func (e Entries) Contains(entry *Entry) bool {
+	for _, curr := range e {
+		if curr.Equals(entry) {
+			return true
+		}
+	}
+	return false
+}
+
+// Diff compares two entries and returns the added and removed entries.
+func (e Entries) Diff(cmp Entries) (Entries, Entries) {
+	added := Entries{}
+	for _, entry := range cmp {
+		if !e.Contains(entry) {
+			added = append(added, entry)
+		}
+	}
+
+	removed := Entries{}
+	for _, entry := range e {
+		if !cmp.Contains(entry) {
+			removed = append(removed, entry)
+		}
+	}
+
+	return added, removed
+}
+
 // The Discovery interface is implemented by Discovery backends which
 // manage swarm host entries.
 type Discovery interface {

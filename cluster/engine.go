@@ -27,7 +27,7 @@ func NewEngine(addr string, overcommitRatio float64) *Engine {
 	e := &Engine{
 		Addr:            addr,
 		Labels:          make(map[string]string),
-		ch:              make(chan bool),
+		stopCh:          make(chan struct{}),
 		containers:      make(map[string]*Container),
 		healthy:         true,
 		overcommitRatio: int64(overcommitRatio * 100),
@@ -47,7 +47,7 @@ type Engine struct {
 	Memory int64
 	Labels map[string]string
 
-	ch              chan bool
+	stopCh          chan struct{}
 	containers      map[string]*Container
 	images          []*Image
 	client          dockerclient.Client
@@ -106,6 +106,15 @@ func (e *Engine) connectClient(client dockerclient.Client) error {
 	e.emitEvent("engine_connect")
 
 	return nil
+}
+
+// Disconnect will stop all monitoring of the engine.
+// The Engine object cannot be further used without reconnecting it first.
+func (e *Engine) Disconnect() {
+	close(e.stopCh)
+	e.client.StopAllMonitorEvents()
+	e.client = nil
+	e.emitEvent("engine_disconnect")
 }
 
 // isConnected returns true if the engine is connected to a remote docker API
@@ -265,20 +274,18 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 	return containers, nil
 }
 
-func (e *Engine) refreshContainersAsync() {
-	e.ch <- true
-}
-
 func (e *Engine) refreshLoop() {
 	for {
 		var err error
+
+		// Sleep stateRefreshPeriod or quit if we get stopped.
 		select {
-		case <-e.ch:
-			err = e.refreshContainers(false)
 		case <-time.After(stateRefreshPeriod):
-			err = e.refreshContainers(false)
+		case <-e.stopCh:
+			return
 		}
 
+		err = e.refreshContainers(false)
 		if err == nil {
 			err = e.RefreshImages()
 		}
