@@ -118,7 +118,7 @@ func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
 		if _, ok := s.sessions[key]; !ok {
 			entry := &api.SessionEntry{
 				Behavior: api.SessionBehaviorDelete,
-				TTL:      time.Duration(60 * time.Second).String(),
+				TTL:      s.ephemeralTTL.String(),
 			}
 
 			// Create global ephemeral keys session
@@ -142,25 +142,26 @@ func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
 				lock.Lock(nil)
 			}
 
-			// Register in sessions map
 			s.sessions[key] = session
+			p.Session = session
 
-			// Renew the session periodically
-			go func() {
-				ticker := time.NewTicker(20 * time.Second)
-				for {
-					select {
-					case <-ticker.C:
-						_, _, err := s.client.Session().Renew(p.Session, nil)
-						if err != nil {
-							delete(s.sessions, key)
-							return
+			// Renew the session periodically if heartbeat set
+			if opts.Heartbeat != 0 {
+				go func() {
+					ticker := time.NewTicker(opts.Heartbeat)
+					for {
+						select {
+						case <-ticker.C:
+							_, _, err := s.client.Session().Renew(p.Session, nil)
+							if err != nil {
+								delete(s.sessions, key)
+								return
+							}
 						}
 					}
-				}
-			}()
+				}()
+			}
 		}
-		p.Session = s.sessions[key]
 	}
 
 	_, err := s.client.KV().Put(p, nil)

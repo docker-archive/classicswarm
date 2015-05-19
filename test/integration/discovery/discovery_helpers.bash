@@ -10,6 +10,11 @@ function discovery_check_swarm_info() {
 	docker_swarm info | grep -q "Nodes: $count"
 }
 
+# Returns true if swarm info outputs is empty (0 nodes).
+function discovery_check_swarm_info_empty() {
+	docker_swarm info | grep -q "Nodes: 0"
+}
+
 # Returns true if all nodes have joined the discovery.
 function discovery_check_swarm_list() {
 	local joined=`swarm list "$1" | wc -l`

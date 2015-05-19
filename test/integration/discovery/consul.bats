@@ -59,6 +59,31 @@ function teardown() {
 	retry 5 1 discovery_check_swarm_info
 }
 
+@test "consul discovery: check for engines departure" {
+	# The goal of this test is to ensure swarm can detect engines that
+	# are removed from the discovery and refresh info accordingly
+
+	# Start the store
+	start_store
+
+	# Start a manager with no engines.
+	swarm_manage "$DISCOVERY"
+	retry 10 1 discovery_check_swarm_info
+
+	# Add Engines to the cluster and make sure it's picked by swarm
+	start_docker 2
+	swarm_join "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
+
+	# Removes all the swarm agents
+	swarm_join_cleanup
+
+	# Check if previously registered engines are all gone
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 30 1 discovery_check_swarm_info_empty
+}
+
 @test "consul discovery: failure" {
 	# The goal of this test is to simulate a store failure and ensure discovery
 	# is resilient to it.

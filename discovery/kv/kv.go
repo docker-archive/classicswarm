@@ -53,7 +53,6 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Du
 		s.backend,
 		addrs,
 		&store.Config{
-			Heartbeat:    s.heartbeat,
 			EphemeralTTL: s.ttl,
 		},
 	)
@@ -124,6 +123,6 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 
 // Register is exported
 func (s *Discovery) Register(addr string) error {
-	opts := &store.WriteOptions{Ephemeral: true}
+	opts := &store.WriteOptions{Ephemeral: true, Heartbeat: s.heartbeat}
 	return s.store.Put(path.Join(s.prefix, addr), []byte(addr), opts)
 }
