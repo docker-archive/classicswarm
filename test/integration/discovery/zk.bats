@@ -59,7 +59,7 @@ function teardown() {
 	retry 10 1 discovery_check_swarm_info
 }
 
-@test "zk discovery: check for engines departure" {
+@test "zk discovery: node removal" {
 	# The goal of this test is to ensure swarm can detect engines that
 	# are removed from the discovery and refresh info accordingly
 
@@ -80,8 +80,7 @@ function teardown() {
 	swarm_join_cleanup
 
 	# Check if previously registered engines are all gone
-	retry 10 1 discovery_check_swarm_list "$DISCOVERY"
-	retry 20 1 discovery_check_swarm_info_empty
+	retry 20 1 discovery_check_swarm_info 0
 }
 
 @test "zk discovery: failure" {

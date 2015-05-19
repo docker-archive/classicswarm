@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -19,11 +20,11 @@ const (
 
 // Consul embeds the client and watches
 type Consul struct {
+	sync.Mutex
 	config           *api.Config
 	client           *api.Client
 	ephemeralTTL     time.Duration
 	ephemeralSession string
-	sessions         map[string]string
 }
 
 type consulLock struct {
@@ -34,7 +35,6 @@ type consulLock struct {
 // a list of endpoints and optional tls config
 func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 	s := &Consul{}
-	s.sessions = make(map[string]string)
 
 	// Create Consul client
 	config := api.DefaultConfig()
@@ -85,6 +85,26 @@ func (s *Consul) setEphemeralTTL(time time.Duration) {
 	s.ephemeralTTL = time
 }
 
+// CreateEphemeralSession creates the a global session
+// once that is used to delete keys at node failure
+func (s *Consul) createEphemeralSession() error {
+	s.Lock()
+	defer s.Unlock()
+	if s.ephemeralSession == "" {
+		entry := &api.SessionEntry{
+			Behavior: api.SessionBehaviorDelete,
+			TTL:      s.ephemeralTTL.String(),
+		}
+		// Create global ephemeral keys session
+		session, _, err := s.client.Session().Create(entry, nil)
+		if err != nil {
+			return err
+		}
+		s.ephemeralSession = session
+	}
+	return nil
+}
+
 // Normalize the key for usage in Consul
 func (s *Consul) normalize(key string) string {
 	key = normalize(key)
@@ -115,41 +135,33 @@ func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
 	}
 
 	if opts != nil && opts.Ephemeral {
-		if _, ok := s.sessions[key]; !ok {
-			entry := &api.SessionEntry{
-				Behavior: api.SessionBehaviorDelete,
-				TTL:      s.ephemeralTTL.String(),
-			}
-
-			// Create global ephemeral keys session
-			session, _, err := s.client.Session().Create(entry, nil)
-			if err != nil {
-				return err
-			}
-
-			// Create lock option with the
-			// EphemeralSession
-			lockOpts := &api.LockOptions{
-				Key:     key,
-				Session: session,
-			}
-
-			// Lock and ignore if lock is held
-			// It's just a placeholder for the
-			// ephemeral behavior
-			lock, _ := s.client.LockOpts(lockOpts)
-			if lock != nil {
-				lock.Lock(nil)
-			}
-
-			s.sessions[key] = session
-			p.Session = session
+		// Creates the global ephemeral session
+		// if it does not exist
+		if s.ephemeralSession == "" {
+			s.createEphemeralSession()
 		}
+
+		// Create lock option with the
+		// EphemeralSession
+		lockOpts := &api.LockOptions{
+			Key:     key,
+			Session: s.ephemeralSession,
+		}
+
+		// Lock and ignore if lock is held
+		// It's just a placeholder for the
+		// ephemeral behavior
+		lock, _ := s.client.LockOpts(lockOpts)
+		if lock != nil {
+			lock.Lock(nil)
+		}
+
+		// Place the session on key
+		p.Session = s.ephemeralSession
 
 		// Renew the session
 		_, _, err := s.client.Session().Renew(p.Session, nil)
 		if err != nil {
-			delete(s.sessions, key)
 			return err
 		}
 	}

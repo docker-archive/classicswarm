@@ -8,6 +8,8 @@ import (
 	zk "github.com/samuel/go-zookeeper/zk"
 )
 
+const defaultTimeout = 10 * time.Second
+
 // Zookeeper embeds the zookeeper client
 type Zookeeper struct {
 	timeout time.Duration
@@ -22,7 +24,7 @@ type zookeeperLock struct {
 // given a list of endpoints and optional tls config
 func InitializeZookeeper(endpoints []string, options *Config) (Store, error) {
 	s := &Zookeeper{}
-	s.timeout = 10 * time.Second // default timeout
+	s.timeout = defaultTimeout
 
 	// Set options
 	if options != nil {
