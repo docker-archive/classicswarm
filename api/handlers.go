@@ -62,6 +62,20 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(version)
 }
 
+// GET /images/{name:.*}/get
+func getImage(c *context, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+
+	for _, image := range c.cluster.Images() {
+		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name) ||
+			len(strings.SplitN(name, ":", 2)) == 1 && image.MatchWithoutTag(name) {
+			proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			return
+		}
+	}
+	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
+}
+
 // GET /images/get
 func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -83,7 +97,8 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 		// Count how many images we need it has.
 		for _, name := range names {
 			for _, image := range images {
-				if image.Match(name) {
+				if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name) ||
+					len(strings.SplitN(name, ":", 2)) == 1 && image.MatchWithoutTag(name) {
 					matchedImages = matchedImages + 1
 					break
 				}

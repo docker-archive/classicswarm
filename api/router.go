@@ -29,7 +29,7 @@ var routes = map[string]map[string]handler{
 		"/images/viz":                     notImplementedHandler,
 		"/images/search":                  proxyRandom,
 		"/images/get":                     getImages,
-		"/images/{name:.*}/get":           proxyImage,
+		"/images/{name:.*}/get":           getImage,
 		"/images/{name:.*}/history":       proxyImage,
 		"/images/{name:.*}/json":          proxyImage,
 		"/containers/ps":                  getContainersJSON,
