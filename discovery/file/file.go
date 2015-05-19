@@ -20,7 +20,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(path string, heartbeat time.Duration) error {
+func (s *Discovery) Initialize(path string, heartbeat time.Duration, ttl time.Duration) error {
 	s.path = path
 	s.heartbeat = heartbeat
 	return nil

@@ -56,6 +56,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 	}
 
 	heartbeat := 25 * time.Second
+	ttl := 75 * time.Second
 	if opt, ok := options.String("swarm.discovery.heartbeat", ""); ok {
 		h, err := time.ParseDuration(opt)
 		if err != nil {
@@ -67,8 +68,19 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		heartbeat = h
 	}
 
+	if opt, ok := options.String("swarm.discovery.ttl", ""); ok {
+		t, err := time.ParseDuration(opt)
+		if err != nil {
+			return nil, err
+		}
+		if t <= heartbeat {
+			return nil, fmt.Errorf("invalid ttl %s: must be strictly superior to heartbeat value", opt)
+		}
+		ttl = t
+	}
+
 	// Set up discovery.
-	cluster.discovery, err = discovery.New(dflag, heartbeat)
+	cluster.discovery, err = discovery.New(dflag, heartbeat, ttl)
 	if err != nil {
 		log.Fatal(err)
 	}

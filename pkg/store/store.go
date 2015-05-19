@@ -43,6 +43,8 @@ var (
 type Config struct {
 	TLS               *tls.Config
 	ConnectionTimeout time.Duration
+	Heartbeat         time.Duration
+	EphemeralTTL      time.Duration
 }
 
 // Store represents the backend K/V storage

@@ -21,7 +21,9 @@ const (
 type Consul struct {
 	config           *api.Config
 	client           *api.Client
+	ephemeralTTL     time.Duration
 	ephemeralSession string
+	sessions         map[string]string
 }
 
 type consulLock struct {
@@ -32,6 +34,7 @@ type consulLock struct {
 // a list of endpoints and optional tls config
 func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 	s := &Consul{}
+	s.sessions = make(map[string]string)
 
 	// Create Consul client
 	config := api.DefaultConfig()
@@ -48,6 +51,9 @@ func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 		if options.ConnectionTimeout != 0 {
 			s.setTimeout(options.ConnectionTimeout)
 		}
+		if options.EphemeralTTL != 0 {
+			s.setEphemeralTTL(options.EphemeralTTL)
+		}
 	}
 
 	// Creates a new client
@@ -57,17 +63,6 @@ func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 		return nil, err
 	}
 	s.client = client
-
-	// Create global ephemeral keys session
-	entry := &api.SessionEntry{
-		Behavior: api.SessionBehaviorDelete,
-		TTL:      time.Duration(EphemeralTTL * time.Second).String(),
-	}
-	session, _, err := s.client.Session().Create(entry, nil)
-	if err != nil {
-		return nil, err
-	}
-	s.ephemeralSession = session
 
 	return s, nil
 }
@@ -83,6 +78,11 @@ func (s *Consul) setTLS(tls *tls.Config) {
 // SetTimeout sets the timout for connecting to Consul
 func (s *Consul) setTimeout(time time.Duration) {
 	s.config.WaitTime = time
+}
+
+// SetEphemeralTTL sets the ttl for ephemeral nodes
+func (s *Consul) setEphemeralTTL(time time.Duration) {
+	s.ephemeralTTL = time
 }
 
 // Normalize the key for usage in Consul
@@ -106,34 +106,61 @@ func (s *Consul) Get(key string) (*KVPair, error) {
 
 // Put a value at "key"
 func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
+
+	key = s.normalize(key)
+
 	p := &api.KVPair{
-		Key:   s.normalize(key),
+		Key:   key,
 		Value: value,
 	}
 
 	if opts != nil && opts.Ephemeral {
-		p.Session = s.ephemeralSession
+		if _, ok := s.sessions[key]; !ok {
+			entry := &api.SessionEntry{
+				Behavior: api.SessionBehaviorDelete,
+				TTL:      time.Duration(60 * time.Second).String(),
+			}
 
-		// Create lock option with the
-		// EphemeralSession
-		lockOpts := &api.LockOptions{
-			Key:     key,
-			Session: s.ephemeralSession,
-		}
+			// Create global ephemeral keys session
+			session, _, err := s.client.Session().Create(entry, nil)
+			if err != nil {
+				return err
+			}
 
-		// Lock and ignore if lock is held
-		// It's just a placeholder for the
-		// ephemeral behavior
-		lock, _ := s.client.LockOpts(lockOpts)
-		if lock != nil {
-			lock.Lock(nil)
-		}
+			// Create lock option with the
+			// EphemeralSession
+			lockOpts := &api.LockOptions{
+				Key:     key,
+				Session: session,
+			}
 
-		// Try to renew the session
-		_, _, err := s.client.Session().Renew(p.Session, nil)
-		if err != nil {
-			return err
+			// Lock and ignore if lock is held
+			// It's just a placeholder for the
+			// ephemeral behavior
+			lock, _ := s.client.LockOpts(lockOpts)
+			if lock != nil {
+				lock.Lock(nil)
+			}
+
+			// Register in sessions map
+			s.sessions[key] = session
+
+			// Renew the session periodically
+			go func() {
+				ticker := time.NewTicker(20 * time.Second)
+				for {
+					select {
+					case <-ticker.C:
+						_, _, err := s.client.Session().Renew(p.Session, nil)
+						if err != nil {
+							delete(s.sessions, key)
+							return
+						}
+					}
+				}
+			}()
 		}
+		p.Session = s.sessions[key]
 	}
 
 	_, err := s.client.KV().Put(p, nil)

@@ -53,6 +53,11 @@ var (
 		Value: "25s",
 		Usage: "period between each heartbeat",
 	}
+	flTTL = cli.StringFlag{
+		Name:  "time-to-live, ttl",
+		Value: "75s",
+		Usage: "sets the expiration of an ephemeral node",
+	}
 	flTimeout = cli.StringFlag{
 		Name:  "timeout",
 		Value: "10s",
