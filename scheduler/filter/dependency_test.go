@@ -54,6 +54,24 @@ func TestDependencyFilterSimple(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
+	// volumes-from:rw
+	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
+		VolumesFrom: []string{"c0:rw"},
+	}}}
+	result, err = f.Filter(config, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[0])
+
+	// volumes-from:ro
+	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
+		VolumesFrom: []string{"c0:ro"},
+	}}}
+	result, err = f.Filter(config, nodes)
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, result[0], nodes[0])
+
 	// link.
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		Links: []string{"c1:foobar"},
