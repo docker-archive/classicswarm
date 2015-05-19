@@ -131,7 +131,7 @@ var (
 )
 
 // CreateStore creates a an instance of store
-func CreateStore(backend Backend, addrs []string, options *Config) (Store, error) {
+func NewStore(backend Backend, addrs []string, options *Config) (Store, error) {
 	if init, exists := initializers[backend]; exists {
 		log.WithFields(log.Fields{"backend": backend}).Debug("Initializing store service")
 		return init(addrs, options)
