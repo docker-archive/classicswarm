@@ -49,7 +49,7 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Du
 
 	// Creates a new store, will ignore options given
 	// if not supported by the chosen store
-	s.store, err = store.CreateStore(
+	s.store, err = store.NewStore(
 		s.backend,
 		addrs,
 		&store.Config{
