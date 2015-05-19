@@ -59,7 +59,7 @@ function teardown() {
 	retry 5 1 discovery_check_swarm_info
 }
 
-@test "consul discovery: check for engines departure" {
+@test "consul discovery: node removal" {
 	# The goal of this test is to ensure swarm can detect engines that
 	# are removed from the discovery and refresh info accordingly
 
@@ -80,8 +80,7 @@ function teardown() {
 	swarm_join_cleanup
 
 	# Check if previously registered engines are all gone
-	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
-	retry 30 1 discovery_check_swarm_info_empty
+	retry 30 1 discovery_check_swarm_info 0
 }
 
 @test "consul discovery: failure" {

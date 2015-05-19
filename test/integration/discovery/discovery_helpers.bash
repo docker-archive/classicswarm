@@ -7,7 +7,7 @@ function discovery_check_swarm_info() {
 	local total="$1"
 	[ -z "$total" ] && total="${#HOSTS[@]}"
 
-	docker_swarm info | grep -q "Nodes: $count"
+	docker_swarm info | grep -q "Nodes: $total"
 }
 
 # Returns true if swarm info outputs is empty (0 nodes).

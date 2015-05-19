@@ -64,7 +64,7 @@ function teardown() {
 	retry 5 1 discovery_check_swarm_info
 }
 
-@test "etcd discovery: check for engines departure" {
+@test "etcd discovery: node removal" {
 	# The goal of this test is to ensure swarm can detect engines that
 	# are removed from the discovery and refresh info accordingly
 
@@ -84,9 +84,8 @@ function teardown() {
 	# Removes all the swarm agents
 	swarm_join_cleanup
 
-	# Check if nodes are all gone
-	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
-	retry 15 1 discovery_check_swarm_info_empty
+	# Check if previously registered engines are all gone
+	retry 15 1 discovery_check_swarm_info 0
 }
 
 @test "etcd discovery: failure" {
