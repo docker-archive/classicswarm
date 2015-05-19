@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -148,4 +149,17 @@ func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.R
 	<-errc
 
 	return nil
+}
+
+func boolValue(r *http.Request, k string) bool {
+	s := strings.ToLower(strings.TrimSpace(r.FormValue(k)))
+	return !(s == "" || s == "0" || s == "no" || s == "false" || s == "none")
+}
+
+func intValueOrZero(r *http.Request, k string) int {
+	val, err := strconv.Atoi(r.FormValue(k))
+	if err != nil {
+		return 0
+	}
+	return val
 }
