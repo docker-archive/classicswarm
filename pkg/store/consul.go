@@ -144,23 +144,13 @@ func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
 
 			s.sessions[key] = session
 			p.Session = session
+		}
 
-			// Renew the session periodically if heartbeat set
-			if opts.Heartbeat != 0 {
-				go func() {
-					ticker := time.NewTicker(opts.Heartbeat)
-					for {
-						select {
-						case <-ticker.C:
-							_, _, err := s.client.Session().Renew(p.Session, nil)
-							if err != nil {
-								delete(s.sessions, key)
-								return
-							}
-						}
-					}
-				}()
-			}
+		// Renew the session
+		_, _, err := s.client.Session().Renew(p.Session, nil)
+		if err != nil {
+			delete(s.sessions, key)
+			return err
 		}
 	}
 
