@@ -43,7 +43,6 @@ var (
 type Config struct {
 	TLS               *tls.Config
 	ConnectionTimeout time.Duration
-	Heartbeat         time.Duration
 	EphemeralTTL      time.Duration
 }
 
@@ -99,11 +98,6 @@ const (
 	// to be removed, it is set to 0 to explain
 	// that there is no expiration
 	DefaultTTL = 0
-
-	// EphemeralTTL is used for the ephemeral node
-	// behavior. If the node session is not renewed
-	// before the ttl expires, the node is removed
-	EphemeralTTL = 60
 )
 
 // KVPair represents {Key, Value, Lastindex} tuple
@@ -115,6 +109,7 @@ type KVPair struct {
 
 // WriteOptions contains optional request parameters
 type WriteOptions struct {
+	Heartbeat time.Duration
 	Ephemeral bool
 }
 
