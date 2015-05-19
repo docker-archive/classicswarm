@@ -51,12 +51,12 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		TLSConfig:       TLSConfig,
 	}
 
-	if val, ok := options.Float("swarm.overcommit"); ok {
+	if val, ok := options.Float("swarm.overcommit", ""); ok {
 		cluster.overcommitRatio = val
 	}
 
 	heartbeat := 25 * time.Second
-	if opt, ok := options.String("swarm.discovery.heartbeat"); ok {
+	if opt, ok := options.String("swarm.discovery.heartbeat", ""); ok {
 		h, err := time.ParseDuration(opt)
 		if err != nil {
 			return nil, err
