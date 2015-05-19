@@ -93,13 +93,6 @@ type Store interface {
 	AtomicDelete(key string, previous *KVPair) (bool, error)
 }
 
-const (
-	// DefaultTTL is the default time used for a node
-	// to be removed, it is set to 0 to explain
-	// that there is no expiration
-	DefaultTTL = 0
-)
-
 // KVPair represents {Key, Value, Lastindex} tuple
 type KVPair struct {
 	Key       string
