@@ -20,11 +20,32 @@ func (image *Image) Match(IDOrName string) bool {
 	if image.Id == IDOrName || (size > 2 && strings.HasPrefix(image.Id, IDOrName)) {
 		return true
 	}
+
+	if len(strings.SplitN(IDOrName, ":", 2)) == 1 {
+		IDOrName = IDOrName + ":latest"
+	}
+
 	for _, repoTag := range image.RepoTags {
-		if len(strings.SplitN(repoTag, ":", 2)) == 1 {
-			repoTag = repoTag + ":latest"
-		}
 		if repoTag == IDOrName {
+			return true
+		}
+	}
+	return false
+}
+
+// MatchWithoutTag is exported
+func (image *Image) MatchWithoutTag(IDOrName string) bool {
+	size := len(IDOrName)
+
+	if image.Id == IDOrName || (size > 2 && strings.HasPrefix(image.Id, IDOrName)) {
+		return true
+	}
+
+	name := strings.SplitN(IDOrName, ":", 2)[0]
+
+	for _, repoTag := range image.RepoTags {
+		repoName := strings.SplitN(repoTag, ":", 2)[0]
+		if repoName == name {
 			return true
 		}
 	}
