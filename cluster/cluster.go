@@ -11,6 +11,12 @@ type Cluster interface {
 	// Create a container
 	CreateContainer(config *ContainerConfig, name string) (*Container, error)
 
+	// Stop a container
+	StopContainer(container *Container, timeout int) error
+
+	// Kill a container
+	KillContainer(container *Container, signal string) error
+
 	// Remove a container
 	RemoveContainer(container *Container, force bool) error
 
