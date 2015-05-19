@@ -378,7 +378,7 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 }
 
 // Import image
-func (c *Cluster) Import(source string, repository string, tar string, imageReader io.Reader, callback func(what, status string)) {
+func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string)) {
 	var wg sync.WaitGroup
 	c.RLock()
 	pipeWriters := []*io.PipeWriter{}
@@ -395,7 +395,7 @@ func (c *Cluster) Import(source string, repository string, tar string, imageRead
 			defer reader.Close()
 
 			// call engine import
-			err := nn.Import(source, repository, tar, reader)
+			err := nn.Import(source, repository, tag, reader)
 			if callback != nil {
 				if err != nil {
 					callback(nn.Name, err.Error())

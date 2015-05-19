@@ -75,10 +75,11 @@ func (e *Engine) Connect(config *tls.Config) error {
 		return err
 	}
 
-	return e.connectClient(c)
+	return e.ConnectWithClient(c)
 }
 
-func (e *Engine) connectClient(client dockerclient.Client) error {
+// ConnectWithClient is exported
+func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 	e.client = client
 
 	// Fetch the engine labels.
@@ -444,8 +445,8 @@ func (e *Engine) Load(reader io.Reader) error {
 }
 
 // Import image
-func (e *Engine) Import(source string, repository string, tar string, imageReader io.Reader) error {
-	if _, err := e.client.ImportImage(source, repository, tar, imageReader); err != nil {
+func (e *Engine) Import(source string, repository string, tag string, imageReader io.Reader) error {
+	if _, err := e.client.ImportImage(source, repository, tag, imageReader); err != nil {
 		return err
 	}
 
