@@ -12,7 +12,11 @@ DISCOVERY="etcd://${STORE_HOST}/test"
 CONTAINER_NAME=swarm_etcd
 
 function start_store() {
-	docker_host run -p $STORE_HOST:4001 --name=$CONTAINER_NAME -d coreos/etcd
+	docker_host run -p $STORE_HOST:4001 \
+		--name=$CONTAINER_NAME -d \
+		quay.io/coreos/etcd:v2.0.11 \
+		--listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
+		--advertise-client-urls=http://$STORE_HOST
 }
 
 function stop_store() {

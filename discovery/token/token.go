@@ -18,6 +18,7 @@ const DiscoveryURL = "https://discovery-stage.hub.docker.com/v1"
 // Discovery is exported
 type Discovery struct {
 	heartbeat time.Duration
+	ttl       time.Duration
 	url       string
 	token     string
 }
@@ -27,7 +28,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(urltoken string, heartbeat time.Duration) error {
+func (s *Discovery) Initialize(urltoken string, heartbeat time.Duration, ttl time.Duration) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
 		s.url = "https://" + urltoken[:i]
 		s.token = urltoken[i+1:]
@@ -40,6 +41,7 @@ func (s *Discovery) Initialize(urltoken string, heartbeat time.Duration) error {
 		return errors.New("token is empty")
 	}
 	s.heartbeat = heartbeat
+	s.ttl = ttl
 
 	return nil
 }

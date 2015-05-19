@@ -27,7 +27,14 @@ func join(c *cli.Context) {
 	if hb < 1*time.Second {
 		log.Fatal("--heartbeat should be at least one second")
 	}
-	d, err := discovery.New(dflag, hb)
+	ttl, err := time.ParseDuration(c.String("ttl"))
+	if err != nil {
+		log.Fatalf("invalid --ttl: %v", err)
+	}
+	if ttl <= hb {
+		log.Fatal("--ttl must be strictly superior to the heartbeat value")
+	}
+	d, err := discovery.New(dflag, hb, ttl)
 	if err != nil {
 		log.Fatal(err)
 	}

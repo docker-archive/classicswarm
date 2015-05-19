@@ -22,7 +22,7 @@ type zookeeperLock struct {
 // given a list of endpoints and optional tls config
 func InitializeZookeeper(endpoints []string, options *Config) (Store, error) {
 	s := &Zookeeper{}
-	s.timeout = 5 * time.Second // default timeout
+	s.timeout = 10 * time.Second // default timeout
 
 	// Set options
 	if options != nil {

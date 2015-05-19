@@ -12,7 +12,8 @@ import (
 
 // Etcd embeds the client
 type Etcd struct {
-	client *etcd.Client
+	client       *etcd.Client
+	ephemeralTTL time.Duration
 }
 
 // InitializeEtcd creates a new Etcd client given
@@ -31,10 +32,11 @@ func InitializeEtcd(addrs []string, options *Config) (Store, error) {
 		if options.ConnectionTimeout != 0 {
 			s.setTimeout(options.ConnectionTimeout)
 		}
+		if options.EphemeralTTL != 0 {
+			s.setEphemeralTTL(options.EphemeralTTL)
+		}
 	}
 
-	// FIXME sync on each operation?
-	s.client.SyncCluster()
 	return s, nil
 }
 
@@ -64,6 +66,11 @@ func (s *Etcd) setTLS(tls *tls.Config) {
 // SetTimeout sets the timeout used for connecting to the store
 func (s *Etcd) setTimeout(time time.Duration) {
 	s.client.SetDialTimeout(time)
+}
+
+// SetHeartbeat sets the heartbeat value to notify we are alive
+func (s *Etcd) setEphemeralTTL(time time.Duration) {
+	s.ephemeralTTL = time
 }
 
 // Create the entire path for a directory that does not exist
@@ -100,24 +107,23 @@ func (s *Etcd) Get(key string) (*KVPair, error) {
 func (s *Etcd) Put(key string, value []byte, opts *WriteOptions) error {
 
 	// Default TTL = 0 means no expiration
-	ttl := DefaultTTL
+	var ttl uint64
 	if opts != nil && opts.Ephemeral {
-		ttl = EphemeralTTL
+		ttl = uint64(s.ephemeralTTL.Seconds())
 	}
 
-	if _, err := s.client.Set(key, string(value), uint64(ttl)); err != nil {
+	if _, err := s.client.Set(key, string(value), ttl); err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			if etcdError.ErrorCode == 104 { // Not a directory
 				// Remove the last element (the actual key) and set the prefix as a dir
 				err = s.createDirectory(getDirectory(key))
-				if _, err := s.client.Set(key, string(value), uint64(ttl)); err != nil {
+				if _, err := s.client.Set(key, string(value), ttl); err != nil {
 					return err
 				}
 			}
 		}
 		return err
 	}
-
 	return nil
 }
 
