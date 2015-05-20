@@ -334,6 +334,51 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// POST /containers/{name:.*}/stop
+func stopContainers(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	name := mux.Vars(r)["name"]
+	time, err := strconv.Atoi(r.Form.Get("t"))
+	if err != nil {
+		time = 10
+	}
+	container := c.cluster.Container(name)
+	if container == nil {
+		httpError(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
+		return
+	}
+	if err := c.cluster.StopContainer(container, time); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// POST /containers/{name:.*}/kill
+func killContainers(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	name := mux.Vars(r)["name"]
+	signal := r.Form.Get("signal")
+	container := c.cluster.Container(name)
+	if container == nil {
+		httpError(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
+		return
+	}
+	if err := c.cluster.KillContainer(container, signal); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // DELETE /containers/{name:.*}
 func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {

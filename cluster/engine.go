@@ -400,8 +400,18 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	return e.containers[id], nil
 }
 
-// Destroy and remove a container from the engine.
-func (e *Engine) Destroy(container *Container, force bool) error {
+// StopContainer stops a container from the engine.
+func (e *Engine) StopContainer(container *Container, timeout int) error {
+	return e.client.StopContainer(container.Id, timeout)
+}
+
+// KillContainer kills a container from the engine.
+func (e *Engine) KillContainer(container *Container, signal string) error {
+	return e.client.KillContainer(container.Id, signal)
+}
+
+// RemoveContainer removes a container from the engine.
+func (e *Engine) RemoveContainer(container *Container, force bool) error {
 	if err := e.client.RemoveContainer(container.Id, force, true); err != nil {
 		return err
 	}

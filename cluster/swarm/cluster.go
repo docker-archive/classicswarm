@@ -143,13 +143,23 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 	return nil, nil
 }
 
+// KillContainer aka Kill a container from the cluster.
+func (c *Cluster) KillContainer(container *cluster.Container, signal string) error {
+	return container.Engine.KillContainer(container, signal)
+}
+
+// StopContainer aka Stop a container from the cluster.
+func (c *Cluster) StopContainer(container *cluster.Container, timeout int) error {
+	return container.Engine.StopContainer(container, timeout)
+}
+
 // RemoveContainer aka Remove a container from the cluster. Containers should
 // always be destroyed through the scheduler to guarantee atomicity.
 func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) error {
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
-	if err := container.Engine.Destroy(container, force); err != nil {
+	if err := container.Engine.RemoveContainer(container, force); err != nil {
 		return err
 	}
 
