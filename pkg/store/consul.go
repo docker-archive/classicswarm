@@ -302,13 +302,16 @@ func (s *Consul) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVP
 	return watchCh, nil
 }
 
-// CreateLock returns a handle to a lock struct which can be used
-// to acquire and release the mutex.
-func (s *Consul) CreateLock(key string, value []byte) (Locker, error) {
-	l, err := s.client.LockOpts(&api.LockOptions{
-		Key:   s.normalize(key),
-		Value: value,
-	})
+// NewLock returns a handle to a lock struct which can be used to acquire and
+// release the mutex.
+func (s *Consul) NewLock(key string, options *LockOptions) (Locker, error) {
+	consulOpts := &api.LockOptions{
+		Key: s.normalize(key),
+	}
+	if options != nil {
+		consulOpts.Value = options.Value
+	}
+	l, err := s.client.LockOpts(consulOpts)
 	if err != nil {
 		return nil, err
 	}
