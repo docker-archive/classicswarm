@@ -1,8 +1,12 @@
 package mesos
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/swarm/cluster"
 	"github.com/gogo/protobuf/proto"
@@ -13,11 +17,21 @@ import (
 type task struct {
 	mesosproto.TaskInfo
 
+	cluster *Cluster
+
 	updates chan *mesosproto.TaskStatus
 
 	config    *cluster.ContainerConfig
 	error     chan error
 	container chan *cluster.Container
+}
+
+func (t *task) ID() string {
+	return t.TaskId.GetValue()
+}
+
+func (t *task) Do() bool {
+	return t.cluster.scheduleTask(t)
 }
 
 func (t *task) build(slaveID string) {
@@ -28,6 +42,46 @@ func (t *task) build(slaveID string) {
 		Docker: &mesosproto.ContainerInfo_DockerInfo{
 			Image: &t.config.Image,
 		},
+	}
+
+	switch t.config.HostConfig.NetworkMode {
+	case "none":
+		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_NONE.Enum()
+	case "host":
+		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_HOST.Enum()
+	case "bridge", "":
+		for containerPort, bindings := range t.config.HostConfig.PortBindings {
+			for _, binding := range bindings {
+				fmt.Println(containerPort)
+				containerInfo := strings.SplitN(containerPort, "/", 2)
+				fmt.Println(containerInfo[0], containerInfo[1])
+				containerPort, err := strconv.ParseUint(containerInfo[0], 10, 32)
+				if err != nil {
+					log.Warn(err)
+					continue
+				}
+				hostPort, err := strconv.ParseUint(binding.HostPort, 10, 32)
+				if err != nil {
+					log.Warn(err)
+					continue
+				}
+				protocol := "tcp"
+				if len(containerInfo) == 2 {
+					protocol = containerInfo[1]
+				}
+				t.Container.Docker.PortMappings = append(t.Container.Docker.PortMappings, &mesosproto.ContainerInfo_DockerInfo_PortMapping{
+					HostPort:      proto.Uint32(uint32(hostPort)),
+					ContainerPort: proto.Uint32(uint32(containerPort)),
+					Protocol:      proto.String(protocol),
+				})
+				t.Resources = append(t.Resources, mesosutil.NewRangesResource("ports", []*mesosproto.Value_Range{mesosutil.NewValueRange(hostPort, hostPort)}))
+			}
+		}
+		// TODO handle -P here
+		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_BRIDGE.Enum()
+	default:
+		log.Errorf("Unsupported network mode %q", t.config.HostConfig.NetworkMode)
+		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_BRIDGE.Enum()
 	}
 
 	if cpus := t.config.CpuShares; cpus > 0 {
@@ -53,13 +107,14 @@ func (t *task) build(slaveID string) {
 	t.SlaveId = &mesosproto.SlaveID{Value: &slaveID}
 }
 
-func newTask(config *cluster.ContainerConfig, name string) (*task, error) {
+func newTask(c *Cluster, config *cluster.ContainerConfig, name string) (*task, error) {
 	// save the name in labels as the mesos containerizer will override it
-	config.SetNamespacedLabel("mesos.name", name)
+	config.Labels[cluster.SwarmLabelNamespace+".mesos.name"] = name
 
 	task := task{
 		updates: make(chan *mesosproto.TaskStatus),
 
+		cluster:   c,
 		config:    config,
 		error:     make(chan error),
 		container: make(chan *cluster.Container),
@@ -82,4 +137,26 @@ func (t *task) sendStatus(status *mesosproto.TaskStatus) {
 
 func (t *task) getStatus() *mesosproto.TaskStatus {
 	return <-t.updates
+}
+
+func (t *task) monitor() (bool, error) {
+	taskStatus := t.getStatus()
+
+	switch taskStatus.GetState() {
+	case mesosproto.TaskState_TASK_STAGING:
+	case mesosproto.TaskState_TASK_STARTING:
+	case mesosproto.TaskState_TASK_RUNNING:
+	case mesosproto.TaskState_TASK_FINISHED:
+		return true, nil
+	case mesosproto.TaskState_TASK_FAILED:
+		return true, errors.New(taskStatus.GetMessage())
+	case mesosproto.TaskState_TASK_KILLED:
+		return true, nil
+	case mesosproto.TaskState_TASK_LOST:
+		return true, errors.New(taskStatus.GetMessage())
+	case mesosproto.TaskState_TASK_ERROR:
+		return true, errors.New(taskStatus.GetMessage())
+	}
+
+	return false, nil
 }

@@ -108,14 +108,3 @@ func (c *ContainerConfig) Affinities() []string {
 func (c *ContainerConfig) Constraints() []string {
 	return c.extractExprs("constraints")
 }
-
-// NamespacedLabel returns a label within `namespace` from the Config.
-// May return an empty string if not set.
-func (c *ContainerConfig) NamespacedLabel(key string) string {
-	return c.Labels[namespace+"."+key]
-}
-
-// SetNamespacedLabel sets or overrides a label within `namespace` in the Config.
-func (c *ContainerConfig) SetNamespacedLabel(key, value string) {
-	c.Labels[namespace+"."+key] = value
-}
