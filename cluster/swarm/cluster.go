@@ -68,7 +68,7 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 	}
 
 	// Set up discovery.
-	cluster.discovery, err = discovery.New(dflag, heartbeat)
+	cluster.discovery, err = discovery.New(dflag, heartbeat, 0)
 	if err != nil {
 		log.Fatal(err)
 	}

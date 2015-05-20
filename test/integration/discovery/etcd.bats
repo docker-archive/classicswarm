@@ -12,7 +12,11 @@ DISCOVERY="etcd://${STORE_HOST}/test"
 CONTAINER_NAME=swarm_etcd
 
 function start_store() {
-	docker_host run -p $STORE_HOST:4001 --name=$CONTAINER_NAME -d coreos/etcd
+	docker_host run -p $STORE_HOST:4001 \
+		--name=$CONTAINER_NAME -d \
+		quay.io/coreos/etcd:v2.0.11 \
+		--listen-client-urls=http://0.0.0.0:2379,http://0.0.0.0:4001 \
+		--advertise-client-urls=http://$STORE_HOST
 }
 
 function stop_store() {
@@ -58,6 +62,30 @@ function teardown() {
 	swarm_join "$DISCOVERY"
 	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
 	retry 5 1 discovery_check_swarm_info
+}
+
+@test "etcd discovery: node removal" {
+	# The goal of this test is to ensure swarm can detect engines that
+	# are removed from the discovery and refresh info accordingly
+
+	# Start the store
+	start_store
+
+	# Start a manager with no engines.
+	swarm_manage "$DISCOVERY"
+	retry 10 1 discovery_check_swarm_info
+
+	# Add Engines to the cluster and make sure it's picked by swarm
+	start_docker 2
+	swarm_join "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_info
+
+	# Removes all the swarm agents
+	swarm_join_cleanup
+
+	# Check if previously registered engines are all gone
+	retry 15 1 discovery_check_swarm_info 0
 }
 
 @test "etcd discovery: failure" {

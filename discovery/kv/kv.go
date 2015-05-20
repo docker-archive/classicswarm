@@ -16,6 +16,7 @@ type Discovery struct {
 	backend   store.Backend
 	store     store.Store
 	heartbeat time.Duration
+	ttl       time.Duration
 	prefix    string
 }
 
@@ -26,7 +27,7 @@ func init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(uris string, heartbeat time.Duration) error {
+func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Duration) error {
 	var (
 		parts = strings.SplitN(uris, "/", 2)
 		ips   = strings.Split(parts[0], ",")
@@ -43,6 +44,7 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration) error {
 	}
 
 	s.heartbeat = heartbeat
+	s.ttl = ttl
 	s.prefix = parts[1]
 
 	// Creates a new store, will ignore options given
@@ -51,7 +53,7 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration) error {
 		s.backend,
 		addrs,
 		&store.Config{
-			Timeout: s.heartbeat,
+			EphemeralTTL: s.ttl,
 		},
 	)
 	return err
@@ -121,5 +123,6 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 
 // Register is exported
 func (s *Discovery) Register(addr string) error {
-	return s.store.Put(path.Join(s.prefix, addr), []byte(addr))
+	opts := &store.WriteOptions{Ephemeral: true, Heartbeat: s.heartbeat}
+	return s.store.Put(path.Join(s.prefix, addr), []byte(addr), opts)
 }
