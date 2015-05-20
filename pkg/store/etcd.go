@@ -277,8 +277,8 @@ func (s *Etcd) DeleteTree(prefix string) error {
 	return nil
 }
 
-// CreateLock returns a handle to a lock struct which can be used
-// to acquire and release the mutex.
-func (s *Etcd) CreateLock(key string, value []byte) (Locker, error) {
+// NewLock returns a handle to a lock struct which can be used to acquire and
+// release the mutex.
+func (s *Etcd) NewLock(key string, options *LockOptions) (Locker, error) {
 	return nil, ErrNotImplemented
 }
