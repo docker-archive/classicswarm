@@ -145,8 +145,8 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse flags.
-	all := r.Form.Get("all") == "1"
-	limit, _ := strconv.Atoi(r.Form.Get("limit"))
+	all := boolValue(r, "all")
+	limit := intValueOrZero(r, "limit")
 
 	// Parse filters.
 	filters, err := dockerfilters.FromParam(r.Form.Get("filters"))
@@ -342,7 +342,7 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := mux.Vars(r)["name"]
-	force := r.Form.Get("force") == "1"
+	force := boolValue(r, "force")
 	container := c.cluster.Container(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
