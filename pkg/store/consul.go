@@ -162,6 +162,7 @@ func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
 		// Renew the session
 		_, _, err := s.client.Session().Renew(p.Session, nil)
 		if err != nil {
+			s.ephemeralSession = ""
 			return err
 		}
 	}
