@@ -49,9 +49,14 @@ var (
 		EnvVar: "SWARM_HOST",
 	}
 	flHeartBeat = cli.StringFlag{
-		Name:  "heartbeat, hb",
-		Value: "25s",
+		Name:  "heartbeat",
+		Value: "20s",
 		Usage: "period between each heartbeat",
+	}
+	flTTL = cli.StringFlag{
+		Name:  "ttl",
+		Value: "60s",
+		Usage: "sets the expiration of an ephemeral node",
 	}
 	flTimeout = cli.StringFlag{
 		Name:  "timeout",

@@ -12,7 +12,8 @@ import (
 
 // Etcd embeds the client
 type Etcd struct {
-	client *etcd.Client
+	client       *etcd.Client
+	ephemeralTTL time.Duration
 }
 
 // InitializeEtcd creates a new Etcd client given
@@ -23,16 +24,19 @@ func InitializeEtcd(addrs []string, options *Config) (Store, error) {
 	entries := createEndpoints(addrs, "http")
 	s.client = etcd.NewClient(entries)
 
-	if options.TLS != nil {
-		s.setTLS(options.TLS)
+	// Set options
+	if options != nil {
+		if options.TLS != nil {
+			s.setTLS(options.TLS)
+		}
+		if options.ConnectionTimeout != 0 {
+			s.setTimeout(options.ConnectionTimeout)
+		}
+		if options.EphemeralTTL != 0 {
+			s.setEphemeralTTL(options.EphemeralTTL)
+		}
 	}
 
-	if options.Timeout != 0 {
-		s.setTimeout(options.Timeout)
-	}
-
-	// FIXME sync on each operation?
-	s.client.SyncCluster()
 	return s, nil
 }
 
@@ -64,9 +68,13 @@ func (s *Etcd) setTimeout(time time.Duration) {
 	s.client.SetDialTimeout(time)
 }
 
+// SetHeartbeat sets the heartbeat value to notify we are alive
+func (s *Etcd) setEphemeralTTL(time time.Duration) {
+	s.ephemeralTTL = time
+}
+
 // Create the entire path for a directory that does not exist
 func (s *Etcd) createDirectory(path string) error {
-	// TODO Handle TTL at key/dir creation -> use K/V struct for key infos?
 	if _, err := s.client.CreateDir(normalize(path), 10); err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			if etcdError.ErrorCode != 105 { // Skip key already exists
@@ -96,13 +104,20 @@ func (s *Etcd) Get(key string) (*KVPair, error) {
 }
 
 // Put a value at "key"
-func (s *Etcd) Put(key string, value []byte) error {
-	if _, err := s.client.Set(key, string(value), 0); err != nil {
+func (s *Etcd) Put(key string, value []byte, opts *WriteOptions) error {
+
+	// Default TTL = 0 means no expiration
+	var ttl uint64
+	if opts != nil && opts.Ephemeral {
+		ttl = uint64(s.ephemeralTTL.Seconds())
+	}
+
+	if _, err := s.client.Set(key, string(value), ttl); err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			if etcdError.ErrorCode == 104 { // Not a directory
 				// Remove the last element (the actual key) and set the prefix as a dir
 				err = s.createDirectory(getDirectory(key))
-				if _, err := s.client.Set(key, string(value), 0); err != nil {
+				if _, err := s.client.Set(key, string(value), ttl); err != nil {
 					return err
 				}
 			}
@@ -223,7 +238,7 @@ func (s *Etcd) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPai
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Etcd) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
+func (s *Etcd) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, error) {
 	_, err := s.client.CompareAndSwap(normalize(key), string(value), 0, "", previous.LastIndex)
 	if err != nil {
 		return false, err

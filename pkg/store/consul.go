@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -19,8 +20,11 @@ const (
 
 // Consul embeds the client and watches
 type Consul struct {
-	config *api.Config
-	client *api.Client
+	sync.Mutex
+	config           *api.Config
+	client           *api.Client
+	ephemeralTTL     time.Duration
+	ephemeralSession string
 }
 
 type consulLock struct {
@@ -39,12 +43,17 @@ func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 	config.Address = endpoints[0]
 	config.Scheme = "http"
 
-	if options.TLS != nil {
-		s.setTLS(options.TLS)
-	}
-
-	if options.Timeout != 0 {
-		s.setTimeout(options.Timeout)
+	// Set options
+	if options != nil {
+		if options.TLS != nil {
+			s.setTLS(options.TLS)
+		}
+		if options.ConnectionTimeout != 0 {
+			s.setTimeout(options.ConnectionTimeout)
+		}
+		if options.EphemeralTTL != 0 {
+			s.setEphemeralTTL(options.EphemeralTTL)
+		}
 	}
 
 	// Creates a new client
@@ -71,6 +80,31 @@ func (s *Consul) setTimeout(time time.Duration) {
 	s.config.WaitTime = time
 }
 
+// SetEphemeralTTL sets the ttl for ephemeral nodes
+func (s *Consul) setEphemeralTTL(time time.Duration) {
+	s.ephemeralTTL = time
+}
+
+// CreateEphemeralSession creates the a global session
+// once that is used to delete keys at node failure
+func (s *Consul) createEphemeralSession() error {
+	s.Lock()
+	defer s.Unlock()
+	if s.ephemeralSession == "" {
+		entry := &api.SessionEntry{
+			Behavior: api.SessionBehaviorDelete,
+			TTL:      s.ephemeralTTL.String(),
+		}
+		// Create global ephemeral keys session
+		session, _, err := s.client.Session().Create(entry, nil)
+		if err != nil {
+			return err
+		}
+		s.ephemeralSession = session
+	}
+	return nil
+}
+
 // Normalize the key for usage in Consul
 func (s *Consul) normalize(key string) string {
 	key = normalize(key)
@@ -91,11 +125,48 @@ func (s *Consul) Get(key string) (*KVPair, error) {
 }
 
 // Put a value at "key"
-func (s *Consul) Put(key string, value []byte) error {
-	p := &api.KVPair{Key: s.normalize(key), Value: value}
-	if s.client == nil {
-		log.Error("Error initializing client")
+func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
+
+	key = s.normalize(key)
+
+	p := &api.KVPair{
+		Key:   key,
+		Value: value,
 	}
+
+	if opts != nil && opts.Ephemeral {
+		// Creates the global ephemeral session
+		// if it does not exist
+		if s.ephemeralSession == "" {
+			s.createEphemeralSession()
+		}
+
+		// Create lock option with the
+		// EphemeralSession
+		lockOpts := &api.LockOptions{
+			Key:     key,
+			Session: s.ephemeralSession,
+		}
+
+		// Lock and ignore if lock is held
+		// It's just a placeholder for the
+		// ephemeral behavior
+		lock, _ := s.client.LockOpts(lockOpts)
+		if lock != nil {
+			lock.Lock(nil)
+		}
+
+		// Place the session on key
+		p.Session = s.ephemeralSession
+
+		// Renew the session
+		_, _, err := s.client.Session().Renew(p.Session, nil)
+		if err != nil {
+			s.ephemeralSession = ""
+			return err
+		}
+	}
+
 	_, err := s.client.KV().Put(p, nil)
 	return err
 }
@@ -258,7 +329,7 @@ func (l *consulLock) Unlock() error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
+func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, error) {
 	p := &api.KVPair{Key: s.normalize(key), Value: value, ModifyIndex: previous.LastIndex}
 	if work, _, err := s.client.KV().CAS(p, nil); err != nil {
 		return false, err

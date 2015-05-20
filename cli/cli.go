@@ -65,7 +65,7 @@ func Run() {
 					log.Fatalf("the `create` command takes no arguments. See '%s create --help'.", c.App.Name)
 				}
 				discovery := &token.Discovery{}
-				discovery.Initialize("", 0)
+				discovery.Initialize("", 0, 0)
 				token, err := discovery.CreateCluster()
 				if err != nil {
 					log.Fatal(err)
@@ -88,7 +88,7 @@ func Run() {
 					log.Fatalf("invalid --timeout: %v", err)
 				}
 
-				d, err := discovery.New(dflag, timeout)
+				d, err := discovery.New(dflag, timeout, 0)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -122,8 +122,8 @@ func Run() {
 		{
 			Name:      "join",
 			ShortName: "j",
-			Usage:     "Join a docker cluster",
-			Flags:     []cli.Flag{flAddr, flHeartBeat},
+			Usage:     "join a docker cluster",
+			Flags:     []cli.Flag{flAddr, flHeartBeat, flTTL},
 			Action:    join,
 		},
 	}

@@ -21,8 +21,8 @@ func InitializeMock(endpoints []string, options *Config) (Store, error) {
 }
 
 // Put mock
-func (s *Mock) Put(key string, value []byte) error {
-	args := s.Mock.Called(key, value)
+func (s *Mock) Put(key string, value []byte, opts *WriteOptions) error {
+	args := s.Mock.Called(key, value, opts)
 	return args.Error(0)
 }
 
@@ -75,8 +75,8 @@ func (s *Mock) DeleteTree(prefix string) error {
 }
 
 // AtomicPut mock
-func (s *Mock) AtomicPut(key string, value []byte, previous *KVPair) (bool, error) {
-	args := s.Mock.Called(key, value, previous)
+func (s *Mock) AtomicPut(key string, value []byte, previous *KVPair, opts *WriteOptions) (bool, error) {
+	args := s.Mock.Called(key, value, previous, opts)
 	return args.Bool(0), args.Error(1)
 }
 
