@@ -149,7 +149,7 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
-	if err := container.Engine.Destroy(container, force); err != nil {
+	if err := container.Engine.RemoveContainer(container, force); err != nil {
 		return err
 	}
 
