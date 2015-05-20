@@ -252,7 +252,7 @@ func (c *Cluster) RemoveImages(name string) ([]*dockerclient.ImageDelete, error)
 	var err error
 	for _, n := range c.engines {
 		for _, image := range n.Images() {
-			if image.Match(name) {
+			if image.Match(name, true) {
 				content, err := image.Engine.RemoveImage(image, name)
 				if err != nil {
 					errs = append(errs, fmt.Sprintf("%s: %s", image.Engine.Name, err.Error()))
