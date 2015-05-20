@@ -19,7 +19,7 @@ if err != nil {
 underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood")
 underwood.RunForElection()
 
-for elected := range candidate.ElectedCh {
+for elected := range underwood.ElectedCh {
 	// This loop will run every time there is a change in our leadership
 	// status.
 
