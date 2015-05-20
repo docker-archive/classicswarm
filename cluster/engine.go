@@ -502,7 +502,7 @@ func (e *Engine) Image(IDOrName string) *Image {
 	defer e.RUnlock()
 
 	for _, image := range e.images {
-		if image.Match(IDOrName) {
+		if image.Match(IDOrName, true) {
 			return image
 		}
 	}

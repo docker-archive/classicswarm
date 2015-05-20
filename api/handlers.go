@@ -67,8 +67,8 @@ func getImage(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 
 	for _, image := range c.cluster.Images() {
-		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name) ||
-			len(strings.SplitN(name, ":", 2)) == 1 && image.MatchWithoutTag(name) {
+		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
+			len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
 			proxy(c.tlsConfig, image.Engine.Addr, w, r)
 			return
 		}
@@ -97,8 +97,8 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 		// Count how many images we need it has.
 		for _, name := range names {
 			for _, image := range images {
-				if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name) ||
-					len(strings.SplitN(name, ":", 2)) == 1 && image.MatchWithoutTag(name) {
+				if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
+					len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
 					matchedImages = matchedImages + 1
 					break
 				}
