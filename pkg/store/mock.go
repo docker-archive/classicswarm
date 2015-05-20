@@ -56,9 +56,9 @@ func (s *Mock) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPai
 	return args.Get(0).(chan []*KVPair), args.Error(1)
 }
 
-// CreateLock mock
-func (s *Mock) CreateLock(key string, value []byte) (Locker, error) {
-	args := s.Mock.Called(key, value)
+// NewLock mock
+func (s *Mock) NewLock(key string, options *LockOptions) (Locker, error) {
+	args := s.Mock.Called(key, options)
 	return args.Get(0).(Locker), args.Error(1)
 }
 
@@ -84,4 +84,21 @@ func (s *Mock) AtomicPut(key string, value []byte, previous *KVPair, opts *Write
 func (s *Mock) AtomicDelete(key string, previous *KVPair) (bool, error) {
 	args := s.Mock.Called(key, previous)
 	return args.Bool(0), args.Error(1)
+}
+
+// MockLock mock implementation of Locker
+type MockLock struct {
+	mock.Mock
+}
+
+// Lock mock
+func (l *MockLock) Lock() (<-chan struct{}, error) {
+	args := l.Mock.Called()
+	return args.Get(0).(<-chan struct{}), args.Error(1)
+}
+
+// Unlock mock
+func (l *MockLock) Unlock() error {
+	args := l.Mock.Called()
+	return args.Error(0)
 }

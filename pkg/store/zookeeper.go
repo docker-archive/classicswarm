@@ -222,10 +222,11 @@ func (s *Zookeeper) AtomicDelete(key string, previous *KVPair) (bool, error) {
 	return false, ErrNotImplemented
 }
 
-// CreateLock returns a handle to a lock struct which can be used
-// to acquire and release the mutex.
-func (s *Zookeeper) CreateLock(key string, value []byte) (Locker, error) {
-	// FIXME: `value` is not being used since there is no support in zk.NewLock().
+// NewLock returns a handle to a lock struct which can be used to acquire and
+// release the mutex.
+func (s *Zookeeper) NewLock(key string, options *LockOptions) (Locker, error) {
+	// FIXME: `options.Value` is not being used since there is no support in
+	// zk.NewLock().
 	return &zookeeperLock{
 		lock: zk.NewLock(s.client, normalize(key), zk.WorldACL(zk.PermAll)),
 	}, nil

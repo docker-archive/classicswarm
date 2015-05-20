@@ -78,7 +78,7 @@ type Store interface {
 	// CreateLock for a given key.
 	// The returned Locker is not held and must be acquired with `.Lock`.
 	// value is optional.
-	CreateLock(key string, value []byte) (Locker, error)
+	NewLock(key string, options *LockOptions) (Locker, error)
 
 	// List the content of a given prefix
 	List(prefix string) ([]*KVPair, error)
@@ -106,6 +106,11 @@ type WriteOptions struct {
 	Ephemeral bool
 }
 
+// LockOptions contains optional request parameters
+type LockOptions struct {
+	Value []byte // Optional, value to associate with the lock
+}
+
 // WatchCallback is used for watch methods on keys
 // and is triggered on key change
 type WatchCallback func(entries ...*KVPair)
@@ -130,7 +135,7 @@ var (
 	}
 )
 
-// CreateStore creates a an instance of store
+// NewStore creates a an instance of store
 func NewStore(backend Backend, addrs []string, options *Config) (Store, error) {
 	if init, exists := initializers[backend]; exists {
 		log.WithFields(log.Fields{"backend": backend}).Debug("Initializing store service")
