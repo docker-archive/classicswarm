@@ -6,6 +6,11 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "code.google.com/p/go-uuid/uuid",
+			"Comment": "null-15",
+			"Rev": "35bc42037350f0078e3c974c6ea690f1926603ab"
+		},
+		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.6.4-6-g539d4dc",
 			"Rev": "539d4dc034c079a7188b5d4ca9650632d73c66e8"
@@ -51,6 +56,14 @@
 			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
 		},
 		{
+			"ImportPath": "github.com/gogo/protobuf/proto",
+			"Rev": "bc946d07d1016848dfd2507f90f0859c9471681e"
+		},
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "44145f04b68cf362d9c4df2182967c2275eaefed"
+		},
+		{
 			"ImportPath": "github.com/gorilla/context",
 			"Rev": "215affda49addc4c8ef7e2534915df2c8c35c6cd"
 		},
@@ -62,6 +75,34 @@
 			"ImportPath": "github.com/hashicorp/consul/api",
 			"Comment": "v0.5.0rc1-108-g79d28b9",
 			"Rev": "79d28b9baf2be44ada3058263572d3a72ba71d4e"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/auth",
+			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/detector",
+			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/mesosproto",
+			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/mesosutil",
+			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/messenger",
+			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/scheduler",
+			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/upid",
+			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
@@ -82,6 +123,10 @@
 		{
 			"ImportPath": "github.com/stretchr/testify/mock",
 			"Rev": "43d0eed2455ed136d33e9426cf52119371ca4596"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "6460565bec1e8891e29ff478184c71b9e443ac36"
 		}
 	]
 }
