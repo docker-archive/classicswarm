@@ -7,7 +7,8 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-const namespace = "com.docker.swarm"
+// SwarmLabelNamespace defines the key prefix in all custom labels
+const SwarmLabelNamespace = "com.docker.swarm"
 
 // ContainerConfig is exported
 // TODO store affinities and constraints in their own fields
@@ -37,12 +38,12 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 	}
 
 	// parse affinities from labels (ex. docker run --label 'com.docker.swarm.affinities=["container==redis","image==nginx"]')
-	if labels, ok := c.Labels[namespace+".affinities"]; ok {
+	if labels, ok := c.Labels[SwarmLabelNamespace+".affinities"]; ok {
 		json.Unmarshal([]byte(labels), &affinities)
 	}
 
 	// parse contraints from labels (ex. docker run --label 'com.docker.swarm.constraints=["region==us-east","storage==ssd"]')
-	if labels, ok := c.Labels[namespace+".constraints"]; ok {
+	if labels, ok := c.Labels[SwarmLabelNamespace+".constraints"]; ok {
 		json.Unmarshal([]byte(labels), &constraints)
 	}
 
@@ -63,14 +64,14 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 	// store affinities in labels
 	if len(affinities) > 0 {
 		if labels, err := json.Marshal(affinities); err == nil {
-			c.Labels[namespace+".affinities"] = string(labels)
+			c.Labels[SwarmLabelNamespace+".affinities"] = string(labels)
 		}
 	}
 
 	// store contraints in labels
 	if len(constraints) > 0 {
 		if labels, err := json.Marshal(constraints); err == nil {
-			c.Labels[namespace+".constraints"] = string(labels)
+			c.Labels[SwarmLabelNamespace+".constraints"] = string(labels)
 		}
 	}
 
@@ -80,7 +81,7 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 func (c *ContainerConfig) extractExprs(key string) []string {
 	var exprs []string
 
-	if labels, ok := c.Labels[namespace+"."+key]; ok {
+	if labels, ok := c.Labels[SwarmLabelNamespace+"."+key]; ok {
 		json.Unmarshal([]byte(labels), &exprs)
 	}
 
@@ -90,12 +91,12 @@ func (c *ContainerConfig) extractExprs(key string) []string {
 // SwarmID extracts the Swarm ID from the Config.
 // May return an empty string if not set.
 func (c *ContainerConfig) SwarmID() string {
-	return c.Labels[namespace+".id"]
+	return c.Labels[SwarmLabelNamespace+".id"]
 }
 
 // SetSwarmID sets or overrides the Swarm ID in the Config.
 func (c *ContainerConfig) SetSwarmID(id string) {
-	c.Labels[namespace+".id"] = id
+	c.Labels[SwarmLabelNamespace+".id"] = id
 }
 
 // Affinities returns all the affinities from the ContainerConfig
