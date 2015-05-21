@@ -35,9 +35,10 @@ func TestSwarmID(t *testing.T) {
 	assert.Empty(t, config.SwarmID())
 	config.SetSwarmID("foo")
 	assert.Equal(t, config.SwarmID(), "foo")
+	assert.Equal(t, config.Labels[SwarmLabelNamespace+".id"], "foo")
 
 	// Retrieve an existing ID.
-	config = BuildContainerConfig(dockerclient.ContainerConfig{Labels: map[string]string{namespace + ".id": "test"}})
+	config = BuildContainerConfig(dockerclient.ContainerConfig{Labels: map[string]string{SwarmLabelNamespace + ".id": "test"}})
 	assert.Equal(t, config.SwarmID(), "test")
 }
 
