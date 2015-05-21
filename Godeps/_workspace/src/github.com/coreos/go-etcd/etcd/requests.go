@@ -188,19 +188,13 @@ func (c *Client) SendRequest(rr *RawRequest) (*RawResponse, error) {
 
 		logger.Debug("Connecting to etcd: attempt ", attempt+1, " for ", rr.RelativePath)
 
-		// get httpPath if not set
-		if httpPath == "" {
-			httpPath = c.getHttpPath(rr.RelativePath)
-		}
+		httpPath = c.getHttpPath(rr.RelativePath)
 
 		// Return a cURL command if curlChan is set
 		if c.cURLch != nil {
 			command := fmt.Sprintf("curl -X %s %s", rr.Method, httpPath)
 			for key, value := range rr.Values {
 				command += fmt.Sprintf(" -d %s=%s", key, value[0])
-			}
-			if c.credentials != nil {
-				command += fmt.Sprintf(" -u %s", c.credentials.username)
 			}
 			c.sendCURL(command)
 		}
@@ -231,13 +225,7 @@ func (c *Client) SendRequest(rr *RawRequest) (*RawResponse, error) {
 			return nil, err
 		}
 
-		if c.credentials != nil {
-			req.SetBasicAuth(c.credentials.username, c.credentials.password)
-		}
-
 		resp, err = c.httpClient.Do(req)
-		// clear previous httpPath
-		httpPath = ""
 		defer func() {
 			if resp != nil {
 				resp.Body.Close()
@@ -292,19 +280,6 @@ func (c *Client) SendRequest(rr *RawRequest) (*RawResponse, error) {
 			}
 		}
 
-		if resp.StatusCode == http.StatusTemporaryRedirect {
-			u, err := resp.Location()
-
-			if err != nil {
-				logger.Warning(err)
-			} else {
-				// set httpPath for following redirection
-				httpPath = u.String()
-			}
-			resp.Body.Close()
-			continue
-		}
-
 		if checkErr := checkRetry(c.cluster, numReqs, *resp,
 			errors.New("Unexpected HTTP status code")); checkErr != nil {
 			return nil, checkErr
@@ -327,38 +302,19 @@ func (c *Client) SendRequest(rr *RawRequest) (*RawResponse, error) {
 func DefaultCheckRetry(cluster *Cluster, numReqs int, lastResp http.Response,
 	err error) error {
 
-	if numReqs > 2*len(cluster.Machines) {
-		errStr := fmt.Sprintf("failed to propose on members %v twice [last error: %v]", cluster.Machines, err)
-		return newError(ErrCodeEtcdNotReachable, errStr, 0)
+	if numReqs >= 2*len(cluster.Machines) {
+		return newError(ErrCodeEtcdNotReachable,
+			"Tried to connect to each peer twice and failed", 0)
 	}
 
-	if isEmptyResponse(lastResp) {
-		// always retry if it failed to get response from one machine
-		return nil
+	code := lastResp.StatusCode
+	if code == http.StatusInternalServerError {
+		time.Sleep(time.Millisecond * 200)
+
 	}
-	if !shouldRetry(lastResp) {
-		body := []byte("nil")
-		if lastResp.Body != nil {
-			if b, err := ioutil.ReadAll(lastResp.Body); err == nil {
-				body = b
-			}
-		}
-		errStr := fmt.Sprintf("unhandled http status [%s] with body [%s]", http.StatusText(lastResp.StatusCode), body)
-		return newError(ErrCodeUnhandledHTTPStatus, errStr, 0)
-	}
-	// sleep some time and expect leader election finish
-	time.Sleep(time.Millisecond * 200)
-	logger.Warning("bad response status code", lastResp.StatusCode)
+
+	logger.Warning("bad response status code", code)
 	return nil
-}
-
-func isEmptyResponse(r http.Response) bool { return r.StatusCode == 0 }
-
-// shouldRetry returns whether the reponse deserves retry.
-func shouldRetry(r http.Response) bool {
-	// TODO: only retry when the cluster is in leader election
-	// We cannot do it exactly because etcd doesn't support it well.
-	return r.StatusCode == http.StatusInternalServerError
 }
 
 func (c *Client) getHttpPath(s ...string) string {
