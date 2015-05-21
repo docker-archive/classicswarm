@@ -13,6 +13,11 @@ type Discovery struct {
 }
 
 func init() {
+	Init()
+}
+
+// Init is exported
+func Init() {
 	discovery.Register("nodes", &Discovery{})
 }
 

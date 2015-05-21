@@ -21,6 +21,11 @@ type Discovery struct {
 }
 
 func init() {
+	Init()
+}
+
+// Init is exported
+func Init() {
 	discovery.Register("zk", &Discovery{backend: store.ZK})
 	discovery.Register("consul", &Discovery{backend: store.CONSUL})
 	discovery.Register("etcd", &Discovery{backend: store.ETCD})
