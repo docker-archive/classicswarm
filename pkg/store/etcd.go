@@ -16,6 +16,19 @@ type Etcd struct {
 	ephemeralTTL time.Duration
 }
 
+type etcdLock struct {
+	client   *etcd.Client
+	stopLock chan struct{}
+	key      string
+	value    string
+	ttl      uint64
+}
+
+const (
+	defaultLockTTL    = 20 * time.Second
+	defaultUpdateTime = 5 * time.Second
+)
+
 // InitializeEtcd creates a new Etcd client given
 // a list of endpoints and optional tls config
 func InitializeEtcd(addrs []string, options *Config) (Store, error) {
@@ -280,5 +293,117 @@ func (s *Etcd) DeleteTree(prefix string) error {
 // NewLock returns a handle to a lock struct which can be used to acquire and
 // release the mutex.
 func (s *Etcd) NewLock(key string, options *LockOptions) (Locker, error) {
-	return nil, ErrNotImplemented
+	var value string
+	ttl := uint64(time.Duration(defaultLockTTL).Seconds())
+
+	// Apply options
+	if options != nil {
+		if options.Value != nil {
+			value = string(options.Value)
+		}
+		if options.TTL != 0 {
+			ttl = uint64(options.TTL.Seconds())
+		}
+	}
+
+	// Create lock object
+	lock := &etcdLock{
+		client: s.client,
+		key:    key,
+		value:  value,
+		ttl:    ttl,
+	}
+
+	return lock, nil
+}
+
+// Lock attempts to acquire the lock and blocks while doing so.
+// Returns a channel that is closed if our lock is lost or an error.
+func (l *etcdLock) Lock() (<-chan struct{}, error) {
+
+	key := normalize(l.key)
+	var lastIndex uint64
+
+	// Lock holder channels
+	lockHeld := make(chan struct{})
+	stopLocking := make(chan struct{})
+
+	for {
+		resp, err := l.client.Create(key, l.value, l.ttl)
+		if err != nil {
+			if etcdError, ok := err.(*etcd.EtcdError); ok {
+				// Key already exists
+				if etcdError.ErrorCode != 105 {
+					lastIndex = ^uint64(0)
+				}
+			}
+		} else {
+			lastIndex = resp.Node.ModifiedIndex
+		}
+
+		_, err = l.client.CompareAndSwap(key, l.value, l.ttl, "", lastIndex)
+
+		if err == nil {
+			// Leader section
+			l.stopLock = stopLocking
+			go l.holdLock(key, lockHeld, stopLocking)
+			break
+		} else {
+			// Seeker section
+			chW := make(chan *etcd.Response)
+			chWStop := make(chan bool)
+			l.waitLock(key, chW, chWStop)
+
+			// Delete or Expire event occured
+			// Retry
+		}
+	}
+
+	return lockHeld, nil
+}
+
+// Hold the lock as long as we can
+// Updates the key ttl periodically until we receive
+// an explicit stop signal from the Unlock method
+func (l *etcdLock) holdLock(key string, lockHeld chan struct{}, stopLocking chan struct{}) {
+	defer close(lockHeld)
+
+	update := time.NewTicker(defaultUpdateTime)
+
+	for {
+		select {
+		case <-update.C:
+			_, err := l.client.Update(key, l.value, l.ttl)
+			if err != nil {
+				return
+			}
+
+		case <-stopLocking:
+			update.Stop()
+			return
+		}
+	}
+}
+
+// Simply wait for the key to be available
+func (l *etcdLock) waitLock(key string, eventCh chan *etcd.Response, stopWatchCh chan bool) {
+	go l.client.Watch(key, 0, false, eventCh, stopWatchCh)
+	for event := range eventCh {
+		if event.Action == "delete" || event.Action == "expire" {
+			return
+		}
+	}
+}
+
+// Unlock released the lock. It is an error to call this
+// if the lock is not currently held.
+func (l *etcdLock) Unlock() error {
+	if l.stopLock != nil {
+		close(l.stopLock)
+	}
+	_, err := l.client.Delete(normalize(l.key), false)
+	if err != nil {
+		return err
+	}
+	return nil
 }

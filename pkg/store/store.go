@@ -108,7 +108,8 @@ type WriteOptions struct {
 
 // LockOptions contains optional request parameters
 type LockOptions struct {
-	Value []byte // Optional, value to associate with the lock
+	Value []byte        // Optional, value to associate with the lock
+	TTL   time.Duration // Optional, expiration ttl associated with the lock
 }
 
 // WatchCallback is used for watch methods on keys
