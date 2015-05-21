@@ -452,9 +452,9 @@ func (e *Engine) RegisterEventHandler(h EventHandler) error {
 }
 
 // Containers returns all the containers in the engine.
-func (e *Engine) Containers() []*Container {
+func (e *Engine) Containers() Containers {
 	e.RLock()
-	containers := make([]*Container, 0, len(e.containers))
+	containers := Containers{}
 	for _, container := range e.containers {
 		containers = append(containers, container)
 	}
