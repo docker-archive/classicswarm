@@ -357,11 +357,11 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 }
 
 // Containers returns all the containers in the cluster.
-func (c *Cluster) Containers() []*cluster.Container {
+func (c *Cluster) Containers() cluster.Containers {
 	c.RLock()
 	defer c.RUnlock()
 
-	out := []*cluster.Container{}
+	out := cluster.Containers{}
 	for _, n := range c.engines {
 		out = append(out, n.Containers()...)
 	}
@@ -399,58 +399,8 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	c.RLock()
 	defer c.RUnlock()
 
-	containers := c.Containers()
+	return cluster.Containers(c.Containers()).Get(IDOrName)
 
-	// Match exact or short Container ID.
-	for _, container := range containers {
-		if container.Id == IDOrName || stringid.TruncateID(container.Id) == IDOrName {
-			return container
-		}
-	}
-
-	// Match exact Swarm ID.
-	for _, container := range containers {
-		if swarmID := container.Config.SwarmID(); swarmID == IDOrName || stringid.TruncateID(swarmID) == IDOrName {
-			return container
-		}
-	}
-
-	candidates := []*cluster.Container{}
-
-	// Match name, /name or engine/name.
-	for _, container := range containers {
-		for _, name := range container.Names {
-			if name == IDOrName || name == "/"+IDOrName || container.Engine.ID+name == IDOrName || container.Engine.Name+name == IDOrName {
-				return container
-			}
-		}
-	}
-
-	if size := len(candidates); size == 1 {
-		return candidates[0]
-	} else if size > 1 {
-		return nil
-	}
-
-	// Match Container ID prefix.
-	for _, container := range containers {
-		if strings.HasPrefix(container.Id, IDOrName) {
-			candidates = append(candidates, container)
-		}
-	}
-
-	// Match Swarm ID prefix.
-	for _, container := range containers {
-		if strings.HasPrefix(container.Config.SwarmID(), IDOrName) {
-			candidates = append(candidates, container)
-		}
-	}
-
-	if len(candidates) == 1 {
-		return candidates[0]
-	}
-
-	return nil
 }
 
 // listNodes returns all the engines in the cluster.

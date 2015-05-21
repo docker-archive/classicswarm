@@ -24,9 +24,11 @@ type Cluster interface {
 	RemoveImage(image *Image) ([]*dockerclient.ImageDelete, error)
 
 	// Return all containers
-	Containers() []*Container
+	Containers() Containers
 
 	// Return container the matching `IDOrName`
+	// TODO: remove this method from the interface as we can use
+	// cluster.Containers().Get(IDOrName)
 	Container(IDOrName string) *Container
 
 	// Pull images
