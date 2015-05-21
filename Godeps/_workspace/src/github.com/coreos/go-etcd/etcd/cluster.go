@@ -30,8 +30,5 @@ func (cl *Cluster) pick() string { return cl.Machines[cl.picked] }
 
 func (cl *Cluster) updateFromStr(machines string) {
 	cl.Machines = strings.Split(machines, ",")
-	for i := range cl.Machines {
-		cl.Machines[i] = strings.TrimSpace(cl.Machines[i])
-	}
-	cl.picked = rand.Intn(len(cl.Machines))
+	cl.picked = rand.Intn(len(machines))
 }
