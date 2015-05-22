@@ -252,6 +252,7 @@ func (l *zookeeperLock) Lock() (<-chan struct{}, error) {
 
 	if err == nil {
 		// We hold the lock, we can set our value
+		// FIXME: When the last leader leaves the election, this value will be left behind
 		_, err = l.client.Set(l.key, l.value, -1)
 	}
 
