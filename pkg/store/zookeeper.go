@@ -17,7 +17,10 @@ type Zookeeper struct {
 }
 
 type zookeeperLock struct {
-	lock *zk.Lock
+	client *zk.Conn
+	lock   *zk.Lock
+	key    string
+	value  []byte
 }
 
 // InitializeZookeeper creates a new Zookeeper client
@@ -225,20 +228,35 @@ func (s *Zookeeper) AtomicDelete(key string, previous *KVPair) (bool, error) {
 // NewLock returns a handle to a lock struct which can be used to acquire and
 // release the mutex.
 func (s *Zookeeper) NewLock(key string, options *LockOptions) (Locker, error) {
-	// FIXME: `options.Value` is not being used since there is no support in
-	// zk.NewLock().
+	value := []byte("")
+
+	// Apply options
+	if options != nil {
+		if options.Value != nil {
+			value = options.Value
+		}
+	}
+
 	return &zookeeperLock{
-		lock: zk.NewLock(s.client, normalize(key), zk.WorldACL(zk.PermAll)),
+		client: s.client,
+		key:    normalize(key),
+		value:  value,
+		lock:   zk.NewLock(s.client, normalize(key), zk.WorldACL(zk.PermAll)),
 	}, nil
 }
 
 // Lock attempts to acquire the lock and blocks while doing so.
 // Returns a channel that is closed if our lock is lost or an error.
 func (l *zookeeperLock) Lock() (<-chan struct{}, error) {
-	if err := l.lock.Lock(); err != nil {
-		return nil, err
+	err := l.lock.Lock()
+
+	if err == nil {
+		// We hold the lock, we can set our value
+		// FIXME: When the last leader leaves the election, this value will be left behind
+		_, err = l.client.Set(l.key, l.value, -1)
 	}
-	return make(<-chan struct{}), nil
+
+	return nil, err
 }
 
 // Unlock released the lock. It is an error to call this
