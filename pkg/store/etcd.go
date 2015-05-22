@@ -21,6 +21,7 @@ type etcdLock struct {
 	stopLock chan struct{}
 	key      string
 	value    string
+	last     *etcd.Response
 	ttl      uint64
 }
 
@@ -322,11 +323,12 @@ func (s *Etcd) NewLock(key string, options *LockOptions) (Locker, error) {
 func (l *etcdLock) Lock() (<-chan struct{}, error) {
 
 	key := normalize(l.key)
-	var lastIndex uint64
 
 	// Lock holder channels
 	lockHeld := make(chan struct{})
 	stopLocking := make(chan struct{})
+
+	var lastIndex uint64
 
 	for {
 		resp, err := l.client.Create(key, l.value, l.ttl)
@@ -369,23 +371,25 @@ func (l *etcdLock) holdLock(key string, lockHeld chan struct{}, stopLocking chan
 	defer close(lockHeld)
 
 	update := time.NewTicker(defaultUpdateTime)
+	defer update.Stop()
+
+	var err error
 
 	for {
 		select {
 		case <-update.C:
-			_, err := l.client.Update(key, l.value, l.ttl)
+			l.last, err = l.client.Update(key, l.value, l.ttl)
 			if err != nil {
 				return
 			}
 
 		case <-stopLocking:
-			update.Stop()
 			return
 		}
 	}
 }
 
-// Simply wait for the key to be available
+// WaitLock simply waits for the key to be available for creation
 func (l *etcdLock) waitLock(key string, eventCh chan *etcd.Response, stopWatchCh chan bool) {
 	go l.client.Watch(key, 0, false, eventCh, stopWatchCh)
 	for event := range eventCh {
@@ -399,11 +403,13 @@ func (l *etcdLock) waitLock(key string, eventCh chan *etcd.Response, stopWatchCh
 // if the lock is not currently held.
 func (l *etcdLock) Unlock() error {
 	if l.stopLock != nil {
-		close(l.stopLock)
+		l.stopLock <- struct{}{}
 	}
-	_, err := l.client.Delete(normalize(l.key), false)
-	if err != nil {
-		return err
+	if l.last != nil {
+		_, err := l.client.CompareAndDelete(normalize(l.key), l.value, l.last.Node.ModifiedIndex)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
