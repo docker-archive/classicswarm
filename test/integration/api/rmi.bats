@@ -56,3 +56,25 @@ function teardown() {
 	[ "$status" -ne 0 ]
 	[[ "${output}" == *"No such image"* ]]
 }
+
+@test "docker rmi without tag" {
+	start_docker_with_busybox 1
+	start_docker 1 
+	
+	docker -H ${HOSTS[0]} tag busybox:latest testimage:latest
+	swarm_manage
+
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"busybox"* ]]
+	[[ "${output}" == *"testimage"* ]]
+
+	run docker_swarm rmi testimage
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Untagged"* ]]
+
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"busybox"* ]]
+	[[ "${output}" != *"testimage"* ]]
+}

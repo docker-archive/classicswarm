@@ -290,11 +290,32 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 	return nil
 }
 
-// RemoveImage removes an image from the cluster
-func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete, error) {
+// RemoveImages removes all the images that match `name` from the cluster
+func (c *Cluster) RemoveImages(name string) ([]*dockerclient.ImageDelete, error) {
 	c.Lock()
 	defer c.Unlock()
-	return image.Engine.RemoveImage(image)
+
+	out := []*dockerclient.ImageDelete{}
+	errs := []string{}
+	var err error
+	for _, n := range c.engines {
+		for _, image := range n.Images() {
+			if image.Match(name) {
+				content, err := image.Engine.RemoveImage(image, name)
+				if err != nil {
+					errs = append(errs, fmt.Sprintf("%s: %s", image.Engine.Name, err.Error()))
+					continue
+				}
+				out = append(out, content...)
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		err = errors.New(strings.Join(errs, "\n"))
+	}
+
+	return out, err
 }
 
 // Pull is exported
