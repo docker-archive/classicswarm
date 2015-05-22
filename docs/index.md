@@ -69,7 +69,116 @@ The easiest way to get started with Swarm is to use the
 $ docker pull swarm
 ```
 
-## Set up Swarm nodes
+## Set up a secured Swarm cluster using docker-machine
+
+`docker-machine` is a tool to provision docker nodes locally or within a Cloud provider infrastructure.
+
+You can setup a Swarm cluster (**secured by default** using TLS) with this tool.
+
+### Installation
+
+See the steps in the [Docker Machine documentation](https://docs.docker.com/machine/) to install `docker-machine`
+
+Make sure you have **Virtualbox** installed locally, this will be the driver used to create our Swarm Virtual Machines
+
+### Create a token
+
+First, create a Swarm token.  Optionally, you can use another discovery service.
+See the Swarm documentation on alternative solutions in [Discovery Documentation](https://github.com/docker/swarm/blob/master/discovery/README.md)
+
+To create the token, first create a Machine. This example will use VirtualBox.
+
+```
+$ docker-machine create -d virtualbox local
+```
+
+Load the Machine configuration into your shell:
+
+```
+$ eval "$(docker-machine env local)"
+```
+
+Then run generate the token using the Swarm Docker image:
+
+```
+$ docker run swarm create
+1257e0f0bbb499b5cd04b4c9bdb2dab3
+```
+Once you have the token, you can create the cluster.
+
+### Launch the swarm manager
+
+Use this command to launch the *Swarm Manager*:
+
+```
+docker-machine create \
+    -d virtualbox \
+    --swarm \
+    --swarm-master \
+    --swarm-discovery token://<TOKEN-FROM-ABOVE> \
+    swarm-master
+```
+
+The *Swarm Manager* is the machine in charge of orchestrating and scheduling containers
+on the entire cluster. The *Swarm Manager* rules a set of *Swarm-Agents*.
+
+### Launch swarm agents
+
+Now that the *Swarm Manager* is up and running, we can launch as many Swarm
+Agents as we want using:
+
+```
+docker-machine create \
+    -d virtualbox \
+    --swarm \
+    --swarm-discovery token://<TOKEN-FROM-ABOVE> \
+    swarm-node-00
+```
+
+We can create more: `swarm-agent-01`, `swarm-agent-02`, etc..
+
+*Swarm agents* are responsible for hosting containers, they are regular docker daemons and
+we communicate with them using the standard docker remote API.
+
+### Point the docker cli to our Swarm Manager
+
+Last step is to point to the machine running the *Swarm Manager* so we can use the `docker` command on it. To do so we are going to load those informations into our environment with:
+
+```
+eval "$(docker-machine env --swarm swarm-master)"
+```
+
+### Time to talk to our Swarm!
+
+Now that the setup is done, we can use the `docker` command on our cluster:
+
+```
+$ docker info
+Containers: 1
+Nodes: 1
+ swarm-master: 192.168.99.100:2376
+  └ Containers: 2
+  └ Reserved CPUs: 0 / 4
+  └ Reserved Memory: 0 B / 999.9 MiB
+Nodes: 2
+ swarm-master: 192.168.99.101:2376
+  └ Containers: 1
+  └ Reserved CPUs: 0 / 4
+  └ Reserved Memory: 0 B / 999.9 MiB
+Nodes: 3
+ swarm-master: 192.168.99.102:2376
+  └ Containers: 1
+  └ Reserved CPUs: 0 / 4
+  └ Reserved Memory: 0 B / 999.9 MiB
+
+$ docker ps
+[...]
+```
+
+
+## Set up a Swarm cluster manually (insecure)
+
+> **Warning**: use these steps only for debugging and testing purposes and if your network environment is secured (use of firewall, etc.)
 
 Each Swarm node will run a Swarm node agent. The agent registers the referenced
 Docker daemon, monitors it, and updates the discovery backend with the node's status.
