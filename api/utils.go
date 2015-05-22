@@ -82,13 +82,13 @@ func proxyAsync(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *ht
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(NewWriteFlusher(w), resp.Body)
 
-	// cleanup
-	resp.Body.Close()
-	closeIdleConnections(client)
-
 	if callback != nil {
 		callback(resp)
 	}
+
+	// cleanup
+	resp.Body.Close()
+	closeIdleConnections(client)
 
 	return nil
 }
