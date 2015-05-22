@@ -10,3 +10,8 @@ type Container struct {
 	Info   dockerclient.ContainerInfo
 	Engine *Engine
 }
+
+// Refresh container
+func (c *Container) Refresh() error {
+	return c.Engine.refreshContainer(c.Id, true)
+}
