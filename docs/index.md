@@ -106,7 +106,7 @@ $ docker run swarm create
 ```
 Once you have the token, you can create the cluster.
 
-### Launch the swarm manager
+### Launch the Swarm manager
 
 Use this command to launch the *Swarm Manager*:
 
@@ -120,25 +120,25 @@ docker-machine create \
 ```
 
 The *Swarm Manager* is the machine in charge of orchestrating and scheduling containers
-on the entire cluster. The *Swarm Manager* rules a set of *Swarm-Agents*.
+on the entire cluster. The *Swarm Manager* rules a set of *Swarm-Agents* (also called **nodes** or **docker nodes**).
 
-### Launch swarm agents
+### Launch Swarm agents
 
-Now that the *Swarm Manager* is up and running, we can launch as many Swarm
-Agents as we want using:
+Now that the *Swarm Manager* is up and running, we can launch as many *Swarm
+Agents* as we want using:
 
 ```
 docker-machine create \
     -d virtualbox \
     --swarm \
     --swarm-discovery token://<TOKEN-FROM-ABOVE> \
-    swarm-node-00
+    swarm-agent-00
 ```
 
 We can create more: `swarm-agent-01`, `swarm-agent-02`, etc..
 
 *Swarm agents* are responsible for hosting containers, they are regular docker daemons and
-we communicate with them using the standard docker remote API.
+we communicate with them using the standard *docker remote API*.
 
 ### Point the docker cli to our Swarm Manager
 
@@ -161,12 +161,12 @@ Nodes: 1
   └ Reserved CPUs: 0 / 4
   └ Reserved Memory: 0 B / 999.9 MiB
 Nodes: 2
- swarm-master: 192.168.99.101:2376
+ swarm-agent-00: 192.168.99.101:2376
   └ Containers: 1
   └ Reserved CPUs: 0 / 4
   └ Reserved Memory: 0 B / 999.9 MiB
 Nodes: 3
- swarm-master: 192.168.99.102:2376
+ swarm-agent-01: 192.168.99.102:2376
   └ Containers: 1
   └ Reserved CPUs: 0 / 4
   └ Reserved Memory: 0 B / 999.9 MiB
