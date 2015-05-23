@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
@@ -36,42 +35,22 @@ type Cluster struct {
 }
 
 // NewCluster is exported
-func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *tls.Config, dflag string, options cluster.DriverOpts) (cluster.Cluster, error) {
+func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *tls.Config, discovery discovery.Discovery, options cluster.DriverOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
-
-	var (
-		err error
-	)
 
 	cluster := &Cluster{
 		engines:         make(map[string]*cluster.Engine),
 		scheduler:       scheduler,
 		store:           store,
-		overcommitRatio: 0.05,
 		TLSConfig:       TLSConfig,
+		discovery:       discovery,
+		overcommitRatio: 0.05,
 	}
 
 	if val, ok := options.Float("swarm.overcommit", ""); ok {
 		cluster.overcommitRatio = val
 	}
 
-	heartbeat := 25 * time.Second
-	if opt, ok := options.String("swarm.discovery.heartbeat", ""); ok {
-		h, err := time.ParseDuration(opt)
-		if err != nil {
-			return nil, err
-		}
-		if h < 1*time.Second {
-			return nil, fmt.Errorf("invalid heartbeat %s: must be at least 1s", opt)
-		}
-		heartbeat = h
-	}
-
-	// Set up discovery.
-	cluster.discovery, err = discovery.New(dflag, heartbeat, 0)
-	if err != nil {
-		log.Fatal(err)
-	}
 	discoveryCh, errCh := cluster.discovery.Watch(nil)
 	go cluster.monitorDiscovery(discoveryCh, errCh)
 

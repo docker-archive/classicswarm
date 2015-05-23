@@ -8,11 +8,51 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/swarm/cluster"
 )
 
 // The default port to listen on for incoming connections
 const DefaultDockerPort = ":2375"
+
+// Dispatcher is a meta http.Handler. It acts as an http.Handler and forwards
+// requests to another http.Handler that can be changed at runtime.
+type dispatcher struct {
+	handler http.Handler
+}
+
+// SetHandler changes the underlying handler.
+func (d *dispatcher) SetHandler(handler http.Handler) {
+	d.handler = handler
+}
+
+// ServeHTTP forwards requests to the underlying handler.
+func (d *dispatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if d.handler == nil {
+		httpError(w, "No dispatcher defined", http.StatusInternalServerError)
+	}
+	d.handler.ServeHTTP(w, r)
+}
+
+// Server is a Docker API server.
+type Server struct {
+	hosts      []string
+	tlsConfig  *tls.Config
+	dispatcher *dispatcher
+}
+
+// NewServer creates an api.Server.
+func NewServer(hosts []string, tlsConfig *tls.Config) *Server {
+	return &Server{
+		hosts:      hosts,
+		tlsConfig:  tlsConfig,
+		dispatcher: &dispatcher{},
+	}
+}
+
+// SetHandler is used to overwrite the HTTP handler for the API.
+// This can be the api router or a reverse proxy.
+func (s *Server) SetHandler(handler http.Handler) {
+	s.dispatcher.SetHandler(handler)
+}
 
 func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error) {
 	l, err := net.Listen(proto, addr)
@@ -35,20 +75,10 @@ func newListener(proto, addr string, tlsConfig *tls.Config) (net.Listener, error
 //
 // The expected format for a host string is [protocol://]address. The protocol
 // must be either "tcp" or "unix", with "tcp" used by default if not specified.
-func ListenAndServe(c cluster.Cluster, hosts []string, enableCors bool, tlsConfig *tls.Config) error {
-	// Register the API events handler in the cluster.
-	eventsHandler := newEventsHandler()
-	c.RegisterEventHandler(eventsHandler)
+func (s *Server) ListenAndServe() error {
+	chErrors := make(chan error, len(s.hosts))
 
-	context := &context{
-		cluster:       c,
-		eventsHandler: eventsHandler,
-		tlsConfig:     tlsConfig,
-	}
-	r := createRouter(context, enableCors)
-	chErrors := make(chan error, len(hosts))
-
-	for _, host := range hosts {
+	for _, host := range s.hosts {
 		protoAddrParts := strings.SplitN(host, "://", 2)
 		if len(protoAddrParts) == 1 {
 			protoAddrParts = append([]string{"tcp"}, protoAddrParts...)
@@ -62,15 +92,15 @@ func ListenAndServe(c cluster.Cluster, hosts []string, enableCors bool, tlsConfi
 				err    error
 				server = &http.Server{
 					Addr:    protoAddrParts[1],
-					Handler: r,
+					Handler: s.dispatcher,
 				}
 			)
 
 			switch protoAddrParts[0] {
 			case "unix":
-				l, err = newUnixListener(protoAddrParts[1], tlsConfig)
+				l, err = newUnixListener(protoAddrParts[1], s.tlsConfig)
 			case "tcp":
-				l, err = newListener("tcp", protoAddrParts[1], tlsConfig)
+				l, err = newListener("tcp", protoAddrParts[1], s.tlsConfig)
 			default:
 				err = fmt.Errorf("unsupported protocol: %q", protoAddrParts[0])
 			}
@@ -83,7 +113,7 @@ func ListenAndServe(c cluster.Cluster, hosts []string, enableCors bool, tlsConfi
 		}()
 	}
 
-	for i := 0; i < len(hosts); i++ {
+	for i := 0; i < len(s.hosts); i++ {
 		err := <-chErrors
 		if err != nil {
 			return err
