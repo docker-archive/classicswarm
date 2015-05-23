@@ -19,11 +19,12 @@ if err != nil {
 underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood")
 underwood.RunForElection()
 
-for elected := range underwood.ElectedCh {
+electedCh := underwood.ElectedCh()
+for isElected := range rlectedCh {
 	// This loop will run every time there is a change in our leadership
 	// status.
 
-	if elected {
+	if isElected {
 		// We won the election - we are now the leader.
 		// Let's do leader stuff, for example, sleep for a while.
 		log.Printf("I won the election! I'm now the leader")
@@ -48,7 +49,8 @@ there is a change in leadership:
 ```go
 follower := leadership.NewFollower(client, "service/swarm/leader")
 follower.FollowElection()
-for leader := <-follower.LeaderCh {
+leaderCh := follower.LeaderCh()
+for leader := <-leaderCh {
 	// Leader is a string containing the value passed to `NewCandidate`.
 	log.Printf("%s is now the leader", leader)
 }

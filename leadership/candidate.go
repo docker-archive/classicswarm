@@ -9,16 +9,15 @@ import (
 
 // Candidate runs the leader election algorithm asynchronously
 type Candidate struct {
-	ElectedCh chan bool
-
 	client store.Store
 	key    string
 	node   string
 
-	lock     sync.Mutex
-	leader   bool
-	stopCh   chan struct{}
-	resignCh chan bool
+	electedCh chan bool
+	lock      sync.Mutex
+	leader    bool
+	stopCh    chan struct{}
+	resignCh  chan bool
 }
 
 // NewCandidate creates a new Candidate
@@ -28,11 +27,18 @@ func NewCandidate(client store.Store, key, node string) *Candidate {
 		key:    key,
 		node:   node,
 
-		ElectedCh: make(chan bool),
+		electedCh: make(chan bool),
 		leader:    false,
 		resignCh:  make(chan bool),
 		stopCh:    make(chan struct{}),
 	}
+}
+
+// ElectedCh is used to get a channel which delivers signals on
+// acquiring or losing leadership. It sends true if we become
+// the leader, and false if we lose it.
+func (c *Candidate) ElectedCh() <-chan bool {
+	return c.electedCh
 }
 
 // RunForElection starts the leader election algorithm. Updates in status are
@@ -70,12 +76,12 @@ func (c *Candidate) update(status bool) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.ElectedCh <- status
+	c.electedCh <- status
 	c.leader = status
 }
 
 func (c *Candidate) campaign(lock store.Locker) {
-	defer close(c.ElectedCh)
+	defer close(c.electedCh)
 
 	for {
 		// Start as a follower.

@@ -20,6 +20,7 @@ func TestFollower(t *testing.T) {
 
 	follower := NewFollower(store, "test_key")
 	follower.FollowElection()
+	leaderCh := follower.LeaderCh()
 
 	// Simulate leader updates
 	go func() {
@@ -30,14 +31,14 @@ func TestFollower(t *testing.T) {
 	}()
 
 	// We shouldn't see duplicate events.
-	assert.Equal(t, <-follower.LeaderCh, "leader1")
-	assert.Equal(t, <-follower.LeaderCh, "leader2")
-	assert.Equal(t, <-follower.LeaderCh, "leader1")
+	assert.Equal(t, <-leaderCh, "leader1")
+	assert.Equal(t, <-leaderCh, "leader2")
+	assert.Equal(t, <-leaderCh, "leader1")
 
 	// Once stopped, iteration over the leader channel should stop.
 	follower.Stop()
 	close(kvCh)
-	assert.Equal(t, "", <-follower.LeaderCh)
+	assert.Equal(t, "", <-leaderCh)
 
 	mockStore.AssertExpectations(t)
 }
