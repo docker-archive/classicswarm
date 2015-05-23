@@ -24,30 +24,31 @@ func TestCandidate(t *testing.T) {
 
 	candidate := NewCandidate(store, "test_key", "test_node")
 	candidate.RunForElection()
+	electedCh := candidate.ElectedCh()
 
 	// Should issue a false upon start, no matter what.
-	assert.False(t, <-candidate.ElectedCh)
+	assert.False(t, <-electedCh)
 
 	// Since the lock always succeeeds, we should get elected.
-	assert.True(t, <-candidate.ElectedCh)
+	assert.True(t, <-electedCh)
 
 	// Signaling a lost lock should get us de-elected...
 	close(lostCh)
-	assert.False(t, <-candidate.ElectedCh)
+	assert.False(t, <-electedCh)
 
 	// And we should attempt to get re-elected again.
-	assert.True(t, <-candidate.ElectedCh)
+	assert.True(t, <-electedCh)
 
 	// When we resign, unlock will get called, we'll be notified of the
 	// de-election and we'll try to get the lock again.
 	go candidate.Resign()
-	assert.False(t, <-candidate.ElectedCh)
-	assert.True(t, <-candidate.ElectedCh)
+	assert.False(t, <-electedCh)
+	assert.True(t, <-electedCh)
 
 	// After stopping the candidate, the ElectedCh should be closed.
 	candidate.Stop()
 	select {
-	case <-candidate.ElectedCh:
+	case <-electedCh:
 		assert.True(t, false) // we should not get here.
 	default:
 		assert.True(t, true)
