@@ -94,7 +94,7 @@ function swarm_manage() {
 		discovery="$@"
 	fi
 
-	"$SWARM_BINARY" -l debug manage -H "$SWARM_HOST" --cluster-opt "swarm.discovery.heartbeat=1s" "$discovery" &
+	"$SWARM_BINARY" -l debug manage -H "$SWARM_HOST" --heartbeat=1s "$discovery" &
 	SWARM_PID=$!
 	wait_until_reachable "$SWARM_HOST"
 }
