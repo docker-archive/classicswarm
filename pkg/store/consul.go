@@ -16,6 +16,10 @@ const (
 	// watched key has changed.  This affects the minimum time it takes to
 	// cancel a watch.
 	DefaultWatchWaitTime = 15 * time.Second
+
+	// MinimumTimeToLive is the minimum TTL value allowed by Consul for
+	// Ephemeral entries
+	MinimumTimeToLive = 10 * time.Second
 )
 
 // Consul embeds the client and watches
@@ -81,8 +85,11 @@ func (s *Consul) setTimeout(time time.Duration) {
 }
 
 // SetEphemeralTTL sets the ttl for ephemeral nodes
-func (s *Consul) setEphemeralTTL(time time.Duration) {
-	s.ephemeralTTL = time
+func (s *Consul) setEphemeralTTL(ttl time.Duration) {
+	if ttl < MinimumTimeToLive {
+		log.Fatal("Consul does not allow a ttl < 10s, please specify a ttl >= 10s")
+	}
+	s.ephemeralTTL = ttl
 }
 
 // CreateEphemeralSession creates the a global session
