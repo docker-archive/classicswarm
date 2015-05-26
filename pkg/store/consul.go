@@ -56,8 +56,7 @@ func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 			s.setTimeout(options.ConnectionTimeout)
 		}
 		if options.EphemeralTTL != 0 {
-			err := s.setEphemeralTTL(options.EphemeralTTL)
-			if err != nil {
+			if err := s.setEphemeralTTL(options.EphemeralTTL); err != nil {
 				return nil, err
 			}
 		}
