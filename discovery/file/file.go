@@ -64,7 +64,7 @@ func (s *Discovery) fetch() (discovery.Entries, error) {
 func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
 	ch := make(chan discovery.Entries)
 	errCh := make(chan error)
-	ticker := time.NewTicker(s.heartbeat * time.Second)
+	ticker := time.NewTicker(s.heartbeat)
 
 	go func() {
 		defer close(errCh)
