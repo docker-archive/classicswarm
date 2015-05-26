@@ -56,7 +56,10 @@ func InitializeConsul(endpoints []string, options *Config) (Store, error) {
 			s.setTimeout(options.ConnectionTimeout)
 		}
 		if options.EphemeralTTL != 0 {
-			s.setEphemeralTTL(options.EphemeralTTL)
+			err := s.setEphemeralTTL(options.EphemeralTTL)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -85,11 +88,12 @@ func (s *Consul) setTimeout(time time.Duration) {
 }
 
 // SetEphemeralTTL sets the ttl for ephemeral nodes
-func (s *Consul) setEphemeralTTL(ttl time.Duration) {
+func (s *Consul) setEphemeralTTL(ttl time.Duration) error {
 	if ttl < MinimumTimeToLive {
-		log.Fatal("Consul does not allow a ttl < 10s, please specify a ttl >= 10s")
+		return ErrInvalidTTL
 	}
 	s.ephemeralTTL = ttl
+	return nil
 }
 
 // CreateEphemeralSession creates the a global session

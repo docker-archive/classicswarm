@@ -23,6 +23,8 @@ const (
 )
 
 var (
+	// ErrInvalidTTL is a specific error to consul
+	ErrInvalidTTL = errors.New("Invalid TTL, please change the value to the miminum allowed ttl for the chosen store")
 	// ErrNotSupported is exported
 	ErrNotSupported = errors.New("Backend storage not supported yet, please choose another one")
 	// ErrNotImplemented is exported
