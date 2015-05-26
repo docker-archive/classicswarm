@@ -11,7 +11,7 @@ import (
 
 func TestInitialize(t *testing.T) {
 	d := &Discovery{}
-	d.Initialize("/path/to/file", 0, 0)
+	d.Initialize("/path/to/file", 1000, 0)
 	assert.Equal(t, d.path, "/path/to/file")
 }
 
@@ -73,7 +73,7 @@ func TestWatch(t *testing.T) {
 
 	// Set up file discovery.
 	d := &Discovery{}
-	d.Initialize(tmp.Name(), 1, 0)
+	d.Initialize(tmp.Name(), 1000, 0)
 	stopCh := make(chan struct{})
 	ch, errCh := d.Watch(stopCh)
 
@@ -87,13 +87,17 @@ func TestWatch(t *testing.T) {
 
 	// Write the file and make sure we get the expected value back.
 	assert.NoError(t, ioutil.WriteFile(tmp.Name(), []byte(data), 0600))
-	assert.Equal(t, <-ch, expected)
+	assert.Equal(t, expected, <-ch)
 
 	// Add a new entry and look it up.
-	data += "\n3.3.3.3:3333\n"
 	expected = append(expected, &discovery.Entry{Host: "3.3.3.3", Port: "3333"})
-	assert.NoError(t, ioutil.WriteFile(tmp.Name(), []byte(data), 0600))
-	assert.Equal(t, <-ch, expected)
+	f, err := os.OpenFile(tmp.Name(), os.O_APPEND|os.O_WRONLY, 0600)
+	assert.NoError(t, err)
+	assert.NotNil(t, f)
+	_, err = f.WriteString("\n3.3.3.3:3333\n")
+	assert.NoError(t, err)
+	f.Close()
+	assert.Equal(t, expected, <-ch)
 
 	// Stop and make sure it closes all channels.
 	close(stopCh)
