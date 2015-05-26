@@ -95,13 +95,13 @@ On each of your nodes, start the Swarm agent. The node IP address
 doesn't have to be public as long as the swarm manager can access it.
 
 ```bash
-swarm join --addr=<node_ip:2375> etcd://<etcd_ip>/<path>
+swarm join --addr=<node_ip:2375> etcd://<etcd_addr1>,<etcd_addr2>/<optional path prefix>
 ```
 
 Start the manager on any machine or your laptop.
 
 ```bash
-swarm manage -H tcp://<swarm_ip:swarm_port> etcd://<etcd_ip>/<path>
+swarm manage -H tcp://<swarm_ip:swarm_port> etcd://<etcd_addr1>,<etcd_addr2>/<optional path prefix>
 ```
 
 And then use the regular Docker commands.
@@ -117,7 +117,7 @@ docker -H tcp://<swarm_ip:swarm_port> logs ...
 You can list the nodes in your cluster.
 
 ```bash
-swarm list etcd://<etcd_ip>/<path>
+swarm list etcd://<etcd_addr1>,<etcd_addr2>/<optional path prefix>
 <node_ip:2375>
 ```
 
@@ -127,13 +127,13 @@ On each of your nodes, start the Swarm agent. The node IP address
 doesn't need to be public as long as the Swarm manager can access it.
 
 ```bash
-swarm join --addr=<node_ip:2375> consul://<consul_addr>/<path>
+swarm join --addr=<node_ip:2375> consul://<consul_addr>/<optional path prefix>
 ```
 
 Start the manager on any machine or your laptop.
 
 ```bash
-swarm manage -H tcp://<swarm_ip:swarm_port> consul://<consul_addr>/<path>
+swarm manage -H tcp://<swarm_ip:swarm_port> consul://<consul_addr>/<optional path prefix>
 ```
 
 And then use the regular Docker commands.
@@ -149,7 +149,7 @@ docker -H tcp://<swarm_ip:swarm_port> logs ...
 You can list the nodes in your cluster.
 
 ```bash
-swarm list consul://<consul_addr>/<path>
+swarm list consul://<consul_addr>/<optional path prefix>
 <node_ip:2375>
 ```
 
@@ -159,13 +159,13 @@ On each of your nodes, start the Swarm agent. The node IP doesn't have
 to be public as long as the swarm manager can access it.
 
 ```bash
-swarm join --addr=<node_ip:2375> zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
+swarm join --addr=<node_ip:2375> zk://<zookeeper_addr1>,<zookeeper_addr2>/<optional path prefix>
 ```
 
 Start the manager on any machine or your laptop.
 
 ```bash
-swarm manage -H tcp://<swarm_ip:swarm_port> zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
+swarm manage -H tcp://<swarm_ip:swarm_port> zk://<zookeeper_addr1>,<zookeeper_addr2>/<optional path prefix>
 ```
 
 You can then use the regular Docker commands.
@@ -181,7 +181,7 @@ docker -H tcp://<swarm_ip:swarm_port> logs ...
 You can list the nodes in the cluster.
 
 ```bash
-swarm list zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
+swarm list zk://<zookeeper_addr1>,<zookeeper_addr2>/<optional path prefix>
 <node_ip:2375>
 ```
 
