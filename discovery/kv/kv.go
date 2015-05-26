@@ -61,7 +61,15 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Du
 			EphemeralTTL: s.ttl,
 		},
 	)
-	return err
+
+	if err != nil {
+		if err == store.ErrInvalidTTL {
+			log.Fatal(err)
+		}
+		return err
+	}
+
+	return nil
 }
 
 // Watch the store until either there's a store error or we receive a stop request.
