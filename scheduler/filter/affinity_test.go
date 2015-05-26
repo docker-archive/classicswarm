@@ -118,6 +118,10 @@ func TestAffinityFilter(t *testing.T) {
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[1])
 
+	// Conflicting Constraint
+	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n1-1-name", "affinity:container==container-n1-1-name"}}), nodes)
+	assert.Error(t, err)
+	assert.Len(t, result, 0)
 	// Validate images by id
 	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==image-0-id"}}), nodes)
 	assert.NoError(t, err)
