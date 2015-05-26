@@ -44,7 +44,10 @@ Arguments:
 Options:
    {{range .Flags}}{{.}}
    {{end}}{{if (eq .Name "manage")}}{{printf "\t * swarm.overcommit=0.05\tovercommit to apply on resources"}}
-                                    {{end}}{{ end }}
+                                    {{printf "\t * mesos.address=\taddress to bind on [$SWARM_MESOS_ADDRESS]"}}
+                                    {{printf "\t * mesos.port=\tport to bind on [$SWARM_MESOS_PORT]"}}
+                                    {{printf "\t * mesos.offertimeout=10m\ttimeout for offers [$SWARM_MESOS_OFFER_TIMEOUT]"}}
+                                    {{printf "\t * mesos.user=\tframework user [$SWARM_MESOS_USER]"}}{{end}}{{ end }}
 `
 
 }
