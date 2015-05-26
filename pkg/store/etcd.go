@@ -252,12 +252,12 @@ func (s *Etcd) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPai
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Etcd) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, error) {
-	_, err := s.client.CompareAndSwap(normalize(key), string(value), 0, "", previous.LastIndex)
+func (s *Etcd) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, *KVPair, error) {
+	meta, err := s.client.CompareAndSwap(normalize(key), string(value), 0, "", previous.LastIndex)
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
-	return true, nil
+	return true, &KVPair{Key: key, Value: value, LastIndex: meta.Node.ModifiedIndex}, nil
 }
 
 // AtomicDelete deletes a value at "key" if the key has not
