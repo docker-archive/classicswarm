@@ -55,6 +55,13 @@ func TestCreateEntries(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestContainsEntry(t *testing.T) {
+	entries, err := CreateEntries([]string{"127.0.0.1:2375", "127.0.0.2:2375", ""})
+	assert.NoError(t, err)
+	assert.True(t, entries.Contains(&Entry{Host: "127.0.0.1", Port: "2375"}))
+	assert.False(t, entries.Contains(&Entry{Host: "127.0.0.3", Port: "2375"}))
+}
+
 func TestEntriesEquality(t *testing.T) {
 	entries := Entries{
 		&Entry{Host: "127.0.0.1", Port: "2375"},
