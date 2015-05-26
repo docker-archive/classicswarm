@@ -13,7 +13,6 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/cluster/mesos"
 	"github.com/docker/swarm/cluster/swarm"
 	"github.com/docker/swarm/discovery"
 	kvdiscovery "github.com/docker/swarm/discovery/kv"
@@ -191,8 +190,8 @@ func manage(c *cli.Context) {
 	sched := scheduler.New(s, fs)
 	var cl cluster.Cluster
 	switch c.String("cluster-driver") {
-	case "mesos":
-		cl, err = mesos.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
+	// case "mesos":
+	// 	cl, err = mesos.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
 	case "swarm":
 		cl, err = swarm.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
 	default:
