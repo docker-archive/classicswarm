@@ -6,18 +6,17 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos/queue"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/docker/swarm/state"
+	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
 	mesosscheduler "github.com/mesos/mesos-go/scheduler"
 	"github.com/samalba/dockerclient"
@@ -27,23 +26,29 @@ import (
 type Cluster struct {
 	sync.RWMutex
 
-	driver *mesosscheduler.MesosSchedulerDriver
-
-	eventHandler cluster.EventHandler
-	slaves       map[string]*slave
-	scheduler    *scheduler.Scheduler
-	options      *cluster.DriverOpts
-	store        *state.Store
-	TLSConfig    *tls.Config
-	master       string
-	pendingTasks *queue.Queue
-	offerTimeout time.Duration
+	driver           *mesosscheduler.MesosSchedulerDriver
+	dockerEnginePort string
+	eventHandler     cluster.EventHandler
+	master           string
+	slaves           map[string]*slave
+	scheduler        *scheduler.Scheduler
+	store            *state.Store
+	TLSConfig        *tls.Config
+	options          *cluster.DriverOpts
+	offerTimeout     time.Duration
+	pendingTasks     *queue.Queue
 }
 
+const (
+	frameworkName              = "swarm"
+	defaultDockerEnginePort    = "2375"
+	defaultDockerEngineTLSPort = "2376"
+	defaultOfferTimeout        = 10 * time.Minute
+	taskCreationTimeout        = 5 * time.Second
+)
+
 var (
-	frameworkName    = "swarm"
-	dockerDaemonPort = "2375"
-	errNotSupported  = errors.New("not supported with mesos")
+	errNotSupported = errors.New("not supported with mesos")
 )
 
 // NewCluster for mesos Cluster creation
@@ -51,13 +56,14 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 	log.WithFields(log.Fields{"name": "mesos"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
-		slaves:       make(map[string]*slave),
-		scheduler:    scheduler,
-		options:      &options,
-		store:        store,
-		master:       master,
-		TLSConfig:    TLSConfig,
-		offerTimeout: 10 * time.Minute,
+		dockerEnginePort: defaultDockerEnginePort,
+		master:           master,
+		slaves:           make(map[string]*slave),
+		scheduler:        scheduler,
+		store:            store,
+		TLSConfig:        TLSConfig,
+		options:          &options,
+		offerTimeout:     defaultOfferTimeout,
 	}
 
 	cluster.pendingTasks = queue.NewQueue()
@@ -67,13 +73,13 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 
 	driverConfig := mesosscheduler.DriverConfig{
 		Scheduler: cluster,
-		Framework: &mesosproto.FrameworkInfo{Name: &frameworkName, User: &user},
+		Framework: &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
 		Master:    cluster.master,
 	}
 
 	// Changing port for https
 	if cluster.TLSConfig != nil {
-		dockerDaemonPort = "2376"
+		cluster.dockerEnginePort = defaultDockerEngineTLSPort
 	}
 
 	if bindingPort, ok := options.Uint("mesos.port", "SWARM_MESOS_PORT"); ok {
@@ -132,10 +138,10 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 
 	select {
 	case container := <-task.container:
-		return container, nil
+		return formatContainer(container), nil
 	case err := <-task.error:
 		return nil, err
-	case <-time.After(5 * time.Second):
+	case <-time.After(taskCreationTimeout):
 		c.pendingTasks.Remove(task)
 		return nil, strategy.ErrNoResourcesAvailable
 	}
@@ -181,18 +187,30 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 	return nil
 }
 
+// RemoveImages removes images from the cluster
+func (c *Cluster) RemoveImages(name string) ([]*dockerclient.ImageDelete, error) {
+	return nil, errNotSupported
+}
+
+func formatContainer(container *cluster.Container) *cluster.Container {
+	if container == nil {
+		return nil
+	}
+	if name := container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.name"]; name != "" && container.Names[0] != "/"+name {
+		container.Names = append([]string{"/" + name}, container.Names...)
+	}
+	return container
+}
+
 // Containers returns all the containers in the cluster.
-func (c *Cluster) Containers() []*cluster.Container {
+func (c *Cluster) Containers() cluster.Containers {
 	c.RLock()
 	defer c.RUnlock()
 
-	out := []*cluster.Container{}
+	out := cluster.Containers{}
 	for _, s := range c.slaves {
 		for _, container := range s.engine.Containers() {
-			if name := container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.name"]; name != "" && container.Names[0] != "/"+name {
-				container.Names = append([]string{"/" + name}, container.Names...)
-			}
-			out = append(out, container)
+			out = append(out, formatContainer(container))
 		}
 	}
 
@@ -209,66 +227,12 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	c.RLock()
 	defer c.RUnlock()
 
-	containers := c.Containers()
-
-	// Match exact or short Container ID.
-	for _, container := range containers {
-		if container.Id == IDOrName || stringid.TruncateID(container.Id) == IDOrName {
-			return container
-		}
-	}
-
-	// Match exact Swarm ID.
-	for _, container := range containers {
-		if swarmID := container.Config.SwarmID(); swarmID == IDOrName || stringid.TruncateID(swarmID) == IDOrName {
-			return container
-		}
-	}
-
-	candidates := []*cluster.Container{}
-
-	// Match name, /name or engine/name.
-	for _, container := range containers {
-		for _, name := range container.Names {
-			if name == IDOrName || name == "/"+IDOrName || container.Engine.ID+name == IDOrName || container.Engine.Name+name == IDOrName {
-				return container
-			}
-		}
-	}
-
-	if size := len(candidates); size == 1 {
-		return candidates[0]
-	} else if size > 1 {
-		return nil
-	}
-
-	// Match Container ID prefix.
-	for _, container := range containers {
-		if strings.HasPrefix(container.Id, IDOrName) {
-			candidates = append(candidates, container)
-		}
-	}
-
-	// Match Swarm ID prefix.
-	for _, container := range containers {
-		if strings.HasPrefix(container.Config.SwarmID(), IDOrName) {
-			candidates = append(candidates, container)
-		}
-	}
-
-	if len(candidates) == 1 {
-		if name := candidates[0].Config.Labels[cluster.SwarmLabelNamespace+".mesos.name"]; name != "" && candidates[0].Names[0] != "/"+name {
-			candidates[0].Names = append([]string{"/" + name}, candidates[0].Names...)
-		}
-		return candidates[0]
-	}
-
-	return nil
+	return formatContainer(cluster.Containers(c.Containers()).Get(IDOrName))
 }
 
 // RemoveImage removes an image from the cluster
 func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete, error) {
-	return nil, nil
+	return nil, errNotSupported
 }
 
 // Pull will pull images on the cluster nodes
@@ -283,7 +247,7 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 
 // RenameContainer Rename a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
-	//FIXME this probably doesn't work as the next refreshcontainer will erase this change
+	//FIXME this doesn't work as the next refreshcontainer will erase this change (this change is in-memory only)
 	container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.name"] = newName
 
 	return nil
@@ -360,7 +324,8 @@ func (c *Cluster) addOffer(offer *mesosproto.Offer) {
 	}
 	s.addOffer(offer)
 	go func(offer *mesosproto.Offer) {
-		<-time.After(c.offerTimeout)
+		time.Sleep(c.offerTimeout)
+		// declining Mesos offers to make them available to other Mesos services
 		if c.removeOffer(offer) {
 			if _, err := c.driver.DeclineOffer(offer.Id, &mesosproto.Filters{}); err != nil {
 				log.WithFields(log.Fields{"name": "mesos"}).Errorf("Error while declining offer %q: %v", offer.Id.GetValue(), err)
@@ -373,6 +338,8 @@ func (c *Cluster) addOffer(offer *mesosproto.Offer) {
 
 func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 	log.WithFields(log.Fields{"name": "mesos", "offerID": offer.Id.String()}).Debug("Removing offer")
+	c.Lock()
+	defer c.Unlock()
 	s, ok := c.slaves[offer.SlaveId.GetValue()]
 	if !ok {
 		return false
@@ -404,12 +371,12 @@ func (c *Cluster) scheduleTask(t *task) bool {
 
 	c.Lock()
 	// TODO: Only use the offer we need
-	offerIds := []*mesosproto.OfferID{}
+	offerIDs := []*mesosproto.OfferID{}
 	for _, offer := range c.slaves[n.ID].offers {
-		offerIds = append(offerIds, offer.Id)
+		offerIDs = append(offerIDs, offer.Id)
 	}
 
-	if _, err := c.driver.LaunchTasks(offerIds, []*mesosproto.TaskInfo{&t.TaskInfo}, &mesosproto.Filters{}); err != nil {
+	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, &mesosproto.Filters{}); err != nil {
 		// TODO: Do not erase all the offers, only the one used
 		for _, offer := range s.offers {
 			c.removeOffer(offer)
@@ -428,10 +395,10 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	c.Unlock()
 	// block until we get the container
 	finished, err := t.monitor()
-
+	taskID := t.TaskInfo.TaskId.GetValue()
 	if err != nil {
 		//remove task
-		s.removeTask(t.TaskInfo.TaskId.GetValue())
+		s.removeTask(taskID)
 		t.error <- err
 		return true
 	}
@@ -440,7 +407,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 			for {
 				finished, err := t.monitor()
 				if err != nil {
-					// TODO proper error message
+					// TODO do a better log by sending proper error message
 					log.Error(err)
 					break
 				}
@@ -448,7 +415,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 					break
 				}
 			}
-			//remove task
+			//remove the task once it's finished
 		}()
 	}
 
@@ -460,9 +427,11 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	// TODO: We have to return the right container that was just created.
 	// Once we receive the ContainerID from the executor.
 	for _, container := range s.engine.Containers() {
-		t.container <- container
+		if container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"] == taskID {
+			t.container <- container
+			return true
+		}
 		// TODO save in store
-		return true
 	}
 
 	t.error <- fmt.Errorf("Container failed to create")

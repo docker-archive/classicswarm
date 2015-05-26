@@ -108,27 +108,28 @@ func (t *task) build(slaveID string) {
 }
 
 func newTask(c *Cluster, config *cluster.ContainerConfig, name string) (*task, error) {
+	id := stringid.TruncateID(stringid.GenerateRandomID())
+
+	if name != "" {
+		id = name + "." + id
+	}
 	// save the name in labels as the mesos containerizer will override it
 	config.Labels[cluster.SwarmLabelNamespace+".mesos.name"] = name
+	// FIXME: once Mesos changes merged no need to save the task id to know which container we launched
+	config.Labels[cluster.SwarmLabelNamespace+".mesos.task"] = id
 
-	task := task{
-		updates: make(chan *mesosproto.TaskStatus),
-
+	task := &task{
 		cluster:   c,
 		config:    config,
-		error:     make(chan error),
 		container: make(chan *cluster.Container),
-	}
-
-	ID := stringid.TruncateID(stringid.GenerateRandomID())
-	if name != "" {
-		ID = name + "." + ID
+		error:     make(chan error),
+		updates:   make(chan *mesosproto.TaskStatus),
 	}
 
 	task.Name = &name
-	task.TaskId = &mesosproto.TaskID{Value: &ID}
+	task.TaskId = &mesosproto.TaskID{Value: &id}
 
-	return &task, nil
+	return task, nil
 }
 
 func (t *task) sendStatus(status *mesosproto.TaskStatus) {

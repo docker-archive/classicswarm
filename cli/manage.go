@@ -13,6 +13,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/cluster/mesos"
 	"github.com/docker/swarm/cluster/swarm"
 	"github.com/docker/swarm/discovery"
 	kvdiscovery "github.com/docker/swarm/discovery/kv"
@@ -72,12 +73,7 @@ func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 }
 
 // Initialize the discovery service.
-func createDiscovery(c *cli.Context) discovery.Discovery {
-	uri := getDiscovery(c)
-	if uri == "" {
-		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
-	}
-
+func createDiscovery(uri string, c *cli.Context) discovery.Discovery {
 	hb, err := time.ParseDuration(c.String("heartbeat"))
 	if err != nil {
 		log.Fatalf("invalid --heartbeat: %v", err)
@@ -170,8 +166,11 @@ func manage(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	discovery := createDiscovery(c)
-
+	uri := getDiscovery(c)
+	if uri == "" {
+		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
+	}
+	discovery := createDiscovery(uri, c)
 	s, err := strategy.New(c.String("strategy"))
 	if err != nil {
 		log.Fatal(err)
@@ -190,12 +189,12 @@ func manage(c *cli.Context) {
 	sched := scheduler.New(s, fs)
 	var cl cluster.Cluster
 	switch c.String("cluster-driver") {
-	// case "mesos":
-	// 	cl, err = mesos.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
+	case "mesos":
+		cl, err = mesos.NewCluster(sched, store, tlsConfig, uri, c.StringSlice("cluster-opt"))
 	case "swarm":
 		cl, err = swarm.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
 	default:
-		log.Fatalf("Unsupported cluster %q", c.String("cluster"))
+		log.Fatalf("Unsupported cluster %q", c.String("cluster-driver"))
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -208,7 +207,7 @@ func manage(c *cli.Context) {
 	}
 
 	server := api.NewServer(hosts, tlsConfig)
-	router := api.NewRouter(cluster, tlsConfig, c.Bool("cors"))
+	router := api.NewRouter(cl, tlsConfig, c.Bool("cors"))
 
 	if c.Bool("leader-election") {
 		setupLeaderElection(server, router, discovery, c.String("addr"), tlsConfig)
