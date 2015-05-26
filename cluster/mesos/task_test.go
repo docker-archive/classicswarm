@@ -1,6 +1,7 @@
 package mesos
 
 import (
+	"sort"
 	"strings"
 	"testing"
 
@@ -35,9 +36,12 @@ func TestBuild(t *testing.T) {
 	assert.Equal(t, task.Command.GetValue(), "ls")
 	assert.Equal(t, task.Command.GetArguments(), []string{"foo", "bar"})
 
-	assert.Equal(t, len(task.Container.Docker.GetParameters()), 1)
-	assert.Equal(t, task.Container.Docker.GetParameters()[0].GetKey(), "label")
-	assert.Equal(t, task.Container.Docker.GetParameters()[0].GetValue(), "com.docker.swarm.mesos.name="+name)
+	parameters := []string{task.Container.Docker.GetParameters()[0].GetValue(), task.Container.Docker.GetParameters()[1].GetValue()}
+	sort.Strings(parameters)
+
+	assert.Equal(t, len(parameters), 2)
+	assert.Equal(t, parameters[0], "com.docker.swarm.mesos.name="+name)
+	assert.Equal(t, parameters[1], "com.docker.swarm.mesos.task="+*task.TaskId.Value)
 
 	assert.Equal(t, task.SlaveId.GetValue(), "slave-id")
 }

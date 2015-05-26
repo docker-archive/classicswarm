@@ -5,7 +5,7 @@ ROOT=${TRAVIS_BUILD_DIR:-.}/../../..
 
 # Grab the list of packages.
 # Exclude the API and CLI from coverage as it will be covered by integration tests.
-PACKAGES=`go list ./... | grep -v github.com/docker/swarm/api | grep -v github.com/docker/swarm/cli`
+PACKAGES=`go list ./... | grep -v github.com/docker/swarm/api | grep -v github.com/docker/swarm/cli | grep -v github.com/docker/swarm/cluster/mesos`
 
 # Create the empty coverage file.
 echo $MODE > goverage.report
