@@ -157,7 +157,7 @@ func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, e
 // Providing a non-nil stopCh can be used to stop watching.
 func (s *Zookeeper) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPair, error) {
 	fprefix := normalize(prefix)
-	entries, stat, eventCh, err := s.client.ChildrenW(fprefix)
+	entries, err := s.List(prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -167,14 +167,14 @@ func (s *Zookeeper) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*
 	go func() {
 		defer close(watchCh)
 
-		// GetW returns the current value before setting the watch.
-		kv := []*KVPair{}
-		for _, item := range entries {
-			kv = append(kv, &KVPair{prefix, []byte(item), uint64(stat.Mzxid)})
-		}
-		watchCh <- kv
+		// List returns the current values before setting the watch.
+		watchCh <- entries
 
 		for {
+			_, _, eventCh, err := s.client.ChildrenW(fprefix)
+			if err != nil {
+				return
+			}
 			select {
 			case e := <-eventCh:
 				if e.Type == zk.EventNodeChildrenChanged {
