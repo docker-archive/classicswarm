@@ -62,6 +62,20 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(version)
 }
 
+// GET /images/{name:.*}/get
+func getImage(c *context, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+
+	for _, image := range c.cluster.Images() {
+		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
+			len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
+			proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			return
+		}
+	}
+	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
+}
+
 // GET /images/get
 func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -83,7 +97,8 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 		// Count how many images we need it has.
 		for _, name := range names {
 			for _, image := range images {
-				if image.Match(name) {
+				if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
+					len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
 					matchedImages = matchedImages + 1
 					break
 				}
@@ -477,36 +492,18 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	var name = mux.Vars(r)["name"]
 
-	matchedImages := []*cluster.Image{}
-	for _, image := range c.cluster.Images() {
-		if image.Match(name) {
-			matchedImages = append(matchedImages, image)
-		}
-	}
-
-	if len(matchedImages) == 0 {
-		httpError(w, fmt.Sprintf("No such image %s", name), http.StatusNotFound)
+	out, err := c.cluster.RemoveImages(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	out := []*dockerclient.ImageDelete{}
-	errs := []string{}
-	for _, image := range matchedImages {
-		content, err := c.cluster.RemoveImage(image)
-		if err != nil {
-			errs = append(errs, fmt.Sprintf("%s: %s", image.Engine.Name, err.Error()))
-			continue
-		}
-		out = append(out, content...)
+	if len(out) == 0 {
+		httpError(w, fmt.Sprintf("No such image %s", name), http.StatusNotFound)
+		return
 	}
-
-	if len(errs) != 0 {
-		httpError(w, strings.Join(errs, ""), http.StatusInternalServerError)
-	} else {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(NewWriteFlusher(w)).Encode(out)
-	}
-
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(NewWriteFlusher(w)).Encode(out)
 }
 
 // GET /_ping

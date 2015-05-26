@@ -161,8 +161,8 @@ func (e *Engine) updateSpecs() error {
 }
 
 // RemoveImage deletes an image from the engine.
-func (e *Engine) RemoveImage(image *Image) ([]*dockerclient.ImageDelete, error) {
-	return e.client.RemoveImage(image.Id)
+func (e *Engine) RemoveImage(image *Image, name string) ([]*dockerclient.ImageDelete, error) {
+	return e.client.RemoveImage(name)
 }
 
 // RefreshImages refreshes the list of images on the engine.
@@ -480,7 +480,7 @@ func (e *Engine) Image(IDOrName string) *Image {
 	defer e.RUnlock()
 
 	for _, image := range e.images {
-		if image.Match(IDOrName) {
+		if image.Match(IDOrName, true) {
 			return image
 		}
 	}
