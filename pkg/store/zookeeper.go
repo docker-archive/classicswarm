@@ -214,9 +214,9 @@ func (s *Zookeeper) DeleteTree(prefix string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, error) {
+func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, *KVPair, error) {
 	// Use index of Set method to implement CAS
-	return false, ErrNotImplemented
+	return false, nil, ErrNotImplemented
 }
 
 // AtomicDelete deletes a value at "key" if the key has not

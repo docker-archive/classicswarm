@@ -89,7 +89,7 @@ type Store interface {
 	DeleteTree(prefix string) error
 
 	// Atomic operation on a single value
-	AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, error)
+	AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, *KVPair, error)
 
 	// Atomic delete of a single value
 	AtomicDelete(key string, previous *KVPair) (bool, error)
