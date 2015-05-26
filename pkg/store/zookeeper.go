@@ -167,7 +167,7 @@ func (s *Zookeeper) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*
 	go func() {
 		defer close(watchCh)
 
-		// GetW returns the current value before setting the watch.
+		// List returns the current values before setting the watch.
 		watchCh <- entries
 
 		for {
