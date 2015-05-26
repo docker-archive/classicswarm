@@ -5,17 +5,26 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/swarm"
+	"github.com/docker/swarm/discovery"
+	kvdiscovery "github.com/docker/swarm/discovery/kv"
+	"github.com/docker/swarm/leadership"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/docker/swarm/state"
+)
+
+const (
+	leaderElectionPath = "docker/swarm/leader"
 )
 
 type logHandler struct {
@@ -62,6 +71,70 @@ func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 	return config, nil
 }
 
+// Initialize the discovery service.
+func createDiscovery(c *cli.Context) discovery.Discovery {
+	uri := getDiscovery(c)
+	if uri == "" {
+		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
+	}
+
+	hb, err := time.ParseDuration(c.String("heartbeat"))
+	if err != nil {
+		log.Fatalf("invalid --heartbeat: %v", err)
+	}
+	if hb < 1*time.Second {
+		log.Fatal("--heartbeat should be at least one second")
+	}
+
+	// Set up discovery.
+	discovery, err := discovery.New(uri, hb, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return discovery
+}
+
+func setupLeaderElection(server *api.Server, apiHandler http.Handler, discovery discovery.Discovery, addr string, tlsConfig *tls.Config) {
+	kvDiscovery, ok := discovery.(*kvdiscovery.Discovery)
+	if !ok {
+		log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
+	}
+	client := kvDiscovery.Store()
+
+	candidate := leadership.NewCandidate(client, leaderElectionPath, addr)
+	follower := leadership.NewFollower(client, leaderElectionPath)
+
+	proxy := api.NewReverseProxy(tlsConfig)
+
+	go func() {
+		candidate.RunForElection()
+		electedCh := candidate.ElectedCh()
+		for isElected := range electedCh {
+			if isElected {
+				log.Info("Cluster leadership acquired")
+				server.SetHandler(apiHandler)
+			} else {
+				log.Info("Cluster leadership lost")
+				server.SetHandler(proxy)
+			}
+		}
+	}()
+
+	go func() {
+		follower.FollowElection()
+		leaderCh := follower.LeaderCh()
+		for leader := range leaderCh {
+			log.Infof("New leader elected: %s", leader)
+			if leader == addr {
+				proxy.SetDestination("")
+			} else {
+				proxy.SetDestination(leader)
+			}
+		}
+	}()
+}
+
 func manage(c *cli.Context) {
 	var (
 		tlsConfig *tls.Config
@@ -97,10 +170,7 @@ func manage(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	dflag := getDiscovery(c)
-	if dflag == "" {
-		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
-	}
+	discovery := createDiscovery(c)
 
 	s, err := strategy.New(c.String("strategy"))
 	if err != nil {
@@ -119,7 +189,7 @@ func manage(c *cli.Context) {
 
 	sched := scheduler.New(s, fs)
 
-	cluster, err := swarm.NewCluster(sched, store, tlsConfig, dflag, c.StringSlice("cluster-opt"))
+	cluster, err := swarm.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,5 +199,15 @@ func manage(c *cli.Context) {
 	if c.IsSet("host") || c.IsSet("H") {
 		hosts = hosts[1:]
 	}
-	log.Fatal(api.ListenAndServe(cluster, hosts, c.Bool("cors"), tlsConfig))
+
+	server := api.NewServer(hosts, tlsConfig)
+	router := api.NewRouter(cluster, tlsConfig, c.Bool("cors"))
+
+	if c.Bool("leader-election") {
+		setupLeaderElection(server, router, discovery, c.String("addr"), tlsConfig)
+	} else {
+		server.SetHandler(router)
+	}
+
+	log.Fatal(server.ListenAndServe())
 }

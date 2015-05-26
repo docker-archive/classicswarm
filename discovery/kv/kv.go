@@ -131,3 +131,8 @@ func (s *Discovery) Register(addr string) error {
 	opts := &store.WriteOptions{Ephemeral: true, Heartbeat: s.heartbeat}
 	return s.store.Put(path.Join(s.prefix, addr), []byte(addr), opts)
 }
+
+// Store returns the underlying store used by KV discovery.
+func (s *Discovery) Store() store.Store {
+	return s.store
+}
