@@ -11,13 +11,17 @@ import (
 	"github.com/docker/swarm/pkg/store"
 )
 
+const (
+	discoveryPath = "docker/swarm/nodes"
+)
+
 // Discovery is exported
 type Discovery struct {
 	backend   store.Backend
 	store     store.Store
 	heartbeat time.Duration
 	ttl       time.Duration
-	prefix    string
+	path      string
 }
 
 func init() {
@@ -34,23 +38,20 @@ func Init() {
 // Initialize is exported
 func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Duration) error {
 	var (
-		parts = strings.SplitN(uris, "/", 2)
-		ips   = strings.Split(parts[0], ",")
-		addrs []string
-		err   error
+		parts  = strings.SplitN(uris, "/", 2)
+		addrs  = strings.Split(parts[0], ",")
+		prefix = ""
+		err    error
 	)
 
-	if len(parts) != 2 {
-		return fmt.Errorf("invalid format %q, missing <path>", uris)
-	}
-
-	for _, ip := range ips {
-		addrs = append(addrs, ip)
+	// A custom prefix to the path can be optionally used.
+	if len(parts) == 2 {
+		prefix = parts[1]
 	}
 
 	s.heartbeat = heartbeat
 	s.ttl = ttl
-	s.prefix = parts[1]
+	s.path = path.Join(prefix, discoveryPath)
 
 	// Creates a new store, will ignore options given
 	// if not supported by the chosen store
@@ -108,7 +109,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 		// Will only stop if we receive a stopCh request.
 		for {
 			// Set up a watch.
-			watchCh, err := s.store.WatchTree(s.prefix, stopCh)
+			watchCh, err := s.store.WatchTree(s.path, stopCh)
 			if err != nil {
 				errCh <- err
 			} else {
@@ -129,7 +130,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 // Register is exported
 func (s *Discovery) Register(addr string) error {
 	opts := &store.WriteOptions{Ephemeral: true, Heartbeat: s.heartbeat}
-	return s.store.Put(path.Join(s.prefix, addr), []byte(addr), opts)
+	return s.store.Put(path.Join(s.path, addr), []byte(addr), opts)
 }
 
 // Store returns the underlying store used by KV discovery.

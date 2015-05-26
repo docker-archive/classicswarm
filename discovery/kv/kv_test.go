@@ -2,6 +2,7 @@ package kv
 
 import (
 	"errors"
+	"path"
 	"testing"
 	"time"
 
@@ -13,14 +14,18 @@ import (
 
 func TestInitialize(t *testing.T) {
 	d := &Discovery{backend: store.MOCK}
-	assert.EqualError(t, d.Initialize("127.0.0.1", 0, 0), "invalid format \"127.0.0.1\", missing <path>")
+	assert.NoError(t, d.Initialize("127.0.0.1", 0, 0))
+	s := d.store.(*store.Mock)
+	assert.Len(t, s.Endpoints, 1)
+	assert.Equal(t, s.Endpoints[0], "127.0.0.1")
+	assert.Equal(t, d.path, discoveryPath)
 
 	d = &Discovery{backend: store.MOCK}
 	assert.NoError(t, d.Initialize("127.0.0.1:1234/path", 0, 0))
-	s := d.store.(*store.Mock)
+	s = d.store.(*store.Mock)
 	assert.Len(t, s.Endpoints, 1)
 	assert.Equal(t, s.Endpoints[0], "127.0.0.1:1234")
-	assert.Equal(t, d.prefix, "path")
+	assert.Equal(t, d.path, "path/"+discoveryPath)
 
 	d = &Discovery{backend: store.MOCK}
 	assert.NoError(t, d.Initialize("127.0.0.1:1234,127.0.0.2:1234,127.0.0.3:1234/path", 0, 0))
@@ -29,7 +34,7 @@ func TestInitialize(t *testing.T) {
 	assert.Equal(t, s.Endpoints[0], "127.0.0.1:1234")
 	assert.Equal(t, s.Endpoints[1], "127.0.0.2:1234")
 	assert.Equal(t, s.Endpoints[2], "127.0.0.3:1234")
-	assert.Equal(t, d.prefix, "path")
+	assert.Equal(t, d.path, "path/"+discoveryPath)
 }
 
 func TestWatch(t *testing.T) {
@@ -40,16 +45,16 @@ func TestWatch(t *testing.T) {
 	mockCh := make(chan []*store.KVPair)
 
 	// The first watch will fail.
-	s.On("WatchTree", "path", mock.Anything).Return(mockCh, errors.New("test error")).Once()
+	s.On("WatchTree", "path/"+discoveryPath, mock.Anything).Return(mockCh, errors.New("test error")).Once()
 	// The second one will succeed.
-	s.On("WatchTree", "path", mock.Anything).Return(mockCh, nil).Once()
+	s.On("WatchTree", "path/"+discoveryPath, mock.Anything).Return(mockCh, nil).Once()
 	expected := discovery.Entries{
 		&discovery.Entry{Host: "1.1.1.1", Port: "1111"},
 		&discovery.Entry{Host: "2.2.2.2", Port: "2222"},
 	}
 	kvs := []*store.KVPair{
-		{Key: "path/1.1.1.1", Value: []byte("1.1.1.1:1111")},
-		{Key: "path/1.1.1.1", Value: []byte("2.2.2.2:2222")},
+		{Key: path.Join("path", discoveryPath, "1.1.1.1"), Value: []byte("1.1.1.1:1111")},
+		{Key: path.Join("path", discoveryPath, "2.2.2.2"), Value: []byte("2.2.2.2:2222")},
 	}
 
 	stopCh := make(chan struct{})
@@ -69,13 +74,13 @@ func TestWatch(t *testing.T) {
 
 	// Add a new entry.
 	expected = append(expected, &discovery.Entry{Host: "3.3.3.3", Port: "3333"})
-	kvs = append(kvs, &store.KVPair{Key: "path/3.3.3.3", Value: []byte("3.3.3.3:3333")})
+	kvs = append(kvs, &store.KVPair{Key: path.Join("path", discoveryPath, "3.3.3.3"), Value: []byte("3.3.3.3:3333")})
 	mockCh <- kvs
 	assert.Equal(t, <-ch, expected)
 
 	// Make sure that if an error occurs it retries.
 	// This third call to WatchTree will be checked later by AssertExpectations.
-	s.On("WatchTree", "path", mock.Anything).Return(mockCh, nil)
+	s.On("WatchTree", "path/"+discoveryPath, mock.Anything).Return(mockCh, nil)
 	close(mockCh)
 	// Give it enough time to call WatchTree.
 	time.Sleep(3)
