@@ -1,7 +1,6 @@
 package filter
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/docker/swarm/cluster"
@@ -59,13 +58,12 @@ func testFixturesNoHealthyNode() []*node.Node {
 
 func TestHealthyFilter(t *testing.T) {
 	var (
-		f                         = HealthFilter{}
-		nodesAllHealth            = testFixturesAllHealthyNode()
-		nodesPartHealth           = testFixturesPartHealthyNode()
-		nodesNoHealth             = testFixturesNoHealthyNode()
-		errNoHealthyNodeAvailable = errors.New("No healthy node available in the cluster")
-		result                    []*node.Node
-		err                       error
+		f               = HealthFilter{}
+		nodesAllHealth  = testFixturesAllHealthyNode()
+		nodesPartHealth = testFixturesPartHealthyNode()
+		nodesNoHealth   = testFixturesNoHealthyNode()
+		result          []*node.Node
+		err             error
 	)
 
 	result, err = f.Filter(&cluster.ContainerConfig{}, nodesAllHealth)
@@ -78,6 +76,6 @@ func TestHealthyFilter(t *testing.T) {
 	assert.Equal(t, result[0], nodesPartHealth[1])
 
 	result, err = f.Filter(&cluster.ContainerConfig{}, nodesNoHealth)
-	assert.Equal(t, err, errNoHealthyNodeAvailable)
+	assert.Equal(t, err, ErrNoHealthyNodeAvailable)
 	assert.Nil(t, result)
 }
