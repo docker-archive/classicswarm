@@ -75,9 +75,9 @@ func (s *Mock) DeleteTree(prefix string) error {
 }
 
 // AtomicPut mock
-func (s *Mock) AtomicPut(key string, value []byte, previous *KVPair, opts *WriteOptions) (bool, error) {
+func (s *Mock) AtomicPut(key string, value []byte, previous *KVPair, opts *WriteOptions) (bool, *KVPair, error) {
 	args := s.Mock.Called(key, value, previous, opts)
-	return args.Bool(0), args.Error(1)
+	return args.Bool(0), args.Get(1).(*KVPair), args.Error(2)
 }
 
 // AtomicDelete mock
