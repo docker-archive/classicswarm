@@ -44,7 +44,7 @@ Arguments:
 Options:
    {{range .Flags}}{{.}}
    {{end}}{{if (eq .Name "manage")}}{{printf "\t * swarm.overcommit=0.05\tovercommit to apply on resources"}}
-                                    {{printf "\t * swarm.discovery.heartbeat=25s\tperiod between each heartbeat"}}{{end}}{{ end }}
+                                    {{end}}{{ end }}
 `
 
 }

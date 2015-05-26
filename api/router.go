@@ -82,7 +82,18 @@ func writeCorsHeaders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
 }
 
-func createRouter(c *context, enableCors bool) *mux.Router {
+// NewRouter creates a new API router.
+func NewRouter(cluster cluster.Cluster, tlsConfig *tls.Config, enableCors bool) *mux.Router {
+	// Register the API events handler in the cluster.
+	eventsHandler := newEventsHandler()
+	cluster.RegisterEventHandler(eventsHandler)
+
+	context := &context{
+		cluster:       cluster,
+		eventsHandler: eventsHandler,
+		tlsConfig:     tlsConfig,
+	}
+
 	r := mux.NewRouter()
 	for method, mappings := range routes {
 		for route, fct := range mappings {
@@ -95,7 +106,7 @@ func createRouter(c *context, enableCors bool) *mux.Router {
 				if enableCors {
 					writeCorsHeaders(w, r)
 				}
-				localFct(c, w, r)
+				localFct(context, w, r)
 			}
 			localMethod := method
 
