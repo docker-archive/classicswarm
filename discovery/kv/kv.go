@@ -62,6 +62,7 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Du
 			EphemeralTTL: s.ttl,
 		},
 	)
+
 	return err
 }
 
