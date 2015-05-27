@@ -60,7 +60,7 @@ func (s *Zookeeper) Get(key string) (*KVPair, error) {
 	if resp == nil {
 		return nil, ErrKeyNotFound
 	}
-	return &KVPair{key, resp, uint64(meta.Mzxid)}, nil
+	return &KVPair{key, resp, uint64(meta.Version)}, nil
 }
 
 // Create the entire path for a directory that does not exist
@@ -132,7 +132,7 @@ func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, e
 		defer close(watchCh)
 
 		// GetW returns the current value before setting the watch.
-		watchCh <- &KVPair{key, resp, uint64(meta.Mzxid)}
+		watchCh <- &KVPair{key, resp, uint64(meta.Version)}
 		for {
 			select {
 			case e := <-eventCh:
@@ -214,15 +214,30 @@ func (s *Zookeeper) DeleteTree(prefix string) error {
 
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
-func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, *KVPair, error) {
-	// Use index of Set method to implement CAS
-	return false, nil, ErrNotImplemented
+func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVPair, _ *WriteOptions) (bool, *KVPair, error) {
+	if previous != nil {
+		return false, nil, ErrPreviousNotSpecified
+	}
+
+	meta, err := s.client.Set(normalize(key), value, int32(previous.LastIndex))
+	if err != nil {
+		return false, nil, err
+	}
+	return true, &KVPair{Key: key, Value: value, LastIndex: uint64(meta.Version)}, nil
 }
 
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
 func (s *Zookeeper) AtomicDelete(key string, previous *KVPair) (bool, error) {
-	return false, ErrNotImplemented
+	if previous != nil {
+		return false, ErrPreviousNotSpecified
+	}
+
+	err := s.client.Delete(normalize(key), int32(previous.LastIndex))
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // NewLock returns a handle to a lock struct which can be used to acquire and
