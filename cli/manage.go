@@ -190,7 +190,7 @@ func manage(c *cli.Context) {
 	var cl cluster.Cluster
 	switch c.String("cluster-driver") {
 	case "mesos-experimental":
-		log.Warn("WARNING: the mesos driver is currently experimental, use at you own risks")
+		log.Warn("WARNING: the mesos driver is currently experimental, use at your own risks")
 		cl, err = mesos.NewCluster(sched, store, tlsConfig, uri, c.StringSlice("cluster-opt"))
 	case "swarm":
 		cl, err = swarm.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
