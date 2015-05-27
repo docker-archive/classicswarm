@@ -21,10 +21,6 @@ func join(c *cli.Context) {
 	}
 
 	addr := c.String("advertise")
-	// Backward compatibility.
-	if addr == "" {
-		addr = c.String("addr")
-	}
 	if addr == "" {
 		log.Fatal("missing mandatory --advertise flag")
 	}

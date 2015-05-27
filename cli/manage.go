@@ -211,10 +211,6 @@ func manage(c *cli.Context) {
 
 	if c.Bool("leader-election") {
 		addr := c.String("advertise")
-		// Backward compatibility.
-		if addr == "" {
-			addr = c.String("addr")
-		}
 		if addr == "" {
 			log.Fatal("--advertise address must be provided when using --leader-election")
 		}
