@@ -65,8 +65,8 @@ func TestEngineCpusMemory(t *testing.T) {
 	assert.True(t, engine.isConnected())
 	assert.True(t, engine.IsHealthy())
 
-	assert.Equal(t, engine.UsedCpus(), 0)
-	assert.Equal(t, engine.UsedMemory(), 0)
+	assert.Equal(t, engine.UsedCpus(), int64(0))
+	assert.Equal(t, engine.UsedMemory(), int64(0))
 
 	client.Mock.AssertExpectations(t)
 }
@@ -196,19 +196,19 @@ func TestCreateContainer(t *testing.T) {
 func TestTotalMemory(t *testing.T) {
 	engine := NewEngine("test", 0.05)
 	engine.Memory = 1024
-	assert.Equal(t, engine.TotalMemory(), 1024+1024*5/100)
+	assert.Equal(t, engine.TotalMemory(), int64(1024+1024*5/100))
 
 	engine = NewEngine("test", 0)
 	engine.Memory = 1024
-	assert.Equal(t, engine.TotalMemory(), 1024)
+	assert.Equal(t, engine.TotalMemory(), int64(1024))
 }
 
 func TestTotalCpus(t *testing.T) {
 	engine := NewEngine("test", 0.05)
 	engine.Cpus = 2
-	assert.Equal(t, engine.TotalCpus(), 2+2*5/100)
+	assert.Equal(t, engine.TotalCpus(), int64(2+2*5/100))
 
 	engine = NewEngine("test", 0)
 	engine.Cpus = 2
-	assert.Equal(t, engine.TotalCpus(), 2)
+	assert.Equal(t, engine.TotalCpus(), int64(2))
 }
