@@ -20,6 +20,18 @@ func join(c *cli.Context) {
 		log.Fatalf("discovery required to join a cluster. See '%s join --help'.", c.App.Name)
 	}
 
+	addr := c.String("advertise")
+	// Backward compatibility.
+	if addr == "" {
+		addr = c.String("addr")
+	}
+	if addr == "" {
+		log.Fatal("missing mandatory --advertise flag")
+	}
+	if !checkAddrFormat(addr) {
+		log.Fatal("--advertise should be of the form ip:port or hostname:port")
+	}
+
 	hb, err := time.ParseDuration(c.String("heartbeat"))
 	if err != nil {
 		log.Fatalf("invalid --heartbeat: %v", err)
@@ -37,12 +49,6 @@ func join(c *cli.Context) {
 	d, err := discovery.New(dflag, hb, ttl)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	addr := c.String("addr")
-
-	if !checkAddrFormat(addr) {
-		log.Fatal("--addr should be of the form ip:port or hostname:port")
 	}
 
 	for {

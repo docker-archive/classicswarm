@@ -32,13 +32,16 @@ var (
 		Value: homepath(".swarm"),
 		Usage: "",
 	}
-	flAddr = cli.StringFlag{
-		Name:   "addr",
-		Value:  "127.0.0.1:2375",
-		Usage:  "ip to advertise",
-		EnvVar: "SWARM_ADDR",
+	flJoinAdvertise = cli.StringFlag{
+		Name:   "advertise",
+		Usage:  "Address of the Docker Engine joining the cluster. Swarm managers MUST be able to reach Docker at this address.",
+		EnvVar: "SWARM_ADVERTISE",
 	}
-
+	flManageAdvertise = cli.StringFlag{
+		Name:   "advertise",
+		Usage:  "Address of the Swarm manager joining the cluster. Other swarm managers MUST be able to reach Swarm at this address.",
+		EnvVar: "SWARM_ADVERTISE",
+	}
 	// hack for go vet
 	flHostsValue = cli.StringSlice([]string{"tcp://127.0.0.1:2375"})
 
