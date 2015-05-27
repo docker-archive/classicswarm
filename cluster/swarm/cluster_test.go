@@ -131,7 +131,7 @@ func TestImportImage(t *testing.T) {
 
 	// import success
 	readCloser := nopCloser{bytes.NewBufferString("ok")}
-	client.On("ImportImage", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(readCloser, nil).Once()
+	client.On("ImportImage", mock.Anything, mock.Anything, mock.Anything, mock.AnythingOfType("*io.PipeReader")).Return(readCloser, nil).Once()
 
 	callback := func(what, status string) {
 		// import success
@@ -142,7 +142,7 @@ func TestImportImage(t *testing.T) {
 	// import error
 	readCloser = nopCloser{bytes.NewBufferString("error")}
 	err := fmt.Errorf("Import error")
-	client.On("ImportImage", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(readCloser, err).Once()
+	client.On("ImportImage", mock.Anything, mock.Anything, mock.Anything, mock.AnythingOfType("*io.PipeReader")).Return(readCloser, err).Once()
 
 	callback = func(what, status string) {
 		// import error
