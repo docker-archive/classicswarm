@@ -343,6 +343,10 @@ func (l *consulLock) Unlock() error {
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
 func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, *KVPair, error) {
+	if previous == nil {
+		return false, nil, ErrPreviousNotSpecified
+	}
+
 	lock, err := s.NewLock(key, nil)
 	if err != nil {
 		return false, nil, err
@@ -368,6 +372,10 @@ func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair, options *
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
 func (s *Consul) AtomicDelete(key string, previous *KVPair) (bool, error) {
+	if previous == nil {
+		return false, ErrPreviousNotSpecified
+	}
+
 	p := &api.KVPair{Key: s.normalize(key), ModifyIndex: previous.LastIndex}
 	if work, _, err := s.client.KV().DeleteCAS(p, nil); err != nil {
 		return false, err
