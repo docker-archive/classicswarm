@@ -343,7 +343,7 @@ func (l *consulLock) Unlock() error {
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
 func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, *KVPair, error) {
-	if previous != nil {
+	if previous == nil {
 		return false, nil, ErrPreviousNotSpecified
 	}
 
@@ -372,7 +372,7 @@ func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair, options *
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
 func (s *Consul) AtomicDelete(key string, previous *KVPair) (bool, error) {
-	if previous != nil {
+	if previous == nil {
 		return false, ErrPreviousNotSpecified
 	}
 

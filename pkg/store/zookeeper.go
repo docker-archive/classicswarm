@@ -215,12 +215,15 @@ func (s *Zookeeper) DeleteTree(prefix string) error {
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
 func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVPair, _ *WriteOptions) (bool, *KVPair, error) {
-	if previous != nil {
+	if previous == nil {
 		return false, nil, ErrPreviousNotSpecified
 	}
 
 	meta, err := s.client.Set(normalize(key), value, int32(previous.LastIndex))
 	if err != nil {
+		if err == zk.ErrBadVersion {
+			return false, nil, ErrKeyModified
+		}
 		return false, nil, err
 	}
 	return true, &KVPair{Key: key, Value: value, LastIndex: uint64(meta.Version)}, nil
@@ -229,12 +232,15 @@ func (s *Zookeeper) AtomicPut(key string, value []byte, previous *KVPair, _ *Wri
 // AtomicDelete deletes a value at "key" if the key has not
 // been modified in the meantime, throws an error if this is the case
 func (s *Zookeeper) AtomicDelete(key string, previous *KVPair) (bool, error) {
-	if previous != nil {
+	if previous == nil {
 		return false, ErrPreviousNotSpecified
 	}
 
 	err := s.client.Delete(normalize(key), int32(previous.LastIndex))
 	if err != nil {
+		if err == zk.ErrBadVersion {
+			return false, ErrKeyModified
+		}
 		return false, err
 	}
 	return true, nil
