@@ -42,5 +42,5 @@ POST "/images/create" : "docker import" flow not implement
 
 - [User guide](https://docs.docker.com/swarm/)
 - [Discovery options](https://docs.docker.com/swarm/discovery/)
-- [Sheduler strategies](https://docs.docker.com/swarm/scheduler/strategy/)
-- [Sheduler filters](https://docs.docker.com/swarm/scheduler/filter/)
+- [Scheduler strategies](https://docs.docker.com/swarm/scheduler/strategy/)
+- [Scheduler filters](https://docs.docker.com/swarm/scheduler/filter/)
