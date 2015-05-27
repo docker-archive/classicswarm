@@ -377,6 +377,57 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 	wg.Wait()
 }
 
+// Import image
+func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string)) {
+	var wg sync.WaitGroup
+	c.RLock()
+	pipeWriters := []*io.PipeWriter{}
+
+	for _, n := range c.engines {
+		wg.Add(1)
+
+		pipeReader, pipeWriter := io.Pipe()
+		pipeWriters = append(pipeWriters, pipeWriter)
+
+		go func(reader *io.PipeReader, nn *cluster.Engine) {
+			defer wg.Done()
+			defer reader.Close()
+
+			// call engine import
+			err := nn.Import(source, repository, tag, reader)
+			if callback != nil {
+				if err != nil {
+					callback(nn.Name, err.Error())
+				} else {
+					callback(nn.Name, "Import success")
+				}
+			}
+
+		}(pipeReader, n)
+	}
+	c.RUnlock()
+
+	// create multi-writer
+	listWriter := []io.Writer{}
+	for _, pipeW := range pipeWriters {
+		listWriter = append(listWriter, pipeW)
+	}
+	multiWriter := io.MultiWriter(listWriter...)
+
+	// copy image-reader to muti-writer
+	_, err := io.Copy(multiWriter, imageReader)
+	if err != nil {
+		log.Error(err)
+	}
+
+	// close pipe writers
+	for _, pipeW := range pipeWriters {
+		pipeW.Close()
+	}
+
+	wg.Wait()
+}
+
 // Containers returns all the containers in the cluster.
 func (c *Cluster) Containers() cluster.Containers {
 	c.RLock()

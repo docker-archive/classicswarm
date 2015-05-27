@@ -245,6 +245,11 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 
 }
 
+// Import image
+func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string)) {
+
+}
+
 // RenameContainer Rename a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
 	//FIXME this doesn't work as the next refreshcontainer will erase this change (this change is in-memory only)
