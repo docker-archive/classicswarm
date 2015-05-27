@@ -53,7 +53,7 @@ func TestSpreadPlaceContainerMemory(t *testing.T) {
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
 	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
-	assert.Equal(t, node1.UsedMemory, 1024*1024*1024)
+	assert.Equal(t, node1.UsedMemory, int64(1024*1024*1024))
 
 	// add another container 1G
 	config = createConfig(1, 0)
@@ -80,14 +80,14 @@ func TestSpreadPlaceContainerCPU(t *testing.T) {
 	node1, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
 	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
-	assert.Equal(t, node1.UsedCpus, 1)
+	assert.Equal(t, node1.UsedCpus, int64(1))
 
 	// add another container 1CPU
 	config = createConfig(0, 1)
 	node2, err := s.PlaceContainer(config, nodes)
 	assert.NoError(t, err)
 	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
-	assert.Equal(t, node2.UsedCpus, 1)
+	assert.Equal(t, node2.UsedCpus, int64(1))
 
 	// check that both containers ended on different node
 	assert.NotEqual(t, node1.ID, node2.ID)

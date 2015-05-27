@@ -46,27 +46,27 @@ func TestInt(t *testing.T) {
 
 	val, ok := opts.Int("foo1", "")
 	assert.True(t, ok)
-	assert.Equal(t, val, 0)
+	assert.Equal(t, val, int64(0))
 
 	val, ok = opts.Int("foo2", "")
 	assert.True(t, ok)
-	assert.Equal(t, val, -5)
+	assert.Equal(t, val, int64(-5))
 
 	val, ok = opts.Int("foo3", "")
 	assert.True(t, ok)
-	assert.Equal(t, val, 7)
+	assert.Equal(t, val, int64(7))
 
 	val, ok = opts.Int("foo4", "")
 	assert.True(t, ok)
-	assert.Equal(t, val, 0)
+	assert.Equal(t, val, int64(0))
 
 	val, ok = opts.Int("", "FOO_4")
 	assert.True(t, ok)
-	assert.Equal(t, val, 0)
+	assert.Equal(t, val, int64(0))
 
 	val, ok = opts.Int("invalid", "")
 	assert.False(t, ok)
-	assert.Equal(t, val, 0)
+	assert.Equal(t, val, int64(0))
 }
 
 func TestUint(t *testing.T) {
@@ -75,27 +75,27 @@ func TestUint(t *testing.T) {
 
 	val, ok := opts.Uint("foo1", "")
 	assert.True(t, ok)
-	assert.Equal(t, val, uint(0))
+	assert.Equal(t, val, uint64(0))
 
 	val, ok = opts.Uint("foo2", "")
 	assert.True(t, ok)
-	assert.Equal(t, val, uint(0))
+	assert.Equal(t, val, uint64(0))
 
 	val, ok = opts.Uint("foo3", "")
 	assert.True(t, ok)
-	assert.Equal(t, val, uint(7))
+	assert.Equal(t, val, uint64(7))
 
 	val, ok = opts.Uint("foo4", "")
 	assert.True(t, ok)
-	assert.Equal(t, val, uint(0))
+	assert.Equal(t, val, uint64(0))
 
 	val, ok = opts.Uint("", "FOO_4")
 	assert.True(t, ok)
-	assert.Equal(t, val, uint(0))
+	assert.Equal(t, val, uint64(0))
 
 	val, ok = opts.Uint("invalid", "")
 	assert.False(t, ok)
-	assert.Equal(t, val, uint(0))
+	assert.Equal(t, val, uint64(0))
 }
 
 func TestFloat(t *testing.T) {
