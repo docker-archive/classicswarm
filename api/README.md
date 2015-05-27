@@ -8,14 +8,6 @@ page_keywords: docker, swarm, clustering, api
 
 The Docker Swarm API is mostly compatible with the [Docker Remote API](https://docs.docker.com/reference/api/docker_remote_api/). This document is an overview of the differences between the Swarm API and the Docker Remote API.
 
-## Missing endpoints
-
-Some endpoints have not yet been implemented and will return a 404 error.
-
-```
-POST "/images/create" : "docker import" flow not implement
-```
-
 ## Endpoints which behave differently
 
 * `GET "/containers/{name:.*}/json"`: New field `Node` added:
