@@ -39,6 +39,8 @@ var (
 	ErrKeyModified = errors.New("Unable to complete atomic operation, key modified")
 	// ErrKeyNotFound is exported
 	ErrKeyNotFound = errors.New("Key not found in store")
+	// ErrPreviousNotSpecified is exported
+	ErrPreviousNotSpecified = errors.New("Previous K/V pair should be provided for the Atomic operation")
 )
 
 // Config contains the options for a storage client
