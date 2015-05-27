@@ -41,14 +41,14 @@ For instance, let's start `node-1` with the `storage=ssd` label:
 
 ```bash
 $ docker -d --label storage=ssd
-$ swarm join --addr=192.168.0.42:2375 token://XXXXXXXXXXXXXXXXXX
+$ swarm join --advertise=192.168.0.42:2375 token://XXXXXXXXXXXXXXXXXX
 ```
 
 Again, but this time `node-2` with `storage=disk`:
 
 ```bash
 $ docker -d --label storage=disk
-$ swarm join --addr=192.168.0.43:2375 token://XXXXXXXXXXXXXXXXXX
+$ swarm join --advertise=192.168.0.43:2375 token://XXXXXXXXXXXXXXXXXX
 ```
 
 Once the nodes are registered with the cluster, the master pulls their respective

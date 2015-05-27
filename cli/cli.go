@@ -114,7 +114,7 @@ func Run() {
 				flStore,
 				flStrategy, flFilter,
 				flHosts,
-				flLeaderElection, flAddr,
+				flLeaderElection, flManageAdvertise,
 				flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
 				flHeartBeat,
 				flEnableCors,
@@ -125,7 +125,7 @@ func Run() {
 			Name:      "join",
 			ShortName: "j",
 			Usage:     "join a docker cluster",
-			Flags:     []cli.Flag{flAddr, flHeartBeat, flTTL},
+			Flags:     []cli.Flag{flJoinAdvertise, flHeartBeat, flTTL},
 			Action:    join,
 		},
 	}

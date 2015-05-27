@@ -210,7 +210,19 @@ func manage(c *cli.Context) {
 	router := api.NewRouter(cl, tlsConfig, c.Bool("cors"))
 
 	if c.Bool("leader-election") {
-		setupLeaderElection(server, router, discovery, c.String("addr"), tlsConfig)
+		addr := c.String("advertise")
+		// Backward compatibility.
+		if addr == "" {
+			addr = c.String("addr")
+		}
+		if addr == "" {
+			log.Fatal("--advertise address must be provided when using --leader-election")
+		}
+		if !checkAddrFormat(addr) {
+			log.Fatal("--advertise should be of the form ip:port or hostname:port")
+		}
+
+		setupLeaderElection(server, router, discovery, addr, tlsConfig)
 	} else {
 		server.SetHandler(router)
 	}
