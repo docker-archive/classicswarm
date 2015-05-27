@@ -338,8 +338,6 @@ func (c *Cluster) addOffer(offer *mesosproto.Offer) {
 
 func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 	log.WithFields(log.Fields{"name": "mesos", "offerID": offer.Id.String()}).Debug("Removing offer")
-	c.Lock()
-	defer c.Unlock()
 	s, ok := c.slaves[offer.SlaveId.GetValue()]
 	if !ok {
 		return false
