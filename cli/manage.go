@@ -189,12 +189,13 @@ func manage(c *cli.Context) {
 	sched := scheduler.New(s, fs)
 	var cl cluster.Cluster
 	switch c.String("cluster-driver") {
-	case "mesos":
+	case "mesos-experimental":
+		log.Warn("WARNING: the mesos driver is currently experimental, use at you own risks")
 		cl, err = mesos.NewCluster(sched, store, tlsConfig, uri, c.StringSlice("cluster-opt"))
 	case "swarm":
 		cl, err = swarm.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
 	default:
-		log.Fatalf("Unsupported cluster %q", c.String("cluster-driver"))
+		log.Fatalf("unsupported cluster %q", c.String("cluster-driver"))
 	}
 	if err != nil {
 		log.Fatal(err)
