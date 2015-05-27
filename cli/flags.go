@@ -106,7 +106,7 @@ var (
 
 	flCluster = cli.StringFlag{
 		Name:  "cluster-driver, c",
-		Usage: "cluster driver to use [swarm, mesos]",
+		Usage: "cluster driver to use [swarm, mesos-experimental]",
 		Value: "swarm",
 	}
 	flClusterOpt = cli.StringSliceFlag{
