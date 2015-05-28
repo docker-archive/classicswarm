@@ -19,8 +19,6 @@ function start_store() {
 		quay.io/coreos/etcd:v2.0.11 \
 		--listen-client-urls="http://0.0.0.0:${PORT}" \
 		--advertise-client-urls="http://${STORE_HOST}"
-
-	sleep 3
 }
 
 function stop_store() {
