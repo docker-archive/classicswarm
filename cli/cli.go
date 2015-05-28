@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/swarm/discovery"
-	"github.com/docker/swarm/discovery/token"
 	"github.com/docker/swarm/version"
 )
 
@@ -55,80 +52,7 @@ func Run() {
 		return nil
 	}
 
-	app.Commands = []cli.Command{
-		{
-			Name:      "create",
-			ShortName: "c",
-			Usage:     "Create a cluster",
-			Action: func(c *cli.Context) {
-				if len(c.Args()) != 0 {
-					log.Fatalf("the `create` command takes no arguments. See '%s create --help'.", c.App.Name)
-				}
-				discovery := &token.Discovery{}
-				discovery.Initialize("", 0, 0)
-				token, err := discovery.CreateCluster()
-				if err != nil {
-					log.Fatal(err)
-				}
-				fmt.Println(token)
-			},
-		},
-		{
-			Name:      "list",
-			ShortName: "l",
-			Usage:     "List nodes in a cluster",
-			Flags:     []cli.Flag{flTimeout},
-			Action: func(c *cli.Context) {
-				dflag := getDiscovery(c)
-				if dflag == "" {
-					log.Fatalf("discovery required to list a cluster. See '%s list --help'.", c.App.Name)
-				}
-				timeout, err := time.ParseDuration(c.String("timeout"))
-				if err != nil {
-					log.Fatalf("invalid --timeout: %v", err)
-				}
-
-				d, err := discovery.New(dflag, timeout, 0)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				ch, errCh := d.Watch(nil)
-				select {
-				case entries := <-ch:
-					for _, entry := range entries {
-						fmt.Println(entry)
-					}
-				case err := <-errCh:
-					log.Fatal(err)
-				case <-time.After(timeout):
-					log.Fatal("Timed out")
-				}
-			},
-		},
-		{
-			Name:      "manage",
-			ShortName: "m",
-			Usage:     "Manage a docker cluster",
-			Flags: []cli.Flag{
-				flStore,
-				flStrategy, flFilter,
-				flHosts,
-				flLeaderElection, flManageAdvertise,
-				flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
-				flHeartBeat,
-				flEnableCors,
-				flCluster, flClusterOpt},
-			Action: manage,
-		},
-		{
-			Name:      "join",
-			ShortName: "j",
-			Usage:     "join a docker cluster",
-			Flags:     []cli.Flag{flJoinAdvertise, flHeartBeat, flTTL},
-			Action:    join,
-		},
-	}
+	app.Commands = commands
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
