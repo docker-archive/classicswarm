@@ -51,6 +51,7 @@ func InitializeEtcd(addrs []string, options *Config) (Store, error) {
 		}
 	}
 
+	s.client.SyncCluster()
 	return s, nil
 }
 
