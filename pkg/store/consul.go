@@ -97,9 +97,21 @@ func (s *Consul) setEphemeralTTL(ttl time.Duration) error {
 
 // CreateEphemeralSession creates the a global session
 // once that is used to delete keys at node failure
-func (s *Consul) createEphemeralSession() error {
+func (s *Consul) createEphemeralSession(key string) error {
 	s.Lock()
 	defer s.Unlock()
+
+	// Recover existing global session
+	pair, _, err := s.client.KV().Get(key, nil)
+	if err != nil {
+		return err
+	}
+	if pair != nil && pair.Session != "" {
+		s.ephemeralSession = pair.Session
+		return nil
+	}
+
+	// Create new session
 	if s.ephemeralSession == "" {
 		entry := &api.SessionEntry{
 			Behavior: api.SessionBehaviorDelete,
@@ -152,7 +164,10 @@ func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
 		// Creates the global ephemeral session
 		// if it does not exist
 		if s.ephemeralSession == "" {
-			s.createEphemeralSession()
+			err := s.createEphemeralSession(key)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Create lock option with the
