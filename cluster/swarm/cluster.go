@@ -358,10 +358,10 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 	for _, pipeW := range pipeWriters {
 		listWriter = append(listWriter, pipeW)
 	}
-	mutiWriter := io.MultiWriter(listWriter...)
+	multiWriter := io.MultiWriter(listWriter...)
 
-	// copy image-reader to muti-writer
-	_, err := io.Copy(mutiWriter, imageReader)
+	// copy image-reader to multi-writer
+	_, err := io.Copy(multiWriter, imageReader)
 	if err != nil {
 		log.Error(err)
 	}
