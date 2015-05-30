@@ -332,12 +332,10 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 
 	c.RLock()
 	pipeWriters := []*io.PipeWriter{}
-	pipeReaders := []*io.PipeReader{}
 	for _, n := range c.engines {
 		wg.Add(1)
 
 		pipeReader, pipeWriter := io.Pipe()
-		pipeReaders = append(pipeReaders, pipeReader)
 		pipeWriters = append(pipeWriters, pipeWriter)
 
 		go func(reader *io.PipeReader, nn *cluster.Engine) {
@@ -353,6 +351,7 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 			}
 		}(pipeReader, n)
 	}
+	c.RUnlock()
 
 	// create multi-writer
 	listWriter := []io.Writer{}
@@ -371,8 +370,6 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 	for _, pipeW := range pipeWriters {
 		pipeW.Close()
 	}
-
-	c.RUnlock()
 
 	wg.Wait()
 }
