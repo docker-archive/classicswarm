@@ -231,6 +231,30 @@ func (client *DockerClient) ContainerChanges(id string) ([]*ContainerChanges, er
 	return changes, nil
 }
 
+func (client *DockerClient) readJSONStream(stream io.ReadCloser, decode func(*json.Decoder) decodingResult, stopChan <-chan struct{}) <-chan decodingResult {
+	resultChan := make(chan decodingResult)
+
+	go func() {
+		decoder := json.NewDecoder(stream)
+		defer stream.Close()
+		defer close(resultChan)
+		for {
+			decodeResult := decode(decoder)
+			select {
+			case <-stopChan:
+				return
+			default:
+				resultChan <- decodeResult
+				if decodeResult.err != nil {
+					return
+				}
+			}
+		}
+	}()
+
+	return resultChan
+}
+
 func (client *DockerClient) StartContainer(id string, config *HostConfig) error {
 	data, err := json.Marshal(config)
 	if err != nil {
@@ -269,6 +293,64 @@ func (client *DockerClient) KillContainer(id, signal string) error {
 		return err
 	}
 	return nil
+}
+
+func (client *DockerClient) MonitorEvents(options *MonitorEventsOptions, stopChan <-chan struct{}) (<-chan EventOrError, error) {
+	v := url.Values{}
+	if options != nil {
+		if options.Since != 0 {
+			v.Add("since", strconv.Itoa(options.Since))
+		}
+		if options.Until != 0 {
+			v.Add("until", strconv.Itoa(options.Until))
+		}
+		if options.Filters != nil {
+			filterMap := make(map[string][]string)
+			if len(options.Filters.Event) > 0 {
+				filterMap["event"] = []string{options.Filters.Event}
+			}
+			if len(options.Filters.Image) > 0 {
+				filterMap["image"] = []string{options.Filters.Image}
+			}
+			if len(options.Filters.Container) > 0 {
+				filterMap["container"] = []string{options.Filters.Container}
+			}
+			if len(filterMap) > 0 {
+				filterJSONBytes, err := json.Marshal(filterMap)
+				if err != nil {
+					return nil, err
+				}
+				v.Add("filters", string(filterJSONBytes))
+			}
+		}
+	}
+	uri := fmt.Sprintf("%s/%s/events?%s", client.URL.String(), APIVersion, v.Encode())
+	resp, err := client.HTTPClient.Get(uri)
+	if err != nil {
+		return nil, err
+	}
+
+	decode := func(decoder *json.Decoder) decodingResult {
+		var event Event
+		if err := decoder.Decode(&event); err != nil {
+			return decodingResult{err: err}
+		} else {
+			return decodingResult{result: event}
+		}
+	}
+	decodingResultChan := client.readJSONStream(resp.Body, decode, stopChan)
+	eventOrErrorChan := make(chan EventOrError)
+	go func() {
+		for decodingResult := range decodingResultChan {
+			event, _ := decodingResult.result.(Event)
+			eventOrErrorChan <- EventOrError{
+				Event: event,
+				Error: decodingResult.err,
+			}
+		}
+		close(eventOrErrorChan)
+	}()
+	return eventOrErrorChan, nil
 }
 
 func (client *DockerClient) StartMonitorEvents(cb Callback, ec chan error, args ...interface{}) {
@@ -380,6 +462,20 @@ func (client *DockerClient) PullImage(name string, auth *AuthConfig) error {
 		return fmt.Errorf("%v", err)
 	}
 	return nil
+}
+
+func (client *DockerClient) InspectImage(id string) (*ImageInfo, error) {
+	uri := fmt.Sprintf("/%s/images/%s/json", APIVersion, id)
+	data, err := client.doRequest("GET", uri, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	info := &ImageInfo{}
+	err = json.Unmarshal(data, info)
+	if err != nil {
+		return nil, err
+	}
+	return info, nil
 }
 
 func (client *DockerClient) LoadImage(reader io.Reader) error {
