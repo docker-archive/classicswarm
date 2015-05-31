@@ -3,6 +3,7 @@ package cluster
 import (
 	"errors"
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/samalba/dockerclient"
@@ -155,7 +156,7 @@ func TestCreateContainer(t *testing.T) {
 	assert.True(t, engine.isConnected())
 
 	mockConfig := config.ContainerConfig
-	mockConfig.CpuShares = config.CpuShares * 1024 / mockInfo.NCPU
+	mockConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(mockInfo.NCPU)))
 
 	// Everything is ok
 	name := "test1"
@@ -171,7 +172,7 @@ func TestCreateContainer(t *testing.T) {
 
 	// Image not found, pullImage == false
 	name = "test2"
-	mockConfig.CpuShares = config.CpuShares * 1024 / mockInfo.NCPU
+	mockConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(mockInfo.NCPU)))
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
 	container, err = engine.Create(config, name, false)
 	assert.Equal(t, err, dockerclient.ErrNotFound)
@@ -180,7 +181,7 @@ func TestCreateContainer(t *testing.T) {
 	// Image not found, pullImage == true, and the image can be pulled successfully
 	name = "test3"
 	id = "id3"
-	mockConfig.CpuShares = config.CpuShares * 1024 / mockInfo.NCPU
+	mockConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(mockInfo.NCPU)))
 	client.On("PullImage", config.Image+":latest", mock.Anything).Return(nil).Once()
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
 	client.On("CreateContainer", &mockConfig, name).Return(id, nil).Once()
@@ -211,4 +212,32 @@ func TestTotalCpus(t *testing.T) {
 	engine = NewEngine("test", 0)
 	engine.Cpus = 2
 	assert.Equal(t, engine.TotalCpus(), int64(2))
+}
+
+func TestUsedCpus(t *testing.T) {
+	var (
+		containerNcpu = []int64{1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47}
+		hostNcpu      = []int64{1, 2, 4, 8, 10, 12, 16, 20, 32, 36, 40, 48}
+	)
+
+	engine := NewEngine("test", 0)
+	client := mockclient.NewMockClient()
+
+	for _, hn := range hostNcpu {
+		for _, cn := range containerNcpu {
+			if cn <= hn {
+				mockInfo.NCPU = hn
+				cpuShares := int64(math.Ceil(float64(cn*1024) / float64(mockInfo.NCPU)))
+
+				client.On("Info").Return(mockInfo, nil)
+				client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+				client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
+				client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "test"}}, nil).Once()
+				client.On("InspectContainer", "test").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: cpuShares}}, nil).Once()
+				engine.ConnectWithClient(client)
+
+				assert.Equal(t, engine.UsedCpus(), cn)
+			}
+		}
+	}
 }
