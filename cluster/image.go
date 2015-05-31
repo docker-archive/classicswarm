@@ -21,18 +21,31 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 		return true
 	}
 
+	repo := ""
 	name := IDOrName
+	if strings.Contains(IDOrName, "/") {
+		parts := strings.SplitN(IDOrName, "/", 2)
+		repo = parts[0] + "/"
+		name = parts[1]
+	}
 	if matchTag {
-		if len(strings.SplitN(IDOrName, ":", 2)) == 1 {
-			name = IDOrName + ":latest"
+		if len(strings.SplitN(name, ":", 2)) == 1 {
+			name = repo + name + ":latest"
+		} else {
+			name = repo + name
 		}
 	} else {
-		name = strings.SplitN(IDOrName, ":", 2)[0]
+		name = repo + strings.SplitN(name, ":", 2)[0]
 	}
 
 	for _, repoTag := range image.RepoTags {
 		if matchTag == false {
-			repoTag = strings.SplitN(repoTag, ":", 2)[0]
+			if strings.Contains(repoTag, "/") {
+				parts := strings.SplitN(repoTag, "/", 2)
+				repoTag = parts[0] + "/" + strings.SplitN(parts[1], ":", 2)[0]
+			} else {
+				repoTag = strings.SplitN(repoTag, ":", 2)[0]
+			}
 		}
 		if repoTag == name {
 			return true
