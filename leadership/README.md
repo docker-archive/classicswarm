@@ -20,7 +20,7 @@ underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood"
 underwood.RunForElection()
 
 electedCh := underwood.ElectedCh()
-for isElected := range rlectedCh {
+for isElected := range electedCh {
 	// This loop will run every time there is a change in our leadership
 	// status.
 
