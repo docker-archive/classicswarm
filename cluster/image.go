@@ -13,6 +13,35 @@ type Image struct {
 	Engine *Engine
 }
 
+func toImageName(repo string, name string, tag string) string {
+	fullname := name
+	if tag != "" {
+		fullname = name + ":" + tag
+	}
+	if repo != "" {
+		fullname = repo + "/" + fullname
+	}
+	return fullname
+}
+
+func parseImageName(fullname string) (repo string, name string, tag string) {
+	parts := strings.SplitN(fullname, "/", 2)
+
+	nameAndTag := parts[0]
+	if len(parts) == 2 {
+		repo = parts[0]
+		nameAndTag = parts[1]
+	}
+
+	parts = strings.SplitN(nameAndTag, ":", 2)
+	name = parts[0]
+	if len(parts) == 2 {
+		tag = parts[1]
+	}
+
+	return
+}
+
 // Match is exported
 func (image *Image) Match(IDOrName string, matchTag bool) bool {
 	size := len(IDOrName)
@@ -21,20 +50,22 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 		return true
 	}
 
-	name := IDOrName
+	imageName := IDOrName
+	repo, name, tag := parseImageName(imageName)
 	if matchTag {
-		if len(strings.SplitN(IDOrName, ":", 2)) == 1 {
-			name = IDOrName + ":latest"
+		if tag == "" {
+			imageName = toImageName(repo, name, "latest")
 		}
 	} else {
-		name = strings.SplitN(IDOrName, ":", 2)[0]
+		imageName = toImageName(repo, name, "")
 	}
 
 	for _, repoTag := range image.RepoTags {
 		if matchTag == false {
-			repoTag = strings.SplitN(repoTag, ":", 2)[0]
+			r, n, _ := parseImageName(repoTag)
+			repoTag = toImageName(r, n, "")
 		}
-		if repoTag == name {
+		if repoTag == imageName {
 			return true
 		}
 	}
