@@ -19,7 +19,15 @@ install:
   - go get github.com/golang/lint/golint
   - go get github.com/GeertJohan/fgt
 
+before_script:
+  - script/travis_consul.sh 0.5.2 
+  - script/travis_etcd.sh 2.0.11
+  - script/travis_zk.sh 3.4.6
+
 script:
+  - ./consul agent -server -bootstrap-expect 1 -data-dir /tmp/consul 1>/dev/null &
+  - ./etcd/etcd --listen-client-urls 'http://0.0.0.0:4001' --advertise-client-urls 'http://127.0.0.1:4001' >/dev/null 2>&1 &
+  - ./zk/bin/zkServer.sh start ./zk/conf/zoo.cfg 1> /dev/null
   - script/validate-gofmt
   - go vet ./...
   - fgt golint ./...
