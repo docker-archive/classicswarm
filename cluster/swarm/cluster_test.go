@@ -150,3 +150,46 @@ func TestImportImage(t *testing.T) {
 	}
 	c.Import("-", "testImageError", "latest", bytes.NewReader(nil), callback)
 }
+
+func TestLoadImage(t *testing.T) {
+	// create cluster
+	c := &Cluster{
+		engines: make(map[string]*cluster.Engine),
+	}
+
+	// create engione
+	id := "test-engine"
+	engine := cluster.NewEngine(id, 0)
+	engine.Name = id
+	engine.ID = id
+
+	// create mock client
+	client := mockclient.NewMockClient()
+	client.On("Info").Return(mockInfo, nil)
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
+	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
+
+	// connect client
+	engine.ConnectWithClient(client)
+
+	// add engine to cluster
+	c.engines[engine.ID] = engine
+
+	// load success
+	client.On("LoadImage", mock.AnythingOfType("*io.PipeReader")).Return(nil).Once()
+	callback := func(what, status string) {
+		//if load OK, will not come here
+		t.Fatalf("Load error")
+	}
+	c.Load(bytes.NewReader(nil), callback)
+
+	// load error
+	err := fmt.Errorf("Load error")
+	client.On("LoadImage", mock.AnythingOfType("*io.PipeReader")).Return(err).Once()
+	callback = func(what, status string) {
+		// load error
+		assert.Equal(t, status, "Load error")
+	}
+	c.Load(bytes.NewReader(nil), callback)
+}
