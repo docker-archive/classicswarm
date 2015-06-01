@@ -8,6 +8,7 @@ type Follower struct {
 	client store.Store
 	key    string
 
+	leader   string
 	leaderCh chan string
 	stopCh   chan struct{}
 }
@@ -26,6 +27,11 @@ func NewFollower(client store.Store, key string) *Follower {
 // leader.
 func (f *Follower) LeaderCh() <-chan string {
 	return f.leaderCh
+}
+
+// Leader returns the current leader.
+func (f *Follower) Leader() string {
+	return f.leader
 }
 
 // FollowElection starts monitoring the election.
@@ -54,13 +60,13 @@ func (f *Follower) follow(<-chan *store.KVPair) {
 		return
 	}
 
-	prev := ""
+	f.leader = ""
 	for kv := range ch {
 		curr := string(kv.Value)
-		if curr == prev {
+		if curr == f.leader {
 			continue
 		}
-		prev = curr
-		f.leaderCh <- string(curr)
+		f.leader = curr
+		f.leaderCh <- f.leader
 	}
 }
