@@ -125,6 +125,7 @@ func (s *Consul) normalize(key string) string {
 // to use in conjunction to CAS calls
 func (s *Consul) Get(key string) (*KVPair, error) {
 	options := &api.QueryOptions{
+		AllowStale:        false,
 		RequireConsistent: true,
 	}
 	pair, meta, err := s.client.KV().Get(s.normalize(key), options)
