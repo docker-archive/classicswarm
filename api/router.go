@@ -13,6 +13,7 @@ import (
 type context struct {
 	cluster       cluster.Cluster
 	eventsHandler *eventsHandler
+	statusHandler StatusHandler
 	debug         bool
 	tlsConfig     *tls.Config
 }
@@ -83,7 +84,7 @@ func writeCorsHeaders(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewRouter creates a new API router.
-func NewRouter(cluster cluster.Cluster, tlsConfig *tls.Config, enableCors bool) *mux.Router {
+func NewRouter(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHandler, enableCors bool) *mux.Router {
 	// Register the API events handler in the cluster.
 	eventsHandler := newEventsHandler()
 	cluster.RegisterEventHandler(eventsHandler)
@@ -91,6 +92,7 @@ func NewRouter(cluster cluster.Cluster, tlsConfig *tls.Config, enableCors bool) 
 	context := &context{
 		cluster:       cluster,
 		eventsHandler: eventsHandler,
+		statusHandler: status,
 		tlsConfig:     tlsConfig,
 	}
 
