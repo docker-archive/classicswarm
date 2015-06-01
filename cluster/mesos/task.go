@@ -140,7 +140,7 @@ func (t *task) getStatus() *mesosproto.TaskStatus {
 	return <-t.updates
 }
 
-func (t *task) monitor() (bool, error) {
+func (t *task) monitor() (bool, []byte, error) {
 	taskStatus := t.getStatus()
 
 	switch taskStatus.GetState() {
@@ -148,16 +148,16 @@ func (t *task) monitor() (bool, error) {
 	case mesosproto.TaskState_TASK_STARTING:
 	case mesosproto.TaskState_TASK_RUNNING:
 	case mesosproto.TaskState_TASK_FINISHED:
-		return true, nil
+		return true, taskStatus.Data, nil
 	case mesosproto.TaskState_TASK_FAILED:
-		return true, errors.New(taskStatus.GetMessage())
+		return true, nil, errors.New(taskStatus.GetMessage())
 	case mesosproto.TaskState_TASK_KILLED:
-		return true, nil
+		return true, taskStatus.Data, nil
 	case mesosproto.TaskState_TASK_LOST:
-		return true, errors.New(taskStatus.GetMessage())
+		return true, nil, errors.New(taskStatus.GetMessage())
 	case mesosproto.TaskState_TASK_ERROR:
-		return true, errors.New(taskStatus.GetMessage())
+		return true, nil, errors.New(taskStatus.GetMessage())
 	}
 
-	return false, nil
+	return false, taskStatus.Data, nil
 }
