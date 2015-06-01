@@ -124,7 +124,10 @@ func (s *Consul) normalize(key string) string {
 // Get the value at "key", returns the last modified index
 // to use in conjunction to CAS calls
 func (s *Consul) Get(key string) (*KVPair, error) {
-	pair, meta, err := s.client.KV().Get(s.normalize(key), nil)
+	options := &api.QueryOptions{
+		RequireConsistent: true,
+	}
+	pair, meta, err := s.client.KV().Get(s.normalize(key), options)
 	if err != nil {
 		return nil, err
 	}
@@ -346,14 +349,6 @@ func (s *Consul) AtomicPut(key string, value []byte, previous *KVPair, options *
 	if previous == nil {
 		return false, nil, ErrPreviousNotSpecified
 	}
-
-	lock, err := s.NewLock(key, nil)
-	if err != nil {
-		return false, nil, err
-	}
-
-	lock.Lock()
-	defer lock.Unlock()
 
 	p := &api.KVPair{Key: s.normalize(key), Value: value, ModifyIndex: previous.LastIndex}
 	if work, _, err := s.client.KV().CAS(p, nil); err != nil {
