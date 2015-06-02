@@ -30,6 +30,11 @@ func (client *MockClient) InspectContainer(id string) (*dockerclient.ContainerIn
 	return args.Get(0).(*dockerclient.ContainerInfo), args.Error(1)
 }
 
+func (client *MockClient) InspectImage(id string) (*dockerclient.ImageInfo, error) {
+	args := client.Mock.Called(id)
+	return args.Get(0).(*dockerclient.ImageInfo), args.Error(1)
+}
+
 func (client *MockClient) CreateContainer(config *dockerclient.ContainerConfig, name string) (string, error) {
 	args := client.Mock.Called(config, name)
 	return args.String(0), args.Error(1)
@@ -63,6 +68,11 @@ func (client *MockClient) RestartContainer(id string, timeout int) error {
 func (client *MockClient) KillContainer(id, signal string) error {
 	args := client.Mock.Called(id, signal)
 	return args.Error(0)
+}
+
+func (client *MockClient) MonitorEvents(options *dockerclient.MonitorEventsOptions, stopChan <-chan struct{}) (<-chan dockerclient.EventOrError, error) {
+	args := client.Mock.Called(options, stopChan)
+	return args.Get(0).(<-chan dockerclient.EventOrError), args.Error(1)
 }
 
 func (client *MockClient) StartMonitorEvents(cb dockerclient.Callback, ec chan error, args ...interface{}) {

@@ -20,6 +20,7 @@ type ContainerConfig struct {
 	AttachStderr    bool
 	PortSpecs       []string
 	ExposedPorts    map[string]struct{}
+	MacAddress      string
 	Tty             bool
 	OpenStdin       bool
 	StdinOnce       bool
@@ -41,6 +42,10 @@ type HostConfig struct {
 	Binds           []string
 	ContainerIDFile string
 	LxcConf         []map[string]string
+	Memory          int64
+	MemorySwap      int64
+	CpuShares       int64
+	CpusetCpus      string
 	Privileged      bool
 	PortBindings    map[string][]PortBinding
 	Links           []string
@@ -71,6 +76,18 @@ type LogOptions struct {
 	Stderr     bool
 	Timestamps bool
 	Tail       int64
+}
+
+type MonitorEventsFilters struct {
+	Event     string `json:",omitempty"`
+	Image     string `json:",omitempty"`
+	Container string `json:",omitempty"`
+}
+
+type MonitorEventsOptions struct {
+	Since   int
+	Until   int
+	Filters *MonitorEventsFilters `json:",omitempty"`
 }
 
 type RestartPolicy struct {
@@ -142,6 +159,22 @@ func (s *State) StateString() string {
 	return "exited"
 }
 
+type ImageInfo struct {
+	Architecture    string
+	Author          string
+	Comment         string
+	Config          *ContainerConfig
+	Container       string
+	ContainerConfig *ContainerConfig
+	Created         time.Time
+	DockerVersion   string
+	Id              string
+	Os              string
+	Parent          string
+	Size            int64
+	VirtualSize     int64
+}
+
 type ContainerInfo struct {
 	Id              string
 	Created         string
@@ -198,9 +231,13 @@ type Event struct {
 }
 
 type Version struct {
-	Version   string
-	GitCommit string
-	GoVersion string
+	ApiVersion    string
+	Arch          string
+	GitCommit     string
+	GoVersion     string
+	KernelVersion string
+	Os            string
+	Version       string
 }
 
 type RespContainersCreate struct {
@@ -217,24 +254,53 @@ type Image struct {
 	VirtualSize int64
 }
 
+// Info is the struct returned by /info
+// The API is currently in flux, so Debug, MemoryLimit, SwapLimit, and
+// IPv4Forwarding are interfaces because in docker 1.6.1 they are 0 or 1 but in
+// master they are bools.
 type Info struct {
-	ID              string
-	Containers      int64
-	Driver          string
-	DriverStatus    [][]string
-	ExecutionDriver string
-	Images          int64
-	KernelVersion   string
-	OperatingSystem string
-	NCPU            int64
-	MemTotal        int64
-	Name            string
-	Labels          []string
+	ID                 string
+	Containers         int64
+	Driver             string
+	DriverStatus       [][]string
+	ExecutionDriver    string
+	Images             int64
+	KernelVersion      string
+	OperatingSystem    string
+	NCPU               int64
+	MemTotal           int64
+	Name               string
+	Labels             []string
+	Debug              interface{}
+	NFd                int64
+	NGoroutines        int64
+	SystemTime         time.Time
+	NEventsListener    int64
+	InitPath           string
+	InitSha1           string
+	IndexServerAddress string
+	MemoryLimit        interface{}
+	SwapLimit          interface{}
+	IPv4Forwarding     interface{}
+	DockerRootDir      string
+	HttpProxy          string
+	HttpsProxy         string
+	NoProxy            string
 }
 
 type ImageDelete struct {
 	Deleted  string
 	Untagged string
+}
+
+type EventOrError struct {
+	Event
+	Error error
+}
+
+type decodingResult struct {
+	result interface{}
+	err    error
 }
 
 // The following are types for the API stats endpoint
