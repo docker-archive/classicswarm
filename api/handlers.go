@@ -26,11 +26,13 @@ const APIVERSION = "1.16"
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := struct {
 		Containers      int
+		Images          int
 		DriverStatus    [][2]string
 		NEventsListener int
 		Debug           bool
 	}{
 		len(c.cluster.Containers()),
+		len(c.cluster.Images()),
 		c.cluster.Info(),
 		c.eventsHandler.Size(),
 		c.debug,
