@@ -36,7 +36,7 @@ func consolidateResourceFields(c *dockerclient.ContainerConfig) {
 	}
 
 	if c.MemorySwap != c.HostConfig.MemorySwap {
-		if c.Memory != 0 {
+		if c.MemorySwap != 0 {
 			c.HostConfig.MemorySwap = c.MemorySwap
 		} else {
 			c.MemorySwap = c.HostConfig.MemorySwap
