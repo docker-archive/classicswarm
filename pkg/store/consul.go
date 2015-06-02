@@ -95,21 +95,11 @@ func (s *Consul) setEphemeralTTL(ttl time.Duration) error {
 	return nil
 }
 
-// CreateEphemeralSession creates the a global session
+// CreateEphemeralSession creates the global session
 // once that is used to delete keys at node failure
-func (s *Consul) createEphemeralSession(key string) error {
+func (s *Consul) createEphemeralSession() (string, error) {
 	s.Lock()
 	defer s.Unlock()
-
-	// Recover existing global session
-	pair, _, err := s.client.KV().Get(key, nil)
-	if err != nil {
-		return err
-	}
-	if pair != nil && pair.Session != "" {
-		s.ephemeralSession = pair.Session
-		return nil
-	}
 
 	// Create new session
 	if s.ephemeralSession == "" {
@@ -120,11 +110,23 @@ func (s *Consul) createEphemeralSession(key string) error {
 		// Create global ephemeral keys session
 		session, _, err := s.client.Session().Create(entry, nil)
 		if err != nil {
-			return err
+			return "", err
 		}
-		s.ephemeralSession = session
+		return session, nil
 	}
-	return nil
+	return "", nil
+}
+
+// checkPreviousSession checks if the key already has a session attached
+func (s *Consul) checkActiveSession(key string) (string, error) {
+	pair, _, err := s.client.KV().Get(key, nil)
+	if err != nil {
+		return "", err
+	}
+	if pair != nil && pair.Session != "" {
+		return pair.Session, nil
+	}
+	return "", nil
 }
 
 // Normalize the key for usage in Consul
@@ -157,20 +159,32 @@ func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
 	}
 
 	if opts != nil && opts.Ephemeral {
-		// Creates the global ephemeral session
-		// if it does not exist
+		// Check if there is any previous session with an active TTL
+		previous, err := s.checkActiveSession(key)
+		if err != nil {
+			return err
+		}
+
+		// Create or recover the global ephemeral session
 		if s.ephemeralSession == "" {
-			err := s.createEphemeralSession(key)
-			if err != nil {
+			if s.ephemeralSession, err = s.createEphemeralSession(); err != nil {
 				return err
 			}
+		}
+
+		// If a previous session is still active for that key, use it
+		// else we use the global ephemeral session
+		if previous != "" && previous != s.ephemeralSession {
+			p.Session = previous
+		} else {
+			p.Session = s.ephemeralSession
 		}
 
 		// Create lock option with the
 		// EphemeralSession
 		lockOpts := &api.LockOptions{
 			Key:     key,
-			Session: s.ephemeralSession,
+			Session: p.Session,
 		}
 
 		// Lock and ignore if lock is held
@@ -181,11 +195,8 @@ func (s *Consul) Put(key string, value []byte, opts *WriteOptions) error {
 			lock.Lock(nil)
 		}
 
-		// Place the session on key
-		p.Session = s.ephemeralSession
-
 		// Renew the session
-		_, _, err := s.client.Session().Renew(p.Session, nil)
+		_, _, err = s.client.Session().Renew(p.Session, nil)
 		if err != nil {
 			s.ephemeralSession = ""
 			return err
