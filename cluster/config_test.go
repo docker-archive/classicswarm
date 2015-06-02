@@ -64,3 +64,20 @@ func TestAffinities(t *testing.T) {
 	assert.Len(t, config.Affinities(), 1)
 	assert.Equal(t, len(config.Affinities()), 1)
 }
+
+func TestConsolidateResourceFields(t *testing.T) {
+	for _, config := range []*ContainerConfig{
+		BuildContainerConfig(dockerclient.ContainerConfig{Memory: 4242, MemorySwap: 4343, CpuShares: 4444, Cpuset: "1-2"}),
+		BuildContainerConfig(dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{Memory: 4242, MemorySwap: 4343, CpuShares: 4444, CpusetCpus: "1-2"}}),
+	} {
+		assert.Equal(t, config.Memory, int64(4242))
+		assert.Equal(t, config.MemorySwap, int64(4343))
+		assert.Equal(t, config.CpuShares, int64(4444))
+		assert.Equal(t, config.Cpuset, "1-2")
+		assert.Equal(t, config.HostConfig.Memory, int64(4242))
+		assert.Equal(t, config.HostConfig.MemorySwap, int64(4343))
+		assert.Equal(t, config.HostConfig.CpuShares, int64(4444))
+		assert.Equal(t, config.HostConfig.CpusetCpus, "1-2")
+	}
+
+}
