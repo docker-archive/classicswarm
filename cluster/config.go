@@ -24,6 +24,42 @@ func parseEnv(e string) (bool, string, string) {
 	return false, "", ""
 }
 
+// FIXME: Temporary fix to handle forward/backward compatibility between Docker <1.6 and >=1.7
+// ContainerConfig should be handling converting to/from different docker versions
+func consolidateResourceFields(c *dockerclient.ContainerConfig) {
+	if c.Memory != c.HostConfig.Memory {
+		if c.Memory != 0 {
+			c.HostConfig.Memory = c.Memory
+		} else {
+			c.Memory = c.HostConfig.Memory
+		}
+	}
+
+	if c.MemorySwap != c.HostConfig.MemorySwap {
+		if c.Memory != 0 {
+			c.HostConfig.MemorySwap = c.MemorySwap
+		} else {
+			c.MemorySwap = c.HostConfig.MemorySwap
+		}
+	}
+
+	if c.CpuShares != c.HostConfig.CpuShares {
+		if c.CpuShares != 0 {
+			c.HostConfig.CpuShares = c.CpuShares
+		} else {
+			c.CpuShares = c.HostConfig.CpuShares
+		}
+	}
+
+	if c.Cpuset != c.HostConfig.CpusetCpus {
+		if c.Cpuset != "" {
+			c.HostConfig.CpusetCpus = c.Cpuset
+		} else {
+			c.Cpuset = c.HostConfig.CpusetCpus
+		}
+	}
+}
+
 // BuildContainerConfig creates a cluster.ContainerConfig from a dockerclient.ContainerConfig
 func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 	var (
@@ -74,6 +110,8 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 			c.Labels[SwarmLabelNamespace+".constraints"] = string(labels)
 		}
 	}
+
+	consolidateResourceFields(&c)
 
 	return &ContainerConfig{c}
 }
