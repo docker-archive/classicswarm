@@ -12,6 +12,7 @@ type Client interface {
 	Info() (*Info, error)
 	ListContainers(all, size bool, filters string) ([]Container, error)
 	InspectContainer(id string) (*ContainerInfo, error)
+	InspectImage(id string) (*ImageInfo, error)
 	CreateContainer(config *ContainerConfig, name string) (string, error)
 	ContainerLogs(id string, options *LogOptions) (io.ReadCloser, error)
 	ContainerChanges(id string) ([]*ContainerChanges, error)
@@ -20,6 +21,11 @@ type Client interface {
 	StopContainer(id string, timeout int) error
 	RestartContainer(id string, timeout int) error
 	KillContainer(id, signal string) error
+	// MonitorEvents takes options and an optional stop channel, and returns
+	// an EventOrError channel. If an error is ever sent, then no more
+	// events will be sent. If a stop channel is provided, events will stop
+	// being monitored after the stop channel is closed.
+	MonitorEvents(options *MonitorEventsOptions, stopChan <-chan struct{}) (<-chan EventOrError, error)
 	StartMonitorEvents(cb Callback, ec chan error, args ...interface{})
 	StopAllMonitorEvents()
 	StartMonitorStats(id string, cb StatCallback, ec chan error, args ...interface{})
