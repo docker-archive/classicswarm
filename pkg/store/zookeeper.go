@@ -194,21 +194,36 @@ func (s *Zookeeper) WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*
 
 // List the content of a given prefix
 func (s *Zookeeper) List(prefix string) ([]*KVPair, error) {
-	prefix = normalize(prefix)
-	entries, stat, err := s.client.Children(prefix)
+	keys, stat, err := s.client.Children(normalize(prefix))
 	if err != nil {
 		return nil, err
 	}
 	kv := []*KVPair{}
-	for _, item := range entries {
-		kv = append(kv, &KVPair{prefix, []byte(item), uint64(stat.Mzxid)})
+	for _, key := range keys {
+		// FIXME Costly Get request for each child key..
+		pair, err := s.Get(prefix + normalize(key))
+		if err != nil {
+			return nil, err
+		}
+		kv = append(kv, &KVPair{key, []byte(pair.Value), uint64(stat.Version)})
 	}
-	return kv, err
+	return kv, nil
 }
 
 // DeleteTree deletes a range of keys based on prefix
 func (s *Zookeeper) DeleteTree(prefix string) error {
-	err := s.client.Delete(normalize(prefix), -1)
+	pairs, err := s.List(prefix)
+	if err != nil {
+		return err
+	}
+	var reqs []interface{}
+	for _, pair := range pairs {
+		reqs = append(reqs, &zk.DeleteRequest{
+			Path:    normalize(prefix + "/" + pair.Key),
+			Version: -1,
+		})
+	}
+	_, err = s.client.Multi(reqs...)
 	return err
 }
 
