@@ -165,7 +165,8 @@ function start_docker() {
 		# We have to manually call `hostname` since --hostname and --net cannot
 		# be used together.
 		DOCKER_CONTAINERS[$i]=$(
-			docker_host run -d --name node-$i --privileged -it --net=host \
+			# -v /usr/local/bin -v /var/run/docker.sock are specific to mesos, so the slave can do a --volumes-from and use the docker cli
+			docker_host run -d --name node-$i --privileged -v /usr/local/bin -v /var/run/docker.sock -it --net=host \
 			${DOCKER_IMAGE}:${DOCKER_VERSION} \
 			bash -c "\
 				hostname node-$i && \
