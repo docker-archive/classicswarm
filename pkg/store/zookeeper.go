@@ -121,7 +121,7 @@ func (s *Zookeeper) Exists(key string) (bool, error) {
 // Providing a non-nil stopCh can be used to stop watching.
 func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error) {
 	fkey := normalize(key)
-	resp, meta, eventCh, err := s.client.GetW(fkey)
+	pair, err := s.Get(key)
 	if err != nil {
 		return nil, err
 	}
@@ -131,9 +131,13 @@ func (s *Zookeeper) Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, e
 	go func() {
 		defer close(watchCh)
 
-		// GetW returns the current value before setting the watch.
-		watchCh <- &KVPair{key, resp, uint64(meta.Version)}
+		// Get returns the current value before setting the watch.
+		watchCh <- pair
 		for {
+			_, _, eventCh, err := s.client.GetW(fkey)
+			if err != nil {
+				return
+			}
 			select {
 			case e := <-eventCh:
 				if e.Type == zk.EventNodeDataChanged {
