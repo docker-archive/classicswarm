@@ -303,7 +303,7 @@ func (c *Cluster) listOffers() []*mesosproto.Offer {
 }
 
 // Info gives minimal information about containers and resources on the mesos cluster
-func (c *Cluster) Info() [][2]string {
+func (c *Cluster) Info() ([][2]string, int64, int64) {
 	offers := c.listOffers()
 	info := [][2]string{
 		{"\bStrategy", c.scheduler.Strategy()},
@@ -320,7 +320,7 @@ func (c *Cluster) Info() [][2]string {
 		}
 	}
 
-	return info
+	return info, 0, 0
 }
 
 func (c *Cluster) addOffer(offer *mesosproto.Offer) {

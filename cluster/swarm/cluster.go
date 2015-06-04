@@ -498,8 +498,8 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 }
 
 // Info is exported
-func (c *Cluster) Info() [][2]string {
-	info := [][2]string{
+func (c *Cluster) Info() (info [][2]string, totalMemory int64, totalCpus int64) {
+	info = [][2]string{
 		{"\bStrategy", c.scheduler.Strategy()},
 		{"\bFilters", c.scheduler.Filters()},
 		{"\bNodes", fmt.Sprintf("%d", len(c.engines))},
@@ -519,9 +519,11 @@ func (c *Cluster) Info() [][2]string {
 		}
 		sort.Strings(labels)
 		info = append(info, [2]string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
+		totalMemory += engine.TotalMemory()
+		totalCpus += engine.TotalCpus()
 	}
 
-	return info
+	return info, totalMemory, totalCpus
 }
 
 // RANDOMENGINE returns a random engine.
