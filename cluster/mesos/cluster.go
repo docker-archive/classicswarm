@@ -303,9 +303,9 @@ func (c *Cluster) listOffers() []*mesosproto.Offer {
 }
 
 // Info gives minimal information about containers and resources on the mesos cluster
-func (c *Cluster) Info() ([][2]string, int64, int64) {
+func (c *Cluster) Info() ([][]string, int64, int64) {
 	offers := c.listOffers()
-	info := [][2]string{
+	info := [][]string{
 		{"\bStrategy", c.scheduler.Strategy()},
 		{"\bFilters", c.scheduler.Filters()},
 		{"\bOffers", fmt.Sprintf("%d", len(offers))},
@@ -314,9 +314,9 @@ func (c *Cluster) Info() ([][2]string, int64, int64) {
 	sort.Sort(offerSorter(offers))
 
 	for _, offer := range offers {
-		info = append(info, [2]string{" Offer", offer.Id.GetValue()})
+		info = append(info, []string{" Offer", offer.Id.GetValue()})
 		for _, resource := range offer.Resources {
-			info = append(info, [2]string{"  └ " + *resource.Name, fmt.Sprintf("%v", resource)})
+			info = append(info, []string{"  └ " + *resource.Name, fmt.Sprintf("%v", resource)})
 		}
 	}
 
