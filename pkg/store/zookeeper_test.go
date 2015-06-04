@@ -88,6 +88,8 @@ func TestZkWatch(t *testing.T) {
 		}
 	}()
 
+	// Check for updates
+	timeout := time.After(2 * time.Second)
 	eventCount := 1
 	for {
 		select {
@@ -105,7 +107,8 @@ func TestZkWatch(t *testing.T) {
 			if eventCount >= 4 {
 				return
 			}
-		case <-stopCh:
+		case <-timeout:
+			t.Fatal("Timeout reached")
 			return
 		}
 	}
@@ -162,6 +165,7 @@ func TestZkWatchTree(t *testing.T) {
 	}()
 
 	// Check for updates
+	timeout := time.After(2 * time.Second)
 	eventCount := 1
 	for {
 		select {
@@ -172,7 +176,8 @@ func TestZkWatchTree(t *testing.T) {
 			if eventCount >= 3 {
 				return
 			}
-		case <-stopCh:
+		case <-timeout:
+			t.Fatal("Timeout reached")
 			return
 		}
 	}

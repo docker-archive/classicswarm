@@ -88,6 +88,8 @@ func TestConsulWatch(t *testing.T) {
 		}
 	}()
 
+	// Check for updates
+	timeout := time.After(2 * time.Second)
 	eventCount := 1
 	for {
 		select {
@@ -105,7 +107,8 @@ func TestConsulWatch(t *testing.T) {
 			if eventCount >= 4 {
 				return
 			}
-		case <-stopCh:
+		case <-timeout:
+			t.Fatal("Timeout reached")
 			return
 		}
 	}
@@ -158,6 +161,7 @@ func TestConsulWatchTree(t *testing.T) {
 	}()
 
 	// Check for updates
+	timeout := time.After(2 * time.Second)
 	eventCount := 1
 	for {
 		select {
@@ -169,7 +173,8 @@ func TestConsulWatchTree(t *testing.T) {
 			if eventCount >= 4 {
 				return
 			}
-		case <-stopCh:
+		case <-timeout:
+			t.Fatal("Timeout reached")
 			return
 		}
 	}
