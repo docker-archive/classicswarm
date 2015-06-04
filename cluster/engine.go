@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"strings"
 	"sync"
@@ -262,7 +263,7 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 		// Convert the ContainerConfig from inspect into our own
 		// cluster.ContainerConfig.
 		container.Config = BuildContainerConfig(*info.Config)
-		container.Config.CpuShares = container.Config.CpuShares * 1024.0 / e.Cpus
+		container.Config.CpuShares = container.Config.CpuShares * e.Cpus / 1024.0
 
 		// Save the entire inspect back into the container.
 		container.Info = *info
@@ -376,7 +377,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	dockerConfig := config.ContainerConfig
 
 	// nb of CPUs -> real CpuShares
-	dockerConfig.CpuShares = config.CpuShares * 1024 / e.Cpus
+	dockerConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(e.Cpus)))
 
 	if id, err = client.CreateContainer(&dockerConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.
