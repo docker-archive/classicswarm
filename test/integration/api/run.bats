@@ -32,14 +32,3 @@ function teardown() {
 	# verify, container is running
 	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
 }
-
-@test "docker run not enough resources" {
-	start_docker_with_busybox 1
-	swarm_manage
-
-	run docker_swarm run -d --name test_container -m 1000g busybox ls
-	[ "$status" -ne 0 ]
-
-	run docker_swarm run -d --name test_container -c 1000 busybox ls
-	[ "$status" -ne 0 ]
-}
