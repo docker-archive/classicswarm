@@ -31,6 +31,7 @@ function teardown() {
 	start_mesos
 	swarm_manage_mesos
 	docker_swarm run -d -m 20m busybox ls
+	docker_swarm run -d -m 20m busybox ls
 }
 
 
