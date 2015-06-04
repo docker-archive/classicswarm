@@ -58,6 +58,7 @@ type HostConfig struct {
 	RestartPolicy   RestartPolicy
 	Ulimits         []Ulimit
 	LogConfig       LogConfig
+	ExtraHosts	[]string
 }
 
 type ExecConfig struct {
