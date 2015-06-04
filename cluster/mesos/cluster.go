@@ -2,6 +2,7 @@ package mesos
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -397,7 +398,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	}
 	c.Unlock()
 	// block until we get the container
-	finished, err := t.monitor()
+	finished, data, err := t.monitor()
 	taskID := t.TaskInfo.TaskId.GetValue()
 	if err != nil {
 		//remove task
@@ -408,7 +409,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	if !finished {
 		go func() {
 			for {
-				finished, err := t.monitor()
+				finished, _, err := t.monitor()
 				if err != nil {
 					// TODO do a better log by sending proper error message
 					log.Error(err)
@@ -423,18 +424,29 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	}
 
 	// Register the container immediately while waiting for a state refresh.
-	// Force a state refresh to pick up the newly created container.
-	// FIXME: unexport this method, see FIXME in engine.go
+
+	// In mesos 0.23+ the docker inspect will be sent back in the taskStatus.Data
+	// We can use this to find the right container.
+	inspect := []dockerclient.ContainerInfo{}
+	if data != nil && json.Unmarshal(data, &inspect) != nil && len(inspect) == 1 {
+		container := &cluster.Container{Container: dockerclient.Container{Id: inspect[0].Id}, Engine: s.engine}
+		if container.Refresh() == nil {
+			t.container <- container
+			return true
+		}
+	}
+
+	log.Debug("Cannot parse docker info from task status, please upgrade Mesos to the last version")
+	// For mesos <= 0.22 we fallback to a full refresh + using labels
+	// TODO: once 0.23 or 0.24 is released, remove all this block of code as it
+	// doesn't scale very well.
 	s.engine.RefreshContainers(true)
 
-	// TODO: We have to return the right container that was just created.
-	// Once we receive the ContainerID from the executor.
 	for _, container := range s.engine.Containers() {
 		if container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"] == taskID {
 			t.container <- container
 			return true
 		}
-		// TODO save in store
 	}
 
 	t.error <- fmt.Errorf("Container failed to create")
