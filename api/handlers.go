@@ -25,28 +25,17 @@ const APIVERSION = "1.16"
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	clusterInfo, totalMemory, totalCpus := c.cluster.Info()
-	info := struct {
-		Containers      int
-		Images          int
-		DriverStatus    [][2]string
-		NEventsListener int
-		Debug           bool
-		MemoryLimit     bool
-		SwapLimit       bool
-		IPv4Forwarding  bool
-		NCPU            int64
-		MemTotal        int64
-	}{
-		len(c.cluster.Containers()),
-		len(c.cluster.Images()),
-		clusterInfo,
-		c.eventsHandler.Size(),
-		c.debug,
-		true,
-		true,
-		true,
-		totalCpus,
-		totalMemory,
+	info := dockerclient.Info{
+		Containers:      int64(len(c.cluster.Containers())),
+		Images:          int64(len(c.cluster.Images())),
+		DriverStatus:    clusterInfo,
+		NEventsListener: int64(c.eventsHandler.Size()),
+		Debug:           c.debug,
+		MemoryLimit:     true,
+		SwapLimit:       true,
+		IPv4Forwarding:  true,
+		NCPU:            totalCpus,
+		MemTotal:        totalMemory,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -55,16 +44,9 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /version
 func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
-	version := struct {
-		Version    string
-		APIVersion string `json:"ApiVersion"`
-		GoVersion  string
-		GitCommit  string
-		Os         string
-		Arch       string
-	}{
+	version := dockerclient.Version{
 		Version:    "swarm/" + version.VERSION,
-		APIVersion: APIVERSION,
+		ApiVersion: APIVERSION,
 		GoVersion:  runtime.Version(),
 		GitCommit:  version.GITCOMMIT,
 		Os:         runtime.GOOS,

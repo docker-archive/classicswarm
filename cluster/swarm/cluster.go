@@ -498,8 +498,8 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 }
 
 // Info is exported
-func (c *Cluster) Info() (info [][2]string, totalMemory int64, totalCpus int64) {
-	info = [][2]string{
+func (c *Cluster) Info() (info [][]string, totalMemory int64, totalCpus int64) {
+	info = [][]string{
 		{"\bStrategy", c.scheduler.Strategy()},
 		{"\bFilters", c.scheduler.Filters()},
 		{"\bNodes", fmt.Sprintf("%d", len(c.engines))},
@@ -509,16 +509,16 @@ func (c *Cluster) Info() (info [][2]string, totalMemory int64, totalCpus int64) 
 	sort.Sort(cluster.EngineSorter(engines))
 
 	for _, engine := range engines {
-		info = append(info, [2]string{engine.Name, engine.Addr})
-		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
-		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
-		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
+		info = append(info, []string{engine.Name, engine.Addr})
+		info = append(info, []string{" └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
+		info = append(info, []string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
+		info = append(info, []string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
 		labels := make([]string, 0, len(engine.Labels))
 		for k, v := range engine.Labels {
 			labels = append(labels, k+"="+v)
 		}
 		sort.Strings(labels)
-		info = append(info, [2]string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
+		info = append(info, []string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
 		totalMemory += engine.TotalMemory()
 		totalCpus += engine.TotalCpus()
 	}
