@@ -222,13 +222,7 @@ func testLockUnlock(t *testing.T, kv Store) {
 	// Lock should successfully succeed or block
 	lockChan, err := lock.Lock()
 	assert.NoError(t, err)
-
-	// If Zookeeper, chan is Nil and its OK
-	if _, ok := kv.(*Zookeeper); ok {
-		assert.Nil(t, lockChan)
-	} else {
-		assert.NotNil(t, lockChan)
-	}
+	assert.NotNil(t, lockChan)
 
 	// Get should work
 	pair, err := kv.Get(key)
