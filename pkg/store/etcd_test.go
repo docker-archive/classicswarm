@@ -12,7 +12,7 @@ func makeEtcdClient(t *testing.T) Store {
 		ETCD,
 		[]string{client},
 		&Config{
-			ConnectionTimeout: 10 * time.Second,
+			ConnectionTimeout: 3 * time.Second,
 			EphemeralTTL:      2 * time.Second,
 		},
 	)

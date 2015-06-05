@@ -428,3 +428,8 @@ func (l *etcdLock) Unlock() error {
 	}
 	return nil
 }
+
+// Close closes the client connection
+func (s *Etcd) Close() {
+	return
+}

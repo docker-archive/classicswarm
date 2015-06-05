@@ -12,7 +12,7 @@ func makeZkClient(t *testing.T) Store {
 		ZK,
 		[]string{client},
 		&Config{
-			ConnectionTimeout: 10 * time.Second,
+			ConnectionTimeout: 3 * time.Second,
 			EphemeralTTL:      2 * time.Second,
 		},
 	)
@@ -32,7 +32,7 @@ func TestZkStore(t *testing.T) {
 	testAtomicPut(t, kv)
 	testAtomicDelete(t, kv)
 	testLockUnlock(t, kv)
-	// testPutEphemeral(t, kv)
+	testPutEphemeral(t, kv)
 	testList(t, kv)
 	testDeleteTree(t, kv)
 }

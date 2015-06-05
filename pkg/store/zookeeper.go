@@ -304,3 +304,8 @@ func (l *zookeeperLock) Lock() (<-chan struct{}, error) {
 func (l *zookeeperLock) Unlock() error {
 	return l.lock.Unlock()
 }
+
+// Close closes the client connection
+func (s *Zookeeper) Close() {
+	s.client.Close()
+}
