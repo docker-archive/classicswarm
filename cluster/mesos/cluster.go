@@ -302,10 +302,22 @@ func (c *Cluster) listOffers() []*mesosproto.Offer {
 	return list
 }
 
+// TotalMemory return the total memory of the cluster
+func (c *Cluster) TotalMemory() int64 {
+	// TODO: use current offers
+	return 0
+}
+
+// TotalCpus return the total memory of the cluster
+func (c *Cluster) TotalCpus() int64 {
+	// TODO: use current offers
+	return 0
+}
+
 // Info gives minimal information about containers and resources on the mesos cluster
-func (c *Cluster) Info() [][2]string {
+func (c *Cluster) Info() [][]string {
 	offers := c.listOffers()
-	info := [][2]string{
+	info := [][]string{
 		{"\bStrategy", c.scheduler.Strategy()},
 		{"\bFilters", c.scheduler.Filters()},
 		{"\bOffers", fmt.Sprintf("%d", len(offers))},
@@ -314,9 +326,9 @@ func (c *Cluster) Info() [][2]string {
 	sort.Sort(offerSorter(offers))
 
 	for _, offer := range offers {
-		info = append(info, [2]string{" Offer", offer.Id.GetValue()})
+		info = append(info, []string{" Offer", offer.Id.GetValue()})
 		for _, resource := range offer.Resources {
-			info = append(info, [2]string{"  └ " + *resource.Name, fmt.Sprintf("%v", resource)})
+			info = append(info, []string{"  └ " + *resource.Name, fmt.Sprintf("%v", resource)})
 		}
 	}
 
