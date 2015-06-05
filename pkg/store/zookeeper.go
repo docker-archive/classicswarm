@@ -296,11 +296,16 @@ func (l *zookeeperLock) Lock() (<-chan struct{}, error) {
 		_, err = l.client.Set(l.key, l.value, -1)
 	}
 
-	return nil, err
+	return make(chan struct{}), err
 }
 
 // Unlock released the lock. It is an error to call this
 // if the lock is not currently held.
 func (l *zookeeperLock) Unlock() error {
 	return l.lock.Unlock()
+}
+
+// Close closes the client connection
+func (s *Zookeeper) Close() {
+	s.client.Close()
 }
