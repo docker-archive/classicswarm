@@ -296,7 +296,7 @@ func (l *zookeeperLock) Lock() (<-chan struct{}, error) {
 		_, err = l.client.Set(l.key, l.value, -1)
 	}
 
-	return nil, err
+	return make(chan struct{}), err
 }
 
 // Unlock released the lock. It is an error to call this
