@@ -28,15 +28,7 @@ func makeConsulClient(t *testing.T) Store {
 func TestConsulStore(t *testing.T) {
 	kv := makeConsulClient(t)
 
-	testPutGetDelete(t, kv)
-	testWatch(t, kv)
-	testWatchTree(t, kv)
-	testAtomicPut(t, kv)
-	testAtomicDelete(t, kv)
-	testLockUnlock(t, kv)
-	testPutEphemeral(t, kv)
-	testList(t, kv)
-	testDeleteTree(t, kv)
+	testStore(t, kv)
 }
 
 func TestCreateEphemeralSession(t *testing.T) {
