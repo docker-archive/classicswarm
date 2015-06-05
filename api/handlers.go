@@ -24,18 +24,17 @@ const APIVERSION = "1.16"
 
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
-	info := struct {
-		Containers      int
-		Images          int
-		DriverStatus    [][2]string
-		NEventsListener int
-		Debug           bool
-	}{
-		len(c.cluster.Containers()),
-		len(c.cluster.Images()),
-		c.cluster.Info(),
-		c.eventsHandler.Size(),
-		c.debug,
+	info := dockerclient.Info{
+		Containers:      int64(len(c.cluster.Containers())),
+		Images:          int64(len(c.cluster.Images())),
+		DriverStatus:    c.cluster.Info(),
+		NEventsListener: int64(c.eventsHandler.Size()),
+		Debug:           c.debug,
+		MemoryLimit:     true,
+		SwapLimit:       true,
+		IPv4Forwarding:  true,
+		NCPU:            c.cluster.TotalCpus(),
+		MemTotal:        c.cluster.TotalMemory(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -44,16 +43,9 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /version
 func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
-	version := struct {
-		Version    string
-		APIVersion string `json:"ApiVersion"`
-		GoVersion  string
-		GitCommit  string
-		Os         string
-		Arch       string
-	}{
+	version := dockerclient.Version{
 		Version:    "swarm/" + version.VERSION,
-		APIVersion: APIVERSION,
+		ApiVersion: APIVERSION,
 		GoVersion:  runtime.Version(),
 		GitCommit:  version.GITCOMMIT,
 		Os:         runtime.GOOS,

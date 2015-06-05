@@ -497,9 +497,27 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 	return out
 }
 
-// Info is exported
-func (c *Cluster) Info() [][2]string {
-	info := [][2]string{
+// TotalMemory return the total memory of the cluster
+func (c *Cluster) TotalMemory() int64 {
+	var totalMemory int64
+	for _, engine := range c.engines {
+		totalMemory += engine.TotalMemory()
+	}
+	return totalMemory
+}
+
+// TotalCpus return the total memory of the cluster
+func (c *Cluster) TotalCpus() int64 {
+	var totalCpus int64
+	for _, engine := range c.engines {
+		totalCpus += engine.TotalCpus()
+	}
+	return totalCpus
+}
+
+// Info returns some info about the cluster, like nb or containers / images
+func (c *Cluster) Info() [][]string {
+	info := [][]string{
 		{"\bStrategy", c.scheduler.Strategy()},
 		{"\bFilters", c.scheduler.Filters()},
 		{"\bNodes", fmt.Sprintf("%d", len(c.engines))},
@@ -509,16 +527,16 @@ func (c *Cluster) Info() [][2]string {
 	sort.Sort(cluster.EngineSorter(engines))
 
 	for _, engine := range engines {
-		info = append(info, [2]string{engine.Name, engine.Addr})
-		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
-		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
-		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
+		info = append(info, []string{engine.Name, engine.Addr})
+		info = append(info, []string{" └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
+		info = append(info, []string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
+		info = append(info, []string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
 		labels := make([]string, 0, len(engine.Labels))
 		for k, v := range engine.Labels {
 			labels = append(labels, k+"="+v)
 		}
 		sort.Strings(labels)
-		info = append(info, [2]string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
+		info = append(info, []string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
 	}
 
 	return info
