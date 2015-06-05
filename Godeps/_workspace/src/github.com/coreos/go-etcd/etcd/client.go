@@ -306,6 +306,7 @@ func (c *Client) GetCluster() []string {
 }
 
 // SyncCluster updates the cluster information using the internal machine list.
+// If no members are found, the intenral machine list is left untouched.
 func (c *Client) SyncCluster() bool {
 	return c.internalSyncCluster(c.cluster.Machines)
 }
@@ -356,7 +357,6 @@ func (c *Client) internalSyncCluster(machines []string) bool {
 				urls = append(urls, m.ClientURLs...)
 			}
 
-			// update Machines List
 			members = strings.Join(urls, ",")
 		}
 

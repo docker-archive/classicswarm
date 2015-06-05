@@ -28,6 +28,7 @@ var (
 		http.StatusNotFound:           true,
 		http.StatusPreconditionFailed: true,
 		http.StatusForbidden:          true,
+		http.StatusUnauthorized:       true,
 	}
 )
 
