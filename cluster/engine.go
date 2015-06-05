@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"strings"
 	"sync"
@@ -262,9 +263,10 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 		// Convert the ContainerConfig from inspect into our own
 		// cluster.ContainerConfig.
 		container.Config = BuildContainerConfig(*info.Config)
+
 		// FIXME remove "duplicate" lines and move this to cluster/config.go
-		container.Config.CpuShares = container.Config.CpuShares * 1024.0 / e.Cpus
-		container.Config.HostConfig.CpuShares = container.Config.HostConfig.CpuShares * 1024.0 / e.Cpus
+		container.Config.CpuShares = container.Config.CpuShares * e.Cpus / 1024.0
+		container.Config.HostConfig.CpuShares = container.Config.CpuShares
 
 		// Save the entire inspect back into the container.
 		container.Info = *info
@@ -378,9 +380,10 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	dockerConfig := config.ContainerConfig
 
 	// nb of CPUs -> real CpuShares
+
 	// FIXME remove "duplicate" lines and move this to cluster/config.go
-	dockerConfig.CpuShares = config.CpuShares * 1024 / e.Cpus
-	dockerConfig.HostConfig.CpuShares = config.HostConfig.CpuShares * 1024 / e.Cpus
+	dockerConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(e.Cpus)))
+	dockerConfig.HostConfig.CpuShares = dockerConfig.CpuShares
 
 	if id, err = client.CreateContainer(&dockerConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.
