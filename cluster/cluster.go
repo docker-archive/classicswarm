@@ -51,7 +51,13 @@ type Cluster interface {
 
 	// Return some info about the cluster, like nb or containers / images
 	// It is pretty open, so the implementation decides what to return.
-	Info() ([][]string, int64, int64)
+	Info() [][]string
+
+	// Return the total memory of the cluster
+	TotalMemory() int64
+
+	// Return the number of CPUs in the cluster
+	TotalCpus() int64
 
 	// Register an event handler for cluster-wide events.
 	RegisterEventHandler(h EventHandler) error

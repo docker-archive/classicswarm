@@ -497,9 +497,27 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 	return out
 }
 
-// Info is exported
-func (c *Cluster) Info() (info [][]string, totalMemory int64, totalCpus int64) {
-	info = [][]string{
+// TotalMemory return the total memory of the cluster
+func (c *Cluster) TotalMemory() int64 {
+	var totalMemory int64
+	for _, engine := range c.engines {
+		totalMemory += engine.TotalMemory()
+	}
+	return totalMemory
+}
+
+// TotalCpus return the total memory of the cluster
+func (c *Cluster) TotalCpus() int64 {
+	var totalCpus int64
+	for _, engine := range c.engines {
+		totalCpus += engine.TotalCpus()
+	}
+	return totalCpus
+}
+
+// Info returns some info about the cluster, like nb or containers / images
+func (c *Cluster) Info() [][]string {
+	info := [][]string{
 		{"\bStrategy", c.scheduler.Strategy()},
 		{"\bFilters", c.scheduler.Filters()},
 		{"\bNodes", fmt.Sprintf("%d", len(c.engines))},
@@ -519,11 +537,9 @@ func (c *Cluster) Info() (info [][]string, totalMemory int64, totalCpus int64) {
 		}
 		sort.Strings(labels)
 		info = append(info, []string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
-		totalMemory += engine.TotalMemory()
-		totalCpus += engine.TotalCpus()
 	}
 
-	return info, totalMemory, totalCpus
+	return info
 }
 
 // RANDOMENGINE returns a random engine.
