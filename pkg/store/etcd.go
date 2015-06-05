@@ -28,6 +28,9 @@ type etcdLock struct {
 const (
 	defaultLockTTL    = 20 * time.Second
 	defaultUpdateTime = 5 * time.Second
+
+	// periodicSync is the time between each call to SyncCluster
+	periodicSync = 10 * time.Minute
 )
 
 // InitializeEtcd creates a new Etcd client given
@@ -51,6 +54,12 @@ func InitializeEtcd(addrs []string, options *Config) (Store, error) {
 		}
 	}
 
+	go func() {
+		for {
+			s.client.SyncCluster()
+			time.Sleep(periodicSync)
+		}
+	}()
 	return s, nil
 }
 

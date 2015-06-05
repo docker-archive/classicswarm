@@ -32,8 +32,8 @@
 		},
 		{
 			"ImportPath": "github.com/coreos/go-etcd/etcd",
-			"Comment": "v2.0.0-7-g73a8ef7",
-			"Rev": "73a8ef737e8ea002281a28b4cb92a1de121ad4c6"
+			"Comment": "v2.0.0-11-gcc90c7b",
+			"Rev": "cc90c7b091275e606ad0ca7102a23fb2072f3f5e"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/ioutils",
