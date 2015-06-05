@@ -396,3 +396,8 @@ func (s *Consul) AtomicDelete(key string, previous *KVPair) (bool, error) {
 	}
 	return true, nil
 }
+
+// Close closes the client connection
+func (s *Consul) Close() {
+	return
+}

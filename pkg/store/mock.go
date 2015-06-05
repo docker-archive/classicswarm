@@ -102,3 +102,8 @@ func (l *MockLock) Unlock() error {
 	args := l.Mock.Called()
 	return args.Error(0)
 }
+
+// Close mock
+func (s *Mock) Close() {
+	return
+}

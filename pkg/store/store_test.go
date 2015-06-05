@@ -247,11 +247,19 @@ func testLockUnlock(t *testing.T, kv Store) {
 	assert.NotEqual(t, pair.LastIndex, 0)
 }
 
+// FIXME Gracefully handle Zookeeper
 func testPutEphemeral(t *testing.T, kv Store) {
-	firstKey := "foo"
+	// Zookeeper: initialize client here (Close() hangs otherwise)
+	zookeeper := false
+	if _, ok := kv.(*Zookeeper); ok {
+		zookeeper = true
+		kv = makeZkClient(t)
+	}
+
+	firstKey := "first"
 	firstValue := []byte("foo")
 
-	secondKey := "bar"
+	secondKey := "second"
 	secondValue := []byte("bar")
 
 	// Put the first key with the Ephemeral flag
@@ -272,8 +280,18 @@ func testPutEphemeral(t *testing.T, kv Store) {
 	assert.NoError(t, err)
 	assert.NotNil(t, pair)
 
+	// Zookeeper: close client connection
+	if zookeeper {
+		kv.Close()
+	}
+
 	// Let the session expire
-	time.Sleep(6 * time.Second)
+	time.Sleep(5 * time.Second)
+
+	// Zookeeper: re-create the client
+	if zookeeper {
+		kv = makeZkClient(t)
+	}
 
 	// Get on firstKey shouldn't work
 	pair, err = kv.Get(firstKey)

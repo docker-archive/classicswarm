@@ -95,6 +95,9 @@ type Store interface {
 
 	// Atomic delete of a single value
 	AtomicDelete(key string, previous *KVPair) (bool, error)
+
+	// Close the store connection
+	Close()
 }
 
 // KVPair represents {Key, Value, Lastindex} tuple
