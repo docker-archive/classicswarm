@@ -7,6 +7,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func testStore(t *testing.T, kv Store) {
+	testPutGetDelete(t, kv)
+	testWatch(t, kv)
+	testWatchTree(t, kv)
+	testAtomicPut(t, kv)
+	testAtomicDelete(t, kv)
+	testLockUnlock(t, kv)
+	testPutEphemeral(t, kv)
+	testList(t, kv)
+	testDeleteTree(t, kv)
+}
+
 func testPutGetDelete(t *testing.T, kv Store) {
 	key := "foo"
 	value := []byte("bar")
