@@ -1,10 +1,15 @@
----
-page_title: Docker Swarm Release Notes
-page_description: Swarm release notes
-page_keywords: docker, swarm, clustering, discovery, release, notes
----
+<!--[metadata]>
++++
+title = "Docker Swarm"
+description = "Docker Swarm release notes"
+keywords = ["docker, swarm, clustering, discovery, release,  notes"]
+[menu.main]
+parent = "smn_release_notes"	
+weight = 5
++++
+<![end-metadata]-->
 
-# Docker Swarm Release Notes 
+# Docker Swarm
 
 This page shows the cumulative release notes across all releases of Docker Swarm.
 
