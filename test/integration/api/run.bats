@@ -27,8 +27,38 @@ function teardown() {
 	swarm_manage
 
 	# run
-	docker_swarm run -d --name test_container -c 1 busybox sleep 100
+	docker_swarm run -d --name test_container \
+			 --add-host=host-test:127.0.0.1 \
+			 --cap-add=NET_ADMIN \
+			 --cap-drop=MKNOD \
+			 --label=com.example.version=1.0 \
+			 --read-only=true \
+			 --ulimit=nofile=10 \
+			 --device=/dev/loop0:/dev/loop0 \
+			 --ipc=host \
+			 --pid=host \
+			 busybox sleep 1000
 
 	# verify, container is running
 	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
+
+	run docker_swarm inspect test_container
+	# label
+	[[ "${output}" == *"com.example.version"* ]]
+	# add-host
+	[[ "${output}" == *"host-test:127.0.0.1"* ]]
+	# cap-add
+	[[ "${output}" == *"NET_ADMIN"* ]]
+	# cap-drop
+	[[ "${output}" == *"MKNOD"* ]]
+	# read-only
+	[[ "${output}" == *"\"ReadonlyRootfs\": true"* ]]
+	# ulimit
+	[[ "${output}" == *"nofile"* ]]
+	# device
+	[[ "${output}" == *"/dev/loop0"* ]]
+	# ipc
+	[[ "${output}" == *"\"IpcMode\": \"host\""* ]]
+	# pid
+	[[ "${output}" == *"\"PidMode\": \"host\""* ]]
 }
