@@ -1,8 +1,12 @@
----
-page_title: Docker Swarm API
-page_description: Swarm API
-page_keywords: docker, swarm, clustering, api
----
+<!--[metadata]>
++++
+title = "Docker Swarm API"
+description = "Swarm API"
+keywords = ["docker, swarm, clustering,  api"]
+[menu.main]
+parent="smn_swarm_ref"
++++
+<![end-metadata]-->
 
 # Docker Swarm API
 
