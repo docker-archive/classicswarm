@@ -16,13 +16,36 @@ function teardown() {
 	[[ "${lines[0]}" == *"no resources available to schedule container"* ]]
 
 	# The number of running containers should be still 0.
-	run docker_swarm ps -n 2
+	run docker_swarm ps -a
 	[ "${#lines[@]}" -eq 1 ]
 
 	# Node is still 1
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Nodes: 1"* ]]
+
+	docker_swarm run --name container_test -m 20m busybox sh
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved Memory: 20 MiB"* ]]
+
+	docker_swarm run --name container_test2 -m 22m busybox sh
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved Memory: 42 MiB"* ]]
+
+	docker_swarm rm container_test
+
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved Memory: 22 MiB"* ]]
+
+	docker_swarm rm container_test2
+
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved Memory: 0 B"* ]]
+
 }
 
 @test "resource limitation: cpu" {
@@ -34,11 +57,22 @@ function teardown() {
 	[[ "${lines[0]}" == *"no resources available to schedule container"* ]]
 
 	# The number of running containers should be still 0.
-	run docker_swarm ps -n 2
+	run docker_swarm ps -a
 	[ "${#lines[@]}" -eq 1 ]
 
 	# Node is still 1
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Nodes: 1"* ]]
+
+	docker_swarm run --name container_test -c 1 busybox sh
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved CPUs: 1"* ]]
+
+	docker_swarm rm container_test
+
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved CPUs: 0"* ]]
 }
