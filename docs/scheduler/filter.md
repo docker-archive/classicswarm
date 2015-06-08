@@ -154,7 +154,7 @@ You can schedule a container to run only on nodes where a specific image is alre
 
 
 Only `node-1` and `node-3` have the `redis` image. Specify a `-e
-affinity:image=redis` filter to schedule several additional containers to run on
+affinity:image==redis` filter to schedule several additional containers to run on
 these nodes.
 
 
