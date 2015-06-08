@@ -8,7 +8,7 @@ function teardown() {
 }
 
 @test "resource limitation: memory" {
-	start_docker_with_busybox 1
+	start_docker_with_busybox 2
 	swarm_manage
 
 	run docker_swarm run -m 1000G busybox sh
@@ -19,37 +19,46 @@ function teardown() {
 	run docker_swarm ps -a
 	[ "${#lines[@]}" -eq 1 ]
 
-	# Node is still 1
 	run docker_swarm info
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"Nodes: 1"* ]]
+	[[ "${output}" == *"Nodes: 2"* ]]
 
-	docker_swarm run --name container_test -m 20m busybox sh
+	docker_swarm run --name container_test -e constraint:node==node-0 -m 20m busybox sh
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved Memory: 20 MiB"* ]]
+	[[ "${output}" == *"Reserved Memory: 0 B"* ]]
 
-	docker_swarm run --name container_test2 -m 22m busybox sh
+	docker_swarm run --name container_test2 -e constraint:node==node-0 -m 22m busybox sh
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved Memory: 42 MiB"* ]]
+	[[ "${output}" == *"Reserved Memory: 0 B"* ]]
+
+	docker_swarm run --name container_test3 -e constraint:node==node-1 -m 18m busybox sh
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved Memory: 42 MiB"* ]]
+	[[ "${output}" == *"Reserved Memory: 18 MiB"* ]]
 
 	docker_swarm rm container_test
 
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved Memory: 22 MiB"* ]]
+	[[ "${output}" == *"Reserved Memory: 18 MiB"* ]]
 
 	docker_swarm rm container_test2
 
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved Memory: 0 B"* ]]
+	[[ "${output}" == *"Reserved Memory: 18 MiB"* ]]
 
 }
 
 @test "resource limitation: cpu" {
-	start_docker_with_busybox 1
+	start_docker_with_busybox 2
 	swarm_manage
 
 	run docker_swarm run -c 10240 busybox sh
@@ -60,15 +69,15 @@ function teardown() {
 	run docker_swarm ps -a
 	[ "${#lines[@]}" -eq 1 ]
 
-	# Node is still 1
 	run docker_swarm info
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"Nodes: 1"* ]]
+	[[ "${output}" == *"Nodes: 2"* ]]
 
 	docker_swarm run --name container_test -c 1 busybox sh
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved CPUs: 1"* ]]
+	[[ "${output}" == *"Reserved CPUs: 0"* ]]
 
 	docker_swarm rm container_test
 
