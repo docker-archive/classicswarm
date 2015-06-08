@@ -154,7 +154,7 @@ $ docker -H node-3:2375 pull redis
 ```
 
 Only `node-1` and `node-3` have the `redis` image. Specify a `-e
-affinity:image=redis` filter to schedule several additional containers to run on
+affinity:image==redis` filter to schedule several additional containers to run on
 these nodes.
 
 ```bash
