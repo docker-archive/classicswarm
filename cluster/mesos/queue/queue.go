@@ -21,27 +21,23 @@ func NewQueue() *Queue {
 
 // Add tries to Do the item, if it's not possible, add the item to the queue for future tries
 func (q *Queue) Add(item Item) {
-	q.Lock()
-	defer q.Unlock()
-
 	if !item.Do() {
+		q.Lock()
 		q.items[item.ID()] = item
+		q.Unlock()
 	}
 }
 
 // Remove an item from the queue
 func (q *Queue) Remove(items ...Item) {
 	q.Lock()
-	defer q.Unlock()
-
 	q.remove(items...)
+	q.Unlock()
 }
 
 // Process tries to Do all the items in the queue and remove the items successfully done
 func (q *Queue) Process() {
 	q.Lock()
-	defer q.Unlock()
-
 	toRemove := []Item{}
 	for _, item := range q.items {
 		if item.Do() {
@@ -50,6 +46,7 @@ func (q *Queue) Process() {
 	}
 
 	q.remove(toRemove...)
+	q.Unlock()
 }
 
 func (q *Queue) remove(items ...Item) {
