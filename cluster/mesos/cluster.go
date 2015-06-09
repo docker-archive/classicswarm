@@ -397,7 +397,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 		for _, offer := range s.offers {
 			c.removeOffer(offer)
 		}
-		s.Unlock()
+		c.Unlock()
 		t.error <- err
 		return true
 	}
