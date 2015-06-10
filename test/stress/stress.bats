@@ -50,14 +50,13 @@ function wait_containers_exit {
 	# Start N engines.
 	start_docker_with_busybox $NODES
 
-	# Start the manager and wait until all nodes join the cluster.
+	# Start the manager
 	swarm_manage
-	wait_until_swarm_joined $NODES
 
 	# Verify that Swarm can see all the nodes.
 	run docker_swarm info
 	[ "$status" -eq 0 ]
-	[[ "${lines[3]}" == *"Nodes: $NODES" ]]
+	[[ "$output" =~ "Nodes: $NODES" ]]
 
 	# Start the containers (random sleeps).
 	start_containers $CONTAINERS
