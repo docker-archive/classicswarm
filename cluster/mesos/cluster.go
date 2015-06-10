@@ -259,18 +259,6 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	return nil
 }
 
-func scalarResourceValue(offers map[string]*mesosproto.Offer, name string) float64 {
-	var value float64
-	for _, offer := range offers {
-		for _, resource := range offer.Resources {
-			if *resource.Name == name {
-				value += *resource.Scalar.Value
-			}
-		}
-	}
-	return value
-}
-
 // listNodes returns all the nodess in the cluster.
 func (c *Cluster) listNodes() []*node.Node {
 	c.RLock()
@@ -280,9 +268,9 @@ func (c *Cluster) listNodes() []*node.Node {
 	for _, s := range c.slaves {
 		n := node.NewNode(s.engine)
 		n.ID = s.id
-		n.TotalCpus = int64(scalarResourceValue(s.offers, "cpus"))
+		n.TotalCpus = int64(sumScalarResourceValue(s.offers, "cpus"))
 		n.UsedCpus = 0
-		n.TotalMemory = int64(scalarResourceValue(s.offers, "mem")) * 1024 * 1024
+		n.TotalMemory = int64(sumScalarResourceValue(s.offers, "mem")) * 1024 * 1024
 		n.UsedMemory = 0
 		out = append(out, n)
 	}
@@ -328,7 +316,7 @@ func (c *Cluster) Info() [][]string {
 	for _, offer := range offers {
 		info = append(info, []string{" Offer", offer.Id.GetValue()})
 		for _, resource := range offer.Resources {
-			info = append(info, []string{"  └ " + *resource.Name, fmt.Sprintf("%v", resource)})
+			info = append(info, []string{"  └ " + resource.GetName(), formatResource(resource)})
 		}
 	}
 
