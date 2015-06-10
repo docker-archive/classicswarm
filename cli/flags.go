@@ -122,4 +122,15 @@ var (
 		Name:  "leader-election",
 		Usage: "Enable cluster leader election between Swarm managers",
 	}
+
+	flUsername = cli.StringFlag{
+		Name:   "username, u",
+		Usage:  "DockerHub username",
+		EnvVar: "DOCKERHUB_USERNAME",
+	}
+	flPassword = cli.StringFlag{
+		Name:   "password, p",
+		Usage:  "DockerHub password",
+		EnvVar: "DOCKERHUB_PASSWORD",
+	}
 )
