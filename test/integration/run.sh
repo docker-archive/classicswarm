@@ -14,7 +14,7 @@ INTEGRATION_IMAGE=${INTEGRATION_IMAGE:-dockerswarm/swarm-test-env}
 
 # Start the integration tests in a Docker container.
 ID=$(docker run -d -t --privileged \
-	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \ # this is specific to mesos
+	-v /sys/fs/cgroup:/sys/fs/cgroup:ro `# this is specific to mesos` \
 	-v ${SWARM_ROOT}:/go/src/github.com/docker/swarm \
 	-e "DOCKER_IMAGE=$DOCKER_IMAGE" \
 	-e "DOCKER_VERSION=$DOCKER_VERSION" \
