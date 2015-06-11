@@ -10,11 +10,11 @@ The discovery service is still in alpha stage and currently hosted at `https://d
 `<- <token>`
 
 #####Add new nodes to a cluster
-`-> POST https://discovery-stage.hub.docker.com/v1/clusters/<token> Request body: "<ip>:<port1>"`
+`-> POST https://discovery-stage.hub.docker.com/v1/clusters/<token>?ttl=<ttl> Request body: "<ip>:<port1>"`
 
 `<- OK`
 
-`-> POST https://discovery-stage.hub.docker.com/v1/clusters/<token> Request body: "<ip>:<port2>")`
+`-> POST https://discovery-stage.hub.docker.com/v1/clusters/<token>?ttl=<ttl> Request body: "<ip>:<port2>")`
 
 `<- OK`
 
