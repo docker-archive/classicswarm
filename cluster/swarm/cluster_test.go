@@ -3,13 +3,14 @@ package swarm
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"testing"
+
 	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/mockclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"io"
-	"testing"
 )
 
 type nopCloser struct {
@@ -32,6 +33,10 @@ var (
 		KernelVersion:   "1.2.3",
 		OperatingSystem: "golang",
 		Labels:          []string{"foo=bar"},
+	}
+
+	mockVersion = &dockerclient.Version{
+		Version: "1.6.2",
 	}
 )
 
@@ -119,6 +124,7 @@ func TestImportImage(t *testing.T) {
 	// create mock client
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
+	client.On("Version").Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
@@ -166,6 +172,7 @@ func TestLoadImage(t *testing.T) {
 	// create mock client
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
+	client.On("Version").Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
