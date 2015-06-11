@@ -11,28 +11,31 @@ type ContainerConfig struct {
 	Hostname        string
 	Domainname      string
 	User            string
-	Memory          int64
-	MemorySwap      int64
-	CpuShares       int64
-	Cpuset          string
 	AttachStdin     bool
 	AttachStdout    bool
 	AttachStderr    bool
-	PortSpecs       []string
 	ExposedPorts    map[string]struct{}
-	MacAddress      string
 	Tty             bool
 	OpenStdin       bool
 	StdinOnce       bool
 	Env             []string
 	Cmd             []string
 	Image           string
-	Labels          map[string]string
 	Volumes         map[string]struct{}
+	VolumeDriver    string
 	WorkingDir      string
 	Entrypoint      []string
 	NetworkDisabled bool
+	MacAddress      string
 	OnBuild         []string
+	Labels          map[string]string
+
+	// FIXME: Compatibility
+	Memory     int64
+	MemorySwap int64
+	CpuShares  int64
+	Cpuset     string
+	PortSpecs  []string
 
 	// This is used only by the create command
 	HostConfig HostConfig
@@ -45,19 +48,39 @@ type HostConfig struct {
 	Memory          int64
 	MemorySwap      int64
 	CpuShares       int64
+	CpuPeriod       int64
 	CpusetCpus      string
+	CpusetMems      string
+	CpuQuota        int64
+	BlkioWeight     int64
+	OomKillDisable  bool
 	Privileged      bool
 	PortBindings    map[string][]PortBinding
 	Links           []string
 	PublishAllPorts bool
 	Dns             []string
 	DnsSearch       []string
+	ExtraHosts      []string
 	VolumesFrom     []string
-	SecurityOpt     []string
+	Devices         []DeviceMapping
 	NetworkMode     string
+	IpcMode         string
+	PidMode         string
+	UTSMode         string
+	CapAdd          []string
+	CapDrop         []string
 	RestartPolicy   RestartPolicy
+	SecurityOpt     []string
+	ReadonlyRootfs  bool
 	Ulimits         []Ulimit
 	LogConfig       LogConfig
+	CgroupParent    string
+}
+
+type DeviceMapping struct {
+	PathOnHost        string `json:"PathOnHost"`
+	PathInContainer   string `json:"PathInContainer"`
+	CgroupPermissions string `json:"CgroupPermissions"`
 }
 
 type ExecConfig struct {
