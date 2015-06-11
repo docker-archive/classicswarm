@@ -119,8 +119,8 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 func (s *Discovery) Register(addr string) error {
 	buf := strings.NewReader(addr)
 
-	resp, err := http.Post(fmt.Sprintf("%s/%s/%s", s.url,
-		"clusters", s.token), "application/json", buf)
+	resp, err := http.Post(fmt.Sprintf("%s/%s/%s?ttl=%d", s.url,
+		"clusters", s.token, uint64(s.ttl.Seconds())), "application/json", buf)
 
 	if err != nil {
 		return err
