@@ -6,8 +6,7 @@ Key/Value store.
 It's built using Swarm's `pkg/store` and is designed to work across multiple
 storage backends.
 
-Right now only `Consul` is supported but `etcd` and `Zookeeper` will be coming
-soon.
+You can use `leadership` with `Consul`, `etcd` and `Zookeeper`.
 
 ```go
 // Create a store using pkg/store.
