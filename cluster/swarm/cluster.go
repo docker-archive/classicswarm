@@ -183,6 +183,7 @@ func (c *Cluster) addEngine(addr string) bool {
 		} else {
 			log.Debugf("node %q (name: %q) with address %q is already registered", engine.ID, engine.Name, engine.Addr)
 		}
+		engine.Disconnect()
 		return false
 	}
 
