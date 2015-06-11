@@ -26,12 +26,13 @@ const (
 // NewEngine is exported
 func NewEngine(addr string, overcommitRatio float64) *Engine {
 	e := &Engine{
-		Addr:            addr,
-		Labels:          make(map[string]string),
-		stopCh:          make(chan struct{}),
-		containers:      make(map[string]*Container),
-		healthy:         true,
-		overcommitRatio: int64(overcommitRatio * 100),
+		Addr:                addr,
+		Labels:              make(map[string]string),
+		stopCh:              make(chan struct{}),
+		containers:          make(map[string]*Container),
+		healthy:             true,
+		overcommitRatio:     int64(overcommitRatio * 100),
+		stopMonitorEventsCh: make(chan struct{}),
 	}
 	return e
 }
@@ -48,13 +49,14 @@ type Engine struct {
 	Memory int64
 	Labels map[string]string
 
-	stopCh          chan struct{}
-	containers      map[string]*Container
-	images          []*Image
-	client          dockerclient.Client
-	eventHandler    EventHandler
-	healthy         bool
-	overcommitRatio int64
+	stopCh              chan struct{}
+	containers          map[string]*Container
+	images              []*Image
+	client              dockerclient.Client
+	eventHandler        EventHandler
+	stopMonitorEventsCh chan struct{}
+	healthy             bool
+	overcommitRatio     int64
 }
 
 // Connect will initialize a connection to the Docker daemon running on the
@@ -104,10 +106,45 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 	go e.refreshLoop()
 
 	// Start monitoring events from the engine.
-	e.client.StartMonitorEvents(e.handler, nil)
+	go e.startMonitorEvents()
 	e.emitEvent("engine_connect")
 
 	return nil
+}
+
+func (e *Engine) startMonitorEvents() {
+	stopCh := make(chan struct{})
+	ch, err := e.client.MonitorEvents(nil, stopCh)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"engine_id": e.ID,
+			"engine_ip": e.IP,
+		}).Warning("Start event monitor failed")
+		e.healthy = false
+		return
+	}
+	for {
+		select {
+		case ev := <-ch:
+			if ev.Error == nil {
+				go e.handler(&ev.Event)
+			} else {
+				log.WithFields(log.Fields{
+					"engine_id": e.ID,
+					"engine_ip": e.IP,
+				}).Warning("Receive event failed: ", ev.Error)
+				// Perhaps we can set e.healthy = false here?
+				return
+			}
+		case <-e.stopMonitorEventsCh:
+			stopCh <- struct{}{}
+			return
+		}
+	}
+}
+
+func (e *Engine) stopMonitorEvents() {
+	e.stopMonitorEventsCh <- struct{}{}
 }
 
 // Disconnect will stop all monitoring of the engine.
@@ -115,7 +152,7 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 func (e *Engine) Disconnect() {
 	// do not close the chan, so it wait until the refreshLoop goroutine stops
 	e.stopCh <- struct{}{}
-	e.client.StopAllMonitorEvents()
+	e.stopMonitorEvents()
 	e.client = nil
 	e.emitEvent("engine_disconnect")
 }
@@ -306,8 +343,8 @@ func (e *Engine) refreshLoop() {
 		} else {
 			if !e.healthy {
 				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Info("Engine came back to life. Hooray!")
-				e.client.StopAllMonitorEvents()
-				e.client.StartMonitorEvents(e.handler, nil)
+				e.stopMonitorEvents()
+				go e.startMonitorEvents()
 				e.emitEvent("engine_reconnect")
 				if err := e.updateSpecs(); err != nil {
 					log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Update engine specs failed: %v", err)
@@ -513,7 +550,7 @@ func (e *Engine) String() string {
 	return fmt.Sprintf("engine %s addr %s", e.ID, e.Addr)
 }
 
-func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
+func (e *Engine) handler(ev *dockerclient.Event) {
 	// Something changed - refresh our internal state.
 	switch ev.Status {
 	case "pull", "untag", "delete":
