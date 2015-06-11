@@ -56,6 +56,11 @@
 			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/version",
+			"Comment": "v1.4.1-3245-g443437f",
+			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
+		},
+		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
 			"Rev": "bc946d07d1016848dfd2507f90f0859c9471681e"
 		},
