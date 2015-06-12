@@ -24,6 +24,10 @@ var (
 		OperatingSystem: "golang",
 		Labels:          []string{"foo=bar"},
 	}
+
+	mockVersion = &dockerclient.Version{
+		Version: "1.6.2",
+	}
 )
 
 func TestEngineConnectionFailure(t *testing.T) {
@@ -58,6 +62,7 @@ func TestEngineCpusMemory(t *testing.T) {
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
+	client.On("Version").Return(mockVersion, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
@@ -78,6 +83,7 @@ func TestEngineSpecs(t *testing.T) {
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
+	client.On("Version").Return(mockVersion, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
@@ -103,6 +109,7 @@ func TestEngineState(t *testing.T) {
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
+	client.On("Version").Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	// The client will return one container at first, then a second one will appear.
@@ -149,6 +156,7 @@ func TestCreateContainer(t *testing.T) {
 	)
 
 	client.On("Info").Return(mockInfo, nil)
+	client.On("Version").Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
@@ -231,6 +239,7 @@ func TestUsedCpus(t *testing.T) {
 				cpuShares := int64(math.Ceil(float64(cn*1024) / float64(mockInfo.NCPU)))
 
 				client.On("Info").Return(mockInfo, nil)
+				client.On("Version").Return(mockVersion, nil)
 				client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 				client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 				client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "test"}}, nil).Once()
