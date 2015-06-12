@@ -117,9 +117,9 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 // Disconnect will stop all monitoring of the engine.
 // The Engine object cannot be further used without reconnecting it first.
 func (e *Engine) Disconnect() {
+	e.client.StopAllMonitorEvents()
 	// do not close the chan, so it wait until the refreshLoop goroutine stops
 	e.stopCh <- struct{}{}
-	e.client.StopAllMonitorEvents()
 	e.client = nil
 	e.emitEvent("engine_disconnect")
 }
