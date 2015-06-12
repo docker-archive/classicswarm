@@ -32,9 +32,9 @@ func TestFollower(t *testing.T) {
 
 	// We shouldn't see duplicate events.
 	assert.Equal(t, <-leaderCh, "leader1")
-	assert.Equal(t, follower.Leader(), "leader1")
 	assert.Equal(t, <-leaderCh, "leader2")
 	assert.Equal(t, <-leaderCh, "leader1")
+	assert.Equal(t, follower.Leader(), "leader1")
 
 	// Once stopped, iteration over the leader channel should stop.
 	follower.Stop()
