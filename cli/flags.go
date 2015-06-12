@@ -119,7 +119,7 @@ var (
 	}
 
 	flLeaderElection = cli.BoolFlag{
-		Name:  "leader-election",
-		Usage: "Enable cluster leader election between Swarm managers",
+		Name:  "replication",
+		Usage: "Enable Swarm manager replication",
 	}
 )
