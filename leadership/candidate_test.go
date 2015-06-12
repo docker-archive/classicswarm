@@ -27,7 +27,6 @@ func TestCandidate(t *testing.T) {
 	electedCh := candidate.ElectedCh()
 
 	// Should issue a false upon start, no matter what.
-	assert.False(t, candidate.IsLeader())
 	assert.False(t, <-electedCh)
 
 	// Since the lock always succeeeds, we should get elected.
