@@ -31,6 +31,7 @@ func TestCandidate(t *testing.T) {
 
 	// Since the lock always succeeeds, we should get elected.
 	assert.True(t, <-electedCh)
+	assert.True(t, candidate.IsLeader())
 
 	// Signaling a lost lock should get us de-elected...
 	close(lostCh)

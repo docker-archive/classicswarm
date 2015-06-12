@@ -41,6 +41,11 @@ func (c *Candidate) ElectedCh() <-chan bool {
 	return c.electedCh
 }
 
+// IsLeader returns true if the candidate is currently a leader.
+func (c *Candidate) IsLeader() bool {
+	return c.leader
+}
+
 // RunForElection starts the leader election algorithm. Updates in status are
 // pushed through the ElectedCh channel.
 func (c *Candidate) RunForElection() error {
@@ -76,8 +81,8 @@ func (c *Candidate) update(status bool) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.electedCh <- status
 	c.leader = status
+	c.electedCh <- status
 }
 
 func (c *Candidate) campaign(lock store.Locker) {

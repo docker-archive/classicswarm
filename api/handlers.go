@@ -27,7 +27,7 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := dockerclient.Info{
 		Containers:      int64(len(c.cluster.Containers())),
 		Images:          int64(len(c.cluster.Images())),
-		DriverStatus:    c.cluster.Info(),
+		DriverStatus:    c.statusHandler.Status(),
 		NEventsListener: int64(c.eventsHandler.Size()),
 		Debug:           c.debug,
 		MemoryLimit:     true,

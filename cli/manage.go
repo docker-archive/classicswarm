@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"path"
 	"time"
 
@@ -39,6 +38,30 @@ func (h *logHandler) Handle(e *cluster.Event) error {
 	}
 	log.WithFields(log.Fields{"node": e.Engine.Name, "id": id, "from": e.From, "status": e.Status}).Debug("Event received")
 	return nil
+}
+
+type statusHandler struct {
+	cluster   cluster.Cluster
+	candidate *leadership.Candidate
+	follower  *leadership.Follower
+}
+
+func (h *statusHandler) Status() [][]string {
+	var status [][]string
+
+	if h.candidate != nil && !h.candidate.IsLeader() {
+		status = [][]string{
+			{"\bRole", "replica"},
+			{"\bPrimary", h.follower.Leader()},
+		}
+	} else {
+		status = [][]string{
+			{"\bRole", "primary"},
+		}
+	}
+
+	status = append(status, h.cluster.Info()...)
+	return status
 }
 
 // Load the TLS certificates/keys and, if verify is true, the CA.
@@ -91,7 +114,7 @@ func createDiscovery(uri string, c *cli.Context) discovery.Discovery {
 	return discovery
 }
 
-func setupLeaderElection(server *api.Server, apiHandler http.Handler, discovery discovery.Discovery, addr string, tlsConfig *tls.Config) {
+func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, discovery discovery.Discovery, addr string, tlsConfig *tls.Config) {
 	kvDiscovery, ok := discovery.(*kvdiscovery.Discovery)
 	if !ok {
 		log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
@@ -101,7 +124,8 @@ func setupLeaderElection(server *api.Server, apiHandler http.Handler, discovery 
 	candidate := leadership.NewCandidate(client, leaderElectionPath, addr)
 	follower := leadership.NewFollower(client, leaderElectionPath)
 
-	proxy := api.NewReverseProxy(tlsConfig)
+	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.Bool("cors"))
+	replica := api.NewReplica(primary, tlsConfig)
 
 	go func() {
 		candidate.RunForElection()
@@ -109,10 +133,10 @@ func setupLeaderElection(server *api.Server, apiHandler http.Handler, discovery 
 		for isElected := range electedCh {
 			if isElected {
 				log.Info("Cluster leadership acquired")
-				server.SetHandler(apiHandler)
+				server.SetHandler(primary)
 			} else {
 				log.Info("Cluster leadership lost")
-				server.SetHandler(proxy)
+				server.SetHandler(replica)
 			}
 		}
 	}()
@@ -123,12 +147,14 @@ func setupLeaderElection(server *api.Server, apiHandler http.Handler, discovery 
 		for leader := range leaderCh {
 			log.Infof("New leader elected: %s", leader)
 			if leader == addr {
-				proxy.SetDestination("")
+				replica.SetPrimary("")
 			} else {
-				proxy.SetDestination(leader)
+				replica.SetPrimary(leader)
 			}
 		}
 	}()
+
+	server.SetHandler(primary)
 }
 
 func manage(c *cli.Context) {
@@ -208,9 +234,7 @@ func manage(c *cli.Context) {
 	}
 
 	server := api.NewServer(hosts, tlsConfig)
-	router := api.NewRouter(cl, tlsConfig, c.Bool("cors"))
-
-	if c.Bool("leader-election") {
+	if c.Bool("replication") {
 		addr := c.String("advertise")
 		if addr == "" {
 			log.Fatal("--advertise address must be provided when using --leader-election")
@@ -219,9 +243,9 @@ func manage(c *cli.Context) {
 			log.Fatal("--advertise should be of the form ip:port or hostname:port")
 		}
 
-		setupLeaderElection(server, router, discovery, addr, tlsConfig)
+		setupReplication(c, cl, server, discovery, addr, tlsConfig)
 	} else {
-		server.SetHandler(router)
+		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.Bool("cors")))
 	}
 
 	log.Fatal(server.ListenAndServe())
