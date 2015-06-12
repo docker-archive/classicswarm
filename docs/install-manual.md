@@ -10,7 +10,8 @@ This section tells you how to create a Docker Swarm on your network to use only 
 You install Docker Swarm on a single system which is known as your Docker Swarm manager. You create the cluster, or swarm, on one or more additional nodes on your network. Each node in your swarm must:
 
 * be accessible by the swarm manager across your network
-* a TCP port open to listen for the swarm manager 
+* have Docker Engine 1.6.0+ installed
+* open a TCP port to listen for the manager
 
 You can run Docker Swarm on Linux 64-bit architectures. You can also install and run it on 64-bit Windows and Max OSX but these architectures are *not* regularly tested for compatibility in the BETA phase.
 

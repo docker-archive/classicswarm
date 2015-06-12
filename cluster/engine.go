@@ -12,6 +12,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/pkg/version"
 	"github.com/samalba/dockerclient"
 )
 
@@ -21,6 +22,9 @@ const (
 
 	// Timeout for requests sent out to the engine.
 	requestTimeout = 10 * time.Second
+
+	// Minimum docker engine version supported by swarm.
+	minSupportedVersion = version.Version("1.6.0")
 )
 
 // NewEngine is exported
@@ -141,11 +145,19 @@ func (e *Engine) updateSpecs() error {
 		return fmt.Errorf("cannot get resources for this engine, make sure %s is a Docker Engine, not a Swarm manager", e.Addr)
 	}
 
-	// Older versions of Docker don't expose the ID field and are not supported
-	// by Swarm.  Catch the error ASAP and refuse to connect.
-	if len(info.ID) == 0 {
-		return fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade", e.Addr)
+	v, err := e.client.Version()
+	if err != nil {
+		return err
 	}
+
+	engineVersion := version.Version(v.Version)
+
+	// Older versions of Docker don't expose the ID field, Labels and are not supported
+	// by Swarm.  Catch the error ASAP and refuse to connect.
+	if engineVersion.LessThan(minSupportedVersion) {
+		return fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade to at least %s", e.Addr, minSupportedVersion)
+	}
+
 	e.ID = info.ID
 	e.Name = info.Name
 	e.Cpus = info.NCPU
