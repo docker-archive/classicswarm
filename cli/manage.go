@@ -124,8 +124,8 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 	candidate := leadership.NewCandidate(client, leaderElectionPath, addr)
 	follower := leadership.NewFollower(client, leaderElectionPath)
 
-	router := api.NewRouter(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.Bool("cors"))
-	proxy := api.NewReverseProxy(router, tlsConfig)
+	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.Bool("cors"))
+	replica := api.NewReplica(primary, tlsConfig)
 
 	go func() {
 		candidate.RunForElection()
@@ -133,10 +133,10 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 		for isElected := range electedCh {
 			if isElected {
 				log.Info("Cluster leadership acquired")
-				server.SetHandler(router)
+				server.SetHandler(primary)
 			} else {
 				log.Info("Cluster leadership lost")
-				server.SetHandler(proxy)
+				server.SetHandler(replica)
 			}
 		}
 	}()
@@ -147,14 +147,14 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 		for leader := range leaderCh {
 			log.Infof("New leader elected: %s", leader)
 			if leader == addr {
-				proxy.SetDestination("")
+				replica.SetPrimary("")
 			} else {
-				proxy.SetDestination(leader)
+				replica.SetPrimary(leader)
 			}
 		}
 	}()
 
-	server.SetHandler(router)
+	server.SetHandler(primary)
 }
 
 func manage(c *cli.Context) {
@@ -245,7 +245,7 @@ func manage(c *cli.Context) {
 
 		setupReplication(c, cl, server, discovery, addr, tlsConfig)
 	} else {
-		server.SetHandler(api.NewRouter(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.Bool("cors")))
+		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.Bool("cors")))
 	}
 
 	log.Fatal(server.ListenAndServe())

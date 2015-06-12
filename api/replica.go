@@ -9,44 +9,44 @@ import (
 
 var localRoutes = []string{"/info", "/_ping"}
 
-// ReverseProxy is a Docker reverse proxy.
-type ReverseProxy struct {
-	api       http.Handler
+// Replica is an API replica that reserves proxy to the primary.
+type Replica struct {
+	handler   http.Handler
 	tlsConfig *tls.Config
-	dest      string
+	primary   string
 }
 
-// NewReverseProxy creates a new reverse proxy.
-func NewReverseProxy(api http.Handler, tlsConfig *tls.Config) *ReverseProxy {
-	return &ReverseProxy{
-		api:       api,
+// NewReplica creates a new API replica.
+func NewReplica(handler http.Handler, tlsConfig *tls.Config) *Replica {
+	return &Replica{
+		handler:   handler,
 		tlsConfig: tlsConfig,
 	}
 }
 
-// SetDestination sets the HTTP destination of the Docker endpoint.
-func (p *ReverseProxy) SetDestination(dest string) {
+// SetPrimary sets the address of the primary Swarm manager
+func (p *Replica) SetPrimary(primary string) {
 	// FIXME: We have to kill current connections before doing this.
-	p.dest = dest
+	p.primary = primary
 }
 
 // ServeHTTP is the http.Handler.
-func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (p *Replica) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Check whether we should handle this request locally.
 	for _, route := range localRoutes {
 		if strings.HasSuffix(r.URL.Path, route) {
-			p.api.ServeHTTP(w, r)
+			p.handler.ServeHTTP(w, r)
 			return
 		}
 	}
 
 	// Otherwise, forward.
-	if p.dest == "" {
+	if p.primary == "" {
 		httpError(w, "No cluster leader", http.StatusInternalServerError)
 		return
 	}
 
-	if err := hijack(p.tlsConfig, p.dest, w, r); err != nil {
+	if err := hijack(p.tlsConfig, p.primary, w, r); err != nil {
 		httpError(w, fmt.Sprintf("Unable to reach cluster leader: %v", err), http.StatusInternalServerError)
 	}
 }
