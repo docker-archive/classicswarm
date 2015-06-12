@@ -42,11 +42,11 @@ func (p *Replica) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Otherwise, forward.
 	if p.primary == "" {
-		httpError(w, "No cluster leader", http.StatusInternalServerError)
+		httpError(w, "No elected primary cluster manager", http.StatusInternalServerError)
 		return
 	}
 
 	if err := hijack(p.tlsConfig, p.primary, w, r); err != nil {
-		httpError(w, fmt.Sprintf("Unable to reach cluster leader: %v", err), http.StatusInternalServerError)
+		httpError(w, fmt.Sprintf("Unable to reach primary cluster manager (%s): %v", err, p.primary), http.StatusInternalServerError)
 	}
 }
