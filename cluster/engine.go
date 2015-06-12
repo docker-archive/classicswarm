@@ -120,27 +120,28 @@ func (e *Engine) startMonitorEvents() {
 			"engine_id": e.ID,
 			"engine_ip": e.IP,
 		}).Warning("Start event monitor failed")
-		e.healthy = false
 		return
 	}
-	for {
-		select {
-		case ev := <-ch:
-			if ev.Error == nil {
-				go e.handler(&ev.Event)
-			} else {
-				log.WithFields(log.Fields{
-					"engine_id": e.ID,
-					"engine_ip": e.IP,
-				}).Warning("Receive event failed: ", ev.Error)
-				// Perhaps we can set e.healthy = false here?
+	go func() {
+		for {
+			select {
+			case ev := <-ch:
+				if ev.Error == nil {
+					e.handler(&ev.Event)
+				} else {
+					log.WithFields(log.Fields{
+						"engine_id": e.ID,
+						"engine_ip": e.IP,
+					}).Warning("Receive event failed: ", ev.Error)
+					// Perhaps we can set e.healthy = false here?
+					return
+				}
+			case <-e.stopMonitorEventsCh:
+				stopCh <- struct{}{}
 				return
 			}
-		case <-e.stopMonitorEventsCh:
-			stopCh <- struct{}{}
-			return
 		}
-	}
+	}()
 }
 
 func (e *Engine) stopMonitorEvents() {
@@ -150,9 +151,9 @@ func (e *Engine) stopMonitorEvents() {
 // Disconnect will stop all monitoring of the engine.
 // The Engine object cannot be further used without reconnecting it first.
 func (e *Engine) Disconnect() {
+	e.stopMonitorEvents()
 	// do not close the chan, so it wait until the refreshLoop goroutine stops
 	e.stopCh <- struct{}{}
-	e.stopMonitorEvents()
 	e.client = nil
 	e.emitEvent("engine_disconnect")
 }
@@ -344,7 +345,7 @@ func (e *Engine) refreshLoop() {
 			if !e.healthy {
 				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Info("Engine came back to life. Hooray!")
 				e.stopMonitorEvents()
-				go e.startMonitorEvents()
+				e.startMonitorEvents()
 				e.emitEvent("engine_reconnect")
 				if err := e.updateSpecs(); err != nil {
 					log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Update engine specs failed: %v", err)
