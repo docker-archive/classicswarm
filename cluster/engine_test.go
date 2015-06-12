@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 
+	"github.com/docker/swarm/test/utils"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/mockclient"
 	"github.com/stretchr/testify/assert"
@@ -60,7 +62,7 @@ func TestEngineCpusMemory(t *testing.T) {
 	client.On("Info").Return(mockInfo, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	utils.NewMockEvent(client, nil)
 
 	assert.NoError(t, engine.ConnectWithClient(client))
 	assert.True(t, engine.isConnected())
@@ -80,7 +82,7 @@ func TestEngineSpecs(t *testing.T) {
 	client.On("Info").Return(mockInfo, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	utils.NewMockEvent(client, nil)
 
 	assert.NoError(t, engine.ConnectWithClient(client))
 	assert.True(t, engine.isConnected())
@@ -103,7 +105,7 @@ func TestEngineState(t *testing.T) {
 
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(mockInfo, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	mockedEvent := utils.NewMockEvent(client, nil)
 
 	// The client will return one container at first, then a second one will appear.
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "one"}}, nil).Once()
@@ -123,7 +125,9 @@ func TestEngineState(t *testing.T) {
 	}
 
 	// Fake an event which will trigger a refresh. The second container will appear.
-	engine.handler(&dockerclient.Event{Id: "two", Status: "created"}, nil)
+	mockedEvent.Emit(dockerclient.EventOrError{Event: dockerclient.Event{Id: "two", Status: "create"}})
+	// Wait for the refreshContainer
+	time.Sleep(3 * time.Millisecond)
 	containers = engine.Containers()
 	assert.Len(t, containers, 2)
 	if containers[0].Id != "one" && containers[1].Id != "one" {
@@ -149,7 +153,7 @@ func TestCreateContainer(t *testing.T) {
 	)
 
 	client.On("Info").Return(mockInfo, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	utils.NewMockEvent(client, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 	assert.NoError(t, engine.ConnectWithClient(client))
@@ -231,7 +235,7 @@ func TestUsedCpus(t *testing.T) {
 				cpuShares := int64(math.Ceil(float64(cn*1024) / float64(mockInfo.NCPU)))
 
 				client.On("Info").Return(mockInfo, nil)
-				client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+				utils.NewMockEvent(client, nil)
 				client.On("ListImages").Return([]*dockerclient.Image{}, nil).Once()
 				client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "test"}}, nil).Once()
 				client.On("InspectContainer", "test").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: cpuShares}}, nil).Once()
