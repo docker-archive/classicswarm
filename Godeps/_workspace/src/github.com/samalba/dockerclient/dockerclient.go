@@ -32,6 +32,7 @@ type DockerClient struct {
 	TLSConfig     *tls.Config
 	monitorEvents int32
 	monitorStats  int32
+	eventStopChan chan (struct{})
 }
 
 type Error struct {
@@ -61,7 +62,7 @@ func NewDockerClientTimeout(daemonUrl string, tlsConfig *tls.Config, timeout tim
 		}
 	}
 	httpClient := newHTTPClient(u, tlsConfig, timeout)
-	return &DockerClient{u, httpClient, tlsConfig, 0, 0}, nil
+	return &DockerClient{u, httpClient, tlsConfig, 0, 0, nil}, nil
 }
 
 func (client *DockerClient) doRequest(method string, path string, body []byte, headers map[string]string) ([]byte, error) {
@@ -236,16 +237,23 @@ func (client *DockerClient) readJSONStream(stream io.ReadCloser, decode func(*js
 
 	go func() {
 		decoder := json.NewDecoder(stream)
-		defer stream.Close()
+		stopped := make(chan struct{})
+		go func() {
+			<-stopChan
+			stream.Close()
+			stopped <- struct{}{}
+		}()
+
 		defer close(resultChan)
 		for {
 			decodeResult := decode(decoder)
 			select {
-			case <-stopChan:
+			case <-stopped:
 				return
 			default:
 				resultChan <- decodeResult
 				if decodeResult.err != nil {
+					stream.Close()
 					return
 				}
 			}
@@ -354,8 +362,23 @@ func (client *DockerClient) MonitorEvents(options *MonitorEventsOptions, stopCha
 }
 
 func (client *DockerClient) StartMonitorEvents(cb Callback, ec chan error, args ...interface{}) {
-	atomic.StoreInt32(&client.monitorEvents, 1)
-	go client.getEvents(cb, ec, args...)
+	client.eventStopChan = make(chan struct{})
+
+	eventErrChan, err := client.MonitorEvents(nil, client.eventStopChan)
+	if err != nil {
+		ec <- err
+		return
+	}
+
+	go func() {
+		for e := range eventErrChan {
+			if e.Error != nil {
+				ec <- err
+				return
+			}
+			go cb(&e.Event, ec, args...)
+		}
+	}()
 }
 
 func (client *DockerClient) getEvents(cb Callback, ec chan error, args ...interface{}) {
@@ -379,7 +402,7 @@ func (client *DockerClient) getEvents(cb Callback, ec chan error, args ...interf
 }
 
 func (client *DockerClient) StopAllMonitorEvents() {
-	atomic.StoreInt32(&client.monitorEvents, 0)
+	client.eventStopChan <- struct{}{}
 }
 
 func (client *DockerClient) StartMonitorStats(id string, cb StatCallback, ec chan error, args ...interface{}) {
