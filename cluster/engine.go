@@ -117,6 +117,9 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 // Disconnect will stop all monitoring of the engine.
 // The Engine object cannot be further used without reconnecting it first.
 func (e *Engine) Disconnect() {
+	e.Lock()
+	defer e.Unlock()
+
 	// do not close the chan, so it wait until the refreshLoop goroutine stops
 	e.stopCh <- struct{}{}
 	e.client.StopAllMonitorEvents()
@@ -318,12 +321,13 @@ func (e *Engine) refreshLoop() {
 		} else {
 			if !e.healthy {
 				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Info("Engine came back to life. Hooray!")
+				if err := e.updateSpecs(); err != nil {
+					log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Update engine specs failed: %v", err)
+					continue
+				}
 				e.client.StopAllMonitorEvents()
 				e.client.StartMonitorEvents(e.handler, nil)
 				e.emitEvent("engine_reconnect")
-				if err := e.updateSpecs(); err != nil {
-					log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Update engine specs failed: %v", err)
-				}
 			}
 			e.healthy = true
 		}
