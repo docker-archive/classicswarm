@@ -161,6 +161,7 @@ function start_docker() {
 	for ((i=current; i < (current + instances); i++)); do
 		local port=$(($BASE_PORT + $i))
 		HOSTS[$i]=127.0.0.1:$port
+		PORTS[$i]=$port
 
 		# We have to manually call `hostname` since --hostname and --net cannot
 		# be used together.

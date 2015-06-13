@@ -4,7 +4,6 @@ load ../helpers
 
 MESOS_IMAGE=jimenez/mesos-dev:clang
 MESOS_MASTER_PORT=$(( ( RANDOM % 1000 )  + 10000 ))
-BASE_PORT=2375
 
 # Start mesos master and slave.
 function start_mesos() {
@@ -17,9 +16,8 @@ function start_mesos() {
 
 	MESOS_SLAVE=$(
 	docker_host run --privileged -d --name mesos-slave --volumes-from node-0 -e DOCKER_HOST="${HOSTS[0]}" -v /sys/fs/cgroup:/sys/fs/cgroup --net=host \
-	$MESOS_IMAGE /mesos/build/bin/mesos-slave.sh --master=127.0.0.1:$MESOS_MASTER_PORT --containerizers=docker --hostname=127.0.0.1 --port=$(($MESOS_MASTER_PORT + 1))
+	$MESOS_IMAGE /mesos/build/bin/mesos-slave.sh --master=127.0.0.1:$MESOS_MASTER_PORT --containerizers=docker --attributes="docker_port:${PORTS[0]}" --hostname=127.0.0.1 --port=$(($MESOS_MASTER_PORT + 1))
 	       )
-
 	retry 10 1 eval "docker_host ps | grep 'mesos-slave'"
 }
 
