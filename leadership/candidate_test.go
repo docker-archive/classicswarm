@@ -46,14 +46,7 @@ func TestCandidate(t *testing.T) {
 	assert.False(t, <-electedCh)
 	assert.True(t, <-electedCh)
 
-	// After stopping the candidate, the ElectedCh should be closed.
 	candidate.Stop()
-	select {
-	case <-electedCh:
-		assert.True(t, false) // we should not get here.
-	default:
-		assert.True(t, true)
-	}
 
 	mockStore.AssertExpectations(t)
 }
