@@ -30,7 +30,6 @@ type DockerClient struct {
 	URL           *url.URL
 	HTTPClient    *http.Client
 	TLSConfig     *tls.Config
-	monitorEvents int32
 	monitorStats  int32
 	eventStopChan chan (struct{})
 }
@@ -62,7 +61,7 @@ func NewDockerClientTimeout(daemonUrl string, tlsConfig *tls.Config, timeout tim
 		}
 	}
 	httpClient := newHTTPClient(u, tlsConfig, timeout)
-	return &DockerClient{u, httpClient, tlsConfig, 0, 0, nil}, nil
+	return &DockerClient{u, httpClient, tlsConfig, 0, nil}, nil
 }
 
 func (client *DockerClient) doRequest(method string, path string, body []byte, headers map[string]string) ([]byte, error) {
@@ -364,13 +363,13 @@ func (client *DockerClient) MonitorEvents(options *MonitorEventsOptions, stopCha
 func (client *DockerClient) StartMonitorEvents(cb Callback, ec chan error, args ...interface{}) {
 	client.eventStopChan = make(chan struct{})
 
-	eventErrChan, err := client.MonitorEvents(nil, client.eventStopChan)
-	if err != nil {
-		ec <- err
-		return
-	}
-
 	go func() {
+		eventErrChan, err := client.MonitorEvents(nil, client.eventStopChan)
+		if err != nil {
+			ec <- err
+			return
+		}
+
 		for e := range eventErrChan {
 			if e.Error != nil {
 				ec <- err
@@ -379,26 +378,6 @@ func (client *DockerClient) StartMonitorEvents(cb Callback, ec chan error, args 
 			go cb(&e.Event, ec, args...)
 		}
 	}()
-}
-
-func (client *DockerClient) getEvents(cb Callback, ec chan error, args ...interface{}) {
-	uri := fmt.Sprintf("%s/%s/events", client.URL.String(), APIVersion)
-	resp, err := client.HTTPClient.Get(uri)
-	if err != nil {
-		ec <- err
-		return
-	}
-	defer resp.Body.Close()
-
-	dec := json.NewDecoder(resp.Body)
-	for atomic.LoadInt32(&client.monitorEvents) > 0 {
-		var event *Event
-		if err := dec.Decode(&event); err != nil {
-			ec <- err
-			return
-		}
-		cb(event, ec, args...)
-	}
 }
 
 func (client *DockerClient) StopAllMonitorEvents() {
