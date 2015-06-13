@@ -381,7 +381,7 @@ func (client *DockerClient) StartMonitorEvents(cb Callback, ec chan error, args 
 }
 
 func (client *DockerClient) StopAllMonitorEvents() {
-	client.eventStopChan <- struct{}{}
+	close(client.eventStopChan)
 }
 
 func (client *DockerClient) StartMonitorStats(id string, cb StatCallback, ec chan error, args ...interface{}) {
