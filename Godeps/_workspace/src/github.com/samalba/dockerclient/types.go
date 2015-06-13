@@ -30,7 +30,7 @@ type ContainerConfig struct {
 	OnBuild         []string
 	Labels          map[string]string
 
-	// FIXME: Compatibility
+	// FIXME: The following fields have been removed since API v1.18
 	Memory     int64
 	MemorySwap int64
 	CpuShares  int64
