@@ -1,19 +1,24 @@
-FROM docs/base:latest
-MAINTAINER Mary <mary@docker.com> (@moxiegirl)
+FROM docs/base:hugo
+MAINTAINER Mary Anthony <mary@docker.com> (@moxiegirl)
 
 # to get the git info for this repo
 COPY . /src
 
-# Reset the /docs dir so we can replace the theme meta with the new repo's git info
-# RUN git reset --hard
+COPY . /docs/content/swarm/
 
-RUN grep "VERSION =" /src/version/version.go  | sed 's/.*"\(.*\)".*/\1/' > /docs/VERSION
-
-
-COPY * /docs/sources/swarm/
-COPY scheduler/* /docs/sources/swarm/scheduler/
-COPY api/* /docs/sources/swarm/api/
-COPY mkdocs.yml /docs/mkdocs-swarm.yml
-
-# Then build everything together, ready for mkdocs
-RUN /docs/build.sh
+# Sed to process GitHub Markdown
+# 1-2 Remove comment code from metadata block
+# 3 Remove .md extension from link text
+# 4 Change ](/ to ](/project/ in links
+# 5 Change ](word) to ](/project/word)
+# 6 Change ](../../ to ](/project/
+# 7 Change ](../ to ](/project/word)
+# 
+# 
+RUN find /docs/content/swarm -type f -name "*.md" -exec sed -i.old \
+    -e '/^<!.*metadata]>/g' \
+    -e '/^<!.*end-metadata.*>/g' \
+    -e 's/\([(]\)\(.*\)\(\.md\)/\1\2/g' \
+    -e 's/\(\]\)\([(]\)\(\/\)/\1\2\/swarm\//g' \
+    -e 's/\(\][(]\)\([A-z]*[)]\)/\]\(\/swarm\/\2/g' \
+    -e 's/\(\][(]\)\(\.\.\/\)/\1\/swarm\//g' {} \;

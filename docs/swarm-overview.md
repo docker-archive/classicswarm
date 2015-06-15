@@ -1,8 +1,12 @@
----
-page_title: Docker Swarm
-page_description: Swarm: a Docker-native clustering system
-page_keywords: docker, swarm, clustering
----
+<!--[metadata]>
++++
+title = "Docker Swarm"
+description = "Swarm: a Docker-native clustering system"
+keywords = ["docker, swarm,  clustering"]
+[menu.main]
+parent="smn_workw_swarm"
++++
+<![end-metadata]-->
 
 # Docker Swarm
 

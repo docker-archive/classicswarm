@@ -1,8 +1,13 @@
----
-page_title: Docker Swarm strategies
-page_description: Swarm strategies
-page_keywords: docker, swarm, clustering, strategies
----
+<!--[metadata]>
++++
+title = "Docker Swarm strategies"
+description = "Swarm strategies"
+keywords = ["docker, swarm, clustering,  strategies"]
+[menu.main]
+parent="smn_workw_swarm"
+weight=5
++++
+<![end-metadata]-->
 
 # Strategies
 

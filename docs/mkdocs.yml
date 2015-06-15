@@ -1,9 +1,0 @@
-- ['swarm/index.md', 'User Guide', 'Docker Swarm' ]
-- ['swarm/install-w-machine.md', 'User Guide', '&nbsp;&nbsp;&nbsp;&nbsp;&blacksquare;&nbsp; Create a swarm with docker-machine' ]
-- ['swarm/install-manual.md', 'User Guide', '&nbsp;&nbsp;&nbsp;&nbsp;&blacksquare;&nbsp; Create a swarm for development' ]
-- ['swarm/release-notes.md', 'User Guide', '&nbsp;&nbsp;&nbsp;&nbsp;&blacksquare;&nbsp; Release Notes']
-- ['swarm/discovery.md', 'Reference', 'Swarm discovery']
-- ['swarm/api/swarm-api.md', 'Reference', 'Swarm API']
-- ['swarm/scheduler/filter.md', 'Reference', 'Swarm filters']
-- ['swarm/scheduler/strategy.md', 'Reference', 'Swarm strategies']
-

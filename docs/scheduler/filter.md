@@ -1,8 +1,13 @@
----
-page_title: Docker Swarm filters
-page_description: Swarm filters
-page_keywords: docker, swarm, clustering, filters
----
+<!--[metadata]>
++++
+title = "Docker Swarm filters"
+description = "Swarm filters"
+keywords = ["docker, swarm, clustering,  filters"]
+[menu.main]
+parent="smn_workw_swarm"
+weight=4
++++
+<![end-metadata]-->
 
 # Filters
 
