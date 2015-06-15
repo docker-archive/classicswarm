@@ -303,6 +303,7 @@ func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callbac
 	var wg sync.WaitGroup
 
 	c.RLock()
+	defer c.RUnlock()
 	for _, n := range c.engines {
 		wg.Add(1)
 
@@ -322,7 +323,6 @@ func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callbac
 			}
 		}(n)
 	}
-	c.RUnlock()
 
 	wg.Wait()
 }
