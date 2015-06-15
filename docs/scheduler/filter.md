@@ -112,13 +112,13 @@ name or  ID.  For example, you can start a container called `frontend` running
 `nginx`:
 
 
-    $ docker run -d -p 80:80 --name front nginx
+    $ docker run -d -p 80:80 --name frontend nginx
      87c4376856a8
 
 
     $ docker ps
     CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-    87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      front
+    87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      frontend
 
 
 Then, using `-e affinity:container==frontend` flag schedule a second container to
