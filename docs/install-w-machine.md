@@ -120,7 +120,7 @@ In this section, you create a swarm manager and two nodes.
 2. Open your VirtualBox Manager, it should contain the `local` machine and the
 new `swarm-master` machine.
 
-	![VirtualBox](../virtual-box.png)
+	![VirtualBox](../docs/images/virtual-box.png)
 		
 3. Create a swarm node.
 
