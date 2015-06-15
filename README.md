@@ -38,6 +38,8 @@ $ go get github.com/tools/godep
 ```
 
 You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
+You may also need to set `$GOPATH/bin` folder in your path environment, e.g `export PATH="${PATH}:${GOPATH}/bin"`
+
 
 **For example, on Mac OS X you'd run:**
 
