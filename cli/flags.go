@@ -34,12 +34,12 @@ var (
 	}
 	flJoinAdvertise = cli.StringFlag{
 		Name:   "advertise, addr",
-		Usage:  "Address of the Docker Engine joining the cluster. Swarm managers MUST be able to reach Docker at this address.",
+		Usage:  "Address of the Docker Engine joining the cluster. Swarm manager(s) MUST be able to reach the Docker Engine at this address.",
 		EnvVar: "SWARM_ADVERTISE",
 	}
 	flManageAdvertise = cli.StringFlag{
 		Name:   "advertise, addr",
-		Usage:  "Address of the Swarm manager joining the cluster. Other swarm managers MUST be able to reach Swarm at this address.",
+		Usage:  "Address of the swarm manager joining the cluster. Other swarm manager(s) MUST be able to reach the swarm manager at this address.",
 		EnvVar: "SWARM_ADVERTISE",
 	}
 	// hack for go vet
