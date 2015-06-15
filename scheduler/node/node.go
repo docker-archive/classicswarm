@@ -7,7 +7,7 @@ import (
 	"github.com/docker/swarm/cluster"
 )
 
-// Node is an abstract type used by the scheduler
+// Node is an abstract type used by the scheduler.
 type Node struct {
 	ID         string
 	IP         string
@@ -25,7 +25,7 @@ type Node struct {
 	IsHealthy bool
 }
 
-// NewNode creates a node from an engine
+// NewNode creates a node from an engine.
 func NewNode(e *cluster.Engine) *Node {
 	return &Node{
 		ID:          e.ID,
@@ -67,7 +67,7 @@ func (n *Node) Container(IDOrName string) *cluster.Container {
 	return nil
 }
 
-// AddContainer inject a container into the internal state.
+// AddContainer injects a container into the internal state.
 func (n *Node) AddContainer(container *cluster.Container) error {
 	if container.Config != nil {
 		memory := container.Config.Memory
