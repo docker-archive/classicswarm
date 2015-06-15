@@ -1,8 +1,13 @@
----
-page_title: Get Started with Docker Swarm
-page_description: Swarm release notes
-page_keywords: docker, swarm, clustering, discovery, release, notes
----
+<!--[metadata]>
++++
+title = "Get Started with Docker Swarm"
+description = "Swarm release notes"
+keywords = ["docker, swarm, clustering, discovery, release,  notes"]
+[menu.main]
+parent="smn_workw_swarm"
+weight=1
++++
+<![end-metadata]-->
 
 # Get Started with Docker Swarm
 

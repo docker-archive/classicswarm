@@ -1,8 +1,13 @@
----
-page_title: Docker Swarm discovery
-page_description: Swarm discovery
-page_keywords: docker, swarm, clustering, discovery
----
+<!--[metadata]>
++++
+title = "Docker Swarm discovery"
+description = "Swarm discovery"
+keywords = ["docker, swarm, clustering,  discovery"]
+[menu.main]
+parent="smn_workw_swarm"
+weight=3
++++
+<![end-metadata]-->
 
 # Discovery
 
@@ -207,7 +212,7 @@ You can contribute a new discovery backend to Swarm. For information on how to d
 
 ## Docker Swarm documentation index
 
-- [User guide](./index.md)
+- [User guide](./swarm-overview.md)
 - [Sheduler strategies](./scheduler/strategy.md)
 - [Sheduler filters](./scheduler/filter.md)
 - [Swarm API](./api/swarm-api.md)

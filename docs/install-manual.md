@@ -1,3 +1,13 @@
+<!--[metadata]>
++++
+title = "Create a swarm for development"
+description = "Swarm: a Docker-native clustering system"
+keywords = ["docker, swarm,  clustering"]
+[menu.main]
+parent="smn_workw_swarm"
+weight=2
++++
+<![end-metadata]-->
 
 # Create a swarm for development
 
