@@ -146,3 +146,18 @@ func (c *ContainerConfig) Affinities() []string {
 func (c *ContainerConfig) Constraints() []string {
 	return c.extractExprs("constraints")
 }
+
+// AddSoftImageAffinity
+func (c *ContainerConfig) AddSoftImageAffinity(image string) error {
+	affnities_json := c.Labels[SwarmLabelNamespace+".affinities"]
+	var affinities []string
+	json.Unmarshal([]byte(affnities_json), &affinities)
+	affinities = append(affinities, "image==~"+image)
+
+	labels, err := json.Marshal(affinities)
+	if err != nil {
+		return err
+	}
+	c.Labels[SwarmLabelNamespace+".affinities"] = string(labels)
+	return nil
+}
