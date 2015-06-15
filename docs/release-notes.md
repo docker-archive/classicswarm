@@ -1,6 +1,6 @@
 <!--[metadata]>
 +++
-title = "Docker Swarm"
+title = "Docker Swarm Release Notes"
 description = "Docker Swarm release notes"
 keywords = ["docker, swarm, clustering, discovery, release,  notes"]
 [menu.main]
