@@ -34,7 +34,7 @@ for isElected := range electedCh {
 	} else {
 		// We lost the election but are still running for leadership.
 		// `elected == false` is the default state and is the first event
-		// we'll receive from the channel. After a successfull election,
+		// we'll receive from the channel. After a successful election,
 		// this event can get triggered if someone else steals the
 		// leadership or if we resign.
 
