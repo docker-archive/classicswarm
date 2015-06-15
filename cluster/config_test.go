@@ -81,3 +81,11 @@ func TestConsolidateResourceFields(t *testing.T) {
 	}
 
 }
+
+func TestAddSoftImageAffinity(t *testing.T) {
+	config := BuildContainerConfig(dockerclient.ContainerConfig{})
+	assert.Empty(t, config.Affinities())
+
+	config.AddSoftImageAffinity("testimage")
+	assert.Len(t, config.Affinities(), 1)
+}
