@@ -21,16 +21,6 @@
 			"Rev": "bf4a526f48af7badd25d2cb02d587e1b01be3b50"
 		},
 		{
-			"ImportPath": "github.com/coreos/etcd/etcdserver/etcdhttp/httptypes",
-			"Comment": "v2.0.0-rc.1-288-g4c33d12",
-			"Rev": "4c33d12bf84fac9fd1b1a88cb8e95f6d4fab802a"
-		},
-		{
-			"ImportPath": "github.com/coreos/etcd/pkg/types",
-			"Comment": "v2.0.0-rc.1-288-g4c33d12",
-			"Rev": "4c33d12bf84fac9fd1b1a88cb8e95f6d4fab802a"
-		},
-		{
 			"ImportPath": "github.com/coreos/go-etcd/etcd",
 			"Comment": "v2.0.0-11-gcc90c7b",
 			"Rev": "cc90c7b091275e606ad0ca7102a23fb2072f3f5e"
@@ -59,6 +49,10 @@
 			"ImportPath": "github.com/docker/docker/pkg/version",
 			"Comment": "v1.4.1-3245-g443437f",
 			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv",
+			"Rev": "e201296a473f7e796488b8bf82629f28ca13634b"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
