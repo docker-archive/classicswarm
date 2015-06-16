@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/swarm/pkg/store"
+	"github.com/docker/libkv/store"
 )
 
 // Candidate runs the leader election algorithm asynchronously
