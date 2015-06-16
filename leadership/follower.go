@@ -1,6 +1,6 @@
 package leadership
 
-import "github.com/docker/swarm/pkg/store"
+import "github.com/docker/libkv/store"
 
 // Follower can folow an election in real-time and push notifications whenever
 // there is a change in leadership.
