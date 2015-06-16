@@ -33,13 +33,13 @@ Run '{{.Name}} COMMAND --help' for more information on a command.
 {{.Usage}}{{if $DISCOVERY}}
 
 Arguments: 
-   <discovery>                                  discovery service to use [$SWARM_DISCOVERY]
-                                                 * token://<token>
-                                                 * consul://<ip>/<path>
-                                                 * etcd://<ip1>,<ip2>/<path>
-                                                 * file://path/to/file
-                                                 * zk://<ip1>,<ip2>/<path>
-                                                 * <ip1>,<ip2>{{end}}{{if .Flags}}
+   <discovery>    discovery service to use [$SWARM_DISCOVERY]
+                   * token://<token>
+                   * consul://<ip>/<path>
+                   * etcd://<ip1>,<ip2>/<path>
+                   * file://path/to/file
+                   * zk://<ip1>,<ip2>/<path>
+                   * <ip1>,<ip2>{{end}}{{if .Flags}}
 
 Options:
    {{range .Flags}}{{.}}
