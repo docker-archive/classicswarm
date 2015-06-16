@@ -184,7 +184,6 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 			return image
 		}
 	}
-
 	return nil
 }
 
@@ -292,14 +291,24 @@ func (c *Cluster) listOffers() []*mesosproto.Offer {
 
 // TotalMemory return the total memory of the cluster
 func (c *Cluster) TotalMemory() int64 {
-	// TODO: use current offers
-	return 0
+	c.RLock()
+	defer c.RUnlock()
+	var totalMemory int64
+	for _, s := range c.slaves {
+		totalMemory += int64(sumScalarResourceValue(s.offers, "mem")) * 1024 * 1024
+	}
+	return totalMemory
 }
 
 // TotalCpus return the total memory of the cluster
 func (c *Cluster) TotalCpus() int64 {
-	// TODO: use current offers
-	return 0
+	c.RLock()
+	defer c.RUnlock()
+	var totalCpus int64
+	for _, s := range c.slaves {
+		totalCpus += int64(sumScalarResourceValue(s.offers, "cpus"))
+	}
+	return totalCpus
 }
 
 // Info gives minimal information about containers and resources on the mesos cluster
