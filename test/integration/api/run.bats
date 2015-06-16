@@ -62,3 +62,25 @@ function teardown() {
 	# pid
 	[[ "${output}" == *"\"PidMode\": \"host\""* ]]
 }
+
+@test "docker run - reschedule with soft-image-affinity" {
+	start_docker_with_busybox 1
+	start_docker 1
+
+	docker -H ${HOSTS[0]} tag busybox:latest busyboxabcde:latest
+	swarm_manage
+
+	# make sure busyboxabcde exists
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"busyboxabcde"* ]]
+
+	# try to create container on node-1, node-1 does not have busyboxabcde and will pull it
+	# but can not find busyboxabcde in dockerhub
+	# then will retry with soft-image-affinity
+	docker_swarm run -d --name test_container -e constraint:node==~node-1 busyboxabcde sleep 1000
+
+	# check container running on node-0
+	run docker_swarm ps
+	[[ "${output}" == *"node-0/test_container"* ]]
+}

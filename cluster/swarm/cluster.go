@@ -102,7 +102,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 	return container, err
 }
 
-func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, with_soft_image_affinity bool) (*cluster.Container, error) {
+func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, withSoftImageAffinity bool) (*cluster.Container, error) {
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
@@ -114,18 +114,18 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	// Associate a Swarm ID to the container we are creating.
 	config.SetSwarmID(c.generateUniqueID())
 
-	config_temp := config
-	if with_soft_image_affinity {
-		config_temp.AddSoftImageAffinity(config.Image)
+	configTemp := config
+	if withSoftImageAffinity {
+		configTemp.AddSoftImageAffinity(config.Image)
 	}
 
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config_temp)
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), configTemp)
 	if err != nil {
 		return nil, err
 	}
 
 	if nn, ok := c.engines[n.ID]; ok {
-		container, err := nn.Create(config_temp, name, true)
+		container, err := nn.Create(config, name, true)
 		if err != nil {
 			return nil, err
 		}
