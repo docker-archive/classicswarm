@@ -1,0 +1,11 @@
+{
+	"session_ttl_min": "1s",
+	"data_dir": "/data",
+	"ui_dir": "/ui",
+	"client_addr": "0.0.0.0",
+	"ports": {
+		"dns": 53
+	},
+	"recursor": "8.8.8.8",
+	"disable_update_check": true
+}
