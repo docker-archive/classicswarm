@@ -26,7 +26,7 @@ or Windows and have installed Docker, you should have VirtualBox already
 installed.
 
 Using the instructions appropriate to your system architecture, [install Docker
-Machine](http://docs.docker.com/machine/#installation).
+Machine](http://docs.docker.com/machine/install-machine).
 
 ## Create a Docker Swarm
 
@@ -125,7 +125,7 @@ In this section, you create a swarm manager and two nodes.
 2. Open your VirtualBox Manager, it should contain the `local` machine and the
 new `swarm-master` machine.
 
-	![VirtualBox](../virtual-box.png)
+	![VirtualBox](/images/virtual-box.png)
 		
 3. Create a swarm node.
 
