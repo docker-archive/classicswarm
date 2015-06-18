@@ -119,6 +119,17 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 	return cluster, nil
 }
 
+// Handle callbacks for the events
+func (c *Cluster) Handle(e *cluster.Event) error {
+	if c.eventHandler == nil {
+		return nil
+	}
+	if err := c.eventHandler.Handle(e); err != nil {
+		log.Error(err)
+	}
+	return nil
+}
+
 // RegisterEventHandler registers an event handler.
 func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 	if c.eventHandler != nil {
