@@ -49,16 +49,17 @@ If you are interested manually installing or interested in contributing, see [Cr
 
 ## Discovery services
 
-To dynamically configure and manage the services in your containers, you use a discovery backend with Docker Swarm. For information on which backends are available, see the [Discovery service](https://docs.docker.com/swarm/discovery/) documentation.
+To dynamically configure and manage the services in your containers, you use a discovery backend with Docker Swarm. For information on which backends are available, see the [Discovery service](discovery.md) documentation.
 
 ## Advanced Scheduling
 
-See [filters](https://docs.docker.com/swarm/scheduler/filter/) and [strategies](https://docs.docker.com/swarm/scheduler/strategy/) to learn
-more about advanced scheduling.
+To learn more about advanced scheduling, see the
+[strategies](/scheduler/strategy) and [filters](/scheduler/filter.md)
+documents.
 
 ## Swarm API
 
-The [Docker Swarm API](https://docs.docker.com/swarm/API/) is compatible with
+The [Docker Swarm API](/api/swarm-api.md) is compatible with
 the [Docker remote
 API](http://docs.docker.com/reference/api/docker_remote_api/), and extends it
 with some new endpoints.

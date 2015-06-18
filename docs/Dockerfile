@@ -8,17 +8,20 @@ COPY . /docs/content/swarm/
 
 # Sed to process GitHub Markdown
 # 1-2 Remove comment code from metadata block
-# 3 Remove .md extension from link text
-# 4 Change ](/ to ](/project/ in links
-# 5 Change ](word) to ](/project/word)
-# 6 Change ](../../ to ](/project/
-# 7 Change ](../ to ](/project/word)
-# 
+# 3 Change ](/word to ](/project/ in links
+# 4 Change ](word.md) to ](/project/word)
+# 5 Remove .md extension from link text
+# 6 Change ](./ to ](/project/word) 
+# 7 Change ](../../ to ](/project/ 
+# 8 Change ](../ to ](/project/ 
 # 
 RUN find /docs/content/swarm -type f -name "*.md" -exec sed -i.old \
     -e '/^<!.*metadata]>/g' \
     -e '/^<!.*end-metadata.*>/g' \
-    -e 's/\([(]\)\(.*\)\(\.md\)/\1\2/g' \
     -e 's/\(\]\)\([(]\)\(\/\)/\1\2\/swarm\//g' \
-    -e 's/\(\][(]\)\([A-z]*[)]\)/\]\(\/swarm\/\2/g' \
+    -e 's/\(\][(]\)\([A-z].*\)\(\.md\)/\1\/swarm\/\2/g' \
+    -e 's/\([(]\)\(.*\)\(\.md\)/\1\2/g'  \
+    -e 's/\(\][(]\)\(\.\/\)/\1\/swarm\//g' \
+    -e 's/\(\][(]\)\(\.\.\/\.\.\/\)/\1\/swarm\//g' \
     -e 's/\(\][(]\)\(\.\.\/\)/\1\/swarm\//g' {} \;
+
