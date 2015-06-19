@@ -30,10 +30,6 @@ func (t *task) ID() string {
 	return t.TaskId.GetValue()
 }
 
-func (t *task) Do() bool {
-	return t.cluster.scheduleTask(t)
-}
-
 func (t *task) build(slaveID string) {
 	t.Command = &mesosproto.CommandInfo{Shell: proto.Bool(false)}
 
@@ -52,9 +48,7 @@ func (t *task) build(slaveID string) {
 	case "bridge", "":
 		for containerPort, bindings := range t.config.HostConfig.PortBindings {
 			for _, binding := range bindings {
-				fmt.Println(containerPort)
 				containerInfo := strings.SplitN(containerPort, "/", 2)
-				fmt.Println(containerInfo[0], containerInfo[1])
 				containerPort, err := strconv.ParseUint(containerInfo[0], 10, 32)
 				if err != nil {
 					log.Warn(err)
@@ -144,20 +138,16 @@ func (t *task) monitor() (bool, []byte, error) {
 	taskStatus := t.getStatus()
 
 	switch taskStatus.GetState() {
-	case mesosproto.TaskState_TASK_STAGING:
-	case mesosproto.TaskState_TASK_STARTING:
 	case mesosproto.TaskState_TASK_RUNNING:
-	case mesosproto.TaskState_TASK_FINISHED:
-		return true, taskStatus.Data, nil
-	case mesosproto.TaskState_TASK_FAILED:
-		return true, nil, errors.New(taskStatus.GetMessage())
+		return false, taskStatus.Data, nil
 	case mesosproto.TaskState_TASK_KILLED:
-		return true, taskStatus.Data, nil
+	case mesosproto.TaskState_TASK_FINISHED:
+		return true, nil, nil
+	case mesosproto.TaskState_TASK_FAILED:
 	case mesosproto.TaskState_TASK_LOST:
-		return true, nil, errors.New(taskStatus.GetMessage())
 	case mesosproto.TaskState_TASK_ERROR:
 		return true, nil, errors.New(taskStatus.GetMessage())
 	}
 
-	return false, taskStatus.Data, nil
+	return false, nil, errors.New("Unexpected task status: " + taskStatus.GetMessage())
 }

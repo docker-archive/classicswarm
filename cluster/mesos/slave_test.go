@@ -27,12 +27,10 @@ func TestAddOffer(t *testing.T) {
 	s.addOffer(mesosutil.NewOffer(mesosutil.NewOfferID("ID1"), nil, nil, "hostname1"))
 	s.addOffer(mesosutil.NewOffer(mesosutil.NewOfferID("ID2"), nil, nil, "hostname1"))
 	assert.Equal(t, len(s.offers), 2)
-	assert.Equal(t, len(s.getOffers()), 2)
 	assert.False(t, s.empty())
 
 	s.addOffer(mesosutil.NewOffer(mesosutil.NewOfferID("ID1"), nil, nil, "hostname1"))
 	assert.Equal(t, len(s.offers), 2)
-	assert.Equal(t, len(s.getOffers()), 2)
 }
 
 func TestAddTask(t *testing.T) {
@@ -65,13 +63,11 @@ func TestRemoveOffer(t *testing.T) {
 	s.addOffer(mesosutil.NewOffer(mesosutil.NewOfferID("ID1"), nil, nil, "hostname1"))
 	s.addOffer(mesosutil.NewOffer(mesosutil.NewOfferID("ID2"), nil, nil, "hostname1"))
 	assert.Equal(t, len(s.offers), 2)
-	assert.Equal(t, len(s.getOffers()), 2)
 
-	assert.True(t, s.removeOffer("ID1"))
+	assert.True(t, s.removeOffer("ID1", false))
 	assert.Equal(t, len(s.offers), 1)
-	assert.Equal(t, len(s.getOffers()), 1)
 
-	assert.False(t, s.removeOffer("ID1"))
+	assert.False(t, s.removeOffer("ID1", false))
 }
 
 func TestRemoveTask(t *testing.T) {

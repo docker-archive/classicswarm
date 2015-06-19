@@ -40,7 +40,7 @@ func (c *Cluster) ResourceOffers(_ mesosscheduler.SchedulerDriver, offers []*mes
 		}
 		c.addOffer(offer)
 	}
-	go c.pendingTasks.Process()
+	go c.pendingTasks.Process(c)
 }
 
 // OfferRescinded method
