@@ -15,7 +15,6 @@ import (
 	"github.com/docker/swarm/cluster/mesos/queue"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/docker/swarm/state"
 	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
@@ -45,11 +44,12 @@ const (
 	defaultDockerEnginePort    = "2375"
 	defaultDockerEngineTLSPort = "2376"
 	defaultOfferTimeout        = 10 * time.Minute
-	taskCreationTimeout        = 5 * time.Second
+	taskCreationTimeout        = 30 * time.Second
 )
 
 var (
-	errNotSupported = errors.New("not supported with mesos")
+	errNotSupported     = errors.New("not supported with mesos")
+	errNoOfferAvailable = errors.New("no offer available to schedule container")
 )
 
 // NewCluster for mesos Cluster creation
@@ -155,7 +155,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 		return nil, err
 	case <-time.After(taskCreationTimeout):
 		c.pendingTasks.Remove(task)
-		return nil, strategy.ErrNoResourcesAvailable
+		return nil, errNoOfferAvailable
 	}
 }
 
