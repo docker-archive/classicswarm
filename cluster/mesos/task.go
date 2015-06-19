@@ -120,6 +120,18 @@ func (t *task) build(slaveID string) {
 		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("env"), Value: proto.String(value)})
 	}
 
+	for _, value := range t.config.HostConfig.Links {
+		nameAlias := strings.SplitN(value, ":", 2)
+		if len(nameAlias) != 2 {
+			nameAlias = append(nameAlias, nameAlias[0])
+		}
+
+		container := t.cluster.Container(nameAlias[0])
+		if container != nil {
+			t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("link"), Value: proto.String(container.Id + ":" + nameAlias[1])})
+		}
+	}
+
 	t.SlaveId = &mesosproto.SlaveID{Value: &slaveID}
 }
 
