@@ -3,6 +3,7 @@ package mesos
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 
@@ -44,26 +45,37 @@ func (t *task) build(slaveID string) {
 		},
 	}
 
+	if t.config.Hostname != "" {
+		t.Container.Hostname = proto.String(t.config.Hostname)
+		if t.config.Domainname != "" {
+			t.Container.Hostname = proto.String(t.config.Hostname + "." + t.config.Domainname)
+		}
+	}
+
 	switch t.config.HostConfig.NetworkMode {
 	case "none":
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_NONE.Enum()
 	case "host":
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_HOST.Enum()
 	case "bridge", "":
-		for containerPort, bindings := range t.config.HostConfig.PortBindings {
+		for containerProtoPort, bindings := range t.config.HostConfig.PortBindings {
 			for _, binding := range bindings {
-				fmt.Println(containerPort)
-				containerInfo := strings.SplitN(containerPort, "/", 2)
-				fmt.Println(containerInfo[0], containerInfo[1])
+				containerInfo := strings.SplitN(containerProtoPort, "/", 2)
 				containerPort, err := strconv.ParseUint(containerInfo[0], 10, 32)
 				if err != nil {
 					log.Warn(err)
 					continue
 				}
-				hostPort, err := strconv.ParseUint(binding.HostPort, 10, 32)
-				if err != nil {
-					log.Warn(err)
-					continue
+				// TODO do not hardcode 31000
+				hostPort := 31000 + uint64(rand.Int63n(1000))
+				fmt.Println(binding.HostPort)
+
+				if binding.HostPort != "" {
+					hostPort, err = strconv.ParseUint(binding.HostPort, 10, 32)
+					if err != nil {
+						log.Warn(err)
+						continue
+					}
 				}
 				protocol := "tcp"
 				if len(containerInfo) == 2 {
