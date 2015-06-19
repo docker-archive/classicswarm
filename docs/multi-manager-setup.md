@@ -1,4 +1,15 @@
-# High availability in Swarm
+<!--[metadata]>
++++
+title = "High availability in Docker Swarm"
+description = "High availability in Docker Swarm"
+keywords = ["docker, swarm,  clustering"]
+[menu.main]
+parent="smn_workw_swarm"
+weight=3
++++
+<![end-metadata]-->
+
+# High availability in Docker Swarm
 
 In Docker Swarm, the **swarm manager** is responsible for the entire cluster and manages the resources of multiple *Docker hosts* at scale. If the swarm manager dies, you must create a new one and deal with an interruption of service.
 
