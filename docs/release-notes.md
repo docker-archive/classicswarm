@@ -1,5 +1,6 @@
 <!--[metadata]>
 +++
+draft=true
 title = "Docker Swarm Release Notes"
 description = "Docker Swarm release notes"
 keywords = ["docker, swarm, clustering, discovery, release,  notes"]
