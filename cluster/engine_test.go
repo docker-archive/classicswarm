@@ -251,3 +251,36 @@ func TestUsedCpus(t *testing.T) {
 		}
 	}
 }
+
+func TestContainerRemovedDuringRefresh(t *testing.T) {
+	var (
+		container1 = dockerclient.Container{Id: "c1"}
+		container2 = dockerclient.Container{Id: "c2"}
+		info1      *dockerclient.ContainerInfo
+		info2      = &dockerclient.ContainerInfo{Id: "c2", Config: &dockerclient.ContainerConfig{}}
+	)
+
+	engine := NewEngine("test", 0)
+	assert.False(t, engine.isConnected())
+
+	// A container is removed before it can be inspected.
+	client := mockclient.NewMockClient()
+
+	client.On("Info").Return(mockInfo, nil)
+	client.On("Version").Return(mockVersion, nil)
+	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{container1, container2}, nil)
+	client.On("InspectContainer", "c1").Return(info1, errors.New("Not found"))
+	client.On("InspectContainer", "c2").Return(info2, nil)
+
+	assert.NoError(t, engine.ConnectWithClient(client))
+	assert.Nil(t, engine.RefreshContainers(true))
+
+	// List of containers is still valid
+	containers := engine.Containers()
+	assert.Len(t, containers, 1)
+	assert.Equal(t, containers[0].Id, "c2")
+
+	client.Mock.AssertExpectations(t)
+}
