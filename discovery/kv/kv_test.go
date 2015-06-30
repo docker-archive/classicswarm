@@ -85,7 +85,7 @@ func TestWatch(t *testing.T) {
 	stopCh := make(chan struct{})
 	ch, errCh := d.Watch(stopCh)
 
-	// It should fire an error since the first WatchRange call failed.
+	// It should fire an error since the first WatchTree call failed.
 	assert.EqualError(t, <-errCh, "test error")
 	// We have to drain the error channel otherwise Watch will get stuck.
 	go func() {
