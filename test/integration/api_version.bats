@@ -12,16 +12,20 @@ function teardown() {
 # and your host CLI version differs from DOCKER_VERSION.
 @test "api version" {
 	start_docker 1
-	run docker -H "${HOSTS[0]}" version
+
+	# Get version output
+	out=$(docker -H "${HOSTS[0]}" version)	
+
+	# Check client version
+	run bash -c "echo '$out' | grep -i version | grep -v Go | grep -v API"
 	[ "$status" -eq 0 ]
 
-	# First line should contain the client version.
-	[[ "${lines[0]}" == "Client version: "* ]]
-	local cli_version=`echo "${lines[0]}" | cut -d':' -f2`
-	[[ "${output}" == *"Server version:$cli_version"* ]]
+	[[ $(echo "${lines[0]}" | cut -d':' -f2) == $(echo "${lines[1]}" | cut -d':' -f2) ]]
 
-	# Second line should be client API version.
-	[[ "${lines[1]}" == "Client API version: "* ]]
-	local cli_api_version=`echo "${lines[1]}" | cut -d':' -f2`
-	[[ "${output}" == *"Server API version:$cli_api_version"* ]]
+	# Check API version
+	run bash -c "echo '$out' | grep -i version | grep API"
+	[ "$status" -eq 0 ]
+
+	[[ $(echo "${lines[0]}" | cut -d':' -f2) == $(echo "${lines[1]}" | cut -d':' -f2) ]]
+
 }
