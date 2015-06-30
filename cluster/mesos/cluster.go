@@ -44,7 +44,7 @@ const (
 	defaultDockerEnginePort    = "2375"
 	defaultDockerEngineTLSPort = "2376"
 	defaultOfferTimeout        = 10 * time.Minute
-	taskCreationTimeout        = 5 * time.Second
+	taskCreationTimeout        = 30 * time.Second
 )
 
 var (
@@ -153,9 +153,6 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 
 // RemoveContainer to remove containers on mesos cluster
 func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) error {
-	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
-
 	return container.Engine.RemoveContainer(container, force)
 }
 
@@ -226,9 +223,6 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	if len(IDOrName) == 0 {
 		return nil
 	}
-
-	c.RLock()
-	defer c.RUnlock()
 
 	return formatContainer(cluster.Containers(c.Containers()).Get(IDOrName))
 }
@@ -336,6 +330,9 @@ func (c *Cluster) Info() [][]string {
 }
 
 func (c *Cluster) addOffer(offer *mesosproto.Offer) {
+	c.Lock()
+	defer c.Unlock()
+
 	s, ok := c.slaves[offer.SlaveId.GetValue()]
 	if !ok {
 		return
@@ -344,7 +341,7 @@ func (c *Cluster) addOffer(offer *mesosproto.Offer) {
 	go func(offer *mesosproto.Offer) {
 		time.Sleep(c.offerTimeout)
 		// declining Mesos offers to make them available to other Mesos services
-		c.Lock()
+
 		if c.removeOffer(offer) {
 			if _, err := c.driver.DeclineOffer(offer.Id, &mesosproto.Filters{}); err != nil {
 				log.WithFields(log.Fields{"name": "mesos"}).Errorf("Error while declining offer %q: %v", offer.Id.GetValue(), err)
@@ -352,11 +349,11 @@ func (c *Cluster) addOffer(offer *mesosproto.Offer) {
 				log.WithFields(log.Fields{"name": "mesos"}).Debugf("Offer %q declined successfully", offer.Id.GetValue())
 			}
 		}
-		c.Unlock()
+
 	}(offer)
 }
 
-func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
+func (c *Cluster) _removeOffer(offer *mesosproto.Offer) bool {
 	log.WithFields(log.Fields{"name": "mesos", "offerID": offer.Id.String()}).Debug("Removing offer")
 	s, ok := c.slaves[offer.SlaveId.GetValue()]
 	if !ok {
@@ -370,11 +367,19 @@ func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 	return found
 }
 
+func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
+	c.Lock()
+	defer c.Unlock()
+
+	return c._removeOffer(offer)
+}
+
 func (c *Cluster) placeTask(task *task, nodes []*node.Node) *slave {
 	n, err := c.scheduler.SelectNodeForContainer(nodes, task.config)
 	if err != nil {
 		return nil
 	}
+
 	s, ok := c.slaves[n.ID]
 	if !ok {
 		task.error <- fmt.Errorf("Unable to create on slave %q", n.ID)
@@ -420,7 +425,7 @@ func (c *Cluster) scheduleTasks(tasks []*task) []*task {
 	for s := range usedSlaves {
 		for _, offer := range c.slaves[s.id].offers {
 			offerIDs = append(offerIDs, offer.Id)
-			c.removeOffer(offer)
+			c._removeOffer(offer)
 		}
 	}
 
