@@ -25,16 +25,18 @@ const APIVERSION = "1.16"
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := dockerclient.Info{
-		Containers:      int64(len(c.cluster.Containers())),
-		Images:          int64(len(c.cluster.Images())),
-		DriverStatus:    c.statusHandler.Status(),
-		NEventsListener: int64(c.eventsHandler.Size()),
-		Debug:           c.debug,
-		MemoryLimit:     true,
-		SwapLimit:       true,
-		IPv4Forwarding:  true,
-		NCPU:            c.cluster.TotalCpus(),
-		MemTotal:        c.cluster.TotalMemory(),
+		Containers:        int64(len(c.cluster.Containers())),
+		Images:            int64(len(c.cluster.Images())),
+		DriverStatus:      c.statusHandler.Status(),
+		NEventsListener:   int64(c.eventsHandler.Size()),
+		Debug:             c.debug,
+		MemoryLimit:       true,
+		SwapLimit:         true,
+		IPv4Forwarding:    true,
+		BridgeNfIptables:  true,
+		BridgeNfIp6tables: true,
+		NCPU:              c.cluster.TotalCpus(),
+		MemTotal:          c.cluster.TotalMemory(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
