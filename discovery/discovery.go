@@ -153,7 +153,10 @@ func CreateEntries(addrs []string) (Entries, error) {
 	}
 
 	for _, addr := range addrs {
-		if len(addr) == 0 {
+		// Check if addr is non empty and valid,
+		// FIXME <= 1 because zookeeper may wrongfully
+		// return a separator character (SOH)
+		if len(addr) <= 1 {
 			continue
 		}
 		entry, err := NewEntry(addr)
