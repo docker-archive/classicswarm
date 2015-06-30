@@ -7,8 +7,9 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/libkv"
+	"github.com/docker/libkv/store"
 	"github.com/docker/swarm/discovery"
-	"github.com/docker/swarm/pkg/store"
 )
 
 const (
@@ -55,7 +56,7 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Du
 
 	// Creates a new store, will ignore options given
 	// if not supported by the chosen store
-	s.store, err = store.NewStore(
+	s.store, err = libkv.NewStore(
 		s.backend,
 		addrs,
 		&store.Config{
