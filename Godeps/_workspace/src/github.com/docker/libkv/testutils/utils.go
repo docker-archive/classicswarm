@@ -1,25 +1,28 @@
-package store
+package testutils
 
 import (
 	"testing"
 	"time"
 
+	"github.com/docker/libkv/store"
 	"github.com/stretchr/testify/assert"
 )
 
-func testStore(t *testing.T, kv Store) {
+// RunTestStore is an helper testing method that is
+// called by each K/V backend sub-package testing
+func RunTestStore(t *testing.T, kv store.Store, backup store.Store) {
 	testPutGetDelete(t, kv)
 	testWatch(t, kv)
 	testWatchTree(t, kv)
 	testAtomicPut(t, kv)
 	testAtomicDelete(t, kv)
 	testLockUnlock(t, kv)
-	testPutEphemeral(t, kv)
+	testPutEphemeral(t, kv, backup)
 	testList(t, kv)
 	testDeleteTree(t, kv)
 }
 
-func testPutGetDelete(t *testing.T, kv Store) {
+func testPutGetDelete(t *testing.T, kv store.Store) {
 	key := "foo"
 	value := []byte("bar")
 
@@ -46,7 +49,7 @@ func testPutGetDelete(t *testing.T, kv Store) {
 	assert.Nil(t, pair)
 }
 
-func testWatch(t *testing.T, kv Store) {
+func testWatch(t *testing.T, kv store.Store) {
 	key := "hello"
 	value := []byte("world")
 	newValue := []byte("world!")
@@ -79,7 +82,6 @@ func testWatch(t *testing.T, kv Store) {
 	}()
 
 	// Check for updates
-	timeout := time.After(2 * time.Second)
 	eventCount := 1
 	for {
 		select {
@@ -97,14 +99,14 @@ func testWatch(t *testing.T, kv Store) {
 			if eventCount >= 4 {
 				return
 			}
-		case <-timeout:
+		case <-time.After(4 * time.Second):
 			t.Fatal("Timeout reached")
 			return
 		}
 	}
 }
 
-func testWatchTree(t *testing.T, kv Store) {
+func testWatchTree(t *testing.T, kv store.Store) {
 	dir := "tree"
 
 	node1 := "tree/node1"
@@ -142,7 +144,6 @@ func testWatchTree(t *testing.T, kv Store) {
 	}()
 
 	// Check for updates
-	timeout := time.After(4 * time.Second)
 	for {
 		select {
 		case event := <-events:
@@ -152,14 +153,14 @@ func testWatchTree(t *testing.T, kv Store) {
 			if len(event) == 2 {
 				return
 			}
-		case <-timeout:
+		case <-time.After(4 * time.Second):
 			t.Fatal("Timeout reached")
 			return
 		}
 	}
 }
 
-func testAtomicPut(t *testing.T, kv Store) {
+func testAtomicPut(t *testing.T, kv store.Store) {
 	key := "hello"
 	value := []byte("world")
 
@@ -176,8 +177,13 @@ func testAtomicPut(t *testing.T, kv Store) {
 	assert.Equal(t, pair.Value, value)
 	assert.NotEqual(t, pair.LastIndex, 0)
 
+	// This CAS should fail: no previous
+	success, _, err := kv.AtomicPut("hello", []byte("WORLD"), nil, nil)
+	assert.Error(t, err)
+	assert.False(t, success)
+
 	// This CAS should succeed
-	success, _, err := kv.AtomicPut("hello", []byte("WORLD"), pair, nil)
+	success, _, err = kv.AtomicPut("hello", []byte("WORLD"), pair, nil)
 	assert.NoError(t, err)
 	assert.True(t, success)
 
@@ -188,7 +194,7 @@ func testAtomicPut(t *testing.T, kv Store) {
 	assert.False(t, success)
 }
 
-func testAtomicDelete(t *testing.T, kv Store) {
+func testAtomicDelete(t *testing.T, kv store.Store) {
 	key := "atomic"
 	value := []byte("world")
 
@@ -220,14 +226,12 @@ func testAtomicDelete(t *testing.T, kv Store) {
 	assert.True(t, success)
 }
 
-func testLockUnlock(t *testing.T, kv Store) {
-	t.Parallel()
-
+func testLockUnlock(t *testing.T, kv store.Store) {
 	key := "foo"
 	value := []byte("bar")
 
 	// We should be able to create a new lock on key
-	lock, err := kv.NewLock(key, &LockOptions{Value: value})
+	lock, err := kv.NewLock(key, &store.LockOptions{Value: value})
 	assert.NoError(t, err)
 	assert.NotNil(t, lock)
 
@@ -259,15 +263,7 @@ func testLockUnlock(t *testing.T, kv Store) {
 	assert.NotEqual(t, pair.LastIndex, 0)
 }
 
-// FIXME Gracefully handle Zookeeper
-func testPutEphemeral(t *testing.T, kv Store) {
-	// Zookeeper: initialize client here (Close() hangs otherwise)
-	zookeeper := false
-	if _, ok := kv.(*Zookeeper); ok {
-		zookeeper = true
-		kv = makeZkClient(t)
-	}
-
+func testPutEphemeral(t *testing.T, kv store.Store, otherConn store.Store) {
 	firstKey := "first"
 	firstValue := []byte("foo")
 
@@ -275,11 +271,11 @@ func testPutEphemeral(t *testing.T, kv Store) {
 	secondValue := []byte("bar")
 
 	// Put the first key with the Ephemeral flag
-	err := kv.Put(firstKey, firstValue, &WriteOptions{Ephemeral: true})
+	err := otherConn.Put(firstKey, firstValue, &store.WriteOptions{Ephemeral: true})
 	assert.NoError(t, err)
 
 	// Put a second key with the Ephemeral flag
-	err = kv.Put(secondKey, secondValue, &WriteOptions{Ephemeral: true})
+	err = otherConn.Put(secondKey, secondValue, &store.WriteOptions{Ephemeral: true})
 	assert.NoError(t, err)
 
 	// Get on firstKey should work
@@ -292,18 +288,11 @@ func testPutEphemeral(t *testing.T, kv Store) {
 	assert.NoError(t, err)
 	assert.NotNil(t, pair)
 
-	// Zookeeper: close client connection
-	if zookeeper {
-		kv.Close()
-	}
+	// Close the connection
+	otherConn.Close()
 
 	// Let the session expire
-	time.Sleep(5 * time.Second)
-
-	// Zookeeper: re-create the client
-	if zookeeper {
-		kv = makeZkClient(t)
-	}
+	time.Sleep(3 * time.Second)
 
 	// Get on firstKey shouldn't work
 	pair, err = kv.Get(firstKey)
@@ -316,7 +305,7 @@ func testPutEphemeral(t *testing.T, kv Store) {
 	assert.Nil(t, pair)
 }
 
-func testList(t *testing.T, kv Store) {
+func testList(t *testing.T, kv store.Store) {
 	prefix := "nodes"
 
 	firstKey := "nodes/first"
@@ -349,9 +338,14 @@ func testList(t *testing.T, kv Store) {
 			assert.Equal(t, pair.Value, secondValue)
 		}
 	}
+
+	// List should fail: the key does not exist
+	pairs, err = kv.List("idontexist")
+	assert.Error(t, err)
+	assert.Nil(t, pairs)
 }
 
-func testDeleteTree(t *testing.T, kv Store) {
+func testDeleteTree(t *testing.T, kv store.Store) {
 	prefix := "nodes"
 
 	firstKey := "nodes/first"

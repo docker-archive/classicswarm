@@ -1,21 +1,24 @@
-package store
+package etcd
 
 import (
 	"testing"
 	"time"
+
+	"github.com/docker/libkv/store"
+	"github.com/docker/libkv/testutils"
 )
 
-func makeEtcdClient(t *testing.T) Store {
+func makeEtcdClient(t *testing.T) store.Store {
 	client := "localhost:4001"
 
-	kv, err := NewStore(
-		ETCD,
+	kv, err := New(
 		[]string{client},
-		&Config{
+		&store.Config{
 			ConnectionTimeout: 3 * time.Second,
 			EphemeralTTL:      2 * time.Second,
 		},
 	)
+
 	if err != nil {
 		t.Fatalf("cannot create store: %v", err)
 	}
@@ -25,6 +28,7 @@ func makeEtcdClient(t *testing.T) Store {
 
 func TestEtcdStore(t *testing.T) {
 	kv := makeEtcdClient(t)
+	backup := makeEtcdClient(t)
 
-	testStore(t, kv)
+	testutils.RunTestStore(t, kv, backup)
 }

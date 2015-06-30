@@ -4,8 +4,8 @@ import (
 	"strings"
 )
 
-// Creates a list of endpoints given the right scheme
-func createEndpoints(addrs []string, scheme string) (entries []string) {
+// CreateEndpoints creates a list of endpoints given the right scheme
+func CreateEndpoints(addrs []string, scheme string) (entries []string) {
 	for _, addr := range addrs {
 		entries = append(entries, scheme+"://"+addr)
 	}
@@ -16,22 +16,23 @@ func createEndpoints(addrs []string, scheme string) (entries []string) {
 //
 //     /path/to/key
 //
-func normalize(key string) string {
-	return "/" + join(splitKey(key))
+func Normalize(key string) string {
+	return "/" + join(SplitKey(key))
 }
 
-// Get the full directory part of the key to the form:
+// GetDirectory gets the full directory part of
+// the key to the form:
 //
 //     /path/to/
 //
-func getDirectory(key string) string {
-	parts := splitKey(key)
+func GetDirectory(key string) string {
+	parts := SplitKey(key)
 	parts = parts[:len(parts)-1]
 	return "/" + join(parts)
 }
 
 // SplitKey splits the key to extract path informations
-func splitKey(key string) (path []string) {
+func SplitKey(key string) (path []string) {
 	if strings.Contains(key, "/") {
 		path = strings.Split(key, "/")
 	} else {
@@ -40,7 +41,7 @@ func splitKey(key string) (path []string) {
 	return path
 }
 
-// Join the path parts with '/'
+// join the path parts with '/'
 func join(parts []string) string {
 	return strings.Join(parts, "/")
 }

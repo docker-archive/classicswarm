@@ -4,42 +4,34 @@ import (
 	"crypto/tls"
 	"errors"
 	"time"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 // Backend represents a KV Store Backend
 type Backend string
 
 const (
-	// MOCK backend
-	MOCK Backend = "mock"
 	// CONSUL backend
-	CONSUL = "consul"
+	CONSUL Backend = "consul"
 	// ETCD backend
-	ETCD = "etcd"
+	ETCD Backend = "etcd"
 	// ZK backend
-	ZK = "zk"
+	ZK Backend = "zk"
 )
 
 var (
-	// ErrInvalidTTL is a specific error to consul
-	ErrInvalidTTL = errors.New("Invalid TTL, please change the value to the miminum allowed ttl for the chosen store")
-	// ErrNotSupported is exported
+	// ErrNotSupported is thrown when the backend k/v store is not supported by libkv
 	ErrNotSupported = errors.New("Backend storage not supported yet, please choose another one")
-	// ErrNotImplemented is exported
+	// ErrNotImplemented is thrown when a method is not implemented by the current backend
 	ErrNotImplemented = errors.New("Call not implemented in current backend")
-	// ErrNotReachable is exported
+	// ErrNotReachable is thrown when the API cannot be reached for issuing common store operations
 	ErrNotReachable = errors.New("Api not reachable")
-	// ErrCannotLock is exported
+	// ErrCannotLock is thrown when there is an error acquiring a lock on a key
 	ErrCannotLock = errors.New("Error acquiring the lock")
-	// ErrWatchDoesNotExist is exported
-	ErrWatchDoesNotExist = errors.New("No watch found for specified key")
-	// ErrKeyModified is exported
+	// ErrKeyModified is thrown during an atomic operation if the index does not match the one in the store
 	ErrKeyModified = errors.New("Unable to complete atomic operation, key modified")
-	// ErrKeyNotFound is exported
+	// ErrKeyNotFound is thrown when the key is not found in the store during a Get operation
 	ErrKeyNotFound = errors.New("Key not found in store")
-	// ErrPreviousNotSpecified is exported
+	// ErrPreviousNotSpecified is thrown when the previous value is not specified for an atomic operation
 	ErrPreviousNotSpecified = errors.New("Previous K/V pair should be provided for the Atomic operation")
 )
 
@@ -67,28 +59,23 @@ type Store interface {
 	// Verify if a Key exists in the store
 	Exists(key string) (bool, error)
 
-	// Watch changes on a key.
-	// Returns a channel that will receive changes or an error.
-	// Upon creating a watch, the current value will be sent to the channel.
-	// Providing a non-nil stopCh can be used to stop watching.
+	// Watch for changes on a key
 	Watch(key string, stopCh <-chan struct{}) (<-chan *KVPair, error)
 
-	// WatchTree watches changes on a "directory"
-	// Returns a channel that will receive changes or an error.
-	// Upon creating a watch, the current value will be sent to the channel.
-	// Providing a non-nil stopCh can be used to stop watching.
-	WatchTree(prefix string, stopCh <-chan struct{}) (<-chan []*KVPair, error)
+	// WatchTree watches for changes on child nodes under
+	// a given a directory
+	WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*KVPair, error)
 
 	// CreateLock for a given key.
-	// The returned Locker is not held and must be acquired with `.Lock`.
-	// value is optional.
+	// The returned Locker is not held and must be acquired
+	// with `.Lock`. The Value is optional.
 	NewLock(key string, options *LockOptions) (Locker, error)
 
 	// List the content of a given prefix
-	List(prefix string) ([]*KVPair, error)
+	List(directory string) ([]*KVPair, error)
 
-	// DeleteTree deletes a range of keys based on prefix
-	DeleteTree(prefix string) error
+	// DeleteTree deletes a range of keys under a given directory
+	DeleteTree(directory string) error
 
 	// Atomic operation on a single value
 	AtomicPut(key string, value []byte, previous *KVPair, options *WriteOptions) (bool, *KVPair, error)
@@ -128,27 +115,4 @@ type WatchCallback func(entries ...*KVPair)
 type Locker interface {
 	Lock() (<-chan struct{}, error)
 	Unlock() error
-}
-
-// Initialize creates a new Store object, initializing the client
-type Initialize func(addrs []string, options *Config) (Store, error)
-
-var (
-	// Backend initializers
-	initializers = map[Backend]Initialize{
-		MOCK:   InitializeMock,
-		CONSUL: InitializeConsul,
-		ETCD:   InitializeEtcd,
-		ZK:     InitializeZookeeper,
-	}
-)
-
-// NewStore creates a an instance of store
-func NewStore(backend Backend, addrs []string, options *Config) (Store, error) {
-	if init, exists := initializers[backend]; exists {
-		log.WithFields(log.Fields{"backend": backend}).Debug("Initializing store service")
-		return init(addrs, options)
-	}
-
-	return nil, ErrNotSupported
 }

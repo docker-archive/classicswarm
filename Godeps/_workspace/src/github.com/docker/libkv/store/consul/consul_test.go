@@ -1,23 +1,25 @@
-package store
+package consul
 
 import (
 	"testing"
 	"time"
 
+	"github.com/docker/libkv/store"
+	"github.com/docker/libkv/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
-func makeConsulClient(t *testing.T) Store {
+func makeConsulClient(t *testing.T) store.Store {
 	client := "localhost:8500"
 
-	kv, err := NewStore(
-		CONSUL,
+	kv, err := New(
 		[]string{client},
-		&Config{
+		&store.Config{
 			ConnectionTimeout: 3 * time.Second,
 			EphemeralTTL:      2 * time.Second,
 		},
 	)
+
 	if err != nil {
 		t.Fatalf("cannot create store: %v", err)
 	}
@@ -27,21 +29,12 @@ func makeConsulClient(t *testing.T) Store {
 
 func TestConsulStore(t *testing.T) {
 	kv := makeConsulClient(t)
+	backup := makeConsulClient(t)
 
-	testStore(t, kv)
+	testutils.RunTestStore(t, kv, backup)
 }
 
-func TestCreateEphemeralSession(t *testing.T) {
-	kv := makeConsulClient(t)
-
-	consul := kv.(*Consul)
-
-	err := consul.createEphemeralSession()
-	assert.NoError(t, err)
-	assert.NotEqual(t, consul.ephemeralSession, "")
-}
-
-func TestCheckActiveSession(t *testing.T) {
+func TestGetActiveSession(t *testing.T) {
 	kv := makeConsulClient(t)
 
 	consul := kv.(*Consul)
@@ -50,11 +43,11 @@ func TestCheckActiveSession(t *testing.T) {
 	value := []byte("bar")
 
 	// Put the first key with the Ephemeral flag
-	err := kv.Put(key, value, &WriteOptions{Ephemeral: true})
+	err := kv.Put(key, value, &store.WriteOptions{Ephemeral: true})
 	assert.NoError(t, err)
 
 	// Session should not be empty
-	session, err := consul.checkActiveSession(key)
+	session, err := consul.getActiveSession(key)
 	assert.NoError(t, err)
 	assert.NotEqual(t, session, "")
 
@@ -63,7 +56,7 @@ func TestCheckActiveSession(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check the session again, it should return nothing
-	session, err = consul.checkActiveSession(key)
+	session, err = consul.getActiveSession(key)
 	assert.NoError(t, err)
 	assert.Equal(t, session, "")
 }
