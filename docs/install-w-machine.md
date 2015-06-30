@@ -1,27 +1,25 @@
 <!--[metadata]>
 +++
-title = "Get Started with Docker Swarm"
+title = " Install and Create a Docker Swarm"
 description = "Swarm release notes"
 keywords = ["docker, swarm, clustering, discovery, release,  notes"]
 [menu.main]
-parent="smn_workw_swarm"
-weight=1
+parent="mn_install"
+weight=8
 +++
 <![end-metadata]-->
 
-# Get Started with Docker Swarm
+# Install and Create a Docker Swarm
 
-This page introduces you to Docker Swarm by teaching you how to create a swarm
-on your local machine using Docker Machine and VirtualBox. Once you have a feel
-for creating and interacting with a swarm, you can use what you learned to test
-deployment on a cloud provider or your own network.
+You use Docker Swarm to host and schedule a cluster of Docker containers. This section introduces you to Docker Swarm by teaching you how to create a swarm
+on your local machine using Docker Machine and VirtualBox.
 
 Remember, Docker Swarm is currently in BETA, so things are likely to change. We
 don't recommend you use it in production yet.
 
 ## Prerequisites
 
-Make sure your local system has VirtualBox installed. If you are using Mac OSX
+Make sure your local system has VirtualBox installed. If you are using Mac OS X
 or Windows and have installed Docker, you should have VirtualBox already
 installed.
 
@@ -44,10 +42,8 @@ you can create a swarm that is secured.
 		NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
 		dev    *        virtualbox   Running   tcp://192.168.99.100:2376   
 
-		
 	This example was run a Mac OSX system with `boot2docker` installed. So, the
 		`dev` environment in the list represents the `boot2docker` machine.
-
 
 2. Create a VirtualBox machine called `local` on your system.  
 
@@ -227,3 +223,10 @@ your swarm, and start an image on your swarm.
 		45821ca5208e        swarm:latest         "/swarm manage --tls   18 minutes ago      Up 18 minutes              2375/tcp, 192.168.99.104:3376->3376/tcp   swarm-master/swarm-agent-master   
 
 
+## Where to go next
+
+At this point, you've installed Docker Swarm by pulling the latest image of
+it from Docker Hub. Then, you built and ran a swarm on your local machine
+using VirtualBox. If you want, you can onto read an [overview of Docker Swarm
+features](/). Alternatively, you can develop a more in-depth view of Swarm by
+[manually installing Swarm](install-manual.md) on a network.
