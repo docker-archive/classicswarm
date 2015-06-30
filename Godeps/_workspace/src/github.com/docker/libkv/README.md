@@ -34,7 +34,7 @@ func main() {
 	client := "localhost:8500"
 
 	// Initialize a new store with consul
-	kv, err = libkv.NewStore(
+	kv, err := libkv.NewStore(
 		store.CONSUL, // or "consul"
 		[]string{client},
 		&store.Config{
