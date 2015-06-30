@@ -305,6 +305,8 @@ type Info struct {
 	MemoryLimit        interface{}
 	SwapLimit          interface{}
 	IPv4Forwarding     interface{}
+	BridgeNfIptables   bool
+	BridgeNfIp6tables  bool
 	DockerRootDir      string
 	HttpProxy          string
 	HttpsProxy         string
