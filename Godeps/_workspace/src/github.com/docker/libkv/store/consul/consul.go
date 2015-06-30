@@ -375,11 +375,16 @@ func (l *consulLock) Unlock() error {
 // AtomicPut put a value at "key" if the key has not been
 // modified in the meantime, throws an error if this is the case
 func (s *Consul) AtomicPut(key string, value []byte, previous *store.KVPair, options *store.WriteOptions) (bool, *store.KVPair, error) {
+
+	p := &api.KVPair{Key: s.normalize(key), Value: value}
+
 	if previous == nil {
-		return false, nil, store.ErrPreviousNotSpecified
+		// Consul interprets ModifyIndex = 0 as new key.
+		p.ModifyIndex = 0
+	} else {
+		p.ModifyIndex = previous.LastIndex
 	}
 
-	p := &api.KVPair{Key: s.normalize(key), Value: value, ModifyIndex: previous.LastIndex}
 	if work, _, err := s.client.KV().CAS(p, nil); err != nil {
 		return false, nil, err
 	} else if !work {
