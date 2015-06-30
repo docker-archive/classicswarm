@@ -209,9 +209,11 @@ func (e *Engine) RefreshContainers(full bool) error {
 
 	merged := make(map[string]*Container)
 	for _, c := range containers {
-		merged, err = e.updateContainer(c, merged, full)
+		mergedUpdate, err := e.updateContainer(c, merged, full)
 		if err != nil {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q", c.Id)
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q: %v", c.Id, err)
+		} else {
+			merged = mergedUpdate
 		}
 	}
 
