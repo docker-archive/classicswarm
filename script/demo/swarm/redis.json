@@ -1,0 +1,13 @@
+{
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "redis"
+    }    
+  },
+  "id": "marathon-redis",
+  "instances": 1,
+  "cpus": 0.25,
+  "mem": 256,
+  "uris": []
+}

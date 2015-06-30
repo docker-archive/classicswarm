@@ -1,0 +1,11 @@
+dashboard:
+ ports:
+  - "31500:9181"
+ mem_limit: 100m
+ image: vieux/rq-dashboard
+ command: -H 10.132.119.71
+
+worker:
+ mem_limit: 20m
+ image: vieux/rqworker
+ command: -u redis://10.132.119.71

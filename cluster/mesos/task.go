@@ -3,6 +3,7 @@ package mesos
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 
@@ -44,26 +45,37 @@ func (t *task) build(slaveID string) {
 		},
 	}
 
+	if t.config.Hostname != "" {
+		t.Container.Hostname = proto.String(t.config.Hostname)
+		if t.config.Domainname != "" {
+			t.Container.Hostname = proto.String(t.config.Hostname + "." + t.config.Domainname)
+		}
+	}
+
 	switch t.config.HostConfig.NetworkMode {
 	case "none":
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_NONE.Enum()
 	case "host":
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_HOST.Enum()
 	case "bridge", "":
-		for containerPort, bindings := range t.config.HostConfig.PortBindings {
+		for containerProtoPort, bindings := range t.config.HostConfig.PortBindings {
 			for _, binding := range bindings {
-				fmt.Println(containerPort)
-				containerInfo := strings.SplitN(containerPort, "/", 2)
-				fmt.Println(containerInfo[0], containerInfo[1])
+				containerInfo := strings.SplitN(containerProtoPort, "/", 2)
 				containerPort, err := strconv.ParseUint(containerInfo[0], 10, 32)
 				if err != nil {
 					log.Warn(err)
 					continue
 				}
-				hostPort, err := strconv.ParseUint(binding.HostPort, 10, 32)
-				if err != nil {
-					log.Warn(err)
-					continue
+				// TODO do not hardcode 31000
+				hostPort := 31000 + uint64(rand.Int63n(1000))
+				fmt.Println(binding.HostPort)
+
+				if binding.HostPort != "" {
+					hostPort, err = strconv.ParseUint(binding.HostPort, 10, 32)
+					if err != nil {
+						log.Warn(err)
+						continue
+					}
 				}
 				protocol := "tcp"
 				if len(containerInfo) == 2 {
@@ -102,6 +114,22 @@ func (t *task) build(slaveID string) {
 
 	for key, value := range t.config.Labels {
 		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("label"), Value: proto.String(fmt.Sprintf("%s=%s", key, value))})
+	}
+
+	for _, value := range t.config.Env {
+		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("env"), Value: proto.String(value)})
+	}
+
+	for _, value := range t.config.HostConfig.Links {
+		nameAlias := strings.SplitN(value, ":", 2)
+		if len(nameAlias) != 2 {
+			nameAlias = append(nameAlias, nameAlias[0])
+		}
+
+		container := t.cluster.Container(nameAlias[0])
+		if container != nil {
+			t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("link"), Value: proto.String(container.Id + ":" + nameAlias[1])})
+		}
 	}
 
 	t.SlaveId = &mesosproto.SlaveID{Value: &slaveID}
