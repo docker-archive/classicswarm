@@ -4,8 +4,8 @@ title = "Get Started with Docker Swarm"
 description = "Swarm release notes"
 keywords = ["docker, swarm, clustering, discovery, release,  notes"]
 [menu.main]
-parent="smn_workw_swarm"
-weight=1
+parent="mn_install"
+weight=9
 +++
 <![end-metadata]-->
 
