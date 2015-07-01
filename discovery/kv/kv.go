@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	discoveryPath           = "docker/swarm/nodes"
-	defaultFailoverWaitTime = 10 * time.Second
+	discoveryPath = "docker/swarm/nodes"
 )
 
 // Discovery is exported
@@ -124,7 +123,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 			// If we get here it means the store watch channel was closed. This
 			// is unexpected so let's retry later.
 			errCh <- fmt.Errorf("Unexpected watch error")
-			time.Sleep(defaultFailoverWaitTime)
+			time.Sleep(s.heartbeat)
 		}
 	}()
 	return ch, errCh
