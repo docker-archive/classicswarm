@@ -5,7 +5,7 @@ description = "Swarm release notes"
 keywords = ["docker, swarm, clustering, discovery, release,  notes"]
 [menu.main]
 parent="mn_install"
-weight=99
+weight=9
 +++
 <![end-metadata]-->
 
