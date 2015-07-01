@@ -27,17 +27,18 @@ import (
 type Cluster struct {
 	sync.RWMutex
 
-	driver           *mesosscheduler.MesosSchedulerDriver
-	dockerEnginePort string
-	eventHandler     cluster.EventHandler
-	master           string
-	slaves           map[string]*slave
-	scheduler        *scheduler.Scheduler
-	store            *state.Store
-	TLSConfig        *tls.Config
-	options          *cluster.DriverOpts
-	offerTimeout     time.Duration
-	pendingTasks     *queue.Queue
+	driver              *mesosscheduler.MesosSchedulerDriver
+	dockerEnginePort    string
+	eventHandler        cluster.EventHandler
+	master              string
+	slaves              map[string]*slave
+	scheduler           *scheduler.Scheduler
+	store               *state.Store
+	TLSConfig           *tls.Config
+	options             *cluster.DriverOpts
+	offerTimeout        time.Duration
+	taskCreationTimeout time.Duration
+	pendingTasks        *queue.Queue
 }
 
 const (
@@ -45,7 +46,7 @@ const (
 	defaultDockerEnginePort    = "2375"
 	defaultDockerEngineTLSPort = "2376"
 	defaultOfferTimeout        = 10 * time.Minute
-	taskCreationTimeout        = 5 * time.Second
+	defaultTaskCreationTimeout = 5 * time.Second
 )
 
 var (
@@ -57,14 +58,15 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 	log.WithFields(log.Fields{"name": "mesos"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
-		dockerEnginePort: defaultDockerEnginePort,
-		master:           master,
-		slaves:           make(map[string]*slave),
-		scheduler:        scheduler,
-		store:            store,
-		TLSConfig:        TLSConfig,
-		options:          &options,
-		offerTimeout:     defaultOfferTimeout,
+		dockerEnginePort:    defaultDockerEnginePort,
+		master:              master,
+		slaves:              make(map[string]*slave),
+		scheduler:           scheduler,
+		store:               store,
+		TLSConfig:           TLSConfig,
+		options:             &options,
+		offerTimeout:        defaultOfferTimeout,
+		taskCreationTimeout: defaultTaskCreationTimeout,
 	}
 
 	cluster.pendingTasks = queue.NewQueue()
@@ -78,6 +80,13 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		Master:    cluster.master,
 	}
 
+	if taskCreationTimeout, ok := options.String("mesos.tasktimeout", "SWARM_MESOS_TASK_TIMEOUT"); ok {
+		d, err := time.ParseDuration(taskCreationTimeout)
+		if err != nil {
+			return nil, err
+		}
+		cluster.taskCreationTimeout = d
+	}
 	// Changing port for https
 	if cluster.TLSConfig != nil {
 		cluster.dockerEnginePort = defaultDockerEngineTLSPort
@@ -142,7 +151,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 		return formatContainer(container), nil
 	case err := <-task.error:
 		return nil, err
-	case <-time.After(taskCreationTimeout):
+	case <-time.After(c.taskCreationTimeout):
 		c.pendingTasks.Remove(task)
 		return nil, strategy.ErrNoResourcesAvailable
 	}
