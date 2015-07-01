@@ -23,7 +23,7 @@ This section explains how to set up Docker Swarm using multiple **managers**.
 
 ### Assumptions
 
-You need either a `Consul`, `etcd`, or `Zookeeper` cluster. This procedure is written assuming a `Consul` server running on address `192.168.42.10:8500`. The sample swarm configuration has three machines:
+You need either a `Consul`, `etcd`, or `Zookeeper` cluster. This procedure is written assuming a `Consul` server running on address `192.168.42.10:8500`. All hosts will have a Docker Engine configured to listen on port 2375.  We will be configuring the Managers to operate on port 4000. The sample swarm configuration has three machines:
 
 - `manager-1` on `192.168.42.200`
 - `manager-2` on `192.168.42.201`
