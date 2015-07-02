@@ -25,7 +25,6 @@ function teardown() {
 }
 
 @test "docker attach through websocket" {
-	skip
 	CLIENT_API_VERSION="v1.17"
 	start_docker_with_busybox 2
 	swarm_manage
@@ -34,7 +33,7 @@ function teardown() {
 	docker_swarm run -d --name test_container busybox sleep 1000
 
 	# test attach-ws api
-	# jimmyxian/centos7-wssh is an image with websocket CLI(WSSH) wirtten in Nodejs
+	# jimmyxian/centos7-wssh is an image with websocket CLI(WSSH) wirtten in Python
 	# if connected successfull, it returns two lines, "Session Open" and "Session Closed"
 	# Note: with stdout=1&stdin=1&stream=1: it can be used as SSH
 	URL="ws://${SWARM_HOST}/${CLIENT_API_VERSION}/containers/test_container/attach/ws?stderr=1"
