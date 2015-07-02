@@ -375,7 +375,7 @@ func (client *DockerClient) StartMonitorEvents(cb Callback, ec chan error, args 
 				ec <- err
 				return
 			}
-			go cb(&e.Event, ec, args...)
+			cb(&e.Event, ec, args...)
 		}
 	}()
 }
