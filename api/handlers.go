@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"runtime"
 	"sort"
 	"strconv"
@@ -37,6 +38,13 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		BridgeNfIp6tables: true,
 		NCPU:              c.cluster.TotalCpus(),
 		MemTotal:          c.cluster.TotalMemory(),
+		HttpProxy:         os.Getenv("http_proxy"),
+		HttpsProxy:        os.Getenv("https_proxy"),
+		NoProxy:           os.Getenv("no_proxy"),
+	}
+
+	if hostname, err := os.Hostname(); err == nil {
+		info.Name = hostname
 	}
 
 	w.Header().Set("Content-Type", "application/json")
