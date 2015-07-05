@@ -55,5 +55,5 @@ for leader := <-leaderCh {
 }
 ```
 
-A typical usecase for this is to be able to always send requests to the current
+A typical use case for this is to be able to always send requests to the current
 leader.
