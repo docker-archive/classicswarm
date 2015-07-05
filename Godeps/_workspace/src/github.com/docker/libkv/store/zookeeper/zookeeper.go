@@ -8,7 +8,12 @@ import (
 	zk "github.com/samuel/go-zookeeper/zk"
 )
 
-const defaultTimeout = 10 * time.Second
+const (
+	// SOH control character
+	SOH = "\x01"
+
+	defaultTimeout = 10 * time.Second
+)
 
 // Zookeeper is the receiver type for
 // the Store interface
@@ -63,6 +68,12 @@ func (s *Zookeeper) Get(key string) (pair *store.KVPair, err error) {
 	// If resp is nil, the key does not exist
 	if resp == nil {
 		return nil, store.ErrKeyNotFound
+	}
+
+	// FIXME handle very rare cases where Get returns the
+	// SOH control character instead of the actual value
+	if string(resp) == SOH {
+		return s.Get(store.Normalize(key))
 	}
 
 	pair = &store.KVPair{
@@ -229,6 +240,10 @@ func (s *Zookeeper) List(directory string) ([]*store.KVPair, error) {
 	for _, key := range keys {
 		pair, err := s.Get(directory + store.Normalize(key))
 		if err != nil {
+			// If node is not found: List is out of date, retry
+			if err == zk.ErrNoNode {
+				return s.List(directory)
+			}
 			return nil, err
 		}
 
