@@ -11,9 +11,10 @@ import (
 var opts = DriverOpts{"foo1=bar", "foo2=-5", "foo3=7", "foo4=0.6", "foo5=127.0.0.1"}
 
 func TestString(t *testing.T) {
-	os.Setenv("FOO_4", "bar")
-	// FIXME: Use Unsetenv when switching to go 1.4
-	defer os.Setenv("FOO_4", "")
+	if err := os.Setenv("FOO_4", "bar"); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Unsetenv("FOO_4")
 
 	val, ok := opts.String("foo1", "")
 	assert.True(t, ok)
@@ -41,8 +42,10 @@ func TestString(t *testing.T) {
 }
 
 func TestInt(t *testing.T) {
-	os.Setenv("FOO_4", "bar")
-	defer os.Setenv("FOO_4", "")
+	if err := os.Setenv("FOO_4", "bar"); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Unsetenv("FOO_4")
 
 	val, ok := opts.Int("foo1", "")
 	assert.True(t, ok)
@@ -70,8 +73,10 @@ func TestInt(t *testing.T) {
 }
 
 func TestUint(t *testing.T) {
-	os.Setenv("FOO_4", "bar")
-	defer os.Setenv("FOO_4", "")
+	if err := os.Setenv("FOO_4", "bar"); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Unsetenv("FOO_4")
 
 	val, ok := opts.Uint("foo1", "")
 	assert.True(t, ok)
@@ -99,8 +104,10 @@ func TestUint(t *testing.T) {
 }
 
 func TestFloat(t *testing.T) {
-	os.Setenv("FOO_4", "0.2")
-	defer os.Setenv("FOO_4", "")
+	if err := os.Setenv("FOO_4", "0.2"); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Unsetenv("FOO_4")
 
 	val, ok := opts.Float("foo1", "")
 	assert.True(t, ok)
@@ -128,8 +135,10 @@ func TestFloat(t *testing.T) {
 }
 
 func TestIP(t *testing.T) {
-	os.Setenv("FOO_4", "0.0.0.0")
-	defer os.Setenv("FOO_4", "")
+	if err := os.Setenv("FOO_4", "0.0.0.0"); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Unsetenv("FOO_4")
 
 	val, ok := opts.IP("foo5", "")
 	assert.True(t, ok)
