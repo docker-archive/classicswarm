@@ -20,6 +20,10 @@ function teardown() {
 
 	# verify, container is running
 	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
+
+	# error check
+	run docker_swarm run -d 4e8aa3148a132f19ec560952231c4d39522043994df7d2dc239942c0f9424ebd
+	[[ "${output}" == *"cannot specify 64-byte hexadecimal strings"* ]]
 }
 
 @test "docker run with resources" {

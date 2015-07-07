@@ -453,7 +453,19 @@ func (client *DockerClient) PullImage(name string, auth *AuthConfig) error {
 	if err != nil {
 		return err
 	}
+
 	defer resp.Body.Close()
+	if resp.StatusCode == 404 {
+		return ErrNotFound
+	}
+	if resp.StatusCode >= 400 {
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("%s", string(data))
+	}
+
 	var finalObj map[string]interface{}
 	for decoder := json.NewDecoder(resp.Body); err == nil; err = decoder.Decode(&finalObj) {
 	}
