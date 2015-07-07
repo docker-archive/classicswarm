@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -81,21 +82,23 @@ func TestClient_FlappingConnection(t *testing.T) {
 				t.Fatalf("only one connector instance is expected")
 			}
 			attempts++
-			ch0 <- zk.Event{
-				Type:  zk.EventSession,
-				State: zk.StateConnecting,
-				Path:  test_zk_path,
-			}
-			ch0 <- zk.Event{
-				Type:  zk.EventSession,
-				State: zk.StateConnected,
-				Path:  test_zk_path,
-			}
-			time.Sleep(200 * time.Millisecond)
-			ch0 <- zk.Event{
-				Type:  zk.EventSession,
-				State: zk.StateDisconnected,
-				Path:  test_zk_path,
+			for i := 0; i < 4; i++ {
+				ch0 <- zk.Event{
+					Type:  zk.EventSession,
+					State: zk.StateConnecting,
+					Path:  test_zk_path,
+				}
+				ch0 <- zk.Event{
+					Type:  zk.EventSession,
+					State: zk.StateConnected,
+					Path:  test_zk_path,
+				}
+				time.Sleep(200 * time.Millisecond)
+				ch0 <- zk.Event{
+					Type:  zk.EventSession,
+					State: zk.StateDisconnected,
+					Path:  test_zk_path,
+				}
 			}
 		}()
 		connector := makeMockConnector(test_zk_path, ch1)
@@ -162,9 +165,109 @@ func TestClientWatchErrors(t *testing.T) {
 	select {
 	case <-wCh:
 	case <-time.After(time.Millisecond * 700):
-		panic("Waited too long...")
+		t.Fatalf("timed out waiting for error message")
 	}
 
+}
+
+func TestWatchChildren_flappy(t *testing.T) {
+	c, err := newClient(test_zk_hosts, test_zk_path)
+	c.reconnDelay = 10 * time.Millisecond // we don't want this test to take forever
+
+	assert.NoError(t, err)
+
+	attempts := 0
+	conn := NewMockConnector()
+	defer func() {
+		if !t.Failed() {
+			conn.AssertExpectations(t)
+		}
+	}()
+	defer func() {
+		// stop client and give it time to shut down the connector
+		c.stop()
+		time.Sleep(100 * time.Millisecond)
+	}()
+	c.setFactory(asFactory(func() (Connector, <-chan zk.Event, error) {
+		log.V(2).Infof("**** Using zk.Conn adapter ****")
+		ch0 := make(chan zk.Event, 10) // session chan
+		ch1 := make(chan zk.Event)     // watch chan
+		go func() {
+			if attempts > 1 {
+				t.Fatalf("only one connector instance is expected")
+			}
+			attempts++
+			for i := 0; i < 4; i++ {
+				ch0 <- zk.Event{
+					Type:  zk.EventSession,
+					State: zk.StateConnecting,
+					Path:  test_zk_path,
+				}
+				ch0 <- zk.Event{
+					Type:  zk.EventSession,
+					State: zk.StateConnected,
+					Path:  test_zk_path,
+				}
+				time.Sleep(200 * time.Millisecond)
+				ch0 <- zk.Event{
+					Type:  zk.EventSession,
+					State: zk.StateDisconnected,
+					Path:  test_zk_path,
+				}
+			}
+			ch0 <- zk.Event{
+				Type:  zk.EventSession,
+				State: zk.StateConnecting,
+				Path:  test_zk_path,
+			}
+			ch0 <- zk.Event{
+				Type:  zk.EventSession,
+				State: zk.StateConnected,
+				Path:  test_zk_path,
+			}
+			ch1 <- zk.Event{
+				Type: zk.EventNodeChildrenChanged,
+				Path: test_zk_path,
+			}
+		}()
+		simulatedErr := errors.New("simulated watch error")
+		conn.On("ChildrenW", test_zk_path).Return(nil, nil, nil, simulatedErr).Times(4)
+		conn.On("ChildrenW", test_zk_path).Return([]string{test_zk_path}, &zk.Stat{}, (<-chan zk.Event)(ch1), nil)
+		conn.On("Close").Return(nil)
+		return conn, ch0, nil
+	}))
+
+	go c.connect()
+	var watchChildrenCount uint64
+	watcherFunc := ChildWatcher(func(zkc *Client, path string) {
+		log.V(1).Infof("ChildWatcher invoked %d", atomic.LoadUint64(&watchChildrenCount))
+	})
+	startTime := time.Now()
+	endTime := startTime.Add(2 * time.Second)
+watcherLoop:
+	for time.Now().Before(endTime) {
+		log.V(1).Infof("entered watcherLoop")
+		select {
+		case <-c.connections():
+			log.V(1).Infof("invoking watchChildren")
+			if _, err := c.watchChildren(currentPath, watcherFunc); err == nil {
+				// watching children succeeded!!
+				t.Logf("child watch success")
+				atomic.AddUint64(&watchChildrenCount, 1)
+			} else {
+				// setting the watch failed
+				t.Logf("setting child watch failed: %v", err)
+				continue watcherLoop
+			}
+		case <-c.stopped():
+			t.Logf("detected client termination")
+			break watcherLoop
+		case <-time.After(endTime.Sub(time.Now())):
+		}
+	}
+
+	wantChildrenCount := atomic.LoadUint64(&watchChildrenCount)
+	assert.Equal(t, uint64(5), wantChildrenCount, "expected watchChildrenCount = 5 instead of %d, should be reinvoked upon initial ChildrenW failures", wantChildrenCount)
 }
 
 func makeClient() (*Client, error) {
