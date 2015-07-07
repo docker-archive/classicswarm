@@ -15,9 +15,10 @@ function start_mesos() {
 
 	retry 10 1 eval "docker_host ps | grep 'mesos-master'"
 	for ((i=0; i < current; i++)); do
+	    local docker_port=$(echo ${HOSTS[$i]} | cut -d: -f2)
 	    MESOS_SLAVES[$i]=$(
 		docker_host run --privileged -d --name mesos-slave-$i --volumes-from node-$i -e DOCKER_HOST="${HOSTS[$i]}" -v /sys/fs/cgroup:/sys/fs/cgroup --net=host \
-		$MESOS_IMAGE /mesos/build/bin/mesos-slave.sh --master=127.0.0.1:$MESOS_MASTER_PORT --containerizers=docker --attributes="docker_port:${PORTS[$i]}" --hostname=127.0.0.1 --port=$(($MESOS_MASTER_PORT + (1 + $i)))
+		$MESOS_IMAGE /mesos/build/bin/mesos-slave.sh --master=127.0.0.1:$MESOS_MASTER_PORT --containerizers=docker --attributes="docker_port:$docker_port" --hostname=127.0.0.1 --port=$(($MESOS_MASTER_PORT + (1 + $i)))
 		       )
 	    retry 10 1 eval "docker_host ps | grep 'mesos-slave-$i'"
 	done
