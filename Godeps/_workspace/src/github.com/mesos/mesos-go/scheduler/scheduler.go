@@ -158,6 +158,11 @@ func NewMesosSchedulerDriver(config DriverConfig) (initializedDriver *MesosSched
 	if framework.GetUser() == "" {
 		user, err := user.Current()
 		if err != nil || user == nil {
+			if err != nil {
+				log.Warningf("Failed to obtain username: %v\n", err)
+			} else {
+				log.Warningln("Failed to obtain username.")
+			}
 			framework.User = proto.String("")
 		} else {
 			framework.User = proto.String(user.Username)
@@ -473,7 +478,7 @@ func (driver *MesosSchedulerDriver) frameworkReregistered(from *upid.UPID, pbMsg
 }
 
 func (driver *MesosSchedulerDriver) resourcesOffered(from *upid.UPID, pbMsg proto.Message) {
-	log.V(1).Infoln("Handling resource offers.")
+	log.V(2).Infoln("Handling resource offers.")
 
 	msg := pbMsg.(*mesos.ResourceOffersMessage)
 	if driver.Status() == mesos.Status_DRIVER_ABORTED {
@@ -495,7 +500,7 @@ func (driver *MesosSchedulerDriver) resourcesOffered(from *upid.UPID, pbMsg prot
 	for i, offer := range msg.Offers {
 		if pid, err := upid.Parse(pidStrings[i]); err == nil {
 			driver.cache.putOffer(offer, pid)
-			log.V(1).Infof("Cached offer %s from SlavePID %s", offer.Id.GetValue(), pid)
+			log.V(2).Infof("Cached offer %s from SlavePID %s", offer.Id.GetValue(), pid)
 		} else {
 			log.Warningf("Failed to parse offer PID '%v': %v", pid, err)
 		}
@@ -817,11 +822,15 @@ func (driver *MesosSchedulerDriver) Stop(failover bool) (mesos.Status, error) {
 		return stat, fmt.Errorf("Unable to Stop, expected driver status %s, but is %s", mesos.Status_DRIVER_RUNNING, stat)
 	}
 
-	if driver.connected && failover {
+	if driver.connected && !failover {
 		// unregister the framework
+		log.Infoln("Unregistering the scheduler driver")
 		message := &mesos.UnregisterFrameworkMessage{
 			FrameworkId: driver.FrameworkInfo.Id,
 		}
+		//TODO(jdef) this is actually a little racy: we send an 'unregister' message but then
+		// immediately afterward the messenger is stopped in driver.stop(). so the unregister message
+		// may not actually end up being sent out.
 		if err := driver.send(driver.MasterPid, message); err != nil {
 			log.Errorf("Failed to send UnregisterFramework message while stopping driver: %v\n", err)
 			return driver.stop(mesos.Status_DRIVER_ABORTED)
