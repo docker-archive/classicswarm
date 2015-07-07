@@ -297,7 +297,7 @@ type Info struct {
 	Debug              interface{}
 	NFd                int64
 	NGoroutines        int64
-	SystemTime         time.Time
+	SystemTime         string
 	NEventsListener    int64
 	InitPath           string
 	InitSha1           string
