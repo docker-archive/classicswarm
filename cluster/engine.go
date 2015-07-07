@@ -412,7 +412,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 		if err = e.Pull(config.Image, nil); err != nil {
 			return nil, err
 		}
-		// ...And try agaie.
+		// ...And try again.
 		if id, err = client.CreateContainer(&dockerConfig, name); err != nil {
 			return nil, err
 		}
