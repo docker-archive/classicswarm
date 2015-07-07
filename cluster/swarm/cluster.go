@@ -116,7 +116,7 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 
 	configTemp := config
 	if withSoftImageAffinity {
-		configTemp.AddSoftImageAffinity(config.Image)
+		configTemp.AddAffinity("image==~" + config.Image)
 	}
 
 	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), configTemp)
