@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
@@ -41,6 +42,7 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		HttpProxy:         os.Getenv("http_proxy"),
 		HttpsProxy:        os.Getenv("https_proxy"),
 		NoProxy:           os.Getenv("no_proxy"),
+		SystemTime:        time.Now().Format(time.RFC3339Nano),
 	}
 
 	if hostname, err := os.Hostname(); err == nil {
