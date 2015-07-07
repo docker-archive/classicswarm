@@ -29,9 +29,9 @@ Constraints are key/value pairs associated to particular nodes. You can see them
 as *node tags*.
 
 When creating a container, the user can select a subset of nodes that should be
-considered for scheduling by specifying one or more sets of matching key/value pairs.
+considered for scheduling by specifying one or more sets of matching key/value
+pairs. This approach has several practical use cases such as:
 
-This approach has several practical use cases such as:
 * Selecting specific host properties (such as `storage=ssd`, in order to schedule
   containers on specific hardware).
 * Tagging nodes based on their physical location (`region=us-east`, to force
@@ -205,7 +205,7 @@ For example, you can run a `nginx` container with the `com.example.type=frontend
     $ docker run -d -p 80:80 --label com.example.type=frontend nginx
      87c4376856a8
 
-    $ docker ps  --filter "label=com.example.type=front"
+    $ docker ps  --filter "label=com.example.type=frontend"
     CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
     87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      trusting_yonath
 
@@ -227,25 +227,24 @@ The `logger` container ends up on `node-1` because its affinity with the `com.ex
 
 #### Expression Syntax
 
-An affinity or a constraint expression consists of a `key` and a `value`.
-A `key` must conform the alpha-numeric pattern, with the leading alphabet or underscore.
+An affinity or a constraint expression consists of a `key` and a `value`. A
+`key` must conform the alpha-numeric pattern, with the leading alphabet or
+underscore. The `value` must be one of the following:
 
-A `value` must be one of the following:
 * An alpha-numeric string, dots, hyphens, and underscores.
 * A globbing pattern, i.e., `abc*`.
 * A regular expression in the form of `/regexp/`. We support the Go's regular expression syntax.
 
-Currently Swarm supports the following affinity/constraint operators: `==` and `!=`.
+Currently Swarm supports the following affinity/constraint operators: `==` and `!=`. For example:
 
-For example,
-* `constraint:node==node1` will match node `node1`.
-* `constraint:node!=node1` will match all nodes, except `node1`.
-* `constraint:region!=us*` will match all nodes outside the regions prefixed with `us`.
-* `constraint:node==/node[12]/` will match nodes `node1` and `node2`.
-* `constraint:node==/node\d/` will match all nodes with `node` + 1 digit.
-* `constraint:node!=/node-[01]/` will match all nodes, except `node-0` and `node-1`.
-* `constraint:node!=/foo\[bar\]/` will match all nodes, except `foo[bar]`. You can see the use of escape characters here.
-* `constraint:node==/(?i)node1/` will match node `node1` case-insensitive. So `NoDe1` or `NODE1` will also match.
+* `constraint:node==node1` matches node `node1`.
+* `constraint:node!=node1` matches all nodes, except `node1`.
+* `constraint:region!=us*` matches all nodes outside the regions prefixed with `us`.
+* `constraint:node==/node[12]/` matches nodes `node1` and `node2`.
+* `constraint:node==/node\d/` matches all nodes with `node` + 1 digit.
+* `constraint:node!=/node-[01]/` matches all nodes, except `node-0` and `node-1`.
+* `constraint:node!=/foo\[bar\]/` matches all nodes, except `foo[bar]`. You can see the use of escape characters here.
+* `constraint:node==/(?i)node1/` matches node `node1` case-insensitive. So `NoDe1` or `NODE1` also match.
 
 #### Soft Affinities/Constraints
 
