@@ -122,4 +122,10 @@ var (
 		Name:  "replication",
 		Usage: "Enable Swarm manager replication",
 	}
+
+	flLeaderPathPrefix = cli.StringFlag{
+		Name:  "leader-path-prefix",
+		Usage: "Leader election path's prefix, leader addr will be set into <prefix>/docker/swarm/leader",
+		Value: "",
+	}
 )
