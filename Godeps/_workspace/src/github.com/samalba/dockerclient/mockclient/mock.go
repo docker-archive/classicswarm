@@ -116,8 +116,8 @@ func (client *MockClient) RemoveContainer(id string, force, volumes bool) error 
 	return args.Error(0)
 }
 
-func (client *MockClient) ListImages() ([]*dockerclient.Image, error) {
-	args := client.Mock.Called()
+func (client *MockClient) ListImages(all bool) ([]*dockerclient.Image, error) {
+	args := client.Mock.Called(all)
 	return args.Get(0).([]*dockerclient.Image), args.Error(1)
 }
 
@@ -148,5 +148,10 @@ func (client *MockClient) RenameContainer(oldName string, newName string) error 
 
 func (client *MockClient) ImportImage(source string, repository string, tag string, tar io.Reader) (io.ReadCloser, error) {
 	args := client.Mock.Called(source, repository, tag, tar)
+	return args.Get(0).(io.ReadCloser), args.Error(1)
+}
+
+func (client *MockClient) BuildImage(image *dockerclient.BuildImage) (io.ReadCloser, error) {
+	args := client.Mock.Called(image)
 	return args.Get(0).(io.ReadCloser), args.Error(1)
 }
