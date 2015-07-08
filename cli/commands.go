@@ -25,7 +25,7 @@ var (
 				flStore,
 				flStrategy, flFilter,
 				flHosts,
-				flLeaderElection, flManageAdvertise,
+				flLeaderElection, flManageAdvertise, flLeaderPathPrefix,
 				flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
 				flHeartBeat,
 				flEnableCors,
