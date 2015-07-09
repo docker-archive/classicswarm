@@ -2,6 +2,7 @@ package zoo
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -25,6 +26,21 @@ const (
 	connectionAttemptState
 	connectedState
 )
+
+func (s stateType) String() string {
+	switch s {
+	case disconnectedState:
+		return "DISCONNECTED"
+	case connectionRequestedState:
+		return "REQUESTED"
+	case connectionAttemptState:
+		return "ATTEMPT"
+	case connectedState:
+		return "CONNECTED"
+	default:
+		panic(fmt.Sprintf("unrecognized state: %d", int32(s)))
+	}
+}
 
 type Client struct {
 	conn           Connector
@@ -84,8 +100,12 @@ func (zkc *Client) setFactory(f Factory) {
 }
 
 // return true only if the client's state was changed from `from` to `to`
-func (zkc *Client) stateChange(from, to stateType) bool {
-	return atomic.CompareAndSwapInt32((*int32)(&zkc.state), int32(from), int32(to))
+func (zkc *Client) stateChange(from, to stateType) (result bool) {
+	defer func() {
+		log.V(3).Infof("stateChange: from=%v to=%v result=%v", from, to, result)
+	}()
+	result = atomic.CompareAndSwapInt32((*int32)(&zkc.state), int32(from), int32(to))
+	return
 }
 
 // connect to zookeeper, blocks on the initial call to doConnect()
@@ -182,13 +202,6 @@ func (zkc *Client) doConnect() error {
 			// - connected           ... another goroutine already established a connection
 			// - connectionRequested ... another goroutine is already trying to connect
 			zkc.requestReconnect()
-		} else {
-			// let any listeners know about the change
-			select {
-			case <-zkc.shouldStop: // noop
-			case zkc.hasConnected <- struct{}{}: // noop
-			default: // message buf full, this becomes a non-blocking noop
-			}
 		}
 		log.Infoln("zookeeper client connected")
 	case <-sessionExpired:
@@ -245,13 +258,17 @@ func (zkc *Client) monitorSession(sessionEvents <-chan zk.Event, connected chan 
 				log.Infoln("connecting to zookeeper..")
 
 			case zk.StateConnected:
+				log.V(2).Infoln("received StateConnected")
 				if firstConnected {
-					close(connected) // signal listener
+					close(connected) // signal session listener
 					firstConnected = false
 				}
-
-			case zk.StateSyncConnected:
-				log.Infoln("syncConnected to zookper server")
+				// let any listeners know about the change
+				select {
+				case <-zkc.shouldStop: // noop
+				case zkc.hasConnected <- struct{}{}: // noop
+				default: // message buf full, this becomes a non-blocking noop
+				}
 
 			case zk.StateDisconnected:
 				log.Infoln("zookeeper client disconnected")
@@ -270,36 +287,56 @@ func (zkc *Client) monitorSession(sessionEvents <-chan zk.Event, connected chan 
 // in the absense of errors a signalling channel is returned that will close
 // upon the termination of the watch (e.g. due to disconnection).
 func (zkc *Client) watchChildren(path string, watcher ChildWatcher) (<-chan struct{}, error) {
-	if !zkc.isConnected() {
-		return nil, errors.New("Not connected to server.")
-	}
-
 	watchPath := zkc.rootPath
 	if path != "" && path != currentPath {
 		watchPath = watchPath + path
 	}
 
 	log.V(2).Infoln("Watching children for path", watchPath)
-	_, _, ch, err := zkc.conn.ChildrenW(watchPath)
-	if err != nil {
-		return nil, err
-	}
-
 	watchEnded := make(chan struct{})
 	go func() {
 		defer close(watchEnded)
-		zkc._watchChildren(watchPath, ch, watcher)
+		zkc._watchChildren(watchPath, watcher)
 	}()
 	return watchEnded, nil
 }
 
-// async continuation of watchChildren. enhances traditional zk watcher functionality by continuously
-// renewing child watches as long as the embedded client has not shut down.
-func (zkc *Client) _watchChildren(watchPath string, zkevents <-chan zk.Event, watcher ChildWatcher) {
+// continuation of watchChildren. blocks until either underlying zk connector terminates, or else this
+// client is shut down. continuously renews child watches.
+func (zkc *Client) _watchChildren(watchPath string, watcher ChildWatcher) {
 	watcher(zkc, watchPath) // prime the listener
+	var zkevents <-chan zk.Event
 	var err error
-watchLoop:
+	first := true
 	for {
+		// we really only expect this to happen when zk session has expired,
+		// give the connection a little time to re-establish itself
+		for {
+			//TODO(jdef) it would be better if we could listen for broadcast Connection/Disconnection events,
+			//emitted whenever the embedded client cycles (read: when the connection state of this client changes).
+			//As it currently stands, if the embedded client cycles fast enough, we may actually not notice it here
+			//and keep on watching like nothing bad happened.
+			if !zkc.isConnected() {
+				log.Warningf("no longer connected to server, exiting child watch")
+				return
+			}
+			if first {
+				first = false
+			} else {
+				select {
+				case <-zkc.shouldStop:
+					return
+				case <-time.After(zkc.rewatchDelay):
+				}
+			}
+			_, _, zkevents, err = zkc.conn.ChildrenW(watchPath)
+			if err == nil {
+				log.V(2).Infoln("rewatching children for path", watchPath)
+				break
+			}
+			log.V(1).Infof("unable to watch children for path %s: %s", watchPath, err.Error())
+			zkc.errorHandler(zkc, err)
+		}
 		// zkevents is (at most) a one-trick channel
 		// (a) a child event happens (no error)
 		// (b) the embedded client is shutting down (zk.ErrClosing)
@@ -332,30 +369,6 @@ watchLoop:
 					}
 				}
 			}
-		}
-		// we really only expect this to happen when zk session has expired,
-		// give the connection a little time to re-establish itself
-		for {
-			//TODO(jdef) it would be better if we could listen for broadcast Connection/Disconnection events,
-			//emitted whenever the embedded client cycles (read: when the connection state of this client changes).
-			//As it currently stands, if the embedded client cycles fast enough, we may actually not notice it here
-			//and keep on watching like nothing bad happened.
-			if !zkc.isConnected() {
-				log.Warningf("no longer connected to server, exiting child watch")
-				return
-			}
-			select {
-			case <-zkc.shouldStop:
-				return
-			case <-time.After(zkc.rewatchDelay):
-			}
-			_, _, zkevents, err = zkc.conn.ChildrenW(watchPath)
-			if err == nil {
-				log.V(2).Infoln("rewatching children for path", watchPath)
-				continue watchLoop
-			}
-			log.V(1).Infof("unable to watch children for path %s: %s", watchPath, err.Error())
-			zkc.errorHandler(zkc, err)
 		}
 	}
 }

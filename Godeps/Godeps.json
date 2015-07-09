@@ -77,31 +77,31 @@
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/auth",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/detector",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/mesosproto",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/mesosutil",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/messenger",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/scheduler",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/upid",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
