@@ -120,9 +120,10 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 		log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
 	}
 	client := kvDiscovery.Store()
+	p := path.Join(kvDiscovery.Prefix(), leaderElectionPath)
 
-	candidate := leadership.NewCandidate(client, leaderElectionPath, addr)
-	follower := leadership.NewFollower(client, leaderElectionPath)
+	candidate := leadership.NewCandidate(client, p, addr)
+	follower := leadership.NewFollower(client, p)
 
 	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.Bool("cors"))
 	replica := api.NewReplica(primary, tlsConfig)
