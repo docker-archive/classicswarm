@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -74,10 +75,16 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 	// Empty string is accepted by the scheduler.
 	user, _ := options.String("mesos.user", "SWARM_MESOS_USER")
 
+	// Override the hostname here because mesos-go will try
+	// to shell out to the hostname binary and it won't work with our official image.
+	// Do not check error here, so mesos-go can still try.
+	hostname, _ := os.Hostname()
+
 	driverConfig := mesosscheduler.DriverConfig{
-		Scheduler: cluster,
-		Framework: &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
-		Master:    cluster.master,
+		Scheduler:        cluster,
+		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
+		Master:           cluster.master,
+		HostnameOverride: hostname,
 	}
 
 	if taskCreationTimeout, ok := options.String("mesos.tasktimeout", "SWARM_MESOS_TASK_TIMEOUT"); ok {
