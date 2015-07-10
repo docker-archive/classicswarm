@@ -26,10 +26,9 @@ intended for debugging.
 Your goal in choosing a strategy is to best optimize your swarm according to
 your company's needs.
 
-Under the `spread` strategy, Swarm optimizes for the node with the least number
-of running containers. The `binpack` strategy causes Swarm to optimize for the
-node which is most packed. The `random` strategy, like it sounds, chooses
-nodes at random regardless of their available CPU or RAM.
+Under the `spread` strategy, Swarm optimizes for the node with the fewest running containers.
+The `binpack` strategy causes Swarm to optimize for the node which is most packed.
+The `random` strategy, like it sounds, chooses nodes at random regardless of their available CPU or RAM.
 
 Using the `spread` strategy results in containers spread thinly over many
 machines. The advantage of this strategy is that if a node goes down you only
@@ -73,9 +72,9 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1      db
 ```
 
-The container `frontend` was started on `node-2` because it was the node the
-least loaded already. If two nodes have the same amount of available RAM and
-CPUs, the `spread` strategy prefers the node with least containers running.
+The container `frontend` was started on `node-2` because it was the node with the
+fewest running containers. If two nodes have the same amount of available RAM and
+CPUs, the `spread` strategy prefers the node with the fewest containers running.
 
 ## BinPack strategy example
 
@@ -105,11 +104,11 @@ f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute   
 ```
 
 The system starts the new `frontend` container on `node-1` because it was the
-node the most packed already. This allows us to start a container requiring 2G
+node with the most running containers. This allows us to start a container requiring 2G
 of RAM on `node-2`.
 
 If two nodes have the same amount of available RAM and CPUs, the `binpack`
-strategy prefers the node with most containers running.
+strategy prefers the node with the most running containers.
 
 ## Docker Swarm documentation index
 
