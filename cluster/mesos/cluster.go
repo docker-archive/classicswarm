@@ -46,6 +46,7 @@ const (
 	frameworkName              = "swarm"
 	defaultDockerEnginePort    = "2375"
 	defaultDockerEngineTLSPort = "2376"
+	dockerPortAttribute        = "docker_port"
 	defaultOfferTimeout        = 10 * time.Minute
 	defaultTaskCreationTimeout = 5 * time.Second
 )

@@ -1,6 +1,8 @@
 package mesos
 
 import (
+	"fmt"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/mesos/mesos-go/mesosproto"
@@ -28,9 +30,20 @@ func (c *Cluster) ResourceOffers(_ mesosscheduler.SchedulerDriver, offers []*mes
 
 	for _, offer := range offers {
 		slaveID := offer.SlaveId.GetValue()
+		dockerPort := c.dockerEnginePort
+		for _, attribute := range offer.GetAttributes() {
+			if attribute.GetName() == dockerPortAttribute {
+				switch attribute.GetType() {
+				case mesosproto.Value_SCALAR:
+					dockerPort = fmt.Sprintf("%d", int(attribute.GetScalar().GetValue()))
+				case mesosproto.Value_TEXT:
+					dockerPort = attribute.GetText().GetValue()
+				}
+			}
+		}
 		s, ok := c.slaves[slaveID]
 		if !ok {
-			engine := cluster.NewEngine(*offer.Hostname+":"+c.dockerEnginePort, 0)
+			engine := cluster.NewEngine(*offer.Hostname+":"+dockerPort, 0)
 			if err := engine.Connect(c.TLSConfig); err != nil {
 				log.Error(err)
 			} else {
