@@ -381,8 +381,9 @@ func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 	}
 	found := s.removeOffer(offer.Id.GetValue())
 	if s.empty() {
-		// Disconnect from engine
+		s.engine.Disconnect()
 		delete(c.slaves, offer.SlaveId.GetValue())
+		log.Infof("Removed Slave %s", offer.SlaveId.GetValue())
 	}
 	return found
 }
