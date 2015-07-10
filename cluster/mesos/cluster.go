@@ -51,7 +51,8 @@ const (
 )
 
 var (
-	errNotSupported = errors.New("not supported with mesos")
+	errNotSupported    = errors.New("not supported with mesos")
+	errResourcesNeeded = errors.New("resources constraints (-c and/or -m) are required by mesos")
 )
 
 // NewCluster for mesos Cluster creation
@@ -146,6 +147,10 @@ func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 
 // CreateContainer for container creation in Mesos task
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) (*cluster.Container, error) {
+	if config.Memory == 0 && config.CpuShares == 0 {
+		return nil, errResourcesNeeded
+	}
+
 	task, err := newTask(c, config, name)
 	if err != nil {
 		return nil, err

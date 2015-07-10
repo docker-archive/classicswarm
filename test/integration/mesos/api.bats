@@ -23,7 +23,7 @@ function teardown() {
 	swarm_manage_mesos
 	run docker_swarm run -d busybox ls
 	[ "$status" -ne 0 ]
-	[[ "${output}" == *'Task uses no resources'* ]]
+	[[ "${output}" == *'resources constraints (-c and/or -m) are required by mesos'* ]]
 }
 
 @test "docker run" {
