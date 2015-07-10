@@ -39,7 +39,7 @@ The first step to creating a swarm on your network is to pull the Docker Swarm i
 * install Docker on each node
 * create and manage TLS certificates to secure your swarm
 
-As a starting point, the manual method is is best suited for experienced administrators or programmers contributing to Docker Swarm. The alternative is to use `docker-machine` to install a swarm.  
+As a starting point, the manual method is best suited for experienced administrators or programmers contributing to Docker Swarm. The alternative is to use `docker-machine` to install a swarm.
 
 Using Docker Machine, you can quickly install a Docker Swarm on cloud providers or inside your own data center. If you have VirtualBox installed on your local machine, you can quickly build and explore Docker Swarm in your local environment. This method automatically generates a certificate to secure your swarm.
 
