@@ -213,7 +213,7 @@ your swarm, and start an image on your swarm.
 		For more examples and ideas, visit:
 		 http://docs.docker.com/userguide/
 		 
-5. Use the `docker ps` command to find out which node the container an on.
+5. Use the `docker ps` command to find out which node the container ran on.
 
 		$ docker ps -a
 		CONTAINER ID        IMAGE                COMMAND                CREATED             STATUS                     PORTS                                     NAMES
