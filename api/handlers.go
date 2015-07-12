@@ -494,6 +494,7 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	container.Info.ExecIDs = append(container.Info.ExecIDs, id.ID)
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
 	w.Write(data)
 }
 
