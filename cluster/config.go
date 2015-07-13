@@ -146,3 +146,15 @@ func (c *ContainerConfig) Affinities() []string {
 func (c *ContainerConfig) Constraints() []string {
 	return c.extractExprs("constraints")
 }
+
+// AddAffinity to config
+func (c *ContainerConfig) AddAffinity(affinity string) error {
+	affinities := c.extractExprs("affinities")
+	affinities = append(affinities, affinity)
+	labels, err := json.Marshal(affinities)
+	if err != nil {
+		return err
+	}
+	c.Labels[SwarmLabelNamespace+".affinities"] = string(labels)
+	return nil
+}

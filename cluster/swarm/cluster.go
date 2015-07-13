@@ -89,6 +89,20 @@ func (c *Cluster) generateUniqueID() string {
 
 // CreateContainer aka schedule a brand new container into the cluster.
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) (*cluster.Container, error) {
+	container, err := c.createContainer(config, name, false)
+
+	//  fails with image not found, then try to reschedule with soft-image-affinity
+	if err != nil && strings.HasSuffix(err.Error(), "not found") {
+		// Check if the image exists in the cluster
+		// If exists, retry with a soft-image-affinity
+		if image := c.Image(config.Image); image != nil {
+			container, err = c.createContainer(config, name, true)
+		}
+	}
+	return container, err
+}
+
+func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, withSoftImageAffinity bool) (*cluster.Container, error) {
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
@@ -100,7 +114,12 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 	// Associate a Swarm ID to the container we are creating.
 	config.SetSwarmID(c.generateUniqueID())
 
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
+	configTemp := config
+	if withSoftImageAffinity {
+		configTemp.AddAffinity("image==~" + config.Image)
+	}
+
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), configTemp)
 	if err != nil {
 		return nil, err
 	}
