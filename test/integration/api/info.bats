@@ -8,10 +8,10 @@ function teardown() {
 }
 
 @test "docker info" {
-	start_docker 1 --label foo=bar
+	start_docker 2 --label foo=bar
 	swarm_manage
 	run docker_swarm info
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"Nodes: 1"* ]]
+	[[ "${output}" == *"Nodes: 2"* ]]
 	[[ "${output}" == *"└ Labels:"*"foo=bar"* ]]
 }
