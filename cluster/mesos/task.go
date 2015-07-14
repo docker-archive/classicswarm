@@ -104,6 +104,10 @@ func (t *task) build(slaveID string) {
 		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("label"), Value: proto.String(fmt.Sprintf("%s=%s", key, value))})
 	}
 
+	for _, value := range t.config.Env {
+		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("env"), Value: proto.String(value)})
+	}
+
 	t.SlaveId = &mesosproto.SlaveID{Value: &slaveID}
 }
 
