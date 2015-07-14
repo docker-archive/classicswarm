@@ -44,6 +44,13 @@ func (t *task) build(slaveID string) {
 		},
 	}
 
+	if t.config.Hostname != "" {
+		t.Container.Hostname = proto.String(t.config.Hostname)
+		if t.config.Domainname != "" {
+			t.Container.Hostname = proto.String(t.config.Hostname + "." + t.config.Domainname)
+		}
+	}
+
 	switch t.config.HostConfig.NetworkMode {
 	case "none":
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_NONE.Enum()

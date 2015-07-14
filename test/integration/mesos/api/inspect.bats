@@ -8,12 +8,12 @@ function teardown() {
 	stop_docker
 }
 
-@test "docker inspect" {
+@test "mesos - docker inspect" {
 	start_docker_with_busybox 2
 	start_mesos
 	swarm_manage_mesos
 	# run container
-	docker_swarm run -d -m 20m -e TEST=true --name test_container busybox sleep 500
+	docker_swarm run -d -m 20m -e TEST=true -h hostname.test --name test_container busybox sleep 500
 
 	# make sure container exsists
 	run docker_swarm ps -l
@@ -25,6 +25,8 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"NetworkSettings"* ]]
 	[[ "${output}" == *"TEST=true"* ]]
+	[[ "${output}" == *'"Hostname": "hostname"'* ]]
+	[[ "${output}" == *'"Domainname": "test"'* ]]
 	# the specific information of swarm node
 	[[ "${output}" == *'"Node": {'* ]]
 	[[ "${output}" == *'"Name": "node-'* ]]

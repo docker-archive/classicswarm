@@ -11,7 +11,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 	# run container
-	docker_swarm run -d -e TEST=true --name test_container busybox sleep 500
+	docker_swarm run -d -e TEST=true -h hostname.test --name test_container busybox sleep 500
 
 	# make sure container exsists
 	run docker_swarm ps -l
@@ -23,6 +23,8 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"NetworkSettings"* ]]
 	[[ "${output}" == *"TEST=true"* ]]
+	[[ "${output}" == *'"Hostname": "hostname"'* ]]
+	[[ "${output}" == *'"Domainname": "test"'* ]]
 	# the specific information of swarm node
 	[[ "${output}" == *'"Node": {'* ]]
 	[[ "${output}" == *'"Name": "node-'* ]]

@@ -8,7 +8,7 @@ function teardown() {
 	stop_docker
 }
 
-@test "docker events" {
+@test "mesos - docker events" {
 	start_docker_with_busybox 2
 	start_mesos
 	swarm_manage_mesos
