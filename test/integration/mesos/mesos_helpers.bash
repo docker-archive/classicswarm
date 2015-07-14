@@ -1,6 +1,6 @@
 #!/bin/bash
 
-load ../helpers
+load ../../helpers
 
 MESOS_IMAGE=jimenez/mesos-dev:clang
 MESOS_MASTER_PORT=$(( ( RANDOM % 1000 )  + 10000 ))
