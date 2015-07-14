@@ -49,6 +49,9 @@ func (c *Cluster) ResourceOffers(_ mesosscheduler.SchedulerDriver, offers []*mes
 			} else {
 				s = newSlave(slaveID, engine)
 				c.slaves[slaveID] = s
+				if err := s.engine.RegisterEventHandler(c); err != nil {
+					log.Error(err)
+				}
 			}
 		}
 		c.addOffer(offer)
