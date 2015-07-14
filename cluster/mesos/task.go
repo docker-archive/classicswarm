@@ -44,6 +44,13 @@ func (t *task) build(slaveID string) {
 		},
 	}
 
+	if t.config.Hostname != "" {
+		t.Container.Hostname = proto.String(t.config.Hostname)
+		if t.config.Domainname != "" {
+			t.Container.Hostname = proto.String(t.config.Hostname + "." + t.config.Domainname)
+		}
+	}
+
 	switch t.config.HostConfig.NetworkMode {
 	case "none":
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_NONE.Enum()
@@ -102,6 +109,10 @@ func (t *task) build(slaveID string) {
 
 	for key, value := range t.config.Labels {
 		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("label"), Value: proto.String(fmt.Sprintf("%s=%s", key, value))})
+	}
+
+	for _, value := range t.config.Env {
+		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("env"), Value: proto.String(value)})
 	}
 
 	t.SlaveId = &mesosproto.SlaveID{Value: &slaveID}
