@@ -68,20 +68,6 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(version)
 }
 
-// GET /images/{name:.*}/get
-func getImage(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
-
-	for _, image := range c.cluster.Images() {
-		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
-			len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
-			proxy(c.tlsConfig, image.Engine.Addr, w, r)
-			return
-		}
-	}
-	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
-}
-
 // GET /images/get
 func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -573,6 +559,20 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 	if image := c.cluster.Image(name); image != nil {
 		proxy(c.tlsConfig, image.Engine.Addr, w, r)
 		return
+	}
+	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
+}
+
+// Proxy a request to the right node
+func proxyImageTagOptional(c *context, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+
+	for _, image := range c.cluster.Images() {
+		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
+			len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
+			proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			return
+		}
 	}
 	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
 }
