@@ -413,7 +413,6 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	}
 
 	// build the offer from it's internal config and set the slaveID
-	t.build(n.ID)
 
 	c.Lock()
 	// TODO: Only use the offer we need
@@ -421,6 +420,8 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	for _, offer := range c.slaves[n.ID].offers {
 		offerIDs = append(offerIDs, offer.Id)
 	}
+
+	t.build(n.ID, c.slaves[n.ID].offers)
 
 	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, &mesosproto.Filters{}); err != nil {
 		// TODO: Do not erase all the offers, only the one used
