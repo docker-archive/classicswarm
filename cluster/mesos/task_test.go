@@ -23,7 +23,7 @@ func TestBuild(t *testing.T) {
 	}), name)
 	assert.NoError(t, err)
 
-	task.build("slave-id")
+	task.build("slave-id", nil)
 
 	assert.Equal(t, task.Container.GetType(), mesosproto.ContainerInfo_DOCKER)
 	assert.Equal(t, task.Container.Docker.GetImage(), "test-image")
