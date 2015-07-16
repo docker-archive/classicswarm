@@ -14,18 +14,18 @@ type RandomPlacementStrategy struct {
 	r *rand.Rand
 }
 
-// Initialize is exported
+// Initialize a RandomPlacementStrategy.
 func (p *RandomPlacementStrategy) Initialize() error {
 	p.r = rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
 	return nil
 }
 
-// Name returns the name of the strategy
+// Name returns the name of the strategy.
 func (p *RandomPlacementStrategy) Name() string {
 	return "random"
 }
 
-// PlaceContainer is exported
+// PlaceContainer places the container on a random node in the cluster.
 func (p *RandomPlacementStrategy) PlaceContainer(config *cluster.ContainerConfig, nodes []*node.Node) (*node.Node, error) {
 	if size := len(nodes); size > 0 {
 		return nodes[p.r.Intn(size)], nil
