@@ -185,6 +185,21 @@ swarm list zk://<zookeeper_addr1>,<zookeeper_addr2>/<path>
 <node_ip:2375>
 ```
 
+### Using ECS
+
+On any machine in the ECS cluster, start the swarm manager. The swarm manager needs to be able to access the docker daemon on each node in the ECS cluster.
+
+```bash
+$ swarm manage -H tcp://<swarm_ip:swarm_port> ecs://<ecs_cluster:2375>
+```
+
+```bash
+$ swarm list ecs://default:2375
+10.0.1.220:2375
+10.0.0.167:2375
+10.0.0.166:2375
+```
+
 ### Using a static list of IP addresses
 
 Start the manager on any machine or your laptop

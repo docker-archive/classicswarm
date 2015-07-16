@@ -16,6 +16,66 @@
 			"Rev": "539d4dc034c079a7188b5d4ca9650632d73c66e8"
 		},
 		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/apierr",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/endpoints",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/ec2query",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/json/jsonutil",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/jsonrpc",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/query/queryutil",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/rest",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/xml/xmlutil",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/signer/v4",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/ec2",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/ecs",
+			"Comment": "v0.6.0-1-g5fa0a7e",
+			"Rev": "5fa0a7e63b3d9f094d7e8549ce483a190587398f"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-62-gbf4a526",
 			"Rev": "bf4a526f48af7badd25d2cb02d587e1b01be3b50"
@@ -122,6 +182,10 @@
 		{
 			"ImportPath": "github.com/stretchr/testify/mock",
 			"Rev": "dab07ac62d4905d3e48d17dc549c684ac3b7c15a"
+		},
+		{
+			"ImportPath": "github.com/vaughan0/go-ini",
+			"Rev": "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
