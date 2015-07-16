@@ -264,8 +264,8 @@ func (c *Cluster) Images() []*cluster.Image {
 	defer c.RUnlock()
 
 	out := []*cluster.Image{}
-	for _, n := range c.engines {
-		out = append(out, n.Images()...)
+	for _, e := range c.engines {
+		out = append(out, e.Images()...)
 	}
 
 	return out
@@ -280,8 +280,8 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 
 	c.RLock()
 	defer c.RUnlock()
-	for _, n := range c.engines {
-		if image := n.Image(IDOrName); image != nil {
+	for _, e := range c.engines {
+		if image := e.Image(IDOrName); image != nil {
 			return image
 		}
 	}
@@ -297,8 +297,8 @@ func (c *Cluster) RemoveImages(name string) ([]*dockerclient.ImageDelete, error)
 	out := []*dockerclient.ImageDelete{}
 	errs := []string{}
 	var err error
-	for _, n := range c.engines {
-		for _, image := range n.Images() {
+	for _, e := range c.engines {
+		for _, image := range e.Images() {
 			if image.Match(name, true) {
 				content, err := image.Engine.RemoveImage(image, name)
 				if err != nil {
@@ -322,24 +322,24 @@ func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callbac
 	var wg sync.WaitGroup
 
 	c.RLock()
-	for _, n := range c.engines {
+	for _, e := range c.engines {
 		wg.Add(1)
 
-		go func(nn *cluster.Engine) {
+		go func(engine *cluster.Engine) {
 			defer wg.Done()
 
 			if callback != nil {
-				callback(nn.Name, "")
+				callback(engine.Name, "")
 			}
-			err := nn.Pull(name, authConfig)
+			err := engine.Pull(name, authConfig)
 			if callback != nil {
 				if err != nil {
-					callback(nn.Name, err.Error())
+					callback(engine.Name, err.Error())
 				} else {
-					callback(nn.Name, "downloaded")
+					callback(engine.Name, "downloaded")
 				}
 			}
-		}(n)
+		}(e)
 	}
 	c.RUnlock()
 
@@ -352,24 +352,24 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)
 
 	c.RLock()
 	pipeWriters := []*io.PipeWriter{}
-	for _, n := range c.engines {
+	for _, e := range c.engines {
 		wg.Add(1)
 
 		pipeReader, pipeWriter := io.Pipe()
 		pipeWriters = append(pipeWriters, pipeWriter)
 
-		go func(reader *io.PipeReader, nn *cluster.Engine) {
+		go func(reader *io.PipeReader, engine *cluster.Engine) {
 			defer wg.Done()
 			defer reader.Close()
 
 			// call engine load image
-			err := nn.Load(reader)
+			err := engine.Load(reader)
 			if callback != nil {
 				if err != nil {
-					callback(nn.Name, err.Error())
+					callback(engine.Name, err.Error())
 				}
 			}
-		}(pipeReader, n)
+		}(pipeReader, e)
 	}
 	c.RUnlock()
 
@@ -400,27 +400,27 @@ func (c *Cluster) Import(source string, repository string, tag string, imageRead
 	c.RLock()
 	pipeWriters := []*io.PipeWriter{}
 
-	for _, n := range c.engines {
+	for _, e := range c.engines {
 		wg.Add(1)
 
 		pipeReader, pipeWriter := io.Pipe()
 		pipeWriters = append(pipeWriters, pipeWriter)
 
-		go func(reader *io.PipeReader, nn *cluster.Engine) {
+		go func(reader *io.PipeReader, engine *cluster.Engine) {
 			defer wg.Done()
 			defer reader.Close()
 
 			// call engine import
-			err := nn.Import(source, repository, tag, reader)
+			err := engine.Import(source, repository, tag, reader)
 			if callback != nil {
 				if err != nil {
-					callback(nn.Name, err.Error())
+					callback(engine.Name, err.Error())
 				} else {
-					callback(nn.Name, "Import success")
+					callback(engine.Name, "Import success")
 				}
 			}
 
-		}(pipeReader, n)
+		}(pipeReader, e)
 	}
 	c.RUnlock()
 
@@ -451,8 +451,8 @@ func (c *Cluster) Containers() cluster.Containers {
 	defer c.RUnlock()
 
 	out := cluster.Containers{}
-	for _, n := range c.engines {
-		out = append(out, n.Containers()...)
+	for _, e := range c.engines {
+		out = append(out, e.Containers()...)
 	}
 
 	return out
@@ -466,8 +466,8 @@ func (c *Cluster) getIDFromName(name string) string {
 
 	c.RLock()
 	defer c.RUnlock()
-	for _, n := range c.engines {
-		for _, c := range n.Containers() {
+	for _, e := range c.engines {
+		for _, c := range e.Containers() {
 			for _, cname := range c.Names {
 				if cname == name || cname == "/"+name {
 					return c.Id
