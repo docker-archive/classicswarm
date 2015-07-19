@@ -130,6 +130,10 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 			return nil, err
 		}
 
+		if container == nil {
+			return nil, errors.New("Container created but refresh didn't report it back")
+		}
+
 		st := &state.RequestedState{
 			ID:     container.Id,
 			Name:   name,
