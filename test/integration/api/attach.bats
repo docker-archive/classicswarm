@@ -25,6 +25,7 @@ function teardown() {
 }
 
 @test "docker attach through websocket" {
+skip
 	CLIENT_API_VERSION="v1.17"
 	start_docker_with_busybox 2
 	swarm_manage
