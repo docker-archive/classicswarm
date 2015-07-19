@@ -15,7 +15,7 @@ function teardown() {
 	docker_swarm run -d --name test_container busybox sleep 1
 
 	# wait until exist(after 1 seconds)
-	run timeout 5 docker -H $SWARM_HOST wait test_container
+	run timeout 5 docker -H ${SWARM_HOSTS[0]} wait test_container
 	[ "$status" -eq 0 ]
 	[[ "${output}" == "0" ]]
 }
