@@ -55,6 +55,10 @@ func (s *Discovery) fetch() (discovery.Entries, error) {
 		return entries, err
 	}
 
+	if len(list.ContainerInstanceARNs) == 0 {
+		return entries, nil
+	}
+
 	ecsDesc, err := s.ecs.DescribeContainerInstances(&ecs.DescribeContainerInstancesInput{
 		Cluster:            aws.String(s.cluster),
 		ContainerInstances: list.ContainerInstanceARNs,

@@ -101,6 +101,32 @@ func TestWatch(t *testing.T) {
 	ec2Mock.AssertExpectations(t)
 }
 
+func TestWatch_NoContainerInstances(t *testing.T) {
+	ecsMock := &mockECS{}
+	ec2Mock := &mockEC2{}
+
+	d := &Discovery{}
+	d.Initialize("cluster", 1, 0)
+	d.ecs = ecsMock
+	d.ec2 = ec2Mock
+
+	ecsMock.On("ListContainerInstances", &ecs.ListContainerInstancesInput{
+		Cluster: aws.String("cluster"),
+	}).Return(&ecs.ListContainerInstancesOutput{
+		ContainerInstanceARNs: []*string{},
+	}, nil)
+
+	stopCh := make(chan struct{})
+	ch, _ := d.Watch(stopCh)
+
+	entries := <-ch
+	var expected discovery.Entries
+	assert.Equal(t, entries, expected)
+
+	ecsMock.AssertExpectations(t)
+	ec2Mock.AssertExpectations(t)
+}
+
 type mockECS struct {
 	mock.Mock
 }
