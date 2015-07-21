@@ -212,7 +212,7 @@ You can contribute a new discovery backend to Swarm. For information on how to d
 
 ## Docker Swarm documentation index
 
-- [User guide](index.md)
-- [Sheduler strategies](/scheduler/strategy.md)
-- [Sheduler filters](/scheduler/filter.md)
+- [User guide](/)
+- [Scheduler strategies](/scheduler/strategy.md)
+- [Scheduler filters](/scheduler/filter.md)
 - [Swarm API](/api/swarm-api.md)
