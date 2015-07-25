@@ -116,11 +116,11 @@ You can list the nodes in your cluster.
 On each of your nodes, start the Swarm agent. The node IP address
 doesn't need to be public as long as the Swarm manager can access it.
 
-    swarm join --advertise=<node_ip:2375> consul://<consul_addr>/<optional path prefix>
+    swarm join --advertise=<node_ip:2375> consul://<consul_addr1>,<consul_addr2>/<optional path prefix>
 
 Start the manager on any machine or your laptop.
 
-    swarm manage -H tcp://<swarm_ip:swarm_port> consul://<consul_addr>/<optional path prefix>
+    swarm manage -H tcp://<swarm_ip:swarm_port> consul://<consul_addr1>,<consul_addr2>/<optional path prefix>
 
 
 And then use the regular Docker commands.
@@ -133,7 +133,7 @@ And then use the regular Docker commands.
 
 You can list the nodes in your cluster.
 
-    swarm list consul://<consul_addr>/<optional path prefix>
+    swarm list consul://<consul_addr1>,<consul_addr2>/<optional path prefix>
     <node_ip:2375>
 
 
