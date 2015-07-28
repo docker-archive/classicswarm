@@ -40,11 +40,11 @@ you can create a swarm that is secured.
 1. List the machines on your system.
 
 		$ docker-machine ls
-		NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
-		dev    *        virtualbox   Running   tcp://192.168.99.100:2376   
+		NAME         ACTIVE   DRIVER       STATE     URL                         SWARM
+		docker-vm    *        virtualbox   Running   tcp://192.168.99.100:2376   
 
-	This example was run a Mac OSX system with `boot2docker` installed. So, the
-		`dev` environment in the list represents the `boot2docker` machine.
+	This example was run a Mac OSX system with Docker Toolbox installed. So, the
+		`docker-vm` virtual machine is in the list.
 
 2. Create a VirtualBox machine called `local` on your system.  
 
