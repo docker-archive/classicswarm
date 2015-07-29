@@ -2,7 +2,7 @@ package leadership
 
 import "github.com/docker/libkv/store"
 
-// Follower can folow an election in real-time and push notifications whenever
+// Follower can follow an election in real-time and push notifications whenever
 // there is a change in leadership.
 type Follower struct {
 	client store.Store
