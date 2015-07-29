@@ -28,7 +28,7 @@ Alternatively, you can run integration tests directly on your host:
 $ bats test/integration
 ```
 
-In order to do that, you will need to setup a full development environmnet plus
+In order to do that, you will need to setup a full development environment plus
 [bats](https://github.com/sstephenson/bats#installing-bats-from-source)
 
 > **Note**: There are known issues running the integration tests using 
