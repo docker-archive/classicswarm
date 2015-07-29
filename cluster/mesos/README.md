@@ -1,6 +1,6 @@
 # Using Docker Swarm and Mesos
 
-Swarm comes with a built-in scheduler that works with the swarm manager to schedule container resources. You can completly replace the built-in scheduler with a 3rd party scheduler. For example, you can replace it with the Mesos scheduler as described here.
+Swarm comes with a built-in scheduler that works with the swarm manager to schedule container resources. You can completely replace the built-in scheduler with a 3rd party scheduler. For example, you can replace it with the Mesos scheduler as described here.
 
 When using Docker Swarm and Mesos, you use the Docker client to ask the swarm
 manager to schedule containers. The swarm manager then schedules those
