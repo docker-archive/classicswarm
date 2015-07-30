@@ -21,62 +21,42 @@ The goal is to provide a smooth out-of-the-box experience for simple use cases, 
 allow swapping in more powerful backends, like Mesos, for large scale production
 deployments.
 
-## Installation and documentation
+## Installation for Swarm Users
 
-Full documentation [is available here](http://docs.docker.com/swarm/).
+For installing swarm for using in your environment, use the Docker Swarm
+documentation on [docs.docker.com](http://docs.docker.com/swarm/).
 
-## Development installation
+## Installation for Swarm Developers
 
-You can download and install from source instead of using the Docker
-image. Ensure you have golang, godep and the git client installed.
+Developers should always download and install from source rather than
+using the Docker image.
 
-Note: The current developing version (0.4) requires golang 1.4.2 version
-to build, ensure that the golang 1.4.2 version will be installed on your build
-machine.
+### Prerequisites
 
-**For example, on Ubuntu you'd run:**
+1. Beginning with Swarm 0.4 golang 1.4.x or later is required for building Swarm. 
+Refer to the [Go installation page](https://golang.org/doc/install#install)
+to download and install the golang 1.4.x or later package.
+> **Note**: On Ubuntu 14.04, the `apt-get` repositories install golang 1.2.1 version by
+> default. So, do not use `apt-get` but install golang 1.4.x manually using the
+> instructions provided on the Go site.
 
-The apt-get repositories for Ubuntu 14.04 contain golang
-1.2.1 version by default, so if you want to install swarm from source on
-Ubuntu 14.04, you need to add the ethereum apt repository frist, which
-hosts the golang 1.4.2 version. you can run the following commands to add
-the ethereum apt repository:
+2. Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 
-```bash
-$ sudo apt-get install software-properties-common
-$ sudo add-apt-repository -y ppa:ethereum/ethereum
-$ sudo add-apt-repository -y ppa:ethereum/ethereum-dev
-$ sudo apt-get update
-$ sudo apt-get install ethereum
-```
+3. Install [godep](https://github.com/tools/godep).
 
-Then install the goland and other required softwares:
+### Clone and build Swarm
 
-```bash
-$ apt-get install golang git
-$ go get github.com/tools/godep
-```
-
-You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
-
-**For example, on Mac OS X you'd run:**
-
-```bash
-$ brew install go
-$ export GOPATH=~/go
-$ export PATH=$PATH:~/go/bin
-$ go get github.com/tools/godep
-```
-
-Then install the `swarm` binary:
+> **Note** `GOPATH` should be set when install godep in above step.
 
 ```bash
 $ mkdir -p $GOPATH/src/github.com/docker/
 $ cd $GOPATH/src/github.com/docker/
 $ git clone https://github.com/docker/swarm
 $ cd swarm
-$ godep go install .
+$ $GOPATH/bin/godep go install .
 ```
+
+Then you can find the swarm binary under `$GOPATH/bin`.
 
 From here, you can follow the instructions [in the main documentation](http://docs.docker.com/swarm/),
 replacing `docker run swarm` with just `swarm`.
