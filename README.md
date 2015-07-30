@@ -30,7 +30,27 @@ Full documentation [is available here](http://docs.docker.com/swarm/).
 You can download and install from source instead of using the Docker
 image. Ensure you have golang, godep and the git client installed.
 
+Note: The current developing version (0.4) requires golang 1.4.2 version
+to build, ensure that the golang 1.4.2 version will be installed on your build
+machine.
+
 **For example, on Ubuntu you'd run:**
+
+The apt-get repositories for Ubuntu 14.04 contain golang
+1.2.1 version by default, so if you want to install swarm from source on
+Ubuntu 14.04, you need to add the ethereum apt repository frist, which
+hosts the golang 1.4.2 version. you can run the following commands to add
+the ethereum apt repository:
+
+```bash
+$ sudo apt-get install software-properties-common
+$ sudo add-apt-repository -y ppa:ethereum/ethereum
+$ sudo add-apt-repository -y ppa:ethereum/ethereum-dev
+$ sudo apt-get update
+$ sudo apt-get install ethereum
+```
+
+Then install the goland and other required softwares:
 
 ```bash
 $ apt-get install golang git
