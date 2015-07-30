@@ -43,21 +43,25 @@ hosts the golang 1.4.2 version. you can run the following commands to add
 the ethereum apt repository:
 
 ```bash
-$ sudo apt-get install software-properties-common
+$ sudo apt-get install -y software-properties-common
 $ sudo add-apt-repository -y ppa:ethereum/ethereum
 $ sudo add-apt-repository -y ppa:ethereum/ethereum-dev
-$ sudo apt-get update
-$ sudo apt-get install ethereum
+$ sudo apt-get update -y
+$ sudo apt-get install -y ethereum
 ```
 
 Then install the goland and other required softwares:
 
 ```bash
-$ apt-get install golang git
-$ go get github.com/tools/godep
+$ apt-get install -y golang git
 ```
 
-You may need to set `$GOPATH`, e.g `mkdir ~/gocode; export GOPATH=~/gocode`.
+Configure `$GOPATH` and install the godep:
+
+```bash
+$ mkdir ~/gocode; export GOPATH=~/gocode;
+$ go get github.com/tools/godep
+```
 
 **For example, on Mac OS X you'd run:**
 
@@ -75,8 +79,10 @@ $ mkdir -p $GOPATH/src/github.com/docker/
 $ cd $GOPATH/src/github.com/docker/
 $ git clone https://github.com/docker/swarm
 $ cd swarm
-$ godep go install .
+$ $GOPATH/bin/godep go install .
 ```
+
+Then you can find the swarm binary under `$GOPATH/bin`.
 
 From here, you can follow the instructions [in the main documentation](http://docs.docker.com/swarm/),
 replacing `docker run swarm` with just `swarm`.
