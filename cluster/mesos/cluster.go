@@ -269,12 +269,12 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete
 }
 
 // Pull will pull images on the cluster nodes
-func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(what, status string)) {
+func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string)) {
 
 }
 
 // Load images
-func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)) {
+func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string)) {
 
 }
 
