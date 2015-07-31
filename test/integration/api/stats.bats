@@ -27,7 +27,8 @@ function teardown() {
 
 	# verify content
 	grep -q "CPU %" "$TEMP_FILE"
-	grep -q "MEM USAGE/LIMIT" "$TEMP_FILE"
+	grep -q "MEM USAGE" "$TEMP_FILE"
+	grep -q "LIMIT" "$TEMP_FILE"
 
 	rm -f $TEMP_FILE
 }
