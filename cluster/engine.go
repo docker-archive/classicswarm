@@ -425,7 +425,11 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	e.RLock()
 	defer e.RUnlock()
 
-	return e.containers[id], nil
+	justCreated := e.containers[id]
+	if justCreated == nil {
+		err = errors.New("Container created but refresh didn't report it back")
+	}
+	return justCreated, err
 }
 
 // RemoveContainer a container from the engine.
