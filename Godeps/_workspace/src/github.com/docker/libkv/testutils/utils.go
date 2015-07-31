@@ -288,6 +288,11 @@ func testLockUnlock(t *testing.T, kv store.Store) {
 	err = lock.Unlock()
 	assert.NoError(t, err)
 
+	// Lock should succeed again
+	lockChan, err = lock.Lock()
+	assert.NoError(t, err)
+	assert.NotNil(t, lockChan)
+
 	// Get should work
 	pair, err = kv.Get(key)
 	assert.NoError(t, err)

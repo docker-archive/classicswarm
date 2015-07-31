@@ -21,10 +21,12 @@ import (
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/docker/swarm/state"
+	"github.com/gorilla/mux"
 )
 
 const (
 	leaderElectionPath = "docker/swarm/leader"
+	defaultRecoverTime = 10 * time.Second
 )
 
 type logHandler struct {
@@ -129,33 +131,62 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 	replica := api.NewReplica(primary, tlsConfig)
 
 	go func() {
-		candidate.RunForElection()
-		electedCh := candidate.ElectedCh()
-		for isElected := range electedCh {
-			if isElected {
-				log.Info("Cluster leadership acquired")
-				server.SetHandler(primary)
-			} else {
-				log.Info("Cluster leadership lost")
-				server.SetHandler(replica)
-			}
+		for {
+			run(candidate, server, primary, replica)
+			time.Sleep(defaultRecoverTime)
 		}
 	}()
 
 	go func() {
-		follower.FollowElection()
-		leaderCh := follower.LeaderCh()
-		for leader := range leaderCh {
-			log.Infof("New leader elected: %s", leader)
-			if leader == addr {
-				replica.SetPrimary("")
-			} else {
-				replica.SetPrimary(leader)
-			}
+		for {
+			follow(follower, replica, addr)
+			time.Sleep(defaultRecoverTime)
 		}
 	}()
 
 	server.SetHandler(primary)
+}
+
+func run(candidate *leadership.Candidate, server *api.Server, primary *mux.Router, replica *api.Replica) {
+	electedCh, errCh := candidate.RunForElection()
+	for {
+		select {
+		case isElected := <-electedCh:
+			if isElected {
+				log.Info("Leader Election: Cluster leadership acquired")
+				server.SetHandler(primary)
+			} else {
+				log.Info("Leader Election: Cluster leadership lost")
+				server.SetHandler(replica)
+			}
+
+		case err := <-errCh:
+			log.Error(err)
+			return
+		}
+	}
+}
+
+func follow(follower *leadership.Follower, replica *api.Replica, addr string) {
+	leaderCh, errCh := follower.FollowElection()
+	for {
+		select {
+		case leader := <-leaderCh:
+			if leader == "" {
+				continue
+			}
+			if leader == addr {
+				replica.SetPrimary("")
+			} else {
+				log.Infof("New leader elected: %s", leader)
+				replica.SetPrimary(leader)
+			}
+
+		case err := <-errCh:
+			log.Error(err)
+			return
+		}
+	}
 }
 
 func manage(c *cli.Context) {
