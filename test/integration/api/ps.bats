@@ -45,6 +45,23 @@ function teardown() {
 	[[ "${lines[1]}" == *"false"* ]]
 }
 
+@test "docker ps --before" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker_swarm run -d --name c1 busybox echo c1
+	docker_swarm run -d --name c2 busybox echo c2
+
+	run docker_swarm ps --before c1
+	[ "${#lines[@]}" -eq  1 ]
+
+	run docker_swarm ps --before c2
+	[ "${#lines[@]}" -eq  2 ]
+
+	run docker_swarm ps --before c3
+	[ "$status" -eq 1 ]
+}
+
 @test "docker ps --filter" {
 	start_docker_with_busybox 2
 	swarm_manage
