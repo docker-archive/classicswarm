@@ -152,8 +152,18 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse flags.
-	all := boolValue(r, "all")
-	limit := intValueOrZero(r, "limit")
+	var (
+		all    = boolValue(r, "all")
+		limit  = intValueOrZero(r, "limit")
+		before *cluster.Container
+	)
+	if value := r.FormValue("before"); value != "" {
+		before = c.cluster.Container(value)
+		if before == nil {
+			httpError(w, fmt.Sprintf("No such container %s", value), http.StatusNotFound)
+			return
+		}
+	}
 
 	// Parse filters.
 	filters, err := dockerfilters.FromParam(r.Form.Get("filters"))
@@ -184,7 +194,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	candidates := []*cluster.Container{}
 	for _, container := range c.cluster.Containers() {
 		// Skip stopped containers unless -a was specified.
-		if !container.Info.State.Running && !all && limit <= 0 {
+		if !container.Info.State.Running && !all && before == nil && limit <= 0 {
 			continue
 		}
 
@@ -232,6 +242,12 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	// Convert cluster.Container back into dockerclient.Container.
 	out := []*dockerclient.Container{}
 	for _, container := range candidates {
+		if before != nil {
+			if container.Id == before.Id {
+				before = nil
+			}
+			continue
+		}
 		// Create a copy of the underlying dockerclient.Container so we can
 		// make changes without messing with cluster.Container.
 		tmp := (*container).Container
