@@ -39,7 +39,7 @@ Arguments:
                    * etcd://<ip1>,<ip2>/<path>
                    * file://path/to/file
                    * zk://<ip1>,<ip2>/<path>
-                   * <ip1>,<ip2>{{end}}{{if .Flags}}
+                   * [nodes://]<ip1>,<ip2>{{end}}{{if .Flags}}
 
 Options:
    {{range .Flags}}{{.}}
