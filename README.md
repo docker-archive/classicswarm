@@ -67,7 +67,7 @@ You can contribute to Docker Swarm in several different ways:
 
   - If you have comments, questions, or want to use your knowledge to help others, come join the conversation on IRC. You can reach us at #docker-swarm on Freenode.
 
-  - To report a problem or request a feature, please [file an issue](ISSUE-TRIAGE.md)
+  - To report a problem or request a feature, please file an issue.
 
   - Of course, we welcome pull requests and patches. For information on making feature requests, follow the process suggested here.
 
