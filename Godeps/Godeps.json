@@ -52,7 +52,7 @@
 		},
 		{
 			"ImportPath": "github.com/docker/libkv",
-			"Rev": "057813e38a46ee5951b1fc33f6f749f7cfce2941"
+			"Rev": "261ee167337a70a244e30410080685843b22e184"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
