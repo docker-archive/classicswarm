@@ -385,9 +385,9 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 		callback := func(what, status string) {
 			if status == "" {
-				fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s...\",%q:{}}", "id", what, "status", image, "progressDetail")
+				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s...", image))
 			} else {
-				fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s... : %s\",%q:{}}", "id", what, "status", image, status, "progressDetail")
+				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s... : %s", image, status))
 			}
 		}
 		c.cluster.Pull(image, &authConfig, callback)
@@ -397,7 +397,7 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		tag := r.Form.Get("tag")
 
 		callback := func(what, status string) {
-			fmt.Fprintf(wf, "{%q:%q,%q:\"%s\"}", "id", what, "status", status)
+			sendJSONMessage(wf, what, status)
 		}
 		c.cluster.Import(source, repo, tag, r.Body, callback)
 	}
@@ -410,9 +410,9 @@ func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 	wf := NewWriteFlusher(w)
 	callback := func(what, status string) {
 		if status == "" {
-			fmt.Fprintf(wf, "%s:Loading Image...\n", what)
+			sendJSONMessage(wf, what, "Loading Image...")
 		} else {
-			fmt.Fprintf(wf, "%s:Loading Image... %s\n", what, status)
+			sendJSONMessage(wf, what, fmt.Sprintf("Loading Image... : %s", status))
 		}
 	}
 	c.cluster.Load(r.Body, callback)
