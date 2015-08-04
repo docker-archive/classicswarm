@@ -510,3 +510,31 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 	}
 	return nil, nil
 }
+
+// BuildImage build an image
+func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer) error {
+	c.scheduler.Lock()
+
+	// get an engine
+	config := &cluster.ContainerConfig{dockerclient.ContainerConfig{
+		CpuShares: buildImage.CpuShares,
+		Memory:    buildImage.Memory,
+	}}
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
+	c.scheduler.Unlock()
+	if err != nil {
+		return err
+	}
+
+	reader, err := c.slaves[n.ID].engine.BuildImage(buildImage)
+	if err != nil {
+		return err
+	}
+
+	if _, err := io.Copy(out, reader); err != nil {
+		return err
+	}
+
+	c.slaves[n.ID].engine.RefreshImages()
+	return nil
+}

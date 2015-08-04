@@ -620,31 +620,6 @@ func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Proxy a request to a random node and force refresh
-func proxyRandomAndForceRefresh(c *context, w http.ResponseWriter, r *http.Request) {
-	engine, err := c.cluster.RANDOMENGINE()
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if engine == nil {
-		httpError(w, "no node available in the cluster", http.StatusInternalServerError)
-		return
-	}
-
-	cb := func(resp *http.Response) {
-		if resp.StatusCode == http.StatusOK {
-			engine.RefreshImages()
-		}
-	}
-
-	if err := proxyAsync(c.tlsConfig, engine.Addr, w, r, cb); err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-	}
-
-}
-
 // POST  /commit
 func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -674,6 +649,50 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 
 	// proxy commit request to the right node
 	if err := proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// POST /build
+func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	buildImage := &dockerclient.BuildImage{
+		DockerfileName: r.Form.Get("dockerfile"),
+		RepoName:       r.Form.Get("t"),
+		RemoteURL:      r.Form.Get("remote"),
+		NoCache:        boolValue(r, "nocache"),
+		Pull:           boolValue(r, "pull"),
+		Remove:         boolValue(r, "rm"),
+		ForceRemove:    boolValue(r, "forcerm"),
+		SuppressOutput: boolValue(r, "q"),
+		Memory:         int64ValueOrZero(r, "memory"),
+		MemorySwap:     int64ValueOrZero(r, "memswap"),
+		CpuShares:      int64ValueOrZero(r, "cpushares"),
+		CpuPeriod:      int64ValueOrZero(r, "cpuperiod"),
+		CpuQuota:       int64ValueOrZero(r, "cpuquota"),
+		CpuSetCpus:     r.Form.Get("cpusetcpus"),
+		CpuSetMems:     r.Form.Get("cpusetmems"),
+		CgroupParent:   r.Form.Get("cgroupparent"),
+		Context:        r.Body,
+	}
+
+	authEncoded := r.Header.Get("X-Registry-Auth")
+	if authEncoded != "" {
+		buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
+		if err == nil {
+			json.Unmarshal(buf, &buildImage.Config)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	wf := NewWriteFlusher(w)
+
+	err := c.cluster.BuildImage(buildImage, wf)
+	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }

@@ -53,3 +53,24 @@ func TestIntValueOrZero(t *testing.T) {
 		}
 	}
 }
+
+func TestInti64ValueOrZero(t *testing.T) {
+	cases := map[string]int64{
+		"":     0,
+		"asdf": 0,
+		"0":    0,
+		"1":    1,
+	}
+
+	for c, e := range cases {
+		v := url.Values{}
+		v.Set("test", c)
+		r, _ := http.NewRequest("POST", "", nil)
+		r.Form = v
+
+		a := int64ValueOrZero(r, "test")
+		if a != e {
+			t.Fatalf("Value: %s, expected: %v, actual: %v", c, e, a)
+		}
+	}
+}

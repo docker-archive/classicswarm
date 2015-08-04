@@ -598,3 +598,31 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	st.Name = newName
 	return c.store.Replace(container.Id, st)
 }
+
+// BuildImage build an image
+func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer) error {
+	c.scheduler.Lock()
+
+	// get an engine
+	config := &cluster.ContainerConfig{dockerclient.ContainerConfig{
+		CpuShares: buildImage.CpuShares,
+		Memory:    buildImage.Memory,
+	}}
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
+	c.scheduler.Unlock()
+	if err != nil {
+		return err
+	}
+
+	reader, err := c.engines[n.ID].BuildImage(buildImage)
+	if err != nil {
+		return err
+	}
+
+	if _, err := io.Copy(out, reader); err != nil {
+		return err
+	}
+
+	c.engines[n.ID].RefreshImages()
+	return nil
+}

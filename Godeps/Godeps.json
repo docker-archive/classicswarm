@@ -105,7 +105,7 @@
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
-			"Rev": "15ebe064ca62ad0d64834e7ef0d4ed8ce9d02cde"
+			"Rev": "68832c185bb6304fed26a986891fd27b6ed17987"
 		},
 		{
 			"ImportPath": "github.com/samuel/go-zookeeper/zk",
