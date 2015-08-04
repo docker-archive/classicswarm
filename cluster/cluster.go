@@ -33,15 +33,15 @@ type Cluster interface {
 
 	// Pull images
 	// `callback` can be called multiple time
-	//  `what` is what is being pulled
+	//  `where` is where it is being pulled
 	//  `status` is the current status, like "", "in progress" or "downloaded
-	Pull(name string, authConfig *dockerclient.AuthConfig, callback func(what, status string))
+	Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string))
 
 	// Import image
 	// `callback` can be called multiple time
-	// `what` is what is being imported
+	// `where` is where it is being imported
 	// `status` is the current status, like "", "in progress" or "imported"
-	Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string))
+	Import(source string, repository string, tag string, imageReader io.Reader, callback func(where, status string))
 
 	// Load images
 	// `callback` can be called multiple time
