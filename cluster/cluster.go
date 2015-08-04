@@ -68,4 +68,7 @@ type Cluster interface {
 
 	// RenameContainer rename a container
 	RenameContainer(container *Container, newName string) error
+
+	// BuildImage build an image
+	BuildImage(*dockerclient.BuildImage, io.Writer) error
 }

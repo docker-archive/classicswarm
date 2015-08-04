@@ -35,10 +35,11 @@ type Client interface {
 	PullImage(name string, auth *AuthConfig) error
 	LoadImage(reader io.Reader) error
 	RemoveContainer(id string, force, volumes bool) error
-	ListImages() ([]*Image, error)
+	ListImages(all bool) ([]*Image, error)
 	RemoveImage(name string) ([]*ImageDelete, error)
 	PauseContainer(name string) error
 	UnpauseContainer(name string) error
 	RenameContainer(oldName string, newName string) error
 	ImportImage(source string, repository string, tag string, tar io.Reader) (io.ReadCloser, error)
+	BuildImage(image *BuildImage) (io.ReadCloser, error)
 }

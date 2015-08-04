@@ -98,7 +98,7 @@ func handleContainerLogs(w http.ResponseWriter, r *http.Request) {
 	for ; i < 50; i++ {
 		line := fmt.Sprintf("line %d", i)
 		if getBoolValue(r.Form.Get("timestamps")) {
-			l := &jsonlog.JSONLog{Log: line, Created: time.Now()}
+			l := &jsonlog.JSONLog{Log: line, Created: time.Now().UTC()}
 			line = fmt.Sprintf("%s %s", l.Created.Format(timeutils.RFC3339NanoFixed), line)
 		}
 		if i%2 == 0 && stderr {
