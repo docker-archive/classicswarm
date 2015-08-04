@@ -122,7 +122,7 @@ func (s *Etcd) Get(key string) (pair *store.KVPair, err error) {
 	if err != nil {
 		if etcdError, ok := err.(*etcd.EtcdError); ok {
 			// Not a Directory or Not a file
-			if etcdError.ErrorCode == 102 || etcdError.ErrorCode == 104 {
+			if etcdError.ErrorCode == 100 || etcdError.ErrorCode == 102 || etcdError.ErrorCode == 104 {
 				return nil, store.ErrKeyNotFound
 			}
 		}
