@@ -163,3 +163,11 @@ func intValueOrZero(r *http.Request, k string) int {
 	}
 	return val
 }
+
+func int64ValueOrZero(r *http.Request, k string) int64 {
+	val, err := strconv.ParseInt(r.FormValue(k), 10, 64)
+	if err != nil {
+		return 0
+	}
+	return val
+}
