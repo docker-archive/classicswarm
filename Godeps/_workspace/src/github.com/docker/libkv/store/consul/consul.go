@@ -2,6 +2,7 @@ package consul
 
 import (
 	"crypto/tls"
+	"errors"
 	"net/http"
 	"strings"
 	"sync"
@@ -16,6 +17,12 @@ const (
 	// time to check if the watched key has changed. This
 	// affects the minimum time it takes to cancel a watch.
 	DefaultWatchWaitTime = 15 * time.Second
+)
+
+var (
+	// ErrMultipleEndpointsUnsupported is thrown when there are
+	// multiple endpoints specified for Consul
+	ErrMultipleEndpointsUnsupported = errors.New("consul does not support multiple endpoints")
 )
 
 // Consul is the receiver type for the
@@ -34,6 +41,10 @@ type consulLock struct {
 // New creates a new Consul client given a list
 // of endpoints and optional tls config
 func New(endpoints []string, options *store.Config) (store.Store, error) {
+	if len(endpoints) > 1 {
+		return nil, ErrMultipleEndpointsUnsupported
+	}
+
 	s := &Consul{}
 
 	// Create Consul client
