@@ -405,6 +405,8 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /images/load
 func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 
 	// call cluster to load image on every node
 	wf := NewWriteFlusher(w)
