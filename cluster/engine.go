@@ -256,7 +256,7 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 
 	e.RLock()
 	if current, exists := e.containers[c.Id]; exists {
-		// The container is already knowe.
+		// The container is already known.
 		container = current
 	} else {
 		// This is a brand new container. We need to do a full refresh.
