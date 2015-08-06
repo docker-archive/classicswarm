@@ -1,5 +1,9 @@
 package cluster
 
+import (
+	"github.com/skarademir/naturalsort"
+)
+
 // EngineSorter implements the Sort interface to sort Cluster.Engine.
 // It is not guaranteed to be a stable sort.
 type EngineSorter []*Engine
@@ -17,5 +21,5 @@ func (s EngineSorter) Swap(i, j int) {
 // Less reports whether the engine with index i should sort before the engine with index j.
 // Engines are sorted chronologically by name.
 func (s EngineSorter) Less(i, j int) bool {
-	return s[i].Name < s[j].Name
+	return naturalsort.NaturalSort([]string{s[i].Name, s[j].Name}).Less(0, 1)
 }
