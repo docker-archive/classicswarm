@@ -12,7 +12,7 @@ function teardown() {
 	swarm_manage
 	docker_swarm create --name test_container busybox sleep 100
 
-	# if container is not runing, exec will failed
+	# if container is not running, exec will failed
 	run docker_swarm exec test_container ls
 	[ "$status" -ne 0 ]
 	[[ "$output" == *"is not running"* ]]
