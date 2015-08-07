@@ -78,12 +78,12 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 		json.Unmarshal([]byte(labels), &affinities)
 	}
 
-	// parse contraints from labels (ex. docker run --label 'com.docker.swarm.constraints=["region==us-east","storage==ssd"]')
+	// parse constraints from labels (ex. docker run --label 'com.docker.swarm.constraints=["region==us-east","storage==ssd"]')
 	if labels, ok := c.Labels[SwarmLabelNamespace+".constraints"]; ok {
 		json.Unmarshal([]byte(labels), &constraints)
 	}
 
-	// parse affinities/contraints from env (ex. docker run -e affinity:container==redis -e affinity:image==nginx -e constraint:region==us-east -e constraint:storage==ssd)
+	// parse affinities/constraints from env (ex. docker run -e affinity:container==redis -e affinity:image==nginx -e constraint:region==us-east -e constraint:storage==ssd)
 	for _, e := range c.Env {
 		if ok, key, value := parseEnv(e); ok && key == "affinity" {
 			affinities = append(affinities, value)
@@ -94,7 +94,7 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 		}
 	}
 
-	// remove affinities/contraints from env
+	// remove affinities/constraints from env
 	c.Env = env
 
 	// store affinities in labels
@@ -104,7 +104,7 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 		}
 	}
 
-	// store contraints in labels
+	// store constraints in labels
 	if len(constraints) > 0 {
 		if labels, err := json.Marshal(constraints); err == nil {
 			c.Labels[SwarmLabelNamespace+".constraints"] = string(labels)

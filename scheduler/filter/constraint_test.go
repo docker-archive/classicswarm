@@ -65,7 +65,7 @@ func TestConstrainteFilter(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, result, nodes)
 
-	// Set a constraint that cannot be fullfilled and expect an error back.
+	// Set a constraint that cannot be fulfilled and expect an error back.
 	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:does_not_exist==true"}}), nodes)
 	assert.Error(t, err)
 
@@ -75,7 +75,7 @@ func TestConstrainteFilter(t *testing.T) {
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
-	// This constraint can only be fullfilled by a subset of nodes.
+	// This constraint can only be fulfilled by a subset of nodes.
 	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:group==1"}}), nodes)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
