@@ -98,7 +98,6 @@ function swarm_manage() {
 	local port=$(($SWARM_BASE_PORT + $i))
 	local host=127.0.0.1:$port
 
-	echo "$SWARM_BINARY" -l debug manage -H "$host" --heartbeat=1s $discovery
 	"$SWARM_BINARY" -l debug manage -H "$host" --heartbeat=1s $discovery &
 	SWARM_MANAGE_PID[$i]=$!
 	SWARM_HOSTS[$i]=$host
