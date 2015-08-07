@@ -105,6 +105,10 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		driverConfig.BindingPort = uint16(bindingPort)
 	}
 
+	if role, ok := options.String("mesos.role", "SWARM_MESOS_ROLE"); ok {
+		driverConfig.Framework.Role = proto.String(role)
+	}
+
 	if bindingAddress, ok := options.IP("mesos.address", "SWARM_MESOS_ADDRESS"); ok {
 		if bindingAddress == nil {
 			return nil, fmt.Errorf("invalid address %s", bindingAddress)
