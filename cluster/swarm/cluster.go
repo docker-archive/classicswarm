@@ -106,7 +106,7 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
-	// Ensure the name is avaliable
+	// Ensure the name is available
 	if cID := c.getIDFromName(name); cID != "" {
 		return nil, fmt.Errorf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, cID, name)
 	}
@@ -579,7 +579,7 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	c.RLock()
 	defer c.RUnlock()
 
-	// check new name whether avaliable
+	// check new name whether available
 	if cID := c.getIDFromName(newName); cID != "" {
 		return fmt.Errorf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, cID, newName)
 	}

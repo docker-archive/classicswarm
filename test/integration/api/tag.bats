@@ -15,7 +15,7 @@ function teardown() {
 	swarm_manage
 
 	# make sure the image of busybox exists 
-	# the comming image of tag_busybox not exsit
+	# the coming image of tag_busybox not exsit
 	run docker_swarm images
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -ge 2 ]

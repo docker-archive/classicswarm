@@ -101,7 +101,7 @@ func (p *PortFilter) compare(requested dockerclient.PortBinding, bindings map[st
 		for _, b := range binding {
 			if b.HostPort == "" {
 				// Skip undefined HostPorts. This happens in bindings that
-				// didn't explicitely specify an external port.
+				// didn't explicitly specify an external port.
 				continue
 			}
 

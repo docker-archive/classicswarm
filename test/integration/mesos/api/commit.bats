@@ -20,7 +20,7 @@ function teardown() {
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" ==  *"test_container"* ]]
 
-	# no comming name before commit 
+	# no coming name before commit 
 	run docker_swarm images
 	[ "$status" -eq 0 ]
 	[[ "${output}" != *"commit_image_busybox"* ]]

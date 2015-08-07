@@ -27,7 +27,7 @@ function teardown() {
 	[ "$status" -ne 0 ]
 	[[ "${output}" == *"Conflict,"* ]]
 
-	# rename container, sucessful
+	# rename container, successful
 	docker_swarm rename test_container rename_container
 
 	# verify after, rename 
