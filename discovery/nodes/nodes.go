@@ -1,6 +1,7 @@
 package nodes
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -27,7 +28,7 @@ func (s *Discovery) Initialize(uris string, _ time.Duration, _ time.Duration) er
 		for _, ip := range discovery.Generate(input) {
 			entry, err := discovery.NewEntry(ip)
 			if err != nil {
-				return err
+				return fmt.Errorf("%s, please check you are using the correct discovery (missing token:// ?)", err.Error())
 			}
 			s.entries = append(s.entries, entry)
 		}
