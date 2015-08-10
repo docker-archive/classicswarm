@@ -2,6 +2,9 @@
 
 load ../../helpers
 
+export SWARM_MESOS_TASK_TIMEOUT=30s
+export SWARM_MESOS_USER=daemon
+
 MESOS_IMAGE=dockerswarm/mesos:0.23
 MESOS_MASTER_PORT=$(( ( RANDOM % 1000 )  + 10000 ))
 
@@ -22,18 +25,6 @@ function start_mesos() {
 		       )
 	    retry 10 1 eval "docker_host ps | grep 'mesos-slave-$i'"
 	done
-}
-
-# Start the swarm manager in background.
-function swarm_manage_mesos() {
-	local current=${#DOCKER_CONTAINERS[@]}
-	local i=${#SWARM_MANAGE_PID[@]}
-	local port=$(($SWARM_BASE_PORT + $i))
-	local host=127.0.0.1:$port
-	"$SWARM_BINARY" -l debug manage -H "$host" --cluster-driver mesos-experimental --cluster-opt mesos.user=daemon 127.0.0.1:$MESOS_MASTER_PORT &
-	SWARM_MANAGE_PID[$i]=$!
-	SWARM_HOSTS[$i]=$host
-	retry 10 1 eval "docker_swarm info | grep 'Offers: $current'"
 }
 
 # Stop mesos master and slave.
