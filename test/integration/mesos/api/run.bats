@@ -11,7 +11,7 @@ function teardown() {
 @test "mesos - docker run" {
 	start_docker_with_busybox 2
 	start_mesos
-	swarm_manage_mesos
+	swarm_manage --cluster-driver mesos-experimental 127.0.0.1:$MESOS_MASTER_PORT
 
 	# make sure no container exist
 	run docker_swarm ps -qa
@@ -31,7 +31,7 @@ function teardown() {
 @test "mesos - docker run no resources" {
 	start_docker 1
 	start_mesos
-	swarm_manage_mesos
+	swarm_manage --cluster-driver mesos-experimental 127.0.0.1:$MESOS_MASTER_PORT
 
 	run docker_swarm run -d busybox ls
 	[ "$status" -ne 0 ]
@@ -41,7 +41,7 @@ function teardown() {
 @test "mesos - docker run big" {
 	start_docker_with_busybox 3
 	start_mesos
-	swarm_manage_mesos
+	swarm_manage --cluster-driver mesos-experimental 127.0.0.1:$MESOS_MASTER_PORT
 
 	for i in `seq 1 100`; do
 	    docker_swarm run -d -m 20m busybox echo $i

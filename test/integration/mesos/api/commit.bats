@@ -11,7 +11,7 @@ function teardown() {
 @test "mesos - docker commit" {
 	start_docker_with_busybox 2
 	start_mesos
-	swarm_manage_mesos
+	swarm_manage --cluster-driver mesos-experimental 127.0.0.1:$MESOS_MASTER_PORT
 
 	docker_swarm run -d -m 20m --name test_container busybox sleep 500
 
