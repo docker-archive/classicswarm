@@ -243,7 +243,11 @@ func (c *Cluster) Containers() cluster.Containers {
 	out := cluster.Containers{}
 	for _, s := range c.slaves {
 		for _, container := range s.engine.Containers() {
-			out = append(out, formatContainer(container))
+			if container.Config.Labels != nil {
+				if _, ok := container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"]; ok {
+					out = append(out, formatContainer(container))
+				}
+			}
 		}
 	}
 

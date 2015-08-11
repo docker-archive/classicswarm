@@ -32,7 +32,8 @@ func TestContainerLookup(t *testing.T) {
 		},
 		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
 			Labels: map[string]string{
-				"com.docker.swarm.id": "swarm1-id",
+				"com.docker.swarm.mesos.task": "task1-id",
+				"com.docker.swarm.mesos.name": "container1-name1",
 			},
 		}),
 	}
@@ -44,13 +45,25 @@ func TestContainerLookup(t *testing.T) {
 		},
 		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
 			Labels: map[string]string{
-				"com.docker.swarm.id": "swarm2-id",
+				"com.docker.swarm.mesos.task": "task2-id",
+				"com.docker.swarm.mesos.name": "con",
 			},
 		}),
 	}
 
-	s := createSlave(t, "test-engine", container1, container2)
+	container3 := &cluster.Container{
+		Container: dockerclient.Container{
+			Id:    "container3-id",
+			Names: []string{"/container3-name"},
+		},
+		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{}),
+	}
+
+	s := createSlave(t, "test-engine", container1, container2, container3)
 	c.slaves[s.id] = s
+
+	// Hide container without `com.docker.swarm.mesos.task`
+	assert.Equal(t, len(c.Containers()), 2)
 
 	// Invalid lookup
 	assert.Nil(t, c.Container("invalid-id"))
@@ -66,11 +79,6 @@ func TestContainerLookup(t *testing.T) {
 	// Container engine/name matching.
 	assert.NotNil(t, c.Container("test-engine/container1-name1"))
 	assert.NotNil(t, c.Container("test-engine/container1-name2"))
-	// Swarm ID lookup.
-	assert.NotNil(t, c.Container("swarm1-id"))
-	// Swarm ID prefix lookup.
-	assert.NotNil(t, c.Container("swarm1-"))
-	assert.Nil(t, c.Container("swarm"))
 	// Match name before ID prefix
 	cc := c.Container("con")
 	assert.NotNil(t, cc)
