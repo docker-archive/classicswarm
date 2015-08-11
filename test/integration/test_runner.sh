@@ -47,4 +47,4 @@ execute docker rm -f "$id" > /dev/null
 export DOCKER_BINARY="${tmp}/docker"
 
 # Run the tests.
-execute time bats -p $TESTS
+execute time bats --tap $TESTS
