@@ -208,7 +208,7 @@ And for the `nodes` discovery method.
 
 ## Contributing a new discovery backend
 
-You can contribute a new discovery backend to Swarm. For information on how to do this, see [our discovery README in the Docker Swarm repository](https://github.com/docker/swarm/blob/master/discovery/README.md).
+You can contribute a new discovery backend to Swarm. For information on how to do this, see <a href="https://github.com/docker/swarm/blob/master/discovery/README.md>our discovery README in the Docker Swarm repository</a>.
 
 ## Docker Swarm documentation index
 
