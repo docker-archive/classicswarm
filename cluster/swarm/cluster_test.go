@@ -84,6 +84,8 @@ func TestContainerLookup(t *testing.T) {
 	n := createEngine(t, "test-engine", container1, container2)
 	c.engines[n.ID] = n
 
+	assert.Equal(t, len(c.Containers()), 2)
+
 	// Invalid lookup
 	assert.Nil(t, c.Container("invalid-id"))
 	assert.Nil(t, c.Container(""))
