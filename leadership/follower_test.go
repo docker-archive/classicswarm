@@ -3,31 +3,32 @@ package leadership
 import (
 	"testing"
 
-	kv "github.com/docker/swarm/pkg/store"
+	"github.com/docker/libkv/store"
+	libkvmock "github.com/docker/libkv/store/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestFollower(t *testing.T) {
-	store, err := kv.NewStore("mock", []string{}, nil)
+	kv, err := libkvmock.New([]string{}, nil)
 	assert.NoError(t, err)
+	assert.NotNil(t, kv)
 
-	mockStore := store.(*kv.Mock)
+	mockStore := kv.(*libkvmock.Mock)
 
-	kvCh := make(chan *kv.KVPair)
-	var mockKVCh <-chan *kv.KVPair = kvCh
+	kvCh := make(chan *store.KVPair)
+	var mockKVCh <-chan *store.KVPair = kvCh
 	mockStore.On("Watch", "test_key", mock.Anything).Return(mockKVCh, nil)
 
-	follower := NewFollower(store, "test_key")
-	follower.FollowElection()
-	leaderCh := follower.LeaderCh()
+	follower := NewFollower(kv, "test_key")
+	leaderCh, errCh := follower.FollowElection()
 
 	// Simulate leader updates
 	go func() {
-		kvCh <- &kv.KVPair{Key: "test_key", Value: []byte("leader1")}
-		kvCh <- &kv.KVPair{Key: "test_key", Value: []byte("leader1")}
-		kvCh <- &kv.KVPair{Key: "test_key", Value: []byte("leader2")}
-		kvCh <- &kv.KVPair{Key: "test_key", Value: []byte("leader1")}
+		kvCh <- &store.KVPair{Key: "test_key", Value: []byte("leader1")}
+		kvCh <- &store.KVPair{Key: "test_key", Value: []byte("leader1")}
+		kvCh <- &store.KVPair{Key: "test_key", Value: []byte("leader2")}
+		kvCh <- &store.KVPair{Key: "test_key", Value: []byte("leader1")}
 	}()
 
 	// We shouldn't see duplicate events.
@@ -39,7 +40,15 @@ func TestFollower(t *testing.T) {
 	// Once stopped, iteration over the leader channel should stop.
 	follower.Stop()
 	close(kvCh)
-	assert.Equal(t, "", <-leaderCh)
+
+	// Assert that we receive an error from the error chan to deal with the failover
+	err, open := <-errCh
+	assert.True(t, open)
+	assert.NotNil(t, err)
+
+	// Ensure that the chan is closed
+	_, open = <-leaderCh
+	assert.False(t, open)
 
 	mockStore.AssertExpectations(t)
 }

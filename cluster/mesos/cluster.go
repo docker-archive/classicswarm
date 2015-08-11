@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -27,29 +28,32 @@ import (
 type Cluster struct {
 	sync.RWMutex
 
-	driver           *mesosscheduler.MesosSchedulerDriver
-	dockerEnginePort string
-	eventHandler     cluster.EventHandler
-	master           string
-	slaves           map[string]*slave
-	scheduler        *scheduler.Scheduler
-	store            *state.Store
-	TLSConfig        *tls.Config
-	options          *cluster.DriverOpts
-	offerTimeout     time.Duration
-	pendingTasks     *queue.Queue
+	driver              *mesosscheduler.MesosSchedulerDriver
+	dockerEnginePort    string
+	eventHandler        cluster.EventHandler
+	master              string
+	slaves              map[string]*slave
+	scheduler           *scheduler.Scheduler
+	store               *state.Store
+	TLSConfig           *tls.Config
+	options             *cluster.DriverOpts
+	offerTimeout        time.Duration
+	taskCreationTimeout time.Duration
+	pendingTasks        *queue.Queue
 }
 
 const (
 	frameworkName              = "swarm"
 	defaultDockerEnginePort    = "2375"
 	defaultDockerEngineTLSPort = "2376"
+	dockerPortAttribute        = "docker_port"
 	defaultOfferTimeout        = 10 * time.Minute
-	taskCreationTimeout        = 5 * time.Second
+	defaultTaskCreationTimeout = 5 * time.Second
 )
 
 var (
-	errNotSupported = errors.New("not supported with mesos")
+	errNotSupported    = errors.New("not supported with mesos")
+	errResourcesNeeded = errors.New("resources constraints (-c and/or -m) are required by mesos")
 )
 
 // NewCluster for mesos Cluster creation
@@ -57,14 +61,15 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 	log.WithFields(log.Fields{"name": "mesos"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
-		dockerEnginePort: defaultDockerEnginePort,
-		master:           master,
-		slaves:           make(map[string]*slave),
-		scheduler:        scheduler,
-		store:            store,
-		TLSConfig:        TLSConfig,
-		options:          &options,
-		offerTimeout:     defaultOfferTimeout,
+		dockerEnginePort:    defaultDockerEnginePort,
+		master:              master,
+		slaves:              make(map[string]*slave),
+		scheduler:           scheduler,
+		store:               store,
+		TLSConfig:           TLSConfig,
+		options:             &options,
+		offerTimeout:        defaultOfferTimeout,
+		taskCreationTimeout: defaultTaskCreationTimeout,
 	}
 
 	cluster.pendingTasks = queue.NewQueue()
@@ -72,12 +77,25 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 	// Empty string is accepted by the scheduler.
 	user, _ := options.String("mesos.user", "SWARM_MESOS_USER")
 
+	// Override the hostname here because mesos-go will try
+	// to shell out to the hostname binary and it won't work with our official image.
+	// Do not check error here, so mesos-go can still try.
+	hostname, _ := os.Hostname()
+
 	driverConfig := mesosscheduler.DriverConfig{
-		Scheduler: cluster,
-		Framework: &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
-		Master:    cluster.master,
+		Scheduler:        cluster,
+		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
+		Master:           cluster.master,
+		HostnameOverride: hostname,
 	}
 
+	if taskCreationTimeout, ok := options.String("mesos.tasktimeout", "SWARM_MESOS_TASK_TIMEOUT"); ok {
+		d, err := time.ParseDuration(taskCreationTimeout)
+		if err != nil {
+			return nil, err
+		}
+		cluster.taskCreationTimeout = d
+	}
 	// Changing port for https
 	if cluster.TLSConfig != nil {
 		cluster.dockerEnginePort = defaultDockerEngineTLSPort
@@ -119,6 +137,17 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 	return cluster, nil
 }
 
+// Handle callbacks for the events
+func (c *Cluster) Handle(e *cluster.Event) error {
+	if c.eventHandler == nil {
+		return nil
+	}
+	if err := c.eventHandler.Handle(e); err != nil {
+		log.Error(err)
+	}
+	return nil
+}
+
 // RegisterEventHandler registers an event handler.
 func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 	if c.eventHandler != nil {
@@ -130,6 +159,10 @@ func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 
 // CreateContainer for container creation in Mesos task
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) (*cluster.Container, error) {
+	if config.Memory == 0 && config.CpuShares == 0 {
+		return nil, errResourcesNeeded
+	}
+
 	task, err := newTask(c, config, name)
 	if err != nil {
 		return nil, err
@@ -142,7 +175,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 		return formatContainer(container), nil
 	case err := <-task.error:
 		return nil, err
-	case <-time.After(taskCreationTimeout):
+	case <-time.After(c.taskCreationTimeout):
 		c.pendingTasks.Remove(task)
 		return nil, strategy.ErrNoResourcesAvailable
 	}
@@ -236,12 +269,12 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete
 }
 
 // Pull will pull images on the cluster nodes
-func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(what, status string)) {
+func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string)) {
 
 }
 
 // Load images
-func (c *Cluster) Load(imageReader io.Reader, callback func(what, status string)) {
+func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string)) {
 
 }
 
@@ -380,7 +413,6 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	}
 
 	// build the offer from it's internal config and set the slaveID
-	t.build(n.ID)
 
 	c.Lock()
 	// TODO: Only use the offer we need
@@ -388,6 +420,8 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	for _, offer := range c.slaves[n.ID].offers {
 		offerIDs = append(offerIDs, offer.Id)
 	}
+
+	t.build(n.ID, c.slaves[n.ID].offers)
 
 	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, &mesosproto.Filters{}); err != nil {
 		// TODO: Do not erase all the offers, only the one used
@@ -475,4 +509,32 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 		return c.slaves[n.ID].engine, nil
 	}
 	return nil, nil
+}
+
+// BuildImage build an image
+func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer) error {
+	c.scheduler.Lock()
+
+	// get an engine
+	config := &cluster.ContainerConfig{dockerclient.ContainerConfig{
+		CpuShares: buildImage.CpuShares,
+		Memory:    buildImage.Memory,
+	}}
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
+	c.scheduler.Unlock()
+	if err != nil {
+		return err
+	}
+
+	reader, err := c.slaves[n.ID].engine.BuildImage(buildImage)
+	if err != nil {
+		return err
+	}
+
+	if _, err := io.Copy(out, reader); err != nil {
+		return err
+	}
+
+	c.slaves[n.ID].engine.RefreshImages()
+	return nil
 }

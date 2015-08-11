@@ -7,21 +7,21 @@ import (
 	"github.com/docker/swarm/scheduler/node"
 )
 
-// BinpackPlacementStrategy is exported
+// BinpackPlacementStrategy places a container onto the most packed node in the cluster.
 type BinpackPlacementStrategy struct {
 }
 
-// Initialize is exported
+// Initialize a BinpackPlacementStrategy.
 func (p *BinpackPlacementStrategy) Initialize() error {
 	return nil
 }
 
-// Name returns the name of the strategy
+// Name returns the name of the strategy.
 func (p *BinpackPlacementStrategy) Name() string {
 	return "binpack"
 }
 
-// PlaceContainer is exported
+// PlaceContainer places a container on the node with the most running containers.
 func (p *BinpackPlacementStrategy) PlaceContainer(config *cluster.ContainerConfig, nodes []*node.Node) (*node.Node, error) {
 	weightedNodes, err := weighNodes(config, nodes)
 	if err != nil {

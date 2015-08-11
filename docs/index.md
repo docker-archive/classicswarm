@@ -14,7 +14,7 @@ Docker Swarm is native clustering for Docker. It allows you create and access to
 a pool of Docker hosts using the full suite of Docker tools. Because Docker
 Swarm serves the standard Docker API, any tool that already communicates with a
 Docker daemon can use Swarm to transparently scale to multiple hosts. Supported
-tools include, but are not  limited to, the following: 
+tools include, but are not limited to, the following:
 
 - Dokku
 - Docker Compose
@@ -39,11 +39,11 @@ The first step to creating a swarm on your network is to pull the Docker Swarm i
 * install Docker on each node
 * create and manage TLS certificates to secure your swarm
 
-As a starting point, the manual method is is best suited for experienced administrators or programmers contributing to Docker Swarm. The alternative is to use `docker-machine` to install a swarm.  
+As a starting point, the manual method is best suited for experienced administrators or programmers contributing to Docker Swarm. The alternative is to use `docker-machine` to install a swarm.
 
 Using Docker Machine, you can quickly install a Docker Swarm on cloud providers or inside your own data center. If you have VirtualBox installed on your local machine, you can quickly build and explore Docker Swarm in your local environment. This method automatically generates a certificate to secure your swarm.
 
-Using Docker Machine is the best method for users getting started with Swarm for the first time. To try the recommended method of getting started, see [Get Started with Docker Swarm](install-w-machine.md). 
+Using Docker Machine is the best method for users getting started with Swarm for the first time. To try the recommended method of getting started, see [Get Started with Docker Swarm](install-w-machine.md).
 
 If you are interested manually installing or interested in contributing, see [Create a swarm for development](install-manual.md).
 
@@ -70,10 +70,10 @@ Docker Swarm is still in its infancy and under active development. If you need
 help, would like to contribute, or simply want to talk about the project with
 like-minded individuals, we have a number of open channels for communication.
 
-* To report bugs or file feature requests: please use the [issue tracker on Github](https://github.com/docker/machine/issues).
+* To report bugs or file feature requests: please use the [issue tracker on Github](https://github.com/docker/swarm/issues).
 
 * To talk about the project with people in real time: please join the `#docker-swarm` channel on IRC.
 
-* To contribute code or documentation changes: please submit a [pull request on Github](https://github.com/docker/machine/pulls).
+* To contribute code or documentation changes: please submit a [pull request on Github](https://github.com/docker/swarm/pulls).
 
 For more information and resources, please visit the [Getting Help project page](https://docs.docker.com/project/get-help/).

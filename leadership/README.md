@@ -16,9 +16,8 @@ if err != nil {
 }
 
 underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood")
-underwood.RunForElection()
+electedCh, _ := underwood.RunForElection()
 
-electedCh := underwood.ElectedCh()
 for isElected := range electedCh {
 	// This loop will run every time there is a change in our leadership
 	// status.
@@ -47,13 +46,56 @@ It is possible to follow an election in real-time and get notified whenever
 there is a change in leadership:
 ```go
 follower := leadership.NewFollower(client, "service/swarm/leader")
-follower.FollowElection()
-leaderCh := follower.LeaderCh()
+leaderCh, _ := follower.FollowElection()
 for leader := <-leaderCh {
 	// Leader is a string containing the value passed to `NewCandidate`.
 	log.Printf("%s is now the leader", leader)
 }
 ```
 
-A typical usecase for this is to be able to always send requests to the current
+A typical use case for this is to be able to always send requests to the current
 leader.
+
+## Fault tolerance
+
+Leadership returns an error channel for Candidates and Followers that you can use
+to be resilient to failures. For example, if the watch on the leader key fails
+because the store becomes unavailable, you can retry the process later.
+
+```go
+func participate() {
+    // Create a store using pkg/store.
+    client, err := store.NewStore("consul", []string{"127.0.0.1:8500"}, &store.Config{})
+    if err != nil {
+        panic(err)
+    }
+
+    waitTime := 10 * time.Second
+    underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood")
+
+    go func() {
+        for {
+            run(underwood)
+            time.Sleep(waitTime)
+            // retry
+        }
+    }
+}
+
+func run(candidate *leadership.Candidate) {
+    electedCh, errCh := candidate.RunForElection()
+    for {
+        select {
+            case elected := <-electedCh:
+            if isElected {
+                // Do something
+            } else {
+                // Do something else
+            }
+
+            case err := <-errCh:
+                log.Error(err)
+                return
+    }
+}
+```

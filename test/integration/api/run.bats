@@ -20,6 +20,10 @@ function teardown() {
 
 	# verify, container is running
 	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
+
+	# error check
+	run docker_swarm run -d 4e8aa3148a132f19ec560952231c4d39522043994df7d2dc239942c0f9424ebd
+	[[ "${output}" == *"cannot specify 64-byte hexadecimal strings"* ]]
 }
 
 @test "docker run with resources" {
@@ -61,4 +65,26 @@ function teardown() {
 	[[ "${output}" == *"\"IpcMode\": \"host\""* ]]
 	# pid
 	[[ "${output}" == *"\"PidMode\": \"host\""* ]]
+}
+
+@test "docker run - reschedule with soft-image-affinity" {
+	start_docker_with_busybox 1
+	start_docker 1
+
+	docker -H ${HOSTS[0]} tag busybox:latest busyboxabcde:latest
+	swarm_manage
+
+	# make sure busyboxabcde exists
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"busyboxabcde"* ]]
+
+	# try to create container on node-1, node-1 does not have busyboxabcde and will pull it
+	# but can not find busyboxabcde in dockerhub
+	# then will retry with soft-image-affinity
+	docker_swarm run -d --name test_container -e constraint:node==~node-1 busyboxabcde sleep 1000
+
+	# check container running on node-0
+	run docker_swarm ps
+	[[ "${output}" == *"node-0/test_container"* ]]
 }

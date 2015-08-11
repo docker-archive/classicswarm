@@ -112,13 +112,13 @@ name or  ID.  For example, you can start a container called `frontend` running
 `nginx`:
 
 ```bash
-$ docker run -d -p 80:80 --name front nginx
+$ docker run -d -p 80:80 --name frontend nginx
  87c4376856a8
 
 
 $ docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      front
+87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      frontend
 ```
 
 Then, using `-e affinity:container==frontend` flag schedule a second container to
@@ -404,5 +404,5 @@ This filter will prevent scheduling containers on unhealthy nodes.
 
 - [User guide](https://docs.docker.com/swarm/)
 - [Discovery options](https://docs.docker.com/swarm/discovery/)
-- [Sheduler strategies](https://docs.docker.com/swarm/scheduler/strategy/)
+- [Scheduler strategies](https://docs.docker.com/swarm/scheduler/strategy/)
 - [Swarm API](https://docs.docker.com/swarm/API/)

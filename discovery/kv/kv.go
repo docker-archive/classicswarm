@@ -7,8 +7,9 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/libkv"
+	"github.com/docker/libkv/store"
 	"github.com/docker/swarm/discovery"
-	"github.com/docker/swarm/pkg/store"
 )
 
 const (
@@ -21,6 +22,7 @@ type Discovery struct {
 	store     store.Store
 	heartbeat time.Duration
 	ttl       time.Duration
+	prefix    string
 	path      string
 }
 
@@ -38,24 +40,23 @@ func Init() {
 // Initialize is exported
 func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Duration) error {
 	var (
-		parts  = strings.SplitN(uris, "/", 2)
-		addrs  = strings.Split(parts[0], ",")
-		prefix = ""
-		err    error
+		parts = strings.SplitN(uris, "/", 2)
+		addrs = strings.Split(parts[0], ",")
+		err   error
 	)
 
 	// A custom prefix to the path can be optionally used.
 	if len(parts) == 2 {
-		prefix = parts[1]
+		s.prefix = parts[1]
 	}
 
 	s.heartbeat = heartbeat
 	s.ttl = ttl
-	s.path = path.Join(prefix, discoveryPath)
+	s.path = path.Join(s.prefix, discoveryPath)
 
 	// Creates a new store, will ignore options given
 	// if not supported by the chosen store
-	s.store, err = store.NewStore(
+	s.store, err = libkv.NewStore(
 		s.backend,
 		addrs,
 		&store.Config{
@@ -137,4 +138,9 @@ func (s *Discovery) Register(addr string) error {
 // Store returns the underlying store used by KV discovery.
 func (s *Discovery) Store() store.Store {
 	return s.store
+}
+
+// Prefix returns the store prefix
+func (s *Discovery) Prefix() string {
+	return s.prefix
 }

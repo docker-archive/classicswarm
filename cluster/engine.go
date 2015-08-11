@@ -185,7 +185,7 @@ func (e *Engine) RemoveImage(image *Image, name string) ([]*dockerclient.ImageDe
 
 // RefreshImages refreshes the list of images on the engine.
 func (e *Engine) RefreshImages() error {
-	images, err := e.client.ListImages()
+	images, err := e.client.ListImages(false)
 	if err != nil {
 		return err
 	}
@@ -209,9 +209,11 @@ func (e *Engine) RefreshContainers(full bool) error {
 
 	merged := make(map[string]*Container)
 	for _, c := range containers {
-		merged, err = e.updateContainer(c, merged, full)
+		mergedUpdate, err := e.updateContainer(c, merged, full)
 		if err != nil {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q", c.Id)
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q: %v", c.Id, err)
+		} else {
+			merged = mergedUpdate
 		}
 	}
 
@@ -254,7 +256,7 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 
 	e.RLock()
 	if current, exists := e.containers[c.Id]; exists {
-		// The container is already knowe.
+		// The container is already known.
 		container = current
 	} else {
 		// This is a brand new container. We need to do a full refresh.
@@ -410,7 +412,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 		if err = e.Pull(config.Image, nil); err != nil {
 			return nil, err
 		}
-		// ...And try agaie.
+		// ...And try again.
 		if id, err = client.CreateContainer(&dockerConfig, name); err != nil {
 			return nil, err
 		}
@@ -423,7 +425,11 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	e.RLock()
 	defer e.RUnlock()
 
-	return e.containers[id], nil
+	container := e.containers[id]
+	if container == nil {
+		err = errors.New("Container created but refresh didn't report it back")
+	}
+	return container, err
 }
 
 // RemoveContainer a container from the engine.
@@ -607,4 +613,10 @@ func (e *Engine) RenameContainer(container *Container, newName string) error {
 
 	// refresh container
 	return e.refreshContainer(container.Id, true)
+}
+
+// BuildImage build an image
+func (e *Engine) BuildImage(buildImage *dockerclient.BuildImage) (io.ReadCloser, error) {
+
+	return e.client.BuildImage(buildImage)
 }

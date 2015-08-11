@@ -12,7 +12,7 @@ DISCOVERY="consul://${STORE_HOST}/test"
 CONTAINER_NAME=swarm_consul
 
 function start_store() {
-	docker_host run --name=$CONTAINER_NAME -h $CONTAINER_NAME -p $STORE_HOST:8500 -d progrium/consul -server -bootstrap-expect 1 -data-dir /test
+	docker_host run -v $(pwd)/discovery/consul/config:/config --name=$CONTAINER_NAME -h $CONTAINER_NAME -p $STORE_HOST:8500 -d progrium/consul -server -bootstrap-expect 1 -config-file=/config/consul.json
 }
 
 function stop_store() {

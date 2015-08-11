@@ -21,6 +21,9 @@ type context struct {
 type handler func(c *context, w http.ResponseWriter, r *http.Request)
 
 var routes = map[string]map[string]handler{
+	"HEAD": {
+		"/containers/{name:.*}/archive": proxyContainer,
+	},
 	"GET": {
 		"/_ping":                          ping,
 		"/events":                         getEvents,
@@ -30,11 +33,12 @@ var routes = map[string]map[string]handler{
 		"/images/viz":                     notImplementedHandler,
 		"/images/search":                  proxyRandom,
 		"/images/get":                     getImages,
-		"/images/{name:.*}/get":           getImage,
+		"/images/{name:.*}/get":           proxyImageTagOptional,
 		"/images/{name:.*}/history":       proxyImage,
 		"/images/{name:.*}/json":          proxyImage,
 		"/containers/ps":                  getContainersJSON,
 		"/containers/json":                getContainersJSON,
+		"/containers/{name:.*}/archive":   proxyContainer,
 		"/containers/{name:.*}/export":    proxyContainer,
 		"/containers/{name:.*}/changes":   proxyContainer,
 		"/containers/{name:.*}/json":      getContainerJSON,
@@ -47,10 +51,10 @@ var routes = map[string]map[string]handler{
 	"POST": {
 		"/auth":                         proxyRandom,
 		"/commit":                       postCommit,
-		"/build":                        proxyRandomAndForceRefresh,
+		"/build":                        postBuild,
 		"/images/create":                postImagesCreate,
 		"/images/load":                  postImagesLoad,
-		"/images/{name:.*}/push":        proxyImage,
+		"/images/{name:.*}/push":        proxyImageTagOptional,
 		"/images/{name:.*}/tag":         proxyImageAndForceRefresh,
 		"/containers/create":            postContainersCreate,
 		"/containers/{name:.*}/kill":    proxyContainerAndForceRefresh,
@@ -67,6 +71,9 @@ var routes = map[string]map[string]handler{
 		"/containers/{name:.*}/exec":    postContainersExec,
 		"/exec/{execid:.*}/start":       proxyHijack,
 		"/exec/{execid:.*}/resize":      proxyContainer,
+	},
+	"PUT": {
+		"/containers/{name:.*}/archive": proxyContainer,
 	},
 	"DELETE": {
 		"/containers/{name:.*}": deleteContainers,

@@ -2,6 +2,7 @@ package dockerclient
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/docker/docker/pkg/units"
@@ -297,7 +298,7 @@ type Info struct {
 	Debug              interface{}
 	NFd                int64
 	NGoroutines        int64
-	SystemTime         time.Time
+	SystemTime         string
 	NEventsListener    int64
 	InitPath           string
 	InitSha1           string
@@ -305,6 +306,8 @@ type Info struct {
 	MemoryLimit        interface{}
 	SwapLimit          interface{}
 	IPv4Forwarding     interface{}
+	BridgeNfIptables   bool
+	BridgeNfIp6tables  bool
 	DockerRootDir      string
 	HttpProxy          string
 	HttpsProxy         string
@@ -412,4 +415,25 @@ type Ulimit struct {
 type LogConfig struct {
 	Type   string            `json:"type"`
 	Config map[string]string `json:"config"`
+}
+
+type BuildImage struct {
+	Config         *ConfigFile
+	DockerfileName string
+	Context        io.Reader
+	RemoteURL      string
+	RepoName       string
+	SuppressOutput bool
+	NoCache        bool
+	Remove         bool
+	ForceRemove    bool
+	Pull           bool
+	Memory         int64
+	MemorySwap     int64
+	CpuShares      int64
+	CpuPeriod      int64
+	CpuQuota       int64
+	CpuSetCpus     string
+	CpuSetMems     string
+	CgroupParent   string
 }

@@ -7,21 +7,21 @@ import (
 	"github.com/docker/swarm/scheduler/node"
 )
 
-// SpreadPlacementStrategy is exported
+// SpreadPlacementStrategy places a container on the node with the fewest running containers.
 type SpreadPlacementStrategy struct {
 }
 
-// Initialize is exported
+// Initialize a SpreadPlacementStrategy.
 func (p *SpreadPlacementStrategy) Initialize() error {
 	return nil
 }
 
-// Name returns the name of the strategy
+// Name returns the name of the strategy.
 func (p *SpreadPlacementStrategy) Name() string {
 	return "spread"
 }
 
-// PlaceContainer is exported
+// PlaceContainer places a container on the node with the fewest running containers.
 func (p *SpreadPlacementStrategy) PlaceContainer(config *cluster.ContainerConfig, nodes []*node.Node) (*node.Node, error) {
 	weightedNodes, err := weighNodes(config, nodes)
 	if err != nil {

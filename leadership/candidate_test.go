@@ -2,18 +2,20 @@ package leadership
 
 import (
 	"testing"
+	"time"
 
-	kv "github.com/docker/swarm/pkg/store"
+	libkvmock "github.com/docker/libkv/store/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestCandidate(t *testing.T) {
-	store, err := kv.NewStore("mock", []string{}, nil)
+	kv, err := libkvmock.New([]string{}, nil)
 	assert.NoError(t, err)
+	assert.NotNil(t, kv)
 
-	mockStore := store.(*kv.Mock)
-	mockLock := &kv.MockLock{}
+	mockStore := kv.(*libkvmock.Mock)
+	mockLock := &libkvmock.Lock{}
 	mockStore.On("NewLock", "test_key", mock.Anything).Return(mockLock, nil)
 
 	// Lock and unlock always succeeds.
@@ -22,9 +24,8 @@ func TestCandidate(t *testing.T) {
 	mockLock.On("Lock").Return(mockLostCh, nil)
 	mockLock.On("Unlock").Return(nil)
 
-	candidate := NewCandidate(store, "test_key", "test_node")
-	candidate.RunForElection()
-	electedCh := candidate.ElectedCh()
+	candidate := NewCandidate(kv, "test_key", "test_node")
+	electedCh, _ := candidate.RunForElection()
 
 	// Should issue a false upon start, no matter what.
 	assert.False(t, <-electedCh)
@@ -48,5 +49,16 @@ func TestCandidate(t *testing.T) {
 
 	candidate.Stop()
 
-	mockStore.AssertExpectations(t)
+	// Ensure that the chan closes after some time
+	for {
+		select {
+		case _, open := <-electedCh:
+			if !open {
+				mockStore.AssertExpectations(t)
+				return
+			}
+		case <-time.After(1 * time.Second):
+			t.Fatalf("electedCh not closed correctly")
+		}
+	}
 }

@@ -126,7 +126,11 @@ func CreateMasterInfo(pid *upid.UPID) *mesos.MasterInfo {
 	}
 	//TODO(jdef) what about (future) ipv6 support?
 	var ipv4 net.IP
-	if addrs, err := net.LookupIP(pid.Host); err == nil {
+	if ipv4 = net.ParseIP(pid.Host); ipv4 != nil {
+		// This is needed for the people cross-compiling from macos to linux.
+		// The cross-compiled version of net.LookupIP() fails to handle plain IPs.
+		// See https://github.com/mesos/mesos-go/pull/117
+	} else if addrs, err := net.LookupIP(pid.Host); err == nil {
 		for _, ip := range addrs {
 			if ip = ip.To4(); ip != nil {
 				ipv4 = ip

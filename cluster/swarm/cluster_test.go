@@ -127,7 +127,7 @@ func TestImportImage(t *testing.T) {
 	client.On("Version").Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
-	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
+	client.On("ListImages", false).Return([]*dockerclient.Image{}, nil)
 
 	// connect client
 	engine.ConnectWithClient(client)
@@ -175,7 +175,7 @@ func TestLoadImage(t *testing.T) {
 	client.On("Version").Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
-	client.On("ListImages").Return([]*dockerclient.Image{}, nil)
+	client.On("ListImages", false).Return([]*dockerclient.Image{}, nil)
 
 	// connect client
 	engine.ConnectWithClient(client)

@@ -6,42 +6,67 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/libkv/store"
+	libkvmock "github.com/docker/libkv/store/mock"
 	"github.com/docker/swarm/discovery"
-	"github.com/docker/swarm/pkg/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestInitialize(t *testing.T) {
-	d := &Discovery{backend: store.MOCK}
-	assert.NoError(t, d.Initialize("127.0.0.1", 0, 0))
-	s := d.store.(*store.Mock)
+	storeMock, err := libkvmock.New([]string{"127.0.0.1"}, nil)
+	assert.NotNil(t, storeMock)
+	assert.NoError(t, err)
+
+	d := &Discovery{backend: store.CONSUL}
+	d.Initialize("127.0.0.1", 0, 0)
+	d.store = storeMock
+
+	s := d.store.(*libkvmock.Mock)
 	assert.Len(t, s.Endpoints, 1)
 	assert.Equal(t, s.Endpoints[0], "127.0.0.1")
 	assert.Equal(t, d.path, discoveryPath)
 
-	d = &Discovery{backend: store.MOCK}
-	assert.NoError(t, d.Initialize("127.0.0.1:1234/path", 0, 0))
-	s = d.store.(*store.Mock)
+	storeMock, err = libkvmock.New([]string{"127.0.0.1:1234"}, nil)
+	assert.NotNil(t, storeMock)
+	assert.NoError(t, err)
+
+	d = &Discovery{backend: store.CONSUL}
+	d.Initialize("127.0.0.1:1234/path", 0, 0)
+	d.store = storeMock
+
+	s = d.store.(*libkvmock.Mock)
 	assert.Len(t, s.Endpoints, 1)
 	assert.Equal(t, s.Endpoints[0], "127.0.0.1:1234")
 	assert.Equal(t, d.path, "path/"+discoveryPath)
 
-	d = &Discovery{backend: store.MOCK}
-	assert.NoError(t, d.Initialize("127.0.0.1:1234,127.0.0.2:1234,127.0.0.3:1234/path", 0, 0))
-	s = d.store.(*store.Mock)
-	assert.Len(t, s.Endpoints, 3)
-	assert.Equal(t, s.Endpoints[0], "127.0.0.1:1234")
-	assert.Equal(t, s.Endpoints[1], "127.0.0.2:1234")
-	assert.Equal(t, s.Endpoints[2], "127.0.0.3:1234")
+	storeMock, err = libkvmock.New([]string{"127.0.0.1:1234", "127.0.0.2:1234", "127.0.0.3:1234"}, nil)
+	assert.NotNil(t, storeMock)
+	assert.NoError(t, err)
+
+	d = &Discovery{backend: store.CONSUL}
+	d.Initialize("127.0.0.1:1234,127.0.0.2:1234,127.0.0.3:1234/path", 0, 0)
+	d.store = storeMock
+
+	s = d.store.(*libkvmock.Mock)
+	if assert.Len(t, s.Endpoints, 3) {
+		assert.Equal(t, s.Endpoints[0], "127.0.0.1:1234")
+		assert.Equal(t, s.Endpoints[1], "127.0.0.2:1234")
+		assert.Equal(t, s.Endpoints[2], "127.0.0.3:1234")
+	}
 	assert.Equal(t, d.path, "path/"+discoveryPath)
 }
 
 func TestWatch(t *testing.T) {
-	d := &Discovery{backend: store.MOCK}
-	assert.NoError(t, d.Initialize("127.0.0.1:1234/path", 0, 0))
-	s := d.store.(*store.Mock)
+	storeMock, err := libkvmock.New([]string{"127.0.0.1:1234"}, nil)
+	assert.NotNil(t, storeMock)
+	assert.NoError(t, err)
 
+	d := &Discovery{backend: store.CONSUL}
+	d.Initialize("127.0.0.1:1234/path", 0, 0)
+	d.store = storeMock
+
+	s := d.store.(*libkvmock.Mock)
 	mockCh := make(chan []*store.KVPair)
 
 	// The first watch will fail.
@@ -60,7 +85,7 @@ func TestWatch(t *testing.T) {
 	stopCh := make(chan struct{})
 	ch, errCh := d.Watch(stopCh)
 
-	// It should fire an error since the first WatchRange call failed.
+	// It should fire an error since the first WatchTree call failed.
 	assert.EqualError(t, <-errCh, "test error")
 	// We have to drain the error channel otherwise Watch will get stuck.
 	go func() {

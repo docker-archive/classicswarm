@@ -17,14 +17,14 @@ DOCKER_IMAGE=${DOCKER_IMAGE:-dockerswarm/dind-master}
 DOCKER_VERSION=${DOCKER_VERSION:-latest}
 DOCKER_BINARY=${DOCKER_BINARY:-`command -v docker`}
 
-# Host on which the manager will listen to (random port between 6000 and 7000).
-SWARM_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 6000 ))
+# Port on which the manager will listen to (random port between 6000 and 7000).
+SWARM_BASE_PORT=$(( ( RANDOM % 1000 )  + 6000 ))
 
 # Use a random base port (for engines) between 5000 and 6000.
 BASE_PORT=$(( ( RANDOM % 1000 )  + 5000 ))
 
 # Drivers to use for Docker engines the tests are going to create.
-STORAGE_DRIVER=${STORAGE_DRIVER:-aufs}
+STORAGE_DRIVER=${STORAGE_DRIVER:-overlay}
 EXEC_DRIVER=${EXEC_DRIVER:-native}
 
 BUSYBOX_IMAGE="$BATS_TMPDIR/busybox.tgz"
@@ -50,7 +50,7 @@ function docker_host() {
 
 # Run the docker CLI against swarm.
 function docker_swarm() {
-	docker -H $SWARM_HOST "$@"
+	docker -H ${SWARM_HOSTS[0]} "$@"
 }
 
 # Run the swarm binary. You must NOT fork this command (swarm foo &) as the PID
@@ -94,9 +94,14 @@ function swarm_manage() {
 		discovery="$@"
 	fi
 
-	"$SWARM_BINARY" -l debug manage -H "$SWARM_HOST" --heartbeat=1s "$discovery" &
-	SWARM_PID=$!
-	wait_until_reachable "$SWARM_HOST"
+	local i=${#SWARM_MANAGE_PID[@]}
+	local port=$(($SWARM_BASE_PORT + $i))
+	local host=127.0.0.1:$port
+
+	"$SWARM_BINARY" -l debug manage -H "$host" --heartbeat=1s $discovery &
+	SWARM_MANAGE_PID[$i]=$!
+	SWARM_HOSTS[$i]=$host
+	wait_until_reachable "$host"
 }
 
 # swarm join every engine created with `start_docker`.
@@ -124,7 +129,9 @@ function swarm_join() {
 
 # Stops the manager.
 function swarm_manage_cleanup() {
-	kill $SWARM_PID || true
+	for pid in ${SWARM_MANAGE_PID[@]}; do
+		kill $pid || true
+	done
 }
 
 # Clean up Swarm join processes

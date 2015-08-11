@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
@@ -25,16 +27,26 @@ const APIVERSION = "1.16"
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := dockerclient.Info{
-		Containers:      int64(len(c.cluster.Containers())),
-		Images:          int64(len(c.cluster.Images())),
-		DriverStatus:    c.statusHandler.Status(),
-		NEventsListener: int64(c.eventsHandler.Size()),
-		Debug:           c.debug,
-		MemoryLimit:     true,
-		SwapLimit:       true,
-		IPv4Forwarding:  true,
-		NCPU:            c.cluster.TotalCpus(),
-		MemTotal:        c.cluster.TotalMemory(),
+		Containers:        int64(len(c.cluster.Containers())),
+		Images:            int64(len(c.cluster.Images())),
+		DriverStatus:      c.statusHandler.Status(),
+		NEventsListener:   int64(c.eventsHandler.Size()),
+		Debug:             c.debug,
+		MemoryLimit:       true,
+		SwapLimit:         true,
+		IPv4Forwarding:    true,
+		BridgeNfIptables:  true,
+		BridgeNfIp6tables: true,
+		NCPU:              c.cluster.TotalCpus(),
+		MemTotal:          c.cluster.TotalMemory(),
+		HttpProxy:         os.Getenv("http_proxy"),
+		HttpsProxy:        os.Getenv("https_proxy"),
+		NoProxy:           os.Getenv("no_proxy"),
+		SystemTime:        time.Now().Format(time.RFC3339Nano),
+	}
+
+	if hostname, err := os.Hostname(); err == nil {
+		info.Name = hostname
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -54,20 +66,6 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(version)
-}
-
-// GET /images/{name:.*}/get
-func getImage(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
-
-	for _, image := range c.cluster.Images() {
-		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
-			len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
-			proxy(c.tlsConfig, image.Engine.Addr, w, r)
-			return
-		}
-	}
-	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
 }
 
 // GET /images/get
@@ -154,8 +152,18 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse flags.
-	all := boolValue(r, "all")
-	limit := intValueOrZero(r, "limit")
+	var (
+		all    = boolValue(r, "all")
+		limit  = intValueOrZero(r, "limit")
+		before *cluster.Container
+	)
+	if value := r.FormValue("before"); value != "" {
+		before = c.cluster.Container(value)
+		if before == nil {
+			httpError(w, fmt.Sprintf("No such container %s", value), http.StatusNotFound)
+			return
+		}
+	}
 
 	// Parse filters.
 	filters, err := dockerfilters.FromParam(r.Form.Get("filters"))
@@ -186,7 +194,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	candidates := []*cluster.Container{}
 	for _, container := range c.cluster.Containers() {
 		// Skip stopped containers unless -a was specified.
-		if !container.Info.State.Running && !all && limit <= 0 {
+		if !container.Info.State.Running && !all && before == nil && limit <= 0 {
 			continue
 		}
 
@@ -234,6 +242,12 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	// Convert cluster.Container back into dockerclient.Container.
 	out := []*dockerclient.Container{}
 	for _, container := range candidates {
+		if before != nil {
+			if container.Id == before.Id {
+				before = nil
+			}
+			continue
+		}
 		// Create a copy of the underlying dockerclient.Container so we can
 		// make changes without messing with cluster.Container.
 		tmp := (*container).Container
@@ -387,9 +401,9 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 		callback := func(what, status string) {
 			if status == "" {
-				fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s...\",%q:{}}", "id", what, "status", image, "progressDetail")
+				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s...", image))
 			} else {
-				fmt.Fprintf(wf, "{%q:%q,%q:\"Pulling %s... : %s\",%q:{}}", "id", what, "status", image, status, "progressDetail")
+				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s... : %s", image, status))
 			}
 		}
 		c.cluster.Pull(image, &authConfig, callback)
@@ -399,7 +413,7 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		tag := r.Form.Get("tag")
 
 		callback := func(what, status string) {
-			fmt.Fprintf(wf, "{%q:%q,%q:\"%s\"}", "id", what, "status", status)
+			sendJSONMessage(wf, what, status)
 		}
 		c.cluster.Import(source, repo, tag, r.Body, callback)
 	}
@@ -407,14 +421,16 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /images/load
 func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 
 	// call cluster to load image on every node
 	wf := NewWriteFlusher(w)
 	callback := func(what, status string) {
 		if status == "" {
-			fmt.Fprintf(wf, "%s:Loading Image...\n", what)
+			sendJSONMessage(wf, what, "Loading Image...")
 		} else {
-			fmt.Fprintf(wf, "%s:Loading Image... %s\n", what, status)
+			sendJSONMessage(wf, what, fmt.Sprintf("Loading Image... : %s", status))
 		}
 	}
 	c.cluster.Load(r.Body, callback)
@@ -482,6 +498,7 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	container.Info.ExecIDs = append(container.Info.ExecIDs, id.ID)
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
 	w.Write(data)
 }
 
@@ -564,6 +581,20 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
 }
 
+// Proxy a request to the right node
+func proxyImageTagOptional(c *context, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+
+	for _, image := range c.cluster.Images() {
+		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
+			len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
+			proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			return
+		}
+	}
+	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
+}
+
 // Proxy a request to the right node and force refresh
 func proxyImageAndForceRefresh(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
@@ -607,31 +638,6 @@ func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Proxy a request to a random node and force refresh
-func proxyRandomAndForceRefresh(c *context, w http.ResponseWriter, r *http.Request) {
-	engine, err := c.cluster.RANDOMENGINE()
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if engine == nil {
-		httpError(w, "no node available in the cluster", http.StatusInternalServerError)
-		return
-	}
-
-	cb := func(resp *http.Response) {
-		if resp.StatusCode == http.StatusOK {
-			engine.RefreshImages()
-		}
-	}
-
-	if err := proxyAsync(c.tlsConfig, engine.Addr, w, r, cb); err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-	}
-
-}
-
 // POST  /commit
 func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -661,6 +667,50 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 
 	// proxy commit request to the right node
 	if err := proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// POST /build
+func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	buildImage := &dockerclient.BuildImage{
+		DockerfileName: r.Form.Get("dockerfile"),
+		RepoName:       r.Form.Get("t"),
+		RemoteURL:      r.Form.Get("remote"),
+		NoCache:        boolValue(r, "nocache"),
+		Pull:           boolValue(r, "pull"),
+		Remove:         boolValue(r, "rm"),
+		ForceRemove:    boolValue(r, "forcerm"),
+		SuppressOutput: boolValue(r, "q"),
+		Memory:         int64ValueOrZero(r, "memory"),
+		MemorySwap:     int64ValueOrZero(r, "memswap"),
+		CpuShares:      int64ValueOrZero(r, "cpushares"),
+		CpuPeriod:      int64ValueOrZero(r, "cpuperiod"),
+		CpuQuota:       int64ValueOrZero(r, "cpuquota"),
+		CpuSetCpus:     r.Form.Get("cpusetcpus"),
+		CpuSetMems:     r.Form.Get("cpusetmems"),
+		CgroupParent:   r.Form.Get("cgroupparent"),
+		Context:        r.Body,
+	}
+
+	authEncoded := r.Header.Get("X-Registry-Auth")
+	if authEncoded != "" {
+		buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
+		if err == nil {
+			json.Unmarshal(buf, &buildImage.Config)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	wf := NewWriteFlusher(w)
+
+	err := c.cluster.BuildImage(buildImage, wf)
+	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }

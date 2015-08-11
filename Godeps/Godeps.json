@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/docker/swarm",
-	"GoVersion": "go1.3.3",
+	"GoVersion": "go1.4.2",
 	"Packages": [
 		"./..."
 	],
@@ -19,16 +19,6 @@
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-62-gbf4a526",
 			"Rev": "bf4a526f48af7badd25d2cb02d587e1b01be3b50"
-		},
-		{
-			"ImportPath": "github.com/coreos/etcd/etcdserver/etcdhttp/httptypes",
-			"Comment": "v2.0.0-rc.1-288-g4c33d12",
-			"Rev": "4c33d12bf84fac9fd1b1a88cb8e95f6d4fab802a"
-		},
-		{
-			"ImportPath": "github.com/coreos/etcd/pkg/types",
-			"Comment": "v2.0.0-rc.1-288-g4c33d12",
-			"Rev": "4c33d12bf84fac9fd1b1a88cb8e95f6d4fab802a"
 		},
 		{
 			"ImportPath": "github.com/coreos/go-etcd/etcd",
@@ -61,6 +51,10 @@
 			"Rev": "443437f5ea04da9d62bf3e05d7951f7d30e77d96"
 		},
 		{
+			"ImportPath": "github.com/docker/libkv",
+			"Rev": "56d6633db7a524c74773fd6b98f02afcd0e6f27a"
+		},
+		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
 			"Rev": "bc946d07d1016848dfd2507f90f0859c9471681e"
 		},
@@ -83,35 +77,39 @@
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/auth",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/detector",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/mesosproto",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/mesosutil",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/messenger",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/scheduler",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/upid",
-			"Rev": "d4406379fb263be8b6c2f5d53bac1570aac28242"
+			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
+		},
+		{
+			"ImportPath": "github.com/skarademir/naturalsort",
+			"Rev": "69a5d87bef620f77ee8508db30c846b3b84b111e"
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
-			"Rev": "12570e600d71374233e5056ba315f657ced496c7"
+			"Rev": "68832c185bb6304fed26a986891fd27b6ed17987"
 		},
 		{
 			"ImportPath": "github.com/samuel/go-zookeeper/zk",
