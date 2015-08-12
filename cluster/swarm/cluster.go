@@ -259,13 +259,13 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 }
 
 // Images returns all the images in the cluster.
-func (c *Cluster) Images() []*cluster.Image {
+func (c *Cluster) Images(all bool) []*cluster.Image {
 	c.RLock()
 	defer c.RUnlock()
 
 	out := []*cluster.Image{}
 	for _, e := range c.engines {
-		out = append(out, e.Images()...)
+		out = append(out, e.Images(all)...)
 	}
 
 	return out
@@ -298,7 +298,7 @@ func (c *Cluster) RemoveImages(name string) ([]*dockerclient.ImageDelete, error)
 	errs := []string{}
 	var err error
 	for _, e := range c.engines {
-		for _, image := range e.Images() {
+		for _, image := range e.Images(true) {
 			if image.Match(name, true) {
 				content, err := image.Engine.RemoveImage(image, name)
 				if err != nil {

@@ -38,4 +38,8 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" == *"busybox"* ]]
+
+	# Try images -a
+	run docker_swarm images -a
+	[ "${#lines[@]}" -ge 5 ]
 }

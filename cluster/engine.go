@@ -185,7 +185,7 @@ func (e *Engine) RemoveImage(image *Image, name string) ([]*dockerclient.ImageDe
 
 // RefreshImages refreshes the list of images on the engine.
 func (e *Engine) RefreshImages() error {
-	images, err := e.client.ListImages(false)
+	images, err := e.client.ListImages(true)
 	if err != nil {
 		return err
 	}
@@ -507,12 +507,14 @@ func (e *Engine) Containers() Containers {
 }
 
 // Images returns all the images in the engine
-func (e *Engine) Images() []*Image {
+func (e *Engine) Images(all bool) []*Image {
 	e.RLock()
 
 	images := make([]*Image, 0, len(e.images))
 	for _, image := range e.images {
-		images = append(images, image)
+		if all || (!all && len(image.RepoTags) != 0 && image.RepoTags[0] != "<none>:<none>") {
+			images = append(images, image)
+		}
 	}
 	e.RUnlock()
 	return images
