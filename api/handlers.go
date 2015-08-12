@@ -28,7 +28,7 @@ const APIVERSION = "1.16"
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := dockerclient.Info{
 		Containers:        int64(len(c.cluster.Containers())),
-		Images:            int64(len(c.cluster.Images())),
+		Images:            int64(len(c.cluster.Images(false))),
 		DriverStatus:      c.statusHandler.Status(),
 		NEventsListener:   int64(c.eventsHandler.Size()),
 		Debug:             c.debug,
@@ -78,7 +78,7 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 
 	// Create a map of engine address to the list of images it holds.
 	engineImages := make(map[string][]*cluster.Image)
-	for _, image := range c.cluster.Images() {
+	for _, image := range c.cluster.Images(true) {
 		engineImages[image.Engine.Addr] = append(engineImages[image.Engine.Addr], image)
 	}
 
@@ -114,6 +114,8 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	all := boolValue(r, "all")
+
 	filters, err := dockerfilters.FromParam(r.Form.Get("filters"))
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
@@ -123,7 +125,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	accepteds, _ := filters["node"]
 	images := []*cluster.Image{}
 
-	for _, image := range c.cluster.Images() {
+	for _, image := range c.cluster.Images(all) {
 		if len(accepteds) != 0 {
 			found := false
 			for _, accepted := range accepteds {
@@ -585,7 +587,7 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 func proxyImageTagOptional(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 
-	for _, image := range c.cluster.Images() {
+	for _, image := range c.cluster.Images(true) {
 		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
 			len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
 			proxy(c.tlsConfig, image.Engine.Addr, w, r)

@@ -190,13 +190,13 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 }
 
 // Images returns all the images in the cluster.
-func (c *Cluster) Images() []*cluster.Image {
+func (c *Cluster) Images(all bool) []*cluster.Image {
 	c.RLock()
 	defer c.RUnlock()
 
 	out := []*cluster.Image{}
 	for _, s := range c.slaves {
-		out = append(out, s.engine.Images()...)
+		out = append(out, s.engine.Images(all)...)
 	}
 
 	return out

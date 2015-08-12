@@ -15,7 +15,7 @@ type Cluster interface {
 	RemoveContainer(container *Container, force bool) error
 
 	// Return all images
-	Images() []*Image
+	Images(all bool) []*Image
 
 	// Return one image matching `IDOrName`
 	Image(IDOrName string) *Image
