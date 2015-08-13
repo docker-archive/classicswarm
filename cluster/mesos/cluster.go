@@ -352,9 +352,9 @@ func (c *Cluster) TotalCpus() int64 {
 func (c *Cluster) Info() [][]string {
 	offers := c.listOffers()
 	info := [][]string{
-		{"\bStrategy", c.scheduler.Strategy()},
-		{"\bFilters", c.scheduler.Filters()},
-		{"\bOffers", fmt.Sprintf("%d", len(offers))},
+		{"Strategy", c.scheduler.Strategy()},
+		{"Filters", c.scheduler.Filters()},
+		{"Offers", fmt.Sprintf("%d", len(offers))},
 	}
 
 	sort.Sort(offerSorter(offers))
