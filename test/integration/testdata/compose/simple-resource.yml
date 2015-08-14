@@ -1,0 +1,9 @@
+service1:
+  image: busybox
+  command: sleep 100
+  cpu_shares: 1
+
+service2:
+  image: busybox
+  command: sleep 100
+  cpu_shares: 1

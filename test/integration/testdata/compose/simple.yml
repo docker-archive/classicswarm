@@ -1,0 +1,7 @@
+service1:
+  image: busybox
+  command: sleep 100
+
+service2:
+  image: busybox
+  command: sleep 100
