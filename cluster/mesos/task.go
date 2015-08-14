@@ -157,7 +157,7 @@ func newTask(c *Cluster, config *cluster.ContainerConfig, name string) (*task, e
 
 	task.Name = &name
 	task.TaskId = &mesosproto.TaskID{Value: &id}
-
+	task.Labels = &mesosproto.Labels{Labels: []*mesosproto.Label{{Key: proto.String("SWARM_CONTAINER_NAME"), Value: &name}}}
 	return task, nil
 }
 
