@@ -274,7 +274,7 @@ func TestMutatedHostUPid(t *testing.T) {
 	serverAddr := serverHost + ":" + strconv.Itoa(serverPort)
 
 	// override the upid.Host with this listener IP
-	addr := net.ParseIP("127.0.0.2")
+	addr := net.ParseIP("0.0.0.0")
 
 	// setup receiver (server) process
 	uPid, err := upid.Parse(fmt.Sprintf("%s@%s", serverId, serverAddr))
@@ -308,7 +308,7 @@ func TestEmptyHostPortUPid(t *testing.T) {
 	uPid.Port = ""
 
 	// override the upid.Host with this listener IP
-	addr := net.ParseIP("127.0.0.2")
+	addr := net.ParseIP("0.0.0.0")
 
 	receiver := NewHTTPTransporter(uPid, addr)
 
@@ -316,7 +316,7 @@ func TestEmptyHostPortUPid(t *testing.T) {
 	assert.NoError(t, err)
 
 	// This should be the host that overrides as uPid.Host is empty
-	if receiver.upid.Host != "127.0.0.2" {
+	if receiver.upid.Host != "0.0.0.0" {
 		t.Fatalf("reciever.upid.Host was expected to return %s, got %s\n", serverHost, receiver.upid.Host)
 	}
 

@@ -41,7 +41,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
-	pb "./testdata"
+	proto3pb "github.com/gogo/protobuf/proto/proto3_proto"
+	pb "github.com/gogo/protobuf/proto/testdata"
 )
 
 // textMessage implements the methods that allow it to marshal and unmarshal
@@ -404,5 +405,37 @@ Message <nil>
 `
 	if s := proto.MarshalTextString(m); s != want {
 		t.Errorf(" got: %s\nwant: %s", s, want)
+	}
+}
+
+func TestProto3Text(t *testing.T) {
+	tests := []struct {
+		m    proto.Message
+		want string
+	}{
+		// zero message
+		{&proto3pb.Message{}, ``},
+		// zero message except for an empty byte slice
+		{&proto3pb.Message{Data: []byte{}}, ``},
+		// trivial case
+		{&proto3pb.Message{Name: "Rob", HeightInCm: 175}, `name:"Rob" height_in_cm:175`},
+		// empty map
+		{&pb.MessageWithMap{}, ``},
+		// non-empty map; current map format is the same as a repeated struct
+		{
+			&pb.MessageWithMap{NameMapping: map[int32]string{1234: "Feist"}},
+			`name_mapping:<key:1234 value:"Feist" >`,
+		},
+		// map with nil value; not well-defined, but we shouldn't crash
+		{
+			&pb.MessageWithMap{MsgMapping: map[int64]*pb.FloatingPoint{7: nil}},
+			`msg_mapping:<key:7 >`,
+		},
+	}
+	for _, test := range tests {
+		got := strings.TrimSpace(test.m.String())
+		if got != test.want {
+			t.Errorf("\n got %s\nwant %s", got, test.want)
+		}
 	}
 }

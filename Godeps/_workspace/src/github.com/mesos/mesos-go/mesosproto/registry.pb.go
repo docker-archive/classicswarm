@@ -7,7 +7,7 @@ package mesosproto
 import proto "github.com/gogo/protobuf/proto"
 import math "math"
 
-// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto/gogo.pb"
+// discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -85,7 +85,4 @@ func (m *Registry_Slaves) GetSlaves() []*Registry_Slave {
 		return m.Slaves
 	}
 	return nil
-}
-
-func init() {
 }

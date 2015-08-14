@@ -78,7 +78,7 @@ type MesosMessenger struct {
 
 // ForHostname creates a new default messenger (HTTP), using UPIDBindingAddress to
 // determine the binding-address used for both the UPID.Host and Transport binding address.
-func ForHostname(proc *process.Process, hostname string, bindingAddress net.IP, port uint16) (Messenger, error) {
+func ForHostname(proc *process.Process, hostname string, bindingAddress net.IP, port uint16, publishedAddress net.IP) (Messenger, error) {
 	upid := &upid.UPID{
 		ID:   proc.Label(),
 		Port: strconv.Itoa(int(port)),
@@ -87,7 +87,21 @@ func ForHostname(proc *process.Process, hostname string, bindingAddress net.IP, 
 	if err != nil {
 		return nil, err
 	}
-	upid.Host = host
+
+	var publishedHost string
+	if publishedAddress != nil {
+		publishedHost, err = UPIDBindingAddress(hostname, publishedAddress)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if publishedHost != "" {
+		upid.Host = publishedHost
+	} else {
+		upid.Host = host
+	}
+
 	return NewHttpWithBindingAddress(upid, bindingAddress), nil
 }
 
