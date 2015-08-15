@@ -28,7 +28,6 @@ import (
 	"sync"
 	"time"
 
-	"code.google.com/p/go-uuid/uuid"
 	"github.com/gogo/protobuf/proto"
 	log "github.com/golang/glog"
 	"github.com/mesos/mesos-go/auth"
@@ -38,6 +37,7 @@ import (
 	"github.com/mesos/mesos-go/mesosutil/process"
 	"github.com/mesos/mesos-go/messenger"
 	"github.com/mesos/mesos-go/upid"
+	"github.com/pborman/uuid"
 	"golang.org/x/net/context"
 )
 
@@ -86,6 +86,7 @@ type DriverConfig struct {
 	HostnameOverride string                                // optional
 	BindingAddress   net.IP                                // optional
 	BindingPort      uint16                                // optional
+	PublishedAddress net.IP                                // optional
 	NewMessenger     func() (messenger.Messenger, error)   // optional
 }
 
@@ -196,7 +197,7 @@ func NewMesosSchedulerDriver(config DriverConfig) (initializedDriver *MesosSched
 	if newMessenger == nil {
 		newMessenger = func() (messenger.Messenger, error) {
 			process := process.New("scheduler")
-			return messenger.ForHostname(process, hostname, config.BindingAddress, config.BindingPort)
+			return messenger.ForHostname(process, hostname, config.BindingAddress, config.BindingPort, config.PublishedAddress)
 		}
 	}
 

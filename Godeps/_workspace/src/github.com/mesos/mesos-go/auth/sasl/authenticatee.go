@@ -285,7 +285,7 @@ func (self *authenticateeProcess) mechanisms(ctx context.Context, from *upid.UPI
 
 	message := &mesos.AuthenticationStartMessage{
 		Mechanism: proto.String(selectedMech),
-		Data:      proto.String(string(data)), // may be nil, depends on init step
+		Data:      data, // may be nil, depends on init step
 	}
 
 	if err := self.transport.Send(ctx, from, message); err != nil {
