@@ -18,7 +18,7 @@ TESTS=${@:-. compose discovery api mesos/api mesos/compose}
 export SWARM_BINARY=`mktemp`
 
 # Download docker-compose
-execute time curl -L --silent https://github.com/docker/compose/releases/download/1.4.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+execute time curl -L --silent https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
 execute chmod +x /usr/local/bin/docker-compose
 
 # Build Swarm.
