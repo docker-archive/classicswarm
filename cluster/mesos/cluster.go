@@ -475,9 +475,9 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	// In mesos 0.23+ the docker inspect will be sent back in the taskStatus.Data
 	// We can use this to find the right container.
 	inspect := []dockerclient.ContainerInfo{}
-	if data != nil && json.Unmarshal(data, &inspect) != nil && len(inspect) == 1 {
+	if data != nil && json.Unmarshal(data, &inspect) == nil && len(inspect) == 1 {
 		container := &cluster.Container{Container: dockerclient.Container{Id: inspect[0].Id}, Engine: s.engine}
-		if container.Refresh() == nil {
+		if container, err := container.Refresh(); err == nil {
 			t.container <- container
 			return true
 		}
