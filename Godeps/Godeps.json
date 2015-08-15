@@ -6,11 +6,6 @@
 	],
 	"Deps": [
 		{
-			"ImportPath": "code.google.com/p/go-uuid/uuid",
-			"Comment": "null-15",
-			"Rev": "35bc42037350f0078e3c974c6ea690f1926603ab"
-		},
-		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.6.4-6-g539d4dc",
 			"Rev": "539d4dc034c079a7188b5d4ca9650632d73c66e8"
@@ -56,7 +51,7 @@
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
-			"Rev": "bc946d07d1016848dfd2507f90f0859c9471681e"
+			"Rev": "8edb24c179ed858a38f18920d9005c2dde05ec17"
 		},
 		{
 			"ImportPath": "github.com/golang/glog",
@@ -77,35 +72,35 @@
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/auth",
-			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
+			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/detector",
-			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
+			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/mesosproto",
-			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
+			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/mesosutil",
-			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
+			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/messenger",
-			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
+			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/scheduler",
-			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
+			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/upid",
-			"Rev": "83b52d7f648d2a2fa91330123d348d4090be2aed"
+			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
 		},
 		{
-			"ImportPath": "github.com/skarademir/naturalsort",
-			"Rev": "69a5d87bef620f77ee8508db30c846b3b84b111e"
+			"ImportPath": "github.com/pborman/uuid",
+			"Rev": "ca53cad383cad2479bbba7f7a1a05797ec1386e4"
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
@@ -114,6 +109,10 @@
 		{
 			"ImportPath": "github.com/samuel/go-zookeeper/zk",
 			"Rev": "fa6674abf3f4580b946a01bf7a1ce4ba8766205b"
+		},
+		{
+			"ImportPath": "github.com/skarademir/naturalsort",
+			"Rev": "69a5d87bef620f77ee8508db30c846b3b84b111e"
 		},
 		{
 			"ImportPath": "github.com/stretchr/objx",
