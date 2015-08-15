@@ -227,15 +227,16 @@ func (e *Engine) RefreshContainers(full bool) error {
 
 // Refresh the status of a container running on the engine. If `full` is true,
 // the container will be inspected.
-func (e *Engine) refreshContainer(ID string, full bool) error {
+func (e *Engine) refreshContainer(ID string, full bool) (*Container, error) {
 	containers, err := e.client.ListContainers(true, false, fmt.Sprintf("{%q:[%q]}", "id", ID))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(containers) > 1 {
 		// We expect one container, if we get more than one, trigger a full refresh.
-		return e.RefreshContainers(full)
+		err = e.RefreshContainers(full)
+		return nil, err
 	}
 
 	if len(containers) == 0 {
@@ -244,11 +245,11 @@ func (e *Engine) refreshContainer(ID string, full bool) error {
 		delete(e.containers, ID)
 		e.Unlock()
 
-		return nil
+		return nil, nil
 	}
 
 	_, err = e.updateContainer(containers[0], e.containers, full)
-	return err
+	return e.containers[containers[0].Id], err
 }
 
 func (e *Engine) updateContainer(c dockerclient.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
@@ -614,7 +615,8 @@ func (e *Engine) RenameContainer(container *Container, newName string) error {
 	}
 
 	// refresh container
-	return e.refreshContainer(container.Id, true)
+	_, err = e.refreshContainer(container.Id, true)
+	return err
 }
 
 // BuildImage build an image

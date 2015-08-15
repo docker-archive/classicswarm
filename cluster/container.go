@@ -17,7 +17,7 @@ type Container struct {
 }
 
 // Refresh container
-func (c *Container) Refresh() error {
+func (c *Container) Refresh() (*Container, error) {
 	return c.Engine.refreshContainer(c.Id, true)
 }
 
