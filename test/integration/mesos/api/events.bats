@@ -19,7 +19,7 @@ function teardown() {
 	local events_pid="$!"
 
 	# This should emit 3 events: create, start, die.
-	docker_swarm run -m 20m --name test_container -e constraint:node==node-0 busybox true
+	docker_swarm run -d -m 20m --name test_container -e constraint:node==node-0 busybox true
 	
 	# events might take a little big to show up, wait until we get the last one.
 	retry 5 0.5 grep -q "die" "$log_file"

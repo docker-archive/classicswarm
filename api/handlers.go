@@ -718,8 +718,25 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// POST /containers/{name:.*}/start
+func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
+	_, container, err := getContainerFromVars(c, mux.Vars(r))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err = c.cluster.StartContainer(container); err != nil {
+		if strings.HasPrefix(err.Error(), "Conflict") {
+			httpError(w, err.Error(), http.StatusConflict)
+		} else {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
+
 // POST /containers/{name:.*}/rename
-func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
+func postContainersRename(c *context, w http.ResponseWriter, r *http.Request) {
 	_, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
