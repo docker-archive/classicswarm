@@ -511,8 +511,9 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var name = mux.Vars(r)["name"]
+	force := boolValue(r, "force")
 
-	out, err := c.cluster.RemoveImages(name)
+	out, err := c.cluster.RemoveImages(name, force)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
