@@ -272,6 +272,56 @@ func (client *DockerClient) readJSONStream(stream io.ReadCloser, decode func(*js
 	return resultChan
 }
 
+func (client *DockerClient) ExecCreate(config *ExecConfig) (string, error) {
+	data, err := json.Marshal(config)
+	if err != nil {
+		return "", err
+	}
+	uri := fmt.Sprintf("/%s/containers/%s/exec", APIVersion, config.Container)
+	resp, err := client.doRequest("POST", uri, data, nil)
+	if err != nil {
+		return "", err
+	}
+	var createExecResp struct {
+		Id string
+	}
+	if err = json.Unmarshal(resp, &createExecResp); err != nil {
+		return "", err
+	}
+	return createExecResp.Id, nil
+}
+
+func (client *DockerClient) ExecStart(id string, config *ExecConfig) error {
+	data, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	uri := fmt.Sprintf("/%s/exec/%s/start", APIVersion, id)
+	if _, err := client.doRequest("POST", uri, data, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (client *DockerClient) ExecResize(id string, width, height int) error {
+	v := url.Values{}
+
+	w := strconv.Itoa(width)
+	h := strconv.Itoa(height)
+
+	v.Set("w", w)
+	v.Set("h", h)
+
+	uri := fmt.Sprintf("/%s/exec/%s/resize?%s", APIVersion, id, v.Encode())
+	if _, err := client.doRequest("POST", client.URL.String()+uri, nil, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (client *DockerClient) StartContainer(id string, config *HostConfig) error {
 	data, err := json.Marshal(config)
 	if err != nil {
@@ -310,6 +360,26 @@ func (client *DockerClient) KillContainer(id, signal string) error {
 		return err
 	}
 	return nil
+}
+
+func (client *DockerClient) Wait(id string) <-chan WaitResult {
+	ch := make(chan WaitResult)
+	uri := fmt.Sprintf("/%s/containers/%s/wait", APIVersion, id)
+
+	go func() {
+		data, err := client.doRequest("POST", uri, nil, nil)
+		if err != nil {
+			ch <- WaitResult{ExitCode: -1, Error: err}
+			return
+		}
+
+		var result struct {
+			StatusCode int `json:"StatusCode"`
+		}
+		err = json.Unmarshal(data, &result)
+		ch <- WaitResult{ExitCode: result.StatusCode, Error: err}
+	}()
+	return ch
 }
 
 func (client *DockerClient) MonitorEvents(options *MonitorEventsOptions, stopChan <-chan struct{}) (<-chan EventOrError, error) {
@@ -556,8 +626,14 @@ func (client *DockerClient) ListImages(all bool) ([]*Image, error) {
 	return images, nil
 }
 
-func (client *DockerClient) RemoveImage(name string) ([]*ImageDelete, error) {
-	uri := fmt.Sprintf("/%s/images/%s", APIVersion, name)
+func (client *DockerClient) RemoveImage(name string, force bool) ([]*ImageDelete, error) {
+	argForce := 0
+	if force {
+		argForce = 1
+	}
+
+	args := fmt.Sprintf("force=%d", argForce)
+	uri := fmt.Sprintf("/%s/images/%s?%s", APIVersion, name, args)
 	data, err := client.doRequest("DELETE", uri, nil, nil)
 	if err != nil {
 		return nil, err
@@ -584,30 +660,6 @@ func (client *DockerClient) UnpauseContainer(id string) error {
 		return err
 	}
 	return nil
-}
-
-func (client *DockerClient) Exec(config *ExecConfig) (string, error) {
-	data, err := json.Marshal(config)
-	if err != nil {
-		return "", err
-	}
-	uri := fmt.Sprintf("/containers/%s/exec", config.Container)
-	resp, err := client.doRequest("POST", uri, data, nil)
-	if err != nil {
-		return "", err
-	}
-	var createExecResp struct {
-		Id string
-	}
-	if err = json.Unmarshal(resp, &createExecResp); err != nil {
-		return "", err
-	}
-	uri = fmt.Sprintf("/exec/%s/start", createExecResp.Id)
-	resp, err = client.doRequest("POST", uri, data, nil)
-	if err != nil {
-		return "", err
-	}
-	return createExecResp.Id, nil
 }
 
 func (client *DockerClient) RenameContainer(oldName string, newName string) error {

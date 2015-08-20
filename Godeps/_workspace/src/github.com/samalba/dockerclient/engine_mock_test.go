@@ -29,6 +29,7 @@ func init() {
 	r.HandleFunc(baseURL+"/containers/{id}/logs", handleContainerLogs).Methods("GET")
 	r.HandleFunc(baseURL+"/containers/{id}/changes", handleContainerChanges).Methods("GET")
 	r.HandleFunc(baseURL+"/containers/{id}/kill", handleContainerKill).Methods("POST")
+	r.HandleFunc(baseURL+"/containers/{id}/wait", handleWait).Methods("POST")
 	r.HandleFunc(baseURL+"/images/create", handleImagePull).Methods("POST")
 	r.HandleFunc(baseURL+"/events", handleEvents).Methods("GET")
 	testHTTPServer = httptest.NewServer(handlerAccessLog(r))
@@ -44,6 +45,15 @@ func handlerAccessLog(handler http.Handler) http.Handler {
 
 func handleContainerKill(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "{%q:%q", "Id", "421373210afd132")
+}
+
+func handleWait(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	if vars["id"] == "valid-id" {
+		fmt.Fprintf(w, `{"StatusCode":0}`)
+	} else {
+		http.Error(w, "failed", 500)
+	}
 }
 
 func handleImagePull(w http.ResponseWriter, r *http.Request) {
