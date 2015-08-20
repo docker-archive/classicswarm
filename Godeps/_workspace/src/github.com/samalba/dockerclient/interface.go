@@ -16,11 +16,14 @@ type Client interface {
 	CreateContainer(config *ContainerConfig, name string) (string, error)
 	ContainerLogs(id string, options *LogOptions) (io.ReadCloser, error)
 	ContainerChanges(id string) ([]*ContainerChanges, error)
-	Exec(config *ExecConfig) (string, error)
+	ExecCreate(config *ExecConfig) (string, error)
+	ExecStart(id string, config *ExecConfig) error
+	ExecResize(id string, width, height int) error
 	StartContainer(id string, config *HostConfig) error
 	StopContainer(id string, timeout int) error
 	RestartContainer(id string, timeout int) error
 	KillContainer(id, signal string) error
+	Wait(id string) <-chan WaitResult
 	// MonitorEvents takes options and an optional stop channel, and returns
 	// an EventOrError channel. If an error is ever sent, then no more
 	// events will be sent. If a stop channel is provided, events will stop
@@ -36,7 +39,7 @@ type Client interface {
 	LoadImage(reader io.Reader) error
 	RemoveContainer(id string, force, volumes bool) error
 	ListImages(all bool) ([]*Image, error)
-	RemoveImage(name string) ([]*ImageDelete, error)
+	RemoveImage(name string, force bool) ([]*ImageDelete, error)
 	PauseContainer(name string) error
 	UnpauseContainer(name string) error
 	RenameContainer(oldName string, newName string) error

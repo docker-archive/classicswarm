@@ -324,6 +324,11 @@ type EventOrError struct {
 	Error error
 }
 
+type WaitResult struct {
+	ExitCode int
+	Error    error
+}
+
 type decodingResult struct {
 	result interface{}
 	err    error
