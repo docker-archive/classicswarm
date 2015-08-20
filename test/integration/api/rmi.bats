@@ -78,3 +78,27 @@ function teardown() {
 	[[ "${output}" == *"busybox"* ]]
 	[[ "${output}" != *"testimage"* ]]
 }
+
+@test "docker rmi --force" {
+	start_docker_with_busybox 1
+	start_docker 1
+
+	swarm_manage
+
+	# make sure same image id have two repo-tags
+	docker_swarm tag busybox:latest testimage:latest
+
+	run docker_swarm images
+	[[ "${output}" == *"busybox"* ]]
+	[[ "${output}" == *"testimage"* ]]
+
+	# get busybox image id
+	busybox_id=`docker_swarm inspect --format='{{.Id}}' busybox:latest`
+
+	# test rmi with force
+	docker_swarm rmi -f ${busybox_id}
+
+	run docker_swarm images
+	[[ "${output}" != *"busybox"* ]]
+	[[ "${output}" != *"testimage"* ]]
+}
