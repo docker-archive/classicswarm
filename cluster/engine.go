@@ -179,8 +179,8 @@ func (e *Engine) updateSpecs() error {
 }
 
 // RemoveImage deletes an image from the engine.
-func (e *Engine) RemoveImage(image *Image, name string) ([]*dockerclient.ImageDelete, error) {
-	return e.client.RemoveImage(name)
+func (e *Engine) RemoveImage(image *Image, name string, force bool) ([]*dockerclient.ImageDelete, error) {
+	return e.client.RemoveImage(name, force)
 }
 
 // RefreshImages refreshes the list of images on the engine.
