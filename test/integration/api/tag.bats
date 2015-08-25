@@ -46,6 +46,10 @@ function teardown() {
 	docker_swarm tag busybox tag_busybox:test
 
 	# verify
-	run docker_swarm images
-	[[ $(echo ${output} | grep -o "tag_busybox" | wc -l) == 2 ]]
+	# change the way to verify tagged image on each node after image deduplication
+	run docker_swarm images --filter node=node-0
+	[[ $(echo ${output} | grep -o "tag_busybox" | wc -l) == 1 ]]
+
+	run docker_swarm images --filter node=node-1
+	[[ $(echo ${output} | grep -o "tag_busybox" | wc -l) == 1 ]]
 }
