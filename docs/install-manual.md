@@ -55,8 +55,9 @@ This example uses the Docker Hub based `token` discovery service. Log into **eac
 
 1. Start the Docker daemon with the `-H` flag. This ensures that the Docker remote API on *Swarm Agents* is available over TCP for the *Swarm Manager*.
 
-		$ docker -H tcp://0.0.0.0:2375 -d
- 
+		$ docker daemon -H tcp://0.0.0.0:2375
+
+	> **Note**: versions of docker prior to 1.8 used the `-d` flag instead of the `docker daemon` subcommand.
 
 2. Register the Swarm agents to the discovery service. The node's IP must be accessible from the Swarm Manager. Use the following command and replace with the proper `node_ip` and `cluster_id` to start an agent:
 
