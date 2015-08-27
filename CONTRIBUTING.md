@@ -43,7 +43,7 @@ First, prepare dependencies for `swarm` and try to compile it.
 ```sh
 cd src/github.com/docker/swarm
 $GOBIN/godep restore
-go test
+go test -v -race ./...
 go install
 ```
 
