@@ -67,13 +67,19 @@ This example uses the Docker Hub based `token` discovery service. Log into **eac
 
 		$ docker run -d swarm join --addr=172.31.40.100:2375 token://6856663cdefdec325839a4b7e1de38e8
 
-3. Start the Swarm manager on any machine or your laptop. 
+## Configure a manager
+
+Once you have your nodes established, set up a manager to control the swarm.
+
+1. Start the Swarm manager on any machine or your laptop. 
 
 	The following command illustrates how to do this:
 
-		docker run -d -p <swarm_port>:2375 swarm manage token://<cluster_id>
+		docker run -d -p <manager_port>:2375 swarm manage token://<cluster_id>
 
-4. Once the manager is running, check your configuration by running `docker info` as follows:
+	The manager is exposed and listening on `<manager_port>`.
+
+2. Once the manager is running, check your configuration by running `docker info` as follows:
 
 		docker -H tcp://<manager_ip:manager_port> info
 
