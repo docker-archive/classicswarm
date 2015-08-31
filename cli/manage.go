@@ -20,7 +20,6 @@ import (
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
-	"github.com/docker/swarm/state"
 	"github.com/gorilla/mux"
 )
 
@@ -219,11 +218,6 @@ func manage(c *cli.Context) {
 		}
 	}
 
-	store := state.NewStore(path.Join(c.String("rootdir"), "state"))
-	if err := store.Initialize(); err != nil {
-		log.Fatal(err)
-	}
-
 	uri := getDiscovery(c)
 	if uri == "" {
 		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
@@ -249,9 +243,9 @@ func manage(c *cli.Context) {
 	switch c.String("cluster-driver") {
 	case "mesos-experimental":
 		log.Warn("WARNING: the mesos driver is currently experimental, use at your own risks")
-		cl, err = mesos.NewCluster(sched, store, tlsConfig, uri, c.StringSlice("cluster-opt"))
+		cl, err = mesos.NewCluster(sched, tlsConfig, uri, c.StringSlice("cluster-opt"))
 	case "swarm":
-		cl, err = swarm.NewCluster(sched, store, tlsConfig, discovery, c.StringSlice("cluster-opt"))
+		cl, err = swarm.NewCluster(sched, tlsConfig, discovery, c.StringSlice("cluster-opt"))
 	default:
 		log.Fatalf("unsupported cluster %q", c.String("cluster-driver"))
 	}
