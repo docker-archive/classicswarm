@@ -16,7 +16,6 @@ import (
 	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/docker/swarm/state"
 	"github.com/samalba/dockerclient"
 )
 
@@ -27,7 +26,6 @@ type Cluster struct {
 	eventHandler cluster.EventHandler
 	engines      map[string]*cluster.Engine
 	scheduler    *scheduler.Scheduler
-	store        *state.Store
 	discovery    discovery.Discovery
 
 	overcommitRatio float64
@@ -35,13 +33,12 @@ type Cluster struct {
 }
 
 // NewCluster is exported
-func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *tls.Config, discovery discovery.Discovery, options cluster.DriverOpts) (cluster.Cluster, error) {
+func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery discovery.Discovery, options cluster.DriverOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
 		engines:         make(map[string]*cluster.Engine),
 		scheduler:       scheduler,
-		store:           store,
 		TLSConfig:       TLSConfig,
 		discovery:       discovery,
 		overcommitRatio: 0.05,
@@ -126,16 +123,7 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 
 	if nn, ok := c.engines[n.ID]; ok {
 		container, err := nn.Create(config, name, true)
-		if err != nil {
-			return nil, err
-		}
-
-		st := &state.RequestedState{
-			ID:     container.Id,
-			Name:   name,
-			Config: config,
-		}
-		return container, c.store.Add(container.Id, st)
+		return container, err
 	}
 
 	return nil, nil
@@ -147,18 +135,8 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) erro
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
-	if err := container.Engine.RemoveContainer(container, force); err != nil {
-		return err
-	}
-
-	if err := c.store.Remove(container.Id); err != nil {
-		if err == state.ErrNotFound {
-			log.Debugf("Container %s not found in the store", container.Id)
-			return nil
-		}
-		return err
-	}
-	return nil
+	err := container.Engine.RemoveContainer(container, force)
+	return err
 }
 
 func (c *Cluster) getEngineByAddr(addr string) *cluster.Engine {
@@ -586,17 +564,7 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 
 	// call engine rename
 	err := container.Engine.RenameContainer(container, newName)
-	if err != nil {
-		return err
-	}
-
-	// update container name in store
-	st, err := c.store.Get(container.Id)
-	if err != nil {
-		return err
-	}
-	st.Name = newName
-	return c.store.Replace(container.Id, st)
+	return err
 }
 
 // BuildImage build an image
