@@ -202,3 +202,42 @@ func TestLoadImage(t *testing.T) {
 	}
 	c.Load(bytes.NewReader(nil), callback)
 }
+
+func TestTagImage(t *testing.T) {
+	// create cluster
+	c := &Cluster{
+		engines: make(map[string]*cluster.Engine),
+	}
+	images := []*dockerclient.Image{}
+
+	image1 := &dockerclient.Image{
+		Id:       "1234567890",
+		RepoTags: []string{"busybox:latest"},
+	}
+	images = append(images, image1)
+
+	// create engine
+	id := "test-engine"
+	engine := cluster.NewEngine(id, 0)
+	engine.Name = id
+	engine.ID = id
+
+	// create mock client
+	client := mockclient.NewMockClient()
+	client.On("Info").Return(mockInfo, nil)
+	client.On("Version").Return(mockVersion, nil)
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
+	client.On("ListImages", mock.Anything).Return(images, nil)
+
+	// connect client
+	engine.ConnectWithClient(client)
+
+	// add engine to cluster
+	c.engines[engine.ID] = engine
+
+	// tag image
+	client.On("TagImage", mock.Anything, mock.Anything, mock.Anything, false).Return(nil).Once()
+	assert.Nil(t, c.TagImage("busybox", "test_busybox", "latest", false))
+	assert.NotNil(t, c.TagImage("busybox_not_exists", "test_busybox", "latest", false))
+}
