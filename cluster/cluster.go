@@ -71,4 +71,7 @@ type Cluster interface {
 
 	// BuildImage build an image
 	BuildImage(*dockerclient.BuildImage, io.Writer) error
+
+	// TagImage tag an image
+	TagImage(IDOrName string, repo string, tag string, force bool) error
 }

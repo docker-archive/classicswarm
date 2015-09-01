@@ -30,3 +30,22 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"tag_busybox"* ]]
 }
+
+@test "docker tag multi-nodes with same image" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	# make sure busybox exists
+	# and tag_busybox not exists
+	run docker_swarm images
+	[ "${#lines[@]}" -ge 2 ]
+	[[ "${output}" == *"busybox"* ]]
+	[[ "${output}" != *"tag_busybox"* ]]
+
+	# tag image
+	docker_swarm tag busybox tag_busybox:test
+
+	# verify
+	run docker_swarm images
+	[[ $(echo ${output} | grep -o "tag_busybox" | wc -l) == 2 ]]
+}

@@ -55,7 +55,7 @@ var routes = map[string]map[string]handler{
 		"/images/create":                postImagesCreate,
 		"/images/load":                  postImagesLoad,
 		"/images/{name:.*}/push":        proxyImageTagOptional,
-		"/images/{name:.*}/tag":         proxyImageAndForceRefresh,
+		"/images/{name:.*}/tag":         postTagImage,
 		"/containers/create":            postContainersCreate,
 		"/containers/{name:.*}/kill":    proxyContainerAndForceRefresh,
 		"/containers/{name:.*}/pause":   proxyContainerAndForceRefresh,
