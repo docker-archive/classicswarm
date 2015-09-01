@@ -32,7 +32,7 @@ You need either a `Consul`, `etcd`, or `Zookeeper` cluster. This procedure is wr
 ### Create the primary manager
 
 You use the `swarm manage` command with the `--replication` and `--advertise` flags to create a primary manager.
-    
+
       user@manager-1 $ swarm manage -H :4000 <tls-config-flags> --replication --advertise 192.168.42.200:4000 consul://192.168.42.10:8500/nodes
       INFO[0000] Listening for HTTP addr=:4000 proto=tcp
       INFO[0000] Cluster leadership acquired
@@ -59,7 +59,7 @@ This command creates a replica manager on `192.168.42.201:4000` which is looking
 
 Create an additional, third *manager* instance:
 
-    user@manager-2 $ swarm manage -H :4000 <tls-config-flags> --replication --advertise 192.168.42.202:4000 consul://192.168.42.10:8500/nodes
+    user@manager-3 $ swarm manage -H :4000 <tls-config-flags> --replication --advertise 192.168.42.202:4000 consul://192.168.42.10:8500/nodes
     INFO[0000] Listening for HTTP                            addr=:4000 proto=tcp
     INFO[0000] Cluster leadership lost
     INFO[0000] New leader elected: 192.168.42.200:4000
@@ -120,7 +120,7 @@ Issue a `Ctrl-C` or `kill` the current primary manager (`manager-1`) to shut it 
 
 After a short time, the other instances detect the failure and a replica takes the *lead* to become the primary manager.
 
-For example, look at `manager-1`'s logs:
+For example, look at `manager-2`'s logs:
 
     user@manager-2 $ swarm manage -H :4000 <tls-config-flags> --replication --advertise 192.168.42.201:4000 consul://192.168.42.10:8500/nodes
     INFO[0000] Listening for HTTP                            addr=:4000 proto=tcp
