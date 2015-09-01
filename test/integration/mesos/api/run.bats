@@ -28,6 +28,19 @@ function teardown() {
 	[[ "${output}" == *"cannot specify 64-byte hexadecimal strings"* ]]
 }
 
+@test "mesos - docker run short lived" {
+	start_docker_with_busybox 1
+	start_mesos
+	swarm_manage --cluster-driver mesos-experimental 127.0.0.1:$MESOS_MASTER_PORT
+
+	# run
+	run docker_swarm run -m 20m busybox true
+
+	# make sure the container was started
+	run docker_swarm ps -qa
+	[ "${#lines[@]}" -eq 1 ]
+}
+
 @test "mesos - docker run no resources" {
 	start_docker 1
 	start_mesos
