@@ -624,3 +624,15 @@ func (e *Engine) BuildImage(buildImage *dockerclient.BuildImage) (io.ReadCloser,
 
 	return e.client.BuildImage(buildImage)
 }
+
+// TagImage tag an image
+func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) error {
+	// send tag request to docker engine
+	err := e.client.TagImage(IDOrName, repo, tag, force)
+	if err != nil {
+		return err
+	}
+
+	// refresh image
+	return e.RefreshImages()
+}

@@ -542,3 +542,8 @@ func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer)
 	c.slaves[n.ID].engine.RefreshImages()
 	return nil
 }
+
+// TagImage tag an image
+func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
+	return errNotSupported
+}

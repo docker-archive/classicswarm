@@ -626,3 +626,33 @@ func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer)
 	c.engines[n.ID].RefreshImages()
 	return nil
 }
+
+// TagImage tag an image
+func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
+	c.RLock()
+	defer c.RUnlock()
+
+	errs := []string{}
+	var err error
+	found := false
+	for _, e := range c.engines {
+		for _, image := range e.Images(true) {
+			if image.Match(IDOrName, true) {
+				found = true
+				err := image.Engine.TagImage(IDOrName, repo, tag, force)
+				if err != nil {
+					errs = append(errs, fmt.Sprintf("%s: %s", image.Engine.Name, err.Error()))
+					continue
+				}
+			}
+		}
+	}
+	if !found {
+		return fmt.Errorf("No such image: %s", IDOrName)
+	}
+	if len(errs) > 0 {
+		err = errors.New(strings.Join(errs, "\n"))
+	}
+
+	return err
+}
