@@ -34,42 +34,52 @@ using the Docker image.
 
 ### Prerequisites
 
-1. Beginning with Swarm 0.4 golang 1.4.x or later is required for building Swarm. 
-Refer to the [Go installation page](https://golang.org/doc/install#install)
-to download and install the golang 1.4.x or later package.
-> **Note**: On Ubuntu 14.04, the `apt-get` repositories install golang 1.2.1 version by
-> default. So, do not use `apt-get` but install golang 1.4.x manually using the
-> instructions provided on the Go site.
+Beginning with Swarm 1.0, golang 1.5.X or later is required for building Swarm.
 
-2. Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
+1. Refer to the [Go installation page](https://golang.org/doc/install#install)
+to download and install the golang 1.5.X or later package.
 
-3. Install [godep](https://github.com/tools/godep).
+  > **Note**: On Ubuntu 14.04, the `apt-get` repositories install golang 1.2.1
+  version by default. So, do not use `apt-get` but install golang 1.5.X manually
+  using the instructions provided on the Go site.
 
-### Clone and build Swarm
+2. After Go is installed, set up a [workspace and
+`GOPATH`](https://golang.org/doc/code.html#GOPATH).
 
-> **Note** `GOPATH` should be set when install godep in above step.
+3. Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 
-Install the `swarm` binary in the `$GOPATH/bin` directory. An easy way to do this 
-is using the `go get` command.
+4. Install [godep](https://github.com/tools/godep).
 
-```bash
-$ go get github.com/docker/swarm
-```
+  `GOPATH` should be set when you installed `godep`.
 
-You can also do this manually using the following commands:
+5. Verify that `$GOPATH` was set.
 
-```bash
-$ mkdir -p $GOPATH/src/github.com/docker/
-$ cd $GOPATH/src/github.com/docker/
-$ git clone https://github.com/docker/swarm
-$ cd swarm
-$ $GOPATH/bin/godep go install .
-```
+        $ echo $GOPATH
+        /Users/mary/go
 
-Then you can find the swarm binary under `$GOPATH/bin`.
+### Get the code and build Swarm
 
-From here, you can follow the instructions [in the main documentation](http://docs.docker.com/swarm/),
-replacing `docker run swarm` with just `swarm`.
+1. Get the source code with the `go get` command.
+
+        $ go get -d github.com/docker/swarm
+
+  This command installs the `docker/swarm` repo in your `$GOPATH`.
+
+2. Change to your `GOPATH`.
+
+        $ cd $GOPATH/src/github.com/docker/swarm/
+
+3. Build and install the binary with the `godep` command.
+
+        $ $GOPATH/bin/godep go install
+
+4. Verify the `swarm` was binary was installed in `$GOPATH/bin`.
+
+        $ ls $GOPATH/bin
+
+To use the `swarm` binary, follow the instructions [in Docker's
+documentation](http://docs.docker.com/swarm/), replacing `docker run swarm` with
+just `swarm`.
 
 ## Participating
 
