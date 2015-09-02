@@ -17,7 +17,6 @@ import (
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/docker/swarm/scheduler/strategy"
-	"github.com/docker/swarm/state"
 	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
 	mesosscheduler "github.com/mesos/mesos-go/scheduler"
@@ -34,7 +33,6 @@ type Cluster struct {
 	master              string
 	slaves              map[string]*slave
 	scheduler           *scheduler.Scheduler
-	store               *state.Store
 	TLSConfig           *tls.Config
 	options             *cluster.DriverOpts
 	offerTimeout        time.Duration
@@ -57,7 +55,7 @@ var (
 )
 
 // NewCluster for mesos Cluster creation
-func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *tls.Config, master string, options cluster.DriverOpts) (cluster.Cluster, error) {
+func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master string, options cluster.DriverOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "mesos"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
@@ -65,7 +63,6 @@ func NewCluster(scheduler *scheduler.Scheduler, store *state.Store, TLSConfig *t
 		master:              master,
 		slaves:              make(map[string]*slave),
 		scheduler:           scheduler,
-		store:               store,
 		TLSConfig:           TLSConfig,
 		options:             &options,
 		offerTimeout:        defaultOfferTimeout,
