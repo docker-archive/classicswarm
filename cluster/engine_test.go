@@ -8,6 +8,7 @@ import (
 
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/mockclient"
+	"github.com/samalba/dockerclient/nopclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -38,8 +39,12 @@ func TestEngineConnectionFailure(t *testing.T) {
 	client := mockclient.NewMockClient()
 	client.On("Info").Return(&dockerclient.Info{}, errors.New("fail"))
 
-	// Connect() should fail and isConnected() return false.
+	// Connect() should fail
 	assert.Error(t, engine.ConnectWithClient(client))
+
+	// isConnected() should return false
+	nop := nopclient.NewNopClient()
+	assert.Error(t, engine.ConnectWithClient(nop))
 	assert.False(t, engine.isConnected())
 
 	client.Mock.AssertExpectations(t)
@@ -51,6 +56,9 @@ func TestOutdatedEngine(t *testing.T) {
 	client.On("Info").Return(&dockerclient.Info{}, nil)
 
 	assert.Error(t, engine.ConnectWithClient(client))
+
+	nop := nopclient.NewNopClient()
+	assert.Error(t, engine.ConnectWithClient(nop))
 	assert.False(t, engine.isConnected())
 
 	client.Mock.AssertExpectations(t)

@@ -14,6 +14,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/version"
 	"github.com/samalba/dockerclient"
+	"github.com/samalba/dockerclient/nopclient"
 )
 
 const (
@@ -31,6 +32,7 @@ const (
 func NewEngine(addr string, overcommitRatio float64) *Engine {
 	e := &Engine{
 		Addr:            addr,
+		client:          nopclient.NewNopClient(),
 		Labels:          make(map[string]string),
 		stopCh:          make(chan struct{}),
 		containers:      make(map[string]*Container),
@@ -89,18 +91,15 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 
 	// Fetch the engine labels.
 	if err := e.updateSpecs(); err != nil {
-		e.client = nil
 		return err
 	}
 
 	// Force a state update before returning.
 	if err := e.RefreshContainers(true); err != nil {
-		e.client = nil
 		return err
 	}
 
 	if err := e.RefreshImages(); err != nil {
-		e.client = nil
 		return err
 	}
 
@@ -120,16 +119,17 @@ func (e *Engine) Disconnect() {
 	e.Lock()
 	defer e.Unlock()
 
-	// do not close the chan, so it wait until the refreshLoop goroutine stops
-	e.stopCh <- struct{}{}
+	// close the chan
+	close(e.stopCh)
 	e.client.StopAllMonitorEvents()
-	e.client = nil
+	e.client = nopclient.NewNopClient()
 	e.emitEvent("engine_disconnect")
 }
 
 // isConnected returns true if the engine is connected to a remote docker API
 func (e *Engine) isConnected() bool {
-	return e.client != nil
+	_, ok := e.client.(*nopclient.NopClient)
+	return !ok
 }
 
 // IsHealthy returns true if the engine is healthy
