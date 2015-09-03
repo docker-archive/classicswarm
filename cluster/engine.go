@@ -433,6 +433,11 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	return container, err
 }
 
+// StartContainer a container from the engine.
+func (e *Engine) StartContainer(container *Container, config *dockerclient.HostConfig) error {
+	return e.client.StartContainer(container.Id, config)
+}
+
 // RemoveContainer a container from the engine.
 func (e *Engine) RemoveContainer(container *Container, force bool) error {
 	if err := e.client.RemoveContainer(container.Id, force, true); err != nil {
