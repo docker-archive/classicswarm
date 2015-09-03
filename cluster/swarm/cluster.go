@@ -552,6 +552,18 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 	return nil, nil
 }
 
+// StartContainer start a container
+func (c *Cluster) StartContainer(container *cluster.Container) error {
+	c.RLock()
+	defer c.RUnlock()
+
+	if err := container.Engine.StartContainer(container, nil); err != nil {
+		return err
+	}
+	_, err := container.Refresh()
+	return err
+}
+
 // RenameContainer rename a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
 	c.RLock()
