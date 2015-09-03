@@ -42,6 +42,8 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 	ch := make(chan discovery.Entries)
 	go func() {
 		defer close(ch)
+
+		// need to make this periodically send entries in a loop
 		ch <- s.entries
 		<-stopCh
 	}()

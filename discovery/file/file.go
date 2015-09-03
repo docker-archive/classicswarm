@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/discovery"
 )
 
@@ -83,16 +84,14 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 			select {
 			case <-ticker.C:
 				newEntries, err := s.fetch()
+				log.Info(newEntries)
 				if err != nil {
 					errCh <- err
 					continue
 				}
 
-				// Check if the file has really changed.
-				if !newEntries.Equals(currentEntries) {
-					ch <- newEntries
-				}
-				currentEntries = newEntries
+				// always send the entries
+				ch <- newEntries
 			case <-stopCh:
 				ticker.Stop()
 				return

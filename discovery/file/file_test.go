@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/discovery"
 	"github.com/stretchr/testify/assert"
 )
@@ -81,7 +82,7 @@ func TestWatch(t *testing.T) {
 	assert.Error(t, <-errCh)
 	// We have to drain the error channel otherwise Watch will get stuck.
 	go func() {
-		for _ = range errCh {
+		for range errCh {
 		}
 	}()
 
@@ -97,10 +98,22 @@ func TestWatch(t *testing.T) {
 	_, err = f.WriteString("\n3.3.3.3:3333\n")
 	assert.NoError(t, err)
 	f.Close()
+	// needs to eventually show up, not immediately
+	for entries := <-ch; len(entries) != 3; entries = <-ch {
+		log.Info(len(entries))
+		log.Info(len(entries) == 3)
+		log.Info(entries)
+	}
 	assert.Equal(t, expected, <-ch)
 
 	// Stop and make sure it closes all channels.
 	close(stopCh)
+	for entries := <-ch; len(entries) == 3; entries = <-ch {
+		log.Info(len(entries))
+		log.Info(len(entries) == 3)
+		log.Info(entries)
+	}
+
 	assert.Nil(t, <-ch)
 	assert.Nil(t, <-errCh)
 }

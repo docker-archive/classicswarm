@@ -155,10 +155,11 @@ func (c *Cluster) hasEngineByAddr(addr string) bool {
 	return c.getEngineByAddr(addr) != nil
 }
 
-func (c *Cluster) addEngine(addr string) bool {
+func (c *Cluster) addEngine(addr string, done chan bool, fail chan string) {
 	// Check the engine is already registered by address.
 	if c.hasEngineByAddr(addr) {
-		return false
+		fail <- addr
+		return
 	}
 
 	// Attempt a connection to the engine. Since this is slow, don't get a hold
@@ -166,7 +167,8 @@ func (c *Cluster) addEngine(addr string) bool {
 	engine := cluster.NewEngine(addr, c.overcommitRatio)
 	if err := engine.Connect(c.TLSConfig); err != nil {
 		log.Error(err)
-		return false
+		fail <- addr
+		return
 	}
 
 	// The following is critical and fast. Grab a lock.
@@ -181,7 +183,8 @@ func (c *Cluster) addEngine(addr string) bool {
 			log.Debugf("node %q (name: %q) with address %q is already registered", engine.ID, engine.Name, engine.Addr)
 		}
 		engine.Disconnect()
-		return false
+		fail <- addr
+		return
 	}
 
 	// Finally register the engine.
@@ -191,7 +194,8 @@ func (c *Cluster) addEngine(addr string) bool {
 	}
 
 	log.Infof("Registered Engine %s at %s", engine.Name, addr)
-	return true
+	done <- true
+	return
 }
 
 func (c *Cluster) removeEngine(addr string) bool {
@@ -215,7 +219,10 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 	for {
 		select {
 		case entries := <-ch:
+			log.Debugf("current entries: %v", currentEntries)
 			added, removed := currentEntries.Diff(entries)
+			log.Debug(added)
+			log.Debug(removed)
 			currentEntries = entries
 
 			// Remove engines first. `addEngine` will refuse to add an engine
@@ -227,9 +234,38 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 
 			// Since `addEngine` can be very slow (it has to connect to the
 			// engine), we are going to do the adds in parallel.
+			retc, failc := make(chan bool), make(chan string)
 			for _, entry := range added {
-				go c.addEngine(entry.String())
+				log.Debug("adding engine %v", entry)
+				go c.addEngine(entry.String(), retc, failc)
 			}
+			for range added {
+				select {
+				case <-retc:
+					// an engine was successfully added
+					log.Info("some engine succeeded in being added")
+				case notAdded := <-failc:
+					log.Infof("engine %v wasn't added, trying to remove from currentEntries", notAdded)
+					failedEntry, err := discovery.NewEntry(notAdded)
+					// find the entry in currentEntries, and remove it
+					if nil != err {
+						// log the err and move on, but now we have an entry we cannot remove
+						log.Errorf("could't make an entry for engine %v, %v", notAdded, err)
+					} else {
+						for j, ent := range currentEntries {
+							if failedEntry.Equals(ent) {
+								// safe to modify because we only ever remove one before bailing out of the loop.
+								currentEntries = append(currentEntries[:j], currentEntries[j+1:]...)
+								log.Debug("removed %v", ent)
+								break
+							}
+						}
+					}
+				}
+			}
+			close(retc)
+			close(failc)
+			log.Debugf("current entries on exit: %v", currentEntries)
 		case err := <-errCh:
 			log.Errorf("Discovery error: %v", err)
 		}
