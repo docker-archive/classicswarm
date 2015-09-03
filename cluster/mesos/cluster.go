@@ -284,23 +284,6 @@ func (c *Cluster) Import(source string, repository string, tag string, imageRead
 
 }
 
-// StartContainer start a container
-func (c *Cluster) StartContainer(container *cluster.Container) error {
-	c.RLock()
-	defer c.RUnlock()
-
-	if container, _ := container.Refresh(); container != nil {
-		// As mesos garbage collect containers, we only allow starting on a "Created" containers
-		if container.Info.State.Running == false && container.Info.State.FinishedAt.IsZero() {
-			if err := container.Engine.StartContainer(container, nil); err != nil {
-				_, err = container.Refresh()
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 // RenameContainer Rename a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
 	//FIXME this doesn't work as the next refreshcontainer will erase this change (this change is in-memory only)
