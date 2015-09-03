@@ -13,7 +13,7 @@ import (
 )
 
 // DiscoveryUrl is exported
-const DiscoveryURL = "https://discovery-stage.hub.docker.com/v1"
+const DiscoveryURL = "https://discovery.hub.docker.com/v1"
 
 // Discovery is exported
 type Discovery struct {
