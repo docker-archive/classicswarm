@@ -442,3 +442,13 @@ type BuildImage struct {
 	CpuSetMems     string
 	CgroupParent   string
 }
+
+type Volume struct {
+	Name       string // Name is the name of the volume
+	Driver     string // Driver is the Driver name used to create the volume
+	Mountpoint string // Mountpoint is the location on disk of the volume
+}
+
+type VolumesListResponse struct {
+	Volumes []*Volume // Volumes is the list of volumes being returned
+}

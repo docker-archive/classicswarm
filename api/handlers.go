@@ -145,6 +145,16 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(images)
 }
 
+// GET /volumes
+func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
+	volumes := struct {
+		Volumes []*cluster.Volume
+	}{c.cluster.Volumes()}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(volumes)
+}
+
 // GET /containers/ps
 // GET /containers/json
 func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
@@ -530,6 +540,16 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 // GET /_ping
 func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
+}
+
+// Proxy a request to the right node
+func proxyVolume(c *context, w http.ResponseWriter, r *http.Request) {
+	var name = mux.Vars(r)["volumename"]
+	if volume := c.cluster.Volume(name); volume != nil {
+		proxy(c.tlsConfig, volume.Engine.Addr, w, r)
+		return
+	}
+	httpError(w, fmt.Sprintf("No such volume: %s", name), http.StatusNotFound)
 }
 
 // Proxy a request to the right node

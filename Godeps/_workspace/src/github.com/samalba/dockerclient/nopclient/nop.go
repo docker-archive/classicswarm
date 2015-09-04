@@ -145,3 +145,7 @@ func (client *NopClient) ImportImage(source string, repository string, tag strin
 func (client *NopClient) BuildImage(image *dockerclient.BuildImage) (io.ReadCloser, error) {
 	return nil, ErrNoEngine
 }
+
+func (client *NopClient) ListVolumes() ([]*dockerclient.Volume, error) {
+	return nil, ErrNoEngine
+}
