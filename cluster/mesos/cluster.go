@@ -292,6 +292,16 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	return nil
 }
 
+// Volumes returns all the volumes in the cluster.
+func (c *Cluster) Volumes() []*cluster.Volume {
+	return nil
+}
+
+// Volume returns the volume name in the cluster
+func (c *Cluster) Volume(name string) *cluster.Volume {
+	return nil
+}
+
 // listNodes returns all the nodess in the cluster.
 func (c *Cluster) listNodes() []*node.Node {
 	c.RLock()

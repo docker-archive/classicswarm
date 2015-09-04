@@ -470,6 +470,39 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 
 }
 
+// Volumes returns all the volumes in the cluster.
+func (c *Cluster) Volumes() []*cluster.Volume {
+	c.RLock()
+	defer c.RUnlock()
+
+	out := []*cluster.Volume{}
+	for _, e := range c.engines {
+		out = append(out, e.Volumes()...)
+	}
+
+	return out
+}
+
+// Volume returns the volume name in the cluster
+func (c *Cluster) Volume(name string) *cluster.Volume {
+	// Abort immediately if the name is empty.
+	if len(name) == 0 {
+		return nil
+	}
+
+	c.RLock()
+	defer c.RUnlock()
+
+	for _, e := range c.engines {
+		for _, v := range e.Volumes() {
+			if v.Name == name {
+				return v
+			}
+		}
+	}
+	return nil
+}
+
 // listNodes returns all the engines in the cluster.
 func (c *Cluster) listNodes() []*node.Node {
 	c.RLock()
