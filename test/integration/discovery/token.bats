@@ -8,7 +8,7 @@ DISCOVERY=""
 function token_cleanup() {
 	[ -z "$TOKEN" ] && return
 	echo "Removing $TOKEN"
-	curl -X DELETE "https://discovery-stage.hub.docker.com/v1/clusters/$TOKEN"
+	curl -X DELETE "https://discovery.hub.docker.com/v1/clusters/$TOKEN"
 }
 
 function setup() {
