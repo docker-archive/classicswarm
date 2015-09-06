@@ -46,4 +46,5 @@ type Client interface {
 	ImportImage(source string, repository string, tag string, tar io.Reader) (io.ReadCloser, error)
 	BuildImage(image *BuildImage) (io.ReadCloser, error)
 	ListVolumes() ([]*Volume, error)
+	RemoveVolume(name string) error
 }

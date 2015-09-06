@@ -36,6 +36,7 @@ func NewEngine(addr string, overcommitRatio float64) *Engine {
 		Labels:          make(map[string]string),
 		stopCh:          make(chan struct{}),
 		containers:      make(map[string]*Container),
+		volumes:         make(map[string]*Volume),
 		healthy:         true,
 		overcommitRatio: int64(overcommitRatio * 100),
 	}
@@ -57,7 +58,7 @@ type Engine struct {
 	stopCh          chan struct{}
 	containers      map[string]*Container
 	images          []*Image
-	volumes         []*Volume
+	volumes         map[string]*Volume
 	client          dockerclient.Client
 	eventHandler    EventHandler
 	healthy         bool
@@ -187,6 +188,21 @@ func (e *Engine) RemoveImage(image *Image, name string, force bool) ([]*dockercl
 	return e.client.RemoveImage(name, force)
 }
 
+// RemoveVolume deletes a volume from the engine.
+func (e *Engine) RemoveVolume(name string) error {
+	if err := e.client.RemoveVolume(name); err != nil {
+		return err
+	}
+
+	// Remove the container from the state. Eventually, the state refresh loop
+	// will rewrite this.
+	e.Lock()
+	defer e.Unlock()
+	delete(e.volumes, name)
+
+	return nil
+}
+
 // RefreshImages refreshes the list of images on the engine.
 func (e *Engine) RefreshImages() error {
 	images, err := e.client.ListImages(true)
@@ -209,9 +225,9 @@ func (e *Engine) RefreshVolumes() error {
 		return err
 	}
 	e.Lock()
-	e.volumes = nil
+	e.volumes = make(map[string]*Volume)
 	for _, volume := range volumes {
-		e.volumes = append(e.volumes, &Volume{Volume: *volume, Engine: e})
+		e.volumes[volume.Name] = &Volume{Volume: *volume, Engine: e}
 	}
 	e.Unlock()
 	return nil
@@ -455,8 +471,8 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 }
 
 // RemoveContainer a container from the engine.
-func (e *Engine) RemoveContainer(container *Container, force bool) error {
-	if err := e.client.RemoveContainer(container.Id, force, true); err != nil {
+func (e *Engine) RemoveContainer(container *Container, force, volumes bool) error {
+	if err := e.client.RemoveContainer(container.Id, force, volumes); err != nil {
 		return err
 	}
 

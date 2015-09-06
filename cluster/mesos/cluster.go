@@ -179,11 +179,11 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 }
 
 // RemoveContainer to remove containers on mesos cluster
-func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) error {
+func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes bool) error {
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
-	return container.Engine.RemoveContainer(container, force)
+	return container.Engine.RemoveContainer(container, force, volumes)
 }
 
 // Images returns all the images in the cluster.
@@ -220,6 +220,11 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 // RemoveImages removes images from the cluster
 func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDelete, error) {
 	return nil, errNotSupported
+}
+
+// RemoveVolumes removes volumes from the cluster
+func (c *Cluster) RemoveVolumes(name string) (bool, error) {
+	return false, errNotSupported
 }
 
 func formatContainer(container *cluster.Container) *cluster.Container {

@@ -757,3 +757,9 @@ func (client *DockerClient) ListVolumes() ([]*Volume, error) {
 	}
 	return volumesList.Volumes, nil
 }
+
+func (client *DockerClient) RemoveVolume(name string) error {
+	uri := fmt.Sprintf("/%s/volumes/%s", APIVersion, name)
+	_, err := client.doRequest("DELETE", uri, nil, nil)
+	return err
+}
