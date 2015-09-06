@@ -222,6 +222,11 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 	return nil, errNotSupported
 }
 
+// CreateVolume creates a volume in the cluster
+func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*cluster.Volume, error) {
+	return nil, errNotSupported
+}
+
 // RemoveVolumes removes volumes from the cluster
 func (c *Cluster) RemoveVolumes(name string) (bool, error) {
 	return false, errNotSupported

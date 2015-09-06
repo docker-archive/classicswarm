@@ -73,7 +73,7 @@ var routes = map[string]map[string]handler{
 		"/containers/{name:.*}/exec":    postContainersExec,
 		"/exec/{execid:.*}/start":       proxyHijack,
 		"/exec/{execid:.*}/resize":      proxyContainer,
-		//		"/volumes":                      postVolumes,
+		"/volumes":                      postVolumes,
 	},
 	"PUT": {
 		"/containers/{name:.*}/archive": proxyContainer,

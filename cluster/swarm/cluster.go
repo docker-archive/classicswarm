@@ -295,6 +295,42 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 	return out, err
 }
 
+// CreateVolume creates a volume in the cluster
+func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*cluster.Volume, error) {
+	var (
+		wg     sync.WaitGroup
+		volume *cluster.Volume
+		err    error
+	)
+
+	if request.Name == "" {
+		request.Name = stringid.GenerateRandomID()
+	}
+
+	c.RLock()
+	for _, e := range c.engines {
+		wg.Add(1)
+
+		go func(engine *cluster.Engine) {
+			defer wg.Done()
+
+			v, er := engine.CreateVolume(request)
+			if v != nil {
+				volume = v
+				err = nil
+			}
+			if er != nil && volume == nil {
+				err = er
+			}
+		}(e)
+	}
+	c.RUnlock()
+
+	wg.Wait()
+
+	return volume, err
+}
+
 // RemoveVolumes removes all the volumes that match `name` from the cluster
 func (c *Cluster) RemoveVolumes(name string) (bool, error) {
 	c.Lock()

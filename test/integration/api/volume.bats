@@ -43,13 +43,19 @@ function teardown() {
 }
 
 @test "docker volume create" {
-skip
 	start_docker 2
 	swarm_manage
+
+	run docker_swarm volume ls
+	[ "${#lines[@]}" -eq 1 ]
 
 	docker_swarm volume create --name=test_volume
 	run docker_swarm volume
 	[ "${#lines[@]}" -eq 3 ]
+
+	docker_swarm run -d -v=/tmp busybox true
+	run docker_swarm volume
+	[ "${#lines[@]}" -eq 4 ]
 }
 
 @test "docker volume rm" {

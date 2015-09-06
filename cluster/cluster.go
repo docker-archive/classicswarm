@@ -31,6 +31,9 @@ type Cluster interface {
 	// cluster.Containers().Get(IDOrName)
 	Container(IDOrName string) *Container
 
+	// Create a volume
+	CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error)
+
 	// Return all volumes
 	Volumes() []*Volume
 

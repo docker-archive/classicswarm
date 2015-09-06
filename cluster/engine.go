@@ -485,6 +485,19 @@ func (e *Engine) RemoveContainer(container *Container, force, volumes bool) erro
 	return nil
 }
 
+// CreateVolume creates a volume in the engine
+func (e *Engine) CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error) {
+	volume, err := e.client.CreateVolume(request)
+
+	e.RefreshVolumes()
+
+	if err != nil {
+		return nil, err
+	}
+	return &Volume{Volume: *volume, Engine: e}, nil
+
+}
+
 // Pull an image on the engine
 func (e *Engine) Pull(image string, authConfig *dockerclient.AuthConfig) error {
 	if !strings.Contains(image, ":") {

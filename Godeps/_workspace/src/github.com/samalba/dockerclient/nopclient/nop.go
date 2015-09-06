@@ -153,3 +153,6 @@ func (client *NopClient) ListVolumes() ([]*dockerclient.Volume, error) {
 func (client *NopClient) RemoveVolume(name string) error {
 	return ErrNoEngine
 }
+func (client *NopClient) CreateVolume(request *dockerclient.VolumeCreateRequest) (*dockerclient.Volume, error) {
+	return nil, ErrNoEngine
+}
