@@ -47,4 +47,5 @@ type Client interface {
 	BuildImage(image *BuildImage) (io.ReadCloser, error)
 	ListVolumes() ([]*Volume, error)
 	RemoveVolume(name string) error
+	CreateVolume(request *VolumeCreateRequest) (*Volume, error)
 }

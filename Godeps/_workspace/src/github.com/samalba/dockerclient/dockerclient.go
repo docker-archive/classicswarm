@@ -763,3 +763,18 @@ func (client *DockerClient) RemoveVolume(name string) error {
 	_, err := client.doRequest("DELETE", uri, nil, nil)
 	return err
 }
+
+func (client *DockerClient) CreateVolume(request *VolumeCreateRequest) (*Volume, error) {
+	data, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+	uri := fmt.Sprintf("/%s/volumes", APIVersion)
+	data, err = client.doRequest("POST", uri, data, nil)
+	if err != nil {
+		return nil, err
+	}
+	volume := &Volume{}
+	err = json.Unmarshal(data, volume)
+	return volume, err
+}

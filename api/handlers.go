@@ -414,6 +414,25 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// POST /volumes
+func postVolumes(c *context, w http.ResponseWriter, r *http.Request) {
+	var request dockerclient.VolumeCreateRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	volume, err := c.cluster.CreateVolume(&request)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(volume)
+}
+
 // POST  /images/create
 func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
