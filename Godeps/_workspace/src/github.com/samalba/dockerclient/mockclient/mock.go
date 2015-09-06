@@ -175,3 +175,8 @@ func (client *MockClient) ListVolumes() ([]*dockerclient.Volume, error) {
 	args := client.Mock.Called()
 	return args.Get(0).([]*dockerclient.Volume), args.Error(1)
 }
+
+func (client *MockClient) RemoveVolume(name string) error {
+	args := client.Mock.Called(name)
+	return args.Error(0)
+}

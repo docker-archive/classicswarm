@@ -12,7 +12,7 @@ type Cluster interface {
 	CreateContainer(config *ContainerConfig, name string) (*Container, error)
 
 	// Remove a container
-	RemoveContainer(container *Container, force bool) error
+	RemoveContainer(container *Container, force, volumes bool) error
 
 	// Return all images
 	Images(all bool) []*Image
@@ -36,6 +36,9 @@ type Cluster interface {
 
 	// Return one volume from the cluster
 	Volume(name string) *Volume
+
+	// Remove volumes from the cluster
+	RemoveVolumes(name string) (bool, error)
 
 	// Pull images
 	// `callback` can be called multiple time

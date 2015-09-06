@@ -149,3 +149,7 @@ func (client *NopClient) BuildImage(image *dockerclient.BuildImage) (io.ReadClos
 func (client *NopClient) ListVolumes() ([]*dockerclient.Volume, error) {
 	return nil, ErrNoEngine
 }
+
+func (client *NopClient) RemoveVolume(name string) error {
+	return ErrNoEngine
+}
