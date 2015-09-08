@@ -18,11 +18,11 @@ function teardown() {
 
 	docker_swarm pull busybox
 
-	# we should get 2 busyboxes, plus the header.
+	# with grouping, we should get 1 busybox, plus the header.
 	run docker_swarm images
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 3 ]
-	# every line should contain "busybox" exclude the first head line 
+	[ "${#lines[@]}" -eq 2 ]
+	# every line should contain "busybox" exclude the first head line
 	for((i=1; i<${#lines[@]}; i++)); do
 		[[ "${lines[i]}" == *"busybox"* ]]
 	done
