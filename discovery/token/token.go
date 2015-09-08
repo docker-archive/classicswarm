@@ -112,7 +112,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 		}
 	}()
 
-	return ch, nil
+	return ch, errCh
 }
 
 // Register adds a new entry identified by the into the discovery service
