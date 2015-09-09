@@ -744,3 +744,16 @@ func (client *DockerClient) BuildImage(image *BuildImage) (io.ReadCloser, error)
 	uri := fmt.Sprintf("/%s/build?%s", APIVersion, v.Encode())
 	return client.doStreamRequest("POST", uri, image.Context, headers)
 }
+
+func (client *DockerClient) ListVolumes() ([]*Volume, error) {
+	uri := fmt.Sprintf("/%s/volumes", APIVersion)
+	data, err := client.doRequest("GET", uri, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var volumesList VolumesListResponse
+	if err := json.Unmarshal(data, &volumesList); err != nil {
+		return nil, err
+	}
+	return volumesList.Volumes, nil
+}

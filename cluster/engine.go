@@ -57,6 +57,7 @@ type Engine struct {
 	stopCh          chan struct{}
 	containers      map[string]*Container
 	images          []*Image
+	volumes         []*Volume
 	client          dockerclient.Client
 	eventHandler    EventHandler
 	healthy         bool
@@ -102,6 +103,9 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 	if err := e.RefreshImages(); err != nil {
 		return err
 	}
+
+	// Do not check error as older daemon don't support this call
+	e.RefreshVolumes()
 
 	// Start the update loop.
 	go e.refreshLoop()
@@ -193,6 +197,21 @@ func (e *Engine) RefreshImages() error {
 	e.images = nil
 	for _, image := range images {
 		e.images = append(e.images, &Image{Image: *image, Engine: e})
+	}
+	e.Unlock()
+	return nil
+}
+
+// RefreshVolumes refreshes the list of volumes on the engine.
+func (e *Engine) RefreshVolumes() error {
+	volumes, err := e.client.ListVolumes()
+	if err != nil {
+		return err
+	}
+	e.Lock()
+	e.volumes = nil
+	for _, volume := range volumes {
+		e.volumes = append(e.volumes, &Volume{Volume: *volume, Engine: e})
 	}
 	e.Unlock()
 	return nil
@@ -312,6 +331,8 @@ func (e *Engine) refreshLoop() {
 
 		err = e.RefreshContainers(false)
 		if err == nil {
+			// Do not check error as older daemon don't support this call
+			e.RefreshVolumes()
 			err = e.RefreshImages()
 		}
 
@@ -521,6 +542,18 @@ func (e *Engine) Images(all bool) []*Image {
 	return images
 }
 
+// Volumes returns all the volumes in the engine
+func (e *Engine) Volumes() []*Volume {
+	e.RLock()
+
+	volumes := make([]*Volume, 0, len(e.volumes))
+	for _, volume := range e.volumes {
+		volumes = append(volumes, volume)
+	}
+	e.RUnlock()
+	return volumes
+}
+
 // Image returns the image with IDOrName in the engine
 func (e *Engine) Image(IDOrName string) *Image {
 	e.RLock()
@@ -549,9 +582,11 @@ func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface
 		// If the container state changes, we have to do an inspect in
 		// order to update container.Info and get the new NetworkSettings.
 		e.refreshContainer(ev.Id, true)
+		e.RefreshVolumes()
 	default:
 		// Otherwise, do a "soft" refresh of the container.
 		e.refreshContainer(ev.Id, false)
+		e.RefreshVolumes()
 	}
 
 	// If there is no event handler registered, abort right now.

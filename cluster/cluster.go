@@ -31,6 +31,12 @@ type Cluster interface {
 	// cluster.Containers().Get(IDOrName)
 	Container(IDOrName string) *Container
 
+	// Return all volumes
+	Volumes() []*Volume
+
+	// Return one volume from the cluster
+	Volume(name string) *Volume
+
 	// Pull images
 	// `callback` can be called multiple time
 	//  `where` is where it is being pulled

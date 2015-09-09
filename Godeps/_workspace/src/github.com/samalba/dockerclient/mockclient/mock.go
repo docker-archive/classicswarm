@@ -170,3 +170,8 @@ func (client *MockClient) BuildImage(image *dockerclient.BuildImage) (io.ReadClo
 	args := client.Mock.Called(image)
 	return args.Get(0).(io.ReadCloser), args.Error(1)
 }
+
+func (client *MockClient) ListVolumes() ([]*dockerclient.Volume, error) {
+	args := client.Mock.Called()
+	return args.Get(0).([]*dockerclient.Volume), args.Error(1)
+}
