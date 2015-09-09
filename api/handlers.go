@@ -485,6 +485,21 @@ func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /events
 func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), 400)
+		return
+	}
+
+	var until int64 = -1
+	if r.Form.Get("until") != "" {
+		u, err := strconv.ParseInt(r.Form.Get("until"), 10, 64)
+		if err != nil {
+			httpError(w, err.Error(), 400)
+			return
+		}
+		until = u
+	}
+
 	c.eventsHandler.Add(r.RemoteAddr, w)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -493,7 +508,7 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 		f.Flush()
 	}
 
-	c.eventsHandler.Wait(r.RemoteAddr)
+	c.eventsHandler.Wait(r.RemoteAddr, until)
 }
 
 // POST /containers/{name:.*}/exec
