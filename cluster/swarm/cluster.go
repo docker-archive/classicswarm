@@ -296,7 +296,7 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 }
 
 // Pull is exported
-func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string)) {
+func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string, err error)) {
 	var wg sync.WaitGroup
 
 	c.RLock()
@@ -307,14 +307,14 @@ func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callbac
 			defer wg.Done()
 
 			if callback != nil {
-				callback(engine.Name, "")
+				callback(engine.Name, "", nil)
 			}
 			err := engine.Pull(name, authConfig)
 			if callback != nil {
 				if err != nil {
-					callback(engine.Name, err.Error())
+					callback(engine.Name, "", err)
 				} else {
-					callback(engine.Name, "downloaded")
+					callback(engine.Name, "downloaded", nil)
 				}
 			}
 		}(e)

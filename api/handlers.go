@@ -434,7 +434,14 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		if tag := r.Form.Get("tag"); tag != "" {
 			image += ":" + tag
 		}
-		callback := func(what, status string) {
+
+		errorFound := false
+		callback := func(what, status string, err error) {
+			if err != nil {
+				errorFound = true
+				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s... : %s", image, err.Error()))
+				return
+			}
 			if status == "" {
 				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s...", image))
 			} else {
@@ -442,6 +449,11 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		c.cluster.Pull(image, &authConfig, callback)
+
+		if errorFound {
+			sendErrorJSONMessage(wf, 1, "")
+		}
+
 	} else { //import
 		source := r.Form.Get("fromSrc")
 		repo := r.Form.Get("repo")
