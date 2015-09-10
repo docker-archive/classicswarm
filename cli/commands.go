@@ -22,7 +22,6 @@ var (
 			ShortName: "m",
 			Usage:     "Manage a docker cluster",
 			Flags: []cli.Flag{
-				flStore,
 				flStrategy, flFilter,
 				flHosts,
 				flLeaderElection, flManageAdvertise,
