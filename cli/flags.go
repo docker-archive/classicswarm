@@ -27,11 +27,6 @@ func getDiscovery(c *cli.Context) string {
 }
 
 var (
-	flStore = cli.StringFlag{
-		Name:  "rootdir",
-		Value: homepath(".swarm"),
-		Usage: "",
-	}
 	flJoinAdvertise = cli.StringFlag{
 		Name:   "advertise, addr",
 		Usage:  "Address of the Docker Engine joining the cluster. Swarm manager(s) MUST be able to reach the Docker Engine at this address.",
