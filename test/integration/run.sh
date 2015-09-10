@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
+# try to use gnu version of readlink on non-gnu systems (e.g. bsd, osx)
+# on osx, install with 'brew install coreutils'
+READLINK_LOCATION=$(which greadlink readlink | head -n 1)
+THIS_SCRIPT=$(${READLINK_LOCATION} -f "$BASH_SOURCE")
+cd "$(dirname "${THIS_SCRIPT}")"
 
 # Root directory of Swarm.
 SWARM_ROOT=$(cd ../..; pwd -P)
