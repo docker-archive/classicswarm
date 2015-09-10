@@ -35,3 +35,11 @@ function teardown() {
 		[[ "${lines[1]}" == *"busybox"* ]]
 	done
 }
+
+@test "docker pull -check error code" {
+	start_docker 2
+	swarm_manage
+
+	run docker_swarm pull does_not_exist
+	[ "$status" -eq 1 ]
+}
