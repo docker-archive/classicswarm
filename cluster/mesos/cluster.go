@@ -104,7 +104,10 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 
 	if bindingAddress, ok := options.IP("mesos.address", "SWARM_MESOS_ADDRESS"); ok {
 		if bindingAddress == nil {
-			return nil, fmt.Errorf("invalid address %s", bindingAddress)
+			value, _ := options.String("mesos.address", "SWARM_MESOS_ADDRESS")
+			return nil, fmt.Errorf(
+				"invalid IP address for cluster-opt mesos.address: \"%s\"",
+				value)
 		}
 		driverConfig.BindingAddress = bindingAddress
 	}
