@@ -34,6 +34,23 @@ func sendJSONMessage(w io.Writer, id, status string) {
 	json.NewEncoder(w).Encode(message)
 }
 
+func sendErrorJSONMessage(w io.Writer, errorCode int, errorMessage string) {
+	error := struct {
+		Code    int    `json:"code,omitempty"`
+		Message string `json:"message,omitempty"`
+	}{
+		errorCode,
+		errorMessage,
+	}
+
+	message := struct {
+		Error interface{} `json:"errorDetail,omitempty"`
+	}{
+		&error,
+	}
+
+	json.NewEncoder(w).Encode(message)
+}
 func newClientAndScheme(tlsConfig *tls.Config) (*http.Client, string) {
 	if tlsConfig != nil {
 		return &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}}, "https"
