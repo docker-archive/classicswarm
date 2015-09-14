@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
@@ -25,11 +26,20 @@ type Cluster struct {
 
 	eventHandler cluster.EventHandler
 	engines      map[string]*cluster.Engine
+	nodes        map[string]*node.Node
 	scheduler    *scheduler.Scheduler
 	discovery    discovery.Discovery
 
 	overcommitRatio float64
 	TLSConfig       *tls.Config
+}
+
+// CreateResponse represents the response
+// from container creation after the scheduling
+// decision has been made
+type CreateResponse struct {
+	Container *cluster.Container
+	Error     error
 }
 
 // NewCluster is exported
@@ -38,6 +48,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 
 	cluster := &Cluster{
 		engines:         make(map[string]*cluster.Engine),
+		nodes:           make(map[string]*node.Node),
 		scheduler:       scheduler,
 		TLSConfig:       TLSConfig,
 		discovery:       discovery,
@@ -100,9 +111,6 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 }
 
 func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, withSoftImageAffinity bool) (*cluster.Container, error) {
-	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
-
 	// Ensure the name is available
 	if cID := c.getIDFromName(name); cID != "" {
 		return nil, fmt.Errorf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, cID, name)
@@ -116,27 +124,56 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 		configTemp.AddAffinity("image==~" + config.Image)
 	}
 
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), configTemp)
-	if err != nil {
-		return nil, err
+	var (
+		n   *node.Node
+		err error
+	)
+
+	for {
+		n, err = c.scheduler.SelectNodeForContainer(c.listNodes(), configTemp)
+		if err != nil {
+			return nil, err
+		}
+
+		err := n.ReserveResource(config)
+		if err == nil {
+			break
+		}
 	}
 
-	if nn, ok := c.engines[n.ID]; ok {
-		container, err := nn.Create(config, name, true)
-		return container, err
-	}
+	done := make(chan CreateResponse, 1)
+	go func() {
+		if nn, ok := c.engines[n.ID]; ok {
+			container, err := nn.Create(config, name, true)
+			done <- CreateResponse{container, err}
+			return
+		}
+		done <- CreateResponse{nil, errors.New("Engine does not exist")}
+	}()
 
-	return nil, nil
+	select {
+	case resp := <-done:
+		return resp.Container, resp.Error
+	case <-time.After(time.Minute * 20):
+		// FIXME Ensures that operation affected by a blocked pull are cleaned up
+		n.ReleaseResource(config)
+		return nil, errors.New("Create Container: Request timed out")
+	}
 }
 
 // RemoveContainer aka Remove a container from the cluster. Containers should
 // always be destroyed through the scheduler to guarantee atomicity.
 func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) error {
-	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
-
 	err := container.Engine.RemoveContainer(container, force)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Release the resources used by the container on the persistent node config
+	node := c.nodes[container.Engine.ID]
+	node.ReleaseResource(container.Config)
+
+	return nil
 }
 
 func (c *Cluster) getEngineByAddr(addr string) *cluster.Engine {
@@ -191,6 +228,10 @@ func (c *Cluster) addEngine(addr string) bool {
 	}
 
 	log.Infof("Registered Engine %s at %s", engine.Name, addr)
+
+	// And register the node to track resources available.
+	c.nodes[engine.ID] = node.NewNode(engine)
+
 	return true
 }
 
@@ -204,6 +245,7 @@ func (c *Cluster) removeEngine(addr string) bool {
 
 	engine.Disconnect()
 	delete(c.engines, engine.ID)
+	delete(c.nodes, engine.ID)
 	log.Infof("Removed Engine %s", engine.Name)
 	return true
 }
@@ -476,8 +518,8 @@ func (c *Cluster) listNodes() []*node.Node {
 	defer c.RUnlock()
 
 	out := make([]*node.Node, 0, len(c.engines))
-	for _, n := range c.engines {
-		out = append(out, node.NewNode(n))
+	for _, n := range c.nodes {
+		out = append(out, n)
 	}
 
 	return out
@@ -569,15 +611,12 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 
 // BuildImage build an image
 func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer) error {
-	c.scheduler.Lock()
-
 	// get an engine
 	config := &cluster.ContainerConfig{dockerclient.ContainerConfig{
 		CpuShares: buildImage.CpuShares,
 		Memory:    buildImage.Memory,
 	}}
 	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
-	c.scheduler.Unlock()
 	if err != nil {
 		return err
 	}
