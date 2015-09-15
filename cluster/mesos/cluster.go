@@ -275,12 +275,12 @@ func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callbac
 }
 
 // Load images
-func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string)) {
+func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string, err error)) {
 
 }
 
 // Import image
-func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string)) {
+func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string, err error)) {
 
 }
 
