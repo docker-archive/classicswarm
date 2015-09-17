@@ -32,13 +32,13 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	run docker_swarm run -d --expose=80 -p 80:80 busybox sh
+	run docker_swarm run --expose=80 -p 80:80 busybox echo 1
 	[ "$status" -eq 0 ]
-	run docker_swarm run -d --expose=80 -p 80:80 busybox sh
+	run docker_swarm run --expose=80 -p 80:80 busybox echo 2
 	[ "$status" -eq 0 ]
 
 	# When trying to start the 3rd one, it should be error finding port 80.
-	run docker_swarm run -d --expose=80 -p 80:80 busybox sh
+	run docker_swarm run --expose=80 -p 80:80 busybox echo 3
 	[ "$status" -ne 0 ]
 	[[ "${lines[0]}" == *"unable to find a node with port 80 available"* ]]
 
