@@ -33,9 +33,12 @@ Docker Machine gets hosts ready to run Docker containers. Each node in your
 Docker Swarm must have access to Docker to pull images and run them in
 containers. Docker Machine manages all this provisioning for your swarm.
 
-Before you create a swarm with `docker-machine`, you create a discovery token.
-Docker Swarm uses tokens for discovery and agent registration. Using this token,
-you can create a swarm that is secured. 
+Before you create a swarm with `docker-machine`, you associate each
+node with a discovery service. This example uses the token discovery
+service hosted by Docker Hub. This discovery service associates a
+token with instances of the Docker Daemon running on each node. Other
+discovery service backends such as `etcd`, `consul`, and `zookeeper`
+are [available](/discovery).
 
 1. List the machines on your system.
 
