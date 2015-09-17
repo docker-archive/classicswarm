@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	api "github.com/hashicorp/consul/api"
 )
@@ -29,13 +30,17 @@ var (
 // Store interface
 type Consul struct {
 	sync.Mutex
-	config       *api.Config
-	client       *api.Client
-	ephemeralTTL time.Duration
+	config *api.Config
+	client *api.Client
 }
 
 type consulLock struct {
 	lock *api.Lock
+}
+
+// Register registers consul to libkv
+func Register() {
+	libkv.AddStore(store.CONSUL, New)
 }
 
 // New creates a new Consul client given a list
@@ -62,9 +67,6 @@ func New(endpoints []string, options *store.Config) (store.Store, error) {
 		if options.ConnectionTimeout != 0 {
 			s.setTimeout(options.ConnectionTimeout)
 		}
-		if options.EphemeralTTL != 0 {
-			s.setEphemeralTTL(options.EphemeralTTL)
-		}
 	}
 
 	// Creates a new client
@@ -90,18 +92,13 @@ func (s *Consul) setTimeout(time time.Duration) {
 	s.config.WaitTime = time
 }
 
-// SetEphemeralTTL sets the ttl for ephemeral nodes
-func (s *Consul) setEphemeralTTL(ttl time.Duration) {
-	s.ephemeralTTL = ttl
-}
-
 // Normalize the key for usage in Consul
 func (s *Consul) normalize(key string) string {
 	key = store.Normalize(key)
 	return strings.TrimPrefix(key, "/")
 }
 
-func (s *Consul) refreshSession(pair *api.KVPair) error {
+func (s *Consul) refreshSession(pair *api.KVPair, ttl time.Duration) error {
 	// Check if there is any previous session with an active TTL
 	session, err := s.getActiveSession(pair.Key)
 	if err != nil {
@@ -110,9 +107,9 @@ func (s *Consul) refreshSession(pair *api.KVPair) error {
 
 	if session == "" {
 		entry := &api.SessionEntry{
-			Behavior:  api.SessionBehaviorDelete,       // Delete the key when the session expires
-			TTL:       ((s.ephemeralTTL) / 2).String(), // Consul multiplies the TTL by 2x
-			LockDelay: 1 * time.Millisecond,            // Virtually disable lock delay
+			Behavior:  api.SessionBehaviorDelete, // Delete the key when the session expires
+			TTL:       (ttl / 2).String(),        // Consul multiplies the TTL by 2x
+			LockDelay: 1 * time.Millisecond,      // Virtually disable lock delay
 		}
 
 		// Create the key session
@@ -137,7 +134,7 @@ func (s *Consul) refreshSession(pair *api.KVPair) error {
 
 	_, _, err = s.client.Session().Renew(session, nil)
 	if err != nil {
-		return s.refreshSession(pair)
+		return s.refreshSession(pair, ttl)
 	}
 	return nil
 }
@@ -185,9 +182,9 @@ func (s *Consul) Put(key string, value []byte, opts *store.WriteOptions) error {
 		Value: value,
 	}
 
-	if opts != nil && opts.Ephemeral {
+	if opts != nil && opts.TTL > 0 {
 		// Create or refresh the session
-		err := s.refreshSession(p)
+		err := s.refreshSession(p, opts.TTL)
 		if err != nil {
 			return err
 		}
@@ -199,6 +196,9 @@ func (s *Consul) Put(key string, value []byte, opts *store.WriteOptions) error {
 
 // Delete a value at "key"
 func (s *Consul) Delete(key string) error {
+	if _, err := s.Get(key); err != nil {
+		return err
+	}
 	_, err := s.client.KV().Delete(s.normalize(key), nil)
 	return err
 }
@@ -206,7 +206,10 @@ func (s *Consul) Delete(key string) error {
 // Exists checks that the key exists inside the store
 func (s *Consul) Exists(key string) (bool, error) {
 	_, err := s.Get(key)
-	if err != nil && err == store.ErrKeyNotFound {
+	if err != nil {
+		if err == store.ErrKeyNotFound {
+			return false, nil
+		}
 		return false, err
 	}
 	return true, nil
@@ -240,6 +243,9 @@ func (s *Consul) List(directory string) ([]*store.KVPair, error) {
 
 // DeleteTree deletes a range of keys under a given directory
 func (s *Consul) DeleteTree(directory string) error {
+	if _, err := s.List(directory); err != nil {
+		return err
+	}
 	_, err := s.client.KV().DeleteTree(s.normalize(directory), nil)
 	return err
 }

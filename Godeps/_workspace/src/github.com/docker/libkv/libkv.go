@@ -62,10 +62,11 @@
 package libkv
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/docker/libkv/store"
-	"github.com/docker/libkv/store/consul"
-	"github.com/docker/libkv/store/etcd"
-	"github.com/docker/libkv/store/zookeeper"
 )
 
 // Initialize creates a new Store object, initializing the client
@@ -73,11 +74,16 @@ type Initialize func(addrs []string, options *store.Config) (store.Store, error)
 
 var (
 	// Backend initializers
-	initializers = map[store.Backend]Initialize{
-		store.CONSUL: consul.New,
-		store.ETCD:   etcd.New,
-		store.ZK:     zookeeper.New,
-	}
+	initializers = make(map[store.Backend]Initialize)
+
+	supportedBackend = func() string {
+		keys := make([]string, 0, len(initializers))
+		for k := range initializers {
+			keys = append(keys, string(k))
+		}
+		sort.Strings(keys)
+		return strings.Join(keys, ", ")
+	}()
 )
 
 // NewStore creates a an instance of store
@@ -86,5 +92,10 @@ func NewStore(backend store.Backend, addrs []string, options *store.Config) (sto
 		return init(addrs, options)
 	}
 
-	return nil, store.ErrNotSupported
+	return nil, fmt.Errorf("%s %s", store.ErrNotSupported.Error(), supportedBackend)
+}
+
+// AddStore adds a new store backend to libkv
+func AddStore(store store.Backend, init Initialize) {
+	initializers[store] = init
 }
