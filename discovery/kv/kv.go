@@ -9,6 +9,9 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
+	"github.com/docker/libkv/store/consul"
+	"github.com/docker/libkv/store/etcd"
+	"github.com/docker/libkv/store/zookeeper"
 	"github.com/docker/swarm/discovery"
 )
 
@@ -32,6 +35,12 @@ func init() {
 
 // Init is exported
 func Init() {
+	// Register to libkv
+	zookeeper.Register()
+	consul.Register()
+	etcd.Register()
+
+	// Register to internal Swarm discovery service
 	discovery.Register("zk", &Discovery{backend: store.ZK})
 	discovery.Register("consul", &Discovery{backend: store.CONSUL})
 	discovery.Register("etcd", &Discovery{backend: store.ETCD})
@@ -56,14 +65,7 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Du
 
 	// Creates a new store, will ignore options given
 	// if not supported by the chosen store
-	s.store, err = libkv.NewStore(
-		s.backend,
-		addrs,
-		&store.Config{
-			EphemeralTTL: s.ttl,
-		},
-	)
-
+	s.store, err = libkv.NewStore(s.backend, addrs, &store.Config{})
 	return err
 }
 
@@ -126,12 +128,13 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 			time.Sleep(s.heartbeat)
 		}
 	}()
+
 	return ch, errCh
 }
 
 // Register is exported
 func (s *Discovery) Register(addr string) error {
-	opts := &store.WriteOptions{Ephemeral: true, Heartbeat: s.heartbeat}
+	opts := &store.WriteOptions{TTL: s.ttl}
 	return s.store.Put(path.Join(s.path, addr), []byte(addr), opts)
 }
 

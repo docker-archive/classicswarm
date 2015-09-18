@@ -8,14 +8,14 @@ import (
 	"time"
 
 	etcd "github.com/coreos/go-etcd/etcd"
+	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 )
 
 // Etcd is the receiver type for the
 // Store interface
 type Etcd struct {
-	client       *etcd.Client
-	ephemeralTTL time.Duration
+	client *etcd.Client
 }
 
 type etcdLock struct {
@@ -33,6 +33,11 @@ const (
 	defaultUpdateTime = 5 * time.Second
 )
 
+// Register registers etcd to libkv
+func Register() {
+	libkv.AddStore(store.ETCD, New)
+}
+
 // New creates a new Etcd client given a list
 // of endpoints and an optional tls config
 func New(addrs []string, options *store.Config) (store.Store, error) {
@@ -48,9 +53,6 @@ func New(addrs []string, options *store.Config) (store.Store, error) {
 		}
 		if options.ConnectionTimeout != 0 {
 			s.setTimeout(options.ConnectionTimeout)
-		}
-		if options.EphemeralTTL != 0 {
-			s.setEphemeralTTL(options.EphemeralTTL)
 		}
 	}
 
@@ -93,12 +95,6 @@ func (s *Etcd) setTimeout(time time.Duration) {
 	s.client.SetDialTimeout(time)
 }
 
-// setEphemeralHeartbeat sets the heartbeat value to notify
-// that a node is alive
-func (s *Etcd) setEphemeralTTL(time time.Duration) {
-	s.ephemeralTTL = time
-}
-
 // createDirectory creates the entire path for a directory
 // that does not exist
 func (s *Etcd) createDirectory(path string) error {
@@ -120,11 +116,8 @@ func (s *Etcd) createDirectory(path string) error {
 func (s *Etcd) Get(key string) (pair *store.KVPair, err error) {
 	result, err := s.client.Get(store.Normalize(key), false, false)
 	if err != nil {
-		if etcdError, ok := err.(*etcd.EtcdError); ok {
-			// Not a Directory or Not a file
-			if etcdError.ErrorCode == 100 || etcdError.ErrorCode == 102 || etcdError.ErrorCode == 104 {
-				return nil, store.ErrKeyNotFound
-			}
+		if isKeyNotFoundError(err) {
+			return nil, store.ErrKeyNotFound
 		}
 		return nil, err
 	}
@@ -143,8 +136,8 @@ func (s *Etcd) Put(key string, value []byte, opts *store.WriteOptions) error {
 
 	// Default TTL = 0 means no expiration
 	var ttl uint64
-	if opts != nil && opts.Ephemeral {
-		ttl = uint64(s.ephemeralTTL.Seconds())
+	if opts != nil && opts.TTL > 0 {
+		ttl = uint64(opts.TTL.Seconds())
 	}
 
 	if _, err := s.client.Set(key, string(value), ttl); err != nil {
@@ -173,14 +166,17 @@ func (s *Etcd) Put(key string, value []byte, opts *store.WriteOptions) error {
 // Delete a value at "key"
 func (s *Etcd) Delete(key string) error {
 	_, err := s.client.Delete(store.Normalize(key), false)
+	if isKeyNotFoundError(err) {
+		return store.ErrKeyNotFound
+	}
 	return err
 }
 
 // Exists checks if the key exists inside the store
 func (s *Etcd) Exists(key string) (bool, error) {
-	entry, err := s.Get(key)
-	if err != nil && entry != nil {
-		if err == store.ErrKeyNotFound || entry.Value == nil {
+	_, err := s.Get(key)
+	if err != nil {
+		if err == store.ErrKeyNotFound {
 			return false, nil
 		}
 		return false, err
@@ -359,6 +355,9 @@ func (s *Etcd) AtomicDelete(key string, previous *store.KVPair) (bool, error) {
 func (s *Etcd) List(directory string) ([]*store.KVPair, error) {
 	resp, err := s.client.Get(store.Normalize(directory), true, true)
 	if err != nil {
+		if isKeyNotFoundError(err) {
+			return nil, store.ErrKeyNotFound
+		}
 		return nil, err
 	}
 	kv := []*store.KVPair{}
@@ -376,6 +375,9 @@ func (s *Etcd) List(directory string) ([]*store.KVPair, error) {
 // DeleteTree deletes a range of keys under a given directory
 func (s *Etcd) DeleteTree(directory string) error {
 	_, err := s.client.Delete(store.Normalize(directory), true)
+	if isKeyNotFoundError(err) {
+		return store.ErrKeyNotFound
+	}
 	return err
 }
 
@@ -506,4 +508,16 @@ func (l *etcdLock) Unlock() error {
 // Close closes the client connection
 func (s *Etcd) Close() {
 	return
+}
+
+func isKeyNotFoundError(err error) bool {
+	if err != nil {
+		if etcdError, ok := err.(*etcd.EtcdError); ok {
+			// Not a Directory or Not a file
+			if etcdError.ErrorCode == 100 || etcdError.ErrorCode == 102 || etcdError.ErrorCode == 104 {
+				return true
+			}
+		}
+	}
+	return false
 }
