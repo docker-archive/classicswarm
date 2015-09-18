@@ -63,7 +63,7 @@ function teardown() {
 
 	run docker_swarm run -c 10240 busybox sh
 	[ "$status" -ne 0 ]
-	[[ "${lines[0]}" == *"no resources available to schedule container"* ]]
+	[[ "${output}" == *"no resources available to schedule container"* ]]
 
 	# The number of running containers should be still 0.
 	run docker_swarm ps -a
