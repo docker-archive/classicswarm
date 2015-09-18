@@ -34,7 +34,10 @@ function teardown() {
 
 	run docker_swarm run -d --expose=80 -p 80:80 busybox sh
 	[ "$status" -eq 0 ]
+	# Sleep for 1 second to make sure the port 80 is available again
+	sleep 1
 	run docker_swarm run -d --expose=80 -p 80:80 busybox sh
+	echo $output
 	[ "$status" -eq 0 ]
 
 	# When trying to start the 3rd one, it should be error finding port 80.
