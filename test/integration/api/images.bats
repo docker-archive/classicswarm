@@ -39,7 +39,7 @@ function teardown() {
 	[[ "${lines[1]}" == *"busybox"* ]]
 
 	# Try images -a
-	# lines are: header, busybox, <none>, <none>
+	# lines are: header, busybox, <none>
 	run docker_swarm images -a
-	[ "${#lines[@]}" -ge 4 ]
+	[ "${#lines[@]}" -ge 3 ]
 }
