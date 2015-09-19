@@ -115,3 +115,37 @@ function teardown() {
 	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
 	retry 5 1 discovery_check_swarm_info
 }
+
+@test "etcd discovery: check engine connect/disconnect events" {
+	# Start the store
+	start_store
+
+	# Start a manager
+	swarm_manage "$DISCOVERY"
+
+	# Start events, report real time events to $log_file
+	local log_file=$(mktemp)
+	docker_swarm events > "$log_file" &
+	local events_pid="$!"
+
+	# Start 2 engines and make them join the cluster.
+	start_docker 2 
+	swarm_join "$DISCOVERY"
+	retry 5 1 discovery_check_swarm_list "$DISCOVERY"
+
+	# Check connect events
+	retry 5 1 grep -q "engine_connect" "$log_file"
+
+	# Removes all the swarm agents
+	swarm_join_cleanup
+
+	# Check if previously registered engines are all gone
+	retry 15 1 discovery_check_swarm_info 0
+
+	# Check disconnect events
+	retry 5 1 grep -q "engine_disconnect" "$log_file"
+
+	# Finally, clean up `docker events` and remove the log file
+	kill "$events_pid"
+	rm -f "$log_file"
+}

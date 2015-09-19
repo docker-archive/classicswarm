@@ -161,9 +161,13 @@ func (c *Cluster) addEngine(addr string) bool {
 		return false
 	}
 
+	engine := cluster.NewEngine(addr, c.overcommitRatio)
+	if err := engine.RegisterEventHandler(c); err != nil {
+		log.Error(err)
+	}
+
 	// Attempt a connection to the engine. Since this is slow, don't get a hold
 	// of the lock yet.
-	engine := cluster.NewEngine(addr, c.overcommitRatio)
 	if err := engine.Connect(c.TLSConfig); err != nil {
 		log.Error(err)
 		return false
@@ -186,10 +190,6 @@ func (c *Cluster) addEngine(addr string) bool {
 
 	// Finally register the engine.
 	c.engines[engine.ID] = engine
-	if err := engine.RegisterEventHandler(c); err != nil {
-		log.Error(err)
-	}
-
 	log.Infof("Registered Engine %s at %s", engine.Name, addr)
 	return true
 }
