@@ -222,6 +222,11 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 	return nil, errNotSupported
 }
 
+// RemoveVolume deletes a volume from the cluster
+func (c *Cluster) RemoveVolume(name string) error {
+	return errNotSupported
+}
+
 func formatContainer(container *cluster.Container) *cluster.Container {
 	if container == nil {
 		return nil

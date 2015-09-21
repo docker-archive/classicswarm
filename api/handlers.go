@@ -572,6 +572,20 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(NewWriteFlusher(w)).Encode(out)
 }
 
+// DELETE /volumes/{name:.*}
+func deleteVolumes(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var name = mux.Vars(r)["name"]
+
+	if err := c.cluster.RemoveVolume(name); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 // GET /_ping
 func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})

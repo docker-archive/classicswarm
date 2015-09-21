@@ -295,6 +295,31 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 	return out, err
 }
 
+// RemoveVolume removes specified volume from the cluster
+func (c *Cluster) RemoveVolume(name string) error {
+	c.Lock()
+	defer c.Unlock()
+
+	errs := []string{}
+	var err error
+	for _, e := range c.engines {
+		for _, vol := range e.Volumes() {
+			if vol.Name == name {
+				if err := vol.Engine.RemoveVolume(name); err != nil {
+					errs = append(errs, fmt.Sprintf("%s: %s", vol.Engine.Name, err.Error()))
+					continue
+				}
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		err = errors.New(strings.Join(errs, "\n"))
+	}
+
+	return err
+}
+
 // Pull is exported
 func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string, err error)) {
 	var wg sync.WaitGroup
