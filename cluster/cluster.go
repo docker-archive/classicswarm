@@ -37,6 +37,9 @@ type Cluster interface {
 	// Return one volume from the cluster
 	Volume(name string) *Volume
 
+	// Remove a volume from the cluster
+	RemoveVolume(name string) error
+
 	// Pull images
 	// `callback` can be called multiple time
 	//  `where` is where it is being pulled

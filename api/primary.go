@@ -80,6 +80,7 @@ var routes = map[string]map[string]handler{
 	"DELETE": {
 		"/containers/{name:.*}": deleteContainers,
 		"/images/{name:.*}":     deleteImages,
+		"/volumes/{name:.*}":    deleteVolumes,
 	},
 	"OPTIONS": {
 		"": optionsHandler,

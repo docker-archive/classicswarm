@@ -217,6 +217,11 @@ func (e *Engine) RefreshVolumes() error {
 	return nil
 }
 
+// RemoveVolume deletes a volume from the engine.
+func (e *Engine) RemoveVolume(name string) error {
+	return e.client.RemoveVolume(name)
+}
+
 // RefreshContainers will refresh the list and status of containers running on the engine. If `full` is
 // true, each container will be inspected.
 // FIXME: unexport this method after mesos scheduler stops using it directly

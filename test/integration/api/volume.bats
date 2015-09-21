@@ -41,3 +41,17 @@ function teardown() {
 	[ "${#lines[@]}" -eq 7 ]
 	[[ "${output}" == *"\"Driver\": \"local\""* ]]
 }
+
+@test "docker volume remove" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	# run
+	docker_swarm run -d -v=/tmp busybox true
+
+	run docker_swarm volume ls -q
+	[ "${#lines[@]}" -eq 1 ]
+
+	run docker_swarm volume rm ${output}
+        [ "$status" -eq 0  ] 
+}
