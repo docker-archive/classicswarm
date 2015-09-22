@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/docker/swarm/cluster"
 )
@@ -34,12 +35,34 @@ func (eh *eventsHandler) Add(remoteAddr string, w io.Writer) {
 }
 
 // Wait waits on a signal from the remote address.
-func (eh *eventsHandler) Wait(remoteAddr string) {
-	<-eh.cs[remoteAddr]
+func (eh *eventsHandler) Wait(remoteAddr string, until int64) {
+
+	timer := time.NewTimer(0)
+	timer.Stop()
+	if until > 0 {
+		dur := time.Unix(until, 0).Sub(time.Now())
+		timer = time.NewTimer(dur)
+	}
+
+	select {
+	case <-eh.cs[remoteAddr]:
+	case <-timer.C: // `--until` timeout
+		close(eh.cs[remoteAddr])
+	}
+	eh.cleanupHandler(remoteAddr)
+}
+
+func (eh *eventsHandler) cleanupHandler(remoteAddr string) {
+	eh.Lock()
+	// the maps are expected to have the same keys
+	delete(eh.cs, remoteAddr)
+	delete(eh.ws, remoteAddr)
+	eh.Unlock()
+
 }
 
 // Handle writes information about a cluster event to each remote address in the cluster that has been added to the events handler.
-// After a successful write to a remote address, the associated channel is closed and the address is removed from the events handler.
+// After an unsuccessful write to a remote address, the associated channel is closed and the address is removed from the events handler.
 func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	eh.RLock()
 
@@ -66,24 +89,16 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 		if f, ok := w.(http.Flusher); ok {
 			f.Flush()
 		}
-
 	}
 
 	eh.RUnlock()
 
 	if len(failed) > 0 {
-		eh.Lock()
-
 		for _, key := range failed {
 			if ch, ok := eh.cs[key]; ok {
 				close(ch)
-				// the maps are expected to have the same keys
-				delete(eh.cs, key)
-				delete(eh.ws, key)
 			}
 		}
-
-		eh.Unlock()
 	}
 
 	return nil
