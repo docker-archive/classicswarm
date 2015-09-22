@@ -40,3 +40,15 @@ function teardown() {
 
 	rm -f $IMAGE_FILE
 }
+
+@test "docker load - check error code" {
+	start_docker 2
+	swarm_manage
+
+	temp_file=$(mktemp)
+
+	run docker_swarm load -i $temp_file
+	[ "$status" -eq 1 ]
+
+	rm -f $temp_file
+}

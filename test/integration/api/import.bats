@@ -41,3 +41,15 @@ function teardown() {
 	# after ok, delete exported tar file
 	rm -f $temp_file_name
 }
+
+@test "docker import - check error code" {
+	start_docker 2
+	swarm_manage
+
+	temp_file=$(mktemp)
+
+	run docker_swarm import - < $temp_file
+	[ "$status" -eq 1 ]
+
+	rm -f $temp_file
+}

@@ -142,9 +142,9 @@ func TestImportImage(t *testing.T) {
 	readCloser := nopCloser{bytes.NewBufferString("ok")}
 	client.On("ImportImage", mock.Anything, mock.Anything, mock.Anything, mock.AnythingOfType("*io.PipeReader")).Return(readCloser, nil).Once()
 
-	callback := func(what, status string) {
+	callback := func(what, status string, err error) {
 		// import success
-		assert.Equal(t, status, "Import success")
+		assert.Nil(t, err)
 	}
 	c.Import("-", "testImageOK", "latest", bytes.NewReader(nil), callback)
 
@@ -153,9 +153,9 @@ func TestImportImage(t *testing.T) {
 	err := fmt.Errorf("Import error")
 	client.On("ImportImage", mock.Anything, mock.Anything, mock.Anything, mock.AnythingOfType("*io.PipeReader")).Return(readCloser, err).Once()
 
-	callback = func(what, status string) {
+	callback = func(what, status string, err error) {
 		// import error
-		assert.Equal(t, status, "Import error")
+		assert.NotNil(t, err)
 	}
 	c.Import("-", "testImageError", "latest", bytes.NewReader(nil), callback)
 }
@@ -189,18 +189,18 @@ func TestLoadImage(t *testing.T) {
 
 	// load success
 	client.On("LoadImage", mock.AnythingOfType("*io.PipeReader")).Return(nil).Once()
-	callback := func(what, status string) {
-		//if load OK, will not come here
-		t.Fatalf("Load error")
+	callback := func(what, status string, err error) {
+		//if load OK, err will be nil
+		assert.Nil(t, err)
 	}
 	c.Load(bytes.NewReader(nil), callback)
 
 	// load error
 	err := fmt.Errorf("Load error")
 	client.On("LoadImage", mock.AnythingOfType("*io.PipeReader")).Return(err).Once()
-	callback = func(what, status string) {
-		// load error
-		assert.Equal(t, status, "Load error")
+	callback = func(what, status string, err error) {
+		// load error, err is not nil
+		assert.NotNil(t, err)
 	}
 	c.Load(bytes.NewReader(nil), callback)
 }
