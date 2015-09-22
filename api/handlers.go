@@ -459,10 +459,20 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		repo := r.Form.Get("repo")
 		tag := r.Form.Get("tag")
 
-		callback := func(what, status string) {
+		errorFound := false
+		callback := func(what, status string, err error) {
+			if err != nil {
+				errorFound = true
+				sendJSONMessage(wf, what, err.Error())
+				return
+			}
 			sendJSONMessage(wf, what, status)
 		}
 		c.cluster.Import(source, repo, tag, r.Body, callback)
+		if errorFound {
+			sendErrorJSONMessage(wf, 1, "")
+		}
+
 	}
 }
 
@@ -473,7 +483,14 @@ func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 
 	// call cluster to load image on every node
 	wf := NewWriteFlusher(w)
-	callback := func(what, status string) {
+	errorFound := false
+	callback := func(what, status string, err error) {
+		if err != nil {
+			errorFound = true
+			sendJSONMessage(wf, what, fmt.Sprintf("Loading Image... : %s", err.Error()))
+			return
+		}
+
 		if status == "" {
 			sendJSONMessage(wf, what, "Loading Image...")
 		} else {
@@ -481,6 +498,10 @@ func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	c.cluster.Load(r.Body, callback)
+	if errorFound {
+		sendErrorJSONMessage(wf, 1, "")
+	}
+
 }
 
 // GET /events

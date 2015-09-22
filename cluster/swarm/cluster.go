@@ -325,7 +325,7 @@ func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callbac
 }
 
 // Load image
-func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string)) {
+func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string, err error)) {
 	var wg sync.WaitGroup
 
 	c.RLock()
@@ -344,7 +344,7 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string
 			err := engine.Load(reader)
 			if callback != nil {
 				if err != nil {
-					callback(engine.Name, err.Error())
+					callback(engine.Name, "", err)
 				}
 			}
 		}(pipeReader, e)
@@ -373,7 +373,7 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string
 }
 
 // Import image
-func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string)) {
+func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string, err error)) {
 	var wg sync.WaitGroup
 	c.RLock()
 	pipeWriters := []*io.PipeWriter{}
@@ -392,9 +392,9 @@ func (c *Cluster) Import(source string, repository string, tag string, imageRead
 			err := engine.Import(source, repository, tag, reader)
 			if callback != nil {
 				if err != nil {
-					callback(engine.Name, err.Error())
+					callback(engine.Name, "", err)
 				} else {
-					callback(engine.Name, "Import success")
+					callback(engine.Name, "Import success", nil)
 				}
 			}
 

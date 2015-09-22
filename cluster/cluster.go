@@ -47,13 +47,13 @@ type Cluster interface {
 	// `callback` can be called multiple time
 	// `where` is where it is being imported
 	// `status` is the current status, like "", "in progress" or "imported"
-	Import(source string, repository string, tag string, imageReader io.Reader, callback func(where, status string))
+	Import(source string, repository string, tag string, imageReader io.Reader, callback func(where, status string, err error))
 
 	// Load images
 	// `callback` can be called multiple time
 	// `what` is what is being loaded
 	// `status` is the current status, like "", "in progress" or "loaded"
-	Load(imageReader io.Reader, callback func(what, status string))
+	Load(imageReader io.Reader, callback func(what, status string, err error))
 
 	// Return some info about the cluster, like nb or containers / images
 	// It is pretty open, so the implementation decides what to return.
