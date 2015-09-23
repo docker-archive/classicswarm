@@ -131,11 +131,11 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 
 // RemoveContainer aka Remove a container from the cluster. Containers should
 // always be destroyed through the scheduler to guarantee atomicity.
-func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) error {
+func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes bool) error {
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
-	err := container.Engine.RemoveContainer(container, force)
+	err := container.Engine.RemoveContainer(container, force, volumes)
 	return err
 }
 
@@ -293,6 +293,67 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 	}
 
 	return out, err
+}
+
+// CreateVolume creates a volume in the cluster
+func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*cluster.Volume, error) {
+	var (
+		wg     sync.WaitGroup
+		volume *cluster.Volume
+		err    error
+	)
+
+	if request.Name == "" {
+		request.Name = stringid.GenerateRandomID()
+	}
+
+	c.RLock()
+	for _, e := range c.engines {
+		wg.Add(1)
+
+		go func(engine *cluster.Engine) {
+			defer wg.Done()
+
+			v, er := engine.CreateVolume(request)
+			if v != nil {
+				volume = v
+				err = nil
+			}
+			if er != nil && volume == nil {
+				err = er
+			}
+		}(e)
+	}
+	c.RUnlock()
+
+	wg.Wait()
+
+	return volume, err
+}
+
+// RemoveVolumes removes all the volumes that match `name` from the cluster
+func (c *Cluster) RemoveVolumes(name string) (bool, error) {
+	c.Lock()
+	defer c.Unlock()
+
+	found := false
+	errs := []string{}
+	var err error
+	for _, e := range c.engines {
+		for _, volume := range e.Volumes() {
+			if volume.Name == name {
+				if err := volume.Engine.RemoveVolume(name); err != nil {
+					errs = append(errs, fmt.Sprintf("%s: %s", volume.Engine.Name, err.Error()))
+					continue
+				}
+				found = true
+			}
+		}
+	}
+	if len(errs) > 0 {
+		err = errors.New(strings.Join(errs, "\n"))
+	}
+	return found, err
 }
 
 // Pull is exported

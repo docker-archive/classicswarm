@@ -401,16 +401,36 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 
 	name := mux.Vars(r)["name"]
 	force := boolValue(r, "force")
+	volumes := boolValue(r, "v")
 	container := c.cluster.Container(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
 		return
 	}
-	if err := c.cluster.RemoveContainer(container, force); err != nil {
+	if err := c.cluster.RemoveContainer(container, force, volumes); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// POST /volumes
+func postVolumes(c *context, w http.ResponseWriter, r *http.Request) {
+	var request dockerclient.VolumeCreateRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	volume, err := c.cluster.CreateVolume(&request)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(volume)
 }
 
 // POST  /images/create
@@ -606,6 +626,27 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(NewWriteFlusher(w)).Encode(out)
+}
+
+// DELETE /volumes/{names:.*}
+func deleteVolumes(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var name = mux.Vars(r)["name"]
+
+	found, err := c.cluster.RemoveVolumes(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !found {
+		httpError(w, fmt.Sprintf("No such volume %s", name), http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // GET /_ping
