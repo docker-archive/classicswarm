@@ -3,12 +3,20 @@ package node
 import (
 	"errors"
 	"strings"
+	"sync"
 
 	"github.com/docker/swarm/cluster"
 )
 
+var (
+	// ErrNotEnoughResources is thrown when a Node does not have any CPU or Memory left
+	ErrNotEnoughResources = errors.New("No more resources available on this node")
+)
+
 // Node is an abstract type used by the scheduler.
 type Node struct {
+	sync.RWMutex
+
 	ID         string
 	IP         string
 	Addr       string
@@ -73,11 +81,40 @@ func (n *Node) AddContainer(container *cluster.Container) error {
 		memory := container.Config.Memory
 		cpus := container.Config.CpuShares
 		if n.TotalMemory-memory < 0 || n.TotalCpus-cpus < 0 {
-			return errors.New("not enough resources")
+			return ErrNotEnoughResources
 		}
 		n.UsedMemory = n.UsedMemory + memory
 		n.UsedCpus = n.UsedCpus + cpus
 	}
 	n.Containers = append(n.Containers, container)
+	return nil
+}
+
+// ReserveResource reserve some resources for a container
+func (n *Node) ReserveResource(config *cluster.ContainerConfig) error {
+	n.Lock()
+	defer n.Unlock()
+	if config != nil {
+		memory := config.Memory
+		cpus := config.CpuShares
+		if (n.TotalMemory-n.UsedMemory)-memory < 0 || (n.TotalCpus-n.UsedCpus)-cpus < 0 {
+			return ErrNotEnoughResources
+		}
+		n.UsedMemory = n.UsedMemory + memory
+		n.UsedCpus = n.UsedCpus + cpus
+	}
+	return nil
+}
+
+// ReleaseResource releases resource on the node
+func (n *Node) ReleaseResource(config *cluster.ContainerConfig) error {
+	n.Lock()
+	defer n.Unlock()
+	if config != nil {
+		memory := config.Memory
+		cpus := config.CpuShares
+		n.UsedMemory = n.UsedMemory - memory
+		n.UsedCpus = n.UsedCpus - cpus
+	}
 	return nil
 }

@@ -180,9 +180,6 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 
 // RemoveContainer to remove containers on mesos cluster
 func (c *Cluster) RemoveContainer(container *cluster.Container, force bool) error {
-	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
-
 	return container.Engine.RemoveContainer(container, force)
 }
 
@@ -410,9 +407,6 @@ func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 }
 
 func (c *Cluster) scheduleTask(t *task) bool {
-	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
-
 	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), t.config)
 	if err != nil {
 		return false
@@ -524,15 +518,12 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 
 // BuildImage build an image
 func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer) error {
-	c.scheduler.Lock()
-
 	// get an engine
 	config := &cluster.ContainerConfig{dockerclient.ContainerConfig{
 		CpuShares: buildImage.CpuShares,
 		Memory:    buildImage.Memory,
 	}}
 	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
-	c.scheduler.Unlock()
 	if err != nil {
 		return err
 	}

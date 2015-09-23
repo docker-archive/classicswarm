@@ -36,6 +36,7 @@ func weighNodes(config *cluster.ContainerConfig, nodes []*node.Node) (weightedNo
 	weightedNodes := weightedNodeList{}
 
 	for _, node := range nodes {
+		node.RLock()
 		nodeMemory := node.TotalMemory
 		nodeCpus := node.TotalCpus
 
@@ -55,6 +56,7 @@ func weighNodes(config *cluster.ContainerConfig, nodes []*node.Node) (weightedNo
 		if config.Memory > 0 {
 			memoryScore = (node.UsedMemory + config.Memory) * 100 / nodeMemory
 		}
+		node.RUnlock()
 
 		if cpuScore <= 100 && memoryScore <= 100 {
 			weightedNodes = append(weightedNodes, &weightedNode{Node: node, Weight: cpuScore + memoryScore})
