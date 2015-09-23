@@ -24,7 +24,7 @@ var (
 			Flags: []cli.Flag{
 				flStrategy, flFilter,
 				flHosts,
-				flLeaderElection, flManageAdvertise,
+				flLeaderElection, flLeaderTTL, flManageAdvertise,
 				flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
 				flHeartBeat,
 				flEnableCors,

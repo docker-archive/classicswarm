@@ -115,7 +115,7 @@ func createDiscovery(uri string, c *cli.Context) discovery.Discovery {
 	return discovery
 }
 
-func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, discovery discovery.Discovery, addr string, tlsConfig *tls.Config) {
+func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, discovery discovery.Discovery, addr string, leaderTTL time.Duration, tlsConfig *tls.Config) {
 	kvDiscovery, ok := discovery.(*kvdiscovery.Discovery)
 	if !ok {
 		log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
@@ -123,7 +123,7 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 	client := kvDiscovery.Store()
 	p := path.Join(kvDiscovery.Prefix(), leaderElectionPath)
 
-	candidate := leadership.NewCandidate(client, p, addr)
+	candidate := leadership.NewCandidate(client, p, addr, leaderTTL)
 	follower := leadership.NewFollower(client, p)
 
 	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.Bool("cors"))
@@ -268,8 +268,12 @@ func manage(c *cli.Context) {
 		if !checkAddrFormat(addr) {
 			log.Fatal("--advertise should be of the form ip:port or hostname:port")
 		}
+		leaderTTL, err := time.ParseDuration(c.String("leaderTTL"))
+		if err != nil {
+			log.Fatalf("invalid --leaderTTL: %v", err)
+		}
 
-		setupReplication(c, cl, server, discovery, addr, tlsConfig)
+		setupReplication(c, cl, server, discovery, addr, leaderTTL, tlsConfig)
 	} else {
 		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.Bool("cors")))
 	}

@@ -371,7 +371,7 @@ func (s *Zookeeper) NewLock(key string, options *store.LockOptions) (lock store.
 // Lock attempts to acquire the lock and blocks while
 // doing so. It returns a channel that is closed if our
 // lock is lost or if an error occurs
-func (l *zookeeperLock) Lock() (<-chan struct{}, error) {
+func (l *zookeeperLock) Lock(stopChan chan struct{}) (<-chan struct{}, error) {
 	err := l.lock.Lock()
 
 	if err == nil {
