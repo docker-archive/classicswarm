@@ -21,10 +21,10 @@ func TestCandidate(t *testing.T) {
 	// Lock and unlock always succeeds.
 	lostCh := make(chan struct{})
 	var mockLostCh <-chan struct{} = lostCh
-	mockLock.On("Lock").Return(mockLostCh, nil)
+	mockLock.On("Lock", mock.Anything).Return(mockLostCh, nil)
 	mockLock.On("Unlock").Return(nil)
 
-	candidate := NewCandidate(kv, "test_key", "test_node")
+	candidate := NewCandidate(kv, "test_key", "test_node", 0)
 	electedCh, _ := candidate.RunForElection()
 
 	// Should issue a false upon start, no matter what.
