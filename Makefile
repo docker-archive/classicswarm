@@ -1,7 +1,7 @@
 .PHONY: build binary shell build_image
 
 
-BUILD_ID ?= $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
+BUILD_ID ?= $(shell git rev-parse --short HEAD 2>/dev/null)
 DOCKER_IMAGE := swarm-dev:$(BUILD_ID)
 
 VOLUMES := \
@@ -18,7 +18,10 @@ dist:
 	mkdir dist/
 
 binary: dist build
-	docker run --rm $(VOLUMES) $(DOCKER_IMAGE)
+	docker run --rm -e VERSION=$(BUILD_ID) $(VOLUMES) $(DOCKER_IMAGE)
 
 shell: dist build
 	docker run --rm -ti $(VOLUMES) $(DOCKER_IMAGE) bash
+
+build_image: binary
+	docker build -t swarm:$(BUILD_ID) .
