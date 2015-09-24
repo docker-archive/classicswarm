@@ -610,9 +610,9 @@ func (c *Cluster) TotalCpus() int64 {
 // Info returns some info about the cluster, like nb or containers / images
 func (c *Cluster) Info() [][]string {
 	info := [][]string{
-		{"\bStrategy", c.scheduler.Strategy()},
-		{"\bFilters", c.scheduler.Filters()},
-		{"\bNodes", fmt.Sprintf("%d", len(c.engines))},
+		{"Strategy", c.scheduler.Strategy()},
+		{"Filters", c.scheduler.Filters()},
+		{"Nodes", fmt.Sprintf("%d", len(c.engines))},
 	}
 
 	engines := c.listEngines()
