@@ -117,4 +117,9 @@ var (
 		Name:  "replication",
 		Usage: "Enable Swarm manager replication",
 	}
+	flLeaderTTL = cli.StringFlag{
+		Name:  "leaderTTL",
+		Value: "30s",
+		Usage: "Leader lock release time on failure",
+	}
 )

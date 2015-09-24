@@ -2,6 +2,7 @@ package leadership
 
 import (
 	"sync"
+	"time"
 
 	"github.com/docker/libkv/store"
 )
@@ -14,6 +15,7 @@ type Candidate struct {
 
 	electedCh chan bool
 	lock      sync.Mutex
+	lockTTL   time.Duration
 	leader    bool
 	stopCh    chan struct{}
 	resignCh  chan bool
@@ -21,13 +23,14 @@ type Candidate struct {
 }
 
 // NewCandidate creates a new Candidate
-func NewCandidate(client store.Store, key, node string) *Candidate {
+func NewCandidate(client store.Store, key, node string, ttl time.Duration) *Candidate {
 	return &Candidate{
 		client: client,
 		key:    key,
 		node:   node,
 
 		leader:   false,
+		lockTTL:  ttl,
 		resignCh: make(chan bool),
 		stopCh:   make(chan struct{}),
 	}
@@ -48,8 +51,12 @@ func (c *Candidate) RunForElection() (<-chan bool, <-chan error) {
 	c.electedCh = make(chan bool)
 	c.errCh = make(chan error)
 
-	// Need a `SessionTTL` (keep-alive) and a stop channel.
-	lock, err := c.client.NewLock(c.key, &store.LockOptions{Value: []byte(c.node)})
+	lock, err := c.client.NewLock(c.key, &store.LockOptions{
+		Value:     []byte(c.node),
+		TTL:       c.lockTTL,
+		RenewLock: make(chan struct{}),
+	})
+
 	if err != nil {
 		c.errCh <- err
 	} else {
@@ -93,7 +100,7 @@ func (c *Candidate) campaign(lock store.Locker) {
 		// Start as a follower.
 		c.update(false)
 
-		lostCh, err := lock.Lock()
+		lostCh, err := lock.Lock(nil)
 		if err != nil {
 			c.errCh <- err
 			return
