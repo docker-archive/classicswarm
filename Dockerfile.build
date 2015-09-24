@@ -1,0 +1,9 @@
+
+FROM    golang:1.5
+RUN     mkdir -p /tmp/godep && \
+        GOPATH=/tmp/godep go get github.com/tools/godep && \
+        mv /tmp/godep/bin/godep /usr/local/bin/godep && \
+        rm -rf /tmp/godep
+
+WORKDIR /go/src/github.com/docker/swarm
+CMD     ["godep", "go", "install", "."]
