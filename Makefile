@@ -1,4 +1,4 @@
-.PHONY: build binary shell build_image
+.PHONY: build binary shell build-image test-unit test-integration test-regression
 
 
 BUILD_ID ?= $(shell git rev-parse --short HEAD 2>/dev/null)
@@ -23,5 +23,14 @@ binary: dist build
 shell: dist build
 	docker run --rm -ti $(VOLUMES) $(DOCKER_IMAGE) bash
 
-build_image: binary
+build-image: binary
 	docker build -t swarm:$(BUILD_ID) .
+
+test-unit: build
+	docker run --rm -ti $(VOLUMES) $(DOCKER_IMAGE) godep go test -v ./...
+
+test-integration:
+	test/integration/run.sh
+
+test-regression:
+	./test/regression/run.sh
