@@ -32,9 +32,20 @@ documentation on [docs.docker.com](http://docs.docker.com/swarm/).
 Developers should always download and install from source rather than
 using the Docker image.
 
-### Prerequisites
+### Developing with Docker
 
-1. Beginning with Swarm 0.4 golang 1.4.x or later is required for building Swarm. 
+Install [Docker](http://docs.docker.com/installation/)
+
+```bash
+$ git clone git@github.com:docker/swarm && cd swarm
+$ make binary
+```
+
+### Developing on the host
+
+#### Prerequisites
+
+1. Beginning with Swarm 0.4 golang 1.4.x or later is required for building Swarm.
 Refer to the [Go installation page](https://golang.org/doc/install#install)
 to download and install the golang 1.4.x or later package.
 > **Note**: On Ubuntu 14.04, the `apt-get` repositories install golang 1.2.1 version by
@@ -45,11 +56,11 @@ to download and install the golang 1.4.x or later package.
 
 3. Install [godep](https://github.com/tools/godep).
 
-### Clone and build Swarm
+#### Clone and build Swarm
 
 > **Note** `GOPATH` should be set when install godep in above step.
 
-Install the `swarm` binary in the `$GOPATH/bin` directory. An easy way to do this 
+Install the `swarm` binary in the `$GOPATH/bin` directory. An easy way to do this
 is using the `go get` command.
 
 ```bash
