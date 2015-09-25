@@ -85,7 +85,7 @@ function teardown() {
 	# Check that we can add instances back to the cluster
 	start_docker 2
 	swarm_join "$DISCOVERY"
-	retry 5 1 discovery_check_swarm_info 2
+	retry 10 1 discovery_check_swarm_info 2
 }
 
 @test "zk discovery: failure" {
