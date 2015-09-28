@@ -43,3 +43,16 @@ function teardown() {
 	run docker_swarm images -a
 	[ "${#lines[@]}" -ge 3 ]
 }
+
+@test "docker images -f label" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker_swarm build -t image-with-labels $TESTDATA/imagelabel
+
+	run docker_swarm images \
+		--filter label=com.docker.swarm.test.integration.images=labeltest
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"image-with-labels"* ]]
+}
