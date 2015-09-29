@@ -2,6 +2,7 @@ package etcd
 
 import (
 	"crypto/tls"
+	"errors"
 	"net"
 	"net/http"
 	"strings"
@@ -10,6 +11,13 @@ import (
 	etcd "github.com/coreos/go-etcd/etcd"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
+)
+
+var (
+	// ErrAbortTryLock is thrown when a user stops trying to seek the lock
+	// by sending a signal to the stop chan, this is used to verify if the
+	// operation succeeded
+	ErrAbortTryLock = errors.New("lock operation aborted")
 )
 
 // Etcd is the receiver type for the
@@ -470,7 +478,7 @@ func (l *etcdLock) Lock(stopChan chan struct{}) (<-chan struct{}, error) {
 			case _ = <-free:
 				break
 			case _ = <-stopChan:
-				return nil, nil
+				return nil, ErrAbortTryLock
 			}
 
 			// Delete or Expire event occured
