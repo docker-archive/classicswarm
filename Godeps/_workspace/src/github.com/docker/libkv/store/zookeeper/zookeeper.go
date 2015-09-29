@@ -10,6 +10,9 @@ import (
 )
 
 const (
+	// SOH control character
+	SOH = "\x01"
+
 	defaultTimeout = 10 * time.Second
 )
 
@@ -70,6 +73,12 @@ func (s *Zookeeper) Get(key string) (pair *store.KVPair, err error) {
 			return nil, store.ErrKeyNotFound
 		}
 		return nil, err
+	}
+
+	// FIXME handle very rare cases where Get returns the
+	// SOH control character instead of the actual value
+	if string(resp) == SOH {
+		return s.Get(store.Normalize(key))
 	}
 
 	pair = &store.KVPair{
