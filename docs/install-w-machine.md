@@ -15,9 +15,6 @@ weight=9
 You use Docker Swarm to host and schedule a cluster of Docker containers. This section introduces you to Docker Swarm by teaching you how to create a swarm
 on your local machine using Docker Machine and VirtualBox.
 
-Remember, Docker Swarm is currently in BETA, so things are likely to change. We
-don't recommend you use it in production yet.
-
 ## Prerequisites
 
 Make sure your local system has VirtualBox installed. If you are using Mac OS X
