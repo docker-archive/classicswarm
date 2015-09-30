@@ -12,7 +12,7 @@ DISCOVERY="zk://${STORE_HOST}/test"
 CONTAINER_NAME=swarm_integration_zk
 
 function start_store() {
-	docker_host run --name $CONTAINER_NAME -p $STORE_HOST:2181 -d jplock/zookeeper:3.4.6
+	docker_host run --name $CONTAINER_NAME -p $STORE_HOST:2181 -d dnephin/docker-zookeeper:3.4.6
 }
 
 function stop_store() {
