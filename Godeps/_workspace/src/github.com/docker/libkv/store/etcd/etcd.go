@@ -495,7 +495,7 @@ func (l *etcdLock) Lock(stopChan chan struct{}) (<-chan struct{}, error) {
 func (l *etcdLock) holdLock(key string, lockHeld chan struct{}, stopLocking <-chan struct{}) {
 	defer close(lockHeld)
 
-	update := time.NewTicker(time.Duration((l.ttl / 3) + 1))
+	update := time.NewTicker(time.Duration(l.ttl) * time.Second / 3)
 	defer update.Stop()
 
 	var err error
