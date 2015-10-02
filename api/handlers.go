@@ -169,6 +169,13 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(images)
 }
 
+// GET /networks
+func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
+	networks := c.cluster.Networks()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(networks)
+}
+
 // GET /volumes
 func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	volumes := struct {
@@ -661,6 +668,16 @@ func deleteVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 // GET /_ping
 func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
+}
+
+// Proxy a request to the right node
+func proxyNetwork(c *context, w http.ResponseWriter, r *http.Request) {
+	var id = mux.Vars(r)["networkid"]
+	if network := c.cluster.Network(id); network != nil {
+		proxy(c.tlsConfig, network.Engine.Addr, w, r)
+		return
+	}
+	httpError(w, fmt.Sprintf("No such network: %s", id), http.StatusNotFound)
 }
 
 // Proxy a request to the right node

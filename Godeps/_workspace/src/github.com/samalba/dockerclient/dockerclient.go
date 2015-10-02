@@ -778,3 +778,79 @@ func (client *DockerClient) CreateVolume(request *VolumeCreateRequest) (*Volume,
 	err = json.Unmarshal(data, volume)
 	return volume, err
 }
+
+func (client *DockerClient) ListNetworks(filters string) ([]*NetworkResource, error) {
+	uri := fmt.Sprintf("/%s/networks", APIVersion)
+
+	if filters != "" {
+		uri += "&filters=" + filters
+	}
+
+	data, err := client.doRequest("GET", uri, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	ret := []*NetworkResource{}
+	err = json.Unmarshal(data, &ret)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (client *DockerClient) InspectNetwork(id string) (*NetworkResource, error) {
+	uri := fmt.Sprintf("/%s/networks/%s", APIVersion, id)
+
+	data, err := client.doRequest("GET", uri, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	ret := &NetworkResource{}
+	err = json.Unmarshal(data, ret)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
+func (client *DockerClient) CreateNetwork(config *NetworkCreate) (*NetworkCreateResponse, error) {
+	data, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+	uri := fmt.Sprintf("/%s/networks/create", APIVersion)
+	data, err = client.doRequest("POST", uri, data, nil)
+	if err != nil {
+		return nil, err
+	}
+	ret := &NetworkCreateResponse{}
+	err = json.Unmarshal(data, ret)
+	return ret, nil
+}
+
+func (client *DockerClient) ConnectNetwork(id, container string) error {
+	data, err := json.Marshal(NetworkConnect{Container: container})
+	if err != nil {
+		return err
+	}
+	uri := fmt.Sprintf("/%s/networks/%s/connect", APIVersion, id)
+	_, err = client.doRequest("POST", uri, data, nil)
+	return err
+}
+
+func (client *DockerClient) DisconnectNetwork(id, container string) error {
+	data, err := json.Marshal(NetworkDisconnect{Container: container})
+	if err != nil {
+		return err
+	}
+	uri := fmt.Sprintf("/%s/networks/%s/disconnect", APIVersion, id)
+	_, err = client.doRequest("POST", uri, data, nil)
+	return err
+}
+
+func (client *DockerClient) RemoveNetwork(id string) error {
+	uri := fmt.Sprintf("/%s/networks/%s", APIVersion, id)
+	_, err := client.doRequest("DELETE", uri, nil, nil)
+	return err
+}

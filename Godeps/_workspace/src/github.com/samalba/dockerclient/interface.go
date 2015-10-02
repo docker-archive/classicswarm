@@ -48,4 +48,10 @@ type Client interface {
 	ListVolumes() ([]*Volume, error)
 	RemoveVolume(name string) error
 	CreateVolume(request *VolumeCreateRequest) (*Volume, error)
+	ListNetworks(filters string) ([]*NetworkResource, error)
+	InspectNetwork(id string) (*NetworkResource, error)
+	CreateNetwork(config *NetworkCreate) (*NetworkCreateResponse, error)
+	ConnectNetwork(id, container string) error
+	DisconnectNetwork(id, container string) error
+	RemoveNetwork(id string) error
 }
