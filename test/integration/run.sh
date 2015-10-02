@@ -16,17 +16,18 @@ INTEGRATION_IMAGE=${INTEGRATION_IMAGE:-dockerswarm/swarm-test-env}
 # Make sure we upgrade the integration environment.
 docker pull $INTEGRATION_IMAGE
 
+# Command to run
+INTEGRATION_CMD=${INTEGRATION_CMD:-./test_runner.sh}
+
 # Start the integration tests in a Docker container.
-ID=$(docker run -d -t --privileged \
+BUILD_ID=${BUILD_ID:-swarm-integration-$USER}
+
+docker run -it --rm --privileged \
+	--name "$BUILD_ID" \
 	-v /sys/fs/cgroup:/sys/fs/cgroup:ro `# this is specific to mesos` \
 	-v ${SWARM_ROOT}:/go/src/github.com/docker/swarm \
 	-e "DOCKER_IMAGE=$DOCKER_IMAGE" \
 	-e "DOCKER_VERSION=$DOCKER_VERSION" \
 	-e "STORAGE_DRIVER=$STORAGE_DRIVER" \
 	${INTEGRATION_IMAGE} \
-	./test_runner.sh "$@")
-
-# Clean it up when we exit.
-trap "docker rm -f -v $ID > /dev/null" EXIT
-
-docker logs -f $ID
+	$INTEGRATION_CMD "$@"

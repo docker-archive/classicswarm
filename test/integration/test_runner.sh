@@ -18,8 +18,11 @@ TESTS=${@:-. compose discovery api mesos/api mesos/compose}
 export SWARM_BINARY=`mktemp`
 
 # Download docker-compose
-execute time curl -L --silent https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
-execute chmod +x /usr/local/bin/docker-compose
+compose_path=/usr/local/bin/docker-compose
+if [ ! -e $compose_path ]; then
+	execute time curl -L --silent https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > $compose_path
+	execute chmod +x $compose_path
+fi
 
 # Build Swarm.
 execute time go build -o "$SWARM_BINARY" ../..
@@ -27,7 +30,8 @@ execute time go build -o "$SWARM_BINARY" ../..
 # Start the docker engine.
 execute docker daemon --log-level=panic \
 	--storage-driver="$STORAGE_DRIVER" &
-DOCKER_PID=$!
+
+trap "pkill -f docker" EXIT
 
 # Wait for it to become reachable.
 tries=10
