@@ -112,6 +112,11 @@ var (
 		Usage: "cluster driver options",
 		Value: &cli.StringSlice{},
 	}
+	flDiscoveryOpt = cli.StringSliceFlag{
+		Name:  "discovery-opt",
+		Usage: "discovery options",
+		Value: &cli.StringSlice{},
+	}
 
 	flLeaderElection = cli.BoolFlag{
 		Name:  "replication",

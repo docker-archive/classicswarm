@@ -19,7 +19,7 @@ func list(c *cli.Context) {
 		log.Fatalf("invalid --timeout: %v", err)
 	}
 
-	d, err := discovery.New(dflag, timeout, 0)
+	d, err := discovery.New(dflag, timeout, 0, getDiscoveryOpt(c))
 	if err != nil {
 		log.Fatal(err)
 	}
