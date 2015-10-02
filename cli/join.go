@@ -42,7 +42,8 @@ func join(c *cli.Context) {
 	if ttl <= hb {
 		log.Fatal("--ttl must be strictly superior to the heartbeat value")
 	}
-	d, err := discovery.New(dflag, hb, ttl)
+
+	d, err := discovery.New(dflag, hb, ttl, getDiscoveryOpt(c))
 	if err != nil {
 		log.Fatal(err)
 	}

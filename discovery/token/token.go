@@ -33,7 +33,7 @@ func Init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(urltoken string, heartbeat time.Duration, ttl time.Duration) error {
+func (s *Discovery) Initialize(urltoken string, heartbeat time.Duration, ttl time.Duration, _ map[string]string) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
 		s.url = "https://" + urltoken[:i]
 		s.token = urltoken[i+1:]

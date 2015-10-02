@@ -84,8 +84,8 @@ func (e Entries) Diff(cmp Entries) (Entries, Entries) {
 // The Discovery interface is implemented by Discovery backends which
 // manage swarm host entries.
 type Discovery interface {
-	// Initialize the discovery with URIs, a heartbeat and a ttl.
-	Initialize(string, time.Duration, time.Duration) error
+	// Initialize the discovery with URIs, a heartbeat, a ttl and optional settings.
+	Initialize(string, time.Duration, time.Duration, map[string]string) error
 
 	// Watch the discovery for entry changes.
 	// Returns a channel that will receive changes or an error.
@@ -133,12 +133,12 @@ func parse(rawurl string) (string, string) {
 
 // New returns a new Discovery given a URL, heartbeat and ttl settings.
 // Returns an error if the URL scheme is not supported.
-func New(rawurl string, heartbeat time.Duration, ttl time.Duration) (Discovery, error) {
+func New(rawurl string, heartbeat time.Duration, ttl time.Duration, discoveryOpt map[string]string) (Discovery, error) {
 	scheme, uri := parse(rawurl)
 
 	if discovery, exists := discoveries[scheme]; exists {
 		log.WithFields(log.Fields{"name": scheme, "uri": uri}).Debug("Initializing discovery service")
-		err := discovery.Initialize(uri, heartbeat, ttl)
+		err := discovery.Initialize(uri, heartbeat, ttl, discoveryOpt)
 		return discovery, err
 	}
 
