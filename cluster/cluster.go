@@ -3,6 +3,7 @@ package cluster
 import (
 	"io"
 
+	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/samalba/dockerclient"
 )
 
@@ -15,7 +16,7 @@ type Cluster interface {
 	RemoveContainer(container *Container, force, volumes bool) error
 
 	// Return all images
-	Images(all bool) []*Image
+	Images(all bool, filters dockerfilters.Args) []*Image
 
 	// Return one image matching `IDOrName`
 	Image(IDOrName string) *Image
