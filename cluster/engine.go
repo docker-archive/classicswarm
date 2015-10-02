@@ -12,6 +12,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/docker/pkg/version"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/nopclient"
@@ -558,15 +559,28 @@ func (e *Engine) Containers() Containers {
 }
 
 // Images returns all the images in the engine
-func (e *Engine) Images(all bool) []*Image {
+func (e *Engine) Images(all bool, filters dockerfilters.Args) []*Image {
 	e.RLock()
+
+	includeAll := func(image *Image) bool {
+		// TODO: this is wrong if RepoTags == []
+		return all || (len(image.RepoTags) != 0 && image.RepoTags[0] != "<none>:<none>")
+	}
+
+	includeFilter := func(image *Image) bool {
+		if filters == nil {
+			return true
+		}
+		return filters.MatchKVList("label", image.Labels)
+	}
 
 	images := make([]*Image, 0, len(e.images))
 	for _, image := range e.images {
-		if all || (!all && len(image.RepoTags) != 0 && image.RepoTags[0] != "<none>:<none>") {
+		if includeAll(image) && includeFilter(image) {
 			images = append(images, image)
 		}
 	}
+	// TODO: shouldn't this be defered immediately after locking?
 	e.RUnlock()
 	return images
 }

@@ -272,7 +272,9 @@ type RespContainersCreate struct {
 type Image struct {
 	Created     int64
 	Id          string
+	Labels      map[string]string
 	ParentId    string
+	RepoDigests []string
 	RepoTags    []string
 	Size        int64
 	VirtualSize int64
