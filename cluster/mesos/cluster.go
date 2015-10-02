@@ -306,6 +306,16 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	return nil
 }
 
+// Networks returns all the networks in the cluster.
+func (c *Cluster) Networks() cluster.Networks {
+	return nil
+}
+
+// Network returns the network name in the cluster
+func (c *Cluster) Network(name string) *cluster.Network {
+	return nil
+}
+
 // Volumes returns all the volumes in the cluster.
 func (c *Cluster) Volumes() []*cluster.Volume {
 	return nil

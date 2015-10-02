@@ -569,7 +569,33 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	c.RLock()
 	defer c.RUnlock()
 
-	return cluster.Containers(c.Containers()).Get(IDOrName)
+	return c.Containers().Get(IDOrName)
+}
+
+// Networks returns all the networks in the cluster.
+func (c *Cluster) Networks() cluster.Networks {
+	c.RLock()
+	defer c.RUnlock()
+
+	out := cluster.Networks{}
+	for _, e := range c.engines {
+		out = append(out, e.Networks()...)
+	}
+
+	return out
+}
+
+// Network returns the network `IDOrName` in the cluster
+func (c *Cluster) Network(IDOrName string) *cluster.Network {
+	// Abort immediately if the name is empty.
+	if len(IDOrName) == 0 {
+		return nil
+	}
+
+	c.RLock()
+	defer c.RUnlock()
+
+	return c.Networks().Get(IDOrName)
 
 }
 
