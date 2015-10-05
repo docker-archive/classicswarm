@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: swarm
+  labels:
+    app: swarm
+spec:
+  replicas: 1
+  selector:
+    app: swarm
+  template:
+    metadata:
+      labels:
+        app: swarm
+    spec:
+      containers:
+        - name: swarm
+          image: b.gcr.io/swarm/swarm:0.5.0
+          args:
+            - "--log-level=debug"
+            - "manage"
+            - "--cluster-driver=kubernetes-experimental"
+            - "--host=0.0.0.0:2375"
+            - "etcd://127.0.0.1:2379"
+          resources:
+            limits:
+              cpu: 100m
+              memory: 50Mi
+          ports:
+            - containerPort: 2375
+          imagePullPolicy: Always
