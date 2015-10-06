@@ -2,7 +2,6 @@ package node
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/docker/swarm/cluster"
 )
@@ -14,7 +13,7 @@ type Node struct {
 	Addr       string
 	Name       string
 	Labels     map[string]string
-	Containers []*cluster.Container
+	Containers cluster.Containers
 	Images     []*cluster.Image
 
 	UsedMemory  int64
@@ -45,26 +44,7 @@ func NewNode(e *cluster.Engine) *Node {
 
 // Container returns the container with IDOrName in the engine.
 func (n *Node) Container(IDOrName string) *cluster.Container {
-	// Abort immediately if the name is empty.
-	if len(IDOrName) == 0 {
-		return nil
-	}
-
-	for _, container := range n.Containers {
-		// Match ID prefix.
-		if strings.HasPrefix(container.Id, IDOrName) {
-			return container
-		}
-
-		// Match name, /name or engine/name.
-		for _, name := range container.Names {
-			if name == IDOrName || name == "/"+IDOrName || container.Engine.ID+name == IDOrName || container.Engine.Name+name == IDOrName {
-				return container
-			}
-		}
-	}
-
-	return nil
+	return n.Containers.Get(IDOrName)
 }
 
 // AddContainer injects a container into the internal state.
