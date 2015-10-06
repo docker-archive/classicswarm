@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/docker/swarm",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.5.1",
 	"Packages": [
 		"./..."
 	],
@@ -16,9 +16,19 @@
 			"Rev": "bf4a526f48af7badd25d2cb02d587e1b01be3b50"
 		},
 		{
-			"ImportPath": "github.com/coreos/go-etcd/etcd",
-			"Comment": "v2.0.0-11-gcc90c7b",
-			"Rev": "cc90c7b091275e606ad0ca7102a23fb2072f3f5e"
+			"ImportPath": "github.com/coreos/etcd/client",
+			"Comment": "v2.2.0-162-gba949ae",
+			"Rev": "ba949ae2be9a2dee53e09c5c0ad365233a4a4711"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/pathutil",
+			"Comment": "v2.2.0-162-gba949ae",
+			"Rev": "ba949ae2be9a2dee53e09c5c0ad365233a4a4711"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/types",
+			"Comment": "v2.2.0-162-gba949ae",
+			"Rev": "ba949ae2be9a2dee53e09c5c0ad365233a4a4711"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/ioutils",
@@ -47,7 +57,7 @@
 		},
 		{
 			"ImportPath": "github.com/docker/libkv",
-			"Rev": "975dbc9a3dc76a4b3ed1f60f73b9c0323b40336c"
+			"Rev": "22a9d7c7674819859798e3e823245f131520081e"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
@@ -125,6 +135,10 @@
 		{
 			"ImportPath": "github.com/stretchr/testify/mock",
 			"Rev": "dab07ac62d4905d3e48d17dc549c684ac3b7c15a"
+		},
+		{
+			"ImportPath": "github.com/ugorji/go/codec",
+			"Rev": "5abd4e96a45c386928ed2ca2a7ef63e2533e18ec"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
