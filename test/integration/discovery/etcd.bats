@@ -16,7 +16,7 @@ function start_store() {
 	docker_host run -d \
 		--net=host \
 		--name=$CONTAINER_NAME \
-		quay.io/coreos/etcd:v2.0.11 \
+		quay.io/coreos/etcd:v2.2.0 \
 		--listen-client-urls="http://0.0.0.0:${PORT}" \
 		--advertise-client-urls="http://${STORE_HOST}"
 }
