@@ -38,12 +38,12 @@ function teardown() {
 	local host=127.0.0.1:$port
 
 	# Bring up one manager, make sure it becomes primary.
-	swarm_manage --replication --leaderTTL "4s" --advertise 127.0.0.1:$SWARM_BASE_PORT "$DISCOVERY"
+	swarm_manage --replication --replication-ttl "4s" --advertise 127.0.0.1:$SWARM_BASE_PORT "$DISCOVERY"
 	run docker -H ${SWARM_HOSTS[0]} info
 	[[ "${output}" == *"Role: primary"* ]]
 
 	# Fire up a second manager. Ensure it's a replica forwarding to the right primary.
-	swarm_manage --replication --leaderTTL "4s" --advertise 127.0.0.1:$(($SWARM_BASE_PORT + 1)) "$DISCOVERY"
+	swarm_manage --replication --replication-ttl "4s" --advertise 127.0.0.1:$(($SWARM_BASE_PORT + 1)) "$DISCOVERY"
 	run docker -H ${SWARM_HOSTS[1]} info
 	[[ "${output}" == *"Role: replica"* ]]
 	[[ "${output}" == *"Primary: ${SWARM_HOSTS[0]}"* ]]
@@ -53,7 +53,7 @@ function teardown() {
 	retry 20 1 eval "docker -H ${SWARM_HOSTS[1]} info | grep -q 'Role: primary'"
 
 	# Add a new replica and make sure it sees the new leader as primary.
-	swarm_manage --replication --advertise 127.0.0.1:$(($SWARM_BASE_PORT + 2)) "$DISCOVERY"
+	swarm_manage --replication --replication-ttl "4s" --advertise 127.0.0.1:$(($SWARM_BASE_PORT + 2)) "$DISCOVERY"
 	run docker -H ${SWARM_HOSTS[2]} info
 	[[ "${output}" == *"Role: replica"* ]]
 	[[ "${output}" == *"Primary: ${SWARM_HOSTS[1]}"* ]]
@@ -61,18 +61,18 @@ function teardown() {
 
 @test "leader election - store failure" {
 	# Bring up one manager, make sure it becomes primary.
-	swarm_manage --replication --leaderTTL "4s" --advertise 127.0.0.1:$SWARM_BASE_PORT "$DISCOVERY"
+	swarm_manage --replication --replication-ttl "4s" --advertise 127.0.0.1:$SWARM_BASE_PORT "$DISCOVERY"
 	run docker -H ${SWARM_HOSTS[0]} info
 	[[ "${output}" == *"Role: primary"* ]]
 
 	# Fire up a second manager. Ensure it's a replica forwarding to the right primary.
-	swarm_manage --replication --leaderTTL "4s" --advertise 127.0.0.1:$(($SWARM_BASE_PORT + 1)) "$DISCOVERY"
+	swarm_manage --replication --replication-ttl "4s" --advertise 127.0.0.1:$(($SWARM_BASE_PORT + 1)) "$DISCOVERY"
 	run docker -H ${SWARM_HOSTS[1]} info
 	[[ "${output}" == *"Role: replica"* ]]
 	[[ "${output}" == *"Primary: ${SWARM_HOSTS[0]}"* ]]
 
 	# Fire up a third manager. Ensure it's a replica forwarding to the right primary.
-	swarm_manage --replication --leaderTTL "4s" --advertise 127.0.0.1:$(($SWARM_BASE_PORT + 2)) "$DISCOVERY"
+	swarm_manage --replication --replication-ttl "4s" --advertise 127.0.0.1:$(($SWARM_BASE_PORT + 2)) "$DISCOVERY"
 	run docker -H ${SWARM_HOSTS[2]} info
 	[[ "${output}" == *"Role: replica"* ]]
 	[[ "${output}" == *"Primary: ${SWARM_HOSTS[0]}"* ]]

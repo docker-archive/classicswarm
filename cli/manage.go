@@ -268,9 +268,9 @@ func manage(c *cli.Context) {
 		if !checkAddrFormat(addr) {
 			log.Fatal("--advertise should be of the form ip:port or hostname:port")
 		}
-		leaderTTL, err := time.ParseDuration(c.String("leaderTTL"))
+		leaderTTL, err := time.ParseDuration(c.String("replication-ttl"))
 		if err != nil {
-			log.Fatalf("invalid --leaderTTL: %v", err)
+			log.Fatalf("invalid --replication-ttl: %v", err)
 		}
 
 		setupReplication(c, cl, server, discovery, addr, leaderTTL, tlsConfig)
