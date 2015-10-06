@@ -122,9 +122,9 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	c.scheduler.Lock()
 
 	// Ensure the name is available
-	if cID := c.getIDFromName(name); cID != "" {
+	if !c.checkNameUniqueness(name) {
 		c.scheduler.Unlock()
-		return nil, fmt.Errorf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, cID, name)
+		return nil, fmt.Errorf("Conflict, The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
 	}
 
 	// Associate a Swarm ID to the container we are creating.
@@ -532,10 +532,10 @@ func (c *Cluster) Containers() cluster.Containers {
 	return out
 }
 
-func (c *Cluster) getIDFromName(name string) string {
+func (c *Cluster) checkNameUniqueness(name string) bool {
 	// Abort immediately if the name is empty.
 	if len(name) == 0 {
-		return ""
+		return true
 	}
 
 	c.RLock()
@@ -544,12 +544,20 @@ func (c *Cluster) getIDFromName(name string) string {
 		for _, c := range e.Containers() {
 			for _, cname := range c.Names {
 				if cname == name || cname == "/"+name {
-					return c.Id
+					return false
 				}
 			}
 		}
 	}
-	return ""
+
+	// check pending containers.
+	for _, c := range c.pendingContainers {
+		if c.Name == name {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Container returns the container with IDOrName in the cluster
@@ -693,8 +701,8 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	defer c.RUnlock()
 
 	// check new name whether available
-	if cID := c.getIDFromName(newName); cID != "" {
-		return fmt.Errorf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, cID, newName)
+	if !c.checkNameUniqueness(newName) {
+		return fmt.Errorf("Conflict, The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, newName)
 	}
 
 	// call engine rename
