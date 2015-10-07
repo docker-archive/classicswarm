@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/rand"
 	"net"
 	"strings"
 	"sync"
@@ -20,7 +21,9 @@ import (
 
 const (
 	// Force-refresh the state of the engine this often.
-	stateRefreshPeriod = 30 * time.Second
+	stateRefreshMinRange = 30
+	stateRefreshMaxRange = 60
+	stateRefreshRetries  = 3
 
 	// Timeout for requests sent out to the engine.
 	requestTimeout = 10 * time.Second
@@ -28,6 +31,10 @@ const (
 	// Minimum docker engine version supported by swarm.
 	minSupportedVersion = version.Version("1.6.0")
 )
+
+func init() {
+	rand.Seed(int64(time.Now().Nanosecond()))
+}
 
 // NewEngine is exported
 func NewEngine(addr string, overcommitRatio float64) *Engine {
@@ -336,12 +343,16 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 }
 
 func (e *Engine) refreshLoop() {
+	failedAttempts := 0
+
 	for {
 		var err error
 
+		refreshPeriod := time.Duration(rand.Intn(stateRefreshMaxRange-stateRefreshMinRange) + stateRefreshMinRange)
+
 		// Sleep stateRefreshPeriod or quit if we get stopped.
 		select {
-		case <-time.After(stateRefreshPeriod):
+		case <-time.After(refreshPeriod * time.Second):
 		case <-e.stopCh:
 			return
 		}
@@ -354,14 +365,17 @@ func (e *Engine) refreshLoop() {
 		}
 
 		if err != nil {
-			if e.healthy {
-				e.emitEvent("engine_disconnect")
+			failedAttempts++
+			if failedAttempts >= stateRefreshRetries {
+				if e.healthy {
+					e.emitEvent("engine_disconnect")
+				}
+				e.healthy = false
+				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as dead. Updated state failed %d times: %v", failedAttempts, err)
 			}
-			e.healthy = false
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as dead. Updated state failed: %v", err)
 		} else {
 			if !e.healthy {
-				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Info("Engine came back to life. Hooray!")
+				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Info("Engine came back to life after %d retries. Hooray!", failedAttempts)
 				if err := e.updateSpecs(); err != nil {
 					log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Update engine specs failed: %v", err)
 					continue
@@ -371,6 +385,7 @@ func (e *Engine) refreshLoop() {
 				e.emitEvent("engine_reconnect")
 			}
 			e.healthy = true
+			failedAttempts = 0
 		}
 	}
 }
