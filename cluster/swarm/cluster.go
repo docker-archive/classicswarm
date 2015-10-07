@@ -164,14 +164,9 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	return container, err
 }
 
-// RemoveContainer aka Remove a container from the cluster. Containers should
-// always be destroyed through the scheduler to guarantee atomicity.
+// RemoveContainer aka Remove a container from the cluster.
 func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes bool) error {
-	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
-
-	err := container.Engine.RemoveContainer(container, force, volumes)
-	return err
+	return container.Engine.RemoveContainer(container, force, volumes)
 }
 
 func (c *Cluster) getEngineByAddr(addr string) *cluster.Engine {
