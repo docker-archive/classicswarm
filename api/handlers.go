@@ -171,9 +171,14 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /networks
 func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
-	networks := c.cluster.Networks()
+	out := []*dockerclient.NetworkResource{}
+	for _, network := range c.cluster.Networks() {
+		tmp := (*network).NetworkResource
+		tmp.Name = network.Engine.Name + "/" + network.Name
+		out = append(out, &tmp)
+	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(networks)
+	json.NewEncoder(w).Encode(out)
 }
 
 // GET /volumes
@@ -674,6 +679,10 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 func proxyNetwork(c *context, w http.ResponseWriter, r *http.Request) {
 	var id = mux.Vars(r)["networkid"]
 	if network := c.cluster.Network(id); network != nil {
+
+		// Set the network ID in the proxied URL path.
+		r.URL.Path = strings.Replace(r.URL.Path, id, network.ID, 1)
+
 		proxy(c.tlsConfig, network.Engine.Addr, w, r)
 		return
 	}
