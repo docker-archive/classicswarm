@@ -112,6 +112,17 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 		// Forever: Create a store watch, watch until we get an error and then try again.
 		// Will only stop if we receive a stopCh request.
 		for {
+			// Create the path to watch if it does not exist yet
+			exists, err := s.store.Exists(s.path)
+			if err != nil {
+				errCh <- err
+			}
+			if !exists {
+				if err := s.store.Put(s.path, []byte(""), &store.WriteOptions{IsDir: true}); err != nil {
+					errCh <- err
+				}
+			}
+
 			// Set up a watch.
 			watchCh, err := s.store.WatchTree(s.path, stopCh)
 			if err != nil {
