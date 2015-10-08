@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"errors"
 	"strings"
 	"sync"
 
@@ -8,6 +9,10 @@ import (
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/docker/swarm/scheduler/strategy"
+)
+
+var (
+	errNoNodeAvailable = errors.New("No nodes available in the cluster")
 )
 
 // Scheduler is exported
@@ -26,14 +31,19 @@ func New(strategy strategy.PlacementStrategy, filters []filter.Filter) *Schedule
 	}
 }
 
-// SelectNodeForContainer will find a nice home for our container.
-func (s *Scheduler) SelectNodeForContainer(nodes []*node.Node, config *cluster.ContainerConfig) (*node.Node, error) {
+// SelectNodesForContainer will return a list of nodes where the container can
+// be scheduled, sorted by order or preference.
+func (s *Scheduler) SelectNodesForContainer(nodes []*node.Node, config *cluster.ContainerConfig) ([]*node.Node, error) {
 	accepted, err := filter.ApplyFilters(s.filters, config, nodes)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.strategy.PlaceContainer(config, accepted)
+	if len(accepted) == 0 {
+		return nil, errNoNodeAvailable
+	}
+
+	return s.strategy.RankAndSort(config, accepted)
 }
 
 // Strategy returns the strategy name

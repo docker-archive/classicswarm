@@ -140,11 +140,12 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 		configTemp.AddAffinity("image==~" + config.Image)
 	}
 
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), configTemp)
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), configTemp)
 	if err != nil {
 		c.scheduler.Unlock()
 		return nil, err
 	}
+	n := nodes[0]
 	engine, ok := c.engines[n.ID]
 	if !ok {
 		c.scheduler.Unlock()
@@ -684,14 +685,11 @@ func (c *Cluster) Info() [][]string {
 
 // RANDOMENGINE returns a random engine.
 func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), &cluster.ContainerConfig{})
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), &cluster.ContainerConfig{})
 	if err != nil {
 		return nil, err
 	}
-	if n != nil {
-		return c.engines[n.ID], nil
-	}
-	return nil, nil
+	return c.engines[nodes[0].ID], nil
 }
 
 // RenameContainer rename a container
@@ -718,11 +716,12 @@ func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer)
 		CpuShares: buildImage.CpuShares,
 		Memory:    buildImage.Memory,
 	}}
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
 	c.scheduler.Unlock()
 	if err != nil {
 		return err
 	}
+	n := nodes[0]
 
 	reader, err := c.engines[n.ID].BuildImage(buildImage)
 	if err != nil {

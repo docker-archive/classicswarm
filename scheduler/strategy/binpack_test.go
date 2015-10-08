@@ -34,6 +34,12 @@ func createContainer(ID string, config *cluster.ContainerConfig) *cluster.Contai
 	}
 }
 
+func selectTopNode(t *testing.T, s PlacementStrategy, config *cluster.ContainerConfig, nodes []*node.Node) *node.Node {
+	n, err := s.RankAndSort(config, nodes)
+	assert.NoError(t, err)
+	return n[0]
+}
+
 func TestPlaceEqualWeight(t *testing.T) {
 	s := &BinpackPlacementStrategy{}
 
@@ -55,8 +61,7 @@ func TestPlaceEqualWeight(t *testing.T) {
 
 	// add another container 1G
 	config = createConfig(1, 0)
-	node, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node.AddContainer(createContainer("c4", config)))
 	assert.Equal(t, node.UsedMemory, int64(3*1024*1024*1024))
 
@@ -76,15 +81,13 @@ func TestPlaceContainerMemory(t *testing.T) {
 
 	// add 1 container 1G
 	config := createConfig(1, 0)
-	node1, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node1 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 	assert.Equal(t, node1.UsedMemory, int64(1024*1024*1024))
 
 	// add another container 1G
 	config = createConfig(1, 0)
-	node2, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node2 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 	assert.Equal(t, node2.UsedMemory, int64(2*1024*1024*1024))
 
@@ -103,15 +106,13 @@ func TestPlaceContainerCPU(t *testing.T) {
 
 	// add 1 container 1CPU
 	config := createConfig(0, 1)
-	node1, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node1 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 	assert.Equal(t, node1.UsedCpus, int64(1))
 
 	// add another container 1CPU
 	config = createConfig(0, 1)
-	node2, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node2 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 	assert.Equal(t, node2.UsedCpus, int64(2))
 
@@ -130,24 +131,22 @@ func TestPlaceContainerHuge(t *testing.T) {
 
 	// add 100 container 1CPU
 	for i := 0; i < 100; i++ {
-		node, err := s.PlaceContainer(createConfig(0, 1), nodes)
-		assert.NoError(t, err)
+		node := selectTopNode(t, s, createConfig(0, 1), nodes)
 		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(0, 1))))
 	}
 
 	// try to add another container 1CPU
-	_, err := s.PlaceContainer(createConfig(0, 1), nodes)
+	_, err := s.RankAndSort(createConfig(0, 1), nodes)
 	assert.Error(t, err)
 
 	// add 100 container 1G
 	for i := 100; i < 200; i++ {
-		node, err := s.PlaceContainer(createConfig(1, 0), nodes)
-		assert.NoError(t, err)
+		node := selectTopNode(t, s, createConfig(1, 0), nodes)
 		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(1, 0))))
 	}
 
 	// try to add another container 1G
-	_, err = s.PlaceContainer(createConfig(1, 0), nodes)
+	_, err = s.RankAndSort(createConfig(1, 0), nodes)
 	assert.Error(t, err)
 }
 
@@ -161,25 +160,22 @@ func TestPlaceContainerOvercommit(t *testing.T) {
 
 	// Below limit should still work.
 	config.Memory = 90 * 1024 * 1024 * 1024
-	node, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node := selectTopNode(t, s, config, nodes)
 	assert.Equal(t, node, nodes[0])
 
 	// At memory limit should still work.
 	config.Memory = 100 * 1024 * 1024 * 1024
-	node, err = s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node = selectTopNode(t, s, config, nodes)
 	assert.Equal(t, node, nodes[0])
 
 	// Up to 105% it should still work.
 	config.Memory = 105 * 1024 * 1024 * 1024
-	node, err = s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node = selectTopNode(t, s, config, nodes)
 	assert.Equal(t, node, nodes[0])
 
 	// Above it should return an error.
 	config.Memory = 106 * 1024 * 1024 * 1024
-	node, err = s.PlaceContainer(config, nodes)
+	_, err = s.RankAndSort(config, nodes)
 	assert.Error(t, err)
 }
 
@@ -194,20 +190,18 @@ func TestPlaceContainerDemo(t *testing.T) {
 
 	// try to place a 10G container
 	config := createConfig(10, 0)
-	_, err := s.PlaceContainer(config, nodes)
+	_, err := s.RankAndSort(config, nodes)
 
 	// check that it refuses because the cluster is full
 	assert.Error(t, err)
 
 	// add one container 1G
 	config = createConfig(1, 0)
-	node1, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node1 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 	// add another container 1G
 	config = createConfig(1, 0)
-	node1bis, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node1bis := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node1bis.AddContainer(createContainer("c2", config)))
 
 	// check that both containers ended on the same node
@@ -216,8 +210,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 
 	// add another container 2G
 	config = createConfig(2, 0)
-	node2, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node2 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node2.AddContainer(createContainer("c3", config)))
 
 	// check that it ends up on another node
@@ -225,8 +218,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 
 	// add another container 1G
 	config = createConfig(1, 0)
-	node3, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node3 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node3.AddContainer(createContainer("c4", config)))
 
 	// check that it ends up on another node
@@ -235,8 +227,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 
 	// add another container 1G
 	config = createConfig(1, 0)
-	node3bis, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node3bis := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node3bis.AddContainer(createContainer("c5", config)))
 
 	// check that it ends up on the same node
@@ -244,7 +235,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 
 	// try to add another container
 	config = createConfig(1, 0)
-	_, err = s.PlaceContainer(config, nodes)
+	_, err = s.RankAndSort(config, nodes)
 
 	// check that it refuses because the cluster is full
 	assert.Error(t, err)
@@ -256,8 +247,7 @@ func TestPlaceContainerDemo(t *testing.T) {
 
 	// add another container
 	config = createConfig(1, 0)
-	node2bis, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node2bis := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node2bis.AddContainer(createContainer("c6", config)))
 
 	// check it ends up on `node3`
@@ -275,14 +265,12 @@ func TestComplexPlacement(t *testing.T) {
 
 	// add one container 2G
 	config := createConfig(2, 0)
-	node1, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node1 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 
 	// add one container 3G
 	config = createConfig(3, 0)
-	node2, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node2 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 
 	// check that they end up on separate nodes
@@ -290,8 +278,7 @@ func TestComplexPlacement(t *testing.T) {
 
 	// add one container 1G
 	config = createConfig(1, 0)
-	node3, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node3 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node3.AddContainer(createContainer("c3", config)))
 
 	// check that it ends up on the same node as the 3G
