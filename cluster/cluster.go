@@ -35,9 +35,6 @@ type Cluster interface {
 	// Return all networks
 	Networks() Networks
 
-	// Return network the matching `IDOrName`
-	Network(IDOrName string) *Network
-
 	// Create a volume
 	CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error)
 

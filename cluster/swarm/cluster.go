@@ -585,20 +585,6 @@ func (c *Cluster) Networks() cluster.Networks {
 	return out
 }
 
-// Network returns the network `IDOrName` in the cluster
-func (c *Cluster) Network(IDOrName string) *cluster.Network {
-	// Abort immediately if the name is empty.
-	if len(IDOrName) == 0 {
-		return nil
-	}
-
-	c.RLock()
-	defer c.RUnlock()
-
-	return c.Networks().Get(IDOrName)
-
-}
-
 // Volumes returns all the volumes in the cluster.
 func (c *Cluster) Volumes() []*cluster.Volume {
 	c.RLock()
