@@ -89,3 +89,11 @@ func TestAddAffinity(t *testing.T) {
 	config.AddAffinity("image==~testimage")
 	assert.Len(t, config.Affinities(), 1)
 }
+
+func TestHaveNodeConstraint(t *testing.T) {
+	config := BuildContainerConfig(dockerclient.ContainerConfig{})
+	assert.False(t, config.HaveNodeConstraint())
+
+	config = BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:node==node1"}})
+	assert.True(t, config.HaveNodeConstraint())
+}
