@@ -125,3 +125,18 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" != *'"Name": "node-1"'* ]]
 }
+
+@test "soft affinity" {
+	start_docker_with_busybox 2
+
+	# Create a new image just on the second host.
+	docker -H ${HOSTS[1]} tag busybox test
+
+	swarm_manage
+
+	docker_swarm run --name c1 -e affinity:image==~not_exist -e affinity:image==test -d busybox:latest sh
+
+	run docker_swarm inspect c1
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
+}
