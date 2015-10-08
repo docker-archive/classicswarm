@@ -35,6 +35,9 @@ type Cluster interface {
 	// Return all networks
 	Networks() Networks
 
+	// Create a network
+	CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error)
+
 	// Create a volume
 	CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error)
 

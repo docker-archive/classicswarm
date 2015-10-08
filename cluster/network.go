@@ -35,7 +35,7 @@ func (networks Networks) Get(IDOrName string) *Network {
 
 	// Match name, /name or engine/name.
 	for _, network := range networks {
-		if network.Engine.ID+"/"+network.Name == IDOrName || network.Engine.Name+"/"+network.Name == IDOrName {
+		if network.Name == IDOrName || network.Engine.ID+"/"+network.Name == IDOrName || network.Engine.Name+"/"+network.Name == IDOrName {
 			candidates = append(candidates, network)
 		}
 	}
@@ -48,7 +48,7 @@ func (networks Networks) Get(IDOrName string) *Network {
 
 	// Match name, /name or engine/name.
 	for _, network := range networks {
-		if network.Name == IDOrName || network.Name == "/"+IDOrName {
+		if network.Name == "/"+IDOrName {
 			return network
 		}
 	}

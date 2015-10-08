@@ -329,6 +329,29 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 	return out, err
 }
 
+// CreateNetwork creates a network in the cluster
+func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (response *dockerclient.NetworkCreateResponse, err error) {
+	var (
+		parts  = strings.SplitN(request.Name, "/", 2)
+		config = &cluster.ContainerConfig{}
+	)
+
+	if len(parts) == 2 {
+		// a node was specified, create the container only on this node
+		request.Name = parts[1]
+		config = cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:node==" + parts[0]}})
+	}
+
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
+	if err != nil {
+		return nil, err
+	}
+	if n != nil {
+		return c.engines[n.ID].CreateNetwork(request)
+	}
+	return nil, nil
+}
+
 // CreateVolume creates a volume in the cluster
 func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*cluster.Volume, error) {
 	var (

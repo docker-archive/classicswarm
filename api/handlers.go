@@ -427,6 +427,25 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// POST /networks/create
+func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
+	var request dockerclient.NetworkCreate
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response, err := c.cluster.CreateNetwork(&request)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 // POST /volumes
 func postVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	var request dockerclient.VolumeCreateRequest

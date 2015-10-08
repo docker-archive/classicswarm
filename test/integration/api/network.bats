@@ -29,21 +29,23 @@ function teardown() {
 	[ "${#lines[@]}" -eq 13 ]
 }
 
-@test "docker volume create" {
-skip
+@test "docker network create" {
 	start_docker 2
 	swarm_manage
 
-	run docker_swarm volume ls
-	[ "${#lines[@]}" -eq 1 ]
+	run docker_swarm network ls
+	[ "${#lines[@]}" -eq 7 ]
 
-	docker_swarm volume create --name=test_volume
-	run docker_swarm volume
-	[ "${#lines[@]}" -eq 3 ]
+	docker_swarm network create -d bridge test1
+	run docker_swarm network ls
+	[ "${#lines[@]}" -eq 8 ]
 
-	docker_swarm run -d -v=/tmp busybox true
-	run docker_swarm volume
-	[ "${#lines[@]}" -eq 4 ]
+	docker_swarm network create -d bridge node-1/test2
+	run docker_swarm network ls
+	[ "${#lines[@]}" -eq 9 ]
+
+	run docker_swarm network create -d bridge node-2/test3
+	[ "$status" -ne 0 ]
 }
 
 @test "docker volume rm" {
