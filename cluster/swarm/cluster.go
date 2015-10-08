@@ -27,13 +27,17 @@ type pendingContainer struct {
 }
 
 func (p *pendingContainer) ToContainer() *cluster.Container {
-	return &cluster.Container{
-		Container: dockerclient.Container{
-			Names: []string{"/" + p.Name},
-		},
-		Config: p.Config,
-		Engine: p.Engine,
+	container := &cluster.Container{
+		Container: dockerclient.Container{},
+		Config:    p.Config,
+		Engine:    p.Engine,
 	}
+
+	if p.Name != "" {
+		container.Container.Names = []string{"/" + p.Name}
+	}
+
+	return container
 }
 
 // Cluster is exported
@@ -124,7 +128,7 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	// Ensure the name is available
 	if !c.checkNameUniqueness(name) {
 		c.scheduler.Unlock()
-		return nil, fmt.Errorf("Conflict, The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
+		return nil, fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
 	}
 
 	// Associate a Swarm ID to the container we are creating.
@@ -697,7 +701,7 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 
 	// check new name whether available
 	if !c.checkNameUniqueness(newName) {
-		return fmt.Errorf("Conflict, The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, newName)
+		return fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, newName)
 	}
 
 	// call engine rename
