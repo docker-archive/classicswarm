@@ -64,7 +64,7 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 		}
 		if len(candidates) == 0 {
 			if affinity.isSoft {
-				return nodes, nil
+				continue
 			}
 			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", affinity.key, OPERATORS[affinity.operator], affinity.value)
 		}
