@@ -427,10 +427,11 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
 
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), t.config)
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), t.config)
 	if err != nil {
 		return false
 	}
+	n := nodes[0]
 	s, ok := c.slaves[n.ID]
 	if !ok {
 		t.error <- fmt.Errorf("Unable to create on slave %q", n.ID)
@@ -526,14 +527,12 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 	c.RLock()
 	defer c.RUnlock()
 
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), &cluster.ContainerConfig{})
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), &cluster.ContainerConfig{})
 	if err != nil {
 		return nil, err
 	}
-	if n != nil {
-		return c.slaves[n.ID].engine, nil
-	}
-	return nil, nil
+	n := nodes[0]
+	return c.slaves[n.ID].engine, nil
 }
 
 // BuildImage build an image
@@ -545,11 +544,12 @@ func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer)
 		CpuShares: buildImage.CpuShares,
 		Memory:    buildImage.Memory,
 	}}
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
 	c.scheduler.Unlock()
 	if err != nil {
 		return err
 	}
+	n := nodes[0]
 
 	reader, err := c.slaves[n.ID].engine.BuildImage(buildImage)
 	if err != nil {

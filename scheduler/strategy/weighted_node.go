@@ -29,6 +29,10 @@ func (n weightedNodeList) Less(i, j int) bool {
 		jp = n[j]
 	)
 
+	// If the nodes have the same weight sort them out by number of containers.
+	if ip.Weight == jp.Weight {
+		return len(ip.Node.Containers) < len(jp.Node.Containers)
+	}
 	return ip.Weight < jp.Weight
 }
 

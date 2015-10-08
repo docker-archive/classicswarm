@@ -29,8 +29,7 @@ func TestSpreadPlaceEqualWeight(t *testing.T) {
 
 	// add another container 1G
 	config = createConfig(1, 0)
-	node, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node.AddContainer(createContainer("c4", config)))
 	assert.Equal(t, node.UsedMemory, int64(3*1024*1024*1024))
 
@@ -50,15 +49,13 @@ func TestSpreadPlaceContainerMemory(t *testing.T) {
 
 	// add 1 container 1G
 	config := createConfig(1, 0)
-	node1, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node1 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 	assert.Equal(t, node1.UsedMemory, int64(1024*1024*1024))
 
 	// add another container 1G
 	config = createConfig(1, 0)
-	node2, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node2 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 	assert.Equal(t, node2.UsedMemory, int64(1024*1024*1024))
 
@@ -77,15 +74,13 @@ func TestSpreadPlaceContainerCPU(t *testing.T) {
 
 	// add 1 container 1CPU
 	config := createConfig(0, 1)
-	node1, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node1 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 	assert.Equal(t, node1.UsedCpus, int64(1))
 
 	// add another container 1CPU
 	config = createConfig(0, 1)
-	node2, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node2 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 	assert.Equal(t, node2.UsedCpus, int64(1))
 
@@ -104,24 +99,22 @@ func TestSpreadPlaceContainerHuge(t *testing.T) {
 
 	// add 100 container 1CPU
 	for i := 0; i < 100; i++ {
-		node, err := s.PlaceContainer(createConfig(0, 1), nodes)
-		assert.NoError(t, err)
+		node := selectTopNode(t, s, createConfig(0, 1), nodes)
 		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(0, 1))))
 	}
 
 	// try to add another container 1CPU
-	_, err := s.PlaceContainer(createConfig(0, 1), nodes)
+	_, err := s.RankAndSort(createConfig(0, 1), nodes)
 	assert.Error(t, err)
 
 	// add 100 container 1G
 	for i := 100; i < 200; i++ {
-		node, err := s.PlaceContainer(createConfig(1, 0), nodes)
-		assert.NoError(t, err)
+		node := selectTopNode(t, s, createConfig(1, 0), nodes)
 		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), createConfig(1, 0))))
 	}
 
 	// try to add another container 1G
-	_, err = s.PlaceContainer(createConfig(1, 0), nodes)
+	_, err = s.RankAndSort(createConfig(1, 0), nodes)
 	assert.Error(t, err)
 }
 
@@ -134,25 +127,22 @@ func TestSpreadPlaceContainerOvercommit(t *testing.T) {
 
 	// Below limit should still work.
 	config.Memory = 90 * 1024 * 1024 * 1024
-	node, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node := selectTopNode(t, s, config, nodes)
 	assert.Equal(t, node, nodes[0])
 
 	// At memory limit should still work.
 	config.Memory = 100 * 1024 * 1024 * 1024
-	node, err = s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node = selectTopNode(t, s, config, nodes)
 	assert.Equal(t, node, nodes[0])
 
 	// Up to 105% it should still work.
 	config.Memory = 105 * 1024 * 1024 * 1024
-	node, err = s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node = selectTopNode(t, s, config, nodes)
 	assert.Equal(t, node, nodes[0])
 
 	// Above it should return an error.
 	config.Memory = 106 * 1024 * 1024 * 1024
-	node, err = s.PlaceContainer(config, nodes)
+	_, err := s.RankAndSort(config, nodes)
 	assert.Error(t, err)
 }
 
@@ -166,14 +156,12 @@ func TestSpreadComplexPlacement(t *testing.T) {
 
 	// add one container 2G
 	config := createConfig(2, 0)
-	node1, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node1 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node1.AddContainer(createContainer("c1", config)))
 
 	// add one container 3G
 	config = createConfig(3, 0)
-	node2, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node2 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node2.AddContainer(createContainer("c2", config)))
 
 	// check that they end up on separate nodes
@@ -181,8 +169,7 @@ func TestSpreadComplexPlacement(t *testing.T) {
 
 	// add one container 1G
 	config = createConfig(1, 0)
-	node3, err := s.PlaceContainer(config, nodes)
-	assert.NoError(t, err)
+	node3 := selectTopNode(t, s, config, nodes)
 	assert.NoError(t, node3.AddContainer(createContainer("c3", config)))
 
 	// check that it ends up on the same node as the 2G
