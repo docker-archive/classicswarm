@@ -542,6 +542,15 @@ func (e *Engine) RemoveContainer(container *Container, force, volumes bool) erro
 	return nil
 }
 
+// CreateNetwork creates a network in the engine
+func (e *Engine) CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error) {
+	response, err := e.client.CreateNetwork(request)
+
+	e.RefreshNetworks()
+
+	return response, err
+}
+
 // CreateVolume creates a volume in the engine
 func (e *Engine) CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error) {
 	volume, err := e.client.CreateVolume(request)
