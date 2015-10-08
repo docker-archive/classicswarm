@@ -39,6 +39,22 @@ function teardown() {
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 }
 
+@test "soft constraint" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker_swarm run --name c1 -e constraint:storagedriver==~not_exist -e constraint:node==node-0 -d busybox:latest sh
+	docker_swarm run --name c2 -e constraint:storagedriver==~not_exist -e constraint:node==node-0 -d busybox:latest sh
+
+	run docker_swarm inspect c1
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-0"'* ]]
+
+	run docker_swarm inspect c2
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-0"'* ]]
+}
+
 @test "label constraints" {
 	start_docker_with_busybox 1 --label foo=a
 	start_docker_with_busybox 1 --label foo=b

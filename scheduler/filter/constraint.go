@@ -43,7 +43,7 @@ func (f *ConstraintFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 		}
 		if len(candidates) == 0 {
 			if constraint.isSoft {
-				return nodes, nil
+				continue
 			}
 			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", constraint.key, OPERATORS[constraint.operator], constraint.value)
 		}
