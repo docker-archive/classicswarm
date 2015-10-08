@@ -90,7 +90,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 	container, err := c.createContainer(config, name, false)
 
 	//  fails with image not found, then try to reschedule with soft-image-affinity
-	if err != nil && strings.HasSuffix(err.Error(), "not found") {
+	if err != nil && strings.HasSuffix(err.Error(), "not found") && !config.HaveNodeConstraint() {
 		// Check if the image exists in the cluster
 		// If exists, retry with a soft-image-affinity
 		if image := c.Image(config.Image); image != nil {
