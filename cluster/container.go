@@ -49,10 +49,14 @@ func (containers Containers) Get(IDOrName string) *Container {
 
 	// Match name, /name or engine/name.
 	for _, container := range containers {
+		found := false
 		for _, name := range container.Names {
 			if name == IDOrName || name == "/"+IDOrName || container.Engine.ID+name == IDOrName || container.Engine.Name+name == IDOrName {
-				return container
+				found = true
 			}
+		}
+		if found {
+			candidates = append(candidates, container)
 		}
 	}
 
