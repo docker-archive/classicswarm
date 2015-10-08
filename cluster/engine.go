@@ -32,10 +32,6 @@ const (
 	minSupportedVersion = version.Version("1.6.0")
 )
 
-func init() {
-	rand.Seed(int64(time.Now().Nanosecond()))
-}
-
 // NewEngine is exported
 func NewEngine(addr string, overcommitRatio float64) *Engine {
 	e := &Engine{
@@ -43,6 +39,7 @@ func NewEngine(addr string, overcommitRatio float64) *Engine {
 		client:          nopclient.NewNopClient(),
 		Labels:          make(map[string]string),
 		stopCh:          make(chan struct{}),
+		r:               rand.New(rand.NewSource(time.Now().UTC().UnixNano())),
 		containers:      make(map[string]*Container),
 		volumes:         make(map[string]*Volume),
 		healthy:         true,
@@ -64,6 +61,7 @@ type Engine struct {
 	Labels map[string]string
 
 	stopCh          chan struct{}
+	r               *rand.Rand
 	containers      map[string]*Container
 	images          []*Image
 	volumes         map[string]*Volume
@@ -348,7 +346,7 @@ func (e *Engine) refreshLoop() {
 	for {
 		var err error
 
-		refreshPeriod := time.Duration(rand.Intn(stateRefreshMaxRange-stateRefreshMinRange) + stateRefreshMinRange)
+		refreshPeriod := time.Duration(e.r.Intn(stateRefreshMaxRange-stateRefreshMinRange) + stateRefreshMinRange)
 
 		// Sleep stateRefreshPeriod or quit if we get stopped.
 		select {
