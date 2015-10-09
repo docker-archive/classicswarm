@@ -48,30 +48,21 @@ function teardown() {
 	[ "$status" -ne 0 ]
 }
 
-@test "docker volume rm" {
-skip
+@test "docker network rm" {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	run docker_swarm volume rm test_volume
+	run docker_swarm network rm test_network
 	[ "$status" -ne 0 ]
 
-	docker_swarm run -d --name=test_container -v=/tmp busybox true
-	
-	run docker_swarm volume ls -q
-	volume=${output}
-	[ "${#lines[@]}" -eq 1 ]
-
-	run docker_swarm volume rm $volume
+	run docker_swarm network rm bridge
 	[ "$status" -ne 0 ]
 
-	docker_swarm rm test_container
-	
-	run docker_swarm volume rm $volume
-	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 1 ]
-	
-	run docker_swarm volume
-	echo $output
-	[ "${#lines[@]}" -eq 1 ]
+	docker_swarm network create -d bridge node-0/test
+	run docker_swarm network ls
+	[ "${#lines[@]}" -eq 8 ]
+
+	docker_swarm network rm node-0/test
+	run docker_swarm network ls
+	[ "${#lines[@]}" -eq 7 ]
 }

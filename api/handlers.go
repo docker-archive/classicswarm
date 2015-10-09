@@ -668,6 +668,27 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(NewWriteFlusher(w)).Encode(out)
 }
 
+// DELETE /networks/{networkid:.*}
+func deleteNetworks(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var id = mux.Vars(r)["networkid"]
+
+	if network := c.cluster.Networks().Get(id); network != nil {
+		if err := c.cluster.RemoveNetwork(network); err != nil {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		httpError(w, fmt.Sprintf("No such network %s", id), http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // DELETE /volumes/{names:.*}
 func deleteVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
