@@ -82,9 +82,10 @@ var routes = map[string]map[string]handler{
 		"/containers/{name:.*}/archive": proxyContainer,
 	},
 	"DELETE": {
-		"/containers/{name:.*}": deleteContainers,
-		"/images/{name:.*}":     deleteImages,
-		"/volumes/{name:.*}":    deleteVolumes,
+		"/containers/{name:.*}":    deleteContainers,
+		"/images/{name:.*}":        deleteImages,
+		"/networks/{networkid:.*}": deleteNetworks,
+		"/volumes/{name:.*}":       deleteVolumes,
 	},
 	"OPTIONS": {
 		"": optionsHandler,

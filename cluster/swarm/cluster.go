@@ -173,6 +173,11 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes b
 	return container.Engine.RemoveContainer(container, force, volumes)
 }
 
+// RemoveNetwork removes a network from the cluster
+func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
+	return network.Engine.RemoveNetwork(network)
+}
+
 func (c *Cluster) getEngineByAddr(addr string) *cluster.Engine {
 	c.RLock()
 	defer c.RUnlock()

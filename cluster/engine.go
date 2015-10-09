@@ -222,6 +222,13 @@ func (e *Engine) RemoveImage(image *Image, name string, force bool) ([]*dockercl
 	return e.client.RemoveImage(name, force)
 }
 
+// RemoveNetwork deletes a network from the engine.
+func (e *Engine) RemoveNetwork(network *Network) error {
+	err := e.client.RemoveNetwork(network.ID)
+	e.RefreshNetworks()
+	return err
+}
+
 // RemoveVolume deletes a volume from the engine.
 func (e *Engine) RemoveVolume(name string) error {
 	if err := e.client.RemoveVolume(name); err != nil {

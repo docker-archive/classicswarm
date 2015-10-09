@@ -236,6 +236,11 @@ func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*clus
 	return nil, errNotSupported
 }
 
+// RemoveNetwork removes network from the cluster
+func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
+	return errNotSupported
+}
+
 // RemoveVolumes removes volumes from the cluster
 func (c *Cluster) RemoveVolumes(name string) (bool, error) {
 	return false, errNotSupported
