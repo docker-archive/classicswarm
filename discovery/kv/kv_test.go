@@ -69,8 +69,11 @@ func TestWatch(t *testing.T) {
 	s := d.store.(*libkvmock.Mock)
 	mockCh := make(chan []*store.KVPair)
 
-	// The first watch will fail.
+	// The first watch will fail on those three calls
+	s.On("Exists", "path/"+discoveryPath).Return(false, errors.New("test error"))
+	s.On("Put", "path/"+discoveryPath, mock.Anything, mock.Anything).Return(errors.New("test error"))
 	s.On("WatchTree", "path/"+discoveryPath, mock.Anything).Return(mockCh, errors.New("test error")).Once()
+
 	// The second one will succeed.
 	s.On("WatchTree", "path/"+discoveryPath, mock.Anything).Return(mockCh, nil).Once()
 	expected := discovery.Entries{
@@ -89,7 +92,7 @@ func TestWatch(t *testing.T) {
 	assert.EqualError(t, <-errCh, "test error")
 	// We have to drain the error channel otherwise Watch will get stuck.
 	go func() {
-		for _ = range errCh {
+		for range errCh {
 		}
 	}()
 
