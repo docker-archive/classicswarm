@@ -7,23 +7,23 @@ function teardown() {
 	stop_docker
 }
 
-@test "docker volume" {
+@test "docker volume ls" {
 	start_docker_with_busybox 2
 	swarm_manage
 
 	# make sure no volume exist
-	run docker_swarm volume
+	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 1 ]
 
 	# run
 	docker_swarm run -d -v=/tmp busybox true
 
-	run docker_swarm volume
+	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 2 ]
 
 	docker_swarm run -d -v=/tmp busybox true
 
-	run docker_swarm volume
+	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 3 ]
 }
 
@@ -50,11 +50,11 @@ function teardown() {
 	[ "${#lines[@]}" -eq 1 ]
 
 	docker_swarm volume create --name=test_volume
-	run docker_swarm volume
+	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 3 ]
 
 	docker_swarm run -d -v=/tmp busybox true
-	run docker_swarm volume
+	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 4 ]
 }
 
@@ -80,7 +80,6 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 1 ]
 	
-	run docker_swarm volume
-	echo $output
+	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 1 ]
 }
