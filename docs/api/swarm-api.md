@@ -42,6 +42,8 @@ POST "/images/create" : "docker import" flow not implement
 
 * `GET "/images/json"` : Use '--filter node=\<Node name\>' to show images of the specific node.
 
+* `POST "/containers/create"`: `CpuShares` in `HostConfig` sets the number of CPU cores allocated to the container.
+
 ## Docker Swarm documentation index
 
 - [User guide](https://docs.docker.com/swarm/)
