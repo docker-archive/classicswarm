@@ -553,6 +553,14 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 	c.eventsHandler.Wait(r.RemoteAddr, until)
 }
 
+// POST /exec/{execid:.*}/start
+func postExecStart(c *context, w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Connection") == "" {
+		proxyContainer(c, w, r)
+	}
+	proxyHijack(c, w, r)
+}
+
 // POST /containers/{name:.*}/exec
 func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
