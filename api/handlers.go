@@ -436,6 +436,10 @@ func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if request.Driver == "" {
+		request.Driver = "overlay"
+	}
+
 	response, err := c.cluster.CreateNetwork(&request)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
