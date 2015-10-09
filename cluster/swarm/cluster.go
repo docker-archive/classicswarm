@@ -20,14 +20,35 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
+type pendingContainer struct {
+	Config *cluster.ContainerConfig
+	Name   string
+	Engine *cluster.Engine
+}
+
+func (p *pendingContainer) ToContainer() *cluster.Container {
+	container := &cluster.Container{
+		Container: dockerclient.Container{},
+		Config:    p.Config,
+		Engine:    p.Engine,
+	}
+
+	if p.Name != "" {
+		container.Container.Names = []string{"/" + p.Name}
+	}
+
+	return container
+}
+
 // Cluster is exported
 type Cluster struct {
 	sync.RWMutex
 
-	eventHandler cluster.EventHandler
-	engines      map[string]*cluster.Engine
-	scheduler    *scheduler.Scheduler
-	discovery    discovery.Discovery
+	eventHandler      cluster.EventHandler
+	engines           map[string]*cluster.Engine
+	scheduler         *scheduler.Scheduler
+	discovery         discovery.Discovery
+	pendingContainers map[string]*pendingContainer
 
 	overcommitRatio float64
 	TLSConfig       *tls.Config
@@ -38,11 +59,12 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
-		engines:         make(map[string]*cluster.Engine),
-		scheduler:       scheduler,
-		TLSConfig:       TLSConfig,
-		discovery:       discovery,
-		overcommitRatio: 0.05,
+		engines:           make(map[string]*cluster.Engine),
+		scheduler:         scheduler,
+		TLSConfig:         TLSConfig,
+		discovery:         discovery,
+		pendingContainers: make(map[string]*pendingContainer),
+		overcommitRatio:   0.05,
 	}
 
 	if val, ok := options.Float("swarm.overcommit", ""); ok {
@@ -102,15 +124,16 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 
 func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, withSoftImageAffinity bool) (*cluster.Container, error) {
 	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
 
 	// Ensure the name is available
-	if cID := c.getIDFromName(name); cID != "" {
-		return nil, fmt.Errorf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", name, cID, name)
+	if !c.checkNameUniqueness(name) {
+		c.scheduler.Unlock()
+		return nil, fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
 	}
 
 	// Associate a Swarm ID to the container we are creating.
-	config.SetSwarmID(c.generateUniqueID())
+	swarmID := c.generateUniqueID()
+	config.SetSwarmID(swarmID)
 
 	configTemp := config
 	if withSoftImageAffinity {
@@ -119,25 +142,35 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 
 	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), configTemp)
 	if err != nil {
+		c.scheduler.Unlock()
 		return nil, err
 	}
-
-	if nn, ok := c.engines[n.ID]; ok {
-		container, err := nn.Create(config, name, true)
-		return container, err
+	engine, ok := c.engines[n.ID]
+	if !ok {
+		c.scheduler.Unlock()
+		return nil, nil
 	}
 
-	return nil, nil
+	c.pendingContainers[swarmID] = &pendingContainer{
+		Name:   name,
+		Config: config,
+		Engine: engine,
+	}
+
+	c.scheduler.Unlock()
+
+	container, err := engine.Create(config, name, true)
+
+	c.scheduler.Lock()
+	delete(c.pendingContainers, swarmID)
+	c.scheduler.Unlock()
+
+	return container, err
 }
 
-// RemoveContainer aka Remove a container from the cluster. Containers should
-// always be destroyed through the scheduler to guarantee atomicity.
+// RemoveContainer aka Remove a container from the cluster.
 func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes bool) error {
-	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
-
-	err := container.Engine.RemoveContainer(container, force, volumes)
-	return err
+	return container.Engine.RemoveContainer(container, force, volumes)
 }
 
 func (c *Cluster) getEngineByAddr(addr string) *cluster.Engine {
@@ -498,10 +531,10 @@ func (c *Cluster) Containers() cluster.Containers {
 	return out
 }
 
-func (c *Cluster) getIDFromName(name string) string {
+func (c *Cluster) checkNameUniqueness(name string) bool {
 	// Abort immediately if the name is empty.
 	if len(name) == 0 {
-		return ""
+		return true
 	}
 
 	c.RLock()
@@ -510,12 +543,20 @@ func (c *Cluster) getIDFromName(name string) string {
 		for _, c := range e.Containers() {
 			for _, cname := range c.Names {
 				if cname == name || cname == "/"+name {
-					return c.Id
+					return false
 				}
 			}
 		}
 	}
-	return ""
+
+	// check pending containers.
+	for _, c := range c.pendingContainers {
+		if c.Name == name {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Container returns the container with IDOrName in the cluster
@@ -571,8 +612,14 @@ func (c *Cluster) listNodes() []*node.Node {
 	defer c.RUnlock()
 
 	out := make([]*node.Node, 0, len(c.engines))
-	for _, n := range c.engines {
-		out = append(out, node.NewNode(n))
+	for _, e := range c.engines {
+		node := node.NewNode(e)
+		for _, c := range c.pendingContainers {
+			if c.Engine.ID == e.ID && node.Container(c.Config.SwarmID()) == nil {
+				node.AddContainer(c.ToContainer())
+			}
+		}
+		out = append(out, node)
 	}
 
 	return out
@@ -653,8 +700,8 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	defer c.RUnlock()
 
 	// check new name whether available
-	if cID := c.getIDFromName(newName); cID != "" {
-		return fmt.Errorf("Conflict, The name %s is already assigned to %s. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, cID, newName)
+	if !c.checkNameUniqueness(newName) {
+		return fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, newName)
 	}
 
 	// call engine rename

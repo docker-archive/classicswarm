@@ -14,24 +14,33 @@ func TestDependencyFilterSimple(t *testing.T) {
 		f     = DependencyFilter{}
 		nodes = []*node.Node{
 			{
-				ID:         "node-0-id",
-				Name:       "node-0-name",
-				Addr:       "node-0",
-				Containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c0"}}},
+				ID:   "node-0-id",
+				Name: "node-0-name",
+				Addr: "node-0",
+				Containers: []*cluster.Container{{
+					Container: dockerclient.Container{Id: "c0"},
+					Config:    &cluster.ContainerConfig{},
+				}},
 			},
 
 			{
-				ID:         "node-1-id",
-				Name:       "node-1-name",
-				Addr:       "node-1",
-				Containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c1"}}},
+				ID:   "node-1-id",
+				Name: "node-1-name",
+				Addr: "node-1",
+				Containers: []*cluster.Container{{
+					Container: dockerclient.Container{Id: "c1"},
+					Config:    &cluster.ContainerConfig{},
+				}},
 			},
 
 			{
-				ID:         "node-2-id",
-				Name:       "node-2-name",
-				Addr:       "node-2",
-				Containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c2"}}},
+				ID:   "node-2-id",
+				Name: "node-2-name",
+				Addr: "node-2",
+				Containers: []*cluster.Container{{
+					Container: dockerclient.Container{Id: "c2"},
+					Config:    &cluster.ContainerConfig{},
+				}},
 			},
 		}
 		result []*node.Node
@@ -109,17 +118,28 @@ func TestDependencyFilterMulti(t *testing.T) {
 				Name: "node-0-name",
 				Addr: "node-0",
 				Containers: []*cluster.Container{
-					{Container: dockerclient.Container{Id: "c0"}},
-					{Container: dockerclient.Container{Id: "c1"}},
+					{
+						Container: dockerclient.Container{Id: "c0"},
+						Config:    &cluster.ContainerConfig{},
+					},
+					{
+						Container: dockerclient.Container{Id: "c1"},
+						Config:    &cluster.ContainerConfig{},
+					},
 				},
 			},
 
 			// nodes[1] has c2
 			{
-				ID:         "node-1-id",
-				Name:       "node-1-name",
-				Addr:       "node-1",
-				Containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c2"}}},
+				ID:   "node-1-id",
+				Name: "node-1-name",
+				Addr: "node-1",
+				Containers: []*cluster.Container{
+					{
+						Container: dockerclient.Container{Id: "c2"},
+						Config:    &cluster.ContainerConfig{},
+					},
+				},
 			},
 
 			// nodes[2] has nothing
@@ -179,17 +199,28 @@ func TestDependencyFilterChaining(t *testing.T) {
 				Name: "node-0-name",
 				Addr: "node-0",
 				Containers: []*cluster.Container{
-					{Container: dockerclient.Container{Id: "c0"}},
-					{Container: dockerclient.Container{Id: "c1"}},
+					{
+						Container: dockerclient.Container{Id: "c0"},
+						Config:    &cluster.ContainerConfig{},
+					},
+					{
+						Container: dockerclient.Container{Id: "c1"},
+						Config:    &cluster.ContainerConfig{},
+					},
 				},
 			},
 
 			// nodes[1] has c2
 			{
-				ID:         "node-1-id",
-				Name:       "node-1-name",
-				Addr:       "node-1",
-				Containers: []*cluster.Container{{Container: dockerclient.Container{Id: "c2"}}},
+				ID:   "node-1-id",
+				Name: "node-1-name",
+				Addr: "node-1",
+				Containers: []*cluster.Container{
+					{
+						Container: dockerclient.Container{Id: "c2"},
+						Config:    &cluster.ContainerConfig{},
+					},
+				},
 			},
 
 			// nodes[2] has nothing
