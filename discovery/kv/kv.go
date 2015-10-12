@@ -7,6 +7,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/pkg/tlsconfig"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
@@ -47,7 +48,7 @@ func Init() {
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Duration) error {
+func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Duration, discoveryOpt map[string]string) error {
 	var (
 		parts = strings.SplitN(uris, "/", 2)
 		addrs = strings.Split(parts[0], ",")
@@ -63,9 +64,34 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Du
 	s.ttl = ttl
 	s.path = path.Join(s.prefix, discoveryPath)
 
+	var config *store.Config
+	if discoveryOpt["kv.cacertfile"] != "" && discoveryOpt["kv.certfile"] != "" && discoveryOpt["kv.keyfile"] != "" {
+		log.Debug("Initializing discovery with TLS")
+		tlsConfig, err := tlsconfig.Client(tlsconfig.Options{
+			CAFile:   discoveryOpt["kv.cacertfile"],
+			CertFile: discoveryOpt["kv.certfile"],
+			KeyFile:  discoveryOpt["kv.keyfile"],
+		})
+		if err != nil {
+			return err
+		}
+		config = &store.Config{
+			// Set ClientTLS to trigger https (bug in libkv/etcd)
+			ClientTLS: &store.ClientTLSConfig{
+				CACertFile: discoveryOpt["kv.cacertfile"],
+				CertFile:   discoveryOpt["kv.certfile"],
+				KeyFile:    discoveryOpt["kv.keyfile"],
+			},
+			// The actual TLS config that will be used
+			TLS: tlsConfig,
+		}
+	} else {
+		log.Debug("Initializing discovery without TLS")
+	}
+
 	// Creates a new store, will ignore options given
 	// if not supported by the chosen store
-	s.store, err = libkv.NewStore(s.backend, addrs, &store.Config{})
+	s.store, err = libkv.NewStore(s.backend, addrs, config)
 	return err
 }
 
