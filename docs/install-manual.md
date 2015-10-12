@@ -53,9 +53,12 @@ Docker daemon, monitors it, and updates the discovery backend with the node's st
 
 This example uses the Docker Hub based `token` discovery service. Log into **each node** and do the following.
 
-1. Start the Docker daemon with the `-H` flag. This ensures that the Docker remote API on *Swarm Agents* is available over TCP for the *Swarm Manager*.
+1. Start the Docker daemon with the `-H` flag. This ensures that the
+Docker remote API on *Swarm Agents* is available over TCP for the
+*Swarm Manager*, as well as the standard unix socket which is
+available in default docker installs.
 
-		$ docker daemon -H tcp://0.0.0.0:2375
+		$ docker daemon -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock
 
 	> **Note**: versions of docker prior to 1.8 used the `-d` flag instead of the `docker daemon` subcommand.
 
