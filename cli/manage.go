@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -97,7 +98,7 @@ func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 }
 
 // Initialize the discovery service.
-func createDiscovery(uri string, c *cli.Context) discovery.Discovery {
+func createDiscovery(uri string, c *cli.Context, discoveryOpt []string) discovery.Discovery {
 	hb, err := time.ParseDuration(c.String("heartbeat"))
 	if err != nil {
 		log.Fatalf("invalid --heartbeat: %v", err)
@@ -107,12 +108,25 @@ func createDiscovery(uri string, c *cli.Context) discovery.Discovery {
 	}
 
 	// Set up discovery.
-	discovery, err := discovery.New(uri, hb, 0)
+	discovery, err := discovery.New(uri, hb, 0, getDiscoveryOpt(c))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return discovery
+}
+
+func getDiscoveryOpt(c *cli.Context) map[string]string {
+	// Process the store options
+	options := map[string]string{}
+	for _, option := range c.StringSlice("discovery-opt") {
+		if !strings.Contains(option, "=") {
+			log.Fatal("--discovery-opt must contain key=value strings")
+		}
+		kvpair := strings.SplitN(option, "=", 2)
+		options[kvpair[0]] = kvpair[1]
+	}
+	return options
 }
 
 func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, discovery discovery.Discovery, addr string, leaderTTL time.Duration, tlsConfig *tls.Config) {
@@ -222,7 +236,7 @@ func manage(c *cli.Context) {
 	if uri == "" {
 		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
 	}
-	discovery := createDiscovery(uri, c)
+	discovery := createDiscovery(uri, c, c.StringSlice("discovery-opt"))
 	s, err := strategy.New(c.String("strategy"))
 	if err != nil {
 		log.Fatal(err)

@@ -11,12 +11,12 @@ import (
 
 func TestInitialize(t *testing.T) {
 	d := &Discovery{}
-	d.Initialize("/path/to/file", 1000, 0)
+	d.Initialize("/path/to/file", 1000, 0, nil)
 	assert.Equal(t, d.path, "/path/to/file")
 }
 
 func TestNew(t *testing.T) {
-	d, err := discovery.New("file:///path/to/file", 0, 0)
+	d, err := discovery.New("file:///path/to/file", 0, 0, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, d.(*Discovery).path, "/path/to/file")
 }
@@ -73,7 +73,7 @@ func TestWatch(t *testing.T) {
 
 	// Set up file discovery.
 	d := &Discovery{}
-	d.Initialize(tmp.Name(), 1000, 0)
+	d.Initialize(tmp.Name(), 1000, 0, nil)
 	stopCh := make(chan struct{})
 	ch, errCh := d.Watch(stopCh)
 
@@ -81,7 +81,7 @@ func TestWatch(t *testing.T) {
 	assert.Error(t, <-errCh)
 	// We have to drain the error channel otherwise Watch will get stuck.
 	go func() {
-		for _ = range errCh {
+		for range errCh {
 		}
 	}()
 
