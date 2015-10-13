@@ -226,7 +226,7 @@ discovery README in the Docker Swarm repository</a>.
 
 ## Docker Swarm documentation index
 
-- [User guide](/)
-- [Scheduler strategies](/scheduler/strategy.md)
-- [Scheduler filters](/scheduler/filter.md)
-- [Swarm API](/api/swarm-api.md)
+- [User guide]()
+- [Scheduler strategies](scheduler/strategy.md)
+- [Scheduler filters](scheduler/filter.md)
+- [Swarm API](api/swarm-api.md)

@@ -116,10 +116,7 @@ strategy prefers the node with most containers running.
 
 ## Docker Swarm documentation index
 
-
-- [User guide](/)
-- [Discovery options](/discovery/)
-- [Scheduler strategies](/scheduler/strategy)
-- [Scheduler filters](/scheduler/filter)
-- [Swarm API](/api/swarm-api)
-
+- [User guide](../index.md)
+- [Discovery options](../discovery.md)
+- [Scheduler filters](filter.md)
+- [Swarm API](../api/swarm-api.md)
