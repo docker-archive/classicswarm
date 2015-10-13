@@ -348,12 +348,12 @@ func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (response *
 		config = cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:node==" + parts[0]}})
 	}
 
-	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
 	if err != nil {
 		return nil, err
 	}
-	if n != nil {
-		return c.engines[n.ID].CreateNetwork(request)
+	if nodes != nil {
+		return c.engines[nodes[0].ID].CreateNetwork(request)
 	}
 	return nil, nil
 }
