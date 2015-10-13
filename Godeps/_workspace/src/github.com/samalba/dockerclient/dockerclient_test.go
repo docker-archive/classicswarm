@@ -119,6 +119,7 @@ func TestListContainersWithSize(t *testing.T) {
 	cnt := containers[0]
 	assertEqual(t, cnt.SizeRw, int64(123), "")
 }
+
 func TestListContainersWithFilters(t *testing.T) {
 	client := testDockerClient(t)
 	containers, err := client.ListContainers(true, true, "{'id':['332375cfbc23edb921a21026314c3497674ba8bdcb2c85e0e65ebf2017f688ce']}")

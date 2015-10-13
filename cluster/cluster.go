@@ -32,6 +32,15 @@ type Cluster interface {
 	// cluster.Containers().Get(IDOrName)
 	Container(IDOrName string) *Container
 
+	// Return all networks
+	Networks() Networks
+
+	// Create a network
+	CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error)
+
+	// Remove a network from the cluster
+	RemoveNetwork(network *Network) error
+
 	// Create a volume
 	CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error)
 

@@ -73,6 +73,7 @@ type Engine struct {
 	refreshDelayer  *delayer
 	containers      map[string]*Container
 	images          []*Image
+	networks        map[string]*Network
 	volumes         map[string]*Volume
 	client          dockerclient.Client
 	eventHandler    EventHandler
@@ -89,6 +90,7 @@ func NewEngine(addr string, overcommitRatio float64) *Engine {
 		Labels:          make(map[string]string),
 		stopCh:          make(chan struct{}),
 		containers:      make(map[string]*Container),
+		networks:        make(map[string]*Network),
 		volumes:         make(map[string]*Volume),
 		healthy:         true,
 		overcommitRatio: int64(overcommitRatio * 100),
@@ -138,6 +140,7 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 
 	// Do not check error as older daemon don't support this call
 	e.RefreshVolumes()
+	e.RefreshNetworks()
 
 	// Start the update loop.
 	go e.refreshLoop()
@@ -219,6 +222,13 @@ func (e *Engine) RemoveImage(image *Image, name string, force bool) ([]*dockercl
 	return e.client.RemoveImage(name, force)
 }
 
+// RemoveNetwork deletes a network from the engine.
+func (e *Engine) RemoveNetwork(network *Network) error {
+	err := e.client.RemoveNetwork(network.ID)
+	e.RefreshNetworks()
+	return err
+}
+
 // RemoveVolume deletes a volume from the engine.
 func (e *Engine) RemoveVolume(name string) error {
 	if err := e.client.RemoveVolume(name); err != nil {
@@ -244,6 +254,21 @@ func (e *Engine) RefreshImages() error {
 	e.images = nil
 	for _, image := range images {
 		e.images = append(e.images, &Image{Image: *image, Engine: e})
+	}
+	e.Unlock()
+	return nil
+}
+
+// RefreshNetworks refreshes the list of networks on the engine.
+func (e *Engine) RefreshNetworks() error {
+	networks, err := e.client.ListNetworks("")
+	if err != nil {
+		return err
+	}
+	e.Lock()
+	e.networks = make(map[string]*Network)
+	for _, network := range networks {
+		e.networks[network.ID] = &Network{NetworkResource: *network, Engine: e}
 	}
 	e.Unlock()
 	return nil
@@ -382,6 +407,7 @@ func (e *Engine) refreshLoop() {
 		if err == nil {
 			// Do not check error as older daemon don't support this call
 			e.RefreshVolumes()
+			e.RefreshNetworks()
 			err = e.RefreshImages()
 		}
 
@@ -496,6 +522,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
 	e.refreshContainer(id, true)
+	e.RefreshNetworks()
 
 	e.RLock()
 	defer e.RUnlock()
@@ -520,6 +547,15 @@ func (e *Engine) RemoveContainer(container *Container, force, volumes bool) erro
 	delete(e.containers, container.Id)
 
 	return nil
+}
+
+// CreateNetwork creates a network in the engine
+func (e *Engine) CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error) {
+	response, err := e.client.CreateNetwork(request)
+
+	e.RefreshNetworks()
+
+	return response, err
 }
 
 // CreateVolume creates a volume in the engine
@@ -621,6 +657,18 @@ func (e *Engine) Images(all bool, filters dockerfilters.Args) []*Image {
 	return images
 }
 
+// Networks returns all the networks in the engine
+func (e *Engine) Networks() Networks {
+	e.RLock()
+
+	networks := Networks{}
+	for _, network := range e.networks {
+		networks = append(networks, network)
+	}
+	e.RUnlock()
+	return networks
+}
+
 // Volumes returns all the volumes in the engine
 func (e *Engine) Volumes() []*Volume {
 	e.RLock()
@@ -662,10 +710,12 @@ func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface
 		// order to update container.Info and get the new NetworkSettings.
 		e.refreshContainer(ev.Id, true)
 		e.RefreshVolumes()
+		e.RefreshNetworks()
 	default:
 		// Otherwise, do a "soft" refresh of the container.
 		e.refreshContainer(ev.Id, false)
 		e.RefreshVolumes()
+		e.RefreshNetworks()
 	}
 
 	// If there is no event handler registered, abort right now.

@@ -169,6 +169,18 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(images)
 }
 
+// GET /networks
+func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
+	out := []*dockerclient.NetworkResource{}
+	for _, network := range c.cluster.Networks() {
+		tmp := (*network).NetworkResource
+		tmp.Name = network.Engine.Name + "/" + network.Name
+		out = append(out, &tmp)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(out)
+}
+
 // GET /volumes
 func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	volumes := struct {
@@ -415,6 +427,29 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// POST /networks/create
+func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
+	var request dockerclient.NetworkCreate
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if request.Driver == "" {
+		request.Driver = "overlay"
+	}
+
+	response, err := c.cluster.CreateNetwork(&request)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 // POST /volumes
 func postVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	var request dockerclient.VolumeCreateRequest
@@ -637,6 +672,27 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(NewWriteFlusher(w)).Encode(out)
 }
 
+// DELETE /networks/{networkid:.*}
+func deleteNetworks(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var id = mux.Vars(r)["networkid"]
+
+	if network := c.cluster.Networks().Get(id); network != nil {
+		if err := c.cluster.RemoveNetwork(network); err != nil {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		httpError(w, fmt.Sprintf("No such network %s", id), http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // DELETE /volumes/{names:.*}
 func deleteVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
@@ -661,6 +717,20 @@ func deleteVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 // GET /_ping
 func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
+}
+
+// Proxy a request to the right node
+func proxyNetwork(c *context, w http.ResponseWriter, r *http.Request) {
+	var id = mux.Vars(r)["networkid"]
+	if network := c.cluster.Networks().Get(id); network != nil {
+
+		// Set the network ID in the proxied URL path.
+		r.URL.Path = strings.Replace(r.URL.Path, id, network.ID, 1)
+
+		proxy(c.tlsConfig, network.Engine.Addr, w, r)
+		return
+	}
+	httpError(w, fmt.Sprintf("No such network: %s", id), http.StatusNotFound)
 }
 
 // Proxy a request to the right node
