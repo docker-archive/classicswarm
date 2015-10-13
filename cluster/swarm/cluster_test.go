@@ -131,6 +131,7 @@ func TestImportImage(t *testing.T) {
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
+	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
 
 	// connect client
 	engine.ConnectWithClient(client)
@@ -180,6 +181,7 @@ func TestLoadImage(t *testing.T) {
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
+	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
 
 	// connect client
 	engine.ConnectWithClient(client)
@@ -232,6 +234,7 @@ func TestTagImage(t *testing.T) {
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return(images, nil)
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
+	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
 
 	// connect client
 	engine.ConnectWithClient(client)

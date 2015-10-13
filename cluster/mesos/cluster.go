@@ -226,9 +226,19 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 	return nil, errNotSupported
 }
 
+// CreateNetwork creates a network in the cluster
+func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error) {
+	return nil, errNotSupported
+}
+
 // CreateVolume creates a volume in the cluster
 func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*cluster.Volume, error) {
 	return nil, errNotSupported
+}
+
+// RemoveNetwork removes network from the cluster
+func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
+	return errNotSupported
 }
 
 // RemoveVolumes removes volumes from the cluster
@@ -304,6 +314,11 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.name"] = newName
 
 	return nil
+}
+
+// Networks returns all the networks in the cluster.
+func (c *Cluster) Networks() cluster.Networks {
+	return cluster.Networks{}
 }
 
 // Volumes returns all the volumes in the cluster.

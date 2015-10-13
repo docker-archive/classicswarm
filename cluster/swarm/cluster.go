@@ -174,6 +174,11 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes b
 	return container.Engine.RemoveContainer(container, force, volumes)
 }
 
+// RemoveNetwork removes a network from the cluster
+func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
+	return network.Engine.RemoveNetwork(network)
+}
+
 func (c *Cluster) getEngineByAddr(addr string) *cluster.Engine {
 	c.RLock()
 	defer c.RUnlock()
@@ -328,6 +333,29 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 	}
 
 	return out, err
+}
+
+// CreateNetwork creates a network in the cluster
+func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (response *dockerclient.NetworkCreateResponse, err error) {
+	var (
+		parts  = strings.SplitN(request.Name, "/", 2)
+		config = &cluster.ContainerConfig{}
+	)
+
+	if len(parts) == 2 {
+		// a node was specified, create the container only on this node
+		request.Name = parts[1]
+		config = cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:node==" + parts[0]}})
+	}
+
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
+	if err != nil {
+		return nil, err
+	}
+	if n != nil {
+		return c.engines[n.ID].CreateNetwork(request)
+	}
+	return nil, nil
 }
 
 // CreateVolume creates a volume in the cluster
@@ -570,8 +598,20 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	c.RLock()
 	defer c.RUnlock()
 
-	return cluster.Containers(c.Containers()).Get(IDOrName)
+	return c.Containers().Get(IDOrName)
+}
 
+// Networks returns all the networks in the cluster.
+func (c *Cluster) Networks() cluster.Networks {
+	c.RLock()
+	defer c.RUnlock()
+
+	out := cluster.Networks{}
+	for _, e := range c.engines {
+		out = append(out, e.Networks()...)
+	}
+
+	return out
 }
 
 // Volumes returns all the volumes in the cluster.
