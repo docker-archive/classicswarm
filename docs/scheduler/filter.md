@@ -406,7 +406,7 @@ This filter will prevent scheduling containers on unhealthy nodes.
 
 ## Docker Swarm documentation index
 
-- [User guide](/)
-- [Discovery options](/discovery/)
-- [Scheduler strategies](/scheduler/strategy/)
-- [Swarm API](/api/swarm-api)
+- [User guide](../index.md)
+- [Discovery options](../discovery.md)
+- [Scheduler strategies](strategy.md)
+- [Swarm API](../api/swarm-api.md)

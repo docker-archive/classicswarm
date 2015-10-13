@@ -38,7 +38,7 @@ node with a discovery service. This example uses the token discovery
 service hosted by Docker Hub. This discovery service associates a
 token with instances of the Docker Daemon running on each node. Other
 discovery service backends such as `etcd`, `consul`, and `zookeeper`
-are [available](/discovery).
+are [available](discovery.md).
 
 1. List the machines on your system.
 
@@ -56,13 +56,13 @@ are [available](/discovery).
 		INFO[0000] Creating VirtualBox VM...                    
 		INFO[0005] Starting VirtualBox VM...                    
 		INFO[0005] Waiting for VM to start...                   
-		INFO[0050] "local" has been created and is now the active machine. 
-		INFO[0050] To point your Docker client at it, run this in your shell: eval "$(docker-machine env local)" 
-		
+		INFO[0050] "local" has been created and is now the active machine.
+		INFO[0050] To point your Docker client at it, run this in your shell: eval "$(docker-machine env local)"
+
 3. Load the `local` machine configuration into your shell.
 
 		$ eval "$(docker-machine env local)"
-		
+
 4. Generate a discovery token using the Docker Swarm image.
 
 	The command below runs the `swarm create` command in a container. If you
@@ -72,21 +72,21 @@ are [available](/discovery).
 		$ docker run swarm create
 		Unable to find image 'swarm:latest' locally
 		latest: Pulling from swarm
-		de939d6ed512: Pull complete 
-		79195899a8a4: Pull complete 
-		79ad4f2cc8e0: Pull complete 
-		0db1696be81b: Pull complete 
-		ae3b6728155e: Pull complete 
-		57ec2f5f3e06: Pull complete 
-		73504b2882a3: Already exists 
+		de939d6ed512: Pull complete
+		79195899a8a4: Pull complete
+		79ad4f2cc8e0: Pull complete
+		0db1696be81b: Pull complete
+		ae3b6728155e: Pull complete
+		57ec2f5f3e06: Pull complete
+		73504b2882a3: Already exists
 		swarm:latest: The image you are pulling has been verified. Important: image verification is a tech preview feature and should not be relied on to provide security.
 		Digest: sha256:aaaf6c18b8be01a75099cc554b4fb372b8ec677ae81764dcdf85470279a61d6f
 		Status: Downloaded newer image for swarm:latest
 		fe0cc96a72cf04dba8c1c4aa79536ec3
-		
+
 	The `swarm create` command returned the  `fe0cc96a72cf04dba8c1c4aa79536ec3`
 	token.
-		
+
 5. Save the token in a safe place.
 
 	You'll use this token in the next step to create a Docker Swarm.
@@ -96,7 +96,7 @@ are [available](/discovery).
 
 A single system in your network is known as your Docker Swarm manager. The swarm
 manager orchestrates and schedules containers on the entire cluster. The swarm
-manager rules a set of agents (also called nodes or Docker nodes). 
+manager rules a set of agents (also called nodes or Docker nodes).
 
 Swarm agents are responsible for hosting containers. They are regular docker
 daemons and you can communicate with them using the Docker remote API.
@@ -113,20 +113,20 @@ In this section, you create a swarm manager and two nodes.
 				swarm-master
 
 	For example:
-	
+
  		$ docker-machine create -d virtualbox --swarm --swarm-master --swarm-discovery token://fe0cc96a72cf04dba8c1c4aa79536ec3 swarm-master
 		INFO[0000] Creating SSH key...                          
 		INFO[0000] Creating VirtualBox VM...                    
 		INFO[0005] Starting VirtualBox VM...                    
 		INFO[0005] Waiting for VM to start...                   
-		INFO[0060] "swarm-master" has been created and is now the active machine. 
-		INFO[0060] To point your Docker client at it, run this in your shell: eval "$(docker-machine env swarm-master)" 
-		
+		INFO[0060] "swarm-master" has been created and is now the active machine.
+		INFO[0060] To point your Docker client at it, run this in your shell: eval "$(docker-machine env swarm-master)"
+
 2. Open your VirtualBox Manager, it should contain the `local` machine and the
 new `swarm-master` machine.
 
-	![VirtualBox](/images/virtual-box.png)
-		
+	![VirtualBox](images/virtual-box.png)
+
 3. Create a swarm node.
 
 			docker-machine create \
@@ -136,19 +136,19 @@ new `swarm-master` machine.
 			swarm-agent-00
 
 	For example:
-	
+
  		$ docker-machine create -d virtualbox --swarm --swarm-discovery token://fe0cc96a72cf04dba8c1c4aa79536ec3 swarm-agent-00
 		INFO[0000] Creating SSH key...                          
 		INFO[0000] Creating VirtualBox VM...                    
 		INFO[0005] Starting VirtualBox VM...                    
 		INFO[0006] Waiting for VM to start...                   
-		INFO[0066] "swarm-agent-00" has been created and is now the active machine. 
-		INFO[0066] To point your Docker client at it, run this in your shell: eval "$(docker-machine env swarm-agent-00)" 
+		INFO[0066] "swarm-agent-00" has been created and is now the active machine.
+		INFO[0066] To point your Docker client at it, run this in your shell: eval "$(docker-machine env swarm-agent-00)"
 
 3. Add another agent called `swarm-agent-01`.
 
 		$ docker-machine create -d virtualbox --swarm --swarm-discovery token://fe0cc96a72cf04dba8c1c4aa79536ec3 swarm-agent-01
-		
+
 	You should see the two agents in your VirtualBox Manager.
 
 ## Direct your swarm
@@ -181,10 +181,10 @@ your swarm, and start an image on your swarm.
 			└ Containers: 2
 			└ Reserved CPUs: 0 / 8
 
-  You can see that each agent and the master all have port `2376` exposed. When you create a swarm, you can use any port you like and even different ports on different nodes. Each swarm node runs the swarm agent container. 
-  
+  You can see that each agent and the master all have port `2376` exposed. When you create a swarm, you can use any port you like and even different ports on different nodes. Each swarm node runs the swarm agent container.
+
   The master is running both the swarm manager and a swarm agent container. This isn't recommended in a production environment because it can cause problems with agent failover. However, it is perfectly fine to do this in a learning environment like this one.
-			
+
 3. Check the images currently running on your swarm.
 
 		$ docker ps  -a
@@ -196,7 +196,7 @@ your swarm, and start an image on your swarm.
 
 4. Run the Docker `hello-world` test image on your swarm.
 
-	
+
 	 	$ docker run hello-world
 		Hello from Docker.
 		This message shows that your installation appears to be working correctly.
@@ -215,7 +215,7 @@ your swarm, and start an image on your swarm.
 
 		For more examples and ideas, visit:
 		 http://docs.docker.com/userguide/
-		 
+
 5. Use the `docker ps` command to find out which node the container ran on.
 
 		$ docker ps -a
@@ -232,5 +232,5 @@ your swarm, and start an image on your swarm.
 At this point, you've installed Docker Swarm by pulling the latest image of
 it from Docker Hub. Then, you built and ran a swarm on your local machine
 using VirtualBox. If you want, you can onto read an [overview of Docker Swarm
-features](/). Alternatively, you can develop a more in-depth view of Swarm by
+features](index.md). Alternatively, you can develop a more in-depth view of Swarm by
 [manually installing Swarm](install-manual.md) on a network.
