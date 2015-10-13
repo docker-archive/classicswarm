@@ -98,6 +98,10 @@ func (client *NopClient) PullImage(name string, auth *dockerclient.AuthConfig) e
 	return ErrNoEngine
 }
 
+func (client *NopClient) PushImage(name, tag string, auth *dockerclient.AuthConfig) error {
+	return ErrNoEngine
+}
+
 func (client *NopClient) LoadImage(reader io.Reader) error {
 	return ErrNoEngine
 }

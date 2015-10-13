@@ -102,6 +102,7 @@ func (client *DockerClient) doStreamRequest(method string, path string, in io.Re
 		return nil, err
 	}
 	if resp.StatusCode == 404 {
+		defer resp.Body.Close()
 		return nil, ErrNotFound
 	}
 	if resp.StatusCode >= 400 {
@@ -523,6 +524,37 @@ func (client *DockerClient) Version() (*Version, error) {
 		return nil, err
 	}
 	return version, nil
+}
+
+func (client *DockerClient) PushImage(name string, tag string, auth *AuthConfig) error {
+	v := url.Values{}
+	if tag != "" {
+		v.Set("tag", tag)
+	}
+	uri := fmt.Sprintf("/%s/images/%s/push?%s", APIVersion, url.QueryEscape(name), v.Encode())
+	req, err := http.NewRequest("POST", client.URL.String()+uri, nil)
+	if auth != nil {
+		if encodedAuth, err := auth.encode(); err != nil {
+			return err
+		} else {
+			req.Header.Add("X-Registry-Auth", encodedAuth)
+		}
+	}
+	resp, err := client.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	var finalObj map[string]interface{}
+	for decoder := json.NewDecoder(resp.Body); err == nil; err = decoder.Decode(&finalObj) {
+	}
+	if err != io.EOF {
+		return err
+	}
+	if err, ok := finalObj["error"]; ok {
+		return fmt.Errorf("%v", err)
+	}
+	return nil
 }
 
 func (client *DockerClient) PullImage(name string, auth *AuthConfig) error {
