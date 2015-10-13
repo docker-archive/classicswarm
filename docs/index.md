@@ -54,12 +54,12 @@ To dynamically configure and manage the services in your containers, you use a d
 ## Advanced Scheduling
 
 To learn more about advanced scheduling, see the
-[strategies](/scheduler/strategy) and [filters](/scheduler/filter.md)
+[strategies](scheduler/strategy.md) and [filters](scheduler/filter.md)
 documents.
 
 ## Swarm API
 
-The [Docker Swarm API](/api/swarm-api.md) is compatible with
+The [Docker Swarm API](api/swarm-api.md) is compatible with
 the [Docker remote
 API](http://docs.docker.com/reference/api/docker_remote_api/), and extends it
 with some new endpoints.
