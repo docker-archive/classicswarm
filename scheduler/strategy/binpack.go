@@ -21,25 +21,17 @@ func (p *BinpackPlacementStrategy) Name() string {
 	return "binpack"
 }
 
-// PlaceContainer places a container on the node with the most running containers.
-func (p *BinpackPlacementStrategy) PlaceContainer(config *cluster.ContainerConfig, nodes []*node.Node) (*node.Node, error) {
+// RankAndSort sorts nodes based on the binpack strategy applied to the container config.
+func (p *BinpackPlacementStrategy) RankAndSort(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
 	weightedNodes, err := weighNodes(config, nodes)
 	if err != nil {
 		return nil, err
 	}
 
-	// sort by highest weight
 	sort.Sort(sort.Reverse(weightedNodes))
-
-	topNode := weightedNodes[0]
-	for _, node := range weightedNodes {
-		if node.Weight != topNode.Weight {
-			break
-		}
-		if len(node.Node.Containers) > len(topNode.Node.Containers) {
-			topNode = node
-		}
+	output := make([]*node.Node, len(weightedNodes))
+	for i, n := range weightedNodes {
+		output[i] = n.Node
 	}
-
-	return topNode.Node, nil
+	return output, nil
 }

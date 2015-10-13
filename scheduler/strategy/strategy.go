@@ -16,10 +16,11 @@ type PlacementStrategy interface {
 	// an error if one is encountered.
 	// If no initial configuration is needed, this may be a no-op and return a nil error.
 	Initialize() error
-	// Given a container configuration and a set of nodes, select the target
-	// node where the container should be scheduled. PlaceContainer returns
-	// an error if there is no available node on which to schedule the container.
-	PlaceContainer(config *cluster.ContainerConfig, nodes []*node.Node) (*node.Node, error)
+	// RankAndSort applies the strategy to a list of nodes and ranks them based
+	// on the best fit given the container configuration.  It returns a sorted
+	// list of nodes (based on their ranks) or an error if there is no
+	// available node on which to schedule the container.
+	RankAndSort(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error)
 }
 
 var (
