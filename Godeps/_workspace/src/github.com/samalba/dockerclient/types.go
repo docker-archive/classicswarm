@@ -461,13 +461,28 @@ type VolumeCreateRequest struct {
 	DriverOpts map[string]string // DriverOpts holds the driver specific options to use for when creating the volume.
 }
 
+// IPAM represents IP Address Management
+type IPAM struct {
+	Driver string       `json:"driver"`
+	Config []IPAMConfig `json:"config"`
+}
+
+// IPAMConfig represents IPAM configurations
+type IPAMConfig struct {
+	Subnet     string            `json:"subnet,omitempty"`
+	IPRange    string            `json:"ip_range,omitempty"`
+	Gateway    string            `json:"gateway,omitempty"`
+	AuxAddress map[string]string `json:"auxiliary_address,omitempty"`
+}
+
 // NetworkResource is the body of the "get network" http response message
 type NetworkResource struct {
 	Name       string                      `json:"name"`
 	ID         string                      `json:"id"`
+	Scope      string                      `json:"scope"`
 	Driver     string                      `json:"driver"`
+	IPAM       IPAM                        `json:"ipam"`
 	Containers map[string]EndpointResource `json:"containers"`
-	Options    map[string]interface{}      `json:"options,omitempty"`
 }
 
 //EndpointResource contains network resources allocated and usd for a container in a network
@@ -480,10 +495,10 @@ type EndpointResource struct {
 
 // NetworkCreate is the expected body of the "create network" http request message
 type NetworkCreate struct {
-	Name           string                 `json:"name"`
-	CheckDuplicate bool                   `json:"check_duplicate"`
-	Driver         string                 `json:"driver"`
-	Options        map[string]interface{} `json:"options"`
+	Name           string `json:"name"`
+	CheckDuplicate bool   `json:"check_duplicate"`
+	Driver         string `json:"driver"`
+	IPAM           IPAM   `json:"ipam"`
 }
 
 // NetworkCreateResponse is the response message sent by the server for network create call
