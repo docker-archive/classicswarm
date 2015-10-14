@@ -83,19 +83,6 @@ You can contribute to Docker Swarm in several different ways:
 
 Finally, if you want to see what we have for the future and learn more about our release cycles, all this information is detailed on the [wiki](https://github.com/docker/swarm/wiki)
 
-
-## Creators
-
-**Andrea Luzzardi**
-
-- <http://twitter.com/aluzzardi>
-- <http://github.com/aluzzardi>
-
-**Victor Vieux**
-
-- <http://twitter.com/vieux>
-- <http://github.com/vieux>
-
 ## Copyright and license
 
 Code and documentation copyright 2014-2015 Docker, inc. Code released under the
