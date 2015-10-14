@@ -26,7 +26,7 @@ function teardown() {
 	[ "$status" -ne 0 ]
 
 	run docker_swarm network inspect node-0/bridge
-	[ "${#lines[@]}" -eq 13 ]
+	[ "${#lines[@]}" -eq 23 ]
 }
 
 @test "docker network create" {
@@ -75,20 +75,20 @@ function teardown() {
 	docker_swarm run -d --name test_container -e constraint:node==node-0 busybox sleep 100
 
 	run docker_swarm network inspect node-0/bridge
-	[ "${#lines[@]}" -eq 13 ]
+	[ "${#lines[@]}" -eq 23 ]
 
 	docker_swarm network disconnect node-0/bridge test_container
 
 	run docker_swarm network inspect node-0/bridge
-	[ "${#lines[@]}" -eq 6 ]
+	[ "${#lines[@]}" -eq 16 ]
 
 	docker_swarm network connect node-0/bridge test_container
 
 	run docker_swarm network inspect node-0/bridge
-	[ "${#lines[@]}" -eq 13 ]
+	[ "${#lines[@]}" -eq 23 ]
 
 	docker_swarm rm -f test_container
 	
 	run docker_swarm network inspect node-0/bridge
-	[ "${#lines[@]}" -eq 6 ]
+	[ "${#lines[@]}" -eq 16 ]
 }

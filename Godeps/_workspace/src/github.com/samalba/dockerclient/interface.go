@@ -36,6 +36,7 @@ type Client interface {
 	TagImage(nameOrID string, repo string, tag string, force bool) error
 	Version() (*Version, error)
 	PullImage(name string, auth *AuthConfig) error
+	PushImage(name string, tag string, auth *AuthConfig) error
 	LoadImage(reader io.Reader) error
 	RemoveContainer(id string, force, volumes bool) error
 	ListImages(all bool) ([]*Image, error)
