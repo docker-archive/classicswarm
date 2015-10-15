@@ -105,6 +105,6 @@ function teardown() {
 	start_store
 
 	# After a while, `join` and `manage` should reach the store.
-	retry 10 1 discovery_check_swarm_list "$DISCOVERY"
-	retry 10 1 discovery_check_swarm_info
+	retry 20 1 discovery_check_swarm_list "$DISCOVERY"
+	retry 20 1 discovery_check_swarm_info
 }
