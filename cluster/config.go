@@ -158,3 +158,15 @@ func (c *ContainerConfig) AddAffinity(affinity string) error {
 	c.Labels[SwarmLabelNamespace+".affinities"] = string(labels)
 	return nil
 }
+
+// HaveNodeConstraint in config
+func (c *ContainerConfig) HaveNodeConstraint() bool {
+	constraints := c.extractExprs("constraints")
+
+	for _, constraint := range constraints {
+		if strings.HasPrefix(constraint, "node==") && !strings.HasPrefix(constraint, "node==~") {
+			return true
+		}
+	}
+	return false
+}
