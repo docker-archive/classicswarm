@@ -33,35 +33,6 @@ func TestMatch(t *testing.T) {
 	assert.False(t, img.Match("na", false))
 }
 
-func TestParseImage(t *testing.T) {
-	repo, name, tag := parseImageName("private.registry.com:5000/name:latest")
-	assert.Equal(t, repo, "private.registry.com:5000")
-	assert.Equal(t, name, "name")
-	assert.Equal(t, tag, "latest")
-
-	repo, name, tag = parseImageName("name:latest")
-	assert.Equal(t, repo, "")
-	assert.Equal(t, name, "name")
-	assert.Equal(t, tag, "latest")
-
-	repo, name, tag = parseImageName("name")
-	assert.Equal(t, repo, "")
-	assert.Equal(t, name, "name")
-	assert.Equal(t, tag, "")
-
-	repo, name, tag = parseImageName("")
-	assert.Equal(t, repo, "")
-	assert.Equal(t, name, "")
-	assert.Equal(t, tag, "")
-}
-
-func TestToImage(t *testing.T) {
-	assert.Equal(t, toImageName("", "name", ""), "name")
-	assert.Equal(t, toImageName("", "name", "latest"), "name:latest")
-	assert.Equal(t, toImageName("a", "name", ""), "a/name")
-	assert.Equal(t, toImageName("private.registry.com:5000", "name", "latest"), "private.registry.com:5000/name:latest")
-}
-
 func TestMatchPrivateRepo(t *testing.T) {
 	img := Image{}
 
