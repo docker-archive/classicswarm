@@ -89,7 +89,7 @@ function teardown() {
 	[[ "${output}" == *"node-0/test_container"* ]]
 }
 
-@test "docker run - reschedule with soft-image-affinity(have node constraint))" {
+@test "docker run - reschedule with soft-image-affinity (have node constraint)" {
 	start_docker_with_busybox 1
 	start_docker 1
 
