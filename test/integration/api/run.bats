@@ -88,3 +88,25 @@ function teardown() {
 	run docker_swarm ps
 	[[ "${output}" == *"node-0/test_container"* ]]
 }
+
+@test "docker run - reschedule with soft-image-affinity(have node constraint))" {
+	start_docker_with_busybox 1
+	start_docker 1
+
+	docker -H ${HOSTS[0]} tag busybox:latest busyboxabcde:latest
+	swarm_manage
+
+	# make sure busyboxabcde exists
+	run docker_swarm images
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"busyboxabcde"* ]]
+
+	# create container on node-1, node-1 does not have busyboxabcde and will pull it
+	# but can not find busyboxabcde in dockerhub
+	# because run with node constraint, will not retry with soft-image-affinity
+	run docker_swarm run -d --name test_container -e constraint:node==node-1 busyboxabcde sleep 1000
+
+	# check error message
+	[[ "${output}" != *"unable to find a node that satisfies"* ]]
+	[[ "${output}" == *"busyboxabcde:latest not found"* ]]
+}
