@@ -44,8 +44,10 @@ func sendErrorJSONMessage(w io.Writer, errorCode int, errorMessage string) {
 	}
 
 	message := struct {
-		Error interface{} `json:"errorDetail,omitempty"`
+		ErrorMsg string      `json:"error,omitempty"`
+		Error    interface{} `json:"errorDetail,omitempty"`
 	}{
+		errorMessage,
 		&error,
 	}
 
