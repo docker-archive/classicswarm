@@ -164,21 +164,36 @@ func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.R
 		return err
 	}
 
-	errc := make(chan error, 2)
-	cp := func(dst io.Writer, src io.Reader) {
-		_, err := io.Copy(dst, src)
+	cp := func(dst io.Writer, src io.Reader, chDone chan struct{}) {
+		io.Copy(dst, src)
 		if conn, ok := dst.(interface {
 			CloseWrite() error
 		}); ok {
 			conn.CloseWrite()
 		}
-		errc <- err
+		close(chDone)
 	}
-	go cp(d, nc)
-	go cp(nc, d)
-	<-errc
-	<-errc
+	inDone := make(chan struct{})
+	outDone := make(chan struct{})
+	go cp(d, nc, inDone)
+	go cp(nc, d, outDone)
 
+	// 1. When stdin is done, wait for stdout always
+	// 2. When stdout is done, close the stream and wait for stdin to finish
+	//
+	// On 2, stdin copy should return immediately now since the out stream is closed.
+	// Note that we probably don't actually even need to wait here.
+	//
+	// If we don't close the stream when stdout is done, in some cases stdin will hange
+	select {
+	case <-inDone:
+		// wait for out to be done
+		<-outDone
+	case <-outDone:
+		// close the conn and wait for stdin
+		nc.Close()
+		<-inDone
+	}
 	return nil
 }
 
