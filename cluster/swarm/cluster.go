@@ -771,10 +771,12 @@ func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer)
 	c.scheduler.Lock()
 
 	// get an engine
-	config := &cluster.ContainerConfig{dockerclient.ContainerConfig{
+	config := cluster.BuildContainerConfig(dockerclient.ContainerConfig{
 		CpuShares: buildImage.CpuShares,
 		Memory:    buildImage.Memory,
-	}}
+		Env:       convertMapToKVStrings(buildImage.BuildArgs),
+	})
+	buildImage.BuildArgs = convertKVStringsToMap(config.Env)
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
 	c.scheduler.Unlock()
 	if err != nil {

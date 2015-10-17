@@ -450,6 +450,7 @@ type BuildImage struct {
 	CpuSetCpus     string
 	CpuSetMems     string
 	CgroupParent   string
+	BuildArgs      map[string]string
 }
 
 type Volume struct {
