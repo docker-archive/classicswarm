@@ -21,3 +21,15 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 1 ]
 }
+
+@test "docker build with arg" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	run docker_swarm build -t test_args --build-arg="greeting=Hello Args" $TESTDATA/build_with_args
+	[ "$status" -eq 0 ]
+
+	run docker_swarm run --rm test_args
+	[ "$status" -eq 0 ]
+	[[ "$output" == "Hello Args" ]]
+}
