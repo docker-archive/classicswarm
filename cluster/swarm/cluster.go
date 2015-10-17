@@ -341,10 +341,10 @@ func (c *Cluster) refreshNetworks() {
 	var wg sync.WaitGroup
 	for _, e := range c.engines {
 		wg.Add(1)
-		go func() {
+		go func(e *cluster.Engine) {
 			e.RefreshNetworks()
 			wg.Done()
-		}()
+		}(e)
 	}
 	wg.Wait()
 }
