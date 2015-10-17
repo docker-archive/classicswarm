@@ -172,9 +172,11 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 // GET /networks
 func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 	out := []*dockerclient.NetworkResource{}
-	for _, network := range c.cluster.Networks() {
+	for _, network := range c.cluster.Networks().Uniq() {
 		tmp := (*network).NetworkResource
-		tmp.Name = network.Engine.Name + "/" + network.Name
+		if tmp.Scope == "local" {
+			tmp.Name = network.Engine.Name + "/" + network.Name
+		}
 		out = append(out, &tmp)
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -687,7 +689,7 @@ func deleteNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 
 	var id = mux.Vars(r)["networkid"]
 
-	if network := c.cluster.Networks().Get(id); network != nil {
+	if network := c.cluster.Networks().Uniq().Get(id); network != nil {
 		if err := c.cluster.RemoveNetwork(network); err != nil {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
