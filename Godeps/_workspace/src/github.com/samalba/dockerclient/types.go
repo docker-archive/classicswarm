@@ -30,6 +30,7 @@ type ContainerConfig struct {
 	MacAddress      string
 	OnBuild         []string
 	Labels          map[string]string
+	StopSignal      string
 
 	// FIXME: The following fields have been removed since API v1.18
 	Memory     int64
@@ -43,39 +44,45 @@ type ContainerConfig struct {
 }
 
 type HostConfig struct {
-	Binds           []string
-	ContainerIDFile string
-	LxcConf         []map[string]string
-	Memory          int64
-	MemorySwap      int64
-	CpuShares       int64
-	CpuPeriod       int64
-	CpusetCpus      string
-	CpusetMems      string
-	CpuQuota        int64
-	BlkioWeight     int64
-	OomKillDisable  bool
-	Privileged      bool
-	PortBindings    map[string][]PortBinding
-	Links           []string
-	PublishAllPorts bool
-	Dns             []string
-	DnsSearch       []string
-	ExtraHosts      []string
-	VolumesFrom     []string
-	Devices         []DeviceMapping
-	NetworkMode     string
-	IpcMode         string
-	PidMode         string
-	UTSMode         string
-	CapAdd          []string
-	CapDrop         []string
-	RestartPolicy   RestartPolicy
-	SecurityOpt     []string
-	ReadonlyRootfs  bool
-	Ulimits         []Ulimit
-	LogConfig       LogConfig
-	CgroupParent    string
+	Binds             []string
+	ContainerIDFile   string
+	LxcConf           []map[string]string
+	Memory            int64
+	MemoryReservation int64
+	MemorySwap        int64
+	KernelMemory      int64
+	CpuShares         int64
+	CpuPeriod         int64
+	CpusetCpus        string
+	CpusetMems        string
+	CpuQuota          int64
+	BlkioWeight       int64
+	OomKillDisable    bool
+	MemorySwappiness  int64
+	Privileged        bool
+	PortBindings      map[string][]PortBinding
+	Links             []string
+	PublishAllPorts   bool
+	Dns               []string
+	DNSOptions        []string
+	DnsSearch         []string
+	ExtraHosts        []string
+	VolumesFrom       []string
+	Devices           []DeviceMapping
+	NetworkMode       string
+	IpcMode           string
+	PidMode           string
+	UTSMode           string
+	CapAdd            []string
+	CapDrop           []string
+	GroupAdd          []string
+	RestartPolicy     RestartPolicy
+	SecurityOpt       []string
+	ReadonlyRootfs    bool
+	Ulimits           []Ulimit
+	LogConfig         LogConfig
+	CgroupParent      string
+	ConsoleSize       [2]int
 }
 
 type DeviceMapping struct {
