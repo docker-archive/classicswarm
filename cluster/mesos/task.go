@@ -24,6 +24,7 @@ type task struct {
 	config    *cluster.ContainerConfig
 	error     chan error
 	container chan *cluster.Container
+	done      bool
 }
 
 func (t *task) ID() string {
@@ -32,6 +33,10 @@ func (t *task) ID() string {
 
 func (t *task) Do() bool {
 	return t.cluster.scheduleTask(t)
+}
+
+func (t *task) Stop() {
+	t.done = true
 }
 
 func (t *task) build(slaveID string, offers map[string]*mesosproto.Offer) {
