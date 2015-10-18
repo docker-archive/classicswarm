@@ -801,7 +801,7 @@ func (client *DockerClient) CreateVolume(request *VolumeCreateRequest) (*Volume,
 	if err != nil {
 		return nil, err
 	}
-	uri := fmt.Sprintf("/%s/volumes", APIVersion)
+	uri := fmt.Sprintf("/%s/volumes/create", APIVersion)
 	data, err = client.doRequest("POST", uri, data, nil)
 	if err != nil {
 		return nil, err
