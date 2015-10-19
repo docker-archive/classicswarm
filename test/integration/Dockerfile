@@ -4,19 +4,14 @@
 FROM dockerswarm/dind:1.6.0
 
 # Install dependencies.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        file \
-        git \
+RUN apt-get update && apt-get install -y --no-install-recommends git \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install golang
 ENV GO_VERSION 1.5
-RUN curl -sSL https://golang.org/dl/go${GO_VERSION}.src.tar.gz | tar -v -C /usr/local -xz \
-    && mkdir -p /go/bin
+RUN curl -sSL https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz | tar -v -C /usr/local -xz
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
 ENV GOPATH /go
-RUN cd /usr/local/go/src && ./make.bash --no-clean 2>&1
 
 # Go dependencies
 RUN go get github.com/tools/godep
