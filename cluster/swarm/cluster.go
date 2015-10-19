@@ -152,7 +152,7 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	engine, ok := c.engines[n.ID]
 	if !ok {
 		c.scheduler.Unlock()
-		return nil, nil
+		return nil, fmt.Errorf("error creating container")
 	}
 
 	c.pendingContainers[swarmID] = &pendingContainer{
