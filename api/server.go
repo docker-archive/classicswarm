@@ -10,7 +10,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-// The default port to listen on for incoming connections
+// DefaultDockerPort is the default port to listen on for incoming connections.
 const DefaultDockerPort = ":2375"
 
 // Dispatcher is a meta http.Handler. It acts as an http.Handler and forwards
