@@ -24,11 +24,11 @@ var (
 
 func init() {
 	filters = []Filter{
-		&AffinityFilter{},
 		&HealthFilter{},
-		&ConstraintFilter{},
 		&PortFilter{},
 		&DependencyFilter{},
+		&AffinityFilter{},
+		&ConstraintFilter{},
 	}
 }
 
