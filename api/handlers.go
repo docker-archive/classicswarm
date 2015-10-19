@@ -21,7 +21,7 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-// The Client API version
+// APIVERSION is the Client API version
 const APIVERSION = "1.16"
 
 // GET /info
