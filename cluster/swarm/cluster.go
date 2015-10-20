@@ -30,7 +30,10 @@ func (p *pendingContainer) ToContainer() *cluster.Container {
 	container := &cluster.Container{
 		Container: dockerclient.Container{},
 		Config:    p.Config,
-		Engine:    p.Engine,
+		Info: dockerclient.ContainerInfo{
+			HostConfig: &dockerclient.HostConfig{},
+		},
+		Engine: p.Engine,
 	}
 
 	if p.Name != "" {
