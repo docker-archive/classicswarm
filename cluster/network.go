@@ -17,6 +17,19 @@ type Network struct {
 // Networks represents a map of networks
 type Networks []*Network
 
+// Uniq returns all uniq networks
+func (networks Networks) Uniq() Networks {
+	tmp := make(map[string]*Network)
+	for _, network := range networks {
+		tmp[network.ID] = network
+	}
+	uniq := Networks{}
+	for _, network := range tmp {
+		uniq = append(uniq, network)
+	}
+	return uniq
+}
+
 // Get returns a network using it's ID or Name
 func (networks Networks) Get(IDOrName string) *Network {
 	// Abort immediately if the name is empty.
