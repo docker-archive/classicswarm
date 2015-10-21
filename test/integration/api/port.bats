@@ -20,3 +20,21 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${lines[*]}" == *"8000"* ]]
 }
+
+@test "docker port parallel" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	declare -a pids
+	for i in 1 2 3; do
+		# Use a non existing image to ensure that we pull at the same time
+		docker_swarm run -d -p 8888 alpine:edge sleep 2 &
+		pids[$i]=$!
+	done
+
+	# Wait for jobs in the background and check their exit status
+	for pid in "${pids[@]}"; do
+		wait $pid
+		[ "$?" -eq 0 ]
+	done
+}
