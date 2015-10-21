@@ -30,6 +30,21 @@ func (networks Networks) Uniq() Networks {
 	return uniq
 }
 
+// Filter returns networks filtered by names or ids
+func (networks Networks) Filter(names []string, ids []string) Networks {
+	if len(names) == 0 && len(ids) == 0 {
+		return networks.Uniq()
+	}
+
+	out := Networks{}
+	for _, idOrName := range append(names, ids...) {
+		if network := networks.Get(idOrName); network != nil {
+			out = append(out, network)
+		}
+	}
+	return out
+}
+
 // Get returns a network using it's ID or Name
 func (networks Networks) Get(IDOrName string) *Network {
 	// Abort immediately if the name is empty.
@@ -78,5 +93,4 @@ func (networks Networks) Get(IDOrName string) *Network {
 	}
 
 	return nil
-
 }
