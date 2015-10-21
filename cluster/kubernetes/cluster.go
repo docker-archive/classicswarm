@@ -239,6 +239,7 @@ func (c *Cluster) Images(all bool, filters dockerfilters.Args) []*cluster.Image 
 	return images
 }
 
+// Info gives minimal information about containers and resources on the kubernetes cluster
 func (c *Cluster) Info() [][]string {
 	info := [][]string{
 		{"\bKubernetes Version", c.kubeClient.APIVersion()},
@@ -260,6 +261,7 @@ func (c *Cluster) Info() [][]string {
 	return info
 }
 
+// TotalCpus return the total memory of the cluster
 func (c *Cluster) TotalCpus() int64 {
 	c.RLock()
 	defer c.RUnlock()
@@ -276,6 +278,7 @@ func (c *Cluster) TotalCpus() int64 {
 	return total
 }
 
+// TotalMemory return the total memory of the cluster
 func (c *Cluster) TotalMemory() int64 {
 	c.RLock()
 	defer c.RUnlock()
