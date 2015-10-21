@@ -452,8 +452,8 @@ func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// POST /volumes
-func postVolumes(c *context, w http.ResponseWriter, r *http.Request) {
+// POST /volumes/create
+func postVolumesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	var request dockerclient.VolumeCreateRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
