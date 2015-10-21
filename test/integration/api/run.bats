@@ -41,6 +41,12 @@ function teardown() {
 			 --device=/dev/loop0:/dev/loop0 \
 			 --ipc=host \
 			 --pid=host \
+			 --memory-swappiness=2 \
+			 --group-add="root" \
+			 --memory-reservation=100 \
+			 --kernel-memory=100 \
+			 --dns-opt="someDnsOption" \
+			 --stop-signal="SIGKILL" \
 			 busybox sleep 1000
 
 	# verify, container is running
@@ -65,6 +71,18 @@ function teardown() {
 	[[ "${output}" == *"\"IpcMode\": \"host\""* ]]
 	# pid
 	[[ "${output}" == *"\"PidMode\": \"host\""* ]]
+	# memory-swappiness
+	[[ "${output}" == *"\"MemorySwappiness\": 2"* ]]
+	# group-add
+	[[ "${output}" == *"root"* ]]
+	# memory-reservation
+	[[ "${output}" == *"\"MemoryReservation\": 100"* ]]
+	# kernel-memory
+	[[ "${output}" == *"\"KernelMemory\": 100"* ]]
+	# dns-opt
+	[[ "${output}" == *"someDnsOption"* ]]
+	# stop-signal
+	[[ "${output}" == *"\"StopSignal\": \"SIGKILL\""* ]]
 }
 
 @test "docker run - reschedule with soft-image-affinity" {
