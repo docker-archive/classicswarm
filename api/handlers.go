@@ -21,8 +21,8 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-// APIVERSION is the Client API version
-const APIVERSION = "1.16"
+// APIVERSION is the API version supported by swarm manager
+const APIVERSION = "1.21"
 
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
