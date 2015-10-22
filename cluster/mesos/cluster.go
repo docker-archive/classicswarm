@@ -17,7 +17,6 @@ import (
 	"github.com/docker/swarm/cluster/mesos/queue"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
 	mesosscheduler "github.com/mesos/mesos-go/scheduler"
@@ -178,7 +177,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 		return nil, err
 	case <-time.After(c.taskCreationTimeout):
 		c.pendingTasks.Remove(task)
-		return nil, strategy.ErrNoResourcesAvailable
+		return nil, fmt.Errorf("container failed to start after %s", c.taskCreationTimeout)
 	}
 }
 
