@@ -171,8 +171,20 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /networks
 func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	filters, err := dockerfilters.FromParam(r.Form.Get("filters"))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	out := []*dockerclient.NetworkResource{}
-	for _, network := range c.cluster.Networks().Uniq() {
+	networks := c.cluster.Networks().Filter(filters["name"], filters["id"])
+	for _, network := range networks {
 		tmp := (*network).NetworkResource
 		if tmp.Scope == "local" {
 			tmp.Name = network.Engine.Name + "/" + network.Name
