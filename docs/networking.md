@@ -100,7 +100,7 @@ from `node-0`.
 
 ## Docker Swarm documentation index
 
-- [User guide](/)
-- [Scheduler strategies](/scheduler/strategy.md)
-- [Scheduler filters](/scheduler/filter.md)
-- [Swarm API](/api/swarm-api.md)
+- [User guide](index.md)
+- [Scheduler strategies](scheduler/strategy.md)
+- [Scheduler filters](scheduler/filter.md)
+- [Swarm API](api/swarm-api.md)
