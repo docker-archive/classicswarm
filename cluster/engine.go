@@ -422,7 +422,7 @@ func (e *Engine) refreshLoop() {
 			}
 		} else {
 			if !e.healthy {
-				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Info("Engine came back to life after %d retries. Hooray!", failedAttempts)
+				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", failedAttempts)
 				if err := e.updateSpecs(); err != nil {
 					log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Update engine specs failed: %v", err)
 					continue
