@@ -928,6 +928,12 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		CpuSetMems:     r.Form.Get("cpusetmems"),
 		CgroupParent:   r.Form.Get("cgroupparent"),
 		Context:        r.Body,
+		BuildArgs:      make(map[string]string),
+	}
+
+	buildArgsJSON := r.Form.Get("buildargs")
+	if buildArgsJSON != "" {
+		json.Unmarshal([]byte(buildArgsJSON), &buildImage.BuildArgs)
 	}
 
 	authEncoded := r.Header.Get("X-Registry-Auth")
