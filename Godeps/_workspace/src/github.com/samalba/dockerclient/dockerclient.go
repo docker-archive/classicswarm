@@ -760,6 +760,13 @@ func (client *DockerClient) BuildImage(image *BuildImage) (io.ReadCloser, error)
 	v.Set("cpusetcpus", image.CpuSetCpus)
 	v.Set("cpusetmems", image.CpuSetMems)
 	v.Set("cgroupparent", image.CgroupParent)
+	if image.BuildArgs != nil {
+		buildArgsJSON, err := json.Marshal(image.BuildArgs)
+		if err != nil {
+			return nil, err
+		}
+		v.Set("buildargs", string(buildArgsJSON))
+	}
 
 	headers := make(map[string]string)
 	if image.Config != nil {
