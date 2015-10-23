@@ -492,7 +492,6 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 	wf := NewWriteFlusher(w)
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
 
 	if image := r.Form.Get("fromImage"); image != "" { //pull
 		authConfig := dockerclient.AuthConfig{}
