@@ -15,6 +15,8 @@ func (i *item) ID() string {
 	return i.id
 }
 
+func (i *item) Stop() {}
+
 func (i *item) Do() bool {
 	i.count = i.count - 1
 	return i.count == 0

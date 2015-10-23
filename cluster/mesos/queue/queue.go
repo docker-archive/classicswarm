@@ -6,6 +6,7 @@ import "sync"
 type Item interface {
 	ID() string
 	Do() bool
+	Stop()
 }
 
 // Queue is a simple item queue
@@ -51,6 +52,7 @@ func (q *Queue) Process() {
 
 func (q *Queue) remove(items ...Item) {
 	for _, item := range items {
+		item.Stop()
 		delete(q.items, item.ID())
 	}
 }

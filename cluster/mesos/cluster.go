@@ -514,7 +514,9 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	if data != nil && json.Unmarshal(data, &inspect) == nil && len(inspect) == 1 {
 		container := &cluster.Container{Container: dockerclient.Container{Id: inspect[0].Id}, Engine: s.engine}
 		if container, err := container.Refresh(); err == nil {
-			t.container <- container
+			if !t.done {
+				t.container <- container
+			}
 			return true
 		}
 	}
@@ -527,12 +529,16 @@ func (c *Cluster) scheduleTask(t *task) bool {
 
 	for _, container := range s.engine.Containers() {
 		if container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"] == taskID {
-			t.container <- container
+			if !t.done {
+				t.container <- container
+			}
 			return true
 		}
 	}
 
-	t.error <- fmt.Errorf("Container failed to create")
+	if !t.done {
+		t.error <- fmt.Errorf("Container failed to create")
+	}
 	return true
 }
 
