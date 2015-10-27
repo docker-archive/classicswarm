@@ -19,11 +19,6 @@ import (
 )
 
 const (
-	// Force-refresh the state of the engine this often.
-	stateRefreshMinRange = 30 * time.Second
-	stateRefreshMaxRange = 60 * time.Second
-	stateRefreshRetries  = 3
-
 	// Timeout for requests sent out to the engine.
 	requestTimeout = 10 * time.Second
 
@@ -52,8 +47,19 @@ func (d *delayer) Wait() <-chan time.Time {
 	d.l.Lock()
 	defer d.l.Unlock()
 
-	waitPeriod := int64(d.rangeMin) + d.r.Int63n(int64(d.rangeMax)-int64(d.rangeMin))
+	waitPeriod := int64(d.rangeMin)
+	if delta := int64(d.rangeMax) - int64(d.rangeMin); delta > 0 {
+		// Int63n panics if the parameter is 0
+		waitPeriod += d.r.Int63n(delta)
+	}
 	return time.After(time.Duration(waitPeriod))
+}
+
+// EngineOpts represents the options for an engine
+type EngineOpts struct {
+	RefreshMinInterval time.Duration
+	RefreshMaxInterval time.Duration
+	RefreshRetry       int
 }
 
 // Engine represents a docker engine
@@ -78,14 +84,18 @@ type Engine struct {
 	eventHandler    EventHandler
 	healthy         bool
 	overcommitRatio int64
+	opts            *EngineOpts
 }
 
 // NewEngine is exported
-func NewEngine(addr string, overcommitRatio float64) *Engine {
+func NewEngine(addr string, overcommitRatio float64, opts *EngineOpts) *Engine {
+	if opts == nil {
+		log.Fatal("EngineOpts is nil")
+	}
 	e := &Engine{
 		Addr:            addr,
 		client:          nopclient.NewNopClient(),
-		refreshDelayer:  newDelayer(stateRefreshMinRange, stateRefreshMaxRange),
+		refreshDelayer:  newDelayer(opts.RefreshMinInterval, opts.RefreshMaxInterval),
 		Labels:          make(map[string]string),
 		stopCh:          make(chan struct{}),
 		containers:      make(map[string]*Container),
@@ -93,6 +103,7 @@ func NewEngine(addr string, overcommitRatio float64) *Engine {
 		volumes:         make(map[string]*Volume),
 		healthy:         true,
 		overcommitRatio: int64(overcommitRatio * 100),
+		opts:            opts,
 	}
 	return e
 }
@@ -412,10 +423,8 @@ func (e *Engine) refreshLoop() {
 
 		if err != nil {
 			failedAttempts++
-			if failedAttempts >= stateRefreshRetries {
-				if e.healthy {
-					e.emitEvent("engine_disconnect")
-				}
+			if failedAttempts >= e.opts.RefreshRetry && e.healthy {
+				e.emitEvent("engine_disconnect")
 				e.healthy = false
 				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as dead. Updated state failed %d times: %v", failedAttempts, err)
 			}
