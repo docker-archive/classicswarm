@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"testing"
+	"time"
 
 	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/samalba/dockerclient"
@@ -52,7 +53,12 @@ func TestMatchPrivateRepo(t *testing.T) {
 }
 
 func TestImagesFilterWithLabelFilter(t *testing.T) {
-	engine := NewEngine("test", 0)
+	opts := &EngineOpts{
+		RefreshMinInterval: time.Duration(30),
+		RefreshMaxInterval: time.Duration(60),
+		RefreshRetry:       3,
+	}
+	engine := NewEngine("test", 0, opts)
 	images := Images{
 		{dockerclient.Image{Id: "a"}, engine},
 		{dockerclient.Image{
@@ -69,7 +75,12 @@ func TestImagesFilterWithLabelFilter(t *testing.T) {
 }
 
 func TestImagesFilterWithNameFilter(t *testing.T) {
-	engine := NewEngine("test", 0)
+	opts := &EngineOpts{
+		RefreshMinInterval: time.Duration(30),
+		RefreshMaxInterval: time.Duration(60),
+		RefreshRetry:       3,
+	}
+	engine := NewEngine("test", 0, opts)
 	images := Images{
 		{
 			dockerclient.Image{
@@ -93,7 +104,12 @@ func TestImagesFilterWithNameFilter(t *testing.T) {
 }
 
 func TestImagesFilterWithNameFilterWithTag(t *testing.T) {
-	engine := NewEngine("test", 0)
+	opts := &EngineOpts{
+		RefreshMinInterval: time.Duration(30),
+		RefreshMaxInterval: time.Duration(60),
+		RefreshRetry:       3,
+	}
+	engine := NewEngine("test", 0, opts)
 	images := Images{
 		{
 			dockerclient.Image{
