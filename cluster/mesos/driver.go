@@ -43,7 +43,7 @@ func (c *Cluster) ResourceOffers(_ mesosscheduler.SchedulerDriver, offers []*mes
 		}
 		s, ok := c.slaves[slaveID]
 		if !ok {
-			engine := cluster.NewEngine(*offer.Hostname+":"+dockerPort, 0)
+			engine := cluster.NewEngine(*offer.Hostname+":"+dockerPort, 0, c.engineOpts)
 			if err := engine.Connect(c.TLSConfig); err != nil {
 				log.Error(err)
 			} else {

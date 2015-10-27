@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
@@ -41,7 +42,12 @@ var (
 )
 
 func createEngine(t *testing.T, ID string, containers ...*cluster.Container) *cluster.Engine {
-	engine := cluster.NewEngine(ID, 0)
+	opts := &cluster.EngineOpts{
+		RefreshMinInterval: time.Duration(30),
+		RefreshMaxInterval: time.Duration(60),
+		RefreshRetry:       3,
+	}
+	engine := cluster.NewEngine(ID, 0, opts)
 	engine.Name = ID
 	engine.ID = ID
 
@@ -119,7 +125,12 @@ func TestImportImage(t *testing.T) {
 
 	// create engione
 	id := "test-engine"
-	engine := cluster.NewEngine(id, 0)
+	opts := &cluster.EngineOpts{
+		RefreshMinInterval: time.Duration(30),
+		RefreshMaxInterval: time.Duration(60),
+		RefreshRetry:       3,
+	}
+	engine := cluster.NewEngine(id, 0, opts)
 	engine.Name = id
 	engine.ID = id
 
@@ -169,7 +180,12 @@ func TestLoadImage(t *testing.T) {
 
 	// create engione
 	id := "test-engine"
-	engine := cluster.NewEngine(id, 0)
+	opts := &cluster.EngineOpts{
+		RefreshMinInterval: time.Duration(30),
+		RefreshMaxInterval: time.Duration(60),
+		RefreshRetry:       3,
+	}
+	engine := cluster.NewEngine(id, 0, opts)
 	engine.Name = id
 	engine.ID = id
 
@@ -222,7 +238,12 @@ func TestTagImage(t *testing.T) {
 
 	// create engine
 	id := "test-engine"
-	engine := cluster.NewEngine(id, 0)
+	opts := &cluster.EngineOpts{
+		RefreshMinInterval: time.Duration(30),
+		RefreshMaxInterval: time.Duration(60),
+		RefreshRetry:       3,
+	}
+	engine := cluster.NewEngine(id, 0, opts)
 	engine.Name = id
 	engine.ID = id
 
