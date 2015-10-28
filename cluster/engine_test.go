@@ -201,9 +201,9 @@ func TestCreateContainer(t *testing.T) {
 	// Image not found, pullImage == false
 	name = "test2"
 	mockConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(mockInfo.NCPU)))
-	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
+	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrImageNotFound).Once()
 	container, err = engine.Create(config, name, false)
-	assert.Equal(t, err, dockerclient.ErrNotFound)
+	assert.Equal(t, err, dockerclient.ErrImageNotFound)
 	assert.Nil(t, container)
 
 	// Image not found, pullImage == true, and the image can be pulled successfully
@@ -211,7 +211,7 @@ func TestCreateContainer(t *testing.T) {
 	id = "id3"
 	mockConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(mockInfo.NCPU)))
 	client.On("PullImage", config.Image+":latest", mock.Anything).Return(nil).Once()
-	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrNotFound).Once()
+	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrImageNotFound).Once()
 	client.On("CreateContainer", &mockConfig, name).Return(id, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -115,11 +116,14 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 	container, err := c.createContainer(config, name, false)
 
 	//  fails with image not found, then try to reschedule with soft-image-affinity
-	if err != nil && strings.HasSuffix(err.Error(), "not found") && !config.HaveNodeConstraint() {
-		// Check if the image exists in the cluster
-		// If exists, retry with a soft-image-affinity
-		if image := c.Image(config.Image); image != nil {
-			container, err = c.createContainer(config, name, true)
+	if err != nil {
+		bImageNotFoundError, _ := regexp.MatchString(`image \S* not found`, err.Error())
+		if bImageNotFoundError && !config.HaveNodeConstraint() {
+			// Check if the image exists in the cluster
+			// If exists, retry with a soft-image-affinity
+			if image := c.Image(config.Image); image != nil {
+				container, err = c.createContainer(config, name, true)
+			}
 		}
 	}
 	return container, err

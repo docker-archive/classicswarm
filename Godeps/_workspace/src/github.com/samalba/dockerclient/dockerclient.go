@@ -21,7 +21,8 @@ const (
 )
 
 var (
-	ErrNotFound = errors.New("Not found")
+	ErrImageNotFound = errors.New("Image not found")
+	ErrNotFound      = errors.New("Not found")
 
 	defaultTimeout = 30 * time.Second
 )
@@ -103,6 +104,17 @@ func (client *DockerClient) doStreamRequest(method string, path string, in io.Re
 	}
 	if resp.StatusCode == 404 {
 		defer resp.Body.Close()
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, ErrNotFound
+		}
+		if len(data) > 0 {
+			// check if is image not found error
+			if strings.Index(string(data), "No such image") != -1 {
+				return nil, ErrImageNotFound
+			}
+			return nil, errors.New(string(data))
+		}
 		return nil, ErrNotFound
 	}
 	if resp.StatusCode >= 400 {
