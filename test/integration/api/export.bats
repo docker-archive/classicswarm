@@ -25,6 +25,8 @@ function teardown() {
 	# verify: exported file exists, not empty and is tar file 
 	[ -s $temp_file_name ]
 	run file $temp_file_name
+	echo $output
+
 	[ "$status" -eq 0 ]
 	[[ "$output" == *"tar archive"* ]]
 	
