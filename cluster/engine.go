@@ -505,7 +505,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 
 	if id, err = client.CreateContainer(&dockerConfig, name); err != nil {
 		// If the error is other than not found, abort immediately.
-		if err != dockerclient.ErrNotFound || !pullImage {
+		if err != dockerclient.ErrImageNotFound || !pullImage {
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
