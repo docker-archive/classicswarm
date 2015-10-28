@@ -56,3 +56,15 @@ function teardown() {
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" == *"image-with-labels"* ]]
 }
+
+@test "docker images imagetag" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker_swarm build -t testimage:latest $TESTDATA/imagelabel
+
+	run docker_swarm images testimage
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"testimage"* ]]
+}

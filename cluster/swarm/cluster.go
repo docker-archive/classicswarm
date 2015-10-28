@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/docker/pkg/units"
 	"github.com/docker/swarm/cluster"
@@ -282,15 +281,14 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 }
 
 // Images returns all the images in the cluster.
-func (c *Cluster) Images(all bool, filters dockerfilters.Args) []*cluster.Image {
+func (c *Cluster) Images() cluster.Images {
 	c.RLock()
 	defer c.RUnlock()
 
 	out := []*cluster.Image{}
 	for _, e := range c.engines {
-		out = append(out, e.Images(all, filters)...)
+		out = append(out, e.Images()...)
 	}
-
 	return out
 }
 
@@ -321,7 +319,7 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 	errs := []string{}
 	var err error
 	for _, e := range c.engines {
-		for _, image := range e.Images(true, nil) {
+		for _, image := range e.Images() {
 			if image.Match(name, true) {
 				content, err := image.Engine.RemoveImage(image, name, force)
 				if err != nil {
@@ -806,7 +804,7 @@ func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool)
 	var err error
 	found := false
 	for _, e := range c.engines {
-		for _, image := range e.Images(true, nil) {
+		for _, image := range e.Images() {
 			if image.Match(IDOrName, true) {
 				found = true
 				err := image.Engine.TagImage(IDOrName, repo, tag, force)
