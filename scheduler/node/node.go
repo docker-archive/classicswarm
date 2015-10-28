@@ -33,7 +33,7 @@ func NewNode(e *cluster.Engine) *Node {
 		Name:        e.Name,
 		Labels:      e.Labels,
 		Containers:  e.Containers(),
-		Images:      e.Images(true, nil),
+		Images:      e.Images(),
 		UsedMemory:  e.UsedMemory(),
 		UsedCpus:    e.UsedCpus(),
 		TotalMemory: e.TotalMemory(),

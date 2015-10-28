@@ -6,7 +6,6 @@ import (
 	"math"
 	"testing"
 
-	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/mockclient"
 	"github.com/samalba/dockerclient/nopclient"
@@ -232,27 +231,9 @@ func TestImages(t *testing.T) {
 		{dockerclient.Image{Id: "c"}, engine},
 	}
 
-	result := engine.Images(true, nil)
+	result := engine.Images()
 	assert.Equal(t, len(result), 3)
 }
-
-func TestImagesWithFilter(t *testing.T) {
-	engine := NewEngine("test", 0)
-	engine.images = []*Image{
-		{dockerclient.Image{Id: "a"}, engine},
-		{dockerclient.Image{
-			Id:     "b",
-			Labels: map[string]string{"com.example.project": "bar"},
-		}, engine},
-		{dockerclient.Image{Id: "c"}, engine},
-	}
-
-	filters := dockerfilters.Args{"label": {"com.example.project=bar"}}
-	result := engine.Images(true, filters)
-	assert.Equal(t, len(result), 1)
-	assert.Equal(t, result[0].Id, "b")
-}
-
 func TestTotalMemory(t *testing.T) {
 	engine := NewEngine("test", 0.05)
 	engine.Memory = 1024

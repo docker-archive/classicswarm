@@ -12,7 +12,6 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos/queue"
 	"github.com/docker/swarm/scheduler"
@@ -190,15 +189,14 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes b
 }
 
 // Images returns all the images in the cluster.
-func (c *Cluster) Images(all bool, filters dockerfilters.Args) []*cluster.Image {
+func (c *Cluster) Images() cluster.Images {
 	c.RLock()
 	defer c.RUnlock()
 
 	out := []*cluster.Image{}
 	for _, s := range c.slaves {
-		out = append(out, s.engine.Images(all, filters)...)
+		out = append(out, s.engine.Images()...)
 	}
-
 	return out
 }
 
