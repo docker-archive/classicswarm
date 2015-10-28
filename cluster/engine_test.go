@@ -199,7 +199,7 @@ func TestCreateContainer(t *testing.T) {
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: &config.ContainerConfig}, nil).Once()
-	container, err := engine.Create(config, name, false)
+	container, err := engine.Create(config, name, false, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
 	assert.Len(t, engine.Containers(), 1)
@@ -208,7 +208,7 @@ func TestCreateContainer(t *testing.T) {
 	name = "test2"
 	mockConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(mockInfo.NCPU)))
 	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrImageNotFound).Once()
-	container, err = engine.Create(config, name, false)
+	container, err = engine.Create(config, name, false, nil)
 	assert.Equal(t, err, dockerclient.ErrImageNotFound)
 	assert.Nil(t, container)
 
@@ -224,7 +224,7 @@ func TestCreateContainer(t *testing.T) {
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: &config.ContainerConfig}, nil).Once()
-	container, err = engine.Create(config, name, true)
+	container, err = engine.Create(config, name, true, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
 	assert.Len(t, engine.Containers(), 2)
