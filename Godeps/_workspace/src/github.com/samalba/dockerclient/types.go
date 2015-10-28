@@ -23,7 +23,6 @@ type ContainerConfig struct {
 	Cmd             []string
 	Image           string
 	Volumes         map[string]struct{}
-	VolumeDriver    string
 	WorkingDir      string
 	Entrypoint      []string
 	NetworkDisabled bool
@@ -31,6 +30,9 @@ type ContainerConfig struct {
 	OnBuild         []string
 	Labels          map[string]string
 	StopSignal      string
+
+	// FIXME: VolumeDriver have been removed since docker 1.9
+	VolumeDriver string
 
 	// FIXME: The following fields have been removed since API v1.18
 	Memory     int64
@@ -83,6 +85,7 @@ type HostConfig struct {
 	LogConfig         LogConfig
 	CgroupParent      string
 	ConsoleSize       [2]int
+	VolumeDriver      string
 }
 
 type DeviceMapping struct {
