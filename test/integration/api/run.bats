@@ -128,3 +128,19 @@ function teardown() {
 	[[ "${output}" != *"unable to find a node that satisfies"* ]]
 	[[ "${output}" == *"busyboxabcde:latest not found"* ]]
 }
+
+@test "docker run - with not exist volume driver" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	# make sure no container exist
+	run docker_swarm ps -qa
+	[ "${#lines[@]}" -eq 0 ]
+
+	# run
+	run docker_swarm run -d --volume-driver=not_exist_volume_driver -v testvolume:/testvolume --name test_container busybox sleep 100
+
+	# check error message
+	[ "$status" -ne 0 ]
+	[[ "${output}" == *"Plugin not found"* ]]
+}
