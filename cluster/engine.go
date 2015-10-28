@@ -489,7 +489,7 @@ func (e *Engine) TotalCpus() int64 {
 }
 
 // Create a new container
-func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*Container, error) {
+func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, authConfig *dockerclient.AuthConfig) (*Container, error) {
 	var (
 		err    error
 		id     string
@@ -513,7 +513,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
-		if err = e.Pull(config.Image, nil); err != nil {
+		if err = e.Pull(config.Image, authConfig); err != nil {
 			return nil, err
 		}
 		// ...And try again.

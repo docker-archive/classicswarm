@@ -406,7 +406,22 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	container, err := c.cluster.CreateContainer(cluster.BuildContainerConfig(config), name)
+	//Send X-Registry_Auth if exists to support Swarm's internal pull
+	authEncoded := r.Header.Get("X-Registry-Auth")
+	var authConfig dockerclient.AuthConfig
+	var auth *dockerclient.AuthConfig
+
+	if authEncoded != "" {
+		buf, err := base64.URLEncoding.DecodeString(authEncoded)
+		if err == nil {
+			err1 := json.Unmarshal(buf, &authConfig)
+			if err1 == nil {
+				auth = &authConfig
+			}
+		}
+	}
+
+	container, err := c.cluster.CreateContainer(cluster.BuildContainerConfig(config), name, auth)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Conflict") {
 			httpError(w, err.Error(), http.StatusConflict)
