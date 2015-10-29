@@ -817,8 +817,8 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
 }
 
-// Proxy a request to the right node
-func proxyImageTagOptional(c *context, w http.ResponseWriter, r *http.Request) {
+// Proxy get image request to the right node
+func proxyImageGet(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 
 	for _, image := range c.cluster.Images() {
@@ -828,6 +828,30 @@ func proxyImageTagOptional(c *context, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
+}
+
+// Proxy push image request to the right node
+func proxyImagePush(c *context, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tag := r.Form.Get("tag")
+	if tag != "" {
+		name = name + ":" + tag
+	}
+
+	for _, image := range c.cluster.Images() {
+		if tag != "" && image.Match(name, true) ||
+			tag == "" && image.Match(name, false) {
+			proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			return
+		}
+	}
+
 	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
 }
 
