@@ -17,7 +17,7 @@ import (
 //TODO - https://github.com/docker/docker/pull/16331
 type Hooks struct{}
 
-//var authZAPI AuthZAPI
+var authZAPI AuthZAPI
 var aclsAPI ACLsAPI
 
 type EVENT_ENUM int
@@ -29,8 +29,7 @@ func (*Hooks) PrePostAuthWrapper(cluster cluster.Cluster, next http.Handler) htt
 		allowed, containerId := aclsAPI.ValidateRequest(cluster, eventType, w, r)
 		//TODO - all kinds of conditionals
 		if eventType == PASS_AS_IS || allowed == APPROVED || allowed == CONDITION_FILTER {
-			log.Debug(containerId)
-			//			authZAPI.HandleEvent(eventType, w, r, next, containerId)
+			authZAPI.HandleEvent(eventType, w, r, next, containerId)
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte("Not Authorized!"))
@@ -71,19 +70,8 @@ func (*Hooks) Init() {
 	//TODO - should use a map for all the Pre . Post function like in primary.go
 
 	aclsAPI = new(DefaultACLsImpl)
-	//	authZAPI = new(DefaultImp)
+	authZAPI = new(DefaultImp)
 	//TODO reflection using configuration file tring for the backend type
-	errorInitAclsAPI := aclsAPI.Init()
-	//	errorInitAuthZAPI := authZAPI.Init()
 
-	if nil != errorInitAclsAPI {
-		log.Error("Got error while provisioning auth api")
-		log.Error(errorInitAclsAPI)
-	}
-
-	//	if nil != errorInitAuthZAPI {
-	//		log.Error("Got error while provisioning acls api")
-	//		log.Error(errorInitAuthZAPI)
-	//	}
 	log.Info("Init provision engine OK")
 }
