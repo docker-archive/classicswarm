@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/swarm/pkg/authZ"
 	"github.com/docker/swarm/cluster"
 	"github.com/gorilla/mux"
 )
@@ -128,9 +129,10 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 				localFct(context, w, r)
 			}
 			localMethod := method
-
-			r.Path("/v{version:[0-9.]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
-			r.Path(localRoute).Methods(localMethod).HandlerFunc(wrap)
+			hooks := new(authZ.Hooks)
+			hooks.Init()
+			r.Path("/v{version:[0-9.]+}" + localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(cluster, http.HandlerFunc(wrap)))
+			r.Path(localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(cluster, http.HandlerFunc(wrap)))
 		}
 	}
 
