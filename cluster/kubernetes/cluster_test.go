@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api/resource"
 	"k8s.io/kubernetes/pkg/client/unversioned/testclient"
 )
 
@@ -21,8 +22,52 @@ func TestContainer(t *testing.T)       {}
 func TestImage(t *testing.T)           {}
 func TestImages(t *testing.T)          {}
 func TestInfo(t *testing.T)            {}
-func TestTotalCpus(t *testing.T)       {}
-func TestTotalMemory(t *testing.T)     {}
+
+func TestTotalCpus(t *testing.T) {
+	client := testclient.NewSimpleFake()
+	c, err := NewCluster(nil, "", client, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, c.TotalCpus(), int64(0))
+
+	client = testclient.NewSimpleFake(&api.NodeList{Items: []api.Node{
+		{
+			ObjectMeta: api.ObjectMeta{Name: "node1"},
+			Status: api.NodeStatus{
+				Capacity: api.ResourceList{
+					api.ResourceCPU:    *resource.NewMilliQuantity(2000, resource.DecimalSI),
+					api.ResourceMemory: *resource.NewQuantity(1024, resource.BinarySI),
+					api.ResourcePods:   *resource.NewQuantity(0, resource.DecimalSI),
+				},
+			},
+		},
+	}})
+	c, err = NewCluster(nil, "", client, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, c.TotalCpus(), int64(2))
+}
+
+func TestTotalMemory(t *testing.T) {
+	client := testclient.NewSimpleFake()
+	c, err := NewCluster(nil, "", client, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, c.TotalMemory(), int64(0))
+
+	client = testclient.NewSimpleFake(&api.NodeList{Items: []api.Node{
+		{
+			ObjectMeta: api.ObjectMeta{Name: "node1"},
+			Status: api.NodeStatus{
+				Capacity: api.ResourceList{
+					api.ResourceCPU:    *resource.NewMilliQuantity(2000, resource.DecimalSI),
+					api.ResourceMemory: *resource.NewQuantity(1024, resource.BinarySI),
+					api.ResourcePods:   *resource.NewQuantity(0, resource.DecimalSI),
+				},
+			},
+		},
+	}})
+	c, err = NewCluster(nil, "", client, nil)
+	assert.Nil(t, err)
+	assert.Equal(t, c.TotalMemory(), int64(1024))
+}
 
 var formatContainerIDTests = []struct {
 	in  string
