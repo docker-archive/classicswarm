@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: swarm
-          image: b.gcr.io/swarm/swarm:0.5.0
+          image: b.gcr.io/swarm/swarm:1.0.0
           args:
             - "--log-level=debug"
             - "manage"

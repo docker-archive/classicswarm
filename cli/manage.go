@@ -261,7 +261,7 @@ func manage(c *cli.Context) {
 		cl, err = mesos.NewCluster(sched, tlsConfig, uri, c.StringSlice("cluster-opt"))
 	case "kubernetes-experimental":
 		log.Warn("WARNING: the kubernetes driver is currently experimental, use at your own risks")
-		cl, err = kubernetes.NewCluster(tlsConfig, uri, c.StringSlice("cluster-opt"))
+		cl, err = kubernetes.NewCluster(tlsConfig, uri, nil, c.StringSlice("cluster-opt"))
 	case "swarm":
 		cl, err = swarm.NewCluster(sched, tlsConfig, discovery, c.StringSlice("cluster-opt"))
 	default:
