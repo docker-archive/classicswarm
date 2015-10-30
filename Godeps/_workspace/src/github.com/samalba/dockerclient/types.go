@@ -474,56 +474,56 @@ type VolumeCreateRequest struct {
 
 // IPAM represents IP Address Management
 type IPAM struct {
-	Driver string       `json:"driver"`
-	Config []IPAMConfig `json:"config"`
+	Driver string
+	Config []IPAMConfig
 }
 
 // IPAMConfig represents IPAM configurations
 type IPAMConfig struct {
-	Subnet     string            `json:"subnet,omitempty"`
-	IPRange    string            `json:"ip_range,omitempty"`
-	Gateway    string            `json:"gateway,omitempty"`
-	AuxAddress map[string]string `json:"auxiliary_address,omitempty"`
+	Subnet     string            `json:",omitempty"`
+	IPRange    string            `json:",omitempty"`
+	Gateway    string            `json:",omitempty"`
+	AuxAddress map[string]string `json:"AuxiliaryAddresses,omitempty"`
 }
 
 // NetworkResource is the body of the "get network" http response message
 type NetworkResource struct {
-	Name       string                      `json:"name"`
-	ID         string                      `json:"id"`
-	Scope      string                      `json:"scope"`
-	Driver     string                      `json:"driver"`
-	IPAM       IPAM                        `json:"ipam"`
-	Containers map[string]EndpointResource `json:"containers"`
+	Name       string
+	ID         string `json:"Id"`
+	Scope      string
+	Driver     string
+	IPAM       IPAM
+	Containers map[string]EndpointResource
 }
 
 //EndpointResource contains network resources allocated and usd for a container in a network
 type EndpointResource struct {
-	EndpointID  string `json:"endpoint"`
-	MacAddress  string `json:"mac_address"`
-	IPv4Address string `json:"ipv4_address"`
-	IPv6Address string `json:"ipv6_address"`
+	EndpointID  string
+	MacAddress  string
+	IPv4Address string
+	IPv6Address string
 }
 
 // NetworkCreate is the expected body of the "create network" http request message
 type NetworkCreate struct {
-	Name           string `json:"name"`
-	CheckDuplicate bool   `json:"check_duplicate"`
-	Driver         string `json:"driver"`
-	IPAM           IPAM   `json:"ipam"`
+	Name           string
+	CheckDuplicate bool
+	Driver         string
+	IPAM           IPAM
 }
 
 // NetworkCreateResponse is the response message sent by the server for network create call
 type NetworkCreateResponse struct {
-	ID      string `json:"id"`
-	Warning string `json:"warning"`
+	ID      string `json:"Id"`
+	Warning string
 }
 
 // NetworkConnect represents the data to be used to connect a container to the network
 type NetworkConnect struct {
-	Container string `json:"container"`
+	Container string
 }
 
 // NetworkDisconnect represents the data to be used to disconnect a container from the network
 type NetworkDisconnect struct {
-	Container string `json:"container"`
+	Container string
 }
