@@ -26,7 +26,9 @@ function teardown() {
 	[ "$status" -ne 0 ]
 
 	run docker_swarm network inspect node-0/bridge
-	[[ "${output}" != *"\"containers\": {}"* ]]
+	[[ "${output}" != *"\"Containers\": {}"* ]]
+
+	diff <(docker_swarm network inspect node-0/bridge) <(docker_host -H ${HOSTS[0]} network inspect bridge)
 }
 
 @test "docker network create" {
@@ -75,20 +77,20 @@ function teardown() {
 	docker_swarm run -d --name test_container -e constraint:node==node-0 busybox sleep 100
 
 	run docker_swarm network inspect node-0/bridge
-	[[ "${output}" != *"\"containers\": {}"* ]]	
+	[[ "${output}" != *"\"Containers\": {}"* ]]	
 
 	docker_swarm network disconnect node-0/bridge test_container
 
 	run docker_swarm network inspect node-0/bridge
-	[[ "${output}" == *"\"containers\": {}"* ]]
+	[[ "${output}" == *"\"Containers\": {}"* ]]
 
 	docker_swarm network connect node-0/bridge test_container
 
 	run docker_swarm network inspect node-0/bridge
-	[[ "${output}" != *"\"containers\": {}"* ]]
+	[[ "${output}" != *"\"Containers\": {}"* ]]
 
 	docker_swarm rm -f test_container
 	
 	run docker_swarm network inspect node-0/bridge
-	[[ "${output}" == *"\"containers\": {}"* ]]
+	[[ "${output}" == *"\"Containers\": {}"* ]]
 }
