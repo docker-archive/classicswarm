@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: swarm
+  labels:
+    app: swarm
+spec:
+  selector:
+    app: swarm
+  ports:
+  - name: http
+    port: 2375
+    protocol: TCP
