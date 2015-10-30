@@ -21,7 +21,6 @@ import (
 	"k8s.io/kubernetes/pkg/labels"
 
 	"github.com/docker/docker/pkg/namesgenerator"
-	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
 	"github.com/docker/swarm/cluster"
 )
 
@@ -30,7 +29,7 @@ type Cluster struct {
 	sync.RWMutex
 
 	dockerEnginePort string
-	kubeClient       *unversioned.Client
+	kubeClient       unversioned.Interface
 	TLSConfig        *tls.Config
 	options          *cluster.DriverOpts
 	engines          map[string]*cluster.Engine
@@ -64,29 +63,20 @@ func newKubeClient() (*unversioned.Client, error) {
 }
 
 // NewCluster create a new Kubernetes cluster based on the given cluster options.
-func NewCluster(TLSConfig *tls.Config, master string, options cluster.DriverOpts) (cluster.Cluster, error) {
+func NewCluster(TLSConfig *tls.Config, master string, kubeClient unversioned.Interface, options cluster.DriverOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "kubernetes"}).Debug("Initializing cluster")
 
-	kubeClient, err := newKubeClient()
+	var err error
+	if kubeClient == nil {
+		kubeClient, err = newKubeClient()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	engines, err := dockerEngines(kubeClient)
 	if err != nil {
 		return nil, err
-	}
-
-	engines := make(map[string]*cluster.Engine)
-	nodes, err := kubeClient.Nodes().List(labels.Everything(), fields.Everything())
-	if err != nil {
-		log.Error(err)
-	}
-
-	for _, node := range nodes.Items {
-		var host string
-		for _, address := range node.Status.Addresses {
-			if address.Type == api.NodeInternalIP {
-				host = address.Address
-			}
-		}
-		engine := cluster.NewEngine(net.JoinHostPort(host, "2375"), 0)
-		engines[node.ObjectMeta.Name] = engine
 	}
 
 	cluster := &Cluster{
@@ -159,10 +149,6 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 	return c.Container(formatContainerID(containerStatus.ContainerID)), nil
 }
 
-func formatContainerID(id string) string {
-	return strings.TrimPrefix(id, "docker://")
-}
-
 // RemoveContainer removes a pod from a Kubernetes cluster based on value of the
 // container's io.kubernetes.pod.name label.
 func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes bool) error {
@@ -204,10 +190,23 @@ func (c *Cluster) Containers() cluster.Containers {
 }
 
 // Container returns the container with IdOrName in the cluster.
+// Pods, not containers, are the smallest level of compute in a Kubernetes
+// cluster. If a pod exisits with the same name as the given container ID
+// or name, then the returned container returned will be the frist container
+// in the pod.
 func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	if len(IDOrName) == 0 {
 		return nil
 	}
+
+	containerID, err := c.containerIDFromPod(IDOrName)
+	if err != nil {
+		log.Error(err)
+	}
+	if containerID != "" {
+		IDOrName = containerID
+	}
+
 	c.RLock()
 	defer c.RUnlock()
 	return cluster.Containers(c.Containers()).Get(IDOrName)
@@ -229,12 +228,12 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 }
 
 // Images returns all the images in the cluster.
-func (c *Cluster) Images(all bool, filters dockerfilters.Args) []*cluster.Image {
+func (c *Cluster) Images() cluster.Images {
 	c.RLock()
 	defer c.RUnlock()
 	images := []*cluster.Image{}
 	for _, engine := range c.engines {
-		images = append(images, engine.Images(all, filters)...)
+		images = append(images, engine.Images()...)
 	}
 	return images
 }
@@ -242,7 +241,7 @@ func (c *Cluster) Images(all bool, filters dockerfilters.Args) []*cluster.Image 
 // Info gives minimal information about containers and resources on the kubernetes cluster
 func (c *Cluster) Info() [][]string {
 	info := [][]string{
-		{"\bKubernetes Version", c.kubeClient.APIVersion()},
+		{"\bKubernetes Version", ""},
 		{"\bNodes", fmt.Sprintf("%d", len(c.engines))},
 	}
 
@@ -261,7 +260,7 @@ func (c *Cluster) Info() [][]string {
 	return info
 }
 
-// TotalCpus return the total memory of the cluster
+// TotalCpus return the total memory of the Kubernetes cluster.
 func (c *Cluster) TotalCpus() int64 {
 	c.RLock()
 	defer c.RUnlock()
@@ -278,7 +277,7 @@ func (c *Cluster) TotalCpus() int64 {
 	return total
 }
 
-// TotalMemory return the total memory of the cluster
+// TotalMemory return the total memory of the Kubernetes cluster.
 func (c *Cluster) TotalMemory() int64 {
 	c.RLock()
 	defer c.RUnlock()
@@ -295,27 +294,27 @@ func (c *Cluster) TotalMemory() int64 {
 	return total
 }
 
-// BuildImage build an image
+// BuildImage build an image.
 func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer) error {
 	return errNotImplemented
 }
 
-// TagImage tag an image
+// TagImage tag an image.
 func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	return errNotSupported
 }
 
-// CreateVolume creates a volume in the cluster
+// CreateVolume creates a volume in the cluster.
 func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*cluster.Volume, error) {
 	return nil, errNotSupported
 }
 
-// RemoveVolumes removes volumes from the cluster
+// RemoveVolumes removes volumes from the cluster.
 func (c *Cluster) RemoveVolumes(name string) (bool, error) {
 	return false, errNotSupported
 }
 
-// Volume returns the volume name in the cluster
+// Volume returns the volume name in the cluster.
 func (c *Cluster) Volume(name string) *cluster.Volume {
 	return nil
 }
@@ -325,24 +324,19 @@ func (c *Cluster) Volumes() []*cluster.Volume {
 	return nil
 }
 
-// RemoveImage removes an image from the cluster
-func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete, error) {
-	return nil, errNotSupported
-}
-
-// Pull will pull images on the cluster nodes
+// Pull will pull images on the cluster nodes.
 func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string, err error)) {
 }
 
-// Load images
+// Load images loads an images on the cluster nodes.
 func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string, err error)) {
 }
 
-// Import image
+// Import image imports an image on the cluster nodes.
 func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string, err error)) {
 }
 
-// Handle callbacks for the events
+// Handle callbacks for the events.
 func (c *Cluster) Handle(e *cluster.Event) error {
 	return nil
 }
@@ -352,22 +346,22 @@ func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 	return nil
 }
 
-// RemoveImages removes images from the cluster
+// RemoveImages removes images from the cluster.
 func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDelete, error) {
 	return nil, errNotSupported
 }
 
-// RenameContainer Rename a container
+// RenameContainer renames a container.
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
 	return errNotSupported
 }
 
-// CreateNetwork creates a network in the cluster
+// CreateNetwork creates a network in the cluster.
 func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error) {
 	return nil, errNotSupported
 }
 
-// RemoveNetwork removes network from the cluster
+// RemoveNetwork removes network from the cluster.
 func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
 	return errNotSupported
 }
@@ -375,4 +369,46 @@ func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
 // Networks returns all the networks in the cluster.
 func (c *Cluster) Networks() cluster.Networks {
 	return cluster.Networks{}
+}
+
+// containerIDFromPod extracts the Docker container ID from the Kubernetes pod
+// identified by name.
+func (c *Cluster) containerIDFromPod(name string) (string, error) {
+	pods := c.kubeClient.Pods(api.NamespaceDefault)
+	pod, err := pods.Get(name)
+	if err != nil {
+		return "", err
+	}
+	if pod != nil {
+		return formatContainerID(pod.Status.ContainerStatuses[0].ContainerID), nil
+	}
+	return "", nil
+}
+
+// formatContainerID converts a Kubernetes container ID to an ID compatible with
+// the Docker API.
+func formatContainerID(id string) string {
+	return strings.TrimPrefix(id, "docker://")
+}
+
+// dockerEngines returns the docker engines in the Kubernetes cluster.
+func dockerEngines(client unversioned.Interface) (map[string]*cluster.Engine, error) {
+	engines := make(map[string]*cluster.Engine)
+
+	nodes, err := client.Nodes().List(labels.Everything(), fields.Everything())
+	if err != nil {
+		return engines, err
+	}
+
+	for _, node := range nodes.Items {
+		var host string
+		for _, address := range node.Status.Addresses {
+			if address.Type == api.NodeInternalIP {
+				host = address.Address
+			}
+		}
+		engine := cluster.NewEngine(net.JoinHostPort(host, defaultDockerEnginePort), 0)
+		engines[node.ObjectMeta.Name] = engine
+	}
+	return engines, nil
 }
