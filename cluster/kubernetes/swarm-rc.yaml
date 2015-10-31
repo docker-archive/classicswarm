@@ -15,13 +15,13 @@ spec:
     spec:
       containers:
         - name: swarm
-          image: b.gcr.io/swarm/swarm:1.0.0
+          image: "b.gcr.io/kuar/swarm:1.0.0"
           args:
             - "--log-level=debug"
             - "manage"
             - "--cluster-driver=kubernetes-experimental"
             - "--host=0.0.0.0:2375"
-            - "etcd://127.0.0.1:2379"
+            - "127.0.0.1:8080"
           resources:
             limits:
               cpu: 100m
