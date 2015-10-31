@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+	clientcmdapi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 
@@ -46,9 +48,43 @@ var (
 	errNotImplemented = errors.New("not implemented in the kubernetes cluster")
 )
 
-func newKubeClient() (*unversioned.Client, error) {
+func newKubeClient(master string, options cluster.DriverOpts) (*unversioned.Client, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	configOverrides := &clientcmd.ConfigOverrides{}
+
+	insecureSkipTLSVerify := false
+
+	apiVersion, _ := options.String("kubernetes.apiversion", "KUBERNETES_APIVERSION")
+	certificateAuthority, _ := options.String("kubernetes.certificateauthority", "KUBERNETES_CERTIFICATE_AUTHORITY")
+	clientCertificate, _ := options.String("kubernetes.clientcertificate", "KUBERNETES_CLIENT_CERTIFICATE")
+	clientKey, _ := options.String("kubernetes.clientkey", "KUBERNETES_CLIENT_KEY")
+	password, _ := options.String("kubernetes.password", "KUBERNETES_PASSWORD")
+	token, _ := options.String("kubernetes.token", "KUBERNETES_TOKEN")
+	username, _ := options.String("kubernetes.username", "KUBERNETES_USERNAME")
+
+	if v, ok := options.String("kubernetes.insecureskiptlsverify", "KUBERNETES_INSECURE_SKIP_TLS_VERIFY"); ok {
+		if s, err := strconv.ParseBool(v); err == nil {
+			insecureSkipTLSVerify = s
+		}
+	}
+
+	configOverrides := &clientcmd.ConfigOverrides{
+		AuthInfo: clientcmdapi.AuthInfo{
+			LocationOfOrigin:  "swarm",
+			ClientCertificate: clientCertificate,
+			ClientKey:         clientKey,
+			Token:             token,
+			Username:          username,
+			Password:          password,
+		},
+		ClusterInfo: clientcmdapi.Cluster{
+			LocationOfOrigin:      "swarm",
+			Server:                master,
+			APIVersion:            apiVersion,
+			InsecureSkipTLSVerify: insecureSkipTLSVerify,
+			CertificateAuthority:  certificateAuthority,
+		},
+	}
+
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 
 	config, err := kubeConfig.ClientConfig()
@@ -65,10 +101,11 @@ func newKubeClient() (*unversioned.Client, error) {
 // NewCluster create a new Kubernetes cluster based on the given cluster options.
 func NewCluster(TLSConfig *tls.Config, master string, kubeClient unversioned.Interface, options cluster.DriverOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "kubernetes"}).Debug("Initializing cluster")
+	log.Infof("Kubernetes master: %s", master)
 
 	var err error
 	if kubeClient == nil {
-		kubeClient, err = newKubeClient()
+		kubeClient, err = newKubeClient(master, options)
 		if err != nil {
 			return nil, err
 		}
