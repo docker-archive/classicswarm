@@ -1,75 +1,29 @@
 etcd:
   command: >
-    --advertise-client-urls http://127.0.0.1:2379
-    --data-dir /var/lib/etcd
-    --listen-client-urls http://127.0.0.1:2379
-    --listen-peer-urls http://127.0.0.1:2380
-    --name etcd0
-  image: "b.gcr.io/kuar/etcd:2.2.0"
+    /usr/local/bin/etcd
+    --addr=127.0.0.1:4001
+    --bind-addr=0.0.0.0:4001
+    --data-dir=/var/etcd/data
+  image: "gcr.io/google_containers/etcd:2.0.12"
   net: "host"
   restart: "always"
-  volumes:
-    - "/var/lib/etcd:/var/lib/etcd"
-    - "/usr/share/ca-certificates/:/etc/ssl/certs"
-apiserver:
+kubernetes:
   command: >
-    --etcd-servers=http://127.0.0.1:2379
-    --insecure-bind-address=0.0.0.0
-    --insecure-port=8080
-    --logtostderr=true
-    --service-cluster-ip-range=10.200.20.0/24
-    --v=2
-  image: "b.gcr.io/kuar/kube-apiserver:1.2.0"
-  net: "host"
-  restart: "always"
-  volumes:
-    - "/etc/kubernetes:/etc/kubernetes"
-    - "/usr/share/ca-certificates:/etc/ssl/certs"
-    - "/var/run/kubernetes:/var/run/kubernetes"
-controllermanager:
-  command: >
-    --logtostderr=true
-    --master=http://127.0.0.1:8080
-    --v=2
-  image: "b.gcr.io/kuar/kube-controller-manager:1.2.0"
-  net: "host"
-  restart: "always"
-  volumes:
-    - "/etc/kubernetes:/etc/kubernetes"
-    - "/usr/share/ca-certificates:/etc/ssl/certs"
-scheduler:
-  command: >
-    --logtostderr=true
-    --master=http://127.0.0.1:8080
-    --v=2
-  image: "b.gcr.io/kuar/kube-scheduler:1.2.0"
-  net: "host"
-  restart: "always"
-  volumes:
-    - "/etc/kubernetes:/etc/kubernetes"
-    - "/usr/share/ca-certificates:/etc/ssl/certs"
-kubelet:
-  command: >
-    --address=0.0.0.0
-    --api-servers=http://127.0.0.1:8080
+    /hyperkube kubelet
     --containerized
-    --enable-server
-    --hostname-override=127.0.0.1
-    --machine-id-file=/rootfs/etc/machine-id
-    --v=2
-  image: "b.gcr.io/kuar/kubelet:1.2.0"
+    --hostname-override="127.0.0.1"
+    --address="0.0.0.0"
+    --api-servers=http://127.0.0.1:8080
+    --config=/etc/kubernetes/manifests
+  image: "gcr.io/google_containers/hyperkube:v1.0.6"
   net: "host"
+  pid: "host"
   privileged: true
   restart: "always"
   volumes:
-    - "/usr/bin/nsenter:/nsenter"
-    - "/usr:/usr"
-    - "/lib64:/lib64"
     - "/:/rootfs:ro"
-    - "/etc/kubernetes:/etc/kubernetes"
-    - "/etc/os-release:/etc/os-release"
-    - "/usr/share/ca-certificates/:/etc/ssl/certs"
     - "/sys:/sys:ro"
-    - "/var/lib/docker/:/var/lib/docker:ro"
+    - "/dev:/dev"
+    - "/var/lib/docker/:/var/lib/docker:rw"
     - "/var/lib/kubelet/:/var/lib/kubelet:rw"
     - "/var/run:/var/run:rw"
