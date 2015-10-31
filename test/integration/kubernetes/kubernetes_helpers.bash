@@ -2,6 +2,7 @@
 
 load ../../helpers
 
+KUBERNETES_API_PORT=8080
 KUBERNETES_IMAGE="gcr.io/google_containers/hyperkube:v1.0.6"
 ETCD_IMAGE="gcr.io/google_containers/etcd:2.0.12"
 
