@@ -37,14 +37,16 @@ type Server struct {
 	hosts      []string
 	tlsConfig  *tls.Config
 	dispatcher *dispatcher
+	multiTenant bool
 }
 
 // NewServer creates an api.Server.
-func NewServer(hosts []string, tlsConfig *tls.Config) *Server {
+func NewServer(hosts []string, tlsConfig *tls.Config, multiTenant bool) *Server {
 	return &Server{
 		hosts:      hosts,
 		tlsConfig:  tlsConfig,
 		dispatcher: &dispatcher{},
+		multiTenant: multiTenant,
 	}
 }
 
