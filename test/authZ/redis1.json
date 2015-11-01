@@ -1,0 +1,28 @@
+{
+ "Image": "redis",
+  "AttachStderr": true,
+        "AttachStdin": false,
+        "AttachStdout": true,
+        "Cmd": [
+            "redis-server"
+        ],
+        "CpuShares": 0,
+        "Cpuset": "",
+        "Domainname": "",
+        "Entrypoint": [
+            "/entrypoint.sh"
+        ],
+        "Env": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "REDIS_VERSION=3.0.2",
+            "REDIS_DOWNLOAD_URL=http://download.redis.io/releases/redis-3.0.2.tar.gz",
+            "REDIS_DOWNLOAD_SHA1=a38755fe9a669896f7c5d8cd3ebbf76d59712002"
+        ],
+        "ExposedPorts": {
+            "6379/tcp": {}
+        },
+        "Volumes": {
+            "/data": {}
+        }
+}
+

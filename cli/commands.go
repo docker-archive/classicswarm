@@ -28,7 +28,8 @@ var (
 				flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
 				flHeartBeat,
 				flEnableCors,
-				flCluster, flDiscoveryOpt, flClusterOpt},
+				flCluster, flDiscoveryOpt, flClusterOpt,
+				multiTenant},
 			Action: manage,
 		},
 		{
