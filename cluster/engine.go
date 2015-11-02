@@ -402,6 +402,9 @@ func (e *Engine) refreshLoop() {
 			return
 		}
 
+		// Refresh Engine specs
+		e.updateSpecs()
+
 		err = e.RefreshContainers(false)
 		if err == nil {
 			// Do not check error as older daemon don't support this call
