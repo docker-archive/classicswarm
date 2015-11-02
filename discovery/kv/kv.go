@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	discoveryPath = "docker/swarm/nodes"
+	defaultDiscoveryPath = "docker/swarm/nodes"
 )
 
 // Discovery is exported
@@ -62,7 +62,14 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Du
 
 	s.heartbeat = heartbeat
 	s.ttl = ttl
-	s.path = path.Join(s.prefix, discoveryPath)
+
+	// Use a custom path if specified in discovery options
+	dpath := defaultDiscoveryPath
+	if discoveryOpt["kv.path"] != "" {
+		dpath = discoveryOpt["kv.path"]
+	}
+
+	s.path = path.Join(s.prefix, dpath)
 
 	var config *store.Config
 	if discoveryOpt["kv.cacertfile"] != "" && discoveryOpt["kv.certfile"] != "" && discoveryOpt["kv.keyfile"] != "" {
