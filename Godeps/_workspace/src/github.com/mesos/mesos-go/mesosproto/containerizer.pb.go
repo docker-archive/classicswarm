@@ -2,37 +2,17 @@
 // source: containerizer.proto
 // DO NOT EDIT!
 
-/*
-	Package mesosproto is a generated protocol buffer package.
-
-	It is generated from these files:
-		containerizer.proto
-		internal.proto
-		log.proto
-		mesos.proto
-		messages.proto
-		registry.proto
-		scheduler.proto
-		state.proto
-
-	It has these top-level messages:
-		Launch
-		Update
-		Wait
-		Destroy
-		Usage
-		Termination
-		Containers
-*/
 package mesosproto
 
 import proto "github.com/gogo/protobuf/proto"
+import fmt "fmt"
 import math "math"
 
 // discarding unused import gogoproto "github.com/gogo/protobuf/gogoproto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
 var _ = math.Inf
 
 // *
