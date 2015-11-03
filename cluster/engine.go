@@ -218,7 +218,10 @@ func (e *Engine) updateSpecs() error {
 
 // RemoveImage deletes an image from the engine.
 func (e *Engine) RemoveImage(image *Image, name string, force bool) ([]*dockerclient.ImageDelete, error) {
-	return e.client.RemoveImage(name, force)
+	array, err := e.client.RemoveImage(name, force)
+	e.RefreshImages()
+	return array, err
+
 }
 
 // RemoveNetwork deletes a network from the engine.
