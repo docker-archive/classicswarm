@@ -50,7 +50,7 @@ func TestPortFilterNoConflicts(t *testing.T) {
 		PortBindings: map[string][]dockerclient.PortBinding{},
 	}}}
 	// Make sure we don't filter anything out.
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Equal(t, result, nodes)
 
@@ -61,7 +61,7 @@ func TestPortFilterNoConflicts(t *testing.T) {
 
 	// Since there are no other containers in the cluster, this shouldn't
 	// filter anything either.
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Equal(t, result, nodes)
 
@@ -70,7 +70,7 @@ func TestPortFilterNoConflicts(t *testing.T) {
 	assert.NoError(t, nodes[0].AddContainer(container))
 
 	// Since no node is using port 80, there should be no filter
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Equal(t, result, nodes)
 }
@@ -109,7 +109,7 @@ func TestPortFilterSimple(t *testing.T) {
 	}}}
 
 	// nodes[0] should be excluded since port 80 is taken away.
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.NotContains(t, result, nodes[0])
 }
@@ -149,7 +149,7 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 
 	// nodes[0] should be excluded since port 80 is taken away for every
 	// interface.
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.NotContains(t, result, nodes[0])
 
@@ -163,7 +163,7 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 	}}}
 	// nodes[1] should be excluded since port 4242 is already taken on that
 	// interface.
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.NotContains(t, result, nodes[1])
 
@@ -172,7 +172,7 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 		PortBindings: makeBinding("0.0.0.0", "4242"),
 	}}}
 	// nodes[1] should still be excluded since the port is not available on the same interface.
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.NotContains(t, result, nodes[1])
 
@@ -181,7 +181,7 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 		PortBindings: makeBinding("", "4242"),
 	}}}
 	// nodes[1] should still be excluded since the port is not available on the same interface.
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.NotContains(t, result, nodes[1])
 
@@ -191,7 +191,7 @@ func TestPortFilterDifferentInterfaces(t *testing.T) {
 	}}}
 	// nodes[1] should be included this time since the port is available on the
 	// other interface.
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Contains(t, result, nodes[1])
 }
@@ -262,7 +262,7 @@ func TestPortFilterRandomAssignment(t *testing.T) {
 	}}}
 
 	// Since port "80" has been mapped to "1234", we should be able to request "80".
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Equal(t, result, nodes)
 
@@ -270,7 +270,7 @@ func TestPortFilterRandomAssignment(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		PortBindings: makeBinding("", "1234"),
 	}}}
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.NotContains(t, result, nodes[0])
 }
@@ -323,7 +323,7 @@ func TestPortFilterForHostMode(t *testing.T) {
 	}}
 
 	// nodes[0] should be excluded since port 80 is taken away
-	result, err = p.Filter(config, nodes)
+	result, err = p.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(result))
 	assert.NotContains(t, result, nodes[0])

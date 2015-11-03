@@ -66,16 +66,16 @@ func TestHealthyFilter(t *testing.T) {
 		err             error
 	)
 
-	result, err = f.Filter(&cluster.ContainerConfig{}, nodesAllHealth)
+	result, err = f.Filter(&cluster.ContainerConfig{}, nodesAllHealth, true)
 	assert.NoError(t, err)
 	assert.Equal(t, result, nodesAllHealth)
 
-	result, err = f.Filter(&cluster.ContainerConfig{}, nodesPartHealth)
+	result, err = f.Filter(&cluster.ContainerConfig{}, nodesPartHealth, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodesPartHealth[1])
 
-	result, err = f.Filter(&cluster.ContainerConfig{}, nodesNoHealth)
+	result, err = f.Filter(&cluster.ContainerConfig{}, nodesNoHealth, true)
 	assert.Equal(t, err, ErrNoHealthyNodeAvailable)
 	assert.Nil(t, result)
 }
