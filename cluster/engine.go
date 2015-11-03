@@ -128,6 +128,9 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 		return err
 	}
 
+	// Start monitoring events from the engine.
+	e.client.StartMonitorEvents(e.handler, nil)
+
 	// Force a state update before returning.
 	if err := e.RefreshContainers(true); err != nil {
 		return err
@@ -144,8 +147,6 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 	// Start the update loop.
 	go e.refreshLoop()
 
-	// Start monitoring events from the engine.
-	e.client.StartMonitorEvents(e.handler, nil)
 	e.emitEvent("engine_connect")
 
 	return nil
@@ -218,7 +219,10 @@ func (e *Engine) updateSpecs() error {
 
 // RemoveImage deletes an image from the engine.
 func (e *Engine) RemoveImage(image *Image, name string, force bool) ([]*dockerclient.ImageDelete, error) {
-	return e.client.RemoveImage(name, force)
+	array, err := e.client.RemoveImage(name, force)
+	e.RefreshImages()
+	return array, err
+
 }
 
 // RemoveNetwork deletes a network from the engine.
@@ -521,6 +525,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
 	e.refreshContainer(id, true)
+	e.RefreshVolumes()
 	e.RefreshNetworks()
 
 	e.RLock()
