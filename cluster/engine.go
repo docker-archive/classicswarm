@@ -128,6 +128,9 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 		return err
 	}
 
+	// Start monitoring events from the engine.
+	e.client.StartMonitorEvents(e.handler, nil)
+
 	// Force a state update before returning.
 	if err := e.RefreshContainers(true); err != nil {
 		return err
@@ -144,8 +147,6 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 	// Start the update loop.
 	go e.refreshLoop()
 
-	// Start monitoring events from the engine.
-	e.client.StartMonitorEvents(e.handler, nil)
 	e.emitEvent("engine_connect")
 
 	return nil
