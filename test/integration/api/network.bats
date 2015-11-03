@@ -28,7 +28,7 @@ function teardown() {
 	run docker_swarm network inspect node-0/bridge
 	[[ "${output}" != *"\"Containers\": {}"* ]]
 
-	diff <(docker_swarm network inspect node-0/bridge) <(docker_host -H ${HOSTS[0]} network inspect bridge)
+	diff <(docker_swarm network inspect node-0/bridge) <(docker -H ${HOSTS[0]} network inspect bridge)
 }
 
 @test "docker network create" {
