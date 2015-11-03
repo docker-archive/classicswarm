@@ -18,7 +18,7 @@ func (f *DependencyFilter) Name() string {
 }
 
 // Filter is exported
-func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node, _ bool) ([]*node.Node, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}

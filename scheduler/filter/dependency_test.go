@@ -50,7 +50,7 @@ func TestDependencyFilterSimple(t *testing.T) {
 
 	// No dependencies - make sure we don't filter anything out.
 	config = &cluster.ContainerConfig{}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Equal(t, result, nodes)
 
@@ -58,7 +58,7 @@ func TestDependencyFilterSimple(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		VolumesFrom: []string{"c0"},
 	}}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
@@ -67,7 +67,7 @@ func TestDependencyFilterSimple(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		VolumesFrom: []string{"c0:rw"},
 	}}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
@@ -76,7 +76,7 @@ func TestDependencyFilterSimple(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		VolumesFrom: []string{"c0:ro"},
 	}}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
@@ -85,7 +85,7 @@ func TestDependencyFilterSimple(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		Links: []string{"c1:foobar"},
 	}}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
@@ -94,7 +94,7 @@ func TestDependencyFilterSimple(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		NetworkMode: "container:c2",
 	}}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[2])
@@ -103,7 +103,7 @@ func TestDependencyFilterSimple(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		NetworkMode: "bridge",
 	}}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Equal(t, result, nodes)
 }
@@ -158,7 +158,7 @@ func TestDependencyFilterMulti(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		VolumesFrom: []string{"c0"},
 	}}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
@@ -167,7 +167,7 @@ func TestDependencyFilterMulti(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		VolumesFrom: []string{"c1"},
 	}}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
@@ -176,7 +176,7 @@ func TestDependencyFilterMulti(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		VolumesFrom: []string{"c0", "c1"},
 	}}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
@@ -185,7 +185,7 @@ func TestDependencyFilterMulti(t *testing.T) {
 	config = &cluster.ContainerConfig{dockerclient.ContainerConfig{HostConfig: dockerclient.HostConfig{
 		VolumesFrom: []string{"c0", "c2"},
 	}}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.Error(t, err)
 }
 
@@ -243,7 +243,7 @@ func TestDependencyFilterChaining(t *testing.T) {
 			NetworkMode: "container:c1",
 		},
 	}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
@@ -256,6 +256,6 @@ func TestDependencyFilterChaining(t *testing.T) {
 			NetworkMode: "container:c1",
 		},
 	}}
-	result, err = f.Filter(config, nodes)
+	result, err = f.Filter(config, nodes, true)
 	assert.Error(t, err)
 }
