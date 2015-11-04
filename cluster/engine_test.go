@@ -193,13 +193,14 @@ func TestCreateContainer(t *testing.T) {
 	// Everything is ok
 	name := "test1"
 	id := "id1"
-	client.On("CreateContainer", &mockConfig, name).Return(id, nil).Once()
+	var auth *dockerclient.AuthConfig
+	client.On("CreateContainer", &mockConfig, name, auth).Return(id, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: &config.ContainerConfig}, nil).Once()
-	container, err := engine.Create(config, name, false)
+	container, err := engine.Create(config, name, false, auth)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
 	assert.Len(t, engine.Containers(), 1)
@@ -207,8 +208,8 @@ func TestCreateContainer(t *testing.T) {
 	// Image not found, pullImage == false
 	name = "test2"
 	mockConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(mockInfo.NCPU)))
-	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrImageNotFound).Once()
-	container, err = engine.Create(config, name, false)
+	client.On("CreateContainer", &mockConfig, name, auth).Return("", dockerclient.ErrImageNotFound).Once()
+	container, err = engine.Create(config, name, false, auth)
 	assert.Equal(t, err, dockerclient.ErrImageNotFound)
 	assert.Nil(t, container)
 
@@ -217,14 +218,14 @@ func TestCreateContainer(t *testing.T) {
 	id = "id3"
 	mockConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(mockInfo.NCPU)))
 	client.On("PullImage", config.Image+":latest", mock.Anything).Return(nil).Once()
-	client.On("CreateContainer", &mockConfig, name).Return("", dockerclient.ErrImageNotFound).Once()
-	client.On("CreateContainer", &mockConfig, name).Return(id, nil).Once()
+	client.On("CreateContainer", &mockConfig, name, auth).Return("", dockerclient.ErrImageNotFound).Once()
+	client.On("CreateContainer", &mockConfig, name, auth).Return(id, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: &config.ContainerConfig}, nil).Once()
-	container, err = engine.Create(config, name, true)
+	container, err = engine.Create(config, name, true, auth)
 	assert.Nil(t, err)
 	assert.Equal(t, container.Id, id)
 	assert.Len(t, engine.Containers(), 2)
