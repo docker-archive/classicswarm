@@ -52,7 +52,7 @@ When you run a new container, the system chooses `node-1` at random from the swa
 of two equally ranked nodes:
 
 ```bash
-$ docker run -d -P -m 1G --name db mysql
+$ docker -H <Swarm Manager IP:Swarm Manager Port(default:2376)> run -d -P -m 1G --name db mysql
 f8b693db9cd6
 
 $ docker ps
@@ -63,7 +63,7 @@ f8b693db9cd6        mysql:latest        "mysqld"            Less than a second a
 Now, we start another container and ask for 1G of RAM again.
 
 ```bash
-$ docker run -d -P -m 1G --name frontend nginx
+$ docker -H <Swarm Manager IP:Swarm Manager Port(default:2376)> run -d -P -m 1G --name frontend nginx
 963841b138d8
 
 $ docker ps
@@ -83,7 +83,7 @@ neither is running a container. Again, the nodes are equal. When you run a new
 container, the system chooses `node-1` at random from the swarm:
 
 ```bash
-$ docker run -d -P -m 1G --name db mysql
+$ docker -H <Swarm Manager IP:Swarm Manager Port(default:2376)> run -d -P -m 1G --name db mysql
 f8b693db9cd6
 
 $ docker ps
@@ -94,7 +94,7 @@ f8b693db9cd6        mysql:latest        "mysqld"            Less than a second a
 Now, you start another container, asking for 1G of RAM again.
 
 ```bash
-$ docker run -d -P -m 1G --name frontend nginx
+$ docker -H <Swarm Manager IP:Swarm Manager Port(default:2376)> run -d -P -m 1G --name frontend nginx
 963841b138d8
 
 $ docker ps
