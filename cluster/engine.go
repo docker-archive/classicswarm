@@ -89,9 +89,6 @@ type Engine struct {
 
 // NewEngine is exported
 func NewEngine(addr string, overcommitRatio float64, opts *EngineOpts) *Engine {
-	if opts == nil {
-		log.Fatal("EngineOpts is nil")
-	}
 	e := &Engine{
 		Addr:            addr,
 		client:          nopclient.NewNopClient(),
