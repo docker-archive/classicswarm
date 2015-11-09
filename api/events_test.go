@@ -42,7 +42,7 @@ func TestHandle(t *testing.T) {
 
 	assert.NoError(t, eh.Handle(event))
 
-	str := fmt.Sprintf("{%q:%q,%q:%q,%q:%q,%q:%d,%q:{%q:%q,%q:%q,%q:%q,%q:%q}}",
+	str := fmt.Sprintf(eventFmt,
 		"status", "status",
 		"id", "id",
 		"from", "from node:node_name",
