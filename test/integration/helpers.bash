@@ -26,7 +26,6 @@ BASE_PORT=$(( ( RANDOM % 1000 )  + 5000 ))
 
 # Drivers to use for Docker engines the tests are going to create.
 STORAGE_DRIVER=${STORAGE_DRIVER:-overlay}
-EXEC_DRIVER=${EXEC_DRIVER:-native}
 
 BUSYBOX_IMAGE="$BATS_TMPDIR/busybox.tgz"
 
@@ -178,8 +177,8 @@ function start_docker() {
 			${DOCKER_IMAGE}:${DOCKER_VERSION} \
 			bash -c "\
 				hostname node-$i && \
-				docker -d -H 127.0.0.1:$port \
-					--storage-driver=$STORAGE_DRIVER --exec-driver=$EXEC_DRIVER \
+				docker daemon -H 127.0.0.1:$port \
+					--storage-driver=$STORAGE_DRIVER \
 					`join ' ' $@` \
 		")
 	done

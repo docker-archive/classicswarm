@@ -26,7 +26,7 @@ execute time go build -o "$SWARM_BINARY" ../..
 
 # Start the docker engine.
 execute docker --daemon --log-level=panic \
-	--storage-driver="$STORAGE_DRIVER" --exec-driver="$EXEC_DRIVER" &
+	--storage-driver="$STORAGE_DRIVER" &
 DOCKER_PID=$!
 
 # Wait for it to become reachable.
