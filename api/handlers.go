@@ -147,6 +147,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		// grouping images by Id, and concat their RepoTags
 		if entry, existed := groupImages[image.Id]; existed {
 			entry.RepoTags = append(entry.RepoTags, image.RepoTags...)
+			entry.RepoDigests = append(entry.RepoDigests, image.RepoDigests...)
 			groupImages[image.Id] = entry
 		} else {
 			groupImages[image.Id] = image.Image
@@ -166,6 +167,18 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		image.RepoTags = result
+
+		// de-duplicate RepoDigests
+		result = []string{}
+		seen = map[string]bool{}
+		for _, val := range image.RepoDigests {
+			if _, ok := seen[val]; !ok {
+				result = append(result, val)
+				seen[val] = true
+			}
+		}
+		image.RepoDigests = result
+
 		images = append(images, image)
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -504,7 +517,11 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 
 		if tag := r.Form.Get("tag"); tag != "" {
-			image += ":" + tag
+			if tagHasDigest(tag) {
+				image += "@" + tag
+			} else {
+				image += ":" + tag
+			}
 		}
 
 		var errorMessage string
