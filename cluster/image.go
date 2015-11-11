@@ -26,6 +26,7 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 
 	repoName, tag := parsers.ParseRepositoryTag(IDOrName)
 
+	// match repotag
 	for _, imageRepoTag := range image.RepoTags {
 		imageRepoName, imageTag := parsers.ParseRepositoryTag(imageRepoTag)
 
@@ -33,6 +34,18 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 			return true
 		}
 		if imageRepoName == repoName && (imageTag == tag || tag == "") {
+			return true
+		}
+	}
+
+	// match repodigests
+	for _, imageDigest := range image.RepoDigests {
+		imageRepoName, imageDigest := parsers.ParseRepositoryTag(imageDigest)
+
+		if matchTag == false && imageRepoName == repoName {
+			return true
+		}
+		if imageRepoName == repoName && (imageDigest == tag || tag == "") {
 			return true
 		}
 	}
@@ -55,7 +68,9 @@ type Images []*Image
 func (images Images) Filter(opts ImageFilterOptions) Images {
 	includeAll := func(image *Image) bool {
 		// TODO: this is wrong if RepoTags == []
-		return opts.All || (len(image.RepoTags) != 0 && image.RepoTags[0] != "<none>:<none>")
+		return opts.All ||
+			(len(image.RepoTags) != 0 && image.RepoTags[0] != "<none>:<none>") ||
+			(len(image.RepoDigests) != 0 && image.RepoDigests[0] != "<none>@<none>")
 	}
 
 	includeFilter := func(image *Image) bool {
