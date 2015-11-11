@@ -219,3 +219,7 @@ func int64ValueOrZero(r *http.Request, k string) int64 {
 	}
 	return val
 }
+
+func tagHasDigest(tag string) bool {
+	return strings.Contains(tag, ":")
+}
