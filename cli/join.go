@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"math/rand"
 	"regexp"
 	"time"
 
@@ -47,6 +48,12 @@ func join(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// add a random delay [0,hb) at start to avoid synchronized registration
+	r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
+	delay := time.Duration(r.Int63n(int64(hb)))
+	log.Infof("Add a random delay %s to avoid synchronized registration", delay)
+	time.Sleep(delay)
 
 	for {
 		log.WithFields(log.Fields{"addr": addr, "discovery": dflag}).Infof("Registering on the discovery service every %s...", hb)
