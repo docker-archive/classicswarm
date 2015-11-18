@@ -36,6 +36,22 @@ function teardown() {
 	done
 }
 
+@test "docker pull with image digest" {
+	start_docker 2
+	swarm_manage
+
+	# make sure no image exists
+	run docker_swarm images -q
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 0 ]
+
+	docker_swarm pull jimmyxian/busybox@sha256:649374debd26307573564fcf9748d39db33ef61fbf88ee84c3af10fd7e08765d
+
+	run docker_swarm images --digests
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"sha256:649374debd26307573564fcf9748d39db33ef61fbf88ee84c3af10fd7e08765d"* ]]
+}
+
 @test "docker pull -check error code" {
 	start_docker 2
 	swarm_manage

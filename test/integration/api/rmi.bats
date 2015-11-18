@@ -103,6 +103,28 @@ function teardown() {
 	[[ "${output}" != *"testimage"* ]]
 }
 
+@test "docker rmi with image digest" {
+	start_docker 2
+	swarm_manage
+
+	# make sure no image exists
+	run docker_swarm images -q
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 0 ]
+
+	docker_swarm pull jimmyxian/busybox@sha256:649374debd26307573564fcf9748d39db33ef61fbf88ee84c3af10fd7e08765d
+
+	run docker_swarm images --digests
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"sha256:649374debd26307573564fcf9748d39db33ef61fbf88ee84c3af10fd7e08765d"* ]]
+
+	docker_swarm rmi jimmyxian/busybox@sha256:649374debd26307573564fcf9748d39db33ef61fbf88ee84c3af10fd7e08765d
+
+	run docker_swarm images --digests
+	[[ "${output}" != *"busybox"* ]]
+	[[ "${output}" != *"sha256:649374debd26307573564fcf9748d39db33ef61fbf88ee84c3af10fd7e08765d"* ]]
+}
+
 @test "docker rmi --force with image tag" {
 	start_docker_with_busybox 1
 	start_docker 1
