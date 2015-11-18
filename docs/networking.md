@@ -55,8 +55,8 @@ scope driver.
 As you can see here, the ID is the same on the two nodes, because it's the same
 network.
 
-If you want to want to create a local scope network (for example with the bridge
-driver) you should use `<node>/<name>` otherwise your network will be created on a
+If you want to create a local scope network (for example with the bridge
+driver) you should use `<node>/<name>`. Otherwise your network will be created on a
 random node.
 
     $ docker network create node-0/bridge2 -b bridge
@@ -79,7 +79,7 @@ random node.
 ## Remove a network
 
 To remove a network you can use its ID or its name.
-If two different network have the same name, use may use `<node>/<name>`.
+If two different networks have the same name, you can use `<node>/<name>`.
 
     $ docker network rm swarm_network
     42131321acab3233ba342443Ba4312
@@ -95,7 +95,7 @@ If two different network have the same name, use may use `<node>/<name>`.
     6382abccd23d        node-1/none            null
     5262bbfe5616        node-1/bridge2         bridge
     
-`swarm_network` was removed from every node, `bridge2` was removed only
+`swarm_network` was removed from every node, whereas `bridge2` was removed only
 from `node-0`.
 
 ## Docker Swarm documentation index
