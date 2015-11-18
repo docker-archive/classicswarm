@@ -79,7 +79,7 @@ random node.
 ## Remove a network
 
 To remove a network you can use its ID or its name.
-If two different network have the same name, use may use `<node>/<name>`.
+If two different networks have the same name, you may use `<node>/<name>`.
 
     $ docker network rm swarm_network
     42131321acab3233ba342443Ba4312
