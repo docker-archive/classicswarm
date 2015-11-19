@@ -90,16 +90,18 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 			f.Flush()
 		}
 	}
-
 	eh.RUnlock()
-
+	eh.Lock()
 	if len(failed) > 0 {
 		for _, key := range failed {
 			if ch, ok := eh.cs[key]; ok {
 				close(ch)
 			}
+			delete(eh.cs, key)
 		}
 	}
+
+	eh.Unlock()
 
 	return nil
 }
