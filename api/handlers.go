@@ -24,16 +24,6 @@ import (
 // APIVERSION is the API version supported by swarm manager
 const APIVERSION = "1.21"
 
-// A simple buffer reader to copy http.Request.Body stream
-type bufReader struct {
-	*bytes.Buffer
-}
-
-// Implements io.ReadCloser interface
-func (bf bufReader) Close() error {
-	return nil
-}
-
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := dockerclient.Info{
@@ -809,13 +799,14 @@ func proxyNetworkContainerOperation(c *context, w http.ResponseWriter, r *http.R
 
 	// make a copy of r.Body
 	buf, _ := ioutil.ReadAll(r.Body)
-	copy1 := bufReader{bytes.NewBuffer(buf)}
-	// restore r.Body
-	r.Body = bufReader{bytes.NewBuffer(buf)}
+	bodyCopy := ioutil.NopCloser(bytes.NewBuffer(buf))
+	defer bodyCopy.Close()
+	// restore r.Body stream as it'll be read again
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
 
 	// Extract container info from r.Body copy
 	var connect dockerclient.NetworkConnect
-	if err := json.NewDecoder(copy1).Decode(&connect); err != nil {
+	if err := json.NewDecoder(bodyCopy).Decode(&connect); err != nil {
 		httpError(w, fmt.Sprintf("Container is not specified"), http.StatusNotFound)
 		return
 	}
