@@ -28,9 +28,9 @@ You can choose the filter(s) you want to use with the `--filter` flag of `swarm 
 Constraints are key/value pairs associated to particular nodes. You can see them
 as *node tags*.
 
-When creating a container, the user can select a subset of nodes that should be
-considered for scheduling by specifying one or more sets of matching key/value
-pairs. This approach has several practical use cases such as:
+When creating a container or building an image, you can select a subset of
+nodes to consider for scheduling. This approach has several practical use cases
+such as:
 
 * Selecting specific host properties (such as `storage=ssd`, in order to schedule
   containers on specific hardware).
@@ -39,8 +39,9 @@ pairs. This approach has several practical use cases such as:
 * Logical cluster partitioning (`environment=production`, to split a cluster into
   sub-clusters with different properties).
 
-To tag a node with a specific set of key/value pairs, one must pass a list of
-`--label` options at docker startup time.
+To specify a subset of key/value pairs for a node, pass a list of `--label`
+options at docker startup time. For instance, let's start `node-1` with the
+`storage=ssd` label:
 
 For instance, let's start `node-1` with the `storage=ssd` label:
 
@@ -89,6 +90,38 @@ Now we want to run an Nginx frontend in our cluster. However, we don't want
 
 
 The scheduler selected `node-2` since it was started with the `storage=disk` label.
+
+Finally, build a custom Sinatra image. Again, you'll avoid flash drives.
+
+    $ mkdir sinatra
+    $ cd sinatra
+    $ echo "FROM ubuntu:14.04" > Dockerfile
+    $ echo "MAINTAINER Kate Smith <ksmith@example.com>" >> Dockerfile
+    $ echo "RUN apt-get update && apt-get install -y ruby ruby-dev" >> Dockerfile
+    $ echo "RUN gem install sinatra" >> Dockerfile
+    $ docker build --build-arg=constraint:storage==disk -t ouruser/sinatra:v2 .
+    Sending build context to Docker daemon 2.048 kB
+    Step 1 : FROM ubuntu:14.04
+     ---> a5a467fddcb8
+    Step 2 : MAINTAINER Kate Smith <ksmith@example.com>
+     ---> Running in 49e97019dcb8
+     ---> de8670dcf80e
+    Removing intermediate container 49e97019dcb8
+    Step 3 : RUN apt-get update && apt-get install -y ruby ruby-dev
+     ---> Running in 26c9fbc55aeb
+     ---> 30681ef95fff
+    Removing intermediate container 26c9fbc55aeb
+    Step 4 : RUN gem install sinatra
+     ---> Running in 68671d4a17b0
+     ---> cd70495a1514
+    Removing intermediate container 68671d4a17b0
+    Successfully built cd70495a1514
+
+    $ docker images
+    REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+    dockerswarm/swarm   master              8c2c56438951        2 days ago          795.7 MB
+    ouruser/sinatra     v2                  cd70495a1514        35 seconds ago      318.7 MB
+    ubuntu              14.04               a5a467fddcb8        11 days ago         187.9 MB
 
 ## Standard Constraints
 
