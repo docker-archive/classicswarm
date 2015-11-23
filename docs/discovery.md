@@ -16,7 +16,7 @@ Docker Swarm comes with multiple Discovery backends.
 ## Backends
 
 You use a hosted discovery service with Docker Swarm. The service
-maintains a list of IPs in your swam. There are several available
+maintains a list of IPs in your swarm. There are several available
 services, such as `etcd`, `consul` and `zookeeper` depending on what
 is best suited for your environment. You can even use a static
 file. Docker Hub also provides a hosted discovery service which you
