@@ -91,9 +91,6 @@ var routes = map[string]map[string]handler{
 		"/networks/{networkid:.*}": deleteNetworks,
 		"/volumes/{name:.*}":       deleteVolumes,
 	},
-	"OPTIONS": {
-		"": optionsHandler,
-	},
 }
 
 func writeCorsHeaders(w http.ResponseWriter, r *http.Request) {
@@ -129,12 +126,23 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 	}
 
 	r := mux.NewRouter()
+	setupPrimaryRouter(r, context, enableCors)
+
+	if debug {
+		profilerSetup(r, "/debug/")
+	}
+
+	return r
+}
+
+func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 	for method, mappings := range routes {
 		for route, fct := range mappings {
 			log.WithFields(log.Fields{"method": method, "route": route}).Debug("Registering HTTP route")
 
 			localRoute := route
 			localFct := fct
+
 			wrap := func(w http.ResponseWriter, r *http.Request) {
 				log.WithFields(log.Fields{"method": r.Method, "uri": r.RequestURI}).Debug("HTTP request received")
 				if enableCors {
@@ -146,12 +154,25 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 
 			r.Path("/v{version:[0-9.]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
 			r.Path(localRoute).Methods(localMethod).HandlerFunc(wrap)
+
+			if enableCors {
+				optionsMethod := "OPTIONS"
+				localFct = optionsHandler
+
+				wrap := func(w http.ResponseWriter, r *http.Request) {
+					log.WithFields(log.Fields{"method": optionsMethod, "uri": r.RequestURI}).
+						Debug("HTTP request received")
+					if enableCors {
+						writeCorsHeaders(w, r)
+					}
+					localFct(context, w, r)
+				}
+
+				r.Path("/v{version:[0-9.]+}" + localRoute).
+					Methods(optionsMethod).HandlerFunc(wrap)
+				r.Path(localRoute).Methods(optionsMethod).
+					HandlerFunc(wrap)
+			}
 		}
 	}
-
-	if debug {
-		profilerSetup(r, "/debug/")
-	}
-
-	return r
 }
