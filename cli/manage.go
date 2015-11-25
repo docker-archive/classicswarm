@@ -232,6 +232,24 @@ func manage(c *cli.Context) {
 		}
 	}
 
+	refreshMinInterval := c.Duration("engine-refresh-min-interval")
+	refreshMaxInterval := c.Duration("engine-refresh-max-interval")
+	if refreshMinInterval == time.Duration(0)*time.Second {
+		log.Fatal("minimum refresh interval should be a positive number")
+	}
+	if refreshMaxInterval < refreshMinInterval {
+		log.Fatal("max refresh interval cannot be less than min refresh interval")
+	}
+	refreshRetry := c.Int("engine-refresh-retry")
+	if refreshRetry <= 0 {
+		log.Fatal("invalid refresh retry count")
+	}
+	engineOpts := &cluster.EngineOpts{
+		RefreshMinInterval: refreshMinInterval,
+		RefreshMaxInterval: refreshMaxInterval,
+		RefreshRetry:       refreshRetry,
+	}
+
 	uri := getDiscovery(c)
 	if uri == "" {
 		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
@@ -257,9 +275,9 @@ func manage(c *cli.Context) {
 	switch c.String("cluster-driver") {
 	case "mesos-experimental":
 		log.Warn("WARNING: the mesos driver is currently experimental, use at your own risks")
-		cl, err = mesos.NewCluster(sched, tlsConfig, uri, c.StringSlice("cluster-opt"))
+		cl, err = mesos.NewCluster(sched, tlsConfig, uri, c.StringSlice("cluster-opt"), engineOpts)
 	case "swarm":
-		cl, err = swarm.NewCluster(sched, tlsConfig, discovery, c.StringSlice("cluster-opt"))
+		cl, err = swarm.NewCluster(sched, tlsConfig, discovery, c.StringSlice("cluster-opt"), engineOpts)
 	default:
 		log.Fatalf("unsupported cluster %q", c.String("cluster-driver"))
 	}

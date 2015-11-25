@@ -2,6 +2,7 @@ package mesos
 
 import (
 	"testing"
+	"time"
 
 	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
@@ -9,7 +10,12 @@ import (
 )
 
 func createSlave(t *testing.T, ID string, containers ...*cluster.Container) *slave {
-	engine := cluster.NewEngine(ID, 0)
+	engOpts := &cluster.EngineOpts{
+		RefreshMinInterval: time.Duration(30) * time.Second,
+		RefreshMaxInterval: time.Duration(60) * time.Second,
+		RefreshRetry:       3,
+	}
+	engine := cluster.NewEngine(ID, 0, engOpts)
 	engine.Name = ID
 	engine.ID = ID
 
