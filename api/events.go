@@ -46,8 +46,16 @@ func (eh *eventsHandler) Wait(remoteAddr string, until int64) {
 		timer = time.NewTimer(dur)
 	}
 
+	// subscribe to http client close event
+	w := eh.ws[remoteAddr]
+	var closeNotify <-chan bool
+	if closeNotifier, ok := w.(http.CloseNotifier); ok {
+		closeNotify = closeNotifier.CloseNotify()
+	}
+
 	select {
 	case <-eh.cs[remoteAddr]:
+	case <-closeNotify:
 	case <-timer.C: // `--until` timeout
 		close(eh.cs[remoteAddr])
 	}
