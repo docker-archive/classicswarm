@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -57,6 +58,10 @@ var (
 func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master string, options cluster.DriverOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "mesos"}).Debug("Initializing cluster")
 
+	// Enabling mesos-go glog logging
+	if log.GetLevel() == log.DebugLevel {
+		flag.Lookup("logtostderr").Value.Set("true")
+	}
 	cluster := &Cluster{
 		dockerEnginePort:    defaultDockerEnginePort,
 		master:              master,
