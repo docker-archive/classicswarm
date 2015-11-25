@@ -28,8 +28,10 @@ type pendingContainer struct {
 
 func (p *pendingContainer) ToContainer() *cluster.Container {
 	container := &cluster.Container{
-		Container: dockerclient.Container{},
-		Config:    p.Config,
+		Container: dockerclient.Container{
+			Labels: p.Config.Labels,
+		},
+		Config: p.Config,
 		Info: dockerclient.ContainerInfo{
 			HostConfig: &dockerclient.HostConfig{},
 		},
