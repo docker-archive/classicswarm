@@ -8,6 +8,19 @@ function teardown() {
 	stop_docker
 }
 
+@test "mesos - docker run with wrong user" {
+	start_docker_with_busybox 2
+	start_mesos
+	swarm_manage --cluster-driver mesos-experimental --cluster-opt mesos.user=test_wrong_user 127.0.0.1:$MESOS_MASTER_PORT
+
+	# run
+	run docker_swarm run -m 20m -d --name test_container busybox sleep 100
+
+	# error check
+	[ "$status" -ne 0 ]
+	[[ "${output}" == *"please verify your SWARM_MESOS_USER is correctly set"* ]]
+}
+
 @test "mesos - docker run" {
 	start_docker_with_busybox 2
 	start_mesos

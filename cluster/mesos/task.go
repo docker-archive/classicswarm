@@ -184,7 +184,11 @@ func (t *task) monitor() (bool, []byte, error) {
 	case mesosproto.TaskState_TASK_FINISHED:
 		return true, taskStatus.Data, nil
 	case mesosproto.TaskState_TASK_FAILED:
-		return true, nil, errors.New(taskStatus.GetMessage())
+		errorMessage := taskStatus.GetMessage()
+		if errorMessage == "Abnormal executor termination" {
+			errorMessage += " : please verify your SWARM_MESOS_USER is correctly set"
+		}
+		return true, nil, errors.New(errorMessage)
 	case mesosproto.TaskState_TASK_KILLED:
 		return true, taskStatus.Data, nil
 	case mesosproto.TaskState_TASK_LOST:
