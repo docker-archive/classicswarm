@@ -29,7 +29,7 @@ type Cluster struct {
 
 	driver              *mesosscheduler.MesosSchedulerDriver
 	dockerEnginePort    string
-	eventHandler        cluster.EventHandler
+	eventHandlers       map[cluster.EventHandler]struct{}
 	master              string
 	agents              map[string]*agent
 	scheduler           *scheduler.Scheduler
@@ -156,22 +156,35 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 
 // Handle callbacks for the events
 func (c *Cluster) Handle(e *cluster.Event) error {
-	if c.eventHandler == nil {
-		return nil
-	}
-	if err := c.eventHandler.Handle(e); err != nil {
-		log.Error(err)
+	c.RLock()
+	defer c.RUnlock()
+
+	for h, _ := range c.eventHandlers {
+		if err := h.Handle(e); err != nil {
+			log.Error(err)
+		}
 	}
 	return nil
 }
 
 // RegisterEventHandler registers an event handler.
 func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
-	if c.eventHandler != nil {
+	c.Lock()
+	defer c.Unlock()
+
+	if _, ok := c.eventHandlers[h]; ok {
 		return errors.New("event handler already set")
 	}
-	c.eventHandler = h
+	c.eventHandlers[h] = struct{}{}
 	return nil
+}
+
+// UnregisterEventHandler unregisters a previously registered event handler.
+func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
+	c.Lock()
+	defer c.Unlock()
+
+	delete(c.eventHandlers, h)
 }
 
 // CreateContainer for container creation in Mesos task

@@ -83,6 +83,9 @@ type Cluster interface {
 	// Register an event handler for cluster-wide events.
 	RegisterEventHandler(h EventHandler) error
 
+	// Unregister an event handler.
+	UnregisterEventHandler(h EventHandler)
+
 	// FIXME: remove this method
 	// Return a random engine
 	RANDOMENGINE() (*Engine, error)

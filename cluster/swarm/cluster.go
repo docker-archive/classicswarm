@@ -50,7 +50,7 @@ func (p *pendingContainer) ToContainer() *cluster.Container {
 type Cluster struct {
 	sync.RWMutex
 
-	eventHandler      cluster.EventHandler
+	eventHandlers     map[cluster.EventHandler]struct{}
 	engines           map[string]*cluster.Engine
 	pendingEngines    map[string]*cluster.Engine
 	scheduler         *scheduler.Scheduler
@@ -67,6 +67,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
+		eventHandlers:     make(map[cluster.EventHandler]struct{}),
 		engines:           make(map[string]*cluster.Engine),
 		pendingEngines:    make(map[string]*cluster.Engine),
 		scheduler:         scheduler,
@@ -90,22 +91,35 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 
 // Handle callbacks for the events
 func (c *Cluster) Handle(e *cluster.Event) error {
-	if c.eventHandler == nil {
-		return nil
-	}
-	if err := c.eventHandler.Handle(e); err != nil {
-		log.Error(err)
+	c.RLock()
+	defer c.RUnlock()
+
+	for h, _ := range c.eventHandlers {
+		if err := h.Handle(e); err != nil {
+			log.Error(err)
+		}
 	}
 	return nil
 }
 
 // RegisterEventHandler registers an event handler.
 func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
-	if c.eventHandler != nil {
+	c.Lock()
+	defer c.Unlock()
+
+	if _, ok := c.eventHandlers[h]; ok {
 		return errors.New("event handler already set")
 	}
-	c.eventHandler = h
+	c.eventHandlers[h] = struct{}{}
 	return nil
+}
+
+// UnregisterEventHandler unregisters a previously registered event handler.
+func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
+	c.Lock()
+	defer c.Unlock()
+
+	delete(c.eventHandlers, h)
 }
 
 // Generate a globally (across the cluster) unique ID.
