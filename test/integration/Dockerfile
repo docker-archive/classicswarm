@@ -4,7 +4,7 @@
 FROM dockerswarm/dind:1.9.0
 
 # Install dependencies.
-RUN apt-get update && apt-get install -y --no-install-recommends git file \
+RUN apt-get update && apt-get install -y --no-install-recommends git file parallel \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install golang
