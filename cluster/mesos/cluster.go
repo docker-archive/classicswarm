@@ -46,7 +46,7 @@ const (
 	defaultDockerEnginePort    = "2375"
 	defaultDockerEngineTLSPort = "2376"
 	dockerPortAttribute        = "docker_port"
-	defaultOfferTimeout        = 10 * time.Minute
+	defaultOfferTimeout        = 30 * time.Second
 	defaultTaskCreationTimeout = 5 * time.Second
 )
 
