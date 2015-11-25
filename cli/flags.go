@@ -61,6 +61,21 @@ var (
 		Value: "10s",
 		Usage: "timeout period",
 	}
+	flRefreshIntervalMin = cli.StringFlag{
+		Name:  "engine-refresh-min-interval",
+		Value: "30s",
+		Usage: "set engine refresh minimum interval",
+	}
+	flRefreshIntervalMax = cli.StringFlag{
+		Name:  "engine-refresh-max-interval",
+		Value: "60s",
+		Usage: "set engine refresh maximum interval",
+	}
+	flRefreshRetry = cli.IntFlag{
+		Name:  "engine-refresh-retry",
+		Value: 3,
+		Usage: "set engine refresh retry count on failure",
+	}
 	flEnableCors = cli.BoolFlag{
 		Name:  "api-enable-cors, cors",
 		Usage: "enable CORS headers in the remote API",
@@ -117,7 +132,6 @@ var (
 		Usage: "discovery options",
 		Value: &cli.StringSlice{},
 	}
-
 	flLeaderElection = cli.BoolFlag{
 		Name:  "replication",
 		Usage: "Enable Swarm manager replication",

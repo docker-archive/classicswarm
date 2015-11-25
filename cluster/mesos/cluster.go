@@ -37,6 +37,7 @@ type Cluster struct {
 	offerTimeout        time.Duration
 	taskCreationTimeout time.Duration
 	pendingTasks        *queue.Queue
+	engineOpts          *cluster.EngineOpts
 }
 
 const (
@@ -54,7 +55,7 @@ var (
 )
 
 // NewCluster for mesos Cluster creation
-func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master string, options cluster.DriverOpts) (cluster.Cluster, error) {
+func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master string, options cluster.DriverOpts, engineOptions *cluster.EngineOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "mesos"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
@@ -66,6 +67,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		options:             &options,
 		offerTimeout:        defaultOfferTimeout,
 		taskCreationTimeout: defaultTaskCreationTimeout,
+		engineOpts:          engineOptions,
 	}
 
 	cluster.pendingTasks = queue.NewQueue()

@@ -26,6 +26,7 @@ var (
 				flHosts,
 				flLeaderElection, flLeaderTTL, flManageAdvertise,
 				flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
+				flRefreshIntervalMin, flRefreshIntervalMax, flRefreshRetry,
 				flHeartBeat,
 				flEnableCors,
 				flCluster, flDiscoveryOpt, flClusterOpt},

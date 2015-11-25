@@ -56,7 +56,7 @@ func TestMatchPrivateRepo(t *testing.T) {
 }
 
 func TestImagesFilterWithLabelFilter(t *testing.T) {
-	engine := NewEngine("test", 0)
+	engine := NewEngine("test", 0, engOpts)
 	images := Images{
 		{dockerclient.Image{Id: "a"}, engine},
 		{dockerclient.Image{
@@ -73,7 +73,7 @@ func TestImagesFilterWithLabelFilter(t *testing.T) {
 }
 
 func TestImagesFilterWithNameFilter(t *testing.T) {
-	engine := NewEngine("test", 0)
+	engine := NewEngine("test", 0, engOpts)
 	images := Images{
 		{
 			dockerclient.Image{
@@ -97,7 +97,7 @@ func TestImagesFilterWithNameFilter(t *testing.T) {
 }
 
 func TestImagesFilterWithNameFilterWithTag(t *testing.T) {
-	engine := NewEngine("test", 0)
+	engine := NewEngine("test", 0, engOpts)
 	images := Images{
 		{
 			dockerclient.Image{
