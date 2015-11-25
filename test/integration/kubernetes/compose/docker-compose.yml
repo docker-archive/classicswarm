@@ -1,0 +1,29 @@
+etcd:
+  command: >
+    /usr/local/bin/etcd
+    --addr=127.0.0.1:4001
+    --bind-addr=0.0.0.0:4001
+    --data-dir=/var/etcd/data
+  image: "gcr.io/google_containers/etcd:2.0.12"
+  net: "host"
+  restart: "always"
+kubernetes:
+  command: >
+    /hyperkube kubelet
+    --containerized
+    --hostname-override="127.0.0.1"
+    --address="0.0.0.0"
+    --api-servers=http://127.0.0.1:8080
+    --config=/etc/kubernetes/manifests
+  image: "gcr.io/google_containers/hyperkube:v1.0.6"
+  net: "host"
+  pid: "host"
+  privileged: true
+  restart: "always"
+  volumes:
+    - "/:/rootfs:ro"
+    - "/sys:/sys:ro"
+    - "/dev:/dev"
+    - "/var/lib/docker/:/var/lib/docker:rw"
+    - "/var/lib/kubelet/:/var/lib/kubelet:rw"
+    - "/var/run:/var/run:rw"
