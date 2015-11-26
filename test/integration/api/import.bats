@@ -47,6 +47,7 @@ function teardown() {
 	swarm_manage
 
 	temp_file=$(mktemp)
+	echo abc > $temp_file
 
 	run docker_swarm import - < $temp_file
 	[ "$status" -eq 1 ]
