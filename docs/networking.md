@@ -55,7 +55,7 @@ scope driver.
 As you can see here, the ID is the same on the two nodes, because it's the same
 network.
 
-If you want to want to create a local scope network (for example with the bridge
+If you want to create a local scope network (for example with the bridge
 driver) you should use `<node>/<name>` otherwise your network will be created on a
 random node.
 
