@@ -720,7 +720,7 @@ func deleteNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 
 	var id = mux.Vars(r)["networkid"]
 
-	if network := c.cluster.Networks().Uniq().Get(id); network != nil {
+	if network := c.cluster.Networks().Get(id); network != nil {
 		if err := c.cluster.RemoveNetwork(network); err != nil {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -761,7 +761,7 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 // Proxy a request to the right node
 func proxyNetwork(c *context, w http.ResponseWriter, r *http.Request) {
 	var id = mux.Vars(r)["networkid"]
-	if network := c.cluster.Networks().Uniq().Get(id); network != nil {
+	if network := c.cluster.Networks().Get(id); network != nil {
 
 		// Set the network ID in the proxied URL path.
 		r.URL.Path = strings.Replace(r.URL.Path, id, network.ID, 1)
