@@ -24,14 +24,130 @@
 		AuthenticationCompletedMessage
 		AuthenticationFailedMessage
 		AuthenticationErrorMessage
+		Launch
+		Update
+		Wait
+		Destroy
+		Usage
+		Termination
+		Containers
+		InternalMasterChangeDetected
+		InternalTryAuthentication
+		InternalAuthenticationResult
+		Promise
+		Action
+		Metadata
+		Record
+		PromiseRequest
+		PromiseResponse
+		WriteRequest
+		WriteResponse
+		LearnedMessage
+		RecoverRequest
+		RecoverResponse
+		FrameworkID
+		OfferID
+		SlaveID
+		TaskID
+		ExecutorID
+		ContainerID
+		FrameworkInfo
+		HealthCheck
+		CommandInfo
+		ExecutorInfo
+		MasterInfo
+		SlaveInfo
+		Value
+		Attribute
+		Resource
+		TrafficControlStatistics
+		ResourceStatistics
+		ResourceUsage
+		PerfStatistics
+		Request
+		Offer
+		TaskInfo
+		TaskStatus
+		Filters
+		Environment
+		Parameter
+		Parameters
+		Credential
+		Credentials
+		ACL
+		ACLs
+		RateLimit
+		RateLimits
+		Volume
+		ContainerInfo
+		Labels
+		Label
+		Port
+		Ports
+		DiscoveryInfo
+		Task
+		StatusUpdate
+		StatusUpdateRecord
+		SubmitSchedulerRequest
+		SubmitSchedulerResponse
+		ExecutorToFrameworkMessage
+		FrameworkToExecutorMessage
+		RegisterFrameworkMessage
+		ReregisterFrameworkMessage
+		FrameworkRegisteredMessage
+		FrameworkReregisteredMessage
+		UnregisterFrameworkMessage
+		DeactivateFrameworkMessage
+		ResourceRequestMessage
+		ResourceOffersMessage
+		LaunchTasksMessage
+		RescindResourceOfferMessage
+		ReviveOffersMessage
+		RunTaskMessage
+		KillTaskMessage
+		StatusUpdateMessage
+		StatusUpdateAcknowledgementMessage
+		LostSlaveMessage
+		ReconcileTasksMessage
+		FrameworkErrorMessage
+		RegisterSlaveMessage
+		ReregisterSlaveMessage
+		SlaveRegisteredMessage
+		SlaveReregisteredMessage
+		UnregisterSlaveMessage
+		MasterSlaveConnection
+		PingSlaveMessage
+		PongSlaveMessage
+		ShutdownFrameworkMessage
+		ShutdownExecutorMessage
+		UpdateFrameworkMessage
+		CheckpointResourcesMessage
+		UpdateSlaveMessage
+		RegisterExecutorMessage
+		ExecutorRegisteredMessage
+		ExecutorReregisteredMessage
+		ExitedExecutorMessage
+		ReconnectExecutorMessage
+		ReregisterExecutorMessage
+		ShutdownMessage
+		Archive
+		TaskHealthStatus
+		HookExecuted
+		Registry
+		Event
+		Call
+		Entry
+		Operation
 */
 package mesosproto
 
 import proto "github.com/gogo/protobuf/proto"
+import fmt "fmt"
 import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
 var _ = math.Inf
 
 type AuthenticateMessage struct {

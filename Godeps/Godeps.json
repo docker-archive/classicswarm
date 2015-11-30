@@ -86,31 +86,38 @@
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/auth",
-			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
+			"Comment": "v0.0.1-14-gdeb41f6",
+			"Rev": "deb41f6c4aaf9cf8509e033e90439e7e8d914bbb"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/detector",
-			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
+			"Comment": "v0.0.1-14-gdeb41f6",
+			"Rev": "deb41f6c4aaf9cf8509e033e90439e7e8d914bbb"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/mesosproto",
-			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
+			"Comment": "v0.0.1-14-gdeb41f6",
+			"Rev": "deb41f6c4aaf9cf8509e033e90439e7e8d914bbb"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/mesosutil",
-			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
+			"Comment": "v0.0.1-14-gdeb41f6",
+			"Rev": "deb41f6c4aaf9cf8509e033e90439e7e8d914bbb"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/messenger",
-			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
+			"Comment": "v0.0.1-14-gdeb41f6",
+			"Rev": "deb41f6c4aaf9cf8509e033e90439e7e8d914bbb"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/scheduler",
-			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
+			"Comment": "v0.0.1-14-gdeb41f6",
+			"Rev": "deb41f6c4aaf9cf8509e033e90439e7e8d914bbb"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/upid",
-			"Rev": "d23a18b51b1ddf4072a223b38cc8d05cffb1ea42"
+			"Comment": "v0.0.1-14-gdeb41f6",
+			"Rev": "deb41f6c4aaf9cf8509e033e90439e7e8d914bbb"
 		},
 		{
 			"ImportPath": "github.com/pborman/uuid",

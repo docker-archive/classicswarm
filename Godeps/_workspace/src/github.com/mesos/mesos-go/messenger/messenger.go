@@ -24,6 +24,7 @@ import (
 	"net"
 	"reflect"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -73,6 +74,7 @@ type MesosMessenger struct {
 	installedMessages map[string]reflect.Type
 	installedHandlers map[string]MessageHandler
 	stop              chan struct{}
+	stopOnce          sync.Once
 	tr                Transporter
 }
 
@@ -217,6 +219,8 @@ func (m *MesosMessenger) Route(ctx context.Context, upid *upid.UPID, msg proto.M
 		return m.Send(ctx, upid, msg)
 	}
 
+	// TODO(jdef) this has an unfortunate performance impact for self-messaging. implement
+	// something more reasonable here.
 	data, err := proto.Marshal(msg)
 	if err != nil {
 		return err
@@ -256,7 +260,11 @@ func (m *MesosMessenger) Start() error {
 				//TODO(jdef) should the driver abort in this case? probably
 				//since this messenger will never attempt to re-establish the
 				//transport
-				log.Error(err)
+				log.Errorln("transport stopped unexpectedly:", err.Error())
+			}
+			err = m.Stop()
+			if err != nil && err != errTerminal {
+				log.Errorln("failed to stop messenger cleanly: ", err.Error())
 			}
 		case <-m.stop:
 		}
@@ -266,12 +274,15 @@ func (m *MesosMessenger) Start() error {
 
 // Stop stops the messenger and clean up all the goroutines.
 func (m *MesosMessenger) Stop() error {
+	defer m.stopOnce.Do(func() { close(m.stop) })
+	log.Info("stopping messenger..")
+
 	//TODO(jdef) don't hardcode the graceful flag here
-	if err := m.tr.Stop(true); err != nil {
-		log.Errorf("Failed to stop the transporter: %v\n", err)
+
+	if err := m.tr.Stop(true); err != nil && err != errTerminal {
+		log.Errorf("failed to stop the transporter: %v\n", err)
 		return err
 	}
-	close(m.stop)
 	return nil
 }
 
