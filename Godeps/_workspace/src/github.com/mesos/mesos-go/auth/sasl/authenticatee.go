@@ -77,7 +77,7 @@ func init() {
 				log.Fatal("expected to have a parent UPID in context")
 			}
 			process := process.New("sasl_authenticatee")
-			tpid := &upid.UPID{
+			tpid := upid.UPID{
 				ID:   process.Label(),
 				Host: parent.Host,
 			}
