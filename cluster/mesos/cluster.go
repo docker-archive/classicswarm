@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -468,7 +469,21 @@ func (c *Cluster) scheduleTask(t *task) bool {
 
 	t.build(n.ID, c.slaves[n.ID].offers)
 
-	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, &mesosproto.Filters{}); err != nil {
+	// Set Mesos refuse seconds by environment variables.
+  var offerFilters *mesosproto.Filters;
+  var refuseSecondsStr string;
+
+  offerFilters = &mesosproto.Filters{};
+  refuseSecondsStr = os.Getenv("MESOS_OFFER_REFUSE_SECONDS");
+
+  if refuseSecondsStr != "" {
+    refuseSeconds, err := strconv.ParseFloat(refuseSecondsStr, 64);
+    if !err {
+			offerFilters.RefuseSeconds = &refuseSeconds;
+    }
+  }
+
+	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, offerFilters); err != nil {
 		// TODO: Do not erase all the offers, only the one used
 		for _, offer := range s.offers {
 			c.removeOffer(offer)
