@@ -470,18 +470,18 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	t.build(n.ID, c.slaves[n.ID].offers)
 
 	// Set Mesos refuse seconds by environment variables.
-  var offerFilters *mesosproto.Filters;
-  var refuseSecondsStr string;
+	var offerFilters *mesosproto.Filters;
+	var refuseSecondsStr string;
 
-  offerFilters = &mesosproto.Filters{};
-  refuseSecondsStr = os.Getenv("MESOS_OFFER_REFUSE_SECONDS");
+	offerFilters = &mesosproto.Filters{};
+	refuseSecondsStr = os.Getenv("MESOS_OFFER_REFUSE_SECONDS");
 
-  if refuseSecondsStr != "" {
-    refuseSeconds, err := strconv.ParseFloat(refuseSecondsStr, 64);
-    if !err {
+	if refuseSecondsStr != "" {
+		refuseSeconds, err := strconv.ParseFloat(refuseSecondsStr, 64);
+		if err == nil {
 			offerFilters.RefuseSeconds = &refuseSeconds;
-    }
-  }
+		}
+	}
 
 	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, offerFilters); err != nil {
 		// TODO: Do not erase all the offers, only the one used
