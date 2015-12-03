@@ -143,7 +143,7 @@ function teardown() {
 	retry 15 1 discovery_check_swarm_info 0
 
 	# Check disconnect events
-	retry 5 1 grep -q "engine_disconnect" "$log_file"
+	retry 15 1 grep -q "engine_disconnect" "$log_file"
 
 	# Finally, clean up `docker events` and remove the log file
 	kill "$events_pid"
