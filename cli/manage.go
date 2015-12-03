@@ -321,5 +321,6 @@ func manage(c *cli.Context) {
 		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.GlobalBool("debug"), c.Bool("cors")))
 	}
 
+	cluster.NewWatchdog(cl)
 	log.Fatal(server.ListenAndServe())
 }

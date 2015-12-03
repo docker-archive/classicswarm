@@ -186,3 +186,12 @@ func (c *ContainerConfig) HaveNodeConstraint() bool {
 	}
 	return false
 }
+
+// Affinities returns all the affinities from the ContainerConfig
+func (c *ContainerConfig) ReschedulePolicy() string {
+	policy, ok := c.Labels[SwarmLabelNamespace+".reschedule-policy"]
+	if !ok {
+		return "no"
+	}
+	return policy
+}
