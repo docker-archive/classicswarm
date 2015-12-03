@@ -32,7 +32,6 @@ function teardown() {
 	start_mesos_zk $DISCOVERY
 
 	swarm_manage --cluster-driver mesos-experimental $DISCOVERY
-	sleep 5
 
 	run docker_swarm info
 	[ "$status" -eq 0 ]
