@@ -32,6 +32,11 @@ var (
 		Usage:  "Address of the Docker Engine joining the cluster. Swarm manager(s) MUST be able to reach the Docker Engine at this address.",
 		EnvVar: "SWARM_ADVERTISE",
 	}
+	flJoinRandomDelay = cli.StringFlag{
+		Name:  "joindelay",
+		Value: "0s",
+		Usage: "add a random delay in [0s,joindelay] to avoid synchronized registration",
+	}
 	flManageAdvertise = cli.StringFlag{
 		Name:   "advertise, addr",
 		Usage:  "Address of the swarm manager joining the cluster. Other swarm manager(s) MUST be able to reach the swarm manager at this address.",
