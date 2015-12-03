@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var localRoutes = []string{"/info", "/_ping"}
+var localRoutes = []string{"/info", "/_ping", "/debug"}
 
 // Replica is an API replica that reserves proxy to the primary.
 type Replica struct {
