@@ -335,6 +335,29 @@ func (client *DockerClient) ExecResize(id string, width, height int) error {
 	return nil
 }
 
+func (client *DockerClient) AttachContainer(id string, options *AttachOptions) (io.ReadCloser, error) {
+	v := url.Values{}
+	if options != nil {
+		if options.Logs {
+			v.Set("logs", "1")
+		}
+		if options.Stream {
+			v.Set("stream", "1")
+		}
+		if options.Stdin {
+			v.Set("stdin", "1")
+		}
+		if options.Stdout {
+			v.Set("stdout", "1")
+		}
+		if options.Stderr {
+			v.Set("stderr", "1")
+		}
+	}
+	uri := fmt.Sprintf("/%s/containers/%s/attach?%s", APIVersion, id, v.Encode())
+	return client.doStreamRequest("POST", uri, nil, nil)
+}
+
 func (client *DockerClient) StartContainer(id string, config *HostConfig) error {
 	data, err := json.Marshal(config)
 	if err != nil {
@@ -625,17 +648,9 @@ func (client *DockerClient) InspectImage(id string) (*ImageInfo, error) {
 }
 
 func (client *DockerClient) LoadImage(reader io.Reader) error {
-	data, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return err
-	}
-
 	uri := fmt.Sprintf("/%s/images/load", APIVersion)
-	_, err = client.doRequest("POST", uri, data, nil)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err := client.doStreamRequest("POST", uri, reader, nil)
+	return err
 }
 
 func (client *DockerClient) RemoveContainer(id string, force, volumes bool) error {

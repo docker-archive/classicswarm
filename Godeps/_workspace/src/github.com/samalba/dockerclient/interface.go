@@ -20,6 +20,7 @@ type Client interface {
 	ExecStart(id string, config *ExecConfig) error
 	ExecResize(id string, width, height int) error
 	StartContainer(id string, config *HostConfig) error
+	AttachContainer(id string, options *AttachOptions) (io.ReadCloser, error)
 	StopContainer(id string, timeout int) error
 	RestartContainer(id string, timeout int) error
 	KillContainer(id, signal string) error
