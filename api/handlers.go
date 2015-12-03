@@ -414,8 +414,12 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	var (
-		config dockerclient.ContainerConfig
-		name   = r.Form.Get("name")
+		config = dockerclient.ContainerConfig{
+			HostConfig: dockerclient.HostConfig{
+				MemorySwappiness: -1,
+			},
+		}
+		name = r.Form.Get("name")
 	)
 
 	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
