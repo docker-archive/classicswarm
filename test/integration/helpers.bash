@@ -87,15 +87,12 @@ function wait_until_reachable() {
 
 # Returns true if all nodes have joined the swarm.
 function discovery_check_swarm_info() {
-	local host="$1"
-	local total="$2"
+	local total="$1"
 	[ -z "$total" ] && total="${#HOSTS[@]}"
+	local host="$2"
+	[ -z "$host" ] && host="${SWARM_HOSTS[0]}"
 
-	if [ -z "$host" ]; then
-		retry 10 1 $(docker_swarm info | grep -q "Nodes: $total")
-	else
-		retry 10 1 $(docker -H $host info | grep -q "Nodes: $total")
-	fi
+	retry 10 1 eval "docker -H $host info | grep -q -e \"Nodes: $total\" -e \"Offers: $total\""
 }
 
 # Start the swarm manager in background.
@@ -119,7 +116,7 @@ function swarm_manage() {
 	wait_until_reachable "$host"
 
 	# Wait for nodes to be discovered
-	discovery_check_swarm_info "$host"
+	discovery_check_swarm_info "${#HOSTS[@]}" "$host"
 }
 
 # swarm join every engine created with `start_docker`.
