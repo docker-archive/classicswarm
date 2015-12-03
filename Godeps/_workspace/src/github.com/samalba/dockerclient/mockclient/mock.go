@@ -50,6 +50,11 @@ func (client *MockClient) ContainerChanges(id string) ([]*dockerclient.Container
 	return args.Get(0).([]*dockerclient.ContainerChanges), args.Error(1)
 }
 
+func (client *MockClient) AttachContainer(id string, options *dockerclient.AttachOptions) (io.ReadCloser, error) {
+	args := client.Mock.Called(id, options)
+	return args.Get(0).(io.ReadCloser), args.Error(1)
+}
+
 func (client *MockClient) StartContainer(id string, config *dockerclient.HostConfig) error {
 	args := client.Mock.Called(id, config)
 	return args.Error(0)
