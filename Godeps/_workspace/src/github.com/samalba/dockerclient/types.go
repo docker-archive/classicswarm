@@ -112,6 +112,14 @@ type LogOptions struct {
 	Tail       int64
 }
 
+type AttachOptions struct {
+	Logs   bool
+	Stream bool
+	Stdin  bool
+	Stdout bool
+	Stderr bool
+}
+
 type MonitorEventsFilters struct {
 	Event     string `json:",omitempty"`
 	Image     string `json:",omitempty"`
@@ -510,6 +518,7 @@ type NetworkCreate struct {
 	CheckDuplicate bool
 	Driver         string
 	IPAM           IPAM
+	Options        map[string]string
 }
 
 // NetworkCreateResponse is the response message sent by the server for network create call
