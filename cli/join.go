@@ -29,6 +29,11 @@ func join(c *cli.Context) {
 		log.Fatal("--advertise should be of the form ip:port or hostname:port")
 	}
 
+	joinDelay, err := time.ParseDuration(c.String("joindelay"))
+	if err != nil {
+		log.Fatalf("invalid --joindelay: %v", err)
+	}
+
 	hb, err := time.ParseDuration(c.String("heartbeat"))
 	if err != nil {
 		log.Fatalf("invalid --heartbeat: %v", err)
@@ -49,11 +54,13 @@ func join(c *cli.Context) {
 		log.Fatal(err)
 	}
 
-	// add a random delay [0,hb) at start to avoid synchronized registration
-	r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
-	delay := time.Duration(r.Int63n(int64(hb)))
-	log.Infof("Add a random delay %s to avoid synchronized registration", delay)
-	time.Sleep(delay)
+	// add a random delay between 0s and joinDelay at start to avoid synchronized registration
+	if joinDelay > 0 {
+		r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
+		delay := time.Duration(r.Int63n(int64(joinDelay)))
+		log.Infof("Add a random delay %s to avoid synchronized registration", delay)
+		time.Sleep(delay)
+	}
 
 	for {
 		log.WithFields(log.Fields{"addr": addr, "discovery": dflag}).Infof("Registering on the discovery service every %s...", hb)
