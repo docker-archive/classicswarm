@@ -24,6 +24,11 @@ can use.
 
 ### Hosted Discovery with Docker Hub
 
+#####The Hosted Discovery Service is not recomended for production use.
+#####It's intended to be used for testing/development.
+
+#####See other backends for produtions use cases.
+
 This example uses the hosted discovery service on Docker Hub. Using
 Docker Hub's hosted discovery service requires that each node in the
 swarm is connected to the internet. To create your swarm:
