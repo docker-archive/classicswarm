@@ -790,6 +790,42 @@ func proxyVolume(c *context, w http.ResponseWriter, r *http.Request) {
 	httpError(w, fmt.Sprintf("No such volume: %s", name), http.StatusNotFound)
 }
 
+// Proxy network to container operations, including connect/disconnect request
+func proxyNetworkContainerOperation(c *context, w http.ResponseWriter, r *http.Request) {
+	var networkid = mux.Vars(r)["networkid"]
+	network := c.cluster.Networks().Uniq().Get(networkid)
+	if network == nil {
+		httpError(w, fmt.Sprintf("No such network: %s", networkid), http.StatusNotFound)
+		return
+	}
+	// Set the network ID in the proxied URL path.
+	r.URL.Path = strings.Replace(r.URL.Path, networkid, network.ID, 1)
+
+	// make a copy of r.Body
+	buf, _ := ioutil.ReadAll(r.Body)
+	bodyCopy := ioutil.NopCloser(bytes.NewBuffer(buf))
+	defer bodyCopy.Close()
+	// restore r.Body stream as it'll be read again
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
+
+	// Extract container info from r.Body copy
+	var connect dockerclient.NetworkConnect
+	if err := json.NewDecoder(bodyCopy).Decode(&connect); err != nil {
+		httpError(w, fmt.Sprintf("Container is not specified"), http.StatusNotFound)
+		return
+	}
+	container := c.cluster.Container(connect.Container)
+	if container == nil {
+		httpError(w, fmt.Sprintf("No such container: %s", connect.Container), http.StatusNotFound)
+		return
+	}
+
+	// request is forwarded to the container's address
+	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+	}
+}
+
 // Proxy a request to the right node
 func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	name, container, err := getContainerFromVars(c, mux.Vars(r))
