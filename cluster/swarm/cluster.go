@@ -734,6 +734,7 @@ func (c *Cluster) Info() [][]string {
 
 	for _, engine := range engines {
 		info = append(info, []string{engine.Name, engine.Addr})
+		info = append(info, []string{" └ Status", engine.Status()})
 		info = append(info, []string{" └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
 		info = append(info, []string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
 		info = append(info, []string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
