@@ -184,6 +184,14 @@ func (e *Engine) IsHealthy() bool {
 	return e.healthy
 }
 
+// Status returns the health status of the Engine: Healthy or Unhealthy
+func (e *Engine) Status() string {
+	if e.healthy {
+		return "Healthy"
+	}
+	return "Unhealthy"
+}
+
 // Gather engine specs (CPU, memory, constraints, ...).
 func (e *Engine) updateSpecs() error {
 	info, err := e.client.Info()
