@@ -85,6 +85,11 @@ function wait_until_reachable() {
 	retry 10 1 docker -H $1 info
 }
 
+# Waits until all nodes have joined the swarm.
+function wait_until_nodes_registered() {
+    retry 10 1 eval "docker_swarm info | grep -q -e \"Nodes: $1\" -e \"Offers: $1\""
+}
+
 # Start the swarm manager in background.
 function swarm_manage() {
 	local discovery
@@ -102,6 +107,7 @@ function swarm_manage() {
 	SWARM_MANAGE_PID[$i]=$!
 	SWARM_HOSTS[$i]=$host
 	wait_until_reachable "$host"
+	wait_until_nodes_registered "${#HOSTS[@]}"
 }
 
 # swarm join every engine created with `start_docker`.
