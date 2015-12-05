@@ -192,6 +192,13 @@ func (e *Engine) Status() string {
 	return "Unhealthy"
 }
 
+// SetEngineHealth sets engine healthy state
+func (e *Engine) SetEngineHealth(state bool) {
+	e.Lock()
+	e.healthy = state
+	e.Unlock()
+}
+
 // Gather engine specs (CPU, memory, constraints, ...).
 func (e *Engine) updateSpecs() error {
 	info, err := e.client.Info()

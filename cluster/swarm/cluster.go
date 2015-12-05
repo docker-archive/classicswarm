@@ -151,32 +151,45 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	}
 
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), configTemp)
+	c.scheduler.Unlock()
+
 	if err != nil {
-		c.scheduler.Unlock()
 		return nil, err
 	}
-	n := nodes[0]
-	engine, ok := c.engines[n.ID]
-	if !ok {
+
+	for _, n := range nodes {
+		engine, ok := c.engines[n.ID]
+		if !ok {
+			continue
+		}
+
+		c.scheduler.Lock()
+		c.pendingContainers[swarmID] = &pendingContainer{
+			Name:   name,
+			Config: config,
+			Engine: engine,
+		}
 		c.scheduler.Unlock()
-		return nil, fmt.Errorf("error creating container")
+
+		container, err := engine.Create(config, name, true)
+
+		// pendingContainer need to be clear
+		c.scheduler.Lock()
+		delete(c.pendingContainers, swarmID)
+		c.scheduler.Unlock()
+
+		if err == nil {
+			return container, err
+		}
+		log.WithFields(log.Fields{"name": "swarm"}).Infof("container create failed: %v", err.Error())
+
+		if err == dockerclient.ErrConnectionRefused {
+			// Mark node as unhealthy
+			engine.SetEngineHealth(false)
+		}
 	}
 
-	c.pendingContainers[swarmID] = &pendingContainer{
-		Name:   name,
-		Config: config,
-		Engine: engine,
-	}
-
-	c.scheduler.Unlock()
-
-	container, err := engine.Create(config, name, true)
-
-	c.scheduler.Lock()
-	delete(c.pendingContainers, swarmID)
-	c.scheduler.Unlock()
-
-	return container, err
+	return nil, fmt.Errorf("error creating container")
 }
 
 // RemoveContainer aka Remove a container from the cluster.
