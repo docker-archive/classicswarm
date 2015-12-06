@@ -32,10 +32,10 @@ containers. Docker Machine manages all this provisioning for your swarm.
 
 Before you create a swarm with `docker-machine`, you associate each
 node with a discovery service. This example uses the token discovery
-service hosted by Docker Hub. This discovery service associates a
-token with instances of the Docker Daemon running on each node. Other
-discovery service backends such as `etcd`, `consul`, and `zookeeper`
-are [available](discovery.md).
+service hosted by Docker Hub (only for testing/dev, not for production).
+This discovery service associates a token with instances of the Docker
+Daemon running on each node. Other discovery service backends such as
+`etcd`, `consul`, and `zookeeper` are [available](discovery.md).
 
 1. List the machines on your system.
 
