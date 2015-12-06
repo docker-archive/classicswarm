@@ -51,7 +51,8 @@ The easiest way to get started with Swarm is to use the
 Each Swarm node will run a Swarm node agent. The agent registers the referenced
 Docker daemon, monitors it, and updates the discovery backend with the node's status.
 
-This example uses the Docker Hub based `token` discovery service. Log into **each node** and do the following.
+This example uses the Docker Hub based `token` discovery service (only for testing/dev, not for production).
+Log into **each node** and do the following.
 
 1. Start the Docker daemon with the `-H` flag. This ensures that the
 Docker remote API on *Swarm Agents* is available over TCP for the
