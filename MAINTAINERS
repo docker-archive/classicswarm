@@ -15,6 +15,7 @@
 			"aluzzardi",
 			"chanwit",
 			"jimmyxian",
+			"mhbauer",
 			"vieux",
 		]
 
@@ -40,6 +41,11 @@
 	Name = "Chanwit Kaewkasi"
 	Email = "chanwit@gmail.com"
 	GitHub = "chanwit"
+
+	[people.mhbauer]
+	Name = "Morgan Bauer"
+	Email = "mbauer@us.ibm.com"
+	GitHub = "mhbauer"
 
 	[people.vieux]
 	Name = "Victor Vieux"
