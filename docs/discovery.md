@@ -98,8 +98,13 @@ You can list the nodes in your cluster.
     <node_ip2:2375>
     <node_ip3:2375>
 
+### Using a Distributed Key/Value Store
 
-### Using etcd
+Distributed Key/Value Store discovery is the recommended way to handle
+the node discovery in Swarm. This is supported through [libkv](https://github.com/docker/libkv).
+For an overview of the supported backends, refer to the [libkv documentation](https://github.com/docker/libkv)
+
+#### Using etcd
 
 On each of your nodes, start the Swarm agent. The node IP address
 doesn't have to be public as long as the swarm manager can access it.
@@ -127,7 +132,7 @@ You can list the nodes in your cluster.
     <node_ip:2375>
 
 
-### Using consul
+#### Using consul
 
 On each of your nodes, start the Swarm agent. The node IP address
 doesn't need to be public as long as the Swarm manager can access it.
@@ -153,7 +158,7 @@ You can list the nodes in your cluster.
     <node_ip:2375>
 
 
-### Using zookeeper
+#### Using zookeeper
 
 On each of your nodes, start the Swarm agent. The node IP doesn't have
 to be public as long as the swarm manager can access it.
@@ -180,6 +185,24 @@ You can list the nodes in the cluster.
     swarm list zk://<zookeeper_addr1>,<zookeeper_addr2>/<optional path prefix>
     <node_ip:2375>
 
+#### Use TLS with Distributed K/V discovery
+
+You can securely talk to the distributed k/v store using TLS.
+This works only for Consul and etcd, SSL support for zookeeper is coming.
+
+To connect securely to the store, make sure you generate the certificates accordingly
+and use (taking Consul as an example):
+
+```
+swarm join \
+    --advertise=<node_ip:2375> \
+    --discovery-opt kv.cacertfile=/path/to/mycacert.pem \
+    --discovery-opt kv.certfile=/path/to/mycert.pem \
+    --discovery-opt kv.keyfile=/path/to/mykey.pem \
+    consul://<consul_addr>/<optional path prefix>
+```
+
+This works the same way for the Swarm `manage` and `list` commands.
 
 ### Using a static list of IP addresses
 
