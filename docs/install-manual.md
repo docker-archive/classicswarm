@@ -17,17 +17,32 @@ This section tells you how to create a Docker Swarm on your network to use only 
 
 ## Prerequisites 
 
-You install Docker Swarm on a single system which is known as your Docker Swarm manager. You create the cluster, or swarm, on one or more additional nodes on your network. Each node in your swarm must:
+You install Docker Swarm on a single system which is known as your Docker Swarm
+manager. You create the cluster, or swarm, on one or more additional nodes on
+your network.  Each node in your swarm must:
 
 * be accessible by the swarm manager across your network
 * have Docker Engine 1.6.0+ installed
 * open a TCP port to listen for the manager
+* *do not* install on a VM or from an image created through cloning
 
-You can run Docker Swarm on Linux 64-bit architectures. You can also install and run it on 64-bit Windows and Max OSX but these architectures are *not* regularly tested for compatibility.
+Docker generates a unique ID for the Engine that is located in the
+`/etc/docker/key.json` file. If a VM is cloned from an instance where a
+Docker daemon was previously pre-installed, Swarm will be unable to differentiate
+among the remote Docker engines. This is because the cloning process copied the
+the identical ID to each image and the ID is no longer unique.
 
-Take a moment and identify the systems on your network that you intend to use. Ensure each node meets the requirements listed above.
+If you forget this restriction and create a node anyway, Swarm displays a single
+Docker engine as registered. To workaround this problem, you can generate a new
+ID for each node with affected by this issue. To do this stop the daemon on a node,
+delete its `/etc/docker/key.json` file, and restart the daemon.
 
+You can run Docker Swarm on Linux 64-bit architectures. You can also install and
+run it on 64-bit Windows and Max OSX but these architectures are *not* regularly
+tested for compatibility.
 
+Take a moment and identify the systems on your network that you intend to use.
+Ensure each node meets the requirements listed above.
 
 ## Pull the swarm image and create a cluster.
 
