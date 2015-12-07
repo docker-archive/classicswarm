@@ -280,7 +280,7 @@ Add a new node to the discovery service.
 
 ## Docker Swarm documentation index
 
-- [User guide](./index.md)
-- [Scheduler strategies](./scheduler/strategy.md)
-- [Scheduler filters](./scheduler/filter.md)
-- [Swarm API](./API.md)
+- [User guide](../docs/index.md)
+- [Scheduler strategies](../docs/scheduler/strategy.md)
+- [Scheduler filters](../docs/scheduler/filter.md)
+- [Swarm API](../docs/api/swarm-api.md)
