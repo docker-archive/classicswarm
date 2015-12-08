@@ -35,7 +35,7 @@ func (client *MockClient) InspectImage(id string) (*dockerclient.ImageInfo, erro
 	return args.Get(0).(*dockerclient.ImageInfo), args.Error(1)
 }
 
-func (client *MockClient) CreateContainer(config *dockerclient.ContainerConfig, name string) (string, error) {
+func (client *MockClient) CreateContainer(config *dockerclient.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (string, error) {
 	args := client.Mock.Called(config, name)
 	return args.String(0), args.Error(1)
 }
