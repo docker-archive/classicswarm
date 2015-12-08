@@ -85,8 +85,27 @@ function wait_until_reachable() {
 	retry 10 1 docker -H $1 info
 }
 
-# Start the swarm manager in background.
+# Returns true if all nodes have joined the swarm.
+function discovery_check_swarm_info() {
+	local total="$1"
+	[ -z "$total" ] && total="${#HOSTS[@]}"
+	local host="$2"
+	[ -z "$host" ] && host="${SWARM_HOSTS[0]}"
+
+	retry 10 1 eval "docker -H $host info | grep -q -e \"Nodes: $total\" -e \"Offers: $total\""
+}
+
 function swarm_manage() {
+	local i=${#SWARM_MANAGE_PID[@]}
+
+	swarm_manage_no_wait "$@"
+
+	# Wait for nodes to be discovered
+	discovery_check_swarm_info "${#HOSTS[@]}" "${SWARM_HOSTS[$i]}"
+}
+
+# Start the swarm manager in background.
+function swarm_manage_no_wait() {
 	local discovery
 	if [ $# -eq 0 ]; then
 		discovery=`join , ${HOSTS[@]}`
@@ -101,6 +120,8 @@ function swarm_manage() {
 	"$SWARM_BINARY" -l debug manage -H "$host" --heartbeat=1s $discovery &
 	SWARM_MANAGE_PID[$i]=$!
 	SWARM_HOSTS[$i]=$host
+
+	# Wait for the Manager to be reachable
 	wait_until_reachable "$host"
 }
 

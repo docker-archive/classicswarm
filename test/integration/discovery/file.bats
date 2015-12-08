@@ -82,7 +82,7 @@ function setup_discovery_file() {
 	start_docker 2
 
 	# Start a manager. It should keep retrying
-	swarm_manage "$DISCOVERY"
+	swarm_manage_no_wait "$DISCOVERY"
 
 	# Now create the discovery file.
 	setup_discovery_file
