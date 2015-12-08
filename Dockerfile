@@ -1,4 +1,4 @@
-FROM golang:1.5.1
+FROM golang:1.5.2
 
 COPY . /go/src/github.com/docker/swarm
 WORKDIR /go/src/github.com/docker/swarm
