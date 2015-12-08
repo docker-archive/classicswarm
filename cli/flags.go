@@ -33,9 +33,9 @@ var (
 		EnvVar: "SWARM_ADVERTISE",
 	}
 	flJoinRandomDelay = cli.StringFlag{
-		Name:  "joindelay",
+		Name:  "delay",
 		Value: "0s",
-		Usage: "add a random delay in [0s,joindelay] to avoid synchronized registration",
+		Usage: "add a random delay in [0s,delay] to avoid synchronized registration",
 	}
 	flManageAdvertise = cli.StringFlag{
 		Name:   "advertise, addr",
