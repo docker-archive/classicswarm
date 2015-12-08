@@ -95,8 +95,17 @@ function discovery_check_swarm_info() {
 	retry 10 1 eval "docker -H $host info | grep -q -e \"Nodes: $total\" -e \"Offers: $total\""
 }
 
-# Start the swarm manager in background.
 function swarm_manage() {
+	local i=${#SWARM_MANAGE_PID[@]}
+
+	swarm_manage_no_wait "$@"
+
+	# Wait for nodes to be discovered
+	discovery_check_swarm_info "${#HOSTS[@]}" "${SWARM_HOSTS[$i]}"
+}
+
+# Start the swarm manager in background.
+function swarm_manage_no_wait() {
 	local discovery
 	if [ $# -eq 0 ]; then
 		discovery=`join , ${HOSTS[@]}`
@@ -114,9 +123,6 @@ function swarm_manage() {
 
 	# Wait for the Manager to be reachable
 	wait_until_reachable "$host"
-
-	# Wait for nodes to be discovered
-	discovery_check_swarm_info "${#HOSTS[@]}" "$host"
 }
 
 # swarm join every engine created with `start_docker`.
