@@ -99,7 +99,7 @@ function teardown() {
 	swarm_join "$DISCOVERY"
 
 	# Start a manager. It should keep retrying
-	swarm_manage "$DISCOVERY"
+	swarm_manage_no_wait "$DISCOVERY"
 
 	# Now start the store
 	start_store
