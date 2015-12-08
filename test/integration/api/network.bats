@@ -69,6 +69,20 @@ function teardown() {
 	[ "${#lines[@]}" -eq 7 ]
 }
 
+@test "docker multi-host network" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker_swarm network create -d overlay multi-host-network
+	run docker_swarm network ls
+	[ "${#lines[@]}" -eq 8 ]
+
+	diff <(docker_swarm network inspect node-0/multi-host-network) <(docker_swarm network inspect node-1/multi-host-network)
+
+	docker_swarm network rm multi-host-network
+	[ "${#lines[@]}" -eq 7 ]
+}
+
 @test "docker network disconnect connect" {
 	start_docker_with_busybox 2
 	swarm_manage

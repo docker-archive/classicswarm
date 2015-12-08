@@ -19,6 +19,9 @@ type Networks []*Network
 
 // Uniq returns all uniq networks
 func (networks Networks) Uniq() Networks {
+	if len(networks) <= 1 {
+		return networks
+	}
 	tmp := make(map[string]*Network)
 	for _, network := range networks {
 		tmp[network.ID] = network
@@ -59,7 +62,7 @@ func (networks Networks) Get(IDOrName string) *Network {
 		}
 	}
 
-	candidates := []*Network{}
+	candidates := Networks{}
 
 	// Match name, /name or engine/name.
 	for _, network := range networks {
@@ -68,6 +71,7 @@ func (networks Networks) Get(IDOrName string) *Network {
 		}
 	}
 
+	candidates = candidates.Uniq()
 	if size := len(candidates); size == 1 {
 		return candidates[0]
 	} else if size > 1 {
