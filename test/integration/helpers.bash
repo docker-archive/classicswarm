@@ -82,7 +82,7 @@ function retry() {
 
 # Waits until the given docker engine API becomes reachable.
 function wait_until_reachable() {
-	retry 10 1 docker -H $1 info
+	retry 15 1 docker -H $1 info
 }
 
 # Returns true if all nodes have joined the swarm.
