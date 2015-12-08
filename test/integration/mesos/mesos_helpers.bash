@@ -5,7 +5,7 @@ load ../../helpers
 export SWARM_MESOS_TASK_TIMEOUT=30s
 export SWARM_MESOS_USER=daemon
 
-MESOS_IMAGE=dockerswarm/mesos:0.24.1
+MESOS_IMAGE=dockerswarm/mesos:0.25.0
 MESOS_MASTER_PORT=$(( ( RANDOM % 1000 )  + 10000 ))
 
 # Start mesos master and slave.
