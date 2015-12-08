@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"net/http"
 
+	"net/http/pprof"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/gorilla/mux"
@@ -100,8 +102,21 @@ func writeCorsHeaders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
 }
 
+func profilerSetup(mainRouter *mux.Router, path string) {
+	var r = mainRouter.PathPrefix(path).Subrouter()
+	r.HandleFunc("/pprof/", pprof.Index)
+	r.HandleFunc("/pprof/cmdline", pprof.Cmdline)
+	r.HandleFunc("/pprof/profile", pprof.Profile)
+	r.HandleFunc("/pprof/symbol", pprof.Symbol)
+	r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	r.HandleFunc("/pprof/block", pprof.Handler("block").ServeHTTP)
+	r.HandleFunc("/pprof/heap", pprof.Handler("heap").ServeHTTP)
+	r.HandleFunc("/pprof/goroutine", pprof.Handler("goroutine").ServeHTTP)
+	r.HandleFunc("/pprof/threadcreate", pprof.Handler("threadcreate").ServeHTTP)
+}
+
 // NewPrimary creates a new API router.
-func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHandler, enableCors bool) *mux.Router {
+func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHandler, debug, enableCors bool) *mux.Router {
 	// Register the API events handler in the cluster.
 	eventsHandler := newEventsHandler()
 	cluster.RegisterEventHandler(eventsHandler)
@@ -132,6 +147,10 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 			r.Path("/v{version:[0-9.]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
 			r.Path(localRoute).Methods(localMethod).HandlerFunc(wrap)
 		}
+	}
+
+	if debug {
+		profilerSetup(r, "/debug/")
 	}
 
 	return r

@@ -140,7 +140,7 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 	candidate := leadership.NewCandidate(client, p, addr, leaderTTL)
 	follower := leadership.NewFollower(client, p)
 
-	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.Bool("cors"))
+	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.GlobalBool("debug"), c.Bool("cors"))
 	replica := api.NewReplica(primary, tlsConfig)
 
 	go func() {
@@ -307,7 +307,7 @@ func manage(c *cli.Context) {
 
 		setupReplication(c, cl, server, discovery, addr, leaderTTL, tlsConfig)
 	} else {
-		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.Bool("cors")))
+		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.GlobalBool("debug"), c.Bool("cors")))
 	}
 
 	log.Fatal(server.ListenAndServe())
