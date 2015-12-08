@@ -29,9 +29,9 @@ func join(c *cli.Context) {
 		log.Fatal("--advertise should be of the form ip:port or hostname:port")
 	}
 
-	joinDelay, err := time.ParseDuration(c.String("joindelay"))
+	joinDelay, err := time.ParseDuration(c.String("delay"))
 	if err != nil {
-		log.Fatalf("invalid --joindelay: %v", err)
+		log.Fatalf("invalid --delay: %v", err)
 	}
 
 	hb, err := time.ParseDuration(c.String("heartbeat"))
