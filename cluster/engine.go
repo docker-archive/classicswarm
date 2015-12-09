@@ -24,6 +24,9 @@ const (
 
 	// Minimum docker engine version supported by swarm.
 	minSupportedVersion = version.Version("1.6.0")
+
+	// Engine failureCount threshold
+	engineFailureCountThreshold = 3
 )
 
 // delayer offers a simple API to random delay within a given time range.
@@ -83,6 +86,7 @@ type Engine struct {
 	client          dockerclient.Client
 	eventHandler    EventHandler
 	healthy         bool
+	failureCount    int64
 	overcommitRatio int64
 	opts            *EngineOpts
 }
@@ -190,6 +194,27 @@ func (e *Engine) Status() string {
 		return "Healthy"
 	}
 	return "Unhealthy"
+}
+
+// IncFailureCount increases engine's failure count, and set engine as unhealthy if threshold is crossed
+func (e *Engine) IncFailureCount() {
+	e.Lock()
+	e.failureCount++
+	if e.healthy && e.failureCount >= engineFailureCountThreshold {
+		e.healthy = false
+	}
+	e.Unlock()
+}
+
+// SetEngineHealth sets engine healthy state
+func (e *Engine) SetEngineHealth(state bool) {
+	e.Lock()
+	e.healthy = state
+	// if engine is healthy, clear failureCount
+	if state {
+		e.failureCount = 0
+	}
+	e.Unlock()
 }
 
 // Gather engine specs (CPU, memory, constraints, ...).
@@ -434,7 +459,7 @@ func (e *Engine) refreshLoop() {
 			failedAttempts++
 			if failedAttempts >= e.opts.RefreshRetry && e.healthy {
 				e.emitEvent("engine_disconnect")
-				e.healthy = false
+				e.SetEngineHealth(false)
 				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as dead. Updated state failed %d times: %v", failedAttempts, err)
 			}
 		} else {
@@ -448,7 +473,7 @@ func (e *Engine) refreshLoop() {
 				e.client.StartMonitorEvents(e.handler, nil)
 				e.emitEvent("engine_reconnect")
 			}
-			e.healthy = true
+			e.SetEngineHealth(true)
 			failedAttempts = 0
 		}
 	}
