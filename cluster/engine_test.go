@@ -38,6 +38,15 @@ var (
 	}
 )
 
+func TestEngineFailureCount(t *testing.T) {
+	engine := NewEngine("test", 0, engOpts)
+	for i := 0; i < engineFailureCountThreshold; i++ {
+		assert.True(t, engine.IsHealthy())
+		engine.IncFailureCount()
+	}
+	assert.False(t, engine.IsHealthy())
+}
+
 func TestEngineConnectionFailure(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	assert.False(t, engine.isConnected())
