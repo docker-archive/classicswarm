@@ -386,6 +386,14 @@ $ docker run -d -p 80:80 nginx
 2014/10/29 00:33:20 Error response from daemon: no resources available to schedule container
 ```
 
+Each container occupies port `80` on its residing node when the container
+is created and releases the port when the container is deleted. A container in `exited`
+state still owns the port. If `prickly_engelbart` on `node-1` is stopped but not
+deleted, trying to start another container on `node-1` that requires port `80` would fail
+because port `80` is associated with `prickly_engelbart`. To increase running
+instances of nginx, you can either restart `prickly_engelbart`, or start another container
+after deleting `prickly_englbart`.
+
 #### Node port filter with host networking
 
 A container running with `--net=host` differs from the default

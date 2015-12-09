@@ -24,7 +24,7 @@ the `swarm manage` command. Swarm currently supports these values:
 * `random`
 
 The `spread` and `binpack` strategies compute rank according to a node's
-available CPU, its RAM, and the number of containers it is running. The `random`
+available CPU, its RAM, and the number of containers it has. The `random`
 strategy uses no computation. It selects a node at random and is primarily
 intended for debugging.
 
@@ -32,9 +32,15 @@ Your goal in choosing a strategy is to best optimize your swarm according to
 your company's needs.
 
 Under the `spread` strategy, Swarm optimizes for the node with the least number
-of running containers. The `binpack` strategy causes Swarm to optimize for the
-node which is most packed. The `random` strategy, like it sounds, chooses
-nodes at random regardless of their available CPU or RAM.
+of containers. The `binpack` strategy causes Swarm to optimize for the
+node which is most packed. Note that a container occupies resource during its life
+cycle, including `exited` state. Users should be aware of this condition to schedule
+containers. For exmaple, `spread` strategy only checks number of containers
+disregarding their states. A node with no active containers but high number of
+stopped containers may not be selected, defeating the purpose of load sharing.
+User could either remove stopped containers, or start stopped containers to achieve
+load spreading. The `random` strategy, like it sounds, chooses nodes at random
+regardless of their available CPU or RAM.
 
 Using the `spread` strategy results in containers spread thinly over many
 machines. The advantage of this strategy is that if a node goes down you only
@@ -78,7 +84,7 @@ Now, we start another container and ask for 1G of RAM again.
 
 The container `frontend` was started on `node-2` because it was the node the
 least loaded already. If two nodes have the same amount of available RAM and
-CPUs, the `spread` strategy prefers the node with least containers running.
+CPUs, the `spread` strategy prefers the node with least containers.
 
 ## BinPack strategy example
 
@@ -112,7 +118,7 @@ node the most packed already. This allows us to start a container requiring 2G
 of RAM on `node-2`.
 
 If two nodes have the same amount of available RAM and CPUs, the `binpack`
-strategy prefers the node with most containers running.
+strategy prefers the node with most containers.
 
 ## Docker Swarm documentation index
 
