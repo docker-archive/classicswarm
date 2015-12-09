@@ -104,7 +104,7 @@ container, you can use a `constraint` to ensure the database gets good I/O
 performance. You do this by by filter for nodes with flash drives:
 
 ```bash
-$ docker run -d -P -e constraint:storage==ssd --name db mysql
+$ docker -H tcp://<manager_ip:manager_port> run -d -P -e constraint:storage==ssd --name db mysql
 f8b693db9cd6
 
 $ docker ps
@@ -119,7 +119,7 @@ selected because it's the only host running flash.
 Suppose you want run an Nginx frontend in a cluster. In this case, you wouldn't want flash drives because the frontend mostly writes logs to disk.
 
 ```bash
-$ docker run -d -P -e constraint:storage==disk --name frontend nginx
+$ docker -H tcp://<manager_ip:manager_port> run -d -P -e constraint:storage==disk --name frontend nginx
 963841b138d8
 
 $ docker ps
@@ -197,7 +197,7 @@ name or ID. For example, you can start a container called `frontend` running
 `nginx`:
 
 ```bash
-$ docker run -d -p 80:80 --name frontend nginx
+$ docker -H tcp://<manager_ip:manager_port> run -d -p 80:80 --name frontend nginx
  87c4376856a8
 
 
@@ -210,7 +210,7 @@ Then, using `-e affinity:container==frontend` value to schedule a second
 container to locate and run next to the container named `frontend`.
 
 ```bash
-$ docker run -d --name logger -e affinity:container==frontend logger
+$ docker -H tcp://<manager_ip:manager_port> run -d --name logger -e affinity:container==frontend logger
  87c4376856a8
 
 $ docker ps
@@ -224,7 +224,7 @@ with the `frontend` container. Instead of the `frontend` name you could have
 supplied its ID as follows:
 
 ```bash
-$ docker run -d --name logger -e affinity:container==87c4376856a8
+$ docker -H tcp://<manager_ip:manager_port> run -d --name logger -e affinity:container==87c4376856a8
 ```
 
 #### Example image affinity
@@ -244,14 +244,14 @@ affinity:image==redis` filter to schedule several additional containers to run
 on these nodes.
 
 ```bash
-$ docker run -d --name redis1 -e affinity:image==redis redis
-$ docker run -d --name redis2 -e affinity:image==redis redis
-$ docker run -d --name redis3 -e affinity:image==redis redis
-$ docker run -d --name redis4 -e affinity:image==redis redis
-$ docker run -d --name redis5 -e affinity:image==redis redis
-$ docker run -d --name redis6 -e affinity:image==redis redis
-$ docker run -d --name redis7 -e affinity:image==redis redis
-$ docker run -d --name redis8 -e affinity:image==redis redis
+$ docker -H tcp://<manager_ip:manager_port> run -d --name redis1 -e affinity:image==redis redis
+$ docker -H tcp://<manager_ip:manager_port> run -d --name redis2 -e affinity:image==redis redis
+$ docker -H tcp://<manager_ip:manager_port> run -d --name redis3 -e affinity:image==redis redis
+$ docker -H tcp://<manager_ip:manager_port> run -d --name redis4 -e affinity:image==redis redis
+$ docker -H tcp://<manager_ip:manager_port> run -d --name redis5 -e affinity:image==redis redis
+$ docker -H tcp://<manager_ip:manager_port> run -d --name redis6 -e affinity:image==redis redis
+$ docker -H tcp://<manager_ip:manager_port> run -d --name redis7 -e affinity:image==redis redis
+$ docker -H tcp://<manager_ip:manager_port> run -d --name redis8 -e affinity:image==redis redis
 
 $ docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
@@ -273,7 +273,7 @@ $ docker images
 REPOSITORY                         TAG                       IMAGE ID            CREATED             VIRTUAL SIZE
 redis                              latest                    06a1f75304ba        2 days ago          111.1 MB
 
-$ docker run -d --name redis1 -e affinity:image==06a1f75304ba redis
+$ docker -H tcp://<manager_ip:manager_port> run -d --name redis1 -e affinity:image==06a1f75304ba redis
 ```
 
 #### Example label affinity
@@ -283,10 +283,10 @@ example, you can run a `nginx` container and apply the
 `com.example.type=frontend` custom label.
 
 ```bash
-$ docker run -d -p 80:80 --label com.example.type=frontend nginx
+$ docker -H tcp://<manager_ip:manager_port> run -d -p 80:80 --label com.example.type=frontend nginx
  87c4376856a8
 
-$ docker ps  --filter "label=com.example.type=frontend"
+$ docker -H tcp://<manager_ip:manager_port> ps  --filter "label=com.example.type=frontend"
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
 87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      trusting_yonath
 ```
@@ -295,10 +295,10 @@ Then, use `-e affnity:com.example.type==frontend` to schedule a container next
 to the container with the `com.example.type==frontend` label.
 
 ```bash
-$ docker run -d -e affinity:com.example.type==frontend logger
+$ docker -H tcp://<manager_ip:manager_port> run -d -e affinity:com.example.type==frontend logger
  87c4376856a8
 
-$ docker ps
+$ docker -H tcp://<manager_ip:manager_port> ps
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
 87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      trusting_yonath
 963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1      happy_hawking
@@ -339,7 +339,7 @@ By default, containers run on Docker's bridge network. To use the `port` filter
 with the bridge network, you run a container as follows.
 
 ```bash
-$ docker run -d -p 80:80 nginx
+$ docker -H tcp://<manager_ip:manager_port> run -d -p 80:80 nginx
 87c4376856a8
 
 $ docker ps
@@ -353,7 +353,7 @@ that uses the host port `80` results in Swarm selecting a different node,
 because port `80` is already occupied on `node-1`:
 
 ```bash
-$ docker run -d -p 80:80 nginx
+$ docker -H tcp://<manager_ip:manager_port> run -d -p 80:80 nginx
 963841b138d8
 
 $ docker ps
@@ -366,7 +366,7 @@ Again, repeating the same command will result in the selection of `node-3`,
 since port `80` is neither available on `node-1` nor `node-2`:
 
 ```bash
-$ docker run -d -p 80:80 nginx
+$ docker -H tcp://<manager_ip:manager_port> run -d -p 80:80 nginx
 963841b138d8
 
 $ docker ps
@@ -380,7 +380,7 @@ Finally, Docker Swarm will refuse to run another container that requires port
 `80`, because it is not available on any node in the cluster:
 
 ```bash
-$ docker run -d -p 80:80 nginx
+$ docker -H tcp://<manager_ip:manager_port> run -d -p 80:80 nginx
 2014/10/29 00:33:20 Error response from daemon: no resources available to schedule container
 ```
 
@@ -396,11 +396,11 @@ choose an available node for a new container.
 For example, the following commands start `nginx` on 3-node cluster.
 
 ```bash
-$ docker run -d --expose=80 --net=host nginx
+$ docker -H tcp://<manager_ip:manager_port> run -d --expose=80 --net=host nginx
 640297cb29a7
-$ docker run -d --expose=80 --net=host nginx
+$ docker -H tcp://<manager_ip:manager_port> run -d --expose=80 --net=host nginx
 7ecf562b1b3f
-$ docker run -d --expose=80 --net=host nginx
+$ docker -H tcp://<manager_ip:manager_port> run -d --expose=80 --net=host nginx
 09a92f582bc2
 ```
 
@@ -418,16 +418,16 @@ CONTAINER ID        IMAGE               COMMAND                CREATED          
 Swarm refuses the operation when trying to instantiate the 4th container.
 
 ```bash
-$  docker run -d --expose=80 --net=host nginx
+$  docker -H tcp://<manager_ip:manager_port> run -d --expose=80 --net=host nginx
 FATA[0000] Error response from daemon: unable to find a node with port 80/tcp available in the Host mode
 ```
 
 However, port binding to the different value, for example  `81`, is still allowed.
 
 ```bash
-$  docker run -d -p 81:80 nginx:latest
+$  docker -H tcp://<manager_ip:manager_port> run -d -p 81:80 nginx:latest
 832f42819adc
-$  docker ps
+$  docker -H tcp://<manager_ip:manager_port> ps
 CONTAINER ID        IMAGE               COMMAND                CREATED                  STATUS                  PORTS                                 NAMES
 832f42819adc        nginx:1             "nginx -g 'daemon of   Less than a second ago   Up Less than a second   443/tcp, 192.168.136.136:81->80/tcp   box3/thirsty_hawking
 640297cb29a7        nginx:1             "nginx -g 'daemon of   8 seconds ago            Up About a minute                                             box3/furious_heisenberg
@@ -441,7 +441,7 @@ To apply a node `constraint` or container `affinity` filters you must set
 environment variables on the container using filter expressions, for example:
 
 ```bash
-$ docker run -d --name redis1 -e affinity:image==~redis redis
+$ docker -H tcp://<manager_ip:manager_port> run -d --name redis1 -e affinity:image==~redis redis
 ```
 
 Each expression must be in the form:
