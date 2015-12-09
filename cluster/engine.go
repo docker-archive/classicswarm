@@ -192,6 +192,13 @@ func (e *Engine) Status() string {
 	return "Unhealthy"
 }
 
+// SetEngineHealth sets engine healthy state
+func (e *Engine) SetEngineHealth(state bool) {
+	e.Lock()
+	e.healthy = state
+	e.Unlock()
+}
+
 // Gather engine specs (CPU, memory, constraints, ...).
 func (e *Engine) updateSpecs() error {
 	info, err := e.client.Info()
@@ -521,7 +528,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 	dockerConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(e.Cpus)))
 	dockerConfig.HostConfig.CpuShares = dockerConfig.CpuShares
 
-	if id, err = client.CreateContainer(&dockerConfig, name); err != nil {
+	if id, err = client.CreateContainer(&dockerConfig, name, nil); err != nil {
 		// If the error is other than not found, abort immediately.
 		if err != dockerclient.ErrImageNotFound || !pullImage {
 			return nil, err
@@ -531,7 +538,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool) (*
 			return nil, err
 		}
 		// ...And try again.
-		if id, err = client.CreateContainer(&dockerConfig, name); err != nil {
+		if id, err = client.CreateContainer(&dockerConfig, name, nil); err != nil {
 			return nil, err
 		}
 	}
