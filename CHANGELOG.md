@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.0.1 (2015-12-09)
+
+#### Scheduler
+
+- Set labels for pending containers to fix scheduler failure
+
+#### Discovery
+
+- Increase default TTL and heartbeat values to reduce traffic to discovery
+
+#### API
+
+- Fix 'ps -a' panic issue
+- Fix network connect/disconnect for overlay network
+- Fix connection leak on TLS connections
+- Fix CLI hang on events command
+- Fix newline issue with events
+- Improve OPTIONS handler
+- Fix image digest
+- Fix memoryswappiness default value
+- Enable profiling for HTTP in debug mode
+
+#### Node Update
+
+- Provide options on swarm node update frequency
+
+#### Mesos integration
+
+- Change offers timeout default to prevent other frameworks starvation
+- Improve error output for bad swarm mesos user
+- Fix connection failure when using Mesos with ZooKeeper
+
+#### Misc
+
+- Update to Go 1.5.2
+- Documentation update
+
 ## 1.0 (2015-10-13)
 
 #### Scheduler
