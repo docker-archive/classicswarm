@@ -11,218 +11,201 @@ weight=4
 
 # Discovery
 
-Docker Swarm comes with multiple Discovery backends.
+Docker Swarm comes with multiple discovery backends. You use a hosted discovery service with Docker Swarm. The service maintains a list of IPs in your swarm.
+This page describes the different types of hosted discovery available to you. These are:
 
-## Backends
 
-You use a hosted discovery service with Docker Swarm. The service
-maintains a list of IPs in your swarm. There are several available
-services, such as `etcd`, `consul` and `zookeeper` depending on what
-is best suited for your environment. You can even use a static
-file. Docker Hub also provides a hosted discovery service which you
-can use.
+## Using a distributed key/value store
 
-### Hosted Discovery with Docker Hub
+The recommended way to do node discovery in Swarm is Docker's libkv project. The libkv project is an abstraction layer over existing distributed key/value stores.  As of this writing, the project supports:
 
-#####The Hosted Discovery Service is not recommended for production use.
-#####It's intended to be used for testing/development.
+* Consul 0.5.1 or higher
+* Etcd 2.0 or higher
+* ZooKeeper 3.4.5 or higher
 
-#####See other discovery backends for production use.
+For details about libkv and a detailed technical overview of the supported backends, refer to the [libkv project](https://github.com/docker/libkv).
+
+### Using a hosted discovery key store
+
+1. On each node, start the Swarm agent.
+
+    The node IP address doesn't have to be public as long as the swarm manager can access it.
+
+    **Etcd**:
+
+        swarm join --advertise=<node_ip:2375> etcd://<etcd_addr1>,<etcd_addr2>/<optional path prefix>
+
+    **Consul**:
+
+        swarm join --advertise=<node_ip:2375> consul://<consul_addr>/<optional path prefix>
+
+    **ZooKeeper**:
+
+        swarm join --advertise=<node_ip:2375> zk://<zookeeper_addr1>,<zookeeper_addr2>/<optional path prefix>
+
+2. Start the Swarm manager on any machine or your laptop.
+
+    **Etcd**:
+
+        swarm manage -H tcp://<swarm_ip:swarm_port> etcd://<etcd_addr1>,<etcd_addr2>/<optional path prefix>
+
+    **Consul**:
+
+        swarm manage -H tcp://<swarm_ip:swarm_port> consul://<consul_addr>/<optional path prefix>
+
+    **ZooKeeper**:
+
+        swarm manage -H tcp://<swarm_ip:swarm_port> zk://<zookeeper_addr1>,<zookeeper_addr2>/<optional path prefix>
+
+4. Use the regular Docker commands.
+
+        docker -H tcp://<swarm_ip:swarm_port> info
+        docker -H tcp://<swarm_ip:swarm_port> run ...
+        docker -H tcp://<swarm_ip:swarm_port> ps
+        docker -H tcp://<swarm_ip:swarm_port> logs ...
+        ...
+
+5. Try listing the nodes in your cluster.
+
+    **Etcd**:
+
+        swarm list etcd://<etcd_addr1>,<etcd_addr2>/<optional path prefix>
+        <node_ip:2375>
+
+    **Consul**:
+
+        swarm list consul://<consul_addr>/<optional path prefix>
+        <node_ip:2375>
+
+    **ZooKeeper**:
+
+        swarm list zk://<zookeeper_addr1>,<zookeeper_addr2>/<optional path prefix>
+        <node_ip:2375>
+
+### Use TLS with distributed key/value discovery
+
+You can securely talk to the distributed k/v store using TLS. To connect
+securely to the store, you must generate the certificates for a node when you
+`join` it to the swarm. You can only use with Consul and Etcd. The following example illustrates this with Consul:
+
+```
+swarm join \
+    --advertise=<node_ip:2375> \
+    --discovery-opt kv.cacertfile=/path/to/mycacert.pem \
+    --discovery-opt kv.certfile=/path/to/mycert.pem \
+    --discovery-opt kv.keyfile=/path/to/mykey.pem \
+    consul://<consul_addr>/<optional path prefix>
+```
+
+This works the same way for the Swarm `manage` and `list` commands.
+
+## A static file or list of nodes
+
+You can use a static file or list of nodes for your discovery backend. The file must be stored on a host that is accessible from the Swarm manager. You can also pass a node list as an option when you start Swarm.
+
+Both the static file and the `nodes` option support a IP address ranges. To specify a range supply a pattern, for example, `10.0.0.[10:200]` refers to nodes starting from `10.0.0.10` to `10.0.0.200`.  For example for the `file` discovery method.
+
+        $ echo "10.0.0.[11:100]:2375"   >> /tmp/my_cluster
+        $ echo "10.0.1.[15:20]:2375"    >> /tmp/my_cluster
+        $ echo "192.168.1.2:[2:20]375"  >> /tmp/my_cluster
+
+Or with node discovery:
+
+        swarm manage -H <swarm_ip:swarm_port> "nodes://10.0.0.[10:200]:2375,10.0.1.[2:250]:2375"
+
+### To create a file
+
+1. Edit the file and add line for each of your nodes.
+
+        echo <node_ip1:2375> >> /opt/my_cluster
+        echo <node_ip2:2375> >> /opt/my_cluster
+        echo <node_ip3:2375> >> /opt/my_cluster
+
+    This example creates a file named `/tmp/my_cluster`. You can use any name you like.
+
+2. Start the Swarm manager on any machine.
+
+        swarm manage -H tcp://<swarm_ip:swarm_port> file:///tmp/my_cluster
+
+3. Use the regular Docker commands.
+
+        docker -H tcp://<swarm_ip:swarm_port> info
+        docker -H tcp://<swarm_ip:swarm_port> run ...
+        docker -H tcp://<swarm_ip:swarm_port> ps
+        docker -H tcp://<swarm_ip:swarm_port> logs ...
+        ...
+
+4. List the nodes in your cluster.
+
+        $ swarm list file:///tmp/my_cluster
+        <node_ip1:2375>
+        <node_ip2:2375>
+        <node_ip3:2375>
+
+### To use a node list
+
+1. Start the manager on any machine or your laptop.
+
+        swarm manage -H <swarm_ip:swarm_port> nodes://<node_ip1:2375>,<node_ip2:2375>
+
+    or
+
+        swarm manage -H <swarm_ip:swarm_port> <node_ip1:2375>,<node_ip2:2375>
+
+2. Use the regular Docker commands.
+
+        docker -H <swarm_ip:swarm_port> info
+        docker -H <swarm_ip:swarm_port> run ...
+        docker -H <swarm_ip:swarm_port> ps
+        docker -H <swarm_ip:swarm_port> logs ...
+
+3. List the nodes in your cluster.
+
+        $ swarm list file:///tmp/my_cluster
+        <node_ip1:2375>
+        <node_ip2:2375>
+        <node_ip3:2375>
+
+
+## Docker Hub as a hosted discovery service
+
+> **Warning**: The Docker Hub Hosted Discovery Service **is not recommended** for production use. It's intended to be used for testing/development. See the  discovery backends for production use.
 
 This example uses the hosted discovery service on Docker Hub. Using
 Docker Hub's hosted discovery service requires that each node in the
-swarm is connected to the internet. To create your swarm:
+swarm is connected to the public internet. To create your swarm:
 
-First we create a cluster.
+1. Create a cluster.
 
-    # create a cluster
-    $ swarm create
-    6856663cdefdec325839a4b7e1de38e8 # <- this is your unique <cluster_id>
+        $ swarm create
+        6856663cdefdec325839a4b7e1de38e8 # <- this is your unique <cluster_id>
 
+2. Create each node and join them to the cluster.
 
-Then we create each node and join them to the cluster.
+    On each of your nodes, start the swarm agent. The <node_ip> doesn't have to be public (eg. 192.168.0.X) but the the swarm manager must be able to access it.
 
-    # on each of your nodes, start the swarm agent
-    #  <node_ip> doesn't have to be public (eg. 192.168.0.X),
-    #  as long as the swarm manager can access it.
-    $ swarm join --advertise=<node_ip:2375> token://<cluster_id>
+        $ swarm join --advertise=<node_ip:2375> token://<cluster_id>
 
+3. Start the Swarm manager.
 
-Finally, we start the Swarm manager. This can be on any machine or even
-your laptop.
+    This can be on any machine or even your laptop.
 
-    $ swarm manage -H tcp://<swarm_ip:swarm_port> token://<cluster_id>
+        $ swarm manage -H tcp://<swarm_ip:swarm_port> token://<cluster_id>
 
-You can then use regular Docker commands to interact with your swarm.
+4. Use regular Docker commands to interact with your swarm.
 
-    docker -H tcp://<swarm_ip:swarm_port> info
-    docker -H tcp://<swarm_ip:swarm_port> run ...
-    docker -H tcp://<swarm_ip:swarm_port> ps
-    docker -H tcp://<swarm_ip:swarm_port> logs ...
-    ...
+        docker -H tcp://<swarm_ip:swarm_port> info
+        docker -H tcp://<swarm_ip:swarm_port> run ...
+        docker -H tcp://<swarm_ip:swarm_port> ps
+        docker -H tcp://<swarm_ip:swarm_port> logs ...
+        ...
 
+5. List the nodes in your cluster.
 
-You can also list the nodes in your cluster.
+        swarm list token://<cluster_id>
+        <node_ip:2375>
 
-    swarm list token://<cluster_id>
-    <node_ip:2375>
-
-
-### Using a static file describing the cluster
-
-For each of your nodes, add a line to a file. The node IP address
-doesn't need to be public as long the Swarm manager can access it.
-
-    echo <node_ip1:2375> >> /tmp/my_cluster
-    echo <node_ip2:2375> >> /tmp/my_cluster
-    echo <node_ip3:2375> >> /tmp/my_cluster
-
-
-Then start the Swarm manager on any machine.
-
-    swarm manage -H tcp://<swarm_ip:swarm_port> file:///tmp/my_cluster
-
-
-And then use the regular Docker commands.
-
-    docker -H tcp://<swarm_ip:swarm_port> info
-    docker -H tcp://<swarm_ip:swarm_port> run ...
-    docker -H tcp://<swarm_ip:swarm_port> ps
-    docker -H tcp://<swarm_ip:swarm_port> logs ...
-    ...
-
-You can list the nodes in your cluster.
-
-    $ swarm list file:///tmp/my_cluster
-    <node_ip1:2375>
-    <node_ip2:2375>
-    <node_ip3:2375>
-
-
-### Using etcd
-
-On each of your nodes, start the Swarm agent. The node IP address
-doesn't have to be public as long as the swarm manager can access it.
-
-    swarm join --advertise=<node_ip:2375> etcd://<etcd_addr1>,<etcd_addr2>/<optional path prefix>
-
-
-Start the manager on any machine or your laptop.
-
-    swarm manage -H tcp://<swarm_ip:swarm_port> etcd://<etcd_addr1>,<etcd_addr2>/<optional path prefix>
-
-
-And then use the regular Docker commands.
-
-    docker -H tcp://<swarm_ip:swarm_port> info
-    docker -H tcp://<swarm_ip:swarm_port> run ...
-    docker -H tcp://<swarm_ip:swarm_port> ps
-    docker -H tcp://<swarm_ip:swarm_port> logs ...
-    ...
-
-
-You can list the nodes in your cluster.
-
-    swarm list etcd://<etcd_addr1>,<etcd_addr2>/<optional path prefix>
-    <node_ip:2375>
-
-
-### Using consul
-
-On each of your nodes, start the Swarm agent. The node IP address
-doesn't need to be public as long as the Swarm manager can access it.
-
-    swarm join --advertise=<node_ip:2375> consul://<consul_addr>/<optional path prefix>
-
-Start the manager on any machine or your laptop.
-
-    swarm manage -H tcp://<swarm_ip:swarm_port> consul://<consul_addr>/<optional path prefix>
-
-
-And then use the regular Docker commands.
-
-    docker -H tcp://<swarm_ip:swarm_port> info
-    docker -H tcp://<swarm_ip:swarm_port> run ...
-    docker -H tcp://<swarm_ip:swarm_port> ps
-    docker -H tcp://<swarm_ip:swarm_port> logs ...
-    ...
-
-You can list the nodes in your cluster.
-
-    swarm list consul://<consul_addr>/<optional path prefix>
-    <node_ip:2375>
-
-
-### Using zookeeper
-
-On each of your nodes, start the Swarm agent. The node IP doesn't have
-to be public as long as the swarm manager can access it.
-
-    swarm join --advertise=<node_ip:2375> zk://<zookeeper_addr1>,<zookeeper_addr2>/<optional path prefix>
-
-
-Start the manager on any machine or your laptop.
-
-    swarm manage -H tcp://<swarm_ip:swarm_port> zk://<zookeeper_addr1>,<zookeeper_addr2>/<optional path prefix>
-
-You can then use the regular Docker commands.
-
-
-    docker -H tcp://<swarm_ip:swarm_port> info
-    docker -H tcp://<swarm_ip:swarm_port> run ...
-    docker -H tcp://<swarm_ip:swarm_port> ps
-    docker -H tcp://<swarm_ip:swarm_port> logs ...
-    ...
-
-
-You can list the nodes in the cluster.
-
-    swarm list zk://<zookeeper_addr1>,<zookeeper_addr2>/<optional path prefix>
-    <node_ip:2375>
-
-
-### Using a static list of IP addresses
-
-Start the manager on any machine or your laptop
-
-    swarm manage -H <swarm_ip:swarm_port> nodes://<node_ip1:2375>,<node_ip2:2375>
-
-Or
-
-    swarm manage -H <swarm_ip:swarm_port> <node_ip1:2375>,<node_ip2:2375>
-
-
-Then use the regular Docker commands.
-
-    docker -H <swarm_ip:swarm_port> info
-    docker -H <swarm_ip:swarm_port> run ...
-    docker -H <swarm_ip:swarm_port> ps
-    docker -H <swarm_ip:swarm_port> logs ...
-
-
-### Range pattern for IP addresses
-
-The `file` and `nodes` discoveries support a range pattern to specify IP
-addresses, i.e., `10.0.0.[10:200]` will be a list of nodes starting from
-`10.0.0.10` to `10.0.0.200`.
-
-For example for the `file` discovery method.
-
-    $ echo "10.0.0.[11:100]:2375"   >> /tmp/my_cluster
-    $ echo "10.0.1.[15:20]:2375"    >> /tmp/my_cluster
-    $ echo "192.168.1.2:[2:20]375"  >> /tmp/my_cluster
-
-Then start the manager.
-
-    swarm manage -H tcp://<swarm_ip:swarm_port> file:///tmp/my_cluster
-
-
-And for the `nodes` discovery method.
-
-    swarm manage -H <swarm_ip:swarm_port> "nodes://10.0.0.[10:200]:2375,10.0.1.[2:250]:2375"
-
-
-## Contributing a new discovery backend
+## Contribute a new discovery backend
 
 You can contribute a new discovery backend to Swarm. For information on how to
 do this, see <a
@@ -231,7 +214,7 @@ discovery README in the Docker Swarm repository</a>.
 
 ## Docker Swarm documentation index
 
-- [User guide]()
+- [Overview](index.md)
 - [Scheduler strategies](scheduler/strategy.md)
 - [Scheduler filters](scheduler/filter.md)
 - [Swarm API](api/swarm-api.md)
