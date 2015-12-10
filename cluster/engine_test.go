@@ -42,7 +42,7 @@ func TestEngineFailureCount(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	for i := 0; i < engine.opts.FailureRetry; i++ {
 		assert.True(t, engine.IsHealthy())
-		engine.IncFailureCount()
+		engine.incFailureCount()
 	}
 	assert.False(t, engine.IsHealthy())
 }
