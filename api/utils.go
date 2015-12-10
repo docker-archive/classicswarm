@@ -64,10 +64,14 @@ func newClientAndScheme(tlsConfig *tls.Config) (*http.Client, string) {
 func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.Container, error) {
 	if name, ok := vars["name"]; ok {
 		if container := c.cluster.Container(name); container != nil {
+			if !container.Engine.IsHealthy() {
+				return name, nil, fmt.Errorf("Container %s running on unhealthy node %s", name, container.Engine.Name)
+			}
 			return name, container, nil
 		}
 		return name, nil, fmt.Errorf("No such container: %s", name)
 	}
+
 	if ID, ok := vars["execid"]; ok {
 		for _, container := range c.cluster.Containers() {
 			for _, execID := range container.Info.ExecIDs {
@@ -78,6 +82,7 @@ func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.
 		}
 		return "", nil, fmt.Errorf("Exec %s not found", ID)
 	}
+
 	return "", nil, errors.New("Not found")
 }
 
