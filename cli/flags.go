@@ -71,10 +71,10 @@ var (
 		Value: "60s",
 		Usage: "set engine refresh maximum interval",
 	}
-	flRefreshRetry = cli.IntFlag{
-		Name:  "engine-refresh-retry",
+	flFailureRetry = cli.IntFlag{
+		Name:  "engine-failure-retry",
 		Value: 3,
-		Usage: "set engine refresh retry count on failure",
+		Usage: "set engine failure retry count",
 	}
 	flEnableCors = cli.BoolFlag{
 		Name:  "api-enable-cors, cors",

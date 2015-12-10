@@ -24,9 +24,6 @@ const (
 
 	// Minimum docker engine version supported by swarm.
 	minSupportedVersion = version.Version("1.6.0")
-
-	// Engine failureCount threshold
-	engineFailureCountThreshold = 3
 )
 
 // delayer offers a simple API to random delay within a given time range.
@@ -62,7 +59,7 @@ func (d *delayer) Wait() <-chan time.Time {
 type EngineOpts struct {
 	RefreshMinInterval time.Duration
 	RefreshMaxInterval time.Duration
-	RefreshRetry       int
+	FailureRetry       int
 }
 
 // Engine represents a docker engine
@@ -86,7 +83,7 @@ type Engine struct {
 	client          dockerclient.Client
 	eventHandler    EventHandler
 	healthy         bool
-	failureCount    int64
+	failureCount    int
 	overcommitRatio int64
 	opts            *EngineOpts
 }
@@ -188,6 +185,17 @@ func (e *Engine) IsHealthy() bool {
 	return e.healthy
 }
 
+// SetHealthy sets engine healthy state
+func (e *Engine) SetHealthy(state bool) {
+	e.Lock()
+	e.healthy = state
+	// if engine is healthy, clear failureCount
+	if state {
+		e.failureCount = 0
+	}
+	e.Unlock()
+}
+
 // Status returns the health status of the Engine: Healthy or Unhealthy
 func (e *Engine) Status() string {
 	if e.healthy {
@@ -200,19 +208,8 @@ func (e *Engine) Status() string {
 func (e *Engine) IncFailureCount() {
 	e.Lock()
 	e.failureCount++
-	if e.healthy && e.failureCount >= engineFailureCountThreshold {
+	if e.healthy && e.failureCount >= e.opts.FailureRetry {
 		e.healthy = false
-	}
-	e.Unlock()
-}
-
-// SetEngineHealth sets engine healthy state
-func (e *Engine) SetEngineHealth(state bool) {
-	e.Lock()
-	e.healthy = state
-	// if engine is healthy, clear failureCount
-	if state {
-		e.failureCount = 0
 	}
 	e.Unlock()
 }
@@ -435,7 +432,6 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 }
 
 func (e *Engine) refreshLoop() {
-	failedAttempts := 0
 
 	for {
 		var err error
@@ -456,15 +452,15 @@ func (e *Engine) refreshLoop() {
 		}
 
 		if err != nil {
-			failedAttempts++
-			if failedAttempts >= e.opts.RefreshRetry && e.healthy {
+			e.failureCount++
+			if e.failureCount >= e.opts.FailureRetry && e.healthy {
 				e.emitEvent("engine_disconnect")
-				e.SetEngineHealth(false)
-				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as dead. Updated state failed %d times: %v", failedAttempts, err)
+				e.SetHealthy(false)
+				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as dead. Updated state failed %d times: %v", e.failureCount, err)
 			}
 		} else {
 			if !e.healthy {
-				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", failedAttempts)
+				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.failureCount)
 				if err := e.updateSpecs(); err != nil {
 					log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Update engine specs failed: %v", err)
 					continue
@@ -473,8 +469,7 @@ func (e *Engine) refreshLoop() {
 				e.client.StartMonitorEvents(e.handler, nil)
 				e.emitEvent("engine_reconnect")
 			}
-			e.SetEngineHealth(true)
-			failedAttempts = 0
+			e.SetHealthy(true)
 		}
 	}
 }
