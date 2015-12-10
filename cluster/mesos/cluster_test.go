@@ -13,7 +13,7 @@ func createAgent(t *testing.T, ID string, containers ...*cluster.Container) *age
 	engOpts := &cluster.EngineOpts{
 		RefreshMinInterval: time.Duration(30) * time.Second,
 		RefreshMaxInterval: time.Duration(60) * time.Second,
-		RefreshRetry:       3,
+		FailureRetry:       3,
 	}
 	engine := cluster.NewEngine(ID, 0, engOpts)
 	engine.Name = ID

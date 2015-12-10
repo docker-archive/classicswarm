@@ -34,13 +34,13 @@ var (
 	engOpts = &EngineOpts{
 		RefreshMinInterval: time.Duration(30) * time.Second,
 		RefreshMaxInterval: time.Duration(60) * time.Second,
-		RefreshRetry:       3,
+		FailureRetry:       3,
 	}
 )
 
 func TestEngineFailureCount(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
-	for i := 0; i < engineFailureCountThreshold; i++ {
+	for i := 0; i < engine.opts.FailureRetry; i++ {
 		assert.True(t, engine.IsHealthy())
 		engine.IncFailureCount()
 	}
