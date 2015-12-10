@@ -57,20 +57,20 @@ have 2G of RAM, 2 CPUs, and neither node is running a container. Under this stra
 When you run a new container, the system chooses `node-1` at random from the swarm
 of two equally ranked nodes:
 
-      $ docker run -d -P -m 1G --name db mysql
+      $ docker tcp://<manager_ip:manager_port> run -d -P -m 1G --name db mysql
       f8b693db9cd6
 
-      $ docker ps
+      $ docker tcp://<manager_ip:manager_port> ps
       CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
       f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1      db
 
 Now, we start another container and ask for 1G of RAM again.
 
 
-    $ docker run -d -P -m 1G --name frontend nginx
+    $ docker tcp://<manager_ip:manager_port> run -d -P -m 1G --name frontend nginx
     963841b138d8
 
-    $ docker ps
+    $ docker tcp://<manager_ip:manager_port> ps
     CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
     963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:49177->80/tcp      node-2      frontend
     f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1      db
@@ -87,10 +87,10 @@ neither is running a container. Again, the nodes are equal. When you run a new
 container, the system chooses `node-1` at random from the swarm:
 
 
-    $ docker run -d -P -m 1G --name db mysql
+    $ docker tcp://<manager_ip:manager_port> run -d -P -m 1G --name db mysql
     f8b693db9cd6
 
-    $ docker ps
+    $ docker tcp://<manager_ip:manager_port> ps
     CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
     f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1      db
 
@@ -98,10 +98,10 @@ container, the system chooses `node-1` at random from the swarm:
 Now, you start another container, asking for 1G of RAM again.
 
 
-    $ docker run -d -P -m 1G --name frontend nginx
+    $ docker tcp://<manager_ip:manager_port> run -d -P -m 1G --name frontend nginx
     963841b138d8
 
-    $ docker ps
+    $ docker tcp://<manager_ip:manager_port> ps
     CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
     963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:49177->80/tcp      node-1      frontend
     f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1      db
