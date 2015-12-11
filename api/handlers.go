@@ -438,8 +438,14 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		authConfig = &dockerclient.AuthConfig{}
 		json.Unmarshal(buf, authConfig)
 	}
+	containerConfig := cluster.BuildContainerConfig(config)
 
-	container, err := c.cluster.CreateContainer(cluster.BuildContainerConfig(config), name, authConfig)
+	if err := containerConfig.Validate(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	container, err := c.cluster.CreateContainer(containerConfig, name, authConfig)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Conflict") {
 			httpError(w, err.Error(), http.StatusConflict)

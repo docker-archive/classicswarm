@@ -94,7 +94,7 @@ func (c *Cluster) Handle(e *cluster.Event) error {
 	c.RLock()
 	defer c.RUnlock()
 
-	for h, _ := range c.eventHandlers {
+	for h := range c.eventHandlers {
 		if err := h.Handle(e); err != nil {
 			log.Error(err)
 		}
@@ -159,9 +159,12 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 		return nil, fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
 	}
 
-	// Associate a Swarm ID to the container we are creating.
-	swarmID := c.generateUniqueID()
-	config.SetSwarmID(swarmID)
+	swarmID := config.SwarmID()
+	if swarmID == "" {
+		// Associate a Swarm ID to the container we are creating.
+		swarmID = c.generateUniqueID()
+		config.SetSwarmID(swarmID)
+	}
 
 	if withImageAffinity {
 		config.AddAffinity("image==" + config.Image)

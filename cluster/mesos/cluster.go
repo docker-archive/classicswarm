@@ -159,7 +159,7 @@ func (c *Cluster) Handle(e *cluster.Event) error {
 	c.RLock()
 	defer c.RUnlock()
 
-	for h, _ := range c.eventHandlers {
+	for h := range c.eventHandlers {
 		if err := h.Handle(e); err != nil {
 			log.Error(err)
 		}
