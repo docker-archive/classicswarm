@@ -219,3 +219,30 @@ function teardown() {
 	[ "$status" -ne 0 ]
 	[[ "${output,,}" == *"plugin not found"* ]]
 }
+
+@test "docker run - overlay network" {
+	PORT=$((RANDOM % 1000 + 9000))
+	STORE_HOST=127.0.0.1:$PORT
+
+	docker_host run -d \
+		--net=host \
+		--name=swarm_etcd \
+		quay.io/coreos/etcd:v2.2.0 \
+		--listen-client-urls="http://0.0.0.0:${PORT}" \
+		--advertise-client-urls="http://${STORE_HOST}"
+
+
+	start_docker 2 --cluster-advertise=127.0.0.1:_port --cluster-store=etcd://$STORE_HOST
+	swarm_manage
+
+	docker_swarm network create test
+
+	docker_swarm run -d --net=test --name test_redis -e constraint:node==node-0 redis
+
+	run docker_swarm run -it --net=test redis redis-cli -h test_redis PING
+	echo ${output}
+
+	docker_host rm -f -v swarm_etcd
+
+	exit 1
+}
