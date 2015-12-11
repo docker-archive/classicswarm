@@ -40,6 +40,7 @@
 			"Comment": "v1.4.1-7381-g270e8cf",
 			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
 		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/random",
 			"Comment": "v1.4.1-7381-g270e8cf",
 			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
