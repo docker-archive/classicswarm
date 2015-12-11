@@ -376,6 +376,12 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
 		return
 	}
+
+	if !container.Engine.IsHealthy() {
+		httpError(w, fmt.Sprintf("Container %s running on unhealthy node %s", name, container.Engine.Name), http.StatusNotFound)
+		return
+	}
+
 	client, scheme := newClientAndScheme(c.tlsConfig)
 
 	resp, err := client.Get(scheme + "://" + container.Engine.Addr + "/containers/" + container.Id + "/json")
