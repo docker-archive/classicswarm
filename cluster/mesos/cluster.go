@@ -37,6 +37,7 @@ type Cluster struct {
 	TLSConfig           *tls.Config
 	options             *cluster.DriverOpts
 	offerTimeout        time.Duration
+	refuseSeconds       *float64
 	taskCreationTimeout time.Duration
 	pendingTasks        *queue.Queue
 	engineOpts          *cluster.EngineOpts
@@ -125,6 +126,14 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 			return nil, err
 		}
 		cluster.offerTimeout = d
+	}
+
+	if refuseSeconds, ok := options.String("mesos.offer_refuse_seconds", "SWARM_MESOS_OFFER_REFUSE_SECONDS"); ok {
+		d, err := strconv.ParseFloat(refuseSeconds, 64);
+		if err != nil {
+			return nil, err
+		}
+		cluster.refuseSeconds = &d;
 	}
 
 	driver, err := mesosscheduler.NewMesosSchedulerDriver(driverConfig)
@@ -472,17 +481,9 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	t.build(n.ID, c.agents[n.ID].offers)
 
 	// Set Mesos refuse seconds by environment variables.
-	var offerFilters *mesosproto.Filters;
-	var refuseSecondsStr string;
-
-	offerFilters = &mesosproto.Filters{};
-	refuseSecondsStr = os.Getenv("MESOS_OFFER_REFUSE_SECONDS");
-
-	if refuseSecondsStr != "" {
-		refuseSeconds, err := strconv.ParseFloat(refuseSecondsStr, 64);
-		if err == nil {
-			offerFilters.RefuseSeconds = &refuseSeconds;
-		}
+	offerFilters := &mesosproto.Filters{};
+	if c.refuseSeconds != nil {
+		offerFilters.RefuseSeconds = c.refuseSeconds;
 	}
 
 	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, offerFilters); err != nil {
