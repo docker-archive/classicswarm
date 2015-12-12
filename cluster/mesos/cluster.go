@@ -164,7 +164,7 @@ func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 }
 
 // CreateContainer for container creation in Mesos task
-func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) (*cluster.Container, error) {
+func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
 	if config.Memory == 0 && config.CpuShares == 0 {
 		return nil, errResourcesNeeded
 	}
