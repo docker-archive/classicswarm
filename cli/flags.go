@@ -71,6 +71,11 @@ var (
 		Value: "60s",
 		Usage: "set engine refresh maximum interval",
 	}
+	flRefreshRetry = cli.IntFlag{
+		Name:  "engine-refresh-retry",
+		Value: 3,
+		Usage: "deprecated; replaced by --engine-failure-retry",
+	}
 	flFailureRetry = cli.IntFlag{
 		Name:  "engine-failure-retry",
 		Value: 3,
