@@ -28,7 +28,7 @@ $ docker run -d -p <swarm_port>:2375 -p 3375:3375 \
         -c mesos-experimental \
         --cluster-opt mesos.address=<public_machine_ip> \
         --cluster-opt mesos.port=3375 \
-        <mesos_master_ip>:<mesos_master:port>
+        <mesos_master_ip>:<mesos_master_port>
 ```
 
 The command above creates a swarm manager listening at `<swarm_port>`.
