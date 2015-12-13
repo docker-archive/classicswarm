@@ -504,7 +504,7 @@ without a container that satisfies `redis*`
 
 ## Related information
 
-- [User guide](../index.md)
+- [Docker Swarm overview](../index.md)
 - [Discovery options](../discovery.md)
 - [Scheduler strategies](strategy.md)
 - [Swarm API](../api/swarm-api.md)

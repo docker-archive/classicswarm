@@ -106,31 +106,29 @@ NETWORK ID          NAME                   DRIVER
 
 ## Remove a network
 
-To remove a network you can use its ID or its name. If two different networks
-have the same name, include the `<node>` value:
+To remove a network you can use its ID or its name.
+If two different networks have the same name, you may use `<node>/<name>`.
 
-```bash
-$ docker network rm swarm_network
-42131321acab3233ba342443Ba4312
-$ docker network rm node-0/bridge2
-921817fefea521673217123abab223
-$ docker network ls
-NETWORK ID          NAME                   DRIVER
-3dd50db9706d        node-0/host            host
-09138343e80e        node-0/bridge          bridge
-8834dbd552e5        node-0/none            null
-45782acfe427        node-1/host            host
-8926accb25fd        node-1/bridge          bridge
-6382abccd23d        node-1/none            null
-5262bbfe5616        node-1/bridge2         bridge
-```
+    $ docker network rm swarm_network
+    42131321acab3233ba342443Ba4312
+    $ docker network rm node-0/bridge2
+    921817fefea521673217123abab223
+    $ docker network ls
+    NETWORK ID          NAME                   DRIVER
+    3dd50db9706d        node-0/host            host
+    09138343e80e        node-0/bridge          bridge
+    8834dbd552e5        node-0/none            null
+    45782acfe427        node-1/host            host
+    8926accb25fd        node-1/bridge          bridge
+    6382abccd23d        node-1/none            null
+    5262bbfe5616        node-1/bridge2         bridge
 
-The `swarm_network` was removed from every node. The `bridge2` was removed only
+`swarm_network` was removed from every node, `bridge2` was removed only
 from `node-0`.
 
 ## Docker Swarm documentation index
 
-- [User guide](index.md)
+- [Docker Swarm overview](index.md)
 - [Scheduler strategies](scheduler/strategy.md)
 - [Scheduler filters](scheduler/filter.md)
 - [Swarm API](api/swarm-api.md)

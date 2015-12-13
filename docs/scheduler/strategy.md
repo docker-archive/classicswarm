@@ -122,7 +122,7 @@ strategy prefers the node with most containers.
 
 ## Docker Swarm documentation index
 
-- [User guide](../index.md)
+- [Docker Swarm overview](../index.md)
 - [Discovery options](../discovery.md)
 - [Scheduler filters](filter.md)
 - [Swarm API](../api/swarm-api.md)
