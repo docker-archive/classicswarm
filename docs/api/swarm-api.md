@@ -90,7 +90,7 @@ echo HEADER=$HEADER
 
 ## Docker Swarm documentation index
 
-- [User guide](https://docs.docker.com/swarm/)
+- [Docker Swarm overview](https://docs.docker.com/swarm/)
 - [Discovery options](https://docs.docker.com/swarm/discovery/)
 - [Scheduler strategies](https://docs.docker.com/swarm/scheduler/strategy/)
 - [Scheduler filters](https://docs.docker.com/swarm/scheduler/filter/)

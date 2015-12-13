@@ -184,7 +184,7 @@ example, you can run a container and instruct Swarm to schedule it next to
 another container based on these affinities:
 
 * container name or id
-* an image on the host 
+* an image on the host
 * a custom label applied to the container
 
 These affinities ensure that containers run on the same network node
@@ -328,7 +328,7 @@ containers are running on different nodes, Swarm does not schedule the container
 ### Use a port filter
 
 When the `port` filter is enabled, a container's port configuration is used as a
-unique constraint. Docker Swarm selects a node where a particular port is 
+unique constraint. Docker Swarm selects a node where a particular port is
 available and unoccupied by another container or process. Required ports may be
 specified by mapping a host port, or using the host networking an exposing a
 port using the container configuration.
@@ -494,7 +494,7 @@ without a container that satisfies `redis*`
 
 ## Related information
 
-- [User guide](../index.md)
+- [Docker Swarm overview](../index.md)
 - [Discovery options](../discovery.md)
 - [Scheduler strategies](strategy.md)
 - [Swarm API](../api/swarm-api.md)
