@@ -29,7 +29,7 @@ func (c *Cluster) ResourceOffers(_ mesosscheduler.SchedulerDriver, offers []*mes
 	log.WithFields(log.Fields{"name": "mesos", "offers": len(offers)}).Debug("Offers received")
 
 	for _, offer := range offers {
-		slaveID := offer.SlaveId.GetValue()
+		agentID := offer.SlaveId.GetValue()
 		dockerPort := c.dockerEnginePort
 		for _, attribute := range offer.GetAttributes() {
 			if attribute.GetName() == dockerPortAttribute {
@@ -41,14 +41,14 @@ func (c *Cluster) ResourceOffers(_ mesosscheduler.SchedulerDriver, offers []*mes
 				}
 			}
 		}
-		s, ok := c.slaves[slaveID]
+		s, ok := c.agents[agentID]
 		if !ok {
 			engine := cluster.NewEngine(*offer.Hostname+":"+dockerPort, 0, c.engineOpts)
 			if err := engine.Connect(c.TLSConfig); err != nil {
 				log.Error(err)
 			} else {
-				s = newSlave(slaveID, engine)
-				c.slaves[slaveID] = s
+				s = newAgent(agentID, engine)
+				c.agents[agentID] = s
 				if err := s.engine.RegisterEventHandler(c); err != nil {
 					log.Error(err)
 				}
@@ -67,8 +67,8 @@ func (c *Cluster) OfferRescinded(mesosscheduler.SchedulerDriver, *mesosproto.Off
 func (c *Cluster) StatusUpdate(_ mesosscheduler.SchedulerDriver, taskStatus *mesosproto.TaskStatus) {
 	log.WithFields(log.Fields{"name": "mesos", "state": taskStatus.State.String()}).Debug("Status update")
 	taskID := taskStatus.TaskId.GetValue()
-	slaveID := taskStatus.SlaveId.GetValue()
-	s, ok := c.slaves[slaveID]
+	agentID := taskStatus.SlaveId.GetValue()
+	s, ok := c.agents[agentID]
 	if !ok {
 		return
 	}
@@ -83,9 +83,9 @@ func (c *Cluster) StatusUpdate(_ mesosscheduler.SchedulerDriver, taskStatus *mes
 		log.WithFields(log.Fields{
 			"name":    "mesos",
 			"state":   taskStatus.State.String(),
-			"slaveId": taskStatus.SlaveId.GetValue(),
+			"agentId": taskStatus.SlaveId.GetValue(),
 			"reason":  reason,
-		}).Warn("Status update received for unknown slave")
+		}).Warn("Status update received for unknown agent")
 	}
 }
 
