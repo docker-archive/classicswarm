@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 
+load ../../helpers
 load ../mesos_helpers
 
 # Address on which the store will listen (random port between 8000 and 9000).

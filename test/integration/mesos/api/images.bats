@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 
+load ../../helpers
 load ../mesos_helpers
 
 function teardown() {
