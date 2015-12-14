@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createSlave(t *testing.T, ID string, containers ...*cluster.Container) *slave {
+func createAgent(t *testing.T, ID string, containers ...*cluster.Container) *agent {
 	engOpts := &cluster.EngineOpts{
 		RefreshMinInterval: time.Duration(30) * time.Second,
 		RefreshMaxInterval: time.Duration(60) * time.Second,
@@ -24,12 +24,12 @@ func createSlave(t *testing.T, ID string, containers ...*cluster.Container) *sla
 		engine.AddContainer(container)
 	}
 
-	return newSlave("slave-"+ID, engine)
+	return newAgent("agent-"+ID, engine)
 }
 
 func TestContainerLookup(t *testing.T) {
 	c := &Cluster{
-		slaves: make(map[string]*slave),
+		agents: make(map[string]*agent),
 	}
 	container1 := &cluster.Container{
 		Container: dockerclient.Container{
@@ -65,8 +65,8 @@ func TestContainerLookup(t *testing.T) {
 		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{}),
 	}
 
-	s := createSlave(t, "test-engine", container1, container2, container3)
-	c.slaves[s.id] = s
+	s := createAgent(t, "test-engine", container1, container2, container3)
+	c.agents[s.id] = s
 
 	// Hide container without `com.docker.swarm.mesos.task`
 	assert.Equal(t, len(c.Containers()), 2)
