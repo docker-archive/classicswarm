@@ -31,7 +31,7 @@ type Cluster struct {
 	dockerEnginePort    string
 	eventHandler        cluster.EventHandler
 	master              string
-	slaves              map[string]*slave
+	agents              map[string]*agent
 	scheduler           *scheduler.Scheduler
 	TLSConfig           *tls.Config
 	options             *cluster.DriverOpts
@@ -66,7 +66,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	cluster := &Cluster{
 		dockerEnginePort:    defaultDockerEnginePort,
 		master:              master,
-		slaves:              make(map[string]*slave),
+		agents:              make(map[string]*agent),
 		scheduler:           scheduler,
 		TLSConfig:           TLSConfig,
 		options:             &options,
@@ -201,7 +201,7 @@ func (c *Cluster) Images() cluster.Images {
 	defer c.RUnlock()
 
 	out := []*cluster.Image{}
-	for _, s := range c.slaves {
+	for _, s := range c.agents {
 		out = append(out, s.engine.Images()...)
 	}
 	return out
@@ -217,7 +217,7 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 	c.RLock()
 	defer c.RUnlock()
 
-	for _, s := range c.slaves {
+	for _, s := range c.agents {
 		if image := s.engine.Image(IDOrName); image != nil {
 			return image
 		}
@@ -266,7 +266,7 @@ func (c *Cluster) Containers() cluster.Containers {
 	defer c.RUnlock()
 
 	out := cluster.Containers{}
-	for _, s := range c.slaves {
+	for _, s := range c.agents {
 		for _, container := range s.engine.Containers() {
 			if container.Config.Labels != nil {
 				if _, ok := container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"]; ok {
@@ -341,7 +341,7 @@ func (c *Cluster) listNodes() []*node.Node {
 	defer c.RUnlock()
 
 	out := []*node.Node{}
-	for _, s := range c.slaves {
+	for _, s := range c.agents {
 		n := node.NewNode(s.engine)
 		n.ID = s.id
 		n.TotalCpus = int64(sumScalarResourceValue(s.offers, "cpus"))
@@ -358,7 +358,7 @@ func (c *Cluster) listOffers() []*mesosproto.Offer {
 	defer c.RUnlock()
 
 	list := []*mesosproto.Offer{}
-	for _, s := range c.slaves {
+	for _, s := range c.agents {
 		for _, offer := range s.offers {
 			list = append(list, offer)
 		}
@@ -371,7 +371,7 @@ func (c *Cluster) TotalMemory() int64 {
 	c.RLock()
 	defer c.RUnlock()
 	var totalMemory int64
-	for _, s := range c.slaves {
+	for _, s := range c.agents {
 		totalMemory += int64(sumScalarResourceValue(s.offers, "mem")) * 1024 * 1024
 	}
 	return totalMemory
@@ -382,7 +382,7 @@ func (c *Cluster) TotalCpus() int64 {
 	c.RLock()
 	defer c.RUnlock()
 	var totalCpus int64
-	for _, s := range c.slaves {
+	for _, s := range c.agents {
 		totalCpus += int64(sumScalarResourceValue(s.offers, "cpus"))
 	}
 	return totalCpus
@@ -410,7 +410,7 @@ func (c *Cluster) Info() [][]string {
 }
 
 func (c *Cluster) addOffer(offer *mesosproto.Offer) {
-	s, ok := c.slaves[offer.SlaveId.GetValue()]
+	s, ok := c.agents[offer.SlaveId.GetValue()]
 	if !ok {
 		return
 	}
@@ -430,14 +430,14 @@ func (c *Cluster) addOffer(offer *mesosproto.Offer) {
 
 func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 	log.WithFields(log.Fields{"name": "mesos", "offerID": offer.Id.String()}).Debug("Removing offer")
-	s, ok := c.slaves[offer.SlaveId.GetValue()]
+	s, ok := c.agents[offer.SlaveId.GetValue()]
 	if !ok {
 		return false
 	}
 	found := s.removeOffer(offer.Id.GetValue())
 	if s.empty() {
 		// Disconnect from engine
-		delete(c.slaves, offer.SlaveId.GetValue())
+		delete(c.agents, offer.SlaveId.GetValue())
 	}
 	return found
 }
@@ -451,22 +451,22 @@ func (c *Cluster) scheduleTask(t *task) bool {
 		return false
 	}
 	n := nodes[0]
-	s, ok := c.slaves[n.ID]
+	s, ok := c.agents[n.ID]
 	if !ok {
-		t.error <- fmt.Errorf("Unable to create on slave %q", n.ID)
+		t.error <- fmt.Errorf("Unable to create on agent %q", n.ID)
 		return true
 	}
 
-	// build the offer from it's internal config and set the slaveID
+	// build the offer from it's internal config and set the agentID
 
 	c.Lock()
 	// TODO: Only use the offer we need
 	offerIDs := []*mesosproto.OfferID{}
-	for _, offer := range c.slaves[n.ID].offers {
+	for _, offer := range c.agents[n.ID].offers {
 		offerIDs = append(offerIDs, offer.Id)
 	}
 
-	t.build(n.ID, c.slaves[n.ID].offers)
+	t.build(n.ID, c.agents[n.ID].offers)
 
 	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, &mesosproto.Filters{}); err != nil {
 		// TODO: Do not erase all the offers, only the one used
@@ -557,7 +557,7 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 		return nil, err
 	}
 	n := nodes[0]
-	return c.slaves[n.ID].engine, nil
+	return c.agents[n.ID].engine, nil
 }
 
 // BuildImage build an image
@@ -576,7 +576,7 @@ func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer)
 	}
 	n := nodes[0]
 
-	reader, err := c.slaves[n.ID].engine.BuildImage(buildImage)
+	reader, err := c.agents[n.ID].engine.BuildImage(buildImage)
 	if err != nil {
 		return err
 	}
@@ -585,7 +585,7 @@ func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer)
 		return err
 	}
 
-	c.slaves[n.ID].engine.RefreshImages()
+	c.agents[n.ID].engine.RefreshImages()
 	return nil
 }
 
