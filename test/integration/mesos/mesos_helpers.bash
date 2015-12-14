@@ -1,6 +1,6 @@
 #!/bin/bash
 
-load ../../helpers
+# /test/integration/helpers should be loaded before loading this file.
 
 export SWARM_MESOS_TASK_TIMEOUT=30s
 export SWARM_MESOS_USER=daemon
