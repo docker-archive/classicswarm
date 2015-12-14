@@ -115,8 +115,8 @@ func (c *Cluster) generateUniqueID() string {
 }
 
 // CreateContainer aka schedule a brand new container into the cluster.
-func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) (*cluster.Container, error) {
-	container, err := c.createContainer(config, name, false)
+func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
+	container, err := c.createContainer(config, name, false, authConfig)
 
 	//  fails with image not found, then try to reschedule with soft-image-affinity
 	if err != nil {
@@ -125,14 +125,14 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) 
 			// Check if the image exists in the cluster
 			// If exists, retry with a soft-image-affinity
 			if image := c.Image(config.Image); image != nil {
-				container, err = c.createContainer(config, name, true)
+				container, err = c.createContainer(config, name, true, authConfig)
 			}
 		}
 	}
 	return container, err
 }
 
-func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, withSoftImageAffinity bool) (*cluster.Container, error) {
+func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, withSoftImageAffinity bool, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
 	c.scheduler.Lock()
 
 	// Ensure the name is available
@@ -170,7 +170,7 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 
 	c.scheduler.Unlock()
 
-	container, err := engine.Create(config, name, true)
+	container, err := engine.Create(config, name, true, authConfig)
 
 	c.scheduler.Lock()
 	delete(c.pendingContainers, swarmID)
