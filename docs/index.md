@@ -8,7 +8,7 @@ parent="smn_workw_swarm"
 +++
 <![end-metadata]-->
 
-# Docker Swarm
+# Docker Swarm overview
 
 Docker Swarm is native clustering for Docker. It turns a pool of Docker hosts
 into a single, virtual Docker host. Because Docker Swarm serves the standard
