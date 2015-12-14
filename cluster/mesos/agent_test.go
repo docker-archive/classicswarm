@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewSlave(t *testing.T) {
-	s := newSlave("SID", nil)
+func TestNewAgent(t *testing.T) {
+	s := newAgent("SID", nil)
 
 	assert.Equal(t, s.id, "SID")
 	assert.Empty(t, s.offers)
@@ -19,7 +19,7 @@ func TestNewSlave(t *testing.T) {
 }
 
 func TestAddOffer(t *testing.T) {
-	s := newSlave("SID", nil)
+	s := newAgent("SID", nil)
 
 	assert.Empty(t, s.offers)
 	assert.True(t, s.empty())
@@ -36,7 +36,7 @@ func TestAddOffer(t *testing.T) {
 }
 
 func TestAddTask(t *testing.T) {
-	s := newSlave("SID", nil)
+	s := newAgent("SID", nil)
 
 	assert.Empty(t, s.tasks)
 	assert.True(t, s.empty())
@@ -58,7 +58,7 @@ func TestAddTask(t *testing.T) {
 }
 
 func TestRemoveOffer(t *testing.T) {
-	s := newSlave("SID", nil)
+	s := newAgent("SID", nil)
 
 	assert.Empty(t, s.offers)
 
@@ -75,7 +75,7 @@ func TestRemoveOffer(t *testing.T) {
 }
 
 func TestRemoveTask(t *testing.T) {
-	s := newSlave("SID", nil)
+	s := newAgent("SID", nil)
 
 	assert.Empty(t, s.tasks)
 
