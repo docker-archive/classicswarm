@@ -7,7 +7,7 @@ import (
 	"github.com/mesos/mesos-go/mesosproto"
 )
 
-type slave struct {
+type agent struct {
 	sync.RWMutex
 
 	id     string
@@ -16,8 +16,8 @@ type slave struct {
 	engine *cluster.Engine
 }
 
-func newSlave(sid string, e *cluster.Engine) *slave {
-	return &slave{
+func newAgent(sid string, e *cluster.Engine) *agent {
+	return &agent{
 		id:     sid,
 		offers: make(map[string]*mesosproto.Offer),
 		tasks:  make(map[string]*task),
@@ -25,19 +25,19 @@ func newSlave(sid string, e *cluster.Engine) *slave {
 	}
 }
 
-func (s *slave) addOffer(offer *mesosproto.Offer) {
+func (s *agent) addOffer(offer *mesosproto.Offer) {
 	s.Lock()
 	s.offers[offer.Id.GetValue()] = offer
 	s.Unlock()
 }
 
-func (s *slave) addTask(task *task) {
+func (s *agent) addTask(task *task) {
 	s.Lock()
 	s.tasks[task.TaskInfo.TaskId.GetValue()] = task
 	s.Unlock()
 }
 
-func (s *slave) removeOffer(offerID string) bool {
+func (s *agent) removeOffer(offerID string) bool {
 	s.Lock()
 	defer s.Unlock()
 	found := false
@@ -48,7 +48,7 @@ func (s *slave) removeOffer(offerID string) bool {
 	return found
 }
 
-func (s *slave) removeTask(taskID string) bool {
+func (s *agent) removeTask(taskID string) bool {
 	s.Lock()
 	defer s.Unlock()
 	found := false
@@ -59,19 +59,19 @@ func (s *slave) removeTask(taskID string) bool {
 	return found
 }
 
-func (s *slave) empty() bool {
+func (s *agent) empty() bool {
 	s.RLock()
 	defer s.RUnlock()
 	return len(s.offers) == 0 && len(s.tasks) == 0
 }
 
-func (s *slave) getOffers() map[string]*mesosproto.Offer {
+func (s *agent) getOffers() map[string]*mesosproto.Offer {
 	s.RLock()
 	defer s.RUnlock()
 	return s.offers
 }
 
-func (s *slave) getTasks() map[string]*task {
+func (s *agent) getTasks() map[string]*task {
 	s.RLock()
 	defer s.RUnlock()
 	return s.tasks
