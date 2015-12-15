@@ -29,7 +29,7 @@ For details about libkv and a detailed technical overview of the supported backe
 
 1. On each node, start the Swarm agent.
 
-    The node IP address doesn't have to be public as long as the swarm manager can access it.
+    The node IP address doesn't have to be public as long as the swarm manager can access it. In a large cluster, the nodes joining swarm may trigger request spikes to discovery. For example, a large number of nodes are added by a script, or recovered from a network partition. This may result in discovery failure. You can use `--delay` option to specify a delay limit. Swarm join will add a random delay less than this limit to reduce pressure to discovery.
 
     **Etcd**:
 
