@@ -785,11 +785,8 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 func proxyNetwork(c *context, w http.ResponseWriter, r *http.Request) {
 	var id = mux.Vars(r)["networkid"]
 	if network := c.cluster.Networks().Uniq().Get(id); network != nil {
-
-		// Set the network ID in the proxied URL path.
-		r.URL.Path = strings.Replace(r.URL.Path, id, network.ID, 1)
-
-		proxy(c.tlsConfig, network.Engine.Addr, w, r)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(network)
 		return
 	}
 	httpError(w, fmt.Sprintf("No such network: %s", id), http.StatusNotFound)
@@ -835,8 +832,13 @@ func proxyNetworkContainerOperation(c *context, w http.ResponseWriter, r *http.R
 		return
 	}
 
+	cb := func(resp *http.Response) {
+		// force fresh networks on this engine
+		container.Engine.RefreshNetworks()
+	}
+
 	// request is forwarded to the container's address
-	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
+	if err := proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb); err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
 	}
 }
