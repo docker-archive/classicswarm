@@ -21,7 +21,13 @@ type Networks []*Network
 func (networks Networks) Uniq() Networks {
 	tmp := make(map[string]*Network)
 	for _, network := range networks {
-		tmp[network.ID] = network
+		if _, ok := tmp[network.ID]; ok {
+			for id, endpoint := range network.Containers {
+				tmp[network.ID].Containers[id] = endpoint
+			}
+		} else {
+			tmp[network.ID] = network
+		}
 	}
 	uniq := Networks{}
 	for _, network := range tmp {
