@@ -34,11 +34,11 @@ using the Docker image.
 
 ### Prerequisites
 
-1. Beginning with Swarm 0.4 golang 1.4.x or later is required for building Swarm. 
+1. Beginning with Swarm 1.0.1 golang 1.5.2 or later is required for building Swarm. 
 Refer to the [Go installation page](https://golang.org/doc/install#install)
-to download and install the golang 1.4.x or later package.
+to download and install the golang 1.5.2 or later package.
 > **Note**: On Ubuntu 14.04, the `apt-get` repositories install golang 1.2.1 version by
-> default. So, do not use `apt-get` but install golang 1.4.x manually using the
+> default. So, do not use `apt-get` but install golang 1.5.2 manually using the
 > instructions provided on the Go site.
 
 2. Install [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
