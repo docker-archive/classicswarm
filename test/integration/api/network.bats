@@ -25,6 +25,8 @@ function teardown() {
 	run docker_swarm network inspect bridge
 	[ "$status" -ne 0 ]
 
+	sleep 1
+	
 	run docker_swarm network inspect node-0/bridge
 	[[ "${output}" != *"\"Containers\": {}"* ]]
 

@@ -40,6 +40,10 @@
 			"Comment": "v1.4.1-7381-g270e8cf",
 			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
 		},
+<<<<<<< HEAD
+=======
+		{
+>>>>>>> upstream/master
 			"ImportPath": "github.com/docker/docker/pkg/random",
 			"Comment": "v1.4.1-7381-g270e8cf",
 			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
@@ -130,7 +134,11 @@
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
+<<<<<<< HEAD
 			"Rev": "9445e25ed06943cf2828bce5a92391d768513d21"
+=======
+			"Rev": "0197eaa42571af873532ba11499f6ccdf16a5f3a"
+>>>>>>> upstream/master
 		},
 		{
 			"ImportPath": "github.com/samuel/go-zookeeper/zk",
