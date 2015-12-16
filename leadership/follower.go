@@ -33,18 +33,18 @@ func (f *Follower) Leader() string {
 }
 
 // FollowElection starts monitoring the election.
-func (f *Follower) FollowElection() (<-chan string, <-chan error) {
+func (f *Follower) FollowElection() (<-chan string, <-chan error, error) {
 	f.leaderCh = make(chan string)
 	f.errCh = make(chan error)
 
 	ch, err := f.client.Watch(f.key, f.stopCh)
 	if err != nil {
-		f.errCh <- err
-	} else {
-		go f.follow(ch)
+		return nil, nil, err
 	}
 
-	return f.leaderCh, f.errCh
+	go f.follow(ch)
+
+	return f.leaderCh, f.errCh, nil
 }
 
 // Stop stops monitoring an election.

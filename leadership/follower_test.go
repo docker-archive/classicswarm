@@ -21,7 +21,8 @@ func TestFollower(t *testing.T) {
 	mockStore.On("Watch", "test_key", mock.Anything).Return(mockKVCh, nil)
 
 	follower := NewFollower(kv, "test_key")
-	leaderCh, errCh := follower.FollowElection()
+	leaderCh, errCh, err := follower.FollowElection()
+	assert.Nil(t, err)
 
 	// Simulate leader updates
 	go func() {
