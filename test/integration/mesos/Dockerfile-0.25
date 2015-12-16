@@ -8,3 +8,4 @@ RUN dpkg -i /tmp/mesos.deb || true
 RUN apt-get install -f -y
 
 USER daemon
+

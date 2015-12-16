@@ -3,9 +3,9 @@
 load ../../helpers
 
 export SWARM_MESOS_TASK_TIMEOUT=30s
-export SWARM_MESOS_USER=daemon
+export SWARM_MESOS_USER=root
 
-MESOS_IMAGE=dockerswarm/mesos:0.25
+MESOS_IMAGE=dockerswarm/mesos:0.25.0
 MESOS_MASTER_PORT=$(( ( RANDOM % 1000 )  + 10000 ))
 
 # Start mesos master and slave.
@@ -20,8 +20,8 @@ function start_mesos() {
 	for ((i=0; i < current; i++)); do
 	    local docker_port=$(echo ${HOSTS[$i]} | cut -d: -f2)
 	    MESOS_SLAVES[$i]=$(
-		docker_host run --privileged -d --name mesos-slave-$i --volumes-from node-$i -e DOCKER_HOST="${HOSTS[$i]}" -v /sys/fs/cgroup:/sys/fs/cgroup --net=host \
-		$MESOS_IMAGE mesos-slave --master=127.0.0.1:$MESOS_MASTER_PORT --containerizers=docker --attributes="docker_port:$docker_port" --hostname=127.0.0.1 --port=$(($MESOS_MASTER_PORT + (1 + $i))) --docker=/usr/local/bin/docker --executor_environment_variables="{\"DOCKER_HOST\":\"${HOSTS[$i]}\"}"
+		docker_host run --privileged -d --name mesos-slave-$i --volumes-from node-$i -v /sys/fs/cgroup:/sys/fs/cgroup --net=host -u root \
+		$MESOS_IMAGE mesos-slave --master=127.0.0.1:$MESOS_MASTER_PORT --containerizers=docker --attributes="docker_port:$docker_port" --hostname=127.0.0.1 --port=$(($MESOS_MASTER_PORT + (1 + $i))) --docker=/usr/local/bin/docker
 		       )
 	    retry 10 1 eval "docker_host ps | grep 'mesos-slave-$i'"
 	done
@@ -38,8 +38,8 @@ function start_mesos_zk() {
 	for ((i=0; i < current; i++)); do
 	    local docker_port=$(echo ${HOSTS[$i]} | cut -d: -f2)
 	    MESOS_SLAVES[$i]=$(
-		docker_host run --privileged -d --name mesos-slave-$i --volumes-from node-$i -e DOCKER_HOST="${HOSTS[$i]}" -v /sys/fs/cgroup:/sys/fs/cgroup --net=host \
-		$MESOS_IMAGE mesos-slave --master=127.0.0.1:$MESOS_MASTER_PORT --containerizers=docker --attributes="docker_port:$docker_port" --hostname=127.0.0.1 --port=$(($MESOS_MASTER_PORT + (1 + $i))) --docker=/usr/local/bin/docker --executor_environment_variables="{\"DOCKER_HOST\":\"${HOSTS[$i]}\"}"
+		docker_host run --privileged -d --name mesos-slave-$i --volumes-from node-$i -v /sys/fs/cgroup:/sys/fs/cgroup --net=host -u root \
+		$MESOS_IMAGE mesos-slave --master=127.0.0.1:$MESOS_MASTER_PORT --containerizers=docker --attributes="docker_port:$docker_port" --hostname=127.0.0.1 --port=$(($MESOS_MASTER_PORT + (1 + $i))) --docker=/usr/local/bin/docker
 			)
 	    retry 10 1 eval "docker_host ps | grep 'mesos-slave-$i'"
 	done
