@@ -161,7 +161,10 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 }
 
 func run(candidate *leadership.Candidate, server *api.Server, primary *mux.Router, replica *api.Replica) {
-	electedCh, errCh := candidate.RunForElection()
+	electedCh, errCh, err := candidate.RunForElection()
+	if err != nil {
+		return
+	}
 	for {
 		select {
 		case isElected := <-electedCh:
@@ -181,7 +184,10 @@ func run(candidate *leadership.Candidate, server *api.Server, primary *mux.Route
 }
 
 func follow(follower *leadership.Follower, replica *api.Replica, addr string) {
-	leaderCh, errCh := follower.FollowElection()
+	leaderCh, errCh, err := follower.FollowElection()
+	if err != nil {
+		return
+	}
 	for {
 		select {
 		case leader := <-leaderCh:
