@@ -73,13 +73,13 @@ replacing `docker run swarm` with just `swarm`.
 
 ## Participating
 
-You can contribute to Docker Swarm in several different ways:
+You can [contribute](https://github.com/docker/swarm/blob/master/CONTRIBUTING.md) to Docker Swarm in several different ways:
 
   - If you have comments, questions, or want to use your knowledge to help others, come join the conversation on IRC. You can reach us at #docker-swarm on Freenode.
 
   - To report a problem or request a feature, please file an issue.
 
-  - Of course, we welcome pull requests and patches. For information on making feature requests, follow the process suggested here.
+  - Of course, we welcome pull requests and patches. For information on making feature requests, follow the process suggested [here](https://github.com/docker/docker/blob/master/CONTRIBUTING.md).
 
 Finally, if you want to see what we have for the future and learn more about our release cycles, all this information is detailed on the [wiki](https://github.com/docker/swarm/wiki)
 
