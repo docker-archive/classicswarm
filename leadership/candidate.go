@@ -7,6 +7,10 @@ import (
 	"github.com/docker/libkv/store"
 )
 
+const (
+	defaultLockTTL = 15 * time.Second
+)
+
 // Candidate runs the leader election algorithm asynchronously
 type Candidate struct {
 	client store.Store
@@ -47,23 +51,28 @@ func (c *Candidate) IsLeader() bool {
 // ElectedCh is used to get a channel which delivers signals on
 // acquiring or losing leadership. It sends true if we become
 // the leader, and false if we lose it.
-func (c *Candidate) RunForElection() (<-chan bool, <-chan error) {
+func (c *Candidate) RunForElection() (<-chan bool, <-chan error, error) {
 	c.electedCh = make(chan bool)
 	c.errCh = make(chan error)
 
-	lock, err := c.client.NewLock(c.key, &store.LockOptions{
-		Value:     []byte(c.node),
-		TTL:       c.lockTTL,
-		RenewLock: make(chan struct{}),
-	})
-
-	if err != nil {
-		c.errCh <- err
-	} else {
-		go c.campaign(lock)
+	lockOpts := &store.LockOptions{
+		Value: []byte(c.node),
 	}
 
-	return c.electedCh, c.errCh
+	if c.lockTTL != defaultLockTTL {
+		lockOpts.TTL = c.lockTTL
+		lockOpts.RenewLock = make(chan struct{})
+	}
+
+	lock, err := c.client.NewLock(c.key, lockOpts)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	go c.campaign(lock)
+
+	return c.electedCh, c.errCh, nil
 }
 
 // Stop running for election.
