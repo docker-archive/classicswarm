@@ -444,16 +444,18 @@ func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 
 func (c *Cluster) scheduleTask(t *task) bool {
 	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
+	//change to explicit lock defer c.scheduler.Unlock()
 
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), t.config)
 	if err != nil {
+		c.scheduler.Unlock()
 		return false
 	}
 	n := nodes[0]
 	s, ok := c.agents[n.ID]
 	if !ok {
 		t.error <- fmt.Errorf("Unable to create on agent %q", n.ID)
+		c.scheduler.Unlock()
 		return true
 	}
 
@@ -474,6 +476,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 			c.removeOffer(offer)
 		}
 		c.Unlock()
+		c.scheduler.Unlock()
 		t.error <- err
 		return true
 	}
@@ -485,6 +488,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 		c.removeOffer(offer)
 	}
 	c.Unlock()
+	c.scheduler.Unlock()
 	// block until we get the container
 	finished, data, err := t.monitor()
 	taskID := t.TaskInfo.TaskId.GetValue()
