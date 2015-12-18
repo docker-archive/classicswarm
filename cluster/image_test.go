@@ -3,7 +3,7 @@ package cluster
 import (
 	"testing"
 
-	dockerfilters "github.com/docker/docker/pkg/parsers/filters"
+	dockerfilters "github.com/docker/docker/api/types/filters"
 	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
@@ -66,7 +66,8 @@ func TestImagesFilterWithLabelFilter(t *testing.T) {
 		{dockerclient.Image{Id: "c"}, engine},
 	}
 
-	filters := dockerfilters.Args{"label": {"com.example.project=bar"}}
+	filters := dockerfilters.NewArgs()
+	filters.Add("label", "com.example.project=bar")
 	result := images.Filter(ImageFilterOptions{All: true, Filters: filters})
 	assert.Equal(t, len(result), 1)
 	assert.Equal(t, result[0].Id, "b")
