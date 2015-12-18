@@ -74,7 +74,12 @@ var (
 	flRefreshRetry = cli.IntFlag{
 		Name:  "engine-refresh-retry",
 		Value: 3,
-		Usage: "set engine refresh retry count on failure",
+		Usage: "deprecated; replaced by --engine-failure-retry",
+	}
+	flFailureRetry = cli.IntFlag{
+		Name:  "engine-failure-retry",
+		Value: 3,
+		Usage: "set engine failure retry count",
 	}
 	flEnableCors = cli.BoolFlag{
 		Name:  "api-enable-cors, cors",

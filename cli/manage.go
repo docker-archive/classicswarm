@@ -246,14 +246,19 @@ func manage(c *cli.Context) {
 	if refreshMaxInterval < refreshMinInterval {
 		log.Fatal("max refresh interval cannot be less than min refresh interval")
 	}
+	// engine-refresh-retry is deprecated
 	refreshRetry := c.Int("engine-refresh-retry")
-	if refreshRetry <= 0 {
-		log.Fatal("invalid refresh retry count")
+	if refreshRetry != 3 {
+		log.Fatal("--engine-refresh-retry is deprecated. Use --engine-failure-retry")
+	}
+	failureRetry := c.Int("engine-failure-retry")
+	if failureRetry <= 0 {
+		log.Fatal("invalid failure retry count")
 	}
 	engineOpts := &cluster.EngineOpts{
 		RefreshMinInterval: refreshMinInterval,
 		RefreshMaxInterval: refreshMaxInterval,
-		RefreshRetry:       refreshRetry,
+		FailureRetry:       failureRetry,
 	}
 
 	uri := getDiscovery(c)
