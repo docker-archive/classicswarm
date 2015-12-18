@@ -30,7 +30,7 @@ function teardown() {
 
 @test "docker logs unhealthy node" {
 	start_docker_with_busybox 1
-	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-refresh-retry=1 ${HOSTS[0]}
+	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 ${HOSTS[0]}
 
 	# run a container with echo command
 	docker_swarm run -d --name test_container busybox /bin/sh -c "echo hello world; echo hello docker; echo hello swarm"
