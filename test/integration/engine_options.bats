@@ -14,7 +14,7 @@ load helpers
 	[[ "${output}" == *"max refresh interval cannot be less than min refresh interval"* ]]
 
 	# engine refresh retry count
-	run swarm manage --engine-refresh-retry 0 --advertise 127.0.0.1:$SWARM_BASE_PORT 192.168.56.202:4444
+	run swarm manage --engine-failure-retry 0 --advertise 127.0.0.1:$SWARM_BASE_PORT 192.168.56.202:4444
 	[ "$status" -ne 0 ]
-	[[ "${output}" == *"invalid refresh retry count"* ]]
+	[[ "${output}" == *"invalid failure retry count"* ]]
 }

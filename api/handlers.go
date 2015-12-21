@@ -386,6 +386,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	client, scheme := newClientAndScheme(c.tlsConfig)
 
 	resp, err := client.Get(scheme + "://" + container.Engine.Addr + "/containers/" + container.Id + "/json")
+	container.Engine.CheckConnectionErr(err)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -670,6 +671,7 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	client, scheme := newClientAndScheme(c.tlsConfig)
 
 	resp, err := client.Post(scheme+"://"+container.Engine.Addr+"/containers/"+container.Id+"/exec", "application/json", r.Body)
+	container.Engine.CheckConnectionErr(err)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -796,7 +798,8 @@ func proxyNetwork(c *context, w http.ResponseWriter, r *http.Request) {
 func proxyVolume(c *context, w http.ResponseWriter, r *http.Request) {
 	var name = mux.Vars(r)["volumename"]
 	if volume := c.cluster.Volume(name); volume != nil {
-		proxy(c.tlsConfig, volume.Engine.Addr, w, r)
+		err := proxy(c.tlsConfig, volume.Engine.Addr, w, r)
+		volume.Engine.CheckConnectionErr(err)
 		return
 	}
 	httpError(w, fmt.Sprintf("No such volume: %s", name), http.StatusNotFound)
@@ -832,18 +835,15 @@ func proxyNetworkContainerOperation(c *context, w http.ResponseWriter, r *http.R
 		return
 	}
 
-<<<<<<< HEAD
-	// request is forwarded to the container's address
-	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
-=======
 	cb := func(resp *http.Response) {
 		// force fresh networks on this engine
 		container.Engine.RefreshNetworks()
 	}
 
 	// request is forwarded to the container's address
-	if err := proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb); err != nil {
->>>>>>> upstream/master
+	err := proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb)
+	container.Engine.CheckConnectionErr(err)
+	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
 	}
 }
@@ -861,7 +861,9 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
 	}
 
-	if err := proxy(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
+	err = proxy(c.tlsConfig, container.Engine.Addr, w, r)
+	container.Engine.CheckConnectionErr(err)
+	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -884,7 +886,9 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 		container.Refresh()
 	}
 
-	if err := proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb); err != nil {
+	err = proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb)
+	container.Engine.CheckConnectionErr(err)
+	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -894,7 +898,8 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 
 	if image := c.cluster.Image(name); image != nil {
-		proxy(c.tlsConfig, image.Engine.Addr, w, r)
+		err := proxy(c.tlsConfig, image.Engine.Addr, w, r)
+		image.Engine.CheckConnectionErr(err)
 		return
 	}
 	httpError(w, fmt.Sprintf("No such image: %s", name), http.StatusNotFound)
@@ -907,7 +912,8 @@ func proxyImageGet(c *context, w http.ResponseWriter, r *http.Request) {
 	for _, image := range c.cluster.Images() {
 		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
 			len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
-			proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			err := proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			image.Engine.CheckConnectionErr(err)
 			return
 		}
 	}
@@ -930,7 +936,8 @@ func proxyImagePush(c *context, w http.ResponseWriter, r *http.Request) {
 	for _, image := range c.cluster.Images() {
 		if tag != "" && image.Match(name, true) ||
 			tag == "" && image.Match(name, false) {
-			proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			err := proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			image.Engine.CheckConnectionErr(err)
 			return
 		}
 	}
@@ -974,7 +981,9 @@ func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := proxy(c.tlsConfig, engine.Addr, w, r); err != nil {
+	err = proxy(c.tlsConfig, engine.Addr, w, r)
+	engine.CheckConnectionErr(err)
+	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 
@@ -1008,7 +1017,9 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// proxy commit request to the right node
-	if err := proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb); err != nil {
+	err = proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb)
+	container.Engine.CheckConnectionErr(err)
+	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -1098,7 +1109,9 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
 	}
 
-	if err := hijack(c.tlsConfig, container.Engine.Addr, w, r); err != nil {
+	err = hijack(c.tlsConfig, container.Engine.Addr, w, r)
+	container.Engine.CheckConnectionErr(err)
+	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
