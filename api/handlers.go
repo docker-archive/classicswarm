@@ -1055,7 +1055,7 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal([]byte(buildArgsJSON), &buildImage.BuildArgs)
 	}
 
-	if buf, err := decodeBase64UrlEncodedHeader(r, "X-Registry-Auth"); err == nil {
+	if buf, err := decodeBase64UrlEncodedHeader(r, "X-Registry-Config"); err == nil {
 		json.Unmarshal(buf, &buildImage.Config)
 	}
 
