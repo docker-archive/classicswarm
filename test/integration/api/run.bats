@@ -142,7 +142,7 @@ function teardown() {
 
 	# check error message
 	[[ "${output}" != *"unable to find a node that satisfies"* ]]
-	[[ "${output}" == *"busyboxabcde not found"* ]]
+	[[ "${output}" == *"not found"* ]]
 }
 
 @test "docker run - with not exist volume driver" {
