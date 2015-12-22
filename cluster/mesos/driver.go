@@ -47,6 +47,8 @@ func (c *Cluster) ResourceOffers(_ mesosscheduler.SchedulerDriver, offers []*mes
 			if err := engine.Connect(c.TLSConfig); err != nil {
 				log.Error(err)
 			} else {
+				// Set engine state to healthy and start refresh loop
+				engine.ValidationComplete()
 				s = newAgent(agentID, engine)
 				c.agents[agentID] = s
 				if err := s.engine.RegisterEventHandler(c); err != nil {
