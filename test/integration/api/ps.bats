@@ -52,13 +52,12 @@ function teardown() {
 	docker_swarm run -d --name c1 busybox echo c1
 	docker_swarm run -d --name c2 busybox echo c2
 
-	# the result of `ps --before` include a Warning messsage:
-	# Warning: '--before' is deprecated, it will be removed soon. See usage
-	run docker_swarm ps --before c1
-	[ "${#lines[@]}" -eq  2 ]
+	run eval "docker_swarm ps --before c1 2>/dev/null"
+	echo $output
+	[ "${#lines[@]}" -eq  1 ]
 
-	run docker_swarm ps --before c2
-	[ "${#lines[@]}" -eq  3 ]
+	run eval "docker_swarm ps --before c2 2>/dev/null"
+	[ "${#lines[@]}" -eq  2 ]
 
 	run docker_swarm ps --before c3
 	[ "$status" -eq 1 ]
