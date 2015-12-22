@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
@@ -51,6 +52,7 @@ type Cluster struct {
 
 	eventHandler      cluster.EventHandler
 	engines           map[string]*cluster.Engine
+	pendingEngines    map[string]*cluster.Engine
 	scheduler         *scheduler.Scheduler
 	discovery         discovery.Discovery
 	pendingContainers map[string]*pendingContainer
@@ -66,6 +68,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 
 	cluster := &Cluster{
 		engines:           make(map[string]*cluster.Engine),
+		pendingEngines:    make(map[string]*cluster.Engine),
 		scheduler:         scheduler,
 		TLSConfig:         TLSConfig,
 		discovery:         discovery,
@@ -80,6 +83,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 
 	discoveryCh, errCh := cluster.discovery.Watch(nil)
 	go cluster.monitorDiscovery(discoveryCh, errCh)
+	go cluster.monitorPendingEngines()
 
 	return cluster, nil
 }
@@ -195,6 +199,9 @@ func (c *Cluster) getEngineByAddr(addr string) *cluster.Engine {
 	c.RLock()
 	defer c.RUnlock()
 
+	if engine, ok := c.pendingEngines[addr]; ok {
+		return engine
+	}
 	for _, engine := range c.engines {
 		if engine.Addr == addr {
 			return engine
@@ -217,11 +224,26 @@ func (c *Cluster) addEngine(addr string) bool {
 	if err := engine.RegisterEventHandler(c); err != nil {
 		log.Error(err)
 	}
+	// Add it to pending engine map, indexed by address. This will prevent
+	// duplicates from entering
+	c.Lock()
+	c.pendingEngines[addr] = engine
+	c.Unlock()
 
+	// validatePendingEngine will start a thread to validate the engine.
+	// If the engine is reachable and valid, it'll be monitored and updated in a loop.
+	// If engine is not reachable, pending engines will be examined once in a while
+	go c.validatePendingEngine(engine)
+
+	return true
+}
+
+// validatePendingEngine connects to the engine,
+func (c *Cluster) validatePendingEngine(engine *cluster.Engine) bool {
 	// Attempt a connection to the engine. Since this is slow, don't get a hold
 	// of the lock yet.
 	if err := engine.Connect(c.TLSConfig); err != nil {
-		log.Error(err)
+		log.WithFields(log.Fields{"Addr": engine.Addr}).Debugf("Failed to validate pending node: %s", err)
 		return false
 	}
 
@@ -233,16 +255,28 @@ func (c *Cluster) addEngine(addr string) bool {
 	if old, exists := c.engines[engine.ID]; exists {
 		if old.Addr != engine.Addr {
 			log.Errorf("ID duplicated. %s shared by %s and %s", engine.ID, old.Addr, engine.Addr)
+			// Keep this engine in pendingEngines table and show its error.
+			// If it's ID duplication from VM clone, user see this message and can fix it.
+			// If the engine is rebooted and get new IP from DHCP, previous address will be removed
+			// from discovery after a while.
+			// In both cases, retry may fix the problem.
+			engine.HandleIDConflict(old.Addr)
 		} else {
 			log.Debugf("node %q (name: %q) with address %q is already registered", engine.ID, engine.Name, engine.Addr)
+			engine.Disconnect()
+			// Remove it from pendingEngines table
+			delete(c.pendingEngines, engine.Addr)
 		}
-		engine.Disconnect()
 		return false
 	}
 
-	// Finally register the engine.
+	// Engine validated, move from pendingEngines table to engines table
+	delete(c.pendingEngines, engine.Addr)
+	// set engine state to healthy, and start refresh loop
+	engine.ValidationComplete()
 	c.engines[engine.ID] = engine
-	log.Infof("Registered Engine %s at %s", engine.Name, addr)
+
+	log.Infof("Registered Engine %s at %s", engine.Name, engine.Addr)
 	return true
 }
 
@@ -255,7 +289,12 @@ func (c *Cluster) removeEngine(addr string) bool {
 	defer c.Unlock()
 
 	engine.Disconnect()
-	delete(c.engines, engine.ID)
+	// it could be in pendingEngines or engines
+	if _, ok := c.pendingEngines[addr]; ok {
+		delete(c.pendingEngines, addr)
+	} else {
+		delete(c.engines, engine.ID)
+	}
 	log.Infof("Removed Engine %s", engine.Name)
 	return true
 }
@@ -277,13 +316,31 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 				c.removeEngine(entry.String())
 			}
 
-			// Since `addEngine` can be very slow (it has to connect to the
-			// engine), we are going to do the adds in parallel.
 			for _, entry := range added {
-				go c.addEngine(entry.String())
+				c.addEngine(entry.String())
 			}
 		case err := <-errCh:
 			log.Errorf("Discovery error: %v", err)
+		}
+	}
+}
+
+// monitorPendingEngines checks if some previous unreachable/invalid engines have been fixed
+func (c *Cluster) monitorPendingEngines() {
+	for {
+		// Don't need to do it frequently
+		time.Sleep(30 * time.Second)
+		// Get the list of pendingEngines
+		c.RLock()
+		pEngines := make([]*cluster.Engine, 0, len(c.pendingEngines))
+		for _, e := range c.pendingEngines {
+			pEngines = append(pEngines, e)
+		}
+		c.RUnlock()
+		for _, e := range pEngines {
+			if e.TimeToValidate() {
+				go c.validatePendingEngine(e)
+			}
 		}
 	}
 }
@@ -672,7 +729,7 @@ func (c *Cluster) Volume(name string) *cluster.Volume {
 	return nil
 }
 
-// listNodes returns all the engines in the cluster.
+// listNodes returns all validated engines in the cluster, excluding pendingEngines.
 func (c *Cluster) listNodes() []*node.Node {
 	c.RLock()
 	defer c.RUnlock()
@@ -692,12 +749,16 @@ func (c *Cluster) listNodes() []*node.Node {
 }
 
 // listEngines returns all the engines in the cluster.
+// This is for reporting, not scheduling, hence pendingEngines are included.
 func (c *Cluster) listEngines() []*cluster.Engine {
 	c.RLock()
 	defer c.RUnlock()
 
-	out := make([]*cluster.Engine, 0, len(c.engines))
+	out := make([]*cluster.Engine, 0, len(c.engines)+len(c.pendingEngines))
 	for _, n := range c.engines {
+		out = append(out, n)
+	}
+	for _, n := range c.pendingEngines {
 		out = append(out, n)
 	}
 	return out
@@ -744,6 +805,8 @@ func (c *Cluster) Info() [][]string {
 		}
 		sort.Strings(labels)
 		info = append(info, []string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
+		info = append(info, []string{" └ Error", engine.ErrMsg()})
+		info = append(info, []string{" └ UpdatedAt", engine.UpdatedAt().UTC().Format(time.RFC3339)})
 	}
 
 	return info
