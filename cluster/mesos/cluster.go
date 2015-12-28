@@ -82,6 +82,11 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	// Empty string is accepted by the scheduler.
 	user, _ := options.String("mesos.user", "SWARM_MESOS_USER")
 
+	role, found := options.String("mesos.role", "SWARM_MESOS_ROLE")
+	if !found {
+		role = "*"
+	}
+
 	// Override the hostname here because mesos-go will try
 	// to shell out to the hostname binary and it won't work with our official image.
 	// Do not check error here, so mesos-go can still try.
@@ -89,7 +94,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 
 	driverConfig := mesosscheduler.DriverConfig{
 		Scheduler:        cluster,
-		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
+		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user, Role: &role},
 		Master:           cluster.master,
 		HostnameOverride: hostname,
 	}
@@ -129,11 +134,11 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	}
 
 	if refuseSeconds, ok := options.String("mesos.offer_refuse_seconds", "SWARM_MESOS_OFFER_REFUSE_SECONDS"); ok {
-		d, err := strconv.ParseFloat(refuseSeconds, 64);
+		d, err := strconv.ParseFloat(refuseSeconds, 64)
 		if err != nil {
 			return nil, err
 		}
-		cluster.refuseSeconds = &d;
+		cluster.refuseSeconds = &d
 	}
 
 	driver, err := mesosscheduler.NewMesosSchedulerDriver(driverConfig)
@@ -481,9 +486,9 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	t.build(n.ID, c.agents[n.ID].offers)
 
 	// Set Mesos refuse seconds by environment variables.
-	offerFilters := &mesosproto.Filters{};
+	offerFilters := &mesosproto.Filters{}
 	if c.refuseSeconds != nil {
-		offerFilters.RefuseSeconds = c.refuseSeconds;
+		offerFilters.RefuseSeconds = c.refuseSeconds
 	}
 
 	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, offerFilters); err != nil {
