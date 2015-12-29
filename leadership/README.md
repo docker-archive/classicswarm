@@ -15,7 +15,7 @@ if err != nil {
 	panic(err)
 }
 
-underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood")
+underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood", 15*time.Second)
 electedCh, _, err := underwood.RunForElection()
 if err != nil {
     log.Fatal("Cannot run for election, store is probably down")
@@ -53,7 +53,7 @@ leaderCh, _, err := follower.FollowElection()
 if err != nil {
     log.Fatal("Cannot follow the election, store is probably down")
 }
-for leader := <-leaderCh {
+for leader := range leaderCh {
 	// Leader is a string containing the value passed to `NewCandidate`.
 	log.Printf("%s is now the leader", leader)
 }
@@ -77,7 +77,7 @@ func participate() {
     }
 
     waitTime := 10 * time.Second
-    underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood")
+    underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood", 15*time.Second)
 
     go func() {
         for {
