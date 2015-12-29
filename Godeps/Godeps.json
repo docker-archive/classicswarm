@@ -1,8 +1,8 @@
 {
 	"ImportPath": "github.com/docker/swarm",
-	"GoVersion": "go1.5.1",
+	"GoVersion": "go1.5.2",
 	"Packages": [
-		"./..."
+		"."
 	],
 	"Deps": [
 		{
@@ -36,12 +36,7 @@
 			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/pkg/tlsconfig",
-			"Comment": "v1.4.1-7381-g270e8cf",
-			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/random",
+			"ImportPath": "github.com/docker/docker/pkg/longpath",
 			"Comment": "v1.4.1-7381-g270e8cf",
 			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
 		},
@@ -51,7 +46,17 @@
 			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/random",
+			"Comment": "v1.4.1-7381-g270e8cf",
+			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/stringid",
+			"Comment": "v1.4.1-7381-g270e8cf",
+			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/tlsconfig",
 			"Comment": "v1.4.1-7381-g270e8cf",
 			"Rev": "270e8cf64dee586240968900fb1cf8e36ed641a5"
 		},
@@ -89,6 +94,15 @@
 			"ImportPath": "github.com/hashicorp/consul/api",
 			"Comment": "v0.5.0rc1-108-g79d28b9",
 			"Rev": "79d28b9baf2be44ada3058263572d3a72ba71d4e"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-cleanhttp",
+			"Rev": "5df5ddc69534f1a4697289f1dca2193fbb40213f"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/serf/coordinate",
+			"Comment": "v0.6.4-150-ge9ac4bb",
+			"Rev": "e9ac4bb0c5721826d5cd3d1cd582c12fbc664bb8"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/auth",
