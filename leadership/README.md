@@ -77,7 +77,7 @@ func participate() {
     }
 
     waitTime := 10 * time.Second
-    underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood")
+    underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood", 15*time.Second)
 
     go func() {
         for {
