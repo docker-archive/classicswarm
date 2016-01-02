@@ -92,8 +92,8 @@
 		},
 		{
 			"ImportPath": "github.com/hashicorp/consul/api",
-			"Comment": "v0.5.0rc1-108-g79d28b9",
-			"Rev": "79d28b9baf2be44ada3058263572d3a72ba71d4e"
+			"Comment": "v0.6.0-90-g0d81e4b",
+			"Rev": "0d81e4bab4e0fc8fdbaabf99050468591edad128"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/auth",
