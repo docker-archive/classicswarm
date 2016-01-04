@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"math/rand"
 	"regexp"
 	"time"
 
@@ -28,6 +29,11 @@ func join(c *cli.Context) {
 		log.Fatal("--advertise should be of the form ip:port or hostname:port")
 	}
 
+	joinDelay, err := time.ParseDuration(c.String("delay"))
+	if err != nil {
+		log.Fatalf("invalid --delay: %v", err)
+	}
+
 	hb, err := time.ParseDuration(c.String("heartbeat"))
 	if err != nil {
 		log.Fatalf("invalid --heartbeat: %v", err)
@@ -46,6 +52,14 @@ func join(c *cli.Context) {
 	d, err := discovery.New(dflag, hb, ttl, getDiscoveryOpt(c))
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// add a random delay between 0s and joinDelay at start to avoid synchronized registration
+	if joinDelay > 0 {
+		r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
+		delay := time.Duration(r.Int63n(int64(joinDelay)))
+		log.Infof("Add a random delay %s to avoid synchronized registration", delay)
+		time.Sleep(delay)
 	}
 
 	for {
