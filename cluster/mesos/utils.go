@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/docker/pkg/units"
+	"github.com/docker/go-units"
 	"github.com/mesos/mesos-go/mesosproto"
 )
 

@@ -12,7 +12,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/docker/pkg/units"
+	"github.com/docker/go-units"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/discovery"
 	"github.com/docker/swarm/scheduler"
