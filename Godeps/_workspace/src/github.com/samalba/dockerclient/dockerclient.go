@@ -513,6 +513,9 @@ func (client *DockerClient) StartMonitorEvents(cb Callback, ec chan error, args 
 }
 
 func (client *DockerClient) StopAllMonitorEvents() {
+	if client.eventStopChan == nil {
+		return
+	}
 	close(client.eventStopChan)
 }
 
