@@ -122,6 +122,10 @@ func (t *task) build(slaveID string, offers map[string]*mesosproto.Offer) {
 		t.Resources = append(t.Resources, mesosutil.NewScalarResource("mem", float64(mem/1024/1024)))
 	}
 
+	for resource := range t.Resources {
+		resource.Role = proto.String(t.cluster.role)
+	}
+
 	if len(t.config.Cmd) > 0 && t.config.Cmd[0] != "" {
 		t.Command.Value = &t.config.Cmd[0]
 	}
