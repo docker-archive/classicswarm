@@ -178,5 +178,5 @@ function teardown() {
 
 	# check error message
 	[ "$status" -ne 0 ]
-	[[ "${output}" == *"Plugin not found"* ]]
+	[[ "${output,,}" == *"plugin not found"* ]]
 }
