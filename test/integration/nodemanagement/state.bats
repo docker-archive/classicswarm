@@ -31,25 +31,17 @@ function setup_discovery_file() {
 	# Start swarm and check it can reach the node
 	swarm_manage --engine-refresh-min-interval "1s" --engine-refresh-max-interval "1s" --engine-failure-retry 2 "$DISCOVERY"
 
-	run docker_swarm info
-	[ "$status" -eq 0 ]
-	[[ "${output}" == *"Status: Healthy"* ]]
+  eval "docker_swarm info | grep -q -i 'Status: Healthy'"
 
 	# Stop the node and let it fail
 	docker_host stop ${DOCKER_CONTAINERS[0]}
-	sleep 4
+  # Wait for swarm to detect node failure
+  retry 5 1 eval "docker_swarm info | grep -q -i 'Status: Unhealthy'"
 
-	# Verify swarm detects node failure
-	run docker_swarm info
-	[ "$status" -eq 0 ]
-	[[ "${output}" == *"Status: Unhealthy"* ]]
-
-	# Verify swarm detects recovery
+	# Restart node
 	docker_host start ${DOCKER_CONTAINERS[0]}
-	sleep 4
-	run docker_swarm info
-	[ "$status" -eq 0 ]
-	[[ "${output}" == *"Status: Healthy"* ]]
+  # Wait for swarm to detect node recovery
+  retry 5 1 eval "docker_swarm info | grep -q -i 'Status: Healthy'"
 }
 
 @test "node pending and recovery" {
@@ -61,17 +53,11 @@ function setup_discovery_file() {
 
 	# Start swarm with the stopped node
 	swarm_manage_no_wait "$DISCOVERY"
-	run docker_swarm info
-	[ "$status" -eq 0 ]
-	[[ "${output}" == *"Status: Pending"* ]]
+  retry 2 1 eval "docker_swarm info | grep -q -i 'Status: Pending'"
 
-	# Restart the node and wait for revalidation
+	# Restart the node
 	docker_host start ${DOCKER_CONTAINERS[0]}
-	sleep 40
-
-	# Verify swarm detects recovery
-	run docker_swarm info
-	[ "$status" -eq 0 ]
-	[[ "${output}" == *"Status: Healthy"* ]]
+  # Wait for swarm to detect node recovery
+  retry 15 3 eval "docker_swarm info | grep -q -i 'Status: Healthy'"
 }
 

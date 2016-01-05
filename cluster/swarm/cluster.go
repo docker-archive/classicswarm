@@ -333,7 +333,7 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 func (c *Cluster) monitorPendingEngines() {
 	for {
 		// Don't need to do it frequently
-		time.Sleep(30 * time.Second)
+		time.Sleep(10 * time.Second)
 		// Get the list of pendingEngines
 		c.RLock()
 		pEngines := make([]*cluster.Engine, 0, len(c.pendingEngines))
