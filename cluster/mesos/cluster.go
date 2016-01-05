@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -36,9 +37,11 @@ type Cluster struct {
 	TLSConfig           *tls.Config
 	options             *cluster.DriverOpts
 	offerTimeout        time.Duration
+	refuseSeconds       *float64
 	taskCreationTimeout time.Duration
 	pendingTasks        *queue.Queue
 	engineOpts          *cluster.EngineOpts
+	role                string
 }
 
 const (
@@ -80,6 +83,10 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	// Empty string is accepted by the scheduler.
 	user, _ := options.String("mesos.user", "SWARM_MESOS_USER")
 
+	if c.role, found = options.String("mesos.role", "SWARM_MESOS_ROLE"); !found {
+		c.role = "*"
+	}
+
 	// Override the hostname here because mesos-go will try
 	// to shell out to the hostname binary and it won't work with our official image.
 	// Do not check error here, so mesos-go can still try.
@@ -87,7 +94,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 
 	driverConfig := mesosscheduler.DriverConfig{
 		Scheduler:        cluster,
-		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
+		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user, Role: &c.role},
 		Master:           cluster.master,
 		HostnameOverride: hostname,
 	}
@@ -124,6 +131,14 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 			return nil, err
 		}
 		cluster.offerTimeout = d
+	}
+
+	if refuseSeconds, ok := options.String("mesos.offer_refuse_seconds", "SWARM_MESOS_OFFER_REFUSE_SECONDS"); ok {
+		d, err := strconv.ParseFloat(refuseSeconds, 64)
+		if err != nil {
+			return nil, err
+		}
+		cluster.refuseSeconds = &d
 	}
 
 	driver, err := mesosscheduler.NewMesosSchedulerDriver(driverConfig)
@@ -470,7 +485,13 @@ func (c *Cluster) scheduleTask(t *task) bool {
 
 	t.build(n.ID, c.agents[n.ID].offers)
 
-	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, &mesosproto.Filters{}); err != nil {
+	// Set Mesos refuse seconds by environment variables.
+	offerFilters := &mesosproto.Filters{}
+	if c.refuseSeconds != nil {
+		offerFilters.RefuseSeconds = c.refuseSeconds
+	}
+
+	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, offerFilters); err != nil {
 		// TODO: Do not erase all the offers, only the one used
 		for _, offer := range s.offers {
 			c.removeOffer(offer)
