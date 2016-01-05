@@ -65,7 +65,7 @@ func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.
 	if name, ok := vars["name"]; ok {
 		if container := c.cluster.Container(name); container != nil {
 			if !container.Engine.IsHealthy() {
-				return name, nil, fmt.Errorf("Container %s running on unhealthy node %s", name, container.Engine.Name)
+				return name, container, fmt.Errorf("Container %s running on unhealthy node %s", name, container.Engine.Name)
 			}
 			return name, container, nil
 		}
