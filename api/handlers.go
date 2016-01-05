@@ -375,7 +375,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !container.Engine.IsHealthy() {
-		httpError(w, fmt.Sprintf("Container %s running on unhealthy node %s", name, container.Engine.Name), http.StatusNotFound)
+		httpError(w, fmt.Sprintf("Container %s running on unhealthy node %s", name, container.Engine.Name), http.StatusInternalServerError)
 		return
 	}
 
@@ -848,7 +848,10 @@ func proxyNetworkContainerOperation(c *context, w http.ResponseWriter, r *http.R
 func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	name, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
-		httpError(w, err.Error(), http.StatusNotFound)
+		if container == nil {
+			httpError(w, err.Error(), http.StatusNotFound)
+		}
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -868,7 +871,10 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Request) {
 	name, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
-		httpError(w, err.Error(), http.StatusNotFound)
+		if container == nil {
+			httpError(w, err.Error(), http.StatusNotFound)
+		}
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -998,7 +1004,10 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	// get container
 	name, container, err := getContainerFromVars(c, vars)
 	if err != nil {
-		httpError(w, err.Error(), http.StatusNotFound)
+		if container == nil {
+			httpError(w, err.Error(), http.StatusNotFound)
+		}
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	// Set the full container ID in the proxied URL path.
@@ -1074,7 +1083,10 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	_, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
-		httpError(w, err.Error(), http.StatusNotFound)
+		if container == nil {
+			httpError(w, err.Error(), http.StatusNotFound)
+		}
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -1097,7 +1109,10 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 	name, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
-		httpError(w, err.Error(), http.StatusNotFound)
+		if container == nil {
+			httpError(w, err.Error(), http.StatusNotFound)
+		}
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	// Set the full container ID in the proxied URL path.
