@@ -20,7 +20,7 @@ func (p *PortFilter) Name() string {
 }
 
 // Filter is exported
-func (p *PortFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
+func (p *PortFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node, _ bool) ([]*node.Node, error) {
 	if config.HostConfig.NetworkMode == "host" {
 		return p.filterHost(config, nodes)
 	}

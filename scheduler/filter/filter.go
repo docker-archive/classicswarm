@@ -13,7 +13,7 @@ type Filter interface {
 	Name() string
 
 	// Return a subset of nodes that were accepted by the filtering policy.
-	Filter(*cluster.ContainerConfig, []*node.Node) ([]*node.Node, error)
+	Filter(*cluster.ContainerConfig, []*node.Node, bool) ([]*node.Node, error)
 }
 
 var (
@@ -55,15 +55,28 @@ func New(names []string) ([]Filter, error) {
 
 // ApplyFilters applies a set of filters in batch.
 func ApplyFilters(filters []Filter, config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
-	var err error
+	candidates, err := applyFilters(filters, config, nodes, true)
+
+	if err != nil {
+		candidates, err = applyFilters(filters, config, nodes, false)
+	}
+
+	return candidates, err
+}
+
+func applyFilters(filters []Filter, config *cluster.ContainerConfig, nodes []*node.Node, soft bool) ([]*node.Node, error) {
+	var (
+		err        error
+		candidates = nodes
+	)
 
 	for _, filter := range filters {
-		nodes, err = filter.Filter(config, nodes)
+		candidates, err = filter.Filter(config, candidates, soft)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return nodes, nil
+	return candidates, nil
 }
 
 // List returns the names of all the available filters

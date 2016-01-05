@@ -145,6 +145,26 @@ function teardown() {
 	[[ "${output}" == *"not found"* ]]
 }
 
+@test "docker run - constraint and soft affinities" {
+	start_docker_with_busybox 1 --label group=A
+	start_docker_with_busybox 1 --label group=B
+	swarm_manage
+
+	# start c0 on a node in group=A
+	docker_swarm run -d --name c0 -e constraint:group==A -e affinity:container==~c0 busybox sleep 100
+
+	# check container running on node-0
+	run docker_swarm ps
+	[[ "${output}" == *"node-0/c0"* ]]
+
+	# start c2 on a node in group==B (soft affinity shouldn't matter here)
+	docker_swarm run -d --name c2 -e constraint:group==B -e affinity:container==~c0 busybox sleep 100
+
+	# check container running on a node in group=B
+	run docker_swarm ps
+	[[ "${output}" == *"node-1/c2"* ]]
+}
+
 @test "docker run - with not exist volume driver" {
 	start_docker_with_busybox 2
 	swarm_manage
