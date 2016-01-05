@@ -2,9 +2,11 @@ package api
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -12,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/go-cleanhttp"
 )
 
 // QueryOptions are used to parameterize a query
@@ -34,12 +38,18 @@ type QueryOptions struct {
 	WaitIndex uint64
 
 	// WaitTime is used to bound the duration of a wait.
-	// Defaults to that of the Config, but can be overriden.
+	// Defaults to that of the Config, but can be overridden.
 	WaitTime time.Duration
 
 	// Token is used to provide a per-request ACL token
 	// which overrides the agent's default token.
 	Token string
+
+	// Near is used to provide a node name that will sort the results
+	// in ascending order based on the estimated round trip time from
+	// that node. Setting this to "_agent" will use the agent's node
+	// for the sort.
+	Near string
 }
 
 // WriteOptions are used to parameterize a write
@@ -117,11 +127,57 @@ func DefaultConfig() *Config {
 	config := &Config{
 		Address:    "127.0.0.1:8500",
 		Scheme:     "http",
-		HttpClient: http.DefaultClient,
+		HttpClient: cleanhttp.DefaultClient(),
 	}
 
 	if addr := os.Getenv("CONSUL_HTTP_ADDR"); addr != "" {
 		config.Address = addr
+	}
+
+	if token := os.Getenv("CONSUL_HTTP_TOKEN"); token != "" {
+		config.Token = token
+	}
+
+	if auth := os.Getenv("CONSUL_HTTP_AUTH"); auth != "" {
+		var username, password string
+		if strings.Contains(auth, ":") {
+			split := strings.SplitN(auth, ":", 2)
+			username = split[0]
+			password = split[1]
+		} else {
+			username = auth
+		}
+
+		config.HttpAuth = &HttpBasicAuth{
+			Username: username,
+			Password: password,
+		}
+	}
+
+	if ssl := os.Getenv("CONSUL_HTTP_SSL"); ssl != "" {
+		enabled, err := strconv.ParseBool(ssl)
+		if err != nil {
+			log.Printf("[WARN] client: could not parse CONSUL_HTTP_SSL: %s", err)
+		}
+
+		if enabled {
+			config.Scheme = "https"
+		}
+	}
+
+	if verify := os.Getenv("CONSUL_HTTP_SSL_VERIFY"); verify != "" {
+		doVerify, err := strconv.ParseBool(verify)
+		if err != nil {
+			log.Printf("[WARN] client: could not parse CONSUL_HTTP_SSL_VERIFY: %s", err)
+		}
+
+		if !doVerify {
+			transport := cleanhttp.DefaultTransport()
+			transport.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true,
+			}
+			config.HttpClient.Transport = transport
+		}
 	}
 
 	return config
@@ -150,12 +206,12 @@ func NewClient(config *Config) (*Client, error) {
 	}
 
 	if parts := strings.SplitN(config.Address, "unix://", 2); len(parts) == 2 {
+		trans := cleanhttp.DefaultTransport()
+		trans.Dial = func(_, _ string) (net.Conn, error) {
+			return net.Dial("unix", parts[1])
+		}
 		config.HttpClient = &http.Client{
-			Transport: &http.Transport{
-				Dial: func(_, _ string) (net.Conn, error) {
-					return net.Dial("unix", parts[1])
-				},
-			},
+			Transport: trans,
 		}
 		config.Address = parts[1]
 	}
@@ -200,11 +256,36 @@ func (r *request) setQueryOptions(q *QueryOptions) {
 	if q.Token != "" {
 		r.params.Set("token", q.Token)
 	}
+	if q.Near != "" {
+		r.params.Set("near", q.Near)
+	}
 }
 
-// durToMsec converts a duration to a millisecond specified string
+// durToMsec converts a duration to a millisecond specified string. If the
+// user selected a positive value that rounds to 0 ms, then we will use 1 ms
+// so they get a short delay, otherwise Consul will translate the 0 ms into
+// a huge default delay.
 func durToMsec(dur time.Duration) string {
-	return fmt.Sprintf("%dms", dur/time.Millisecond)
+	ms := dur / time.Millisecond
+	if dur > 0 && ms == 0 {
+		ms = 1
+	}
+	return fmt.Sprintf("%dms", ms)
+}
+
+// serverError is a string we look for to detect 500 errors.
+const serverError = "Unexpected response code: 500"
+
+// IsServerError returns true for 500 errors from the Consul servers, these are
+// usually retryable at a later time.
+func IsServerError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// TODO (slackpad) - Make a real error type here instead of using
+	// a string check.
+	return strings.Contains(err.Error(), serverError)
 }
 
 // setWriteOptions is used to annotate the request with
@@ -287,6 +368,49 @@ func (c *Client) doRequest(r *request) (time.Duration, *http.Response, error) {
 	resp, err := c.config.HttpClient.Do(req)
 	diff := time.Now().Sub(start)
 	return diff, resp, err
+}
+
+// Query is used to do a GET request against an endpoint
+// and deserialize the response into an interface using
+// standard Consul conventions.
+func (c *Client) query(endpoint string, out interface{}, q *QueryOptions) (*QueryMeta, error) {
+	r := c.newRequest("GET", endpoint)
+	r.setQueryOptions(q)
+	rtt, resp, err := requireOK(c.doRequest(r))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	qm := &QueryMeta{}
+	parseQueryMeta(resp, qm)
+	qm.RequestTime = rtt
+
+	if err := decodeBody(resp, out); err != nil {
+		return nil, err
+	}
+	return qm, nil
+}
+
+// write is used to do a PUT request against an endpoint
+// and serialize/deserialized using the standard Consul conventions.
+func (c *Client) write(endpoint string, in, out interface{}, q *WriteOptions) (*WriteMeta, error) {
+	r := c.newRequest("PUT", endpoint)
+	r.setWriteOptions(q)
+	r.obj = in
+	rtt, resp, err := requireOK(c.doRequest(r))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	wm := &WriteMeta{RequestTime: rtt}
+	if out != nil {
+		if err := decodeBody(resp, &out); err != nil {
+			return nil, err
+		}
+	}
+	return wm, nil
 }
 
 // parseQueryMeta is used to help parse query meta-data
