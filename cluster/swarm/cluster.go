@@ -118,12 +118,12 @@ func (c *Cluster) generateUniqueID() string {
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
 	container, err := c.createContainer(config, name, false, authConfig)
 
-	//  fails with image not found, then try to reschedule with image-affinity
+	//  fails with image not found, then try to reschedule with image affinity
 	if err != nil {
 		bImageNotFoundError, _ := regexp.MatchString(`image \S* not found`, err.Error())
 		if bImageNotFoundError && !config.HaveNodeConstraint() {
 			// Check if the image exists in the cluster
-			// If exists, retry with a image-affinity
+			// If exists, retry with a image affinity
 			if c.Image(config.Image) != nil {
 				container, err = c.createContainer(config, name, true, authConfig)
 			}
@@ -145,12 +145,16 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	swarmID := c.generateUniqueID()
 	config.SetSwarmID(swarmID)
 
-	configTemp := config
 	if withImageAffinity {
-		configTemp.AddAffinity("image==" + config.Image)
+		config.AddAffinity("image==" + config.Image)
 	}
 
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), configTemp)
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+
+	if withImageAffinity {
+		config.RemoveAffinity("image==" + config.Image)
+	}
+
 	if err != nil {
 		c.scheduler.Unlock()
 		return nil, err
