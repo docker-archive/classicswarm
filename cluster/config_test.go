@@ -90,6 +90,20 @@ func TestAddAffinity(t *testing.T) {
 	assert.Len(t, config.Affinities(), 1)
 }
 
+func TestRemoveAffinity(t *testing.T) {
+	config := BuildContainerConfig(dockerclient.ContainerConfig{})
+	assert.Empty(t, config.Affinities())
+
+	config.AddAffinity("image==~testimage1")
+	config.AddAffinity("image==~testimage2")
+	assert.Len(t, config.Affinities(), 2)
+
+	config.RemoveAffinity("image==~testimage1")
+	assert.Len(t, config.Affinities(), 1)
+
+	assert.Equal(t, config.Affinities()[0], "image==~testimage2")
+}
+
 func TestHaveNodeConstraint(t *testing.T) {
 	config := BuildContainerConfig(dockerclient.ContainerConfig{})
 	assert.False(t, config.HaveNodeConstraint())
