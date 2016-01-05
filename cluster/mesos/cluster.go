@@ -9,7 +9,6 @@ import (
 	"io"
 	"os"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -37,7 +36,7 @@ type Cluster struct {
 	TLSConfig           *tls.Config
 	options             *cluster.DriverOpts
 	offerTimeout        time.Duration
-	refuseSeconds       *float64
+	refuseTimeout       time.Duration
 	taskCreationTimeout time.Duration
 	pendingTasks        *queue.Queue
 	engineOpts          *cluster.EngineOpts
@@ -49,6 +48,7 @@ const (
 	defaultDockerEngineTLSPort = "2376"
 	dockerPortAttribute        = "docker_port"
 	defaultOfferTimeout        = 30 * time.Second
+	defaultRefuseTimeout       = 5 * time.Second
 	defaultTaskCreationTimeout = 5 * time.Second
 )
 
@@ -75,6 +75,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		offerTimeout:        defaultOfferTimeout,
 		taskCreationTimeout: defaultTaskCreationTimeout,
 		engineOpts:          engineOptions,
+		refuseTimeout:       defaultRefuseTimeout,
 	}
 
 	cluster.pendingTasks = queue.NewQueue()
@@ -128,12 +129,12 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		cluster.offerTimeout = d
 	}
 
-	if refuseSeconds, ok := options.String("mesos.offer_refuse_seconds", "SWARM_MESOS_OFFER_REFUSE_SECONDS"); ok {
-		d, err := strconv.ParseFloat(refuseSeconds, 64);
+	if refuseTimeout, ok := options.String("mesos.offerrefusetimeout", "SWARM_MESOS_OFFER_REFUSE_TIMEOUT"); ok {
+		d, err := time.ParseDuration(refuseTimeout)
 		if err != nil {
 			return nil, err
 		}
-		cluster.refuseSeconds = &d;
+		cluster.refuseTimeout = d
 	}
 
 	driver, err := mesosscheduler.NewMesosSchedulerDriver(driverConfig)
@@ -480,11 +481,9 @@ func (c *Cluster) scheduleTask(t *task) bool {
 
 	t.build(n.ID, c.agents[n.ID].offers)
 
-	// Set Mesos refuse seconds by environment variables.
-	offerFilters := &mesosproto.Filters{};
-	if c.refuseSeconds != nil {
-		offerFilters.RefuseSeconds = c.refuseSeconds;
-	}
+	offerFilters := &mesosproto.Filters{}
+	refuseSeconds := c.refuseTimeout.Seconds()
+	offerFilters.RefuseSeconds = &refuseSeconds
 
 	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, offerFilters); err != nil {
 		// TODO: Do not erase all the offers, only the one used

@@ -48,7 +48,8 @@ Options:
                                     {{printf "\t * mesos.port=\tport to bind on [$SWARM_MESOS_PORT]"}}
                                     {{printf "\t * mesos.offertimeout=30s\ttimeout for offers [$SWARM_MESOS_OFFER_TIMEOUT]"}}
                                     {{printf "\t * mesos.tasktimeout=5s\ttimeout for task creation [$SWARM_MESOS_TASK_TIMEOUT]"}}
-                                    {{printf "\t * mesos.user=\tframework user [$SWARM_MESOS_USER]"}}{{end}}{{ end }}
+                                    {{printf "\t * mesos.user=\tframework user [$SWARM_MESOS_USER]"}}
+                                    {{printf "\t * mesos.offerrefusetimeout=5s\tseconds to consider unused resources refused [$SWARM_MESOS_OFFER_REFUSE_TIMEOUT]"}}{{end}}{{ end }}
 `
 
 }
