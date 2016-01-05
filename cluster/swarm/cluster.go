@@ -805,7 +805,11 @@ func (c *Cluster) Info() [][]string {
 		}
 		sort.Strings(labels)
 		info = append(info, []string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
-		info = append(info, []string{" └ Error", engine.ErrMsg()})
+		errMsg := engine.ErrMsg()
+		if len(errMsg) == 0 {
+			errMsg = "(none)"
+		}
+		info = append(info, []string{" └ Error", errMsg})
 		info = append(info, []string{" └ UpdatedAt", engine.UpdatedAt().UTC().Format(time.RFC3339)})
 	}
 
