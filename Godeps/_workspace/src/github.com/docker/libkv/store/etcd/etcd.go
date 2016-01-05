@@ -335,6 +335,10 @@ func (s *Etcd) AtomicPut(key string, value []byte, previous *store.KVPair, opts 
 			if etcdError.Code == etcd.ErrorCodeTestFailed {
 				return false, nil, store.ErrKeyModified
 			}
+			// Node exists error (when PrevNoExist)
+			if etcdError.Code == etcd.ErrorCodeNodeExist {
+				return false, nil, store.ErrKeyExists
+			}
 		}
 		return false, nil, err
 	}
@@ -368,6 +372,10 @@ func (s *Etcd) AtomicDelete(key string, previous *store.KVPair) (bool, error) {
 	_, err := s.client.Delete(context.Background(), s.normalize(key), delOpts)
 	if err != nil {
 		if etcdError, ok := err.(etcd.Error); ok {
+			// Key Not Found
+			if etcdError.Code == etcd.ErrorCodeKeyNotFound {
+				return false, store.ErrKeyNotFound
+			}
 			// Compare failed
 			if etcdError.Code == etcd.ErrorCodeTestFailed {
 				return false, store.ErrKeyModified

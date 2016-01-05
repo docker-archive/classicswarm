@@ -7,8 +7,8 @@ else
 fi
 
 # install consul
-wget "https://dl.bintray.com/mitchellh/consul/${CONSUL_VERSION}_linux_amd64.zip"
-unzip "${CONSUL_VERSION}_linux_amd64.zip"
+wget "https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip"
+unzip "consul_${CONSUL_VERSION}_linux_amd64.zip"
 
 # make config for minimum ttl
 touch config.json

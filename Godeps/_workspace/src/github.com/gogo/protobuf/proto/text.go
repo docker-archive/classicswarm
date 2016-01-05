@@ -42,6 +42,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -174,20 +175,12 @@ func writeName(w *textWriter, props *Properties) error {
 	return nil
 }
 
-var (
-	messageSetType = reflect.TypeOf((*MessageSet)(nil)).Elem()
-)
-
 // raw is the interface satisfied by RawMessage.
 type raw interface {
 	Bytes() []byte
 }
 
 func writeStruct(w *textWriter, sv reflect.Value) error {
-	if sv.Type() == messageSetType {
-		return writeMessageSet(w, sv.Addr().Interface().(*MessageSet))
-	}
-
 	st := sv.Type()
 	sprops := GetProperties(st)
 	for i := 0; i < sv.NumField(); i++ {
@@ -254,7 +247,7 @@ func writeStruct(w *textWriter, sv reflect.Value) error {
 		}
 		if fv.Kind() == reflect.Map {
 			// Map fields are rendered as a repeated struct with key/value fields.
-			keys := fv.MapKeys() // TODO: should we sort these for deterministic output?
+			keys := fv.MapKeys()
 			sort.Sort(mapKeys(keys))
 			for _, key := range keys {
 				val := fv.MapIndex(key)
@@ -331,6 +324,32 @@ func writeStruct(w *textWriter, sv reflect.Value) error {
 			}
 		}
 
+		if fv.Kind() == reflect.Interface {
+			// Check if it is a oneof.
+			if st.Field(i).Tag.Get("protobuf_oneof") != "" {
+				// fv is nil, or holds a pointer to generated struct.
+				// That generated struct has exactly one field,
+				// which has a protobuf struct tag.
+				if fv.IsNil() {
+					continue
+				}
+				inner := fv.Elem().Elem() // interface -> *T -> T
+				tag := inner.Type().Field(0).Tag.Get("protobuf")
+				props.Parse(tag) // Overwrite the outer props.
+				// Write the value in the oneof, not the oneof itself.
+				fv = inner.Field(0)
+
+				// Special case to cope with malformed messages gracefully:
+				// If the value in the oneof is a nil pointer, don't panic
+				// in writeAny.
+				if fv.Kind() == reflect.Ptr && fv.IsNil() {
+					// Use errors.New so writeAny won't render quotes.
+					msg := errors.New("/* nil */")
+					fv = reflect.ValueOf(&msg).Elem()
+				}
+			}
+		}
+
 		if err := writeName(w, props); err != nil {
 			return err
 		}
@@ -360,7 +379,13 @@ func writeStruct(w *textWriter, sv reflect.Value) error {
 	}
 
 	// Extensions (the XXX_extensions field).
-	pv := sv.Addr()
+	pv := sv
+	if pv.CanAddr() {
+		pv = sv.Addr()
+	} else {
+		pv = reflect.New(sv.Type())
+		pv.Elem().Set(sv)
+	}
 	if pv.Type().Implements(extendableProtoType) {
 		if err := writeExtensions(w, pv); err != nil {
 			return err
@@ -396,15 +421,17 @@ func writeAny(w *textWriter, v reflect.Value, props *Properties) error {
 	v = reflect.Indirect(v)
 
 	if props != nil && len(props.CustomType) > 0 {
-		var custom Marshaler = v.Interface().(Marshaler)
-		data, err := custom.Marshal()
-		if err != nil {
-			return err
+		custom, ok := v.Interface().(Marshaler)
+		if ok {
+			data, err := custom.Marshal()
+			if err != nil {
+				return err
+			}
+			if err := writeString(w, string(data)); err != nil {
+				return err
+			}
+			return nil
 		}
-		if err := writeString(w, string(data)); err != nil {
-			return err
-		}
-		return nil
 	}
 
 	// Floats have special cases.
@@ -521,44 +548,6 @@ func writeString(w *textWriter, s string) error {
 	return w.WriteByte('"')
 }
 
-func writeMessageSet(w *textWriter, ms *MessageSet) error {
-	for _, item := range ms.Item {
-		id := *item.TypeId
-		if msd, ok := messageSetMap[id]; ok {
-			// Known message set type.
-			if _, err := fmt.Fprintf(w, "[%s]: <\n", msd.name); err != nil {
-				return err
-			}
-			w.indent()
-
-			pb := reflect.New(msd.t.Elem())
-			if err := Unmarshal(item.Message, pb.Interface().(Message)); err != nil {
-				if _, err := fmt.Fprintf(w, "/* bad message: %v */\n", err); err != nil {
-					return err
-				}
-			} else {
-				if err := writeStruct(w, pb.Elem()); err != nil {
-					return err
-				}
-			}
-		} else {
-			// Unknown type.
-			if _, err := fmt.Fprintf(w, "[%d]: <\n", id); err != nil {
-				return err
-			}
-			w.indent()
-			if err := writeUnknownStruct(w, item.Message); err != nil {
-				return err
-			}
-		}
-		w.unindent()
-		if _, err := w.Write(gtNewline); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func writeUnknownStruct(w *textWriter, data []byte) (err error) {
 	if !w.compact {
 		if _, err := fmt.Fprintf(w, "/* %d unknown bytes */\n", len(data)); err != nil {
@@ -569,19 +558,19 @@ func writeUnknownStruct(w *textWriter, data []byte) (err error) {
 	for b.index < len(b.buf) {
 		x, err := b.DecodeVarint()
 		if err != nil {
-			_, err := fmt.Fprintf(w, "/* %v */\n", err)
-			return err
+			_, ferr := fmt.Fprintf(w, "/* %v */\n", err)
+			return ferr
 		}
 		wire, tag := x&7, x>>3
 		if wire == WireEndGroup {
 			w.unindent()
-			if _, err := w.Write(endBraceNewline); err != nil {
-				return err
+			if _, werr := w.Write(endBraceNewline); werr != nil {
+				return werr
 			}
 			continue
 		}
-		if _, err := fmt.Fprint(w, tag); err != nil {
-			return err
+		if _, ferr := fmt.Fprint(w, tag); ferr != nil {
+			return ferr
 		}
 		if wire != WireStartGroup {
 			if err := w.WriteByte(':'); err != nil {
@@ -619,7 +608,7 @@ func writeUnknownStruct(w *textWriter, data []byte) (err error) {
 		if err != nil {
 			return err
 		}
-		if err = w.WriteByte('\n'); err != nil {
+		if err := w.WriteByte('\n'); err != nil {
 			return err
 		}
 	}

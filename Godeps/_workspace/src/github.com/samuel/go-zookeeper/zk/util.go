@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math/rand"
+	"strconv"
+	"strings"
 )
 
 // AuthACL produces an ACL list containing a single ACL which uses the
@@ -29,6 +31,18 @@ func DigestACL(perms int32, user, password string) []ACL {
 	}
 	digest := base64.StdEncoding.EncodeToString(h.Sum(nil))
 	return []ACL{{perms, "digest", fmt.Sprintf("%s:%s", user, digest)}}
+}
+
+// FormatServers takes a slice of addresses, and makes sure they are in a format
+// that resembles <addr>:<port>. If the server has no port provided, the
+// DefaultPort constant is added to the end.
+func FormatServers(servers []string) []string {
+	for i := range servers {
+		if !strings.Contains(servers[i], ":") {
+			servers[i] = servers[i] + ":" + strconv.Itoa(DefaultPort)
+		}
+	}
+	return servers
 }
 
 // stringShuffle performs a Fisher-Yates shuffle on a slice of strings
