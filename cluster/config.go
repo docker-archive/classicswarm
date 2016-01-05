@@ -159,6 +159,22 @@ func (c *ContainerConfig) AddAffinity(affinity string) error {
 	return nil
 }
 
+// RemoveAffinity from config
+func (c *ContainerConfig) RemoveAffinity(affinity string) error {
+	affinities := []string{}
+	for _, a := range c.extractExprs("affinities") {
+		if a != affinity {
+			affinities = append(affinities, a)
+		}
+	}
+	labels, err := json.Marshal(affinities)
+	if err != nil {
+		return err
+	}
+	c.Labels[SwarmLabelNamespace+".affinities"] = string(labels)
+	return nil
+}
+
 // HaveNodeConstraint in config
 func (c *ContainerConfig) HaveNodeConstraint() bool {
 	constraints := c.extractExprs("constraints")
