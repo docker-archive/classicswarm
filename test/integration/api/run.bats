@@ -101,7 +101,7 @@ function teardown() {
 	[[ "${output}" == *"\"StopSignal\": \"SIGKILL\""* ]]
 }
 
-@test "docker run - reschedule with soft-image-affinity" {
+@test "docker run - reschedule with image affinity" {
 	start_docker_with_busybox 1
 	start_docker 1
 
@@ -115,15 +115,19 @@ function teardown() {
 
 	# try to create container on node-1, node-1 does not have busyboxabcde and will pull it
 	# but can not find busyboxabcde in dockerhub
-	# then will retry with soft-image-affinity
+	# then will retry with image affinity
 	docker_swarm run -d --name test_container -e constraint:node==~node-1 busyboxabcde sleep 1000
 
 	# check container running on node-0
 	run docker_swarm ps
 	[[ "${output}" == *"node-0/test_container"* ]]
+
+	# check the image affinity wasn't saved
+	run docker_swarm inspect test_container
+	[[ "${output}" != *"image==busyboxabcde"* ]]
 }
 
-@test "docker run - reschedule with soft-image-affinity and node constraint" {
+@test "docker run - reschedule with image affinity and node constraint" {
 	start_docker_with_busybox 1
 	start_docker 1
 
