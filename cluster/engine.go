@@ -208,15 +208,11 @@ func (e *Engine) IsHealthy() bool {
 	return e.state == stateHealthy
 }
 
-// setState sets engine healthy state
+// setState sets engine state
 func (e *Engine) setState(state engineState) {
 	e.Lock()
 	defer e.Unlock()
 	e.state = state
-	// if engine is healthy, clear failureCount
-	if state == stateHealthy {
-		e.failureCount = 0
-	}
 }
 
 // TimeToValidate returns true if a pending node is up for validation
@@ -292,10 +288,17 @@ func (e *Engine) UpdatedAt() time.Time {
 	return e.updatedAt
 }
 
+func (e *Engine) resetFailureCount() {
+	e.Lock()
+	defer e.Unlock()
+	e.failureCount = 0
+}
+
 // CheckConnectionErr checks error from client response and adjusts engine healthy indicators
 func (e *Engine) CheckConnectionErr(err error) {
 	if err == nil {
 		e.setErrMsg("")
+		e.resetFailureCount()
 		// If current state is unhealthy, change it to healthy
 		if e.state == stateUnhealthy {
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.failureCount)
@@ -322,7 +325,7 @@ func (e *Engine) CheckConnectionErr(err error) {
 		e.incFailureCount()
 		return
 	}
-	// other errors may be ambiguous. let refresh loop decide healthy or not.
+	// other errors may be ambiguous.
 }
 
 // Gather engine specs (CPU, memory, constraints, ...).

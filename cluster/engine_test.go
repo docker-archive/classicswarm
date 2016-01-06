@@ -43,11 +43,8 @@ func TestSetEngineState(t *testing.T) {
 	assert.True(t, engine.state == statePending)
 	engine.setState(stateUnhealthy)
 	assert.True(t, engine.state == stateUnhealthy)
-	engine.incFailureCount()
-	assert.True(t, engine.failureCount == 1)
 	engine.setState(stateHealthy)
 	assert.True(t, engine.state == stateHealthy)
-	assert.True(t, engine.failureCount == 0)
 }
 
 func TestErrMsg(t *testing.T) {
@@ -58,6 +55,22 @@ func TestErrMsg(t *testing.T) {
 	assert.True(t, engine.ErrMsg() == message)
 }
 
+func TestCheckConnectionErr(t *testing.T) {
+	engine := NewEngine("test", 0, engOpts)
+	engine.setState(stateHealthy)
+	assert.True(t, engine.failureCount == 0)
+	err := dockerclient.ErrConnectionRefused
+	engine.CheckConnectionErr(err)
+	assert.True(t, len(engine.ErrMsg()) > 0)
+	assert.True(t, engine.failureCount == 1)
+	engine.CheckConnectionErr(err)
+	assert.True(t, engine.failureCount == 2)
+	err = nil
+	engine.CheckConnectionErr(err)
+	assert.True(t, engine.failureCount == 0)
+	assert.True(t, len(engine.ErrMsg()) == 0)
+}
+
 func TestEngineFailureCount(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	engine.setState(stateHealthy)
@@ -66,6 +79,9 @@ func TestEngineFailureCount(t *testing.T) {
 		engine.incFailureCount()
 	}
 	assert.False(t, engine.IsHealthy())
+	assert.True(t, engine.failureCount == engine.opts.FailureRetry)
+	engine.resetFailureCount()
+	assert.True(t, engine.failureCount == 0)
 }
 
 func TestEngineConnectionFailure(t *testing.T) {
