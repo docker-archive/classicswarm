@@ -27,12 +27,11 @@ import (
 type Cluster struct {
 	sync.RWMutex
 
-	driver              *mesosscheduler.MesosSchedulerDriver
 	dockerEnginePort    string
 	eventHandler        cluster.EventHandler
 	master              string
 	agents              map[string]*agent
-	scheduler           *scheduler.Scheduler
+	scheduler           *Scheduler
 	TLSConfig           *tls.Config
 	options             *cluster.DriverOpts
 	offerTimeout        time.Duration
@@ -69,7 +68,6 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		dockerEnginePort:    defaultDockerEnginePort,
 		master:              master,
 		agents:              make(map[string]*agent),
-		scheduler:           scheduler,
 		TLSConfig:           TLSConfig,
 		options:             &options,
 		offerTimeout:        defaultOfferTimeout,
@@ -89,7 +87,6 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	hostname, _ := os.Hostname()
 
 	driverConfig := mesosscheduler.DriverConfig{
-		Scheduler:        cluster,
 		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
 		Master:           cluster.master,
 		HostnameOverride: hostname,
@@ -137,14 +134,13 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		cluster.refuseTimeout = d
 	}
 
-	driver, err := mesosscheduler.NewMesosSchedulerDriver(driverConfig)
+	sched, err := NewScheduler(driverConfig, cluster, scheduler)
 	if err != nil {
 		return nil, err
 	}
 
-	cluster.driver = driver
-
-	status, err := driver.Start()
+	cluster.scheduler = sched
+	status, err := sched.driver.Start()
 	if err != nil {
 		log.Debugf("Mesos driver started, status/err %v: %v", status, err)
 		return nil, err
@@ -430,7 +426,7 @@ func (c *Cluster) addOffer(offer *mesosproto.Offer) {
 		time.Sleep(c.offerTimeout)
 		// declining Mesos offers to make them available to other Mesos services
 		if c.removeOffer(offer) {
-			if _, err := c.driver.DeclineOffer(offer.Id, &mesosproto.Filters{}); err != nil {
+			if _, err := c.scheduler.driver.DeclineOffer(offer.Id, &mesosproto.Filters{}); err != nil {
 				log.WithFields(log.Fields{"name": "mesos"}).Errorf("Error while declining offer %q: %v", offer.Id.GetValue(), err)
 			} else {
 				log.WithFields(log.Fields{"name": "mesos"}).Debugf("Offer %q declined successfully", offer.Id.GetValue())
@@ -485,7 +481,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	refuseSeconds := c.refuseTimeout.Seconds()
 	offerFilters.RefuseSeconds = &refuseSeconds
 
-	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, offerFilters); err != nil {
+	if _, err := c.scheduler.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, offerFilters); err != nil {
 		// TODO: Do not erase all the offers, only the one used
 		for _, offer := range s.offers {
 			c.removeOffer(offer)
