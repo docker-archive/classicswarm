@@ -18,6 +18,11 @@ import (
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
+	"time"
+)
+
+const (
+	reAddEnginePeriod = 30 * time.Second
 )
 
 type pendingContainer struct {
@@ -211,10 +216,39 @@ func (c *Cluster) hasEngineByAddr(addr string) bool {
 	return c.getEngineByAddr(addr) != nil
 }
 
-func (c *Cluster) addEngine(addr string) bool {
+func (c *Cluster) addEngine(addr string) {
+	res, engine := c.registEngine(addr)
+	if !res && engine == nil {
+		//		ticker := time.Tick(reAddEnginePeriod)
+		//		go func(){
+		//			for {
+		//				<-ticker
+		//				_, engine = c.registEngine(addr)
+		//				if engine != nil {
+		//					return
+		//				}
+		//			}
+		//		}()
+		ticker := time.NewTicker(reAddEnginePeriod)
+		go func() {
+			for {
+				select {
+				case <-ticker.C:
+					_, engine = c.registEngine(addr)
+					if engine != nil {
+						ticker.Stop()
+						return
+					}
+				}
+			}
+		}()
+	}
+}
+
+func (c *Cluster) registEngine(addr string) (bool, *cluster.Engine) {
 	// Check the engine is already registered by address.
 	if c.hasEngineByAddr(addr) {
-		return false
+		return false, c.getEngineByAddr(addr)
 	}
 
 	engine := cluster.NewEngine(addr, c.overcommitRatio, c.engineOpts)
@@ -226,7 +260,7 @@ func (c *Cluster) addEngine(addr string) bool {
 	// of the lock yet.
 	if err := engine.Connect(c.TLSConfig); err != nil {
 		log.Error(err)
-		return false
+		return false, nil
 	}
 
 	// The following is critical and fast. Grab a lock.
@@ -241,13 +275,13 @@ func (c *Cluster) addEngine(addr string) bool {
 			log.Debugf("node %q (name: %q) with address %q is already registered", engine.ID, engine.Name, engine.Addr)
 		}
 		engine.Disconnect()
-		return false
+		return false, engine
 	}
 
 	// Finally register the engine.
 	c.engines[engine.ID] = engine
 	log.Infof("Registered Engine %s at %s", engine.Name, addr)
-	return true
+	return true, engine
 }
 
 func (c *Cluster) removeEngine(addr string) bool {
@@ -284,6 +318,7 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 			// Since `addEngine` can be very slow (it has to connect to the
 			// engine), we are going to do the adds in parallel.
 			for _, entry := range added {
+				//				go c.addEngine(entry.String())
 				go c.addEngine(entry.String())
 			}
 		case err := <-errCh:
