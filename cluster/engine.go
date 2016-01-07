@@ -35,6 +35,7 @@ const (
 	stateUnhealthy
 	// healthy means an engine is reachable
 	stateHealthy
+	// TODO: add maintenance state. Proposal #1486
 	// maintenance means an engine is under maintenance.
 	// There is no action to migrate a node into maintenance state yet.
 	//stateMaintenance
@@ -217,14 +218,16 @@ func (e *Engine) setState(state engineState) {
 
 // TimeToValidate returns true if a pending node is up for validation
 func (e *Engine) TimeToValidate() bool {
+	const validationLimit time.Duration = 4 * time.Hour
+	const failureBackoff time.Duration = 30 * time.Second
 	e.Lock()
 	defer e.Unlock()
 	if e.state != statePending {
 		return false
 	}
 	sinceLastUpdate := time.Since(e.updatedAt)
-	// Increase check interval for a pending engine according to failureCount and cap it at 4 hours
-	if sinceLastUpdate > 4*time.Hour || sinceLastUpdate > time.Duration(e.failureCount)*30*time.Second {
+	// Increase check interval for a pending engine according to failureCount and cap it at a limit
+	if sinceLastUpdate > validationLimit || sinceLastUpdate > time.Duration(e.failureCount)*failureBackoff {
 		return true
 	}
 	return false
