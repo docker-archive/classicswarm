@@ -331,9 +331,10 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 
 // monitorPendingEngines checks if some previous unreachable/invalid engines have been fixed
 func (c *Cluster) monitorPendingEngines() {
+	const minimumValidationInterval time.Duration = 10 * time.Second
 	for {
 		// Don't need to do it frequently
-		time.Sleep(10 * time.Second)
+		time.Sleep(minimumValidationInterval)
 		// Get the list of pendingEngines
 		c.RLock()
 		pEngines := make([]*cluster.Engine, 0, len(c.pendingEngines))
