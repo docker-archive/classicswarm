@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 
+load ../../helpers
 load ../mesos_helpers
 
 function teardown() {
@@ -62,17 +63,4 @@ function teardown() {
 	run docker_swarm run -d busybox ls
 	[ "$status" -ne 0 ]
 	[[ "${output}" == *'resources constraints (-c and/or -m) are required by mesos'* ]]
-}
-
-@test "mesos - docker run big" {
-	start_docker_with_busybox 3
-	start_mesos
-	swarm_manage --cluster-driver mesos-experimental 127.0.0.1:$MESOS_MASTER_PORT
-
-	for i in `seq 1 100`; do
-	    docker_swarm run -d -m 20m busybox echo $i
-	done
-
-	run docker_swarm ps -aq
-	[ "${#lines[@]}" -eq  100 ]
 }
