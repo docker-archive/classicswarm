@@ -58,3 +58,12 @@ func (do DriverOpts) IP(key, env string) (net.IP, bool) {
 	}
 	return nil, false
 }
+
+// Bool returns a boolean from the driver options
+func (do DriverOpts) Bool(key, env string) (bool, bool) {
+	if value, ok := do.String(key, env); ok {
+		b, _ := strconv.ParseBool(value)
+		return b, true
+	}
+	return false, false
+}
