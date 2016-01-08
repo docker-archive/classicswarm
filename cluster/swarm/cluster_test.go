@@ -25,7 +25,7 @@ func (nopCloser) Close() error {
 
 var (
 	mockInfo = &dockerclient.Info{
-		ID:              "id",
+		ID:              "test-engine",
 		Name:            "name",
 		NCPU:            10,
 		MemTotal:        20,
