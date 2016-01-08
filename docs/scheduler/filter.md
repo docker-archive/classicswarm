@@ -291,7 +291,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      trusting_yonath
 ```
 
-Then, use `-e affnity:com.example.type==frontend` to schedule a container next
+Then, use `-e affinity:com.example.type==frontend` to schedule a container next
 to the container with the `com.example.type==frontend` label.
 
 ```bash
