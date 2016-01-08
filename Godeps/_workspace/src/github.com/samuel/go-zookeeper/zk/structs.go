@@ -3,8 +3,10 @@ package zk
 import (
 	"encoding/binary"
 	"errors"
+	"log"
 	"reflect"
 	"runtime"
+	"time"
 )
 
 var (
@@ -12,6 +14,12 @@ var (
 	ErrPtrExpected        = errors.New("zk: encode/decode expect a non-nil pointer to struct")
 	ErrShortBuffer        = errors.New("zk: buffer too small")
 )
+
+type defaultLogger struct{}
+
+func (defaultLogger) Printf(format string, a ...interface{}) {
+	log.Printf(format, a...)
+}
 
 type ACL struct {
 	Perms  int32
@@ -31,6 +39,54 @@ type Stat struct {
 	DataLength     int32 // The length of the data field of this znode.
 	NumChildren    int32 // The number of children of this znode.
 	Pzxid          int64 // last modified children
+}
+
+// ServerClient is the information for a single Zookeeper client and its session.
+// This is used to parse/extract the output fo the `cons` command.
+type ServerClient struct {
+	Queued        int64
+	Received      int64
+	Sent          int64
+	SessionID     int64
+	Lcxid         int64
+	Lzxid         int64
+	Timeout       int32
+	LastLatency   int32
+	MinLatency    int32
+	AvgLatency    int32
+	MaxLatency    int32
+	Established   time.Time
+	LastResponse  time.Time
+	Addr          string
+	LastOperation string // maybe?
+	Error         error
+}
+
+// ServerClients is a struct for the FLWCons() function. It's used to provide
+// the list of Clients.
+//
+// This is needed because FLWCons() takes multiple servers.
+type ServerClients struct {
+	Clients []*ServerClient
+	Error   error
+}
+
+// ServerStats is the information pulled from the Zookeeper `stat` command.
+type ServerStats struct {
+	Sent        int64
+	Received    int64
+	NodeCount   int64
+	MinLatency  int64
+	AvgLatency  int64
+	MaxLatency  int64
+	Connections int64
+	Outstanding int64
+	Epoch       int32
+	Counter     int32
+	BuildTime   time.Time
+	Mode        Mode
+	Version     string
+	Error       error
 }
 
 type requestHeader struct {
