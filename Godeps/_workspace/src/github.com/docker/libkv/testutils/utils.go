@@ -22,6 +22,7 @@ func RunTestCommon(t *testing.T, kv store.Store) {
 func RunTestAtomic(t *testing.T, kv store.Store) {
 	testAtomicPut(t, kv)
 	testAtomicPutCreate(t, kv)
+	testAtomicPutWithSlashSuffixKey(t, kv)
 	testAtomicDelete(t, kv)
 }
 
@@ -265,12 +266,19 @@ func testAtomicPutCreate(t *testing.T, kv store.Store) {
 
 	// Attempting to create again should fail.
 	success, _, err = kv.AtomicPut(key, value, nil, nil)
-	assert.Error(t, err)
+	assert.Error(t, store.ErrKeyExists)
 	assert.False(t, success)
 
 	// This CAS should succeed, since it has the value from Get()
 	success, _, err = kv.AtomicPut(key, []byte("PUTCREATE"), pair, nil)
 	assert.NoError(t, err)
+	assert.True(t, success)
+}
+
+func testAtomicPutWithSlashSuffixKey(t *testing.T, kv store.Store) {
+	k1 := "testAtomicPutWithSlashSuffixKey/key/"
+	success, _, err := kv.AtomicPut(k1, []byte{}, nil, nil)
+	assert.Nil(t, err)
 	assert.True(t, success)
 }
 
@@ -304,6 +312,11 @@ func testAtomicDelete(t *testing.T, kv store.Store) {
 	success, err = kv.AtomicDelete(key, pair)
 	assert.NoError(t, err)
 	assert.True(t, success)
+
+	// Delete a non-existent key; should fail
+	success, err = kv.AtomicDelete(key, pair)
+	assert.Error(t, store.ErrKeyNotFound)
+	assert.False(t, success)
 }
 
 func testLockUnlock(t *testing.T, kv store.Store) {
@@ -588,6 +601,7 @@ func testDeleteTree(t *testing.T, kv store.Store) {
 // RunCleanup cleans up keys introduced by the tests
 func RunCleanup(t *testing.T, kv store.Store) {
 	for _, key := range []string{
+		"testAtomicPutWithSlashSuffixKey",
 		"testPutGetDeleteExists",
 		"testWatch",
 		"testWatchTree",
