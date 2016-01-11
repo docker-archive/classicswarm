@@ -3,7 +3,7 @@ package cluster
 import (
 	"strings"
 
-	dockerfilters "github.com/docker/docker/api/types/filters"
+	dockerfilters "github.com/docker/engine-api/types/filters"
 	"github.com/samalba/dockerclient"
 )
 
