@@ -209,8 +209,9 @@ swarm is connected to the public internet. To create your swarm:
 
 You can contribute a new discovery backend to Swarm. For information on how to
 do this, see <a
-href="https://github.com/docker/swarm/blob/master/discovery/README.md">our
-discovery README in the Docker Swarm repository</a>.
+href="https://github.com/docker/docker/tree/master/pkg/discovery">
+github.com/docker/docker/pkg/discovery</a>.
+
 
 ## Docker Swarm documentation index
 

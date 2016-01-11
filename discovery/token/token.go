@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/swarm/discovery"
+	"github.com/docker/docker/pkg/discovery"
 )
 
 const discoveryURL = "https://discovery.hub.docker.com/v1"

@@ -7,7 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/docker/swarm/discovery"
+	"github.com/docker/docker/pkg/discovery"
 )
 
 func checkAddrFormat(addr string) bool {
