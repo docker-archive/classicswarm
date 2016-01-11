@@ -3,7 +3,7 @@ package cluster
 import (
 	"testing"
 
-	dockerfilters "github.com/docker/docker/api/types/filters"
+	dockerfilters "github.com/docker/engine-api/types/filters"
 	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
