@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/swarm/discovery"
+	"github.com/docker/docker/pkg/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
