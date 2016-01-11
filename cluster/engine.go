@@ -209,6 +209,18 @@ func (e *Engine) IsHealthy() bool {
 	return e.state == stateHealthy
 }
 
+// HealthIndicator returns degree of healthiness between 0 and 100.
+// 0 means node is not healthy (unhealthy, pending), 100 means last connectivity was successful
+// other values indicate recent failures but haven't moved engine out of healthy state
+func (e *Engine) HealthIndicator() int {
+	e.RLock()
+	e.RUnlock()
+	if e.state != stateHealthy || e.failureCount >= e.opts.FailureRetry {
+		return 0
+	}
+	return 100 - e.failureCount*100/e.opts.FailureRetry
+}
+
 // setState sets engine state
 func (e *Engine) setState(state engineState) {
 	e.Lock()
@@ -301,13 +313,13 @@ func (e *Engine) resetFailureCount() {
 func (e *Engine) CheckConnectionErr(err error) {
 	if err == nil {
 		e.setErrMsg("")
-		e.resetFailureCount()
 		// If current state is unhealthy, change it to healthy
 		if e.state == stateUnhealthy {
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.failureCount)
 			e.emitEvent("engine_reconnect")
 			e.setState(stateHealthy)
 		}
+		e.resetFailureCount()
 		return
 	}
 

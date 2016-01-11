@@ -84,6 +84,18 @@ func TestEngineFailureCount(t *testing.T) {
 	assert.True(t, engine.failureCount == 0)
 }
 
+func TestHealthINdicator(t *testing.T) {
+	engine := NewEngine("test", 0, engOpts)
+	assert.True(t, engine.state == statePending)
+	assert.True(t, engine.HealthIndicator() == 0)
+	engine.setState(stateUnhealthy)
+	assert.True(t, engine.HealthIndicator() == 0)
+	engine.setState(stateHealthy)
+	assert.True(t, engine.HealthIndicator() == 100)
+	engine.incFailureCount()
+	assert.True(t, engine.HealthIndicator() == 100-100/engine.opts.FailureRetry)
+}
+
 func TestEngineConnectionFailure(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	assert.False(t, engine.isConnected())
