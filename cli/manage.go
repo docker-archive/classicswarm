@@ -126,6 +126,9 @@ func getDiscoveryOpt(c *cli.Context) map[string]string {
 		kvpair := strings.SplitN(option, "=", 2)
 		options[kvpair[0]] = kvpair[1]
 	}
+	if _, ok := options["kv.path"]; !ok {
+		options["kv.path"] = "docker/swarm/nodes"
+	}
 	return options
 }
 
