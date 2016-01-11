@@ -14,11 +14,12 @@ func createNode(ID string, memory int64, cpus int64) *node.Node {
 	oc := 0.05
 	memory = int64(float64(memory) + float64(memory)*oc)
 	return &node.Node{
-		ID:          ID,
-		IP:          ID,
-		Addr:        ID,
-		TotalMemory: memory * 1024 * 1024 * 1024,
-		TotalCpus:   cpus,
+		ID:              ID,
+		IP:              ID,
+		Addr:            ID,
+		TotalMemory:     memory * 1024 * 1024 * 1024,
+		TotalCpus:       cpus,
+		HealthIndicator: 100,
 	}
 }
 

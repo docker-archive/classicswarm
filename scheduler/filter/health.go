@@ -25,7 +25,7 @@ func (f *HealthFilter) Name() string {
 func (f *HealthFilter) Filter(_ *cluster.ContainerConfig, nodes []*node.Node, _ bool) ([]*node.Node, error) {
 	result := []*node.Node{}
 	for _, node := range nodes {
-		if node.IsHealthy {
+		if node.IsHealthy() {
 			result = append(result, node)
 		}
 	}
