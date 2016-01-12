@@ -30,7 +30,7 @@ func TestApplyFilters(t *testing.T) {
 					Id:       "image-0-id",
 					RepoTags: []string{"image-0:tag1", "image-0:tag2"},
 				}}},
-				IsHealthy: true,
+				HealthIndicator: 100,
 			},
 			{
 				ID:   "node-1-id",
@@ -54,7 +54,7 @@ func TestApplyFilters(t *testing.T) {
 					Id:       "image-1-id",
 					RepoTags: []string{"image-1:tag1", "image-0:tag3", "image-1:tag2"},
 				}}},
-				IsHealthy: false,
+				HealthIndicator: 0,
 			},
 		}
 		result []*node.Node
