@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/mesos/mesos-go/mesosutil"
 	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
@@ -41,11 +42,11 @@ func TestAddTask(t *testing.T) {
 	assert.Empty(t, s.tasks)
 	assert.True(t, s.empty())
 
-	t1, err := newTask(nil, cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
+	t1, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
 	assert.NoError(t, err)
 	s.addTask(t1)
 
-	t2, err := newTask(nil, cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
+	t2, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
 	assert.NoError(t, err)
 	s.addTask(t2)
 	assert.Equal(t, len(s.tasks), 2)
@@ -79,11 +80,11 @@ func TestRemoveTask(t *testing.T) {
 
 	assert.Empty(t, s.tasks)
 
-	t1, err := newTask(nil, cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
+	t1, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
 	assert.NoError(t, err)
 	s.addTask(t1)
 
-	t2, err := newTask(nil, cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
+	t2, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
 	assert.NoError(t, err)
 	s.addTask(t2)
 	assert.Equal(t, len(s.tasks), 2)

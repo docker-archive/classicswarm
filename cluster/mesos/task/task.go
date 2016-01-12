@@ -1,4 +1,4 @@
-package mesos
+package task
 
 import (
 	"errors"
@@ -14,32 +14,52 @@ import (
 	"github.com/mesos/mesos-go/mesosutil"
 )
 
-type task struct {
+// Task struct inherits from TaskInfo and represents a mesos task
+type Task struct {
 	mesosproto.TaskInfo
-
-	cluster *Cluster
 
 	updates chan *mesosproto.TaskStatus
 
 	config    *cluster.ContainerConfig
-	error     chan error
+	Error     chan error
 	container chan *cluster.Container
 	done      bool
 }
 
-func (t *task) ID() string {
+// GetContainer returns the container channel from the task
+// where the Swarm API sends the created container
+func (t *Task) GetContainer() chan *cluster.Container {
+	return t.container
+}
+
+// SetContainer writes on the container channel from the task
+func (t *Task) SetContainer(container *cluster.Container) {
+	t.container <- container
+}
+
+// GetConfig returns the container configuration of the task
+func (t *Task) GetConfig() *cluster.ContainerConfig {
+	return t.config
+}
+
+// ID method returns the taskId
+func (t *Task) ID() string {
 	return t.TaskId.GetValue()
 }
 
-func (t *task) Do() bool {
-	return t.cluster.scheduleTask(t)
+// Stopped method returns a boolean determining if the task
+// is done
+func (t *Task) Stopped() bool {
+	return t.done
 }
 
-func (t *task) Stop() {
+// Stop method sets the boolean determining if the task is done
+func (t *Task) Stop() {
 	t.done = true
 }
 
-func (t *task) build(slaveID string, offers map[string]*mesosproto.Offer) {
+// Build method builds the task
+func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 	t.Command = &mesosproto.CommandInfo{Shell: proto.Bool(false)}
 
 	t.Container = &mesosproto.ContainerInfo{
@@ -141,7 +161,8 @@ func (t *task) build(slaveID string, offers map[string]*mesosproto.Offer) {
 	t.SlaveId = &mesosproto.SlaveID{Value: &slaveID}
 }
 
-func newTask(c *Cluster, config *cluster.ContainerConfig, name string) (*task, error) {
+// NewTask fucntion creates a task
+func NewTask(config *cluster.ContainerConfig, name string) (*Task, error) {
 	id := stringid.TruncateID(stringid.GenerateRandomID())
 
 	if name != "" {
@@ -152,11 +173,10 @@ func newTask(c *Cluster, config *cluster.ContainerConfig, name string) (*task, e
 	// FIXME: once Mesos changes merged no need to save the task id to know which container we launched
 	config.Labels[cluster.SwarmLabelNamespace+".mesos.task"] = id
 
-	task := &task{
-		cluster:   c,
+	task := &Task{
 		config:    config,
 		container: make(chan *cluster.Container),
-		error:     make(chan error),
+		Error:     make(chan error),
 		updates:   make(chan *mesosproto.TaskStatus),
 	}
 
@@ -166,16 +186,19 @@ func newTask(c *Cluster, config *cluster.ContainerConfig, name string) (*task, e
 	return task, nil
 }
 
-func (t *task) sendStatus(status *mesosproto.TaskStatus) {
+// SendStatus method writes the task status in the updates channel
+func (t *Task) SendStatus(status *mesosproto.TaskStatus) {
 	t.updates <- status
 }
 
-func (t *task) getStatus() *mesosproto.TaskStatus {
+// GetStatus method reads the task status on the updates channel
+func (t *Task) GetStatus() *mesosproto.TaskStatus {
 	return <-t.updates
 }
 
-func (t *task) monitor() (bool, []byte, error) {
-	taskStatus := t.getStatus()
+// Monitor method monitors task statuses
+func (t *Task) Monitor() (bool, []byte, error) {
+	taskStatus := t.GetStatus()
 
 	switch taskStatus.GetState() {
 	case mesosproto.TaskState_TASK_STAGING:
