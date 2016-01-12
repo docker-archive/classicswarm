@@ -14,7 +14,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/cluster/mesos/queue"
+	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/gogo/protobuf/proto"
@@ -37,7 +37,7 @@ type Cluster struct {
 	offerTimeout        time.Duration
 	refuseTimeout       time.Duration
 	taskCreationTimeout time.Duration
-	pendingTasks        *queue.Queue
+	pendingTasks        *task.Tasks
 	engineOpts          *cluster.EngineOpts
 }
 
@@ -77,7 +77,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		refuseTimeout:       defaultRefuseTimeout,
 	}
 
-	cluster.pendingTasks = queue.NewQueue()
+	cluster.pendingTasks = task.NewTasks(cluster)
 
 	// Empty string is accepted by the scheduler.
 	user, _ := options.String("mesos.user", "SWARM_MESOS_USER")
@@ -179,7 +179,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		return nil, errResourcesNeeded
 	}
 
-	task, err := newTask(c, config, name)
+	task, err := task.NewTask(config, name)
 	if err != nil {
 		return nil, err
 	}
@@ -187,9 +187,9 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 	go c.pendingTasks.Add(task)
 
 	select {
-	case container := <-task.container:
+	case container := <-task.GetContainer():
 		return formatContainer(container), nil
-	case err := <-task.error:
+	case err := <-task.Error:
 		return nil, err
 	case <-time.After(c.taskCreationTimeout):
 		c.pendingTasks.Remove(task)
@@ -452,11 +452,12 @@ func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 	return found
 }
 
-func (c *Cluster) scheduleTask(t *task) bool {
+// LaunchTask method selects node and calls driver to launch a task
+func (c *Cluster) LaunchTask(t *task.Task) bool {
 	c.scheduler.Lock()
 	//change to explicit lock defer c.scheduler.Unlock()
 
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), t.config)
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), t.GetConfig())
 	if err != nil {
 		c.scheduler.Unlock()
 		return false
@@ -464,7 +465,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	n := nodes[0]
 	s, ok := c.agents[n.ID]
 	if !ok {
-		t.error <- fmt.Errorf("Unable to create on agent %q", n.ID)
+		t.Error <- fmt.Errorf("Unable to create on agent %q", n.ID)
 		c.scheduler.Unlock()
 		return true
 	}
@@ -478,7 +479,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 		offerIDs = append(offerIDs, offer.Id)
 	}
 
-	t.build(n.ID, c.agents[n.ID].offers)
+	t.Build(n.ID, c.agents[n.ID].offers)
 
 	offerFilters := &mesosproto.Filters{}
 	refuseSeconds := c.refuseTimeout.Seconds()
@@ -491,7 +492,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 		}
 		c.Unlock()
 		c.scheduler.Unlock()
-		t.error <- err
+		t.Error <- err
 		return true
 	}
 
@@ -504,18 +505,18 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	c.Unlock()
 	c.scheduler.Unlock()
 	// block until we get the container
-	finished, data, err := t.monitor()
+	finished, data, err := t.Monitor()
 	taskID := t.TaskInfo.TaskId.GetValue()
 	if err != nil {
 		//remove task
 		s.removeTask(taskID)
-		t.error <- err
+		t.Error <- err
 		return true
 	}
 	if !finished {
 		go func() {
 			for {
-				finished, _, err := t.monitor()
+				finished, _, err := t.Monitor()
 				if err != nil {
 					// TODO do a better log by sending proper error message
 					log.Error(err)
@@ -537,8 +538,8 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	if data != nil && json.Unmarshal(data, &inspect) == nil && len(inspect) == 1 {
 		container := &cluster.Container{Container: dockerclient.Container{Id: inspect[0].Id}, Engine: s.engine}
 		if container, err := container.Refresh(); err == nil {
-			if !t.done {
-				t.container <- container
+			if !t.Stopped() {
+				t.SetContainer(container)
 			}
 			return true
 		}
@@ -552,15 +553,15 @@ func (c *Cluster) scheduleTask(t *task) bool {
 
 	for _, container := range s.engine.Containers() {
 		if container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"] == taskID {
-			if !t.done {
-				t.container <- container
+			if !t.Stopped() {
+				t.SetContainer(container)
 			}
 			return true
 		}
 	}
 
-	if !t.done {
-		t.error <- fmt.Errorf("Container failed to create")
+	if !t.Stopped() {
+		t.Error <- fmt.Errorf("Container failed to create")
 	}
 	return true
 }
