@@ -87,7 +87,7 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 	}
 
 	// parse reschedule policy from labels (ex. docker run --label 'com.docker.swarm.reschedule-policies=on-node-failure')
-	if labels, ok := c.Labels[SwarmLabelNamespace+".reschedule-policies"]; ok {
+	if labels, ok := c.Labels[SwarmLabelNamespace+".experimental-reschedule-policies"]; ok {
 		json.Unmarshal([]byte(labels), &reschedulePolicies)
 	}
 
@@ -97,7 +97,7 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 			affinities = append(affinities, value)
 		} else if ok && key == "constraint" {
 			constraints = append(constraints, value)
-		} else if ok && key == "reschedule" {
+		} else if ok && key == "experimental-reschedule" {
 			reschedulePolicies = append(reschedulePolicies, value)
 		} else {
 			env = append(env, e)
@@ -124,7 +124,7 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 	// store reschedule policies in labels
 	if len(reschedulePolicies) > 0 {
 		if labels, err := json.Marshal(reschedulePolicies); err == nil {
-			c.Labels[SwarmLabelNamespace+".reschedule-policies"] = string(labels)
+			c.Labels[SwarmLabelNamespace+".experimental-reschedule-policies"] = string(labels)
 		}
 	}
 
@@ -206,7 +206,7 @@ func (c *ContainerConfig) HaveNodeConstraint() bool {
 
 // HasReschedulePolicy returns true if the specified policy is part of the config
 func (c *ContainerConfig) HasReschedulePolicy(p string) bool {
-	for _, reschedulePolicy := range c.extractExprs("reschedule-policies") {
+	for _, reschedulePolicy := range c.extractExprs("experimental-reschedule-policies") {
 		if reschedulePolicy == p {
 			return true
 		}
@@ -217,7 +217,7 @@ func (c *ContainerConfig) HasReschedulePolicy(p string) bool {
 // Validate returns an error if the config isn't valid
 func (c *ContainerConfig) Validate() error {
 	//TODO: add validation for affinities and constraints
-	reschedulePolicies := c.extractExprs("reschedule-policies")
+	reschedulePolicies := c.extractExprs("experimental-reschedule-policies")
 	if len(reschedulePolicies) > 1 {
 		return errors.New("too many reschedule policies")
 	} else if len(reschedulePolicies) == 1 {

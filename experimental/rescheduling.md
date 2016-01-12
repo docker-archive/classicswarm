@@ -28,14 +28,14 @@ apply to the container.
 
 ```
 # do not reschedule (default)
-$ docker run -d -e reschedule:off redis
+$ docker run -d -e experimental-reschedule:off redis
 # or
-$ docker run -d -l 'com.docker.swarm.reschedule-policy=["off"]' redis
+$ docker run -d -l 'com.docker.swarm.experimental-reschedule-policy=["off"]' redis
 ```
 
 ```
 # reschedule on node failure
-$ docker run -d -e reschedule:on-node-failure redis
+$ docker run -d -e experimental-reschedule:on-node-failure redis
 # or
-$ docker run -d -l 'com.docker.swarm.reschedule-policy=["on-node-failure"]' redis
+$ docker run -d -l 'com.docker.swarm.experimental-reschedule-policy=["on-node-failure"]' redis
 ```

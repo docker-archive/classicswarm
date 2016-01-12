@@ -12,13 +12,13 @@ function teardown() {
 	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 ${HOSTS[0]},${HOSTS[1]}
 
 	# c1 on node-0 with reschedule=on-node-failure
-	run docker_swarm run -dit --name c1 -e constraint:node==~node-0 --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]' busybox sh
+	run docker_swarm run -dit --name c1 -e constraint:node==~node-0 --label 'com.docker.swarm.experimental-reschedule-policies=["on-node-failure"]' busybox sh
 	[ "$status" -eq 0 ]
 	# c2 on node-0 with reschedule=off
-	run docker_swarm run -dit --name c2 -e constraint:node==~node-0 --label 'com.docker.swarm.reschedule-policies=["off"]' busybox sh
+	run docker_swarm run -dit --name c2 -e constraint:node==~node-0 --label 'com.docker.swarm.experimental-reschedule-policies=["off"]' busybox sh
 	[ "$status" -eq 0 ]
 	# c3 on node-1
-	run docker_swarm run -dit --name c3 -e constraint:node==~node-1 --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]' busybox sh
+	run docker_swarm run -dit --name c3 -e constraint:node==~node-1 --label 'com.docker.swarm.experimental-reschedule-policies=["on-node-failure"]' busybox sh
 	[ "$status" -eq 0 ]
 
 	run docker_swarm ps -q
@@ -74,13 +74,13 @@ function teardown() {
 	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 ${HOSTS[0]},${HOSTS[1]}
 
 	# c1 on node-0 with reschedule=on-node-failure
-	run docker_swarm run -dit --name c1 -e constraint:node==~node-0 -e reschedule:on-node-failure busybox sh
+	run docker_swarm run -dit --name c1 -e constraint:node==~node-0 -e experimental-reschedule:on-node-failure busybox sh
 	[ "$status" -eq 0 ]
 	# c2 on node-0 with reschedule=off
-	run docker_swarm run -dit --name c2 -e constraint:node==node-0 -e reschedule:on-node-failure busybox sh
+	run docker_swarm run -dit --name c2 -e constraint:node==node-0 -e experimental-reschedule:on-node-failure busybox sh
 	[ "$status" -eq 0 ]
 	# c3 on node-1
-	run docker_swarm run -dit --name c3 -e constraint:node==node-1 -e reschedule:on-node-failure busybox sh
+	run docker_swarm run -dit --name c3 -e constraint:node==node-1 -e experimental-reschedule:on-node-failure busybox sh
 	[ "$status" -eq 0 ]
 
 	run docker_swarm ps -q
@@ -125,11 +125,11 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	run docker_swarm run --name c1 -dit --label 'com.docker.swarm.reschedule-policies=["false"]' busybox sh
+	run docker_swarm run --name c1 -dit --label 'com.docker.swarm.experimental-reschedule-policies=["false"]' busybox sh
 	[ "$status" -ne 0 ]
 	[[ "${output}" == *'invalid reschedule policy: false'* ]]
 
-	run docker_swarm run --name c2 -dit -e reschedule:off --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]' -e reschedule:off busybox sh
+	run docker_swarm run --name c2 -dit -e experimental-reschedule:off --label 'com.docker.swarm.experimental-reschedule-policies=["on-node-failure"]' -e experimental-reschedule:off busybox sh
 	[ "$status" -ne 0 ]
 	[[ "${output}" == *'too many reschedule policies'* ]]
 }
@@ -139,10 +139,10 @@ function teardown() {
 	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 ${HOSTS[0]},${HOSTS[1]}
 
 	# c1 on node-0 with reschedule=on-node-failure
-	run docker_swarm run -dit --name c1 -e constraint:node==~node-0 --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]' busybox sh
+	run docker_swarm run -dit --name c1 -e constraint:node==~node-0 --label 'com.docker.swarm.experimental-reschedule-policies=["on-node-failure"]' busybox sh
 	[ "$status" -eq 0 ]
 	# c2 on node-1
-	run docker_swarm run -dit --name c2 -e constraint:node==~node-1 --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]' busybox sh
+	run docker_swarm run -dit --name c2 -e constraint:node==~node-1 --label 'com.docker.swarm.experimental-reschedule-policies=["on-node-failure"]' busybox sh
 	[ "$status" -eq 0 ]
 
 	run docker_swarm ps -q
