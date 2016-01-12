@@ -36,7 +36,7 @@ func (n weightedNodeList) Less(i, j int) bool {
 	return ip.Weight < jp.Weight
 }
 
-func weighNodes(config *cluster.ContainerConfig, nodes []*node.Node) (weightedNodeList, error) {
+func weighNodes(config *cluster.ContainerConfig, nodes []*node.Node, healthinessFactor int64) (weightedNodeList, error) {
 	weightedNodes := weightedNodeList{}
 
 	for _, node := range nodes {
@@ -61,7 +61,7 @@ func weighNodes(config *cluster.ContainerConfig, nodes []*node.Node) (weightedNo
 		}
 
 		if cpuScore <= 100 && memoryScore <= 100 {
-			weightedNodes = append(weightedNodes, &weightedNode{Node: node, Weight: cpuScore + memoryScore})
+			weightedNodes = append(weightedNodes, &weightedNode{Node: node, Weight: cpuScore + memoryScore + healthinessFactor*node.HealthIndicator})
 		}
 	}
 
