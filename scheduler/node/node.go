@@ -38,7 +38,7 @@ func NewNode(e *cluster.Engine) *Node {
 		UsedCpus:        e.UsedCpus(),
 		TotalMemory:     e.TotalMemory(),
 		TotalCpus:       e.TotalCpus(),
-		HealthIndicator: int64(e.HealthIndicator()),
+		HealthIndicator: e.HealthIndicator(),
 	}
 }
 
