@@ -18,7 +18,6 @@ func setup(t *testing.T) (string, func()) {
 	backup := socketsPath
 	socketsPath = tmpdir
 	specsPaths = []string{tmpdir}
-	//
 	return tmpdir, func() {
 		socketsPath = backup
 		os.RemoveAll(tmpdir)
