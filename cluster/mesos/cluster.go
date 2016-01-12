@@ -40,6 +40,7 @@ type Cluster struct {
 	taskCreationTimeout time.Duration
 	pendingTasks        *queue.Queue
 	engineOpts          *cluster.EngineOpts
+	role                string
 }
 
 const (
@@ -83,6 +84,12 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	// Empty string is accepted by the scheduler.
 	user, _ := options.String("mesos.user", "SWARM_MESOS_USER")
 
+	var found bool
+
+	if cluster.role, found = options.String("mesos.role", "SWARM_MESOS_ROLE"); !found {
+		cluster.role = "*"
+	}
+
 	// Override the hostname here because mesos-go will try
 	// to shell out to the hostname binary and it won't work with our official image.
 	// Do not check error here, so mesos-go can still try.
@@ -90,7 +97,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 
 	driverConfig := mesosscheduler.DriverConfig{
 		Scheduler:        cluster,
-		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
+		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user, Role: &cluster.role},
 		Master:           cluster.master,
 		HostnameOverride: hostname,
 	}
