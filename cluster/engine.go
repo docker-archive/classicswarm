@@ -212,13 +212,13 @@ func (e *Engine) IsHealthy() bool {
 // HealthIndicator returns degree of healthiness between 0 and 100.
 // 0 means node is not healthy (unhealthy, pending), 100 means last connectivity was successful
 // other values indicate recent failures but haven't moved engine out of healthy state
-func (e *Engine) HealthIndicator() int {
+func (e *Engine) HealthIndicator() int64 {
 	e.RLock()
-	e.RUnlock()
+	defer e.RUnlock()
 	if e.state != stateHealthy || e.failureCount >= e.opts.FailureRetry {
 		return 0
 	}
-	return 100 - e.failureCount*100/e.opts.FailureRetry
+	return int64(100 - e.failureCount*100/e.opts.FailureRetry)
 }
 
 // setState sets engine state

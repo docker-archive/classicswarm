@@ -93,7 +93,7 @@ func TestHealthINdicator(t *testing.T) {
 	engine.setState(stateHealthy)
 	assert.True(t, engine.HealthIndicator() == 100)
 	engine.incFailureCount()
-	assert.True(t, engine.HealthIndicator() == 100-100/engine.opts.FailureRetry)
+	assert.True(t, engine.HealthIndicator() == (int64)(100-100/engine.opts.FailureRetry))
 }
 
 func TestEngineConnectionFailure(t *testing.T) {
