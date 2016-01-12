@@ -148,6 +148,12 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	}
 	log.Debugf("Mesos driver started, status %v", status)
 
+	go func() {
+		status, err := sched.driver.Join()
+		log.Debugf("Mesos driver stopped unexpectedly, status/err %v: %v", status, err)
+
+	}()
+
 	return cluster, nil
 }
 
