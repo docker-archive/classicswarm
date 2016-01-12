@@ -6,4 +6,7 @@ var (
 
 	// GITCOMMIT will be overwritten automatically by the build system
 	GITCOMMIT = "HEAD"
+
+	// BUILDTIME will be overwritten automatically by the build system
+	BUILDTIME = "<unknown>"
 )
