@@ -7,6 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/docker/swarm/experimental"
 	"github.com/docker/swarm/version"
 )
 
@@ -32,6 +33,11 @@ func Run() {
 			Value: "info",
 			Usage: fmt.Sprintf("Log level (options: debug, info, warn, error, fatal, panic)"),
 		},
+
+		cli.BoolFlag{
+			Name:  "experimental",
+			Usage: "enable experimental features",
+		},
 	}
 
 	// logs
@@ -48,6 +54,8 @@ func Run() {
 		if !c.IsSet("log-level") && !c.IsSet("l") && c.Bool("debug") {
 			log.SetLevel(log.DebugLevel)
 		}
+
+		experimental.ENABLED = c.Bool("experimental")
 
 		return nil
 	}

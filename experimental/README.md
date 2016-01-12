@@ -8,7 +8,15 @@ The information below describes each feature and the GitHub pull requests and
 issues associated with it. If necessary, links are provided to additional
 documentation on an issue.  As an active Docker user and community member,
 please feel free to provide any feedback on these features you wish.
+## Enable experimental features
 
+To enable experimental feature, use the flag `-experimental` on swarm, for example:
+
+```
+$ swarm -experimental manage ...
+# or
+$ swarm -experimental join ...
+```
 
 ## Current experimental features
 
