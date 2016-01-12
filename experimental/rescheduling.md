@@ -39,8 +39,3 @@ $ docker run -d -e reschedule:on-node-failure redis
 # or
 $ docker run -d -l 'com.docker.swarm.reschedule-policy=["on-node-failure"]' redis
 ```
-
-- [Docker Swarm overview](../index.md)
-- [Discovery options](../discovery.md)
-- [Scheduler filters](filter.md)
-- [Swarm API](../api/swarm-api.md)
