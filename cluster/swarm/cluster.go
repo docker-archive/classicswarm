@@ -50,7 +50,7 @@ func (p *pendingContainer) ToContainer() *cluster.Container {
 type Cluster struct {
 	sync.RWMutex
 
-	eventHandler      cluster.EventHandler
+	eventHandlers     *cluster.EventHandlers
 	engines           map[string]*cluster.Engine
 	pendingEngines    map[string]*cluster.Engine
 	scheduler         *scheduler.Scheduler
@@ -67,6 +67,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
+		eventHandlers:     cluster.NewEventHandlers(),
 		engines:           make(map[string]*cluster.Engine),
 		pendingEngines:    make(map[string]*cluster.Engine),
 		scheduler:         scheduler,
@@ -90,22 +91,18 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 
 // Handle callbacks for the events
 func (c *Cluster) Handle(e *cluster.Event) error {
-	if c.eventHandler == nil {
-		return nil
-	}
-	if err := c.eventHandler.Handle(e); err != nil {
-		log.Error(err)
-	}
+	c.eventHandlers.Handle(e)
 	return nil
 }
 
 // RegisterEventHandler registers an event handler.
 func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
-	if c.eventHandler != nil {
-		return errors.New("event handler already set")
-	}
-	c.eventHandler = h
-	return nil
+	return c.eventHandlers.RegisterEventHandler(h)
+}
+
+// UnregisterEventHandler unregisters a previously registered event handler.
+func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
+	c.eventHandlers.UnregisterEventHandler(h)
 }
 
 // Generate a globally (across the cluster) unique ID.
@@ -145,9 +142,12 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 		return nil, fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
 	}
 
-	// Associate a Swarm ID to the container we are creating.
-	swarmID := c.generateUniqueID()
-	config.SetSwarmID(swarmID)
+	swarmID := config.SwarmID()
+	if swarmID == "" {
+		// Associate a Swarm ID to the container we are creating.
+		swarmID = c.generateUniqueID()
+		config.SetSwarmID(swarmID)
+	}
 
 	if withImageAffinity {
 		config.AddAffinity("image==" + config.Image)
