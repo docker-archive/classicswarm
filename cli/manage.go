@@ -17,6 +17,7 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos"
 	"github.com/docker/swarm/cluster/swarm"
+	"github.com/docker/swarm/experimental"
 	"github.com/docker/swarm/leadership"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
@@ -324,6 +325,9 @@ func manage(c *cli.Context) {
 		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.GlobalBool("debug"), c.Bool("cors")))
 	}
 
-	cluster.NewWatchdog(cl)
+	if experimental.ENABLED {
+		log.Warn("WARNING: rescheduling is currently experimental, use at your own risks")
+		cluster.NewWatchdog(cl)
+	}
 	log.Fatal(server.ListenAndServe())
 }
