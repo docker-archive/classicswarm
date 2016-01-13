@@ -1,4 +1,4 @@
-<!--[metadata]>
+M<!--[metadata]>
 +++
 title = "Docker Swarm"
 description = "Swarm release notes"
@@ -10,10 +10,41 @@ weight=9
 +++
 <![end-metadata]-->
 
-# Install and Create a Docker Swarm
+# Get Started with Docker Swarm
 
-You use Docker Swarm to host and schedule a cluster of Docker containers. This section introduces you to Docker Swarm by teaching you how to create a swarm
-on your local machine using Docker Machine and VirtualBox.
+## Introduction
+
+This topic provides a high-level explanation of Docker Swarm, and then guides
+you through an easy training example that shows you how to create a Docker Swarm
+on your own computer.
+
+To set up Docker Swarm in production or development environments, see <TBD links
+to both topics>.
+
+## What is Docker Swarm?
+
+Docker Swarm turns a group of Docker engines into a single, virtual
+Docker Engine.
+
+To use a visual analogy: The whale in the following illustration is a Docker
+Engine running four containers.
+
+![Docker Engine with
+Containers](http://www.docker.com/sites/default/files/products/product%20-%20engine.png)
+
+The Docker Engine whales in the following illustration are part of a Docker
+Swarm. The Docker Swarm functions that is running multiple containers. Each Docker Engine is a 
+
+![Docker Swarm with
+Containers](https://www.docker.com/sites/default/files/products/swarm.png)
+
+The following example will explain other concepts, such as
+
+## Why Use Docker Swarm
+
+The nature of distributed applications requires compute resources that are also
+distributed. By using Docker Engine to pool these resources, you can scale out
+your application as if it were running on a single, huge computer.
 
 ## Prerequisites
 
