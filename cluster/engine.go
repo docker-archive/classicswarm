@@ -879,7 +879,7 @@ func (e *Engine) String() string {
 func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
 	// Something changed - refresh our internal state.
 	switch ev.Status {
-	case "pull", "untag", "delete":
+	case "pull", "untag", "delete", "commit":
 		// These events refer to images so there's no need to update
 		// containers.
 		e.RefreshImages()
