@@ -7,17 +7,17 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/docker/pkg/tlsconfig"
+	"github.com/docker/docker/pkg/discovery"
+	"github.com/docker/go-connections/tlsconfig"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
 	"github.com/docker/libkv/store/etcd"
 	"github.com/docker/libkv/store/zookeeper"
-	"github.com/docker/swarm/discovery"
 )
 
 const (
-	defaultDiscoveryPath = "docker/swarm/nodes"
+	defaultDiscoveryPath = "docker/nodes"
 )
 
 // Discovery is exported
@@ -41,14 +41,14 @@ func Init() {
 	consul.Register()
 	etcd.Register()
 
-	// Register to internal Swarm discovery service
+	// Register to internal discovery service
 	discovery.Register("zk", &Discovery{backend: store.ZK})
 	discovery.Register("consul", &Discovery{backend: store.CONSUL})
 	discovery.Register("etcd", &Discovery{backend: store.ETCD})
 }
 
 // Initialize is exported
-func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Duration, discoveryOpt map[string]string) error {
+func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Duration, clusterOpts map[string]string) error {
 	var (
 		parts = strings.SplitN(uris, "/", 2)
 		addrs = strings.Split(parts[0], ",")
@@ -65,19 +65,19 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Du
 
 	// Use a custom path if specified in discovery options
 	dpath := defaultDiscoveryPath
-	if discoveryOpt["kv.path"] != "" {
-		dpath = discoveryOpt["kv.path"]
+	if clusterOpts["kv.path"] != "" {
+		dpath = clusterOpts["kv.path"]
 	}
 
 	s.path = path.Join(s.prefix, dpath)
 
 	var config *store.Config
-	if discoveryOpt["kv.cacertfile"] != "" && discoveryOpt["kv.certfile"] != "" && discoveryOpt["kv.keyfile"] != "" {
-		log.Debug("Initializing discovery with TLS")
+	if clusterOpts["kv.cacertfile"] != "" && clusterOpts["kv.certfile"] != "" && clusterOpts["kv.keyfile"] != "" {
+		log.Info("Initializing discovery with TLS")
 		tlsConfig, err := tlsconfig.Client(tlsconfig.Options{
-			CAFile:   discoveryOpt["kv.cacertfile"],
-			CertFile: discoveryOpt["kv.certfile"],
-			KeyFile:  discoveryOpt["kv.keyfile"],
+			CAFile:   clusterOpts["kv.cacertfile"],
+			CertFile: clusterOpts["kv.certfile"],
+			KeyFile:  clusterOpts["kv.keyfile"],
 		})
 		if err != nil {
 			return err
@@ -85,15 +85,15 @@ func (s *Discovery) Initialize(uris string, heartbeat time.Duration, ttl time.Du
 		config = &store.Config{
 			// Set ClientTLS to trigger https (bug in libkv/etcd)
 			ClientTLS: &store.ClientTLSConfig{
-				CACertFile: discoveryOpt["kv.cacertfile"],
-				CertFile:   discoveryOpt["kv.certfile"],
-				KeyFile:    discoveryOpt["kv.keyfile"],
+				CACertFile: clusterOpts["kv.cacertfile"],
+				CertFile:   clusterOpts["kv.certfile"],
+				KeyFile:    clusterOpts["kv.keyfile"],
 			},
 			// The actual TLS config that will be used
 			TLS: tlsConfig,
 		}
 	} else {
-		log.Debug("Initializing discovery without TLS")
+		log.Info("Initializing discovery without TLS")
 	}
 
 	// Creates a new store, will ignore options given
@@ -172,7 +172,6 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 			time.Sleep(s.heartbeat)
 		}
 	}()
-
 	return ch, errCh
 }
 

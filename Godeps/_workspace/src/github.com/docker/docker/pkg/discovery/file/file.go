@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/swarm/discovery"
+	"github.com/docker/docker/pkg/discovery"
 )
 
 // Discovery is exported
