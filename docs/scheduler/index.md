@@ -10,7 +10,5 @@ parent="smn_workw_swarm"
 
 ## Advanced Scheduling
 
-To learn more about advanced scheduling, see the [rescheduling]
-(rescheduling.md), [strategies](strategy.md) and [filters](filter.md)
-documents.
-
+To learn more about advanced scheduling, see the [strategies](strategy.md) and
+[filters](filter.md) documents.
