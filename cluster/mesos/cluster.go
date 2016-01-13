@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -253,7 +254,47 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 
 // CreateNetwork creates a network in the cluster
 func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error) {
-	return nil, errNotSupported
+	var (
+		parts  = strings.SplitN(request.Name, "/", 2)
+		config = &cluster.ContainerConfig{}
+	)
+
+	if len(parts) == 2 {
+		// a node was specified, create the container only on this node
+		request.Name = parts[1]
+		config = cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:node==" + parts[0]}})
+	}
+
+	c.scheduler.Lock()
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+	c.scheduler.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	if nodes == nil {
+		return nil, errors.New("cannot find node to create network")
+	}
+	n := nodes[0]
+	s, ok := c.agents[n.ID]
+	if !ok {
+		return nil, fmt.Errorf("Unable to create network on agent %q", n.ID)
+	}
+	resp, err := s.engine.CreateNetwork(request)
+	c.refreshNetworks()
+	return resp, err
+}
+
+func (c *Cluster) refreshNetworks() {
+	var wg sync.WaitGroup
+	for _, s := range c.agents {
+		e := s.engine
+		wg.Add(1)
+		go func(e *cluster.Engine) {
+			e.RefreshNetworks()
+			wg.Done()
+		}(e)
+	}
+	wg.Wait()
 }
 
 // CreateVolume creates a volume in the cluster
@@ -263,7 +304,9 @@ func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*clus
 
 // RemoveNetwork removes network from the cluster
 func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
-	return errNotSupported
+	err := network.Engine.RemoveNetwork(network)
+	c.refreshNetworks()
+	return err
 }
 
 // RemoveVolumes removes volumes from the cluster
@@ -343,7 +386,16 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 
 // Networks returns all the networks in the cluster.
 func (c *Cluster) Networks() cluster.Networks {
-	return cluster.Networks{}
+	c.RLock()
+	defer c.RUnlock()
+
+	out := cluster.Networks{}
+	for _, s := range c.agents {
+		out = append(out, s.engine.Networks()...)
+	}
+
+	return out
+
 }
 
 // Volumes returns all the volumes in the cluster.
