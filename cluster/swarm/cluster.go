@@ -59,6 +59,7 @@ type Cluster struct {
 
 	overcommitRatio float64
 	engineOpts      *cluster.EngineOpts
+	createRetry     int64
 	TLSConfig       *tls.Config
 }
 
@@ -76,10 +77,18 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 		pendingContainers: make(map[string]*pendingContainer),
 		overcommitRatio:   0.05,
 		engineOpts:        engineOptions,
+		createRetry:       0,
 	}
 
 	if val, ok := options.Float("swarm.overcommit", ""); ok {
 		cluster.overcommitRatio = val
+	}
+
+	if val, ok := options.Int("swarm.createretry", ""); ok {
+		if val < 0 {
+			log.Fatalf("swarm.createretry=%d is invalid", val)
+		}
+		cluster.createRetry = val
 	}
 
 	discoveryCh, errCh := cluster.discovery.Watch(nil)
@@ -119,15 +128,22 @@ func (c *Cluster) generateUniqueID() string {
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
 	container, err := c.createContainer(config, name, false, authConfig)
 
-	//  fails with image not found, then try to reschedule with image affinity
 	if err != nil {
+		var retries int64
+		//  fails with image not found, then try to reschedule with image affinity
 		bImageNotFoundError, _ := regexp.MatchString(`image \S* not found`, err.Error())
 		if bImageNotFoundError && !config.HaveNodeConstraint() {
 			// Check if the image exists in the cluster
 			// If exists, retry with a image affinity
 			if c.Image(config.Image) != nil {
 				container, err = c.createContainer(config, name, true, authConfig)
+				retries++
 			}
+		}
+
+		for ; retries < c.createRetry && err != nil; retries++ {
+			log.WithFields(log.Fields{"Name": "Swarm"}).Warnf("Failed to create container: %s, retrying", err)
+			container, err = c.createContainer(config, name, false, authConfig)
 		}
 	}
 	return container, err
