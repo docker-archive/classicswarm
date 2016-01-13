@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
-	"github.com/docker/swarm/discovery"
+	"github.com/docker/docker/pkg/discovery"
 )
 
 func list(c *cli.Context) {
