@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/docker/swarm",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.5.1",
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -198,10 +198,6 @@
 		{
 			"ImportPath": "golang.org/x/net/context",
 			"Rev": "4fd4a9fed55e5bdee4a89d6406c2eabe38b60300"
-		},
-		{
-			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "833a04a10549a95dc34458c195cbad61bbb6cb4d"
 		}
 	]
 }
