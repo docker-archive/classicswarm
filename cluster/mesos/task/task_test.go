@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/docker/swarm/cluster"
 	"github.com/mesos/mesos-go/mesosproto"
@@ -20,7 +21,7 @@ func TestBuild(t *testing.T) {
 		CpuShares: 42,
 		Memory:    2097152,
 		Cmd:       []string{"ls", "foo", "bar"},
-	}), name)
+	}), name, 5*time.Second)
 	assert.NoError(t, err)
 
 	task.Build("slave-id", nil)
@@ -47,7 +48,7 @@ func TestBuild(t *testing.T) {
 }
 
 func TestNewTask(t *testing.T) {
-	task, err := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), name)
+	task, err := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), name, 5*time.Second)
 	assert.NoError(t, err)
 
 	assert.Equal(t, *task.Name, name)
@@ -56,7 +57,7 @@ func TestNewTask(t *testing.T) {
 }
 
 func TestSendGetStatus(t *testing.T) {
-	task, err := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "")
+	task, err := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "", 5*time.Second)
 	assert.NoError(t, err)
 
 	status := mesosutil.NewTaskStatus(nil, mesosproto.TaskState_TASK_RUNNING)

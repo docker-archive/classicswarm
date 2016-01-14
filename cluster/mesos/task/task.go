@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
@@ -162,7 +163,7 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 }
 
 // NewTask fucntion creates a task
-func NewTask(config *cluster.ContainerConfig, name string) (*Task, error) {
+func NewTask(config *cluster.ContainerConfig, name string, timeout time.Duration) (*Task, error) {
 	id := stringid.TruncateID(stringid.GenerateRandomID())
 
 	if name != "" {
@@ -183,7 +184,17 @@ func NewTask(config *cluster.ContainerConfig, name string) (*Task, error) {
 	task.Name = &name
 	task.TaskId = &mesosproto.TaskID{Value: &id}
 	task.Labels = &mesosproto.Labels{Labels: []*mesosproto.Label{{Key: proto.String("SWARM_CONTAINER_NAME"), Value: &name}}}
+
+	go task.suicide(timeout)
+
 	return task, nil
+}
+
+func (t *Task) suicide(timeout time.Duration) {
+	<-time.After(timeout)
+	if !t.Stopped() && t.SlaveId == nil {
+		t.Error <- fmt.Errorf("container failed to start after %s", timeout)
+	}
 }
 
 // SendStatus method writes the task status in the updates channel

@@ -183,7 +183,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		return nil, errResourcesNeeded
 	}
 
-	task, err := task.NewTask(config, name)
+	task, err := task.NewTask(config, name, c.taskCreationTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -194,10 +194,8 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 	case container := <-task.GetContainer():
 		return formatContainer(container), nil
 	case err := <-task.Error:
-		return nil, err
-	case <-time.After(c.taskCreationTimeout):
 		c.pendingTasks.Remove(task)
-		return nil, fmt.Errorf("container failed to start after %s", c.taskCreationTimeout)
+		return nil, err
 	}
 }
 
