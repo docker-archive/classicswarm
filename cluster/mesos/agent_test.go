@@ -2,6 +2,7 @@ package mesos
 
 import (
 	"testing"
+	"time"
 
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos/task"
@@ -42,11 +43,11 @@ func TestAddTask(t *testing.T) {
 	assert.Empty(t, s.tasks)
 	assert.True(t, s.empty())
 
-	t1, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
+	t1, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1", 5*time.Second)
 	assert.NoError(t, err)
 	s.addTask(t1)
 
-	t2, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
+	t2, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1", 5*time.Second)
 	assert.NoError(t, err)
 	s.addTask(t2)
 	assert.Equal(t, len(s.tasks), 2)
@@ -80,11 +81,11 @@ func TestRemoveTask(t *testing.T) {
 
 	assert.Empty(t, s.tasks)
 
-	t1, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
+	t1, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1", 5*time.Second)
 	assert.NoError(t, err)
 	s.addTask(t1)
 
-	t2, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1")
+	t2, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1", 5*time.Second)
 	assert.NoError(t, err)
 	s.addTask(t2)
 	assert.Equal(t, len(s.tasks), 2)
