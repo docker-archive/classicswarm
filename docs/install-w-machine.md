@@ -18,11 +18,8 @@ This topic provides a high-level explanation of Docker Swarm and related
 concepts. Then, using a simplified training example, it shows you how to create
 a Docker Swarm on your own computer.
 
-For a more detailed and technical explanation of Docker Swarm, see the following
-topics:
-
-* TBD - link a
-* TBD - link b
+To set up Docker Swarm in production or development environments, see <TBD links
+to both topics>.
 
 ## Swarm FAQ
 
@@ -31,21 +28,20 @@ topics:
 Docker Swarm clusters a group of Docker engines into a single, virtual
 Docker Engine.
 
-The following illustration shows several Docker Engines running
-containers without using Docker Swarm.
+The following illustration shows several Docker Engines running containers
+without using Docker Swarm.
 
 ![Docker Engines running
 containers](./images/separate-docker-engines.png)
 
 In the following illustration, Docker Swarm enables the group of the Docker
-Engine whales to function together as one virtual Docker Engine. The containers
-run on top of the swarm.
+Engine whales to function together as one virtual Docker Engine.
 
 ![Docker Swarm running
 containers](./images/docker-swarm.png)
 
-Each Docker Engine within the swarm is a "node."
-
+The following example will introduce other swarm concepts and terminology as we
+use them.
 
 ### Why Use Docker Swarm?
 
@@ -56,15 +52,10 @@ your application as if it were running on a single, huge computer.
 You can implement Docker Swarm to achieve different goals, such as improving
 reliability, increasing flexibility, and simplifying administration.
 
-TBD
-
 ### What Other Components Work with Docker Swarm?
 
-TBD
 
-### What Are Some Alternatives to Docker Swarm?
-
-TBD (UPC)
+### What are the alternatives to Docker Swarm?
 
 ## Prerequisites
 
