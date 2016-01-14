@@ -145,7 +145,7 @@ func (e *Engine) Connect(config *tls.Config) error {
 	}
 	e.IP = addr.IP.String()
 
-	c, err := dockerclient.NewDockerClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), nil)
+	c, err := dockerclient.NewDockerClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), setTCPUserTimeout)
 	if err != nil {
 		return err
 	}
