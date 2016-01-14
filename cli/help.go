@@ -44,6 +44,7 @@ Arguments:
 Options:
    {{range .Flags}}{{.}}
    {{end}}{{if (eq .Name "manage")}}{{printf "\t * swarm.overcommit=0.05\tovercommit to apply on resources"}}
+                                    {{printf "\t * swarm.createretry=0\tcontainer create retry count after initial failure"}}
                                     {{printf "\t * mesos.address=\taddress to bind on [$SWARM_MESOS_ADDRESS]"}}
                                     {{printf "\t * mesos.port=\tport to bind on [$SWARM_MESOS_PORT]"}}
                                     {{printf "\t * mesos.offertimeout=30s\ttimeout for offers [$SWARM_MESOS_OFFER_TIMEOUT]"}}
