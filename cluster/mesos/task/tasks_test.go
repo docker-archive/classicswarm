@@ -2,6 +2,7 @@ package task
 
 import (
 	"testing"
+	"time"
 
 	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient"
@@ -25,14 +26,14 @@ func TestAdd(t *testing.T) {
 		CpuShares: 42,
 		Memory:    2097152,
 		Cmd:       []string{"ls", "foo", "bar"},
-	}), "name1")
+	}), "name1", 5*time.Second)
 
 	task2, _ := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{
 		Image:     "test-image",
 		CpuShares: 42,
 		Memory:    2097152,
 		Cmd:       []string{"ls", "foo", "bar"},
-	}), "name2")
+	}), "name2", 5*time.Second)
 	q.Add(task1)
 	assert.Equal(t, len(q.Tasks), 0)
 
@@ -48,7 +49,7 @@ func TestRemove(t *testing.T) {
 		CpuShares: 42,
 		Memory:    2097152,
 		Cmd:       []string{"ls", "foo", "bar"},
-	}), "name1")
+	}), "name1", 5*time.Second)
 
 	q.Add(task1)
 	assert.Equal(t, len(q.Tasks), 1)
@@ -64,7 +65,7 @@ func TestProcess(t *testing.T) {
 		CpuShares: 42,
 		Memory:    2097152,
 		Cmd:       []string{"ls", "foo", "bar"},
-	}), "name1")
+	}), "name1", 5*time.Second)
 
 	q.Add(task1)
 	assert.Equal(t, len(q.Tasks), 1)
