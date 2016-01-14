@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/docker/swarm",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.5.1",
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -38,11 +38,6 @@
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/ioutils",
-			"Comment": "v1.4.1-9107-gf11b6a2",
-			"Rev": "f11b6a2ab313a03d051dd6f69d264d0482df72d6"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/longpath",
 			"Comment": "v1.4.1-9107-gf11b6a2",
 			"Rev": "f11b6a2ab313a03d051dd6f69d264d0482df72d6"
 		},
@@ -188,10 +183,6 @@
 		{
 			"ImportPath": "golang.org/x/net/context",
 			"Rev": "4fd4a9fed55e5bdee4a89d6406c2eabe38b60300"
-		},
-		{
-			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "833a04a10549a95dc34458c195cbad61bbb6cb4d"
 		}
 	]
 }
