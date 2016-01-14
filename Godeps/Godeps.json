@@ -42,11 +42,6 @@
 			"Rev": "f11b6a2ab313a03d051dd6f69d264d0482df72d6"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/pkg/longpath",
-			"Comment": "v1.4.1-9107-gf11b6a2",
-			"Rev": "f11b6a2ab313a03d051dd6f69d264d0482df72d6"
-		},
-		{
 			"ImportPath": "github.com/docker/docker/pkg/parsers/kernel",
 			"Comment": "v1.4.1-9107-gf11b6a2",
 			"Rev": "f11b6a2ab313a03d051dd6f69d264d0482df72d6"
