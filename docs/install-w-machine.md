@@ -14,48 +14,37 @@ weight=9
 
 ## Introduction
 
-This topic provides a high-level explanation of Docker Swarm and related
-concepts. Then, using a simplified training example, it shows you how to create
-a Docker Swarm on your own computer.
+This topic provides a high-level explanation of Docker Swarm, and then guides
+you through an easy training example that shows you how to create a Docker Swarm
+on your own computer.
 
 To set up Docker Swarm in production or development environments, see <TBD links
 to both topics>.
 
-## Swarm FAQ
+## What is Docker Swarm?
 
-### What is Docker Swarm?
-
-Docker Swarm clusters a group of Docker engines into a single, virtual
+Docker Swarm turns a group of Docker engines into a single, virtual
 Docker Engine.
 
-The following illustration shows several Docker Engines running containers
-without using Docker Swarm.
+To use a visual analogy: The whale in the following illustration is a Docker
+Engine running four containers.
 
-![Docker Engines running
-containers](./images/separate-docker-engines.png)
+![Docker Engine with
+Containers](http://www.docker.com/sites/default/files/products/product%20-%20engine.png)
 
-In the following illustration, Docker Swarm enables the group of the Docker
-Engine whales to function together as one virtual Docker Engine.
+The Docker Engine whales in the following illustration are part of a Docker
+Swarm. The Docker Swarm functions that is running multiple containers. Each Docker Engine is a 
 
-![Docker Swarm running
-containers](./images/docker-swarm.png)
+![Docker Swarm with
+Containers](https://www.docker.com/sites/default/files/products/swarm.png)
 
-The following example will introduce other swarm concepts and terminology as we
-use them.
+The following example will explain other concepts, such as
 
-### Why Use Docker Swarm?
+## Why Use Docker Swarm
 
 The nature of distributed applications requires compute resources that are also
-distributed. By using Docker Swarm to pool these resources, you can scale out
+distributed. By using Docker Engine to pool these resources, you can scale out
 your application as if it were running on a single, huge computer.
-
-You can implement Docker Swarm to achieve different goals, such as improving
-reliability, increasing flexibility, and simplifying administration.
-
-### What Other Components Work with Docker Swarm?
-
-
-### What are the alternatives to Docker Swarm?
 
 ## Prerequisites
 
