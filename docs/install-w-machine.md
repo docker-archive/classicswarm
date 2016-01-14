@@ -16,7 +16,7 @@ weight=9
 
 This topic provides a high-level explanation of Docker Swarm and related
 concepts. Then, using a simplified training example, it shows you how to create
-a Docker Swarm on your own computer.
+a Docker Swarm on your computer.
 
 For a more detailed and technical explanation of Docker Swarm, see the following
 topics:
@@ -28,23 +28,25 @@ topics:
 
 ### What is Docker Swarm?
 
-Docker Swarm clusters a group of Docker engines into a single, virtual
-Docker Engine.
+Docker Swarm turns a pool of Docker Engines into a cluster that functions like
+single virtual Docker Engine.
 
-The following illustration shows several Docker Engines running
-containers without using Docker Swarm.
+For example, the following illustration shows three Docker Engines before
+clustering. Each engine runs its containers independently of the others.
 
 ![Docker Engines running
 containers](./images/separate-docker-engines.png)
 
-In the following illustration, Docker Swarm enables the group of the Docker
-Engine whales to function together as one virtual Docker Engine. The containers
-run on top of the swarm.
+With Docker Swarm, the Docker Engines function as a cluster, running the
+containers and providing a single interface to users and management
+software.
 
 ![Docker Swarm running
 containers](./images/docker-swarm.png)
 
-Each Docker Engine within the swarm is a "node."
+A few extra swarm concepts:
+* Each Docker Engine within the swarm is called a "node."
+* When you create the swarm, you designate a master node that keeps track of the 
 
 
 ### Why Use Docker Swarm?
@@ -54,7 +56,7 @@ distributed. By using Docker Swarm to pool these resources, you can scale out
 your application as if it were running on a single, huge computer.
 
 You can implement Docker Swarm to achieve different goals, such as improving
-reliability, increasing flexibility, and simplifying administration.
+reliability, increasing flexibility and simplifying administration.
 
 TBD
 
@@ -253,8 +255,9 @@ your swarm, and start an image on your swarm.
 		 1. The Docker client contacted the Docker daemon.
 		 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
 				(Assuming it was not already locally available.)
-		 3. The Docker daemon created a new container from that image which runs the
-				executable that produces the output you are currently reading.
+		 3. The Docker daemon created a new container from that image. The container
+		    runs an executable that sends a "Hello from Docker" message to the
+				standard output device.
 		 4. The Docker daemon streamed that output to the Docker client, which sent it
 				to your terminal.
 
@@ -279,6 +282,6 @@ your swarm, and start an image on your swarm.
 
 At this point, you've installed Docker Swarm by pulling the latest image of
 it from Docker Hub. Then, you built and ran a swarm on your local machine
-using VirtualBox. If you want, you can onto read an [overview of Docker Swarm
+using VirtualBox. If you want, you can read an [overview of Docker Swarm
 features](index.md). Alternatively, you can develop a more in-depth view of Swarm by
 [manually installing Swarm](install-manual.md) on a network.
