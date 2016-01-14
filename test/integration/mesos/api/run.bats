@@ -64,3 +64,19 @@ function teardown() {
 	[ "$status" -ne 0 ]
 	[[ "${output}" == *'resources constraints (-c and/or -m) are required by mesos'* ]]
 }
+
+@test "mesos - docker run with long pull" {
+	start_docker 2
+	start_mesos
+	swarm_manage --cluster-driver mesos-experimental --cluster-opt mesos.tasktimeout=1s 127.0.0.1:$MESOS_MASTER_PORT
+
+	# make sure no container exist
+	run docker_swarm ps -qa
+	[ "${#lines[@]}" -eq 0 ]
+
+	# run
+	docker_swarm run -m 20m -d --name test_container busybox sleep 100
+
+	# verify, container is running
+	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
+}
