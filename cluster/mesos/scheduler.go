@@ -104,7 +104,7 @@ func (s *Scheduler) StatusUpdate(_ mesosscheduler.SchedulerDriver, taskStatus *m
 		return
 	}
 	if task, ok := a.tasks[taskID]; ok {
-		task.sendStatus(taskStatus)
+		task.SendStatus(taskStatus)
 	} else {
 		var reason = ""
 		if taskStatus.Reason != nil {

@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/mesos/mesos-go/mesosproto"
 )
 
@@ -12,7 +13,7 @@ type agent struct {
 
 	id     string
 	offers map[string]*mesosproto.Offer
-	tasks  map[string]*task
+	tasks  map[string]*task.Task
 	engine *cluster.Engine
 }
 
@@ -20,7 +21,7 @@ func newAgent(sid string, e *cluster.Engine) *agent {
 	return &agent{
 		id:     sid,
 		offers: make(map[string]*mesosproto.Offer),
-		tasks:  make(map[string]*task),
+		tasks:  make(map[string]*task.Task),
 		engine: e,
 	}
 }
@@ -31,7 +32,7 @@ func (s *agent) addOffer(offer *mesosproto.Offer) {
 	s.Unlock()
 }
 
-func (s *agent) addTask(task *task) {
+func (s *agent) addTask(task *task.Task) {
 	s.Lock()
 	s.tasks[task.TaskInfo.TaskId.GetValue()] = task
 	s.Unlock()
@@ -71,7 +72,7 @@ func (s *agent) getOffers() map[string]*mesosproto.Offer {
 	return s.offers
 }
 
-func (s *agent) getTasks() map[string]*task {
+func (s *agent) getTasks() map[string]*task.Task {
 	s.RLock()
 	defer s.RUnlock()
 	return s.tasks
