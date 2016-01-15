@@ -51,7 +51,9 @@ Options:
                                     {{printf "\t * mesos.offertimeout=30s\ttimeout for offers [$SWARM_MESOS_OFFER_TIMEOUT]"}}
                                     {{printf "\t * mesos.offerrefusetimeout=5s\tseconds to consider unused resources refused [$SWARM_MESOS_OFFER_REFUSE_TIMEOUT]"}}
                                     {{printf "\t * mesos.tasktimeout=5s\ttimeout for task creation [$SWARM_MESOS_TASK_TIMEOUT]"}}
-                                    {{printf "\t * mesos.user=\tframework user [$SWARM_MESOS_USER]"}}{{end}}{{ end }}
+                                    {{printf "\t * mesos.user=\tframework user [$SWARM_MESOS_USER]"}}
+                                    {{printf "\t * mesos.defaultcpushares=0\tDefault cpu shares [$SWARM_MESOS_DEFAULT_CPU_SHARES]"}}
+                                    {{printf "\t * mesos.defaultmemory=0\tDefault memory [$SWARM_MESOS_DEFAULT_MEMORY]"}}{{end}}{{ end }}
 `
 
 }
