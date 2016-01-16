@@ -14,7 +14,7 @@ type Network struct {
 	Engine *Engine
 }
 
-// Networks represents a map of networks
+// Networks represents an array of networks
 type Networks []*Network
 
 // Uniq returns all uniq networks
