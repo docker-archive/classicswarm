@@ -44,10 +44,7 @@ type Cluster interface {
 	CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error)
 
 	// Return all volumes
-	Volumes() []*Volume
-
-	// Return one volume from the cluster
-	Volume(name string) *Volume
+	Volumes() Volumes
 
 	// Remove volumes from the cluster
 	RemoveVolumes(name string) (bool, error)
