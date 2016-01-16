@@ -441,6 +441,18 @@ func (c *Cluster) refreshNetworks() {
 	wg.Wait()
 }
 
+func (c *Cluster) refreshVolumes() {
+	var wg sync.WaitGroup
+	for _, e := range c.engines {
+		wg.Add(1)
+		go func(e *cluster.Engine) {
+			e.RefreshVolumes()
+			wg.Done()
+		}(e)
+	}
+	wg.Wait()
+}
+
 // CreateNetwork creates a network in the cluster
 func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (response *dockerclient.NetworkCreateResponse, err error) {
 	var (
@@ -472,20 +484,45 @@ func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*clus
 		wg     sync.WaitGroup
 		volume *cluster.Volume
 		err    error
+		parts  = strings.SplitN(request.Name, "/", 2)
+		node   = ""
 	)
 
 	if request.Name == "" {
 		request.Name = stringid.GenerateRandomID()
+	} else if len(parts) == 2 {
+		node = parts[0]
+		request.Name = parts[1]
 	}
+	if node == "" {
+		c.RLock()
+		for _, e := range c.engines {
+			wg.Add(1)
 
-	c.RLock()
-	for _, e := range c.engines {
-		wg.Add(1)
+			go func(engine *cluster.Engine) {
+				defer wg.Done()
 
-		go func(engine *cluster.Engine) {
-			defer wg.Done()
+				v, er := engine.CreateVolume(request)
+				if v != nil {
+					volume = v
+					err = nil
+				}
+				if er != nil && volume == nil {
+					err = er
+				}
+			}(e)
+		}
+		c.RUnlock()
 
-			v, er := engine.CreateVolume(request)
+		wg.Wait()
+	} else {
+		config := cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:node==" + parts[0]}})
+		nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+		if err != nil {
+			return nil, err
+		}
+		if nodes != nil {
+			v, er := c.engines[nodes[0].ID].CreateVolume(request)
 			if v != nil {
 				volume = v
 				err = nil
@@ -493,11 +530,8 @@ func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*clus
 			if er != nil && volume == nil {
 				err = er
 			}
-		}(e)
+		}
 	}
-	c.RUnlock()
-
-	wg.Wait()
 
 	return volume, err
 }
@@ -511,14 +545,12 @@ func (c *Cluster) RemoveVolumes(name string) (bool, error) {
 	errs := []string{}
 	var err error
 	for _, e := range c.engines {
-		for _, volume := range e.Volumes() {
-			if volume.Name == name {
-				if err := volume.Engine.RemoveVolume(name); err != nil {
-					errs = append(errs, fmt.Sprintf("%s: %s", volume.Engine.Name, err.Error()))
-					continue
-				}
-				found = true
+		if volume := e.Volumes().Get(name); volume != nil {
+			if err := volume.Engine.RemoveVolume(volume.Name); err != nil {
+				errs = append(errs, fmt.Sprintf("%s: %s", volume.Engine.Name, err.Error()))
+				continue
 			}
+			found = true
 		}
 	}
 	if len(errs) > 0 {
@@ -723,36 +755,16 @@ func (c *Cluster) Networks() cluster.Networks {
 }
 
 // Volumes returns all the volumes in the cluster.
-func (c *Cluster) Volumes() []*cluster.Volume {
+func (c *Cluster) Volumes() cluster.Volumes {
 	c.RLock()
 	defer c.RUnlock()
 
-	out := []*cluster.Volume{}
+	out := cluster.Volumes{}
 	for _, e := range c.engines {
 		out = append(out, e.Volumes()...)
 	}
 
 	return out
-}
-
-// Volume returns the volume name in the cluster
-func (c *Cluster) Volume(name string) *cluster.Volume {
-	// Abort immediately if the name is empty.
-	if len(name) == 0 {
-		return nil
-	}
-
-	c.RLock()
-	defer c.RUnlock()
-
-	for _, e := range c.engines {
-		for _, v := range e.Volumes() {
-			if v.Name == name {
-				return v
-			}
-		}
-	}
-	return nil
 }
 
 // listNodes returns all validated engines in the cluster, excluding pendingEngines.

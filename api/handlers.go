@@ -223,9 +223,15 @@ func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /volumes
 func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
-	volumes := struct {
-		Volumes []*cluster.Volume
-	}{c.cluster.Volumes()}
+	volumes := struct{ Volumes []*dockerclient.Volume }{}
+
+	for _, volume := range c.cluster.Volumes() {
+		tmp := (*volume).Volume
+		if tmp.Driver == "local" {
+			tmp.Name = volume.Engine.Name + "/" + volume.Name
+		}
+		volumes.Volumes = append(volumes.Volumes, &tmp)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(volumes)
@@ -808,9 +814,9 @@ func proxyNetwork(c *context, w http.ResponseWriter, r *http.Request) {
 // Proxy a request to the right node
 func proxyVolume(c *context, w http.ResponseWriter, r *http.Request) {
 	var name = mux.Vars(r)["volumename"]
-	if volume := c.cluster.Volume(name); volume != nil {
-		err := proxy(c.tlsConfig, volume.Engine.Addr, w, r)
-		volume.Engine.CheckConnectionErr(err)
+	if volume := c.cluster.Volumes().Get(name); volume != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(volume)
 		return
 	}
 	httpError(w, fmt.Sprintf("No such volume: %s", name), http.StatusNotFound)

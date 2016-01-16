@@ -857,10 +857,10 @@ func (e *Engine) Networks() Networks {
 }
 
 // Volumes returns all the volumes in the engine
-func (e *Engine) Volumes() []*Volume {
+func (e *Engine) Volumes() Volumes {
 	e.RLock()
 
-	volumes := make([]*Volume, 0, len(e.volumes))
+	volumes := Volumes{}
 	for _, volume := range e.volumes {
 		volumes = append(volumes, volume)
 	}
