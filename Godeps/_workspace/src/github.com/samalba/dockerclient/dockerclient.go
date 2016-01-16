@@ -47,10 +47,10 @@ func (e Error) Error() string {
 }
 
 func NewDockerClient(daemonUrl string, tlsConfig *tls.Config) (*DockerClient, error) {
-	return NewDockerClientTimeout(daemonUrl, tlsConfig, time.Duration(defaultTimeout))
+	return NewDockerClientTimeout(daemonUrl, tlsConfig, time.Duration(defaultTimeout), nil)
 }
 
-func NewDockerClientTimeout(daemonUrl string, tlsConfig *tls.Config, timeout time.Duration) (*DockerClient, error) {
+func NewDockerClientTimeout(daemonUrl string, tlsConfig *tls.Config, timeout time.Duration, setUserTimeout tcpFunc) (*DockerClient, error) {
 	u, err := url.Parse(daemonUrl)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func NewDockerClientTimeout(daemonUrl string, tlsConfig *tls.Config, timeout tim
 			u.Scheme = "https"
 		}
 	}
-	httpClient := newHTTPClient(u, tlsConfig, timeout)
+	httpClient := newHTTPClient(u, tlsConfig, timeout, setUserTimeout)
 	return &DockerClient{u, httpClient, tlsConfig, 0, nil}, nil
 }
 
@@ -920,8 +920,8 @@ func (client *DockerClient) ConnectNetwork(id, container string) error {
 	return err
 }
 
-func (client *DockerClient) DisconnectNetwork(id, container string) error {
-	data, err := json.Marshal(NetworkDisconnect{Container: container})
+func (client *DockerClient) DisconnectNetwork(id, container string, force bool) error {
+	data, err := json.Marshal(NetworkDisconnect{Container: container, Force: force})
 	if err != nil {
 		return err
 	}
