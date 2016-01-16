@@ -279,11 +279,22 @@ type Container struct {
 	}
 }
 
+type Actor struct {
+	ID         string
+	Attributes map[string]string
+}
+
 type Event struct {
-	Id     string
-	Status string
-	From   string
-	Time   int64
+	Status string `json:"status,omitempty"`
+	ID     string `json:"id,omitempty"`
+	From   string `json:"from,omitempty"`
+
+	Type   string
+	Action string
+	Actor  Actor
+
+	Time     int64 `json:"time,omitempty"`
+	TimeNano int64 `json:"timeNano,omitempty"`
 }
 
 type Version struct {
@@ -551,4 +562,5 @@ type NetworkConnect struct {
 // NetworkDisconnect represents the data to be used to disconnect a container from the network
 type NetworkDisconnect struct {
 	Container string
+	Force     bool
 }
