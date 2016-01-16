@@ -182,7 +182,7 @@ func (client *NopClient) ConnectNetwork(id, container string) error {
 	return ErrNoEngine
 }
 
-func (client *NopClient) DisconnectNetwork(id, container string) error {
+func (client *NopClient) DisconnectNetwork(id, container string, force bool) error {
 	return ErrNoEngine
 }
 
