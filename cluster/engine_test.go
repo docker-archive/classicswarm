@@ -212,7 +212,7 @@ func TestEngineState(t *testing.T) {
 	}
 
 	// Fake an event which will trigger a refresh. The second container will appear.
-	engine.handler(&dockerclient.Event{Id: "two", Status: "created"}, nil)
+	engine.handler(&dockerclient.Event{ID: "two", Status: "created"}, nil)
 	containers = engine.Containers()
 	assert.Len(t, containers, 2)
 	if containers[0].Id != "one" && containers[1].Id != "one" {

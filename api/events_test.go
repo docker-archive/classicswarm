@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -36,22 +37,33 @@ func TestHandle(t *testing.T) {
 	}
 
 	event.Event.Status = "status"
-	event.Event.Id = "id"
+	event.Event.ID = "id"
 	event.Event.From = "from"
 	event.Event.Time = 0
+	event.Actor.Attributes = make(map[string]string)
+	event.Actor.Attributes["nodevent.name"] = event.Engine.Name
+	event.Actor.Attributes["nodevent.id"] = event.Engine.ID
+	event.Actor.Attributes["nodevent.addr"] = event.Engine.Addr
+	event.Actor.Attributes["nodevent.ip"] = event.Engine.IP
 
 	assert.NoError(t, eh.Handle(event))
 
-	str := fmt.Sprintf(eventFmt,
-		"status", "status",
-		"id", "id",
-		"from", "from node:node_name",
-		"time", 0,
-		"node",
-		"Name", "node_name",
-		"Id", "node_id",
-		"Addr", "node_addr",
-		"Ip", "node_ip")
+	event.Event.From = "from node:node_name"
 
-	assert.Equal(t, str, string(fw.Tmp))
+	data, err := json.Marshal(event)
+	assert.NoError(t, err)
+
+	node := fmt.Sprintf(",%q:{%q:%q,%q:%q,%q:%q,%q:%q}}",
+		"node",
+		"Name", event.Engine.Name,
+		"Id", event.Engine.ID,
+		"Addr", event.Engine.Addr,
+		"Ip", event.Engine.IP,
+	)
+
+	// insert Node field
+	data = data[:len(data)-1]
+	data = append(data, []byte(node)...)
+
+	assert.Equal(t, string(data), string(fw.Tmp))
 }
