@@ -11,7 +11,7 @@ import (
 // Event is exported
 type Event struct {
 	dockerclient.Event
-	Engine *Engine
+	Engine *Engine `json:"-"`
 }
 
 // EventHandler is exported
