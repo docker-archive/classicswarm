@@ -26,12 +26,12 @@ function teardown() {
 	kill "$events_pid"
 
 	# verify size
-	[[ $(wc -l < ${log_file}) == 3 ]]
+	[[ $(wc -l < ${log_file}) -ge 3 ]]
 
 	# verify content
 	run cat "$log_file"
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"node:node-0"* ]]
+	[[ "${output}" == *"node-0"* ]]
 	[[ "${output}" == *"create"* ]]
 	[[ "${output}" == *"start"* ]]
 	[[ "${output}" == *"die"* ]]

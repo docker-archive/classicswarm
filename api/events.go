@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,8 +10,6 @@ import (
 
 	"github.com/docker/swarm/cluster"
 )
-
-const eventFmt string = "{%q:%q,%q:%q,%q:%q,%q:%d,%q:{%q:%q,%q:%q,%q:%q,%q:%q}}\n"
 
 // EventsHandler broadcasts events to multiple client listeners.
 type eventsHandler struct {
@@ -76,21 +75,42 @@ func (eh *eventsHandler) cleanupHandler(remoteAddr string) {
 func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	eh.RLock()
 
-	str := fmt.Sprintf(eventFmt,
-		"status", e.Status,
-		"id", e.Id,
-		"from", e.From+" node:"+e.Engine.Name,
-		"time", e.Time,
+	// remove this hack once 1.10 is broadly adopted
+	from := e.From
+	e.From = e.From + " node:" + e.Engine.Name
+
+	// Attributes will be nil if the event was sent by engine < 1.10
+	if e.Actor.Attributes == nil {
+		e.Actor.Attributes = make(map[string]string)
+	}
+	e.Actor.Attributes["node.name"] = e.Engine.Name
+	e.Actor.Attributes["node.id"] = e.Engine.ID
+	e.Actor.Attributes["node.addr"] = e.Engine.Addr
+	e.Actor.Attributes["node.ip"] = e.Engine.IP
+
+	data, err := json.Marshal(e)
+	e.From = from
+	if err != nil {
+		return err
+	}
+
+	// remove the node field once 1.10 is broadly adopted & interlock stop relying on it
+	node := fmt.Sprintf(",%q:{%q:%q,%q:%q,%q:%q,%q:%q}}",
 		"node",
 		"Name", e.Engine.Name,
 		"Id", e.Engine.ID,
 		"Addr", e.Engine.Addr,
-		"Ip", e.Engine.IP)
+		"Ip", e.Engine.IP,
+	)
+
+	// insert Node field
+	data = data[:len(data)-1]
+	data = append(data, []byte(node)...)
 
 	var failed []string
 
 	for key, w := range eh.ws {
-		if _, err := fmt.Fprintf(w, str); err != nil {
+		if _, err := fmt.Fprintf(w, string(data)); err != nil {
 			// collect them to handle later under Lock
 			failed = append(failed, key)
 			continue
