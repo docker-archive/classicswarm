@@ -396,9 +396,9 @@ func (c *Cluster) TotalCpus() int64 {
 }
 
 // Info gives minimal information about containers and resources on the mesos cluster
-func (c *Cluster) Info() [][]string {
+func (c *Cluster) Info() [][2]string {
 	offers := c.listOffers()
-	info := [][]string{
+	info := [][2]string{
 		{"\bStrategy", c.scheduler.Strategy()},
 		{"\bFilters", c.scheduler.Filters()},
 		{"\bOffers", fmt.Sprintf("%d", len(offers))},
@@ -407,9 +407,9 @@ func (c *Cluster) Info() [][]string {
 	sort.Sort(offerSorter(offers))
 
 	for _, offer := range offers {
-		info = append(info, []string{" Offer", offer.Id.GetValue()})
+		info = append(info, [2]string{" Offer", offer.Id.GetValue()})
 		for _, resource := range offer.Resources {
-			info = append(info, []string{"  └ " + resource.GetName(), formatResource(resource)})
+			info = append(info, [2]string{"  └ " + resource.GetName(), formatResource(resource)})
 		}
 	}
 
