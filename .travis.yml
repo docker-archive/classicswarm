@@ -23,6 +23,9 @@ script:
   - fgt golint ./...
   # Lint shell files and make sure they are not space indented.
   - fgt find test/ -type f \( -name "*.sh" -or -name "*.bash" -or -name "*.bats" \) -exec grep -Hn -e "^ " {} \;
+  - GOOS=darwin go build
+  - GOOS=windows go build
+  - GOOS=linux go build
   - go test -v -race ./...
   - script/coverage
   - goveralls -service=travis-ci -coverprofile=goverage.report
