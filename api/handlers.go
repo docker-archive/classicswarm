@@ -29,23 +29,45 @@ const APIVERSION = "1.21"
 
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
-	info := dockerclient.Info{
-		Containers:        int64(len(c.cluster.Containers())),
-		Images:            int64(len(c.cluster.Images().Filter(cluster.ImageFilterOptions{}))),
+	info := apitypes.Info{
+		Images:            len(c.cluster.Images().Filter(cluster.ImageFilterOptions{})),
 		DriverStatus:      c.statusHandler.Status(),
-		NEventsListener:   int64(c.eventsHandler.Size()),
+		NEventsListener:   c.eventsHandler.Size(),
 		Debug:             c.debug,
 		MemoryLimit:       true,
 		SwapLimit:         true,
+		CPUCfsPeriod:      true,
+		CPUCfsQuota:       true,
+		CPUShares:         true,
+		CPUSet:            true,
 		IPv4Forwarding:    true,
 		BridgeNfIptables:  true,
-		BridgeNfIp6tables: true,
-		NCPU:              c.cluster.TotalCpus(),
+		BridgeNfIP6tables: true,
+		OomKillDisable:    true,
+		OperatingSystem:   runtime.GOOS,
+		Architecture:      runtime.GOARCH,
+		NCPU:              int(c.cluster.TotalCpus()),
 		MemTotal:          c.cluster.TotalMemory(),
-		HttpProxy:         os.Getenv("http_proxy"),
-		HttpsProxy:        os.Getenv("https_proxy"),
+		HTTPProxy:         os.Getenv("http_proxy"),
+		HTTPSProxy:        os.Getenv("https_proxy"),
 		NoProxy:           os.Getenv("no_proxy"),
 		SystemTime:        time.Now().Format(time.RFC3339Nano),
+		ExperimentalBuild: experimental.ENABLED,
+	}
+
+	if kernelVersion, err := kernel.GetKernelVersion(); err == nil {
+		info.KernelVersion = kernelVersion.String()
+	}
+
+	for _, c := range c.cluster.Containers() {
+		info.Containers++
+		if c.Info.State.Paused {
+			info.ContainersPaused++
+		} else if c.Info.State.Running {
+			info.ContainersRunning++
+		} else {
+			info.ContainersStopped++
+		}
 	}
 
 	if hostname, err := os.Hostname(); err == nil {

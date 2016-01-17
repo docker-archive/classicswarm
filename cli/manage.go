@@ -49,16 +49,16 @@ type statusHandler struct {
 	follower  *leadership.Follower
 }
 
-func (h *statusHandler) Status() [][]string {
-	var status [][]string
+func (h *statusHandler) Status() [][2]string {
+	var status [][2]string
 
 	if h.candidate != nil && !h.candidate.IsLeader() {
-		status = [][]string{
+		status = [][2]string{
 			{"\bRole", "replica"},
 			{"\bPrimary", h.follower.Leader()},
 		}
 	} else {
-		status = [][]string{
+		status = [][2]string{
 			{"\bRole", "primary"},
 		}
 	}
