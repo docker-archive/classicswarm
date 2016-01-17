@@ -221,6 +221,28 @@ func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(out)
 }
 
+// GET /networks/{networkid:.*}
+func getNetwork(c *context, w http.ResponseWriter, r *http.Request) {
+	var id = mux.Vars(r)["networkid"]
+	if network := c.cluster.Networks().Uniq().Get(id); network != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(network)
+		return
+	}
+	httpError(w, fmt.Sprintf("No such network: %s", id), http.StatusNotFound)
+}
+
+// GET /volumes/{volumename:.*}
+func getVolume(c *context, w http.ResponseWriter, r *http.Request) {
+	var name = mux.Vars(r)["volumename"]
+	if volume := c.cluster.Volumes().Get(name); volume != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(volume)
+		return
+	}
+	httpError(w, fmt.Sprintf("No such volume: %s", name), http.StatusNotFound)
+}
+
 // GET /volumes
 func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	volumes := struct{ Volumes []*dockerclient.Volume }{}
@@ -798,28 +820,6 @@ func deleteVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 // GET /_ping
 func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
-}
-
-// Proxy a request to the right node
-func proxyNetwork(c *context, w http.ResponseWriter, r *http.Request) {
-	var id = mux.Vars(r)["networkid"]
-	if network := c.cluster.Networks().Uniq().Get(id); network != nil {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(network)
-		return
-	}
-	httpError(w, fmt.Sprintf("No such network: %s", id), http.StatusNotFound)
-}
-
-// Proxy a request to the right node
-func proxyVolume(c *context, w http.ResponseWriter, r *http.Request) {
-	var name = mux.Vars(r)["volumename"]
-	if volume := c.cluster.Volumes().Get(name); volume != nil {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(volume)
-		return
-	}
-	httpError(w, fmt.Sprintf("No such volume: %s", name), http.StatusNotFound)
 }
 
 // Proxy network to container operations, including connect/disconnect request
