@@ -21,20 +21,21 @@ func (volumes Volumes) Get(name string) *Volume {
 
 	candidates := []*Volume{}
 
-	// Match name, /name or engine/name.
+	// Match name or engine/name.
 	for _, volume := range volumes {
 		if volume.Name == name || volume.Engine.ID+"/"+volume.Name == name || volume.Engine.Name+"/"+volume.Name == name {
 			candidates = append(candidates, volume)
 		}
 	}
 
+	// Return if we found a unique match.
 	if size := len(candidates); size == 1 {
 		return candidates[0]
 	} else if size > 1 {
 		return nil
 	}
 
-	// Match name, /name or engine/name.
+	// Match /name and return as soon as we find one.
 	for _, volume := range volumes {
 		if volume.Name == "/"+name {
 			return volume
