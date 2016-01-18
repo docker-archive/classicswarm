@@ -145,7 +145,7 @@ func (e *Engine) Connect(config *tls.Config) error {
 	}
 	e.IP = addr.IP.String()
 
-	c, err := dockerclient.NewDockerClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout))
+	c, err := dockerclient.NewDockerClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), nil)
 	if err != nil {
 		return err
 	}
@@ -627,7 +627,13 @@ func (e *Engine) emitEvent(event string) {
 		Event: dockerclient.Event{
 			Status: event,
 			From:   "swarm",
-			Time:   time.Now().Unix(),
+			Type:   "swarm",
+			Action: event,
+			Actor: dockerclient.Actor{
+				Attributes: make(map[string]string),
+			},
+			Time:     time.Now().Unix(),
+			TimeNano: time.Now().UnixNano(),
 		},
 		Engine: e,
 	}
@@ -886,12 +892,12 @@ func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface
 	case "die", "kill", "oom", "pause", "start", "stop", "unpause", "rename":
 		// If the container state changes, we have to do an inspect in
 		// order to update container.Info and get the new NetworkSettings.
-		e.refreshContainer(ev.Id, true)
+		e.refreshContainer(ev.ID, true)
 		e.RefreshVolumes()
 		e.RefreshNetworks()
 	default:
 		// Otherwise, do a "soft" refresh of the container.
-		e.refreshContainer(ev.Id, false)
+		e.refreshContainer(ev.ID, false)
 		e.RefreshVolumes()
 		e.RefreshNetworks()
 	}

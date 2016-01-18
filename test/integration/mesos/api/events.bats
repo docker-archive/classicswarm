@@ -31,7 +31,7 @@ function teardown() {
 	# verify
 	run cat "$log_file"
 	[ "$status" -eq 0 ]
-	[[ "${output}" == *"node:node-0"* ]]
+	[[ "${output}" == *"node-0"* ]]
 	[[ "${output}" == *"create"* ]]
 	[[ "${output}" == *"start"* ]]
 	[[ "${output}" == *"die"* ]]

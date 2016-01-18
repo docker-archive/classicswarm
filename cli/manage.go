@@ -34,7 +34,7 @@ type logHandler struct {
 }
 
 func (h *logHandler) Handle(e *cluster.Event) error {
-	id := e.Id
+	id := e.ID
 	// Trim IDs to 12 chars.
 	if len(id) > 12 {
 		id = id[:12]
