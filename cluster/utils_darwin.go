@@ -1,12 +1,14 @@
 // +build darwin
 
-package dockerclient
+package cluster
 
 import (
 	"net"
 	"os"
 	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 )
 
 // setTCPUserTimeout sets TCP_RXT_CONNDROPTIME on darwin
