@@ -271,6 +271,11 @@ func (c *Cluster) validatePendingEngine(engine *cluster.Engine) bool {
 	c.Lock()
 	defer c.Unlock()
 
+	// Only validate engines from pendingEngines list
+	if _, exists := c.pendingEngines[engine.Addr]; !exists {
+		return false
+	}
+
 	// Make sure the engine ID is unique.
 	if old, exists := c.engines[engine.ID]; exists {
 		if old.Addr != engine.Addr {
