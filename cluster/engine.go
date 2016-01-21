@@ -239,7 +239,9 @@ func (e *Engine) TimeToValidate() bool {
 	}
 	sinceLastUpdate := time.Since(e.updatedAt)
 	// Increase check interval for a pending engine according to failureCount and cap it at a limit
-	if sinceLastUpdate > validationLimit || sinceLastUpdate > time.Duration(e.failureCount)*failureBackoff {
+	// '+1' would enforce a minimum backoff because e.failureCount could be 0 at first join, or
+	// the engine has a duplicate ID
+	if sinceLastUpdate > validationLimit || sinceLastUpdate > time.Duration(e.failureCount+1)*failureBackoff {
 		return true
 	}
 	return false
