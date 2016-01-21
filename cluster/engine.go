@@ -231,7 +231,7 @@ func (e *Engine) setState(state engineState) {
 // TimeToValidate returns true if a pending node is up for validation
 func (e *Engine) TimeToValidate() bool {
 	const validationLimit time.Duration = 4 * time.Hour
-	const failureBackoff time.Duration = 30 * time.Second
+	const minFailureBackoff time.Duration = 30 * time.Second
 	e.Lock()
 	defer e.Unlock()
 	if e.state != statePending {
@@ -239,7 +239,10 @@ func (e *Engine) TimeToValidate() bool {
 	}
 	sinceLastUpdate := time.Since(e.updatedAt)
 	// Increase check interval for a pending engine according to failureCount and cap it at a limit
-	if sinceLastUpdate > validationLimit || sinceLastUpdate > time.Duration(e.failureCount)*failureBackoff {
+	// it's exponential backoff = 2 ^ failureCount + minFailureBackoff. A minimum backoff is
+	// needed because e.failureCount could be 0 at first join, or the engine has a duplicate ID
+	if sinceLastUpdate > validationLimit ||
+		sinceLastUpdate > (1<<uint(e.failureCount))*time.Second+minFailureBackoff {
 		return true
 	}
 	return false
