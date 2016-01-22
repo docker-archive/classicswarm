@@ -219,7 +219,7 @@ func (t *Task) Monitor() (bool, []byte, error) {
 		return true, taskStatus.Data, nil
 	case mesosproto.TaskState_TASK_FAILED:
 		errorMessage := taskStatus.GetMessage()
-		if errorMessage == "Abnormal executor termination" {
+		if strings.Contains(errorMessage, "Abnormal executor termination") {
 			errorMessage += " : please verify your SWARM_MESOS_USER is correctly set"
 		}
 		return true, nil, errors.New(errorMessage)
