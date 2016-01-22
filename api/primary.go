@@ -70,6 +70,7 @@ var routes = map[string]map[string]handler{
 		"/containers/{name:.*}/restart":       proxyContainerAndForceRefresh,
 		"/containers/{name:.*}/start":         proxyContainerAndForceRefresh,
 		"/containers/{name:.*}/stop":          proxyContainerAndForceRefresh,
+		"/containers/{name:.*}/update":        proxyContainerAndForceRefresh,
 		"/containers/{name:.*}/wait":          proxyContainerAndForceRefresh,
 		"/containers/{name:.*}/resize":        proxyContainer,
 		"/containers/{name:.*}/attach":        proxyHijack,
