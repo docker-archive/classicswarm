@@ -338,12 +338,7 @@ func (c *Cluster) Networks() cluster.Networks {
 }
 
 // Volumes returns all the volumes in the cluster.
-func (c *Cluster) Volumes() []*cluster.Volume {
-	return nil
-}
-
-// Volume returns the volume name in the cluster
-func (c *Cluster) Volume(name string) *cluster.Volume {
+func (c *Cluster) Volumes() cluster.Volumes {
 	return nil
 }
 
