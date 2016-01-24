@@ -1,15 +1,15 @@
 <!--[metadata]>
 +++
-title = "Docker Swarm filters"
+title = "Filters"
 description = "Swarm filters"
 keywords = ["docker, swarm, clustering,  filters"]
 [menu.main]
-parent="smn_workw_swarm"
+parent="swarm_sched"
 weight=4
 +++
 <![end-metadata]-->
 
-# Filters
+# Swarm filters
 
 Filters tell Docker Swarm scheduler which nodes to use when creating and running
 a container.
@@ -505,4 +505,4 @@ without a container that satisfies `redis*`
 - [Docker Swarm overview](../index.md)
 - [Discovery options](../discovery.md)
 - [Scheduler strategies](strategy.md)
-- [Swarm API](../api/swarm-api.md)
+- [Swarm API](../swarm-api.md)

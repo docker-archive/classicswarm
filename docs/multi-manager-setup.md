@@ -1,10 +1,10 @@
 <!--[metadata]>
 +++
-title = "High availability in Docker Swarm"
-description = "High availability in Docker Swarm"
+title = "High availability in Swarm"
+description = "High availability in Swarm"
 keywords = ["docker, swarm,  clustering"]
 [menu.main]
-parent="smn_workw_swarm"
+parent="workw_swarm"
 weight=3
 +++
 <![end-metadata]-->
