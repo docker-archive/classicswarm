@@ -50,7 +50,8 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 					images = append(images, image.Id)
 					images = append(images, image.RepoTags...)
 					for _, tag := range image.RepoTags {
-						images = append(images, strings.Split(tag, ":")[0])
+						repo, _ := parseRepositoryTag(tag)
+						images = append(images, repo)
 					}
 				}
 				if affinity.Match(images...) {
