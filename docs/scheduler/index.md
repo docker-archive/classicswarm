@@ -1,10 +1,12 @@
 <!--[metadata]>
 +++
-title = "Docker Swarm Scheduling"
+title = "Scheduling"
 description = "Swarm: a Docker-native clustering system"
 keywords = ["docker, swarm, clustering, scheduling"]
 [menu.main]
-parent="smn_workw_swarm"
+identifier="swarm_sched"
+parent="workw_swarm"
+weight=80
 +++
 <![end-metadata]-->
 

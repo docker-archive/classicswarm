@@ -4,8 +4,7 @@ title = "Create a swarm for development"
 description = "Swarm: a Docker-native clustering system"
 keywords = ["docker, swarm,  clustering"]
 [menu.main]
-parent="smn_workw_swarm"
-weight=2
+parent="workw_swarm"
 +++
 <![end-metadata]-->
 
@@ -15,7 +14,7 @@ This section tells you how to create a Docker Swarm on your network to use only 
 
 > **Caution**: Only use this set up if your network environment is secured by a firewall or other measures.
 
-## Prerequisites 
+## Prerequisites
 
 You install Docker Swarm on a single system which is known as your Docker Swarm
 manager. You create the cluster, or swarm, on one or more additional nodes on
@@ -56,7 +55,7 @@ The easiest way to get started with Swarm is to use the
 1. Create a Swarm cluster using the `docker` command.
 
 		$ docker run --rm swarm create
-		6856663cdefdec325839a4b7e1de38e8 # 
+		6856663cdefdec325839a4b7e1de38e8 #
 
 	The `create` command returns a unique cluster ID (`cluster_id`). You'll need
 	this ID when starting the Docker Swarm agent on a node.
@@ -90,7 +89,7 @@ available in default docker installs.
 
 Once you have your nodes established, set up a manager to control the swarm.
 
-1. Start the Swarm manager on any machine or your laptop. 
+1. Start the Swarm manager on any machine or your laptop.
 
 	The following command illustrates how to do this:
 
@@ -124,7 +123,7 @@ Once you have your nodes established, set up a manager to control the swarm.
   In that case, be sure to unset `DOCKER_TLS_VERIFY` with:
 
     $ unset DOCKER_TLS_VERIFY
-  
+
 ## Using the docker CLI
 
 You can now use the regular Docker CLI to access your nodes:

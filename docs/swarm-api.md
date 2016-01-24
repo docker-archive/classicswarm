@@ -1,11 +1,12 @@
 <!--[metadata]>
 +++
+aliases = ["api/swarm-api/", "/swarm/api/"]
 title = "Docker Swarm API"
 description = "Swarm API"
 keywords = ["docker, swarm, clustering,  api"]
-aliases = ["/swarm/api/"]
 [menu.main]
-parent="smn_swarm_ref"
+parent="workw_swarm"
+weight=99
 +++
 <![end-metadata]-->
 
