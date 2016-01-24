@@ -1,15 +1,15 @@
 <!--[metadata]>
 +++
-title = "Docker Swarm strategies"
+title = "Strategies"
 description = "Swarm strategies"
 keywords = ["docker, swarm, clustering,  strategies"]
 [menu.main]
-parent="smn_workw_swarm"
+parent="swarm_sched"
 weight=5
 +++
 <![end-metadata]-->
 
-# Strategies
+# Docker Swarm strategies
 
 The Docker Swarm scheduler features multiple strategies for ranking nodes. The
 strategy you choose determines how Swarm computes ranking. When you run a new
@@ -125,4 +125,4 @@ strategy prefers the node with most containers.
 - [Docker Swarm overview](../index.md)
 - [Discovery options](../discovery.md)
 - [Scheduler filters](filter.md)
-- [Swarm API](../api/swarm-api.md)
+- [Swarm API](../swarm-api.md)

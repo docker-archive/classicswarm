@@ -1,15 +1,14 @@
 <!--[metadata]>
 +++
-title = "Docker Swarm Networking"
-description = "Swarm Networking"
+title = "Swarm and container networks"
+description = "Swarm and container networks"
 keywords = ["docker, swarm, clustering,  networking"]
 [menu.main]
-parent="smn_workw_swarm"
-weight=4
+parent="workw_swarm"
 +++
 <![end-metadata]-->
 
-# Networking
+# Swarm and container networks
 
 Docker Swarm is fully compatible with Docker's networking features. This
 includes the multi-host networking feature which allows creation of custom
@@ -133,4 +132,4 @@ from `node-0`.
 - [Docker Swarm overview](index.md)
 - [Scheduler strategies](scheduler/strategy.md)
 - [Scheduler filters](scheduler/filter.md)
-- [Swarm API](api/swarm-api.md)
+- [Swarm API](swarm-api.md)
