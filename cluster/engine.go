@@ -369,7 +369,9 @@ func (e *Engine) updateSpecs() error {
 	// Older versions of Docker don't expose the ID field, Labels and are not supported
 	// by Swarm.  Catch the error ASAP and refuse to connect.
 	if engineVersion.LessThan(minSupportedVersion) {
-		return fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade to at least %s", e.Addr, minSupportedVersion)
+		err = fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade to at least %s", e.Addr, minSupportedVersion)
+		e.CheckConnectionErr(err)
+		return err
 	}
 
 	e.Lock()
