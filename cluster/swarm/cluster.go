@@ -825,7 +825,7 @@ func (c *Cluster) Info() [][]string {
 	info := [][]string{
 		{"\bStrategy", c.scheduler.Strategy()},
 		{"\bFilters", c.scheduler.Filters()},
-		{"\bNodes", fmt.Sprintf("%d", len(c.engines))},
+		{"\bNodes", fmt.Sprintf("%d", len(c.engines)+len(c.pendingEngines))},
 	}
 
 	engines := c.listEngines()
