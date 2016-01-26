@@ -1,12 +1,10 @@
 <!--[metadata]>
 +++
-title = "Docker Swarm"
+title = "Install and use Swarm"
 description = "Swarm release notes"
 keywords = ["docker, swarm, clustering, discovery, release,  notes"]
 [menu.main]
-identifier="swm_install"
-parent="mn_install"
-weight=9
+parent="workw_swarm"
 +++
 <![end-metadata]-->
 
