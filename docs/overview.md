@@ -11,62 +11,59 @@ weight=-99
 
 # Docker Swarm overview
 
-Docker Swarm is native clustering for Docker. It turns a pool of Docker hosts
-into a single, virtual Docker host. Because Docker Swarm serves the standard
-Docker API, any tool that already communicates with a Docker daemon can use
-Swarm to transparently scale to multiple hosts. Supported tools include, but
-are not limited to, the following:
+Docker Swarm is native clustering for Docker. You can use it to create a single virtual Docker host from a pool of Docker hosts.
 
-- Dokku
-- Docker Compose
-- Krane
-- Jenkins
+To scale up and run more containers, add more nodes to your Swarm cluster. In production, a Swarm cluster can have 1,000 nodes running 50,000 containers with no performance degradation.
 
-And of course, the Docker client itself is also supported.
+Docker tools are compatible with Swarm. Because the Docker Swarm API is based on the standard Docker Remote API, tools that communicate with a Docker host work with Docker Swarm. These tools include Dokku, Docker Compose, Krane, Flynn, Deis, DockerUI, Shipyard, Drone, Jenkins, the Docker client, and others.
 
 Like other Docker projects, Docker Swarm follows the "swap, plug, and play"
-principle. As initial development settles, an API will develop to enable
-pluggable backends.  This means you can swap out the scheduling backend
-Docker Swarm uses out-of-the-box with a backend you prefer. Swarm's swappable design provides a smooth out-of-box experience for most use cases, and allows large-scale production deployments to swap for more powerful backends, like Mesos.
+principle by supporting pluggable backends. For example, on a large-scale Swarm cluster, you can use Apache Mesos to do scheduling instead of Swarm's built-in tools.
 
-## Understand swarm creation
+## Understand Swarm creation
 
-The first step to creating a swarm on your network is to pull the Docker Swarm image. Then, using Docker, you configure the swarm manager and all the nodes to run Docker Swarm. This method requires that you:
+There are different ways to create a Swarm cluster. This is a simple high-level
+description of how to do it.
 
-* open a TCP port on each node for communication with the swarm manager
-* install Docker on each node
-* create and manage TLS certificates to secure your swarm
+On a Docker Engine host, use the `docker run swarm create` command to get a token from the discovery backend. When you create Swarm managers and nodes later on, you use this token to authenticate each one as a member of your cluster.
 
-As a starting point, the manual method is best suited for experienced administrators or programmers contributing to Docker Swarm. The alternative is to use `docker-machine` to install a swarm.
+Then use the `docker swarm create` command to create a Swarm manager and multiple Swarm nodes. For high availability, create an odd number of managers, and put each one on a dedicated host.
 
-Using Docker Machine, you can quickly install a Docker Swarm on cloud providers or inside your own data center. If you have VirtualBox installed on your local machine, you can quickly build and explore Docker Swarm in your local environment. This method automatically generates a certificate to secure your swarm.
+When you create managers and nodes using the discovery token, each one registers with the discovery backend as a member of your Swarm cluster. The discovery service keeps a current list of each cluster member, and shares this information with the managers.
 
-Using Docker Machine is the best method for users getting started with Swarm for the first time. To try the recommended method of getting started, see [Get Started with Docker Swarm](install-w-machine.md).
+Also, when you create Swarm managers and nodes on different hosts, you enable and configure the TCP ports so the managers can communicate directly with each node.
 
-If you are interested manually installing or interested in contributing, see [Create a swarm for development](install-manual.md).
+To manage the Swarm cluster, connect to the Swarm manager using your Docker Client or any other software that works with the Docker API. Then, start running containers on your Swarm like you would on any Docker Engine.
+
+## Docker Machine
+You can use Docker Machine to set up a Docker Swarm on your computer, cloud service provider, or data center.
+
+If you're running Windows or Mac OS X, get Docker Machine and VirtualBox by installing Docker Toolbox. Then, you can use Machine to build and explore a Docker Swarm on your computer. This is the best way to [get started with Swarm for the first time](install-w-machine.md).
+
+If you're interested, you can also [manually install Swarm and contribute to the Swarm project](install-manual.md).
 
 ## Discovery services
 
-To dynamically configure and manage the services in your containers, you use a discovery backend with Docker Swarm. For information on which backends are available, see the [Discovery service](discovery.md) documentation.
+To keep track of the managers and nodes in a cluster, Docker Swarm needs a discovery backend. By default, Swarm uses the free tier of Docker Hub's discovery service. ***Only use this tier for low volume purposes. For high-volume production clusters, you must choose and set up one of [these discovery service backends](discovery.md).***
 
-## Advanced Scheduling
+## Advanced scheduling
 
-To learn more about advanced scheduling, see the
+When the Swarm gets your command to run a container, it assigns the container to one of the nodes and runs it there. By default, the Swarm uses the `spread` strategy, which sends containers to the node that has the most CPU and RAM *available* at that moment. For more control over scheduling, see the
 [strategies](scheduler/strategy.md) and [filters](scheduler/filter.md)
-documents.
+topics.
 
 ## Swarm API
 
-The [Docker Swarm API](swarm-api.md) is compatible with
-the [Docker remote
-API](http://docs.docker.com/reference/api/docker_remote_api/), and extends it
+The [Docker Swarm API](api/swarm-api.md) is compatible with
+the [Docker Remote
+API](http://docs.docker.com/reference/api/docker_remote_api/) and extends it
 with some new endpoints.
 
 # Getting help
 
-Docker Swarm is still in its infancy and under active development. If you need
-help, would like to contribute, or simply want to talk about the project with
-like-minded individuals, we have a number of open channels for communication.
+Docker Swarm is under active development. If you need help, would like to
+contribute, or simply want to talk about the project with like-minded
+individuals, we have some open channels for communication.
 
 * To report bugs or file feature requests: please use the [issue tracker on Github](https://github.com/docker/swarm/issues).
 
