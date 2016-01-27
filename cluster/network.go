@@ -65,7 +65,7 @@ func (networks Networks) Get(IDOrName string) *Network {
 		}
 	}
 
-	candidates := []*Network{}
+	candidates := Networks{}
 
 	// Match name or engine/name.
 	for _, network := range networks {
@@ -75,7 +75,7 @@ func (networks Networks) Get(IDOrName string) *Network {
 	}
 
 	// Return if we found a unique match.
-	if size := len(candidates); size == 1 {
+	if size := len(candidates.Uniq()); size == 1 {
 		return candidates[0]
 	} else if size > 1 {
 		return nil
@@ -95,7 +95,7 @@ func (networks Networks) Get(IDOrName string) *Network {
 		}
 	}
 
-	if len(candidates) == 1 {
+	if len(candidates.Uniq()) == 1 {
 		return candidates[0]
 	}
 
