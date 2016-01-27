@@ -69,7 +69,7 @@ type Cluster interface {
 
 	// Return some info about the cluster, like nb or containers / images
 	// It is pretty open, so the implementation decides what to return.
-	Info() [][]string
+	Info() [][2]string
 
 	// Return the total memory of the cluster
 	TotalMemory() int64

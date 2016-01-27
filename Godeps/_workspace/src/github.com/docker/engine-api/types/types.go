@@ -142,6 +142,7 @@ type Container struct {
 	SizeRw     int64 `json:",omitempty"`
 	SizeRootFs int64 `json:",omitempty"`
 	Labels     map[string]string
+	State      string
 	Status     string
 	HostConfig struct {
 		NetworkMode string `json:",omitempty"`
@@ -192,9 +193,13 @@ type Version struct {
 type Info struct {
 	ID                 string
 	Containers         int
+	ContainersRunning  int
+	ContainersPaused   int
+	ContainersStopped  int
 	Images             int
 	Driver             string
 	DriverStatus       [][2]string
+	SystemStatus       [][2]string
 	Plugins            PluginsInfo
 	MemoryLimit        bool
 	SwapLimit          bool
@@ -219,8 +224,6 @@ type Info struct {
 	Architecture       string
 	IndexServerAddress string
 	RegistryConfig     *registry.ServiceConfig
-	InitSha1           string
-	InitPath           string
 	NCPU               int
 	MemTotal           int64
 	DockerRootDir      string
@@ -385,6 +388,7 @@ type NetworkResource struct {
 	Scope      string
 	Driver     string
 	IPAM       network.IPAM
+	Internal   bool
 	Containers map[string]EndpointResource
 	Options    map[string]string
 }
@@ -404,6 +408,7 @@ type NetworkCreate struct {
 	CheckDuplicate bool
 	Driver         string
 	IPAM           network.IPAM
+	Internal       bool
 	Options        map[string]string
 }
 
@@ -416,7 +421,7 @@ type NetworkCreateResponse struct {
 // NetworkConnect represents the data to be used to connect a container to the network
 type NetworkConnect struct {
 	Container      string
-	EndpointConfig *network.EndpointSettings `json:"endpoint_config"`
+	EndpointConfig *network.EndpointSettings `json:",omitempty"`
 }
 
 // NetworkDisconnect represents the data to be used to disconnect a container from the network
