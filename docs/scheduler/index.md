@@ -6,7 +6,7 @@ keywords = ["docker, swarm, clustering, scheduling"]
 [menu.main]
 identifier="swarm_sched"
 parent="workw_swarm"
-weight=80
+weight=5
 +++
 <![end-metadata]-->
 

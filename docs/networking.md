@@ -5,6 +5,7 @@ description = "Swarm and container networks"
 keywords = ["docker, swarm, clustering,  networking"]
 [menu.main]
 parent="workw_swarm"
+weight=3
 +++
 <![end-metadata]-->
 
