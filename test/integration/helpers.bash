@@ -85,7 +85,7 @@ function wait_until_reachable() {
 	retry 15 1 docker -H $1 info
 }
 
-# Returns true if all nodes have joined the swarm.
+# Returns true if all nodes have been added to swarm. Note some may be in pending state.
 function discovery_check_swarm_info() {
 	local total="$1"
 	[ -z "$total" ] && total="${#HOSTS[@]}"
@@ -95,6 +95,12 @@ function discovery_check_swarm_info() {
 	retry 10 1 eval "docker -H $host info | grep -q -e \"Nodes: $total\" -e \"Offers: $total\""
 }
 
+# Return true if all nodes has been validated
+function nodes_validated() {
+	# Nodes are not in Pending state
+	[[ $(docker_swarm info | grep -c "Status: Pending") -eq 0 ]]
+}
+
 function swarm_manage() {
 	local i=${#SWARM_MANAGE_PID[@]}
 
@@ -102,6 +108,9 @@ function swarm_manage() {
 
 	# Wait for nodes to be discovered
 	discovery_check_swarm_info "${#HOSTS[@]}" "${SWARM_HOSTS[$i]}"
+
+	# All nodes passes pending state
+	retry 5 1 nodes_validated
 }
 
 # Start the swarm manager in background.
