@@ -327,8 +327,8 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	// Filtering: select the containers we want to return.
 	candidates := []*cluster.Container{}
 	for _, container := range c.cluster.Containers() {
-		// Skip stopped containers unless -a was specified.
-		if !container.Info.State.Running && !all && before == nil && limit <= 0 {
+		// Skip stopped containers unless -a was specified
+		if (!container.Info.State.Running || !container.Engine.IsHealthy()) && !all && before == nil && limit <= 0 {
 			continue
 		}
 
