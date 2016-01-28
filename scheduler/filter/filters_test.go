@@ -63,7 +63,10 @@ func TestApplyFilters(t *testing.T) {
 
 	//Tests for Soft affinity, it should be considered as last
 	config := cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==~image-0:tag3"}})
-	result, err = ApplyFilters(filters, config, nodes)
+	result, err = ApplyFilters(filters, config, nodes, true)
+	assert.Error(t, err)
+	assert.Len(t, result, 0)
+	result, err = ApplyFilters(filters, config, nodes, false)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 
