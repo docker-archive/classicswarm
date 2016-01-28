@@ -159,6 +159,10 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("env"), Value: proto.String(value)})
 	}
 
+	if !t.config.AttachStdin && !t.config.AttachStdout && !t.config.AttachStderr {
+		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("label"), Value: proto.String(fmt.Sprintf("%s=true", cluster.SwarmLabelNamespace+".mesos.detach"))})
+	}
+
 	t.SlaveId = &mesosproto.SlaveID{Value: &slaveID}
 }
 
