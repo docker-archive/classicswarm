@@ -54,17 +54,7 @@ func New(names []string) ([]Filter, error) {
 }
 
 // ApplyFilters applies a set of filters in batch.
-func ApplyFilters(filters []Filter, config *cluster.ContainerConfig, nodes []*node.Node) ([]*node.Node, error) {
-	candidates, err := applyFilters(filters, config, nodes, true)
-
-	if err != nil {
-		candidates, err = applyFilters(filters, config, nodes, false)
-	}
-
-	return candidates, err
-}
-
-func applyFilters(filters []Filter, config *cluster.ContainerConfig, nodes []*node.Node, soft bool) ([]*node.Node, error) {
+func ApplyFilters(filters []Filter, config *cluster.ContainerConfig, nodes []*node.Node, soft bool) ([]*node.Node, error) {
 	var (
 		err        error
 		candidates = nodes
