@@ -18,6 +18,7 @@ type context struct {
 	statusHandler StatusHandler
 	debug         bool
 	tlsConfig     *tls.Config
+	apiVersion    string
 }
 
 type handler func(c *context, w http.ResponseWriter, r *http.Request)
@@ -149,11 +150,12 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 				if enableCors {
 					writeCorsHeaders(w, r)
 				}
+				context.apiVersion = mux.Vars(r)["version"]
 				localFct(context, w, r)
 			}
 			localMethod := method
 
-			r.Path("/v{version:[0-9.]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
+			r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
 			r.Path(localRoute).Methods(localMethod).HandlerFunc(wrap)
 
 			if enableCors {
@@ -169,7 +171,7 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 					localFct(context, w, r)
 				}
 
-				r.Path("/v{version:[0-9.]+}" + localRoute).
+				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
 					Methods(optionsMethod).HandlerFunc(wrap)
 				r.Path(localRoute).Methods(optionsMethod).
 					HandlerFunc(wrap)
