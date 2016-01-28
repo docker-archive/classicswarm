@@ -76,12 +76,13 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 		newContainer, err := w.cluster.CreateContainer(c.Config, c.Info.Name, nil)
 
 		if err != nil {
-			log.Errorf("Failed to reschedule container %s (Swarm ID: %s): %v", c.Id, c.Config.SwarmID(), err)
+			log.Errorf("Failed to reschedule container %s: %v", c.Id, err)
 			// add the container back, so we can retry later
 			c.Engine.AddContainer(c)
 		} else {
-			log.Infof("Rescheduled container %s from %s to %s as %s (Swarm ID: %s)", c.Id, c.Engine.ID, newContainer.Engine.ID, newContainer.Id, c.Config.SwarmID())
+			log.Infof("Rescheduled container %s from %s to %s as %s", c.Id, c.Engine.Name, newContainer.Engine.Name, newContainer.Id)
 			if c.Info.State.Running {
+				log.Infof("Container %s was running, starting container %s", c.Id, newContainer.Id)
 				if err := newContainer.Start(); err != nil {
 					log.Errorf("Failed to start rescheduled container %s", newContainer.Id)
 				}
