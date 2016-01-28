@@ -38,6 +38,10 @@ func (w *Watchdog) removeDuplicateContainers(e *Engine) {
 	defer w.Unlock()
 
 	for _, container := range e.Containers() {
+		// skip non-swarm containers
+		if container.Config.SwarmID() == "" {
+			continue
+		}
 
 		for _, containerInCluster := range w.cluster.Containers() {
 			if containerInCluster.Config.SwarmID() == container.Config.SwarmID() && containerInCluster.Engine.ID != container.Engine.ID {
