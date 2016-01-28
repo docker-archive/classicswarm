@@ -823,32 +823,32 @@ func (c *Cluster) TotalCpus() int64 {
 // Info returns some info about the cluster, like nb or containers / images
 func (c *Cluster) Info() [][2]string {
 	info := [][2]string{
-		{"\bStrategy", c.scheduler.Strategy()},
-		{"\bFilters", c.scheduler.Filters()},
-		{"\bNodes", fmt.Sprintf("%d", len(c.engines)+len(c.pendingEngines))},
+		{"Strategy", c.scheduler.Strategy()},
+		{"Filters", c.scheduler.Filters()},
+		{"Nodes", fmt.Sprintf("%d", len(c.engines)+len(c.pendingEngines))},
 	}
 
 	engines := c.listEngines()
 	sort.Sort(cluster.EngineSorter(engines))
 
 	for _, engine := range engines {
-		info = append(info, [2]string{engine.Name, engine.Addr})
-		info = append(info, [2]string{" └ Status", engine.Status()})
-		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
-		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
-		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
+		info = append(info, [2]string{" " + engine.Name, engine.Addr})
+		info = append(info, [2]string{"  └ Status", engine.Status()})
+		info = append(info, [2]string{"  └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
+		info = append(info, [2]string{"  └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
+		info = append(info, [2]string{"  └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
 		labels := make([]string, 0, len(engine.Labels))
 		for k, v := range engine.Labels {
 			labels = append(labels, k+"="+v)
 		}
 		sort.Strings(labels)
-		info = append(info, [2]string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
+		info = append(info, [2]string{"  └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
 		errMsg := engine.ErrMsg()
 		if len(errMsg) == 0 {
 			errMsg = "(none)"
 		}
-		info = append(info, [2]string{" └ Error", errMsg})
-		info = append(info, [2]string{" └ UpdatedAt", engine.UpdatedAt().UTC().Format(time.RFC3339)})
+		info = append(info, [2]string{"  └ Error", errMsg})
+		info = append(info, [2]string{"  └ UpdatedAt", engine.UpdatedAt().UTC().Format(time.RFC3339)})
 	}
 
 	return info
