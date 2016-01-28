@@ -26,6 +26,9 @@ type Cluster interface {
 	// Return all containers
 	Containers() Containers
 
+	// Start a container
+	StartContainer(container *Container) error
+
 	// Return container the matching `IDOrName`
 	// TODO: remove this method from the interface as we can use
 	// cluster.Containers().Get(IDOrName)
