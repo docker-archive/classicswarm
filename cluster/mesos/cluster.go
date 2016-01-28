@@ -408,17 +408,17 @@ func (c *Cluster) TotalCpus() int64 {
 func (c *Cluster) Info() [][2]string {
 	offers := c.listOffers()
 	info := [][2]string{
-		{"\bStrategy", c.scheduler.Strategy()},
-		{"\bFilters", c.scheduler.Filters()},
-		{"\bOffers", fmt.Sprintf("%d", len(offers))},
+		{"Strategy", c.scheduler.Strategy()},
+		{"Filters", c.scheduler.Filters()},
+		{"Offers", fmt.Sprintf("%d", len(offers))},
 	}
 
 	sort.Sort(offerSorter(offers))
 
 	for _, offer := range offers {
-		info = append(info, [2]string{" Offer", offer.Id.GetValue()})
+		info = append(info, [2]string{"  Offer", offer.Id.GetValue()})
 		for _, resource := range offer.Resources {
-			info = append(info, [2]string{"  └ " + resource.GetName(), formatResource(resource)})
+			info = append(info, [2]string{"   └ " + resource.GetName(), formatResource(resource)})
 		}
 	}
 
