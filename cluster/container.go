@@ -21,11 +21,6 @@ func (c *Container) Refresh() (*Container, error) {
 	return c.Engine.refreshContainer(c.Id, true)
 }
 
-// Start a container
-func (c *Container) Start() error {
-	return c.Engine.client.StartContainer(c.Id, nil)
-}
-
 // Containers represents a list a containers
 type Containers []*Container
 

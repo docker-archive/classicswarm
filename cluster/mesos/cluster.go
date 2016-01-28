@@ -177,6 +177,15 @@ func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 	c.eventHandlers.UnregisterEventHandler(h)
 }
 
+// StartContainer starts a container
+func (c *Cluster) StartContainer(container *cluster.Container) error {
+	// if the container was started less than a second ago in detach mode, do not start it
+	if time.Now().Unix()-container.Created > 1 || container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.detach"] != "true" {
+		return container.Engine.StartContainer(container.Id)
+	}
+	return nil
+}
+
 // CreateContainer for container creation in Mesos task
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
 	if config.Memory == 0 && config.CpuShares == 0 {

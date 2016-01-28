@@ -973,6 +973,19 @@ func (e *Engine) cleanupContainers() {
 	e.Unlock()
 }
 
+// StartContainer starts a container
+func (e *Engine) StartContainer(id string) error {
+	err := e.client.StartContainer(id, nil)
+	e.CheckConnectionErr(err)
+	if err != nil {
+		return err
+	}
+
+	// refresh container
+	_, err = e.refreshContainer(id, true)
+	return err
+}
+
 // RenameContainer rename a container
 func (e *Engine) RenameContainer(container *Container, newName string) error {
 	// send rename request
