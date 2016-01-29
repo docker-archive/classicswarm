@@ -153,6 +153,23 @@ func (e *Engine) Connect(config *tls.Config) error {
 	return e.ConnectWithClient(c)
 }
 
+// StartMonitorEvents monitors events from the engine
+func (e *Engine) StartMonitorEvents() {
+	log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Debug("Start monitoring events")
+	ec := make(chan error)
+	e.client.StartMonitorEvents(e.handler, ec)
+
+	go func() {
+		if err := <-ec; err != nil && err.Error() != "EOF" {
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Error monitoring events: %s", err)
+		} else if err != nil {
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Debug("EOF monitoring events, restarting")
+			e.StartMonitorEvents()
+		}
+		close(ec)
+	}()
+}
+
 // ConnectWithClient is exported
 func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 	e.client = client
@@ -162,8 +179,7 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 		return err
 	}
 
-	// Start monitoring events from the engine.
-	e.client.StartMonitorEvents(e.handler, nil)
+	e.StartMonitorEvents()
 
 	// Force a state update before returning.
 	if err := e.RefreshContainers(true); err != nil {
@@ -621,7 +637,7 @@ func (e *Engine) refreshLoop() {
 				continue
 			}
 			e.client.StopAllMonitorEvents()
-			e.client.StartMonitorEvents(e.handler, nil)
+			e.StartMonitorEvents()
 		}
 
 		err = e.RefreshContainers(false)
