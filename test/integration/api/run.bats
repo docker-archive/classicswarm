@@ -101,6 +101,17 @@ function teardown() {
 	[[ "${output}" == *"\"StopSignal\": \"SIGKILL\""* ]]
 }
 
+@test "docker run --ip" {
+      start_docker_with_busybox 1
+      swarm_manage
+
+      docker_swarm network create -d bridge --subnet 10.0.0.0/24 testn
+
+      docker_swarm run --name testc --net testn -d --ip 10.0.0.42 busybox sh
+      run docker_swarm inspect testc
+      [[ "${output}" == *"10.0.0.42"* ]]
+}
+
 @test "docker run - reschedule with image affinity" {
 	start_docker_with_busybox 1
 	start_docker 1
