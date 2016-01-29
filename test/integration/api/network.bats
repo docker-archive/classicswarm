@@ -94,3 +94,57 @@ function teardown() {
 	run docker_swarm network inspect node-0/bridge
 	[[ "${output}" == *"\"Containers\": {}"* ]]
 }
+
+@test "docker network connect --ip" {
+	# docker network connect --ip is introduced in docker 1.10, skip older version without --ip
+	run docker network connect --help
+	if [[ "${output}" != *"--ip"* ]]; then
+		skip
+	fi
+
+	start_docker_with_busybox 1
+	swarm_manage
+
+	docker_swarm network create -d bridge --subnet 10.0.0.0/24 testn
+
+	run docker_swarm network inspect testn
+	[[ "${output}" == *"\"Containers\": {}"* ]]
+
+	# run
+	docker_swarm run -d --name test_container  busybox sleep 100
+
+	docker_swarm network connect --ip 10.0.0.42 testn test_container
+
+	run docker_swarm inspect test_container
+	[[ "${output}" == *"10.0.0.42"* ]]
+
+	run docker_swarm network inspect testn
+	[[ "${output}" != *"\"Containers\": {}"* ]]
+}
+
+@test "docker network connect --alias" {
+	# docker network connect --alias is introduced in docker 1.10, skip older version without --alias
+	run docker network connect --help
+	if [[ "${output}" != *"--alias"* ]]; then
+		skip
+	fi
+
+	start_docker_with_busybox 1
+	swarm_manage
+
+	docker_swarm network create -d bridge testn
+
+	run docker_swarm network inspect testn
+	[[ "${output}" == *"\"Containers\": {}"* ]]
+
+	# run
+	docker_swarm run -d --name test_container  busybox sleep 100
+
+	docker_swarm network connect --alias testa testn test_container
+
+	run docker_swarm inspect test_container
+	[[ "${output}" == *"testa"* ]]
+
+	run docker_swarm network inspect testn
+	[[ "${output}" != *"\"Containers\": {}"* ]]
+}
