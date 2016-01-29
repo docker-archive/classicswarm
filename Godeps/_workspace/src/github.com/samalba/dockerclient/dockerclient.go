@@ -503,7 +503,7 @@ func (client *DockerClient) StartMonitorEvents(cb Callback, ec chan error, args 
 		for e := range eventErrChan {
 			if e.Error != nil {
 				if ec != nil {
-					ec <- err
+					ec <- e.Error
 				}
 				return
 			}
