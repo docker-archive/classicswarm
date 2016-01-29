@@ -11,10 +11,10 @@ containers on a Mesos cluster.
 
 ## Prerequisites
 
-Each node in your swarm must run a Mesos slave. The slave must be capable of
+Each node in your swarm must run a Mesos agent. The agent must be capable of
 starting tasks in a Docker Container using the `--containerizers=docker` option.
 
-You need to configure two TCP ports on the slave. One port to listen for the
+You need to configure two TCP ports on the agent. One port to listen for the
 swarm manager, for example 2375. And a second TCP port to listen for the Mesos
 master, for example 3375.
 
