@@ -36,6 +36,13 @@ Docker engine as registered. To workaround this problem, you can generate a new
 ID for each node with affected by this issue. To do this stop the daemon on a node,
 delete its `/etc/docker/key.json` file, and restart the daemon.
 
+If you use `ssh` to start the Engine `daemon`, make sure the daemon runs in the
+background. You can do this using `disown` or `nohup` in combination with the `&`
+(ampersand). Or you could launch the `daemon` through `systemd` or any other
+Linux-distribution-specific method. Regardless of which launch method you
+choose, make sure the daemon process does not stop when your session on a node
+ends.
+
 You can run Docker Swarm on Linux 64-bit architectures. You can also install and
 run it on 64-bit Windows and Max OSX but these architectures are *not* regularly
 tested for compatibility.
