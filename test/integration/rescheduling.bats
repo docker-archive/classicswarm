@@ -67,6 +67,9 @@ function teardown() {
 	run docker_swarm inspect c3
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
+
+	run docker_swarm ps -q
+	[ "${#lines[@]}" -eq  2 ]
 }
 
 @test "rescheduling with constraints" {
