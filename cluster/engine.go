@@ -721,10 +721,10 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 	e.RefreshVolumes()
 	e.RefreshNetworks()
 
-	e.RLock()
-	defer e.RUnlock()
-
+	e.Lock()
 	container := e.containers[id]
+	e.Unlock()
+
 	if container == nil {
 		err = errors.New("Container created but refresh didn't report it back")
 	}
