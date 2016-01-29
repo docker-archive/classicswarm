@@ -110,7 +110,7 @@ function swarm_manage() {
 	discovery_check_swarm_info "${#HOSTS[@]}" "${SWARM_HOSTS[$i]}"
 
 	# All nodes passes pending state
-	retry 5 1 nodes_validated
+	retry 15 1 nodes_validated
 }
 
 # Start the swarm manager in background.
