@@ -85,3 +85,37 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved CPUs: 0"* ]]
 }
+
+@test "strategy spread" {
+	start_docker_with_busybox 2
+	swarm_manage --strategy spread ${HOSTS[0]},${HOSTS[1]}
+
+	docker_swarm run --name container_test1 -c 1 busybox sh
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved CPUs: 1"* ]]
+	[[ "${output}" == *"Reserved CPUs: 0"* ]]
+
+	docker_swarm run --name container_test2 -c 1 busybox sh
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved CPUs: 1"* ]]
+	[[ "${output}" != *"Reserved CPUs: 0"* ]]
+}
+
+@test "strategy binpack" {
+	start_docker_with_busybox 2
+	swarm_manage --strategy binpack ${HOSTS[0]},${HOSTS[1]}
+
+	docker_swarm run --name container_test1 -c 1 busybox sh
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved CPUs: 1"* ]]
+	[[ "${output}" == *"Reserved CPUs: 0"* ]]
+
+	docker_swarm run --name container_test2 -c 1 busybox sh
+	run docker_swarm info
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"Reserved CPUs: 2"* ]]
+	[[ "${output}" == *"Reserved CPUs: 0"* ]]
+}
