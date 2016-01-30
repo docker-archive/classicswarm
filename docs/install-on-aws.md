@@ -46,10 +46,6 @@ For a gentler introduction to Swarm, try the [Swarm get started (novice)](https:
 
     Name it something like "AL-AMI running Docker Engine 1.10".
 
-## Create three instances for an etcd discovery backend
-
-<Use information from https://coreos.com/etcd/docs/2.0.9/docker_guide.html#running-a-3-node-etcd-cluster>
-
 ## Create two instances for Swarm managers
 
 In the EC2 Dashboard, click *Launch Instance*.
@@ -72,6 +68,7 @@ On *Step 6: Configure Security Group*, Use `Create a new security group` to crea
 | HTTP             | TCP        | 80         | 0.0.0.0/0     |
 | Custom TCP Rule  | TCP        | 2375       | 172.30.0.0/24 |
 | Custom TCP Rule  | TCP        | 3375       | 172.30.0.0/24 |
+| Custom TCP Rule  | TCP        | 4000       | 172.30.0.0/24 |
 
 Then, launch the instances!
 
@@ -126,6 +123,16 @@ To start, copy each of the following etcd launch commands to a text document. Re
 
 When you've finished editing the following launch commands, connect to each  instance and use the command to launch an etcd node.
 
+Use can use other discovery backends, The etcd backend is just one of the discovery backends you can use  backend. For more information, see the [https://docs.docker.com/swarm/discovery/](Discovery) topic. Here is a list of the alternative discovery syntax to use in the following commands.
+
+        token://<token>
+        consul://<ip>/<path>
+        etcd://<ip1>,<ip2>/<path>
+        file://path/to/file
+        zk://<ip1>,<ip2>/<path>
+        [nodes://]<ip1>,<ip2>
+
+
 ### etcd0 launch command
 
         docker run -d -p 4001:4001 -p 2380:2380 -p 2379:2379 --name etcd quay.io/coreos/etcd:v2.0.3 \
@@ -168,18 +175,34 @@ When you've finished editing the following launch commands, connect to each  ins
 
 Connect to each of the instances named "Swarm manager" using SSH.
 
-Start the Swarm manager.
+To start a solo Swarm manager.
 
-        docker run -d -p <manager_port>:2375 swarm manage etcd://<ip1>,<ip2>/<path>
+        docker run -d -p <manager_port>:2375 swarm manage etcd://<ip1>,<ip2>,<ip2>
 
 
-The manager is exposed and listening on `<manager_port>`.
+Where `<manager_port>`is the port number the manager is listening on, and `<ip1>,<ip2>,<ip2>` are the IP addresses of the etcd servers. For example:
+
+        docker run -d -p 54.86.51.147:2375 swarm manage etcd://54.164.42.72:2380,54.172.65.234:2380,54.165.237.251:2380
+
+To start the primary manager in a high-availability Swarm cluster use the `--replication` and `--advertise` flags, like this:
+
+        docker swarm manage -H :4000 <tls-config-flags> --replication --advertise <manager1_ip_address>:4000 etcd://<ip1>,<ip2>,<ip2>
+
+For example:
+
+        docker swarm manage -H :4000 --replication --advertise 54.86.51.147:4000  etcd://54.164.42.72:2380,54.172.65.234:2380,54.165.237.251:2380
+        INFO[0000] Listening for HTTP addr=:4000 proto=tcp
+        INFO[0000] Cluster leadership acquired
+        INFO[0000] New leader elected: 192.168.42.200:4000
+        [...]
+
+<We need to clarify the other differences in syntax - and the use of port 4000 versus 2375 >
 
 Check your configuration by running `docker info` as follows:
 
-		docker -H tcp://<manager_ip:manager_port> info
+		docker -H tcp://<manager_ip_address>:manager_port> info
 
-	For example, if you run the manager locally on your machine:
+For example, if you run the manager locally on your machine:
 
 		$ docker -H tcp://0.0.0.0:2375 info
 		Containers: 0
@@ -203,6 +226,8 @@ Check your configuration by running `docker info` as follows:
 
 <update procedure to use TLS>    
 
+
+#####OPEN ITEMS _ REMOVE THIS SECTION
 ### Talk about ports
 Open ports
 Talk about port options
