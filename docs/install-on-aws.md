@@ -32,7 +32,7 @@ For a gentler introduction to Swarm, try the [Swarm get started (novice)](https:
 
 1. Log in to your Amazon AWS account and open the Home Console.
 
-2. Open the EC2 Dashboard, create an instance using the *Amazon Linux AMI*.
+2. Open the EC2 Dashboard and create an instance using the *Amazon Linux AMI*.
 
 4. Connect to the instance using SSH.
 
@@ -198,42 +198,26 @@ For example:
 
 <We need to clarify the other differences in syntax - and the use of port 4000 versus 2375 >
 
-Check your configuration by running `docker info` as follows:
 
-		docker -H tcp://<manager_ip_address>:manager_port> info
+#####OPEN ITEMS _ REVISE AND MIGRATE OR REMOVE THE FOLLOWING SUBSECTIONS
+The following items are placeholders for topics that we might incorporate...
 
-For example, if you run the manager locally on your machine:
+### Using TLS with Swarm
 
-		$ docker -H tcp://0.0.0.0:2375 info
-		Containers: 0
-		Nodes: 3
-		 agent-2: 172.31.40.102:2375
-			└ Containers: 0
-			└ Reserved CPUs: 0 / 1
-			└ Reserved Memory: 0 B / 514.5 MiB
-		 agent-1: 172.31.40.101:2375
-			└ Containers: 0
-			└ Reserved CPUs: 0 / 1
-			└ Reserved Memory: 0 B / 514.5 MiB
-		 agent-0: 172.31.40.100:2375
-			└ Containers: 0
-			└ Reserved CPUs: 0 / 1
-			└ Reserved Memory: 0 B / 514.5 MiB
+Swarm supports TLS authentication between the Docker Client, Swarm, and the Docker nodes. Use the same CA-certificate to sign all of the Docker daemon certificates and client certificates. For
 
-<If you are running a test cluster without TLS enabled, you may get an error. If so, unset `DOCKER_TLS_VERIFY` with:
+To enable TLS for both client and server, you can specify the same command line options as with Docker Engine:
 
-    $ unset DOCKER_TLS_VERIFY>
+swarm manage --tlsverify --tlscacert=<CACERT> --tlscert=<CERT> --tlskey=<KEY> [...]
 
-<update procedure to use TLS>    
+Please refer to the [Docker documentation](https://github.com/moxiegirl/swarm/blob/securing-swarm/docs/configure-tls.md) for more information on how to set up TLS authentication on Docker Engine and generating the certificates.
 
+Note: Swarm certificates must be generated with `extendedKeyUsage = clientAuth,serverAuth`.
 
-#####OPEN ITEMS _ REMOVE THIS SECTION
 ### Talk about ports
 Open ports
 Talk about port options
 Specific discussion of difference between ports 2375, 2376 and 3375/6
-
-## Create the Swarm nodes
 
 
 ## Connect to the Swarm master and deploy a container on a swarm
