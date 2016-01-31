@@ -1,4 +1,15 @@
-# Get and run Swarm
+<!--[metadata]>
++++
+title = "Get the Swarm software"
+description = "Get the Swarm software"
+keywords = ["docker, Swarm, clustering, image, binary"]
+[menu.main]
+parent="workw_swarm"
+weight=-97
++++
+<![end-metadata]-->
+
+# Get and run the Swarm software
 
 You can create a Docker Swarm cluster using the `swarm` executable image from a  container or using an executable `swarm` binary you build and install on your system. This page introduces the two methods and discusses their pros and cons
 
