@@ -9,7 +9,6 @@ weight=-75
 +++
 <![end-metadata]-->
 
-
 # Docker Swarm
 
 - [Docker Swarm overview](overview.md)
