@@ -10,7 +10,7 @@ parent="workw_swarm"
 
 # Swarm get started (network pro)
 
-This example shows you how to deploy a high-availability Docker Swarm cluster on  Amazon Web Services (AWS). You'll use Docker Engine on Elastic Cloud (EC2) instances on a Virtual Private Cloud (VPC). Then you'll deploy Swarm managers and nodes to those hosts. During this process you'll implement network security, choose a scheduling strategy, and set up a discovery backend. Finally, you'll deploy a container on your Swarm cluster and learn how high-availability works when one of the managers or nodes goes down.
+This example shows you how to deploy a high-availability Docker Swarm cluster on  Amazon Web Services (AWS). You'll use Docker Engine on Elastic Cloud (EC2) instances on a Virtual Private Cloud (VPC). Then you'll deploy Swarm managers and nodes to those hosts. During this process you'll implement basic network security and set up a discovery backend. Finally, you'll deploy a container on your Swarm cluster and learn how high-availability works when one of the managers or nodes goes down.
 
 For a gentler introduction to Swarm, try the [Swarm get started (novice)](https://docs.docker.com/swarm/install-w-machine/) page.
 
@@ -21,14 +21,14 @@ For a gentler introduction to Swarm, try the [Swarm get started (novice)](https:
 ## Prerequisites
 
 - An Amazon Web Services (AWS) account
-- Familiarity with AWS products and features:
+- Familiarity with the location of AWS features, such as:
   - EC2 Virtual Servers in the Cloud
   - Virtual Private Cloud (VPC)
   - VPC Security groups
   - Creating SSH keys and using them to to connect to an EC2 instance
 
 
-## Step 1: Create an AMI an EC2 instance that has Docker Engine  
+## Step 1: Create an AMI that has Docker Engine  
 
 1. Log in to your Amazon AWS account and open the Home Console.
 
@@ -38,19 +38,18 @@ For a gentler introduction to Swarm, try the [Swarm get started (novice)](https:
 
 5. Install Docker Engine on the instance [using these  instructions](https://docs.docker.com/engine/installation/rhel/#install-with-the-script).
 
-    >Make sure you use the `sudo usermod -aG docker ec2-user` command mentioned by the command line output, followed by `logout`. Then log back in and test your D.
+    Use the `sudo usermod -aG docker ec2-user` command mentioned by the command line output, followed by `logout`.
+    > If your Swarm is going to use TLS authentication, you can set up TLS now before creating the AMI image. If you're using self-signed certificates, you can add one to the instance now.   
 
-6. Now, create an AMI image of your instance.
+6. Create an AMI image of your instance named something like "AL-AMI running Docker Engine 1.10".
 
     ![Create image of EC2 instance](/images/create-image.png)
-
-    Name it something like "AL-AMI running Docker Engine 1.10".
 
 ## Create two instances for Swarm managers
 
 In the EC2 Dashboard, click *Launch Instance*.
 
-For *Step 1. Choose AMI Image*,  click the tab for *My AMIs*, and select your "AL-AMI running Docker Engine".
+For *Step 1. Choose AMI Image*,  click the tab for *My AMIs*, and select your AMI, "AL-AMI running Docker Engine".
 
 ![My AMIs Docker Engine](/images/my-amis-select-alami-docker-engine.png)
 
@@ -88,6 +87,8 @@ Name the security group "Swarm nodes" and add the following Inbound rules to it:
 | HTTP             | TCP        | 80         | 0.0.0.0/0     |
 | Custom TCP Rule  | TCP        | 2375       | 172.30.0.0/24 |
 
+Optional: You can also edit the settings of the first EC2 instance you created (the one you used to create the AMI) to become a Swarm node.
+
 ## Create three instances for etcd discovery backend
 
 Return to the EC2 Dashboard and launch three instances.  
@@ -107,75 +108,69 @@ Name the security group "etcd discovery backend" and add the following Inbound r
 
 ## Some notes about security and high availability
 
-To use this example in production, consult with an expert to improve your network security. That person may apply more restrictive settings to your security groups, applying a Network Access Control List NACL, and other strategies not mentioned in this example.
+The security groups shown above are purely for example. For a production environment, consult a network security expert. That person may apply more restrictive settings to your security groups, apply a Network Access Control List (NACL), and use other strategies not mentioned here.
 
-For high-availability, you can deploy instances over multiple failure domains, such as AWS availability zones. For example, you can deploy each swarm managers in each of the AWS availability zones for your Region. Refer to the AWS documentation for information about this topic.
+For high-availability, you can deploy instances over multiple failure domains. For example, you can deploy the instances across multiple AWS availability zones for your Region. Consult with an expert or study Amazon's documentation on this subject.
 
 ## Set up a etcd discovery backend
 
-Here, you're going to create a high-availability discovery backend for Swarm. The etcd nodes are going to run as containers on Docker Engine nodes on three separate EC2 instances.
+Here, you're going to create a high-availability discovery backend for Swarm. You're going to use containers to deploy three etcd nodes to three separate EC2 instances running Docker Engine.
 
-To start, copy each of the following etcd launch commands to a text document. Replace the <ETCD# PUBLIC IP ADDRESS> placeholders in the text with the publicly visible IP address of each instance.
+To start, copy all three of the following following launch commands to a text file. Then, find and replace the <ip0>, <ip1>, <ip2> placeholders with the publicly visible IP addresses of the three EC2 instances.
 
-(To get the IP address, go to EC2 Dashboard > Instances, select an instance, and click the Connect button. This displays the IP address in Connect to Your Instance window.)
+> To get the IP address, go to EC2 Dashboard > Instances, select an instance, and click the Connect button. This displays the IP address in Connect to Your Instance window.
 
 ![Get public IP address](./images/get-public-ip-address.png)
 
-When you've finished editing the following launch commands, connect to each  instance and use the command to launch an etcd node.
+When you've finished editing the following launch commands, connect to each  of the three instances and use the command to launch an etcd node.
 
-Use can use other discovery backends, The etcd backend is just one of the discovery backends you can use  backend. For more information, see the [https://docs.docker.com/swarm/discovery/](Discovery) topic. Here is a list of the alternative discovery syntax to use in the following commands.
-
-        token://<token>
-        consul://<ip>/<path>
-        etcd://<ip1>,<ip2>/<path>
-        file://path/to/file
-        zk://<ip1>,<ip2>/<path>
-        [nodes://]<ip1>,<ip2>
-
-
-### etcd0 launch command
+        ### etcd0 launch command
 
         docker run -d -p 4001:4001 -p 2380:2380 -p 2379:2379 --name etcd quay.io/coreos/etcd:v2.0.3 \
          -name etcd0 \
-         -advertise-client-urls http://<ETCD0 PUBLIC IP ADDRESS>:2379,http://<ETCD0 PUBLIC IP ADDRESS>:4001 \
+         -advertise-client-urls http://<ip0>:2379,http://<ip0>:4001 \
          -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
-         -initial-advertise-peer-urls http://<ETCD0 PUBLIC IP ADDRESS>:2380 \
+         -initial-advertise-peer-urls http://<ip0>:2380 \
          -listen-peer-urls http://0.0.0.0:2380 \
          -initial-cluster-token etcd-cluster-1 \
-         -initial-cluster etcd0=http://<ETCD0 PUBLIC IP ADDRESS>:2380,etcd1=http://<ETCD1 PUBLIC IP ADDRESS>:2380,etcd2=http://<ETCD2 PUBLIC IP ADDRESS>:2380 \
+         -initial-cluster etcd0=http://<ip0>:2380,etcd1=http://<ip1>:2380,etcd2=http://<ip2>:2380 \
          -initial-cluster-state new
 
-### etcd1
+
+        ### etcd1 launch command
 
         docker run -d -p 4001:4001 -p 2380:2380 -p 2379:2379 --name etcd quay.io/coreos/etcd:v2.0.3 \
          -name etcd1 \
-         -advertise-client-urls http://<ETCD1 PUBLIC IP ADDRESS>:2379,http://<ETCD1 PUBLIC IP ADDRESS>:4001 \
+         -advertise-client-urls http://<ip1>:2379,http://<ip1>:4001 \
          -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
-         -initial-advertise-peer-urls http://<ETCD1 PUBLIC IP ADDRESS>:2380 \
+         -initial-advertise-peer-urls http://<ip1>:2380 \
          -listen-peer-urls http://0.0.0.0:2380 \
          -initial-cluster-token etcd-cluster-1 \
-         -initial-cluster etcd0=http://<ETCD0 PUBLIC IP ADDRESS>:2380,etcd1=http://<ETCD1 PUBLIC IP ADDRESS>:2380,etcd2=http://<ETCD2 PUBLIC IP ADDRESS>:2380 \
+         -initial-cluster etcd0=http://<ip0>:2380,etcd1=http://<ip1>:2380,etcd2=http://<ip2>:2380 \
          -initial-cluster-state new
 
-### etcd2
+
+        ### etcd2 launch command
 
         docker run -d -p 4001:4001 -p 2380:2380 -p 2379:2379 --name etcd quay.io/coreos/etcd:v2.0.3 \
          -name etcd2 \
-         -advertise-client-urls http://<ETCD2 PUBLIC IP ADDRESS>:2379,http://<ETCD2 PUBLIC IP ADDRESS>:4001 \
+         -advertise-client-urls http://<ip2>:2379,http://<ip2>:4001 \
          -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
-         -initial-advertise-peer-urls http://<ETCD2 PUBLIC IP ADDRESS>:2380 \
+         -initial-advertise-peer-urls http://<ip2>:2380 \
          -listen-peer-urls http://0.0.0.0:2380 \
          -initial-cluster-token etcd-cluster-1 \
-         -initial-cluster etcd0=http://<ETCD0 PUBLIC IP ADDRESS>:2380,etcd1=http://<ETCD1 PUBLIC IP ADDRESS>:2380,etcd2=http://<ETCD2 PUBLIC IP ADDRESS>:2380 \
+         -initial-cluster etcd0=http://<ip0>:2380,etcd1=http://<ip1>:2380,etcd2=http://<ip2>:2380 \
          -initial-cluster-state new
 
-<For more information, see https://coreos.com/etcd/docs/2.0.9/docker_guide.html#running-a-3-node-etcd-cluster>
+<For more information about configuring etcd this way, see https://coreos.com/etcd/docs/2.0.9/docker_guide.html#running-a-3-node-etcd-cluster>
 
 ## Create the Swarm managers
 
-Connect to each of the instances named "Swarm manager" using SSH.
+After you've created the discovery backend, you can create Swarm managers that use the backend.
 
-To start a solo Swarm manager.
+Using an SSH terminal window, connect to one of the instances named "Swarm manager".
+
+For a solo Swarm manager, you would use the following command.
 
         docker run -d -p <manager_port>:2375 swarm manage etcd://<ip1>,<ip2>,<ip2>
 
@@ -202,9 +197,21 @@ For example:
 #####OPEN ITEMS _ REVISE AND MIGRATE OR REMOVE THE FOLLOWING SUBSECTIONS
 The following items are placeholders for topics that we might incorporate...
 
+### About Backends
+The etcd backend is just one of the discovery backends you can use. For more information, see the [https://docs.docker.com/swarm/discovery/](Discovery) topic. Here is a list of the alternative discovery syntax to use in the following commands.
+
+        token://<token>
+        consul://<ip>/<path>
+        etcd://<ip1>,<ip2>/<path>
+        file://path/to/file
+        zk://<ip1>,<ip2>/<path>
+        [nodes://]<ip1>,<ip2>
+
 ### Using TLS with Swarm
 
-Swarm supports TLS authentication between the Docker Client, Swarm, and the Docker nodes. Use the same CA-certificate to sign all of the Docker daemon certificates and client certificates. For
+Swarm supports TLS authentication between the Docker Client, Swarm, and the Docker nodes. Use the same CA-certificate to sign all of the Docker daemon certificates and client certificates.
+
+One approach is to
 
 To enable TLS for both client and server, you can specify the same command line options as with Docker Engine:
 
