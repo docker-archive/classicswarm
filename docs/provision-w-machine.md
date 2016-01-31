@@ -14,7 +14,7 @@ weight=5
 
 You can use Docker Machine to provision a Docker Swarm cluster. Machine is the
 Docker provisioning tool. Machine provisions the hosts, installs Docker Engine
-on them, and then configures the Docker CLI client. With Machine's Swarm options, you can also quickly configure a Swarm cluster as part of this provisiong.
+on them, and then configures the Docker CLI client. With Machine's Swarm options, you can also quickly configure a Swarm cluster as part of this provisioning.
 
 This page explains the commands you need to provision a basic Swarm cluster on a
 local Mac or Windows computer using Machine. Once you understand the process,
@@ -168,7 +168,7 @@ Name: swarm-master
 
 ## Related information
 
-* [Install a Swarm for evaluation](install-w-machine.md)
-* [Install a Swarm for production](install-on-aws.md)
+* [Evaluate Swarm in a sandbox](install-w-machine.md)
+* [Build a Swarm cluster for production](install-on-aws.md)
 * [Swarm Discovery](discovery.md)
 * [Docker Machine](https://docs.docker.com/machine) documentation
