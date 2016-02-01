@@ -54,12 +54,12 @@ func (h *statusHandler) Status() [][2]string {
 
 	if h.candidate != nil && !h.candidate.IsLeader() {
 		status = [][2]string{
-			{"\bRole", "replica"},
-			{"\bPrimary", h.follower.Leader()},
+			{"Role", "replica"},
+			{"Primary", h.follower.Leader()},
 		}
 	} else {
 		status = [][2]string{
-			{"\bRole", "primary"},
+			{"Role", "primary"},
 		}
 	}
 

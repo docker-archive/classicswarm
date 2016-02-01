@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/pkg/parsers/kernel"
+	versionpkg "github.com/docker/docker/pkg/version"
 	apitypes "github.com/docker/engine-api/types"
 	dockerfilters "github.com/docker/engine-api/types/filters"
 	"github.com/docker/swarm/cluster"
@@ -31,7 +32,6 @@ const APIVERSION = "1.21"
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := apitypes.Info{
 		Images:            len(c.cluster.Images().Filter(cluster.ImageFilterOptions{})),
-		DriverStatus:      c.statusHandler.Status(),
 		NEventsListener:   c.eventsHandler.Size(),
 		Debug:             c.debug,
 		MemoryLimit:       true,
@@ -53,6 +53,21 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		NoProxy:           os.Getenv("no_proxy"),
 		SystemTime:        time.Now().Format(time.RFC3339Nano),
 		ExperimentalBuild: experimental.ENABLED,
+	}
+
+	// API versions older than 1.22 use DriverStatus and return \b characters in the output
+	status := c.statusHandler.Status()
+	if c.apiVersion != "" && versionpkg.Version(c.apiVersion).LessThan("1.22") {
+		for i := range status {
+			if status[i][0][:1] == " " {
+				status[i][0] = status[i][0][1:]
+			} else {
+				status[i][0] = "\b" + status[i][0]
+			}
+		}
+		info.DriverStatus = status
+	} else {
+		info.SystemStatus = status
 	}
 
 	if kernelVersion, err := kernel.GetKernelVersion(); err == nil {
