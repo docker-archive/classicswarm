@@ -101,6 +101,24 @@ function teardown() {
 	[[ "${output}" == *"\"StopSignal\": \"SIGKILL\""* ]]
 }
 
+@test "docker run --ip" {
+	# docker run --ip is introduced in docker 1.10, skip older version without --ip
+	# look for --ip6 because --ip will match --ipc
+	run docker run --help
+	if [[ "${output}" != *"--ip6"* ]]; then
+		skip
+	fi
+
+	start_docker_with_busybox 1
+	swarm_manage
+
+	docker_swarm network create -d bridge --subnet 10.0.0.0/24 testn
+
+	docker_swarm run --name testc --net testn -d --ip 10.0.0.42 busybox sh
+	run docker_swarm inspect testc
+	[[ "${output}" == *"10.0.0.42"* ]]
+}
+
 @test "docker run - reschedule with image affinity" {
 	start_docker_with_busybox 1
 	start_docker 1
