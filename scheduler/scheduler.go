@@ -34,7 +34,16 @@ func New(strategy strategy.PlacementStrategy, filters []filter.Filter) *Schedule
 // SelectNodesForContainer will return a list of nodes where the container can
 // be scheduled, sorted by order or preference.
 func (s *Scheduler) SelectNodesForContainer(nodes []*node.Node, config *cluster.ContainerConfig) ([]*node.Node, error) {
-	accepted, err := filter.ApplyFilters(s.filters, config, nodes)
+	candidates, err := s.selectNodesForContainer(nodes, config, true)
+
+	if err != nil {
+		candidates, err = s.selectNodesForContainer(nodes, config, false)
+	}
+	return candidates, err
+}
+
+func (s *Scheduler) selectNodesForContainer(nodes []*node.Node, config *cluster.ContainerConfig, soft bool) ([]*node.Node, error) {
+	accepted, err := filter.ApplyFilters(s.filters, config, nodes, soft)
 	if err != nil {
 		return nil, err
 	}
