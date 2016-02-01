@@ -168,6 +168,7 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 					if enableCors {
 						writeCorsHeaders(w, r)
 					}
+					context.apiVersion = mux.Vars(r)["version"]
 					localFct(context, w, r)
 				}
 
