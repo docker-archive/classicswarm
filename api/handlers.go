@@ -489,7 +489,6 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	// Pass auth information along if present
 	var authConfig *dockerclient.AuthConfig
 	buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
@@ -498,7 +497,6 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal(buf, authConfig)
 	}
 	containerConfig := cluster.BuildContainerConfig(config)
-
 	if err := containerConfig.Validate(); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -710,6 +708,22 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.eventsHandler.Wait(r.RemoteAddr, until)
+}
+
+// POST /containers/{name:.*}/start
+func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+	container := c.cluster.Container(name)
+	if container == nil {
+		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
+		return
+	}
+
+	if err := c.cluster.StartContainer(container); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // POST /exec/{execid:.*}/start
