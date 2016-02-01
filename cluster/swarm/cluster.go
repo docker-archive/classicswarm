@@ -837,7 +837,11 @@ func (c *Cluster) Info() [][2]string {
 	sort.Sort(cluster.EngineSorter(engines))
 
 	for _, engine := range engines {
-		info = append(info, [2]string{" " + engine.Name, engine.Addr})
+		engineName := "(unknown)"
+		if engine.Name != "" {
+			engineName = engine.Name
+		}
+		info = append(info, [2]string{" " + engineName, engine.Addr})
 		info = append(info, [2]string{"  └ Status", engine.Status()})
 		info = append(info, [2]string{"  └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
 		info = append(info, [2]string{"  └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
