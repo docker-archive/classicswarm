@@ -69,6 +69,11 @@ func TestCheckConnectionErr(t *testing.T) {
 	engine.CheckConnectionErr(err)
 	assert.True(t, engine.failureCount == 0)
 	assert.True(t, len(engine.ErrMsg()) == 0)
+	// Do not accept random error
+	err = fmt.Errorf("random error")
+	engine.CheckConnectionErr(err)
+	assert.True(t, engine.failureCount == 0)
+	assert.True(t, len(engine.ErrMsg()) == 0)
 }
 
 func TestEngineFailureCount(t *testing.T) {
