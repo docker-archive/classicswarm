@@ -5,7 +5,7 @@ description = "Plan for Swarm in production"
 keywords = ["docker, swarm, scale, voting, application,  plan"]
 [menu.main]
 parent="workw_swarm"
-weight=70
+weight=-45
 +++
 <![end-metadata]-->
 
