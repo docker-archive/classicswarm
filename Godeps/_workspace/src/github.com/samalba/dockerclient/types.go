@@ -236,6 +236,8 @@ type ContainerInfo struct {
 		Gateway     string
 		Bridge      string
 		Ports       map[string][]PortBinding
+		Networks    map[string]*EndpointSettings
+
 	}
 	SysInitPath    string
 	ResolvConfPath string
