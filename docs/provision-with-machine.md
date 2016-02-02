@@ -26,7 +26,7 @@ company's data center.
 If this is the first time you are creating a Swarm cluster, you should first
 learn about Swarm and its requirements by [installing a Swarm for
 evaluation](install-w-machine.md) or [installing a Swarm for
-production](install-on-aws.md). If this is the first time you have used Machine,
+production](install-manual.md). If this is the first time you have used Machine,
 you should take some time to [understand Machine before
 continuing](https://docs.docker.com/machine).
 
@@ -185,6 +185,6 @@ Name: swarm-master
 ## Related information
 
 * [Evaluate Swarm in a sandbox](install-w-machine.md)
-* [Build a Swarm cluster for production](install-on-aws.md)
+* [Build a Swarm cluster for production](install-manual.md)
 * [Swarm Discovery](discovery.md)
 * [Docker Machine](https://docs.docker.com/machine) documentation

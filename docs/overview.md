@@ -43,7 +43,7 @@ Using Docker Machine, you can quickly install a Docker Swarm on cloud providers 
 
 Using Docker Machine is the best method for users getting started with Swarm for the first time. To try the recommended method of getting started, see [Get Started with Docker Swarm](install-w-machine.md).
 
-If you are interested manually installing or interested in contributing, see [Create a swarm for development](install-manual.md).
+If you are interested manually installing or interested in contributing, see [Build a Swarm cluster for production](install-manual.md).
 
 ## Discovery services
 
