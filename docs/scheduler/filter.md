@@ -53,7 +53,7 @@ When creating a container or building an image, you use a `constraint` or
 
 Node constraints can refer to Docker's default tags or to custom labels. Default
 tags are sourced from `docker info`. Often, they relate to properties of the Docker
-host. Currently, the dafult tags include:
+host. Currently, the default tags include:
 
 * `node` to refer to the node by ID or name
 * `storagedriver`
@@ -101,7 +101,7 @@ new containers.
 Continuing the previous example, assuming your cluster with `node-1` and
 `node-2`, you can run a MySQL server container on the cluster.  When you run the
 container, you can use a `constraint` to ensure the database gets good I/O
-performance. You do this by by filter for nodes with flash drives:
+performance. You do this by filtering for nodes with flash drives:
 
 ```bash
 $ docker tcp://<manager_ip:manager_port>  run -d -P -e constraint:storage==ssd --name db mysql
@@ -116,7 +116,7 @@ In this example, the master selected all nodes that met the `storage=ssd`
 constraint and applied resource management on top of them.   Only `node-1` was
 selected because it's the only host running flash.
 
-Suppose you want run an Nginx frontend in a cluster. In this case, you wouldn't want flash drives because the frontend mostly writes logs to disk.
+Suppose you want to run an Nginx frontend in a cluster. In this case, you wouldn't want flash drives because the frontend mostly writes logs to disk.
 
 ```bash
 $ docker tcp://<manager_ip:manager_port> run -d -P -e constraint:storage==disk --name frontend nginx
