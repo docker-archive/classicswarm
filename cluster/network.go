@@ -14,6 +14,10 @@ type Network struct {
 	Engine *Engine
 }
 
+func (network *Network) isPreDefined() bool {
+	return (network.Name == "none" || network.Name == "host" || network.Name == "bridge")
+}
+
 // Networks represents an array of networks
 type Networks []*Network
 
@@ -37,17 +41,40 @@ func (networks Networks) Uniq() Networks {
 }
 
 // Filter returns networks filtered by names or ids
-func (networks Networks) Filter(names []string, ids []string) Networks {
-	if len(names) == 0 && len(ids) == 0 {
-		return networks.Uniq()
+func (networks Networks) Filter(names []string, ids []string, types []string) Networks {
+	typeFilter := func(network *Network) bool {
+		if len(types) > 0 {
+			for _, typ := range types {
+				if typ == "custom" && !network.isPreDefined() {
+					return true
+				}
+				if typ == "builtin" && network.isPreDefined() {
+					return true
+				}
+			}
+		} else {
+			return true
+		}
+		return false
 	}
 
 	out := Networks{}
-	for _, idOrName := range append(names, ids...) {
-		if network := networks.Get(idOrName); network != nil {
-			out = append(out, network)
+	if len(names) == 0 && len(ids) == 0 {
+		for _, network := range networks.Uniq() {
+			if typeFilter(network) {
+				out = append(out, network)
+			}
+		}
+	} else {
+		for _, idOrName := range append(names, ids...) {
+			if network := networks.Get(idOrName); network != nil {
+				if typeFilter(network) {
+					out = append(out, network)
+				}
+			}
 		}
 	}
+
 	return out
 }
 
