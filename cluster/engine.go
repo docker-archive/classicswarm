@@ -280,7 +280,7 @@ func (e *Engine) ValidationComplete() {
 func (e *Engine) setErrMsg(errMsg string) {
 	e.Lock()
 	defer e.Unlock()
-	e.lastError = errMsg
+	e.lastError = strings.TrimSpace(errMsg)
 	e.updatedAt = time.Now()
 }
 
@@ -339,6 +339,13 @@ func (e *Engine) CheckConnectionErr(err error) {
 			e.setState(stateHealthy)
 		}
 		e.resetFailureCount()
+		return
+	}
+
+	// Docker engine may return 404 when it doesn't recognize a command.
+	// It's not an error from the engine itself. Version validation should be done separately.
+	// This error message is not recorded here to avoid user confusion.
+	if strings.HasPrefix(err.Error(), "404 ") {
 		return
 	}
 
