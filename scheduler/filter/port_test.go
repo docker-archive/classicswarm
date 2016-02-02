@@ -235,24 +235,15 @@ func TestPortFilterRandomAssignment(t *testing.T) {
 					},
 				},
 			}},
-			NetworkSettings: struct {
-				IPAddress   string `json:"IpAddress"`
-				IPPrefixLen int    `json:"IpPrefixLen"`
-				Gateway     string
-				Bridge      string
-				Ports       map[string][]dockerclient.PortBinding
-			}{
-				Ports: map[string][]dockerclient.PortBinding{
-					"80/tcp": {
-						{
-							HostIp:   "127.0.0.1",
-							HostPort: "1234",
-						},
-					},
-				},
-			},
 		},
 	}
+	container.Info.NetworkSettings.Ports = map[string][]dockerclient.PortBinding{
+		"80/tcp": {
+			{
+				HostIp:   "127.0.0.1",
+				HostPort: "1234",
+			},
+		}}
 
 	assert.NoError(t, nodes[0].AddContainer(container))
 
