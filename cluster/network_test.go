@@ -28,7 +28,7 @@ func TestNetworksFilter(t *testing.T) {
 		}, engine},
 	}
 
-	filtered := networks.Filter([]string{"network_name"}, []string{"abababab"})
+	filtered := networks.Filter([]string{"network_name"}, []string{"abababab"}, nil)
 	assert.Equal(t, len(filtered), 2)
 	for _, network := range filtered {
 		assert.True(t, network.ID == "aaaaaaaaaa1" || network.ID == "ababababab")
