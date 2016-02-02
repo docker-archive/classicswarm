@@ -342,16 +342,6 @@ func (e *Engine) CheckConnectionErr(err error) {
 		return
 	}
 
-	// Docker engine may return 404 when it doesn't recognize a command.
-	// It's not an error from the engine itself. Version validation should be done separately.
-	// This error message is not recorded here to avoid user confusion.
-	if strings.HasPrefix(err.Error(), "404 ") {
-		return
-	}
-
-	// update engine error message
-	e.setErrMsg(err.Error())
-
 	// dockerclient defines ErrConnectionRefused error. but if http client is from swarm, it's not using
 	// dockerclient. We need string matching for these cases. Remove the first character to deal with
 	// case sensitive issue
@@ -364,6 +354,8 @@ func (e *Engine) CheckConnectionErr(err error) {
 		// can track last error time. Only increase failure count if last error is
 		// not too recent, e.g., last error is at least 1 seconds ago.
 		e.incFailureCount()
+		// update engine error message
+		e.setErrMsg(err.Error())
 		return
 	}
 	// other errors may be ambiguous.
