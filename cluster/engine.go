@@ -280,7 +280,7 @@ func (e *Engine) ValidationComplete() {
 func (e *Engine) setErrMsg(errMsg string) {
 	e.Lock()
 	defer e.Unlock()
-	e.lastError = errMsg
+	e.lastError = strings.TrimSpace(errMsg)
 	e.updatedAt = time.Now()
 }
 
@@ -342,9 +342,6 @@ func (e *Engine) CheckConnectionErr(err error) {
 		return
 	}
 
-	// update engine error message
-	e.setErrMsg(err.Error())
-
 	// dockerclient defines ErrConnectionRefused error. but if http client is from swarm, it's not using
 	// dockerclient. We need string matching for these cases. Remove the first character to deal with
 	// case sensitive issue
@@ -357,6 +354,8 @@ func (e *Engine) CheckConnectionErr(err error) {
 		// can track last error time. Only increase failure count if last error is
 		// not too recent, e.g., last error is at least 1 seconds ago.
 		e.incFailureCount()
+		// update engine error message
+		e.setErrMsg(err.Error())
 		return
 	}
 	// other errors may be ambiguous.
