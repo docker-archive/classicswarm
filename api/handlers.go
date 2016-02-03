@@ -26,7 +26,7 @@ import (
 )
 
 // APIVERSION is the API version supported by swarm manager
-const APIVERSION = "1.21"
+const APIVERSION = "1.22"
 
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
