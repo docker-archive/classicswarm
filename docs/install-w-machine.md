@@ -51,15 +51,16 @@ Here, you use Docker Machine to provision three VMs running Docker Engine.
 
 		$ docker-machine create -d virtualbox manager
 
-3. Create and run a VM named `agent1`.  
+4. Create and run a VM named `agent1`.  
 
 		$ docker-machine create -d virtualbox agent1
 
-3. Create and run a VM named `agent2`.  
+5. Create and run a VM named `agent2`.  
 
 		$ docker-machine create -d virtualbox agent2
 
-Each command checks for a local copy of the latest VM image called boot2docker.iso. If the latest copy isn't available, Docker Machine downloads the latest image from Docker Hub. Then, Docker Machine uses boot2docker.iso to create a VM that automatically runs Docker Engine.
+
+Each create command checks for a local copy of the *latest* VM image, called boot2docker.iso. If it isn't available, Docker Machine downloads the image from Docker Hub. Then, Docker Machine uses boot2docker.iso to create a VM that automatically runs Docker Engine.
 
 > Troubleshooting: If your computer or hosts cannot reach Docker Hub, the
 `docker-machine` or `docker run` commands that pull images may fail. In that
@@ -85,7 +86,7 @@ Here you use the discovery backend hosted on Docker Hub to create a unique disco
         Status: Downloaded newer image for swarm:latest
         0ac50ef75c9739f5bfeeaf00503d4e6e
 
-    The `docker run` command gets the latest `swarm` image and runs it as a container. The `create` argument makes the Swarm container connect to the Docker Hub discovery service and get a unique Swarm ID, also known as a "discovery token". The token appears in the output, it is not saved to a file on the host. The `--rm` option automatically cleans up the container and removes the file system when the container exits. 
+    The `docker run` command gets the latest `swarm` image and runs it as a container. The `create` argument makes the Swarm container connect to the Docker Hub discovery service and get a unique Swarm ID, also known as a "discovery token". The token appears in the output, it is not saved to a file on the host. The `--rm` option automatically cleans up the container and removes the file system when the container exits.
 
     The discovery service keeps unused tokens for approximately one week.
 
