@@ -18,9 +18,9 @@ The Swarm cluster will contain three types of nodes:
 - Swarm node (aka Swarm agent)
 - Discovery backend node running consul
 
-This example will take you through the following steps: You establish basic network security by creating a security group that restricts inbound traffic by port number, type, and origin. Then, you create four hosts on your network by launching EC2 instances, applying the appropriate security group to each one, and installing Docker Engine on each one. You create a discovery backend by running an consul container on one of the hosts. You create the Swarm cluster by running two Swarm managers in a high-availability configuration. One of the Swarm managers shares a host with consul. Then you run two Swarm nodes. You communicate with the Swarm via the primary manager, running a simple hello world application and then checking which node ran the application. To finish, you test high-availability by making one of Swarm managers fail and checking the status of the managers.
+This example will take you through the following steps: You establish basic network security by creating a security group that restricts inbound traffic by port number, type, and origin. Then, you create four hosts on your network by launching Elastic Cloud (EC2) instances, applying the appropriate security group to each one, and installing Docker Engine on each one. You create a discovery backend by running an consul container on one of the hosts. You create the Swarm cluster by running two Swarm managers in a high-availability configuration. One of the Swarm managers shares a host with consul. Then you run two Swarm nodes. You communicate with the Swarm via the primary manager, running a simple hello world application and then checking which node ran the application. To finish, you test high-availability by making one of Swarm managers fail and checking the status of the managers.
 
-For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](https://docs.docker.com/swarm/install-w-machine/) page.
+For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](install-w-machine) page.
 
 <This example doesn't use Amazon's EC2 Container Service (ECS)>
 
@@ -29,21 +29,19 @@ For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](https
 - An Amazon Web Services (AWS) account
 - Familiarity with AWS features and tools, such as:
   - EC2 Dashboard
-  - VPC Dashboard
+  - Virtual Private Cloud (VPC) Dashboard
   - VPC Security groups
   - Connecting to an EC2 instance using SSH
 
 ## Establish basic network security
 
-You create basic network security by restricting the types of inbound traffic that can reach the hosts on your network. To accomplish this, you create a security group and add rules to it. Each rule specifies the type, protocol, port range, and source of the traffic that is allowed to reach your hosts. This security group excludes all other inbound traffic. It also has a rule that allows all outbound traffic.
-
-This one-size-fits-all security group is suitable for an example like this one. For a production environment, you would probably create multiple security groups with more restrictive rules for traffic to each type of host. To establish network security for your production environment, consult a network security expert.
+You create basic network security by restricting the types of inbound traffic that can reach the hosts on your network. To accomplish this on your AWS VPC, you create a security group and add rules to it. Each rule specifies the type, protocol, port range, and source of the traffic that can to reach your hosts. This security group excludes all other inbound traffic. It also has a rule that allows all outbound traffic. To establish network security for a production environment, consult a network security expert.
 
 Important: You do not need to create a VPC. New EC2 instances use a default VPC. ***When you create the following security group, associate it with the default VPC.***
 
 From your AWS home console, click **VPC - Isolated Cloud Resources**. Then, in the VPC Dashboard that opens, navigate to **Your VPCs**.
 
-Check the **VPC CIDR** of the default VPC (e.g., "172.30.0.0/16"). If the CIDR does not contain the "172.30.0.0" dotted quad, update the following rules with the actual dotted quad. Leave the "/24" portion of the CIDR unchanged.
+Check the **VPC CIDR** of the default VPC (e.g., `172.30.0.0/16`). If the CIDR does not contain the `172.30.0.0` dotted quad, update the following rules with the actual dotted quad. Leave the `/24` portion of the CIDR unchanged.
 
 Navigate to **Security Groups**. Create a security group named "Docker Swarm Example" with the following inbound rules. The **Allows** column explains what each rule allows and is just for your reference.
 
@@ -55,21 +53,11 @@ Navigate to **Security Groups**. Create a security group named "Docker Swarm Exa
 | Custom TCP Rule | TCP       | 8500       | 172.30.0.0/24 | Consul discovery  |
 | Custom TCP Rule | TCP       | 4000       | 172.30.0.0/24 | Swarm HA managers |
 
-This example doesn't use the following rules. However, they are included here for your reference.
-
- If you create an overlay network to serve as an isolated virtual network for the Swarm cluster, add the following rules to the security group
-
-| Type             | Protocol | Port Range | Source        | Allows            |
-| --------------   | -----    | -----      | -----         | -----             |
-| Custom UDP Rule  | UDP      | 4789       | 172.30.0.0/24 | Overlay network data plane (VXLAN) |
-| Custom TCP Rule  | TCP      | 7946       | 172.30.0.0/24 | Overlay network control plane |
-| Custom UDP Rule  | UDP      | 7946       | 172.30.0.0/24 | Overlay network control plane |
-
 ## Create your hosts
 
-Here, you create five Linux hosts that are part of the "Docker Swarm Example" security group and install Docker Engine on each one.
+Here, you create five Linux hosts that are part of the "Docker Swarm Example" security group.
 
-Open the EC2 Dashboard and launch four EC2 instances one at a time:
+Open the EC2 Dashboard and launch four EC2 instances, one at a time:
 
 - During **Step 1: Choose an Amazon Machine Image (AMI)**, pick the *Amazon Linux AMI*.
 
@@ -78,7 +66,6 @@ Open the EC2 Dashboard and launch four EC2 instances one at a time:
     - manager1
     - node0
     - node1
-
 
 - During **Step 6: Configure Security Group**, choose **Select an existing security group** and pick "Docker Swarm Example".
 
@@ -112,7 +99,7 @@ Give the ec2-user root privileges:
 
  Then, enter `logout`.
 
-> Troubleshooting: If entering a docker command produces a message asking whether docker is available on this host, it may be because the user doesn't have root privileges. If so, use `sudo` or give the user root privileges.
+> Troubleshooting: If entering a `docker` command produces a message asking whether docker is available on this host, it may be because the user doesn't have root privileges. If so, use `sudo` or give the user root privileges.
 > For this example, don't create an AMI image from one of your instances running Docker Engine and then re-use it to create the other instances. Doing so will produce errors.
 
 ## Set up an consul discovery backend
@@ -127,11 +114,9 @@ To start, copy the following launch command to a text file.
 
 Then, use SSH to connect to the "manager0 & consul0" instance. At the command line, enter `ifconfig`. From the output, copy the `eth0` IP address from `inet addr`.
 
-In the text file, find and replace `<consul_ip>` with the IP address.
-
 Using SSH, connect to the "manager0 & etc0" instance. Copy the launch command from the text file and paste it into the command line.
 
-Your consul node is up and running, providing your cluster with a discovery backend.
+Your consul node is up and running, providing your cluster with a discovery backend. To increase its reliability, you can create a high-availability cluster using a trio of consul nodes using the link mentioned at the end of this page. (Before creating a cluster of console nodes, update the VPC security group with rules to allow inbound traffic on the required port numbers.)
 
 ## Create a high-availability Swarm cluster
 
@@ -217,17 +202,13 @@ You can connect to the "master1" node and run the `info` and `logs` commands. Th
 ## Additional Resources
 
 - Installing Docker Engine
-    - [Example: Manual install on a cloud provider](http://docs-stage.docker.com/engine/installation/cloud/cloud-ex-aws/)
+    - [Example: Manual install on a cloud provider](http://docs.docker.com/engine/installation/cloud/cloud-ex-aws/)
 - Docker Swarm
   - [Docker Swarm 1.0 with Multi-host Networking: Manual Setup](http://goelzer.com/blog/2015/12/29/docker-swarmoverlay-networks-manual-method/)
-  - [High availability in Docker Swarm](./multi-manager-setup/)
-  - [Create a swarm for development](./install-manual/)
-  - [Discovery](./discovery/)
+  - [High availability in Docker Swarm](multi-manager-setup/)
+  - [Create a swarm for development](install-manual/)
+  - [Discovery](discovery/)
 - consul Discovery Backend
-  - [Running consul under Docker](https://github.com/coreos/consul/blob/manager/Documentation/docker_guide.md)
-  - [Configuration Flags](https://github.com/coreos/consul/blob/manager/Documentation/configuration.md)
-  - [Clustering Guide](https://github.com/coreos/consul/blob/manager/Documentation/clustering.md)
-  - [Running an consul-Backed Docker Swarm Cluster](http://blog.scottlowe.org/2015/04/19/running-consul-backed-docker-swarm-cluster/)
-  - [Running consul under Docker](https://coreos.com/consul/docs/2.0.9/docker_guide.html)
+  - [high-availability cluster using a trio of consul nodes](https://hub.docker.com/r/progrium/consul/)
 - Networking
   - [Networking](https://docs.docker.com/swarm/networking/)

@@ -17,12 +17,11 @@ When you finish, you'll have a Docker Swarm up and running in VirtualBox on your
 local Mac or Windows computer. You can use this Swarm as personal development
 sandbox.
 
-To use Docker Swarm on Linux, see [Create a Swarm for
-development](https://docs.docker.com/swarm/install-manual/).
+To use Docker Swarm on Linux, see [Create a Swarm for development](install-manual).
 
 ## Install Docker Toolbox
 
-Download and install [https://www.docker.com/docker-toolbox](Docker Toolbox).
+Download and install [Docker Toolbox](https://www.docker.com/docker-toolbox).
 
 The toolbox installs a handful of tools on your local Windows or Mac OS X computer. In this exercise, you use three of those tools:
 
