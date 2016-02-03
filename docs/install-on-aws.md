@@ -35,25 +35,15 @@ For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](insta
 
 ## Update the network security rules
 
-AWS uses a "security group" to allow or prevent specific types of network traffic on your VPC network. The default VPC is associated with a security group whose initial rules "deny all inbound traffic, allow all outbound traffic, and allow all traffic between instances."
+AWS uses a "security group" to allow specific types of network traffic on your VPC network. The **default** security group's initial set of rules deny all inbound traffic, allow all outbound traffic, and allow all traffic between instances. You're  going to add a couple of rules to allow inbound SSH connections and inbound container images. This set of rules somewhat protects the Engine, Swarm, and Consul ports. For a production environment, you would apply more restrictive security measures. Do not leave Docker Engine ports unprotected.
 
-Here you add rules to the default VPC's security group that enable SSH connections and downloading container images from the Internet, and restrict traffic between instances to allow only traffic that's required. 
-
-Important: You do not need to create a VPC. New EC2 instances use a default VPC. ***When you create the following security group, associate it with the default VPC.***
-
-From your AWS home console, click **VPC - Isolated Cloud Resources**. Then, in the VPC Dashboard that opens, navigate to **Your VPCs**.
-
-Check the **VPC CIDR** of the default VPC (e.g., `172.30.0.0/16`). If the CIDR does not contain the `172.30.0.0` dotted quad, update the following rules with the actual dotted quad. Leave the `/24` portion of the CIDR unchanged.
-
-Navigate to **Security Groups**. Create a security group named "Docker Swarm Example" with the following inbound rules. The **Allows** column explains what each rule allows and is just for your reference.
+From your AWS home console, click **VPC - Isolated Cloud Resources**. Then, in the VPC Dashboard that opens, navigate to **Security Groups**. Select the **default** security group that's associated with your default VPC and add the following two rules. The **Allows** column explains what each rule allows and is just for your reference.
 
 | Type            | Protocol  | Port Range | Source        | Allows            |
 | --------------  | -----     | -----      | -----         | -----             |
 | SSH             | TCP       | 22         | 0.0.0.0/0     | SSH connection    |
 | HTTP            | TCP       | 80         | 0.0.0.0/0     | Container images  |
-| Custom TCP Rule | TCP       | 2375       | 172.30.0.0/24 | Non-TLS traffic   |
-| Custom TCP Rule | TCP       | 8500       | 172.30.0.0/24 | Consul discovery  |
-| Custom TCP Rule | TCP       | 4000       | 172.30.0.0/24 | Swarm HA managers |
+
 
 ## Create your hosts
 
@@ -69,7 +59,7 @@ Open the EC2 Dashboard and launch four EC2 instances, one at a time:
     - node0
     - node1
 
-- During **Step 6: Configure Security Group**, choose **Select an existing security group** and pick "Docker Swarm Example".
+- During **Step 6: Configure Security Group**, choose **Select an existing security group** and pick the "default" security group.
 
 Review and launch your instances.
 
