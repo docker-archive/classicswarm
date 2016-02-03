@@ -2,11 +2,13 @@ package api
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 
 	"net/http/pprof"
 
 	log "github.com/Sirupsen/logrus"
+	versionpkg "github.com/docker/docker/pkg/version"
 	"github.com/docker/swarm/cluster"
 	"github.com/gorilla/mux"
 )
@@ -137,6 +139,15 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 	return r
 }
 
+func versionCheckMiddleware(c *context, w http.ResponseWriter, r *http.Request, handlerFunc handler) {
+	if c.apiVersion != "" && versionpkg.Version(c.apiVersion).LessThan(MINAPIVERSION) {
+		httpError(w, fmt.Sprintf("API Version %s is too old. Supported versions > %s.", c.apiVersion, MINAPIVERSION), http.StatusBadRequest)
+		return
+	}
+	// API version passes checks, now call the handler
+	handlerFunc(c, w, r)
+}
+
 func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 	for method, mappings := range routes {
 		for route, fct := range mappings {
@@ -151,7 +162,7 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 					writeCorsHeaders(w, r)
 				}
 				context.apiVersion = mux.Vars(r)["version"]
-				localFct(context, w, r)
+				versionCheckMiddleware(context, w, r, localFct)
 			}
 			localMethod := method
 
@@ -169,7 +180,7 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 						writeCorsHeaders(w, r)
 					}
 					context.apiVersion = mux.Vars(r)["version"]
-					localFct(context, w, r)
+					versionCheckMiddleware(context, w, r, localFct)
 				}
 
 				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).

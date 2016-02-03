@@ -26,6 +26,7 @@ import (
 )
 
 // APIVERSION is the API version supported by swarm manager
+const MINAPIVERSION = "1.18"
 const APIVERSION = "1.21"
 
 // GET /info
