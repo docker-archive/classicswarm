@@ -37,7 +37,7 @@ For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](insta
 
 AWS uses a "security group" to allow specific types of network traffic on your VPC network. The **default** security group's initial set of rules deny all inbound traffic, allow all outbound traffic, and allow all traffic between instances. You're  going to add a couple of rules to allow inbound SSH connections and inbound container images. This set of rules somewhat protects the Engine, Swarm, and Consul ports. For a production environment, you would apply more restrictive security measures. Do not leave Docker Engine ports unprotected.
 
-From your AWS home console, click **VPC - Isolated Cloud Resources**. Then, in the VPC Dashboard that opens, navigate to **Security Groups**. Select the **default** security group that's associated with your default VPC and add the following two rules. The **Allows** column explains what each rule allows and is just for your reference.
+From your AWS home console, click **VPC - Isolated Cloud Resources**. Then, in the VPC Dashboard that opens, navigate to **Security Groups**. Select the **default** security group that's associated with your default VPC and add the following two rules. (The **Allows** column is just for your reference.)
 
 | Type            | Protocol  | Port Range | Source        | Allows            |
 | --------------  | -----     | -----      | -----         | -----             |
@@ -93,6 +93,9 @@ Give the ec2-user root privileges:
 
 > Troubleshooting: If entering a `docker` command produces a message asking whether docker is available on this host, it may be because the user doesn't have root privileges. If so, use `sudo` or give the user root privileges.
 > For this example, don't create an AMI image from one of your instances running Docker Engine and then re-use it to create the other instances. Doing so will produce errors.
+> **Note**: These command rely on Docker Swarm's hosted discovery service, Docker Hub. If your network cannot reach Docker Hub, the `docker run` commands that pull container images may fail. In that case, check that your VPC is associated with a security group with a rule that allows inbound traffic (e.g., HTTP/TCP/80/0.0.0.0/0). Also Check
+the [Docker Hub status page](http://status.docker.com/) for service
+availability.
 
 ## Set up an consul discovery backend
 
