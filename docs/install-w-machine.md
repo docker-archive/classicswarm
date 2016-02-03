@@ -13,6 +13,8 @@ parent="workw_swarm"
 This getting started example shows you how to create a Docker Swarm, the
 native clustering tool for Docker.
 
+You'll use Docker Toolbox to install Docker Machine and some other tools on your computer. Then you'll use Docker Machine to provision a set of Docker Engine hosts. Lastly, you'll use Docker client to connect to the hosts, where you'll create a discovery token, create a cluster of one Swarm manager and nodes, and manage the cluster.
+
 When you finish, you'll have a Docker Swarm up and running in VirtualBox on your
 local Mac or Windows computer. You can use this Swarm as personal development
 sandbox.
@@ -32,6 +34,8 @@ The toolbox installs a handful of tools on your local Windows or Mac OS X comput
 The following sections provide more information on each of these tools. The rest of the document uses the abbreviation, VM, for virtual machine.
 
 ## Create three VMs running Docker Engine
+
+Here, you use Docker Machine to provision three VMs running Docker Engine.
 
 1. Open a terminal on your computer. Use Docker Machine to list any VMs in VirtualBox.
 
@@ -57,7 +61,14 @@ The following sections provide more information on each of these tools. The rest
 
 Each command checks for a local copy of the latest VM image called boot2docker.iso. If the latest copy isn't available, Docker Machine downloads the latest image from Docker Hub. Then, Docker Machine uses boot2docker.iso to create a VM that automatically runs Docker Engine.
 
+> Troubleshooting: If your computer or hosts cannot reach Docker Hub, the
+`docker-machine` or `docker run` commands that pull images may fail. In that
+case, check the [Docker Hub status page](http://status.docker.com/) for
+service availability. Then, check whether your computer is connected to the Internet.  Finally, check whether VirtualBox's network settings allow your hosts to connect to the Internet.
+
 ## Create a Swarm discovery token
+
+Here you use the discovery backend hosted on Docker Hub to create a unique discovery token for your cluster. This discovery backend is only for low-volume development and testing purposes, not for production. Later on, when you run the Swarm manager and nodes, they register with the discovery backend as members of the cluster that's associated with the unique token. The discovery backend maintains an up-to-date list of cluster members and shares that list with the Swarm manager. The Swarm manager uses this list to assign tasks to the nodes.
 
 1. Connect the Docker Client on your computer to the Docker Engine running on `manager`.
 
@@ -82,11 +93,14 @@ Each command checks for a local copy of the latest VM image called boot2docker.i
 
 ## Create three Swarm nodes
 
+Here, you connect to each of the hosts and create a Swarm manager or node. 
+
 1. Get the IP addresses of the three VMs.
 
         docker-machine ls
 
-2. Use the following syntax to run a Swarm container as the primary Swarm manager on `manager`.
+
+2. Your client should still be pointing to Docker Engine on `manager`. Use the following syntax to run a Swarm container as the primary Swarm manager on `manager`.
 
         docker run -t -p <your_selected_port>:2375 -t swarm manage token://<cluster_id> >
 
@@ -116,6 +130,8 @@ Each command checks for a local copy of the latest VM image called boot2docker.i
 
 ## Manage your Swarm
 
+Here, you connect to the cluster and review information about the Swarm manager and nodes. You tell the Swarm run a container and check which node did the work.
+
 1. Connect the Docker Client to the Swarm.
 
         $ eval $(docker-machine env swarm)
@@ -126,7 +142,7 @@ Each command checks for a local copy of the latest VM image called boot2docker.i
 
         $ docker info
 
-    As you can see, the output displays information about the two agent nodes and the one master node in the Swarm.
+    As you can see, the output displays information about the two agent nodes and the one manager node in the Swarm.
 
 3. Check the images currently running on your Swarm.
 
@@ -140,7 +156,7 @@ Each command checks for a local copy of the latest VM image called boot2docker.i
         .
         .
 
-5. Use the `docker ps` command to find out which node the container ran on.
+5. Use the `docker ps` command to find out which node the container ran on. For example:
 
         $ docker ps  -a
         CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                      PORTS               NAMES

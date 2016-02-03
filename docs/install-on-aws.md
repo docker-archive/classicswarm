@@ -93,7 +93,7 @@ Give the ec2-user root privileges:
 
 > Troubleshooting: If entering a `docker` command produces a message asking whether docker is available on this host, it may be because the user doesn't have root privileges. If so, use `sudo` or give the user root privileges.
 > For this example, don't create an AMI image from one of your instances running Docker Engine and then re-use it to create the other instances. Doing so will produce errors.
-> **Note**: These command rely on Docker Swarm's hosted discovery service, Docker Hub. If your network cannot reach Docker Hub, the `docker run` commands that pull container images may fail. In that case, check that your VPC is associated with a security group with a rule that allows inbound traffic (e.g., HTTP/TCP/80/0.0.0.0/0). Also Check
+> Troubleshooting: If your host cannot reach Docker Hub, the `docker run` commands that pull container images may fail. In that case, check that your VPC is associated with a security group with a rule that allows inbound traffic (e.g., HTTP/TCP/80/0.0.0.0/0). Also Check
 the [Docker Hub status page](http://status.docker.com/) for service
 availability.
 
