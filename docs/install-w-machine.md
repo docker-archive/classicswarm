@@ -120,11 +120,11 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
 
 4. Use the following syntax to run a Swarm container as an agent on `agent1`. Replace <node_ip> with the IP address of the VM.
 
-        $ docker run -d swarm join --addr=<node_ip>:2375 token://<cluster_id>
+        $ docker run -d swarm join --addr=<node_ip>:<node_port> token://<cluster_id>
 
     For example:
 
-        $ docker run -d swarm join --addr=192.168.99.101:2375 token://0ac50ef75c9739f5bfeeaf00503d4e6e
+        $ docker run -d swarm join --addr=192.168.99.102:2376 token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
 5. Connect Docker Client to `agent2`.
 
@@ -132,7 +132,7 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
 
 6.  Run a Swarm container as an agent on `agent2`.
 
-        $ docker run -d swarm join --addr=192.168.99.102:2375 token://0ac50ef75c9739f5bfeeaf00503d4e6e
+        $ docker run -d swarm join --addr=192.168.99.103:2376 token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
 ## Manage your Swarm
 
