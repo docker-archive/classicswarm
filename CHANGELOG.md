@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 (2016-01-14)
+## 1.1.0 (2016-02-02)
 
 #### Scheduler
 
@@ -17,8 +17,11 @@
 - Fix error when inspect on unhealthy node
 - Prevent panic in filters when container has no name
 - Add buildtime, kernelversion and experimental to API version
+- Support docker update and new networking related flags in run & network create/connect/disconnect/ls
+- Require `--all` on docker ps to display containers on unhealthy nodes
+- Retry on docker events EOF
 
-#### Node Managment
+#### Node Management
 
 - Add a random delay to avoid synchronized registration at swarm join
 - Use engine connection error to fail engine fast
@@ -33,6 +36,7 @@
 - Enable checkpoint failover in FrameworkInfo
 - Fix timeout when pulling images
 - Add timeout to refuse offers
+- Fix double start issue
 
 #### Misc
 
