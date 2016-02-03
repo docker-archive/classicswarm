@@ -25,9 +25,11 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-// APIVERSION is the API version supported by swarm manager
+// MINAPIVERSION is the minimum API version supported by swarm manager
 const MINAPIVERSION = "1.18"
-const APIVERSION = "1.21"
+
+// APIVERSION is the API version supported by swarm manager
+const APIVERSION = "1.22"
 
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {

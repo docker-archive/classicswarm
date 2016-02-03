@@ -141,7 +141,7 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 
 func versionCheckMiddleware(c *context, w http.ResponseWriter, r *http.Request, handlerFunc handler) {
 	if c.apiVersion != "" && versionpkg.Version(c.apiVersion).LessThan(MINAPIVERSION) {
-		httpError(w, fmt.Sprintf("API Version %s is too old. Supported versions > %s.", c.apiVersion, MINAPIVERSION), http.StatusBadRequest)
+		httpError(w, fmt.Sprintf("API Version %s is too old. Supported versions >= %s.", c.apiVersion, MINAPIVERSION), http.StatusBadRequest)
 		return
 	}
 	// API version passes checks, now call the handler
