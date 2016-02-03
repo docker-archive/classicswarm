@@ -245,8 +245,16 @@ func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	types := filters.Get("type")
+	for _, typ := range types {
+		if typ != "custom" && typ != "builtin" {
+			httpError(w, fmt.Sprintf("Invalid filter: 'type'='%s'", typ), http.StatusBadRequest)
+			return
+		}
+	}
+
 	out := []*dockerclient.NetworkResource{}
-	networks := c.cluster.Networks().Filter(filters.Get("name"), filters.Get("id"))
+	networks := c.cluster.Networks().Filter(filters.Get("name"), filters.Get("id"), types)
 	for _, network := range networks {
 		tmp := (*network).NetworkResource
 		if tmp.Scope == "local" {
