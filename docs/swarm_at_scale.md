@@ -764,7 +764,7 @@ network latency and reliability is key to a smooth and workable solution.
 
 ## Related information
 
-The application in this example could be deployed on Docker Universal Control Plane (UPC) which is currently in Beta release. To try the application on UPC in your environment, [request access to the UPC Beta release](https://www.docker.com/products/docker-universal-control-plane). Other useful documentation:
+The application in this example could be deployed on Docker Universal Control Plane (UCP) which is currently in Beta release. To try the application on UCP in your environment, [request access to the UCP Beta release](https://www.docker.com/products/docker-universal-control-plane). Other useful documentation:
 
 * [Plan for Swarm in production](plan-for-production.md)
 * [Swarm and container networks](networking.md)
