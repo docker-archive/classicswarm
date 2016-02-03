@@ -83,50 +83,56 @@ Here you use the discovery backend hosted on Docker Hub to create a unique disco
         .
         .
         Status: Downloaded newer image for swarm:latest
-        f6dc2febe7d321b987d30228e8c7a21b
+        0ac50ef75c9739f5bfeeaf00503d4e6e
 
-    The `docker run` command gets the latest `swarm` image and runs it as a container. The `create` argument makes the Swarm container connect to the Docker Hub discovery service and get a unique Swarm ID, also known as a "discovery token". The `--rm` option automatically cleans up the container and removes the file system when the container exits.
+    The `docker run` command gets the latest `swarm` image and runs it as a container. The `create` argument makes the Swarm container connect to the Docker Hub discovery service and get a unique Swarm ID, also known as a "discovery token". The token appears in the output, it is not saved to a file on the host. The `--rm` option automatically cleans up the container and removes the file system when the container exits.
 
     The discovery service keeps unused tokens for approximately one week.
 
 3. Copy the discovery token from the last line of the previous output to a safe place.
 
-## Create three Swarm nodes
+## Create the Swarm manager and nodes
 
-Here, you connect to each of the hosts and create a Swarm manager or node. 
+Here, you connect to each of the hosts and create a Swarm manager or node.
 
-1. Get the IP addresses of the three VMs.
+1. Get the IP addresses of the three VMs. For example:
 
-        docker-machine ls
+        $ docker-machine ls
+        NAME      ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
+        agent1    -        virtualbox   Running   tcp://192.168.99.102:2376           v1.9.1   
+        agent2    -        virtualbox   Running   tcp://192.168.99.103:2376           v1.9.1   
+        manager   *        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1   
 
 
 2. Your client should still be pointing to Docker Engine on `manager`. Use the following syntax to run a Swarm container as the primary Swarm manager on `manager`.
 
-        docker run -t -p <your_selected_port>:2375 -t swarm manage token://<cluster_id> >
+        $ docker run -d -p <your_selected_port>:2375 -t swarm manage token://<cluster_id> >
 
     For example:
 
-        docker run -t -p 2370:2375 -t swarm manage token://f6dc2febe7d321b987d30228e8c7a21b
+        $ docker run -d -p 2375:2375 -t swarm manage token://0ac50ef75c9739f5bfeeaf00503d4e6e
+
+    The -p option maps a port on the container to a port on the host.
 
 3. Connect Docker Client to `agent1`.
 
-        eval $(docker-machine env agent1)
+        $ eval $(docker-machine env agent1)
 
-4. Use the following syntax to run a Swarm container as an agent on `agent1`.
+4. Use the following syntax to run a Swarm container as an agent on `agent1`. Replace <node_ip> with the IP address of the VM.
 
-        docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>
+        $ docker run -d swarm join --addr=<node_ip>:2375 token://<cluster_id>
 
     For example:
 
-        docker run -d swarm join --addr=192.168.99.101:2375 token://f6dc2febe7d321b987d30228e8c7a21b
+        $ docker run -d swarm join --addr=192.168.99.101:2375 token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
 5. Connect Docker Client to `agent2`.
 
-        eval $(docker-machine env agent2)
+        $ eval $(docker-machine env agent2)
 
 6.  Run a Swarm container as an agent on `agent2`.
 
-        docker run -d swarm join --addr=192.168.99.102:2376 token://f6dc2febe7d321b987d30228e8c7a21b
+        $ docker run -d swarm join --addr=192.168.99.102:2375 token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
 ## Manage your Swarm
 
