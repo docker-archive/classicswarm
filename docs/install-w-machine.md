@@ -124,15 +124,15 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
 
     For example:
 
-        $ docker run -d swarm join --addr=192.168.99.102:2376 token://0ac50ef75c9739f5bfeeaf00503d4e6e
+        $ docker run -d swarm join --addr=192.168.99.102:2375 token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
 5. Connect Docker Client to `agent2`.
 
         $ eval $(docker-machine env agent2)
 
-6.  Run a Swarm container as an agent on `agent2`.
+6.  Run a Swarm container as an agent on `agent2`. For example:
 
-        $ docker run -d swarm join --addr=192.168.99.103:2376 token://0ac50ef75c9739f5bfeeaf00503d4e6e
+        $ docker run -d swarm join --addr=192.168.99.103:2375 token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
 ## Manage your Swarm
 
