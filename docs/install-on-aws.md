@@ -28,14 +28,16 @@ For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](insta
 
 - An Amazon Web Services (AWS) account
 - Familiarity with AWS features and tools, such as:
-  - EC2 Dashboard
+  - Elastic Cloud (EC2) Dashboard
   - Virtual Private Cloud (VPC) Dashboard
   - VPC Security groups
   - Connecting to an EC2 instance using SSH
 
-## Establish basic network security
+## Update the network security rules
 
-You create basic network security by restricting the types of inbound traffic that can reach the hosts on your network. To accomplish this on your AWS VPC, you create a security group and add rules to it. Each rule specifies the type, protocol, port range, and source of the traffic that can to reach your hosts. This security group excludes all other inbound traffic. It also has a rule that allows all outbound traffic. To establish network security for a production environment, consult a network security expert.
+AWS uses a "security group" to allow or prevent specific types of network traffic on your VPC network. The default VPC is associated with a security group whose initial rules "deny all inbound traffic, allow all outbound traffic, and allow all traffic between instances."
+
+Here you add rules to the default VPC's security group that enable SSH connections and downloading container images from the Internet, and restrict traffic between instances to allow only traffic that's required. 
 
 Important: You do not need to create a VPC. New EC2 instances use a default VPC. ***When you create the following security group, associate it with the default VPC.***
 
@@ -147,7 +149,7 @@ For example:
         $ docker run -d swarm join --advertise=172.30.0.69:2375 consul://172.30.0.161:8500
 
 
-Your small Swarm cluster is up and running on multiple hosts, providing you with a high-availability virtual Docker Engine. To increase its reliability and capacity, you can add more Swarm managers and nodes.
+Your small Swarm cluster is up and running on multiple hosts, providing you with a high-availability virtual Docker Engine. To increase its reliability and capacity, you can add more Swarm managers, nodes, and a high-availability discovery backend.
 
 ## Communicate with the Swarm
 
