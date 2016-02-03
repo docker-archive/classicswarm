@@ -881,8 +881,64 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte{'O', 'K'})
 }
 
-// Proxy network to container operations, including connect/disconnect request
-func proxyNetworkContainerOperation(c *context, w http.ResponseWriter, r *http.Request) {
+// POST /networks/{networkid:.*}/disconnect
+func proxyNetworkDisconnect(c *context, w http.ResponseWriter, r *http.Request) {
+	var networkid = mux.Vars(r)["networkid"]
+	network := c.cluster.Networks().Uniq().Get(networkid)
+	if network == nil {
+		httpError(w, fmt.Sprintf("No such network: %s", networkid), http.StatusNotFound)
+		return
+	}
+	// Set the network ID in the proxied URL path.
+	r.URL.Path = strings.Replace(r.URL.Path, networkid, network.ID, 1)
+
+	// make a copy of r.Body
+	buf, _ := ioutil.ReadAll(r.Body)
+	bodyCopy := ioutil.NopCloser(bytes.NewBuffer(buf))
+	defer bodyCopy.Close()
+	// restore r.Body stream as it'll be read again
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
+
+	// Extract container info from r.Body copy
+	var disconnect dockerclient.NetworkDisconnect
+	if err := json.NewDecoder(bodyCopy).Decode(&disconnect); err != nil {
+		httpError(w, fmt.Sprintf("Container is not specified"), http.StatusNotFound)
+		return
+	}
+
+	var engine *cluster.Engine
+
+	if disconnect.Force && network.Scope == "global" {
+		randomEngine, err := c.cluster.RANDOMENGINE()
+		if err != nil {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		engine = randomEngine
+	} else {
+		container := c.cluster.Container(disconnect.Container)
+		if container == nil {
+			httpError(w, fmt.Sprintf("No such container: %s", disconnect.Container), http.StatusNotFound)
+			return
+		}
+		engine = container.Engine
+	}
+
+	cb := func(resp *http.Response) {
+		// force fresh networks on this engine
+		engine.RefreshNetworks()
+	}
+
+	// request is forwarded to the container's address
+	err := proxyAsync(c.tlsConfig, engine.Addr, w, r, cb)
+	engine.CheckConnectionErr(err)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusNotFound)
+	}
+}
+
+// POST /networks/{networkid:.*}/connect
+func proxyNetworkConnect(c *context, w http.ResponseWriter, r *http.Request) {
 	var networkid = mux.Vars(r)["networkid"]
 	network := c.cluster.Networks().Uniq().Get(networkid)
 	if network == nil {
