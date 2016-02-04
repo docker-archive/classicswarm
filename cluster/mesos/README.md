@@ -142,10 +142,9 @@ The current Swarm scheduler for Mesos implementation is not feature complete. He
 
 ## Known issues
 
-Docker Swarm on Mesos only uses unreserved resources; and if Mesos offers reserved resources, the role info is also ignored which is rejected by Mesos master.
-See [here](https://github.com/docker/swarm/issues/1618) for a proposal on letting Docker Swarm on Mesos use  both un-reserved/reserved resources.
-See [here](https://github.com/docker/swarm/issues/1619) for a proposal on letting Docker Swarm on Mesos use revocable resources.
-Restarted Mesos agents have flaky recovery in conjunction with Docker Swarm. When Mesos agents restart, Mesos master don’t always send offers for those agents to Docker Swarm. This issue seems to be solved with the Swarm 1.1 release.
+- Docker Swarm on Mesos only uses unreserved resources; and if Mesos offers reserved resources, the role info is also ignored which is rejected by Mesos master. See [here](https://github.com/docker/swarm/issues/1618) for a proposal on letting Docker Swarm on Mesos use  both un-reserved/reserved resources.
+- See [here](https://github.com/docker/swarm/issues/1619) for a proposal on letting Docker Swarm on Mesos use revocable resources.
+- Restarted Mesos agents have flaky recovery in conjunction with Docker Swarm. When Mesos agents restart, Mesos master don’t always send offers for those agents to Docker Swarm. This issue seems to be solved with the Swarm 1.1 release.
 
-To have a global view of the tracked issues please refer to:
-[Mesos issues](https://github.com/docker/swarm/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+mesos)
+To have a global view of the tracked issues please refer to
+[Mesos issues in Github](https://github.com/docker/swarm/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+mesos).
