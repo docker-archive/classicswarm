@@ -96,7 +96,7 @@ NETWORK ID          NAME                   DRIVER
 09138343e80e        node-0/bridge          bridge
 8834dbd552e5        node-0/none            null
 42131321acab        node-0/swarm_network   overlay
-921817fefea5        node-0/bridge2         brige
+921817fefea5        node-0/bridge2         bridge
 45782acfe427        node-1/host            host
 8926accb25fd        node-1/bridge          bridge
 6382abccd23d        node-1/none            null
