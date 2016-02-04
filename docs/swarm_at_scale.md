@@ -5,7 +5,7 @@ description = "Try Swarm at scale"
 keywords = ["docker, swarm, scale, voting, application,  certificates"]
 [menu.main]
 parent="workw_swarm"
-weight=75
+weight=-35
 +++
 <![end-metadata]-->
 
@@ -146,7 +146,7 @@ CloudFormation template located
 
 ### Step 1. Build and configure the VPC
 
-This step assumes you know [how to configure a VPC](link here) either manually
+This step assumes you know how to configure a VPC either manually
 or using the VPC wizard on Amazon. You can build the VPC manually or by using
 using the VPC Wizard. If you use the wizard, be sure to choose the **VPC with a
 Single Public Subnet** option.
