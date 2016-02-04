@@ -16,10 +16,7 @@ a container.
 
 ## Configure the available filters
 
-Filters are divided into two categories, node filters and container configuration
-filters. Node filters operate on characteristics of the Docker host or on the
-configuration of the Docker daemon. Container configuration filters operate on
-characteristics of containers, or on the availability of images on a host.
+Filters are divided into two categories, node filters and container configuration filters. Node filters operate on characteristics of the Docker host or on the configuration of the Docker daemon. Container configuration filters operate on characteristics of containers, or on the availability of images on a host.
 
 Each filter has a name that identifies it. The node filters are:
 
@@ -33,16 +30,13 @@ The container configuration filters are:
 * `port`
 
 When you start a Swarm manager with the `swarm manage` command, all the filters
-are enabled. If you want to limit the filters available to your Swarm, specify a subset
-of filters by passing the `--filter` flag and the name:
+are enabled. If you want to limit the filters available to your Swarm, specify a subset of filters by passing the `--filter` flag and the name:
 
 ```
 $ swarm manage --filter=health --filter=dependency
 ```
 
-> **Note**: Container configuration filters match all containers, including stopped
-> containers, when applying the filter. To release a node used by a container, you
-> must remove the container from the node.
+> **Note**: Container configuration filters match all containers, including stopped containers, when applying the filter. To release a node used by a container, you must remove the container from the node.
 
 ## Node filters
 
@@ -52,8 +46,7 @@ When creating a container or building an image, you use a `constraint` or
 ### Use a constraint filter
 
 Node constraints can refer to Docker's default tags or to custom labels. Default
-tags are sourced from `docker info`. Often, they relate to properties of the Docker
-host. Currently, the default tags include:
+tags are sourced from `docker info`. Often, they relate to properties of the Docker host. Currently, the default tags include:
 
 * `node` to refer to the node by ID or name
 * `storagedriver`
@@ -73,14 +66,12 @@ these default tags or custom labels. The Swarm scheduler looks for matching node
 on the cluster and starts the container there. This approach has several
 practical applications:
 
-* Schedule based on specific host properties, for example,`storage=ssd` schedules
-  containers on specific hardware.
-* Force containers to run in a given location, for example region=us-east`.
-* Create logical cluster partitions by splitting a cluster into
-  sub-clusters with different properties, for example `environment=production`.
+* Schedule based on specific host properties, for example,`storage=ssd` schedules containers on specific hardware.
+* Force containers to run in a given location. For example: `region=us-east`.
+* Create logical cluster partitions by splitting a cluster into sub-clusters with different properties. For example: `environment=production`.
 
 
-#### Example node constraints  
+#### Example node constraints
 
 To specify custom label for a node, pass a list of `--label`
 options at `docker` startup time. For instance, to start `node-1` with the
@@ -95,12 +86,11 @@ You might start a different `node-2` with `storage=disk`:
     $ swarm join --advertise=192.168.0.43:2375 token://XXXXXXXXXXXXXXXXXX
 
 Once the nodes are joined to a cluster, the Swarm master pulls their respective
-tags.  Moving forward, the master takes the tags into account when scheduling
+tags. Moving forward, the master takes the tags into account when scheduling
 new containers.
 
 Continuing the previous example, assuming your cluster with `node-1` and
-`node-2`, you can run a MySQL server container on the cluster.  When you run the
-container, you can use a `constraint` to ensure the database gets good I/O
+`node-2`, you can run a MySQL server container on the cluster. When you run the container, you can use a `constraint` to ensure the database gets good I/O
 performance. You do this by filtering for nodes with flash drives:
 
 ```bash
@@ -113,7 +103,7 @@ f8b693db9cd6        mysql:latest        "mysqld"            Less than a second a
 ```
 
 In this example, the master selected all nodes that met the `storage=ssd`
-constraint and applied resource management on top of them.   Only `node-1` was
+constraint, and applied resource management on top of them. Only `node-1` was
 selected because it's the only host running flash.
 
 Suppose you want to run an Nginx frontend in a cluster. In this case, you wouldn't want flash drives because the frontend mostly writes logs to disk.
@@ -165,7 +155,7 @@ Again, you'll avoid flash drives.
 
 ### Use the health filter
 
-The node `health` filter prevents the scheduler form running containers
+The node `health` filter prevents the scheduler from running containers
 on unhealthy nodes. A node is considered unhealthy if the node is down or it
 can't communicate with the cluster store.
 
@@ -183,12 +173,11 @@ Use an `affinity` filter to create "attractions" between containers. For
 example, you can run a container and instruct Swarm to schedule it next to
 another container based on these affinities:
 
-* container name or id
-* an image on the host
-* a custom label applied to the container
+* Container name or id
+* An image on the host
+* A custom label applied to the container
 
-These affinities ensure that containers run on the same network node
-&mdash; without you having to know what each node is running.
+These affinities ensure that containers run on the same network node &mdash; without you having to know what each node is running.
 
 #### Example name affinity
 
@@ -206,7 +195,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      frontend
 ```
 
-Then, using `-e affinity:container==frontend` value to schedule a second
+Then, using `-e affinity:container==frontend`, schedule a second
 container to locate and run next to the container named `frontend`.
 
 ```bash
@@ -219,7 +208,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1      logger
 ```
 
-Because of `name` affinity, the  `logger` container ends up on `node-1` along
+Because of `name` affinity, the `logger` container ends up on `node-1` along
 with the `frontend` container. Instead of the `frontend` name you could have
 supplied its ID as follows:
 
@@ -310,6 +299,7 @@ The `logger` container ends up on `node-1` because its affinity with the
 ### Use a dependency filter
 
 A container dependency filter co-schedules dependent containers on the same node.
+
 Currently, dependencies are declared as follows:
 
 * `--volumes-from=dependency` (shared volumes)
@@ -320,8 +310,8 @@ Swarm attempts to co-locate the dependent container on the same node. If it
 cannot be done (because the dependent container doesn't exist, or because the
 node doesn't have enough resources), it will prevent the container creation.
 
-The combination of multiple dependencies are honored if possible. For
-instance, if you specify `--volumes-from=A --net=container:B`,  the scheduler
+The combination of multiple dependencies is honored if possible. For
+instance, if you specify `--volumes-from=A --net=container:B`, the scheduler
 attempts to co-locate the container on the same node as `A` and `B`. If those
 containers are running on different nodes, Swarm does not schedule the container.
 
@@ -330,7 +320,7 @@ containers are running on different nodes, Swarm does not schedule the container
 When the `port` filter is enabled, a container's port configuration is used as a
 unique constraint. Docker Swarm selects a node where a particular port is
 available and unoccupied by another container or process. Required ports may be
-specified by mapping a host port, or using the host networking an exposing a
+specified by mapping a host port, or using the host networking and exposing a
 port using the container configuration.
 
 #### Example in bridge mode
@@ -385,18 +375,13 @@ $ docker tcp://<manager_ip:manager_port> run -d -p 80:80 nginx
 ```
 
 Each container occupies port `80` on its residing node when the container
-is created and releases the port when the container is deleted. A container in `exited`
-state still owns the port. If `prickly_engelbart` on `node-1` is stopped but not
-deleted, trying to start another container on `node-1` that requires port `80` would fail
-because port `80` is associated with `prickly_engelbart`. To increase running
-instances of nginx, you can either restart `prickly_engelbart`, or start another container
-after deleting `prickly_englbart`.
+is created, and releases the port when the container is deleted. A container in an `exited` state still owns the port. If `prickly_engelbart` on `node-1` is stopped but not deleted, trying to start another container on `node-1` that requires port `80` would fail because port `80` is associated with `prickly_engelbart`. To increase running instances of nginx, you can either restart `prickly_engelbart`, or start another container after deleting `prickly_englbart`.
 
 #### Node port filter with host networking
 
 A container running with `--net=host` differs from the default
 `bridge` mode as the `host` mode does not perform any port binding. Instead,
-host mode requires that you  explicitly expose one or more port numbers.  You
+host mode requires that you explicitly expose one or more port numbers. You
 expose a port using `EXPOSE` in the `Dockerfile` or `--expose` on the command
 line. Swarm makes use of this information in conjunction with the `host` mode to
 choose an available node for a new container.
@@ -412,8 +397,7 @@ $ docker tcp://<manager_ip:manager_port> run -d --expose=80 --net=host nginx
 09a92f582bc2
 ```
 
-Port binding information is not available through the `docker ps` command because
-all the nodes were started with the `host` network.
+Port binding information is not available through the `docker ps` command because all the nodes were started with the `host` network.
 
 ```bash
 $ docker tcp://<manager_ip:manager_port> ps
@@ -430,7 +414,7 @@ $  docker tcp://<manager_ip:manager_port> run -d --expose=80 --net=host nginx
 FATA[0000] Error response from daemon: unable to find a node with port 80/tcp available in the Host mode
 ```
 
-However, port binding to the different value, for example  `81`, is still allowed.
+However, port binding to the different value, for example `81`, is still allowed.
 
 ```bash
 $  docker tcp://<manager_ip:manager_port> run -d -p 81:80 nginx:latest
@@ -464,10 +448,10 @@ identifies the type filter you intend to use.
 The `<key>` is an alpha-numeric and must start with a letter or underscore. The
 `<key>` corresponds to one of the following:
 
-* the `container` keyword
-* the `node` keyword
-* a default tag (node constraints)
-* a custom metadata label (nodes or containers).
+* The `container` keyword
+* The `node` keyword
+* A default tag (node constraints)
+* A custom metadata label (nodes or containers).
 
 The `<operator> `is either `==` or `!=`. By default, expression operators are
 hard enforced. If an expression is not met exactly , the manager does not

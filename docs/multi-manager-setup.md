@@ -13,7 +13,7 @@ weight=3
 
 In Docker Swarm, the **swarm manager** is responsible for the entire cluster and manages the resources of multiple *Docker hosts* at scale. If the swarm manager dies, you must create a new one and deal with an interruption of service.
 
-The *High Availability* feature allows a Docker Swarm to gracefully handle the failover of a manager instance. Using this feature, you can create a single **primary manager** instance and multiple **replica** instances.
+The *High Availability* feature allows a Docker Swarm to handle gracefully the failover of a manager instance. Using this feature, you can create a single **primary manager** instance and multiple **replica** instances.
 
 A primary manager is the main point of contact with the Docker Swarm cluster. You can also create and talk to replica instances that will act as backups. Requests issued on a replica are automatically proxied to the primary manager. If the primary manager fails, a replica takes away the lead. In this way, you always keep a point of contact with the cluster.
 
@@ -40,7 +40,7 @@ You use the `swarm manage` command with the `--replication` and `--advertise` fl
       [...]
 
 
-The  `--replication` flag tells swarm that the manager is part of a a multi-manager configuration and that this primary manager competes with other manager instances for the primary role. The primary manager has the authority to manage cluster, replicate logs, and replicate events happening inside the cluster.
+The  `--replication` flag tells swarm that the manager is part of a multi-manager configuration and that this primary manager competes with other manager instances for the primary role. The primary manager has the authority to manage the cluster, replicate logs, and replicate events happening inside the cluster.
 
 The `--advertise` option specifies the primary manager address. Swarm uses this address to advertise to the cluster when the node is elected as the primary. As you see in the command's output, the address you provided now appears to be the one of the elected Primary manager.
 
@@ -55,7 +55,7 @@ Now that you have a primary manager, you can create replicas.
     INFO[0000] New leader elected: 192.168.42.200:4000
     [...]
 
-This command creates a replica manager on `192.168.42.201:4000` which is looking at `192.168.42.200:4000` as the primary manager.
+This command creates a replica manager on `192.168.42.201:4000` that looks at `192.168.42.200:4000` as the primary manager.
 
 Create an additional, third *manager* instance:
 
@@ -118,7 +118,7 @@ Issue a `Ctrl-C` or `kill` the current primary manager (`manager-1`) to shut it 
 
 ### Wait for automated failover
 
-After a short time, the other instances detect the failure and a replica takes the *lead* to become the primary manager.
+After a short time, the other instances detect the failure, and a replica takes the *lead* to become the primary manager.
 
 For example, look at `manager-2`'s logs:
 
@@ -162,4 +162,4 @@ To switch the `DOCKER_HOST` to use `manager-2` as the primary, you do the follow
 
 You can use the `docker` command on any Docker Swarm primary manager or any replica.
 
-If you like, you can use custom mechanisms to always point `DOCKER_HOST` to the current primary manager. Then, you never lose contact with your Docker Swarm in the event of a failover.
+If you like, you can use custom mechanisms to point `DOCKER_HOST` to the current primary manager. Then, you never lose contact with your Docker Swarm in the event of a failover.

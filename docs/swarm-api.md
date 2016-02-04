@@ -40,7 +40,7 @@ POST "/images/create" : "docker import" flow not implement
 
 * `GET "/containers/json"`: `HostIP` replaced by the the actual Node's IP if `HostIP` is `0.0.0.0`
 
-* `GET "/containers/json"` : Containers started from the `swarm` official image are hidden by default, use `all=1` to display them.
+* `GET "/containers/json"` : Containers started from the `swarm` official image are hidden by default. Use `all=1` to display them.
 
 * `GET "/images/json"` : Use '--filter node=\<Node name\>' to show images of the specific node.
 
@@ -48,11 +48,9 @@ POST "/images/create" : "docker import" flow not implement
 
 # Registry Authentication
 
-During container create calls, the swarm API will optionally accept a X-Registry-Config header.
-If provided, this header will be passed down to the engine if the image must be pulled
-to complete the create operation.
+During container create calls, the swarm API will optionally accept an X-Registry-Config header. If provided, this header will be passed down to the engine if the image must be pulled to complete the create operation.
 
-The following two examples demonstrate how to utilize this using the existing docker CLI
+The following two examples demonstrate how to utilize this using the existing Docker CLI
 
 * CLI usage example using username/password:
 

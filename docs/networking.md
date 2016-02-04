@@ -12,7 +12,7 @@ weight=3
 # Swarm and container networks
 
 Docker Swarm is fully compatible with Docker's networking features. This
-includes the multi-host networking feature which allows creation of custom
+includes the multi-host networking feature which allows the creation of custom
 container networks that span multiple Docker hosts.
 
 Before using Swarm with a custom network, read through the conceptual
@@ -79,11 +79,10 @@ NETWORK ID          NAME                   DRIVER
 ```
 
 As you can see here, both the `node-0/swarm_network` and the
-`node-1/swarm_network` have the same ID.  This is because when you create a
+`node-1/swarm_network` have the same ID.  This is because, when you create a
 network on the swarm, it is accessible from all the nodes.
 
-To create a local scope network (for example with the `bridge` network driver) you
-should use `<node>/<name>` otherwise your network is created on a random node.
+To create a local scope network (for example with the `bridge` network driver) you should use `<node>/<name>` otherwise your network is created on a random node.
 
 ```bash
 $ docker network create node-0/bridge2 -b bridge

@@ -11,15 +11,11 @@ weight=55
 
 # Configure Docker Swarm for TLS
 
-In this procedure you create a two-node Swarm cluster, a Docker Engine CLI, a
-Swarm Manager, and a Certificate Authority as shown below. All the Docker Engine
-hosts (`client`, `swarm`, `node1`, and `node2`) have a copy of the
-CA's certificate as well as their own key-pair signed by the CA.
+In this procedure, you create a two-node Swarm cluster, a Docker Engine CLI, a Swarm Manager, and a Certificate Authority as shown below. All the Docker Engine hosts (`client`, `swarm`, `node1`, and `node2`) have a copy of the CA's certificate as well as their own key-pair signed by the CA.
 
 ![](images/tls-1.jpg)
 
 You will complete the following steps in this procedure:
-
 
 - [Step 1: Set up the prerequisites](#step-1-set-up-the-prerequisites)
 - [Step 2: Create a Certificate Authority (CA) server](#step-2-create-a-certificate-authority-ca-server)
@@ -32,18 +28,14 @@ You will complete the following steps in this procedure:
 - [Step 9: Configure the Engine CLI to use TLS](#step-9-configure-the-engine-cli-to-use-tls)
 
 ### Before you begin
-The article includes steps to create your own CA using OpenSSL. This is similar
-to operating your own internal corporate CA and PKI. However, this `must not`
-be used as a guide to building a production-worthy internal CA and PKI. These
-steps are included for demonstration purposes only - so that readers without
-access to an existing CA and set of certificates can follow along and configure
-Docker Swarm to use TLS.
+
+This article includes steps to create your own CA using OpenSSL. This is similar to operating your own internal corporate CA and PKI. However, this **must not** be used as a guide to building a production-worthy internal CA and PKI. These steps are included for demonstration purposes only---so that readers without access to an existing CA and set of certificates can follow along and configure Docker Swarm to use TLS.
 
 
 ## Step 1: Set up the prerequisites
 
-To complete this procedure you must stand up 5 (five) Linux servers. These
-servers can be any mix of physical and virtual servers; they may be on premises
+To complete this procedure, you must stand up five Linux servers. These
+servers can be any mix of physical and virtual servers; they may be on-premises
 or in the public cloud. The following table lists each server name and its purpose.
 
 | Server name | Description                                    |
@@ -54,13 +46,13 @@ or in the public cloud. The following table lists each server name and its purpo
 | `node2`   | Act as a Swarm node.                           |
 | `client`  | Acts as a remote Docker Engine client          |
 
-Make sure that you have SSH access to all 5 servers and that they can communicate with each other using DNS name resolution. In particular:
+Make sure that you have SSH access to all five servers and that they can communicate with each other using DNS name resolution. In particular:
 
-- Open TCP port 2376 between the Swarm Manager and Swarm nodes
-- Open TCP port 3376 between the Docker Engine client and the Swarm Manager
+- Open TCP port 2376 between the Swarm Manager and Swarm nodes.
+- Open TCP port 3376 between the Docker Engine client and the Swarm Manager.
 
 You can choose different ports if these are already in use. This example assumes
-you use these ports though.
+you use these ports, though.
 
 Each server must run an operating system compatible with Docker Engine. For
 simplicity, the steps that follow assume all servers are running Ubuntu 14.04
@@ -68,18 +60,15 @@ LTS.
 
 ## Step 2: Create a Certificate Authority (CA) server
 
->**Note**:If you already have access to a CA and certificates, and are comfortable working with them, you should skip this step and go to the next.
+>**Note**: If you already have access to a CA and certificates, and are comfortable working with them, you should skip this step and go to the next.
 
 In this step, you configure a Linux server as a CA. You use this CA to create
-and sign keys. This step included so that readers without access to an existing
-CA (external or corpoate) and certificates can follow along and complete the
-later steps that require installing and using certificates. It is `not`
-intended as a model for how to deploy production-worthy CA.
+and sign keys. This step is included so that readers without access to an existing CA (external or corporate) and certificates can follow along and complete the later steps that require installing and using certificates. It is **not** intended as a model for how to deploy a production-worthy CA.
 
-1. Logon to the terminal of your CA server and elevate to root.
+1. Log on to the terminal of your CA server and elevate to root.
 
         $ sudo su
-        # 
+        #
 
 2. Create a private key called `ca-priv-key.pem` for the CA:
 
@@ -97,8 +86,8 @@ intended as a model for how to deploy production-worthy CA.
         You are about to be asked to enter information that will be incorporated
         into your certificate request.
         What you are about to enter is what is called a Distinguished Name or a DN.
-        There are quite a few fields but you can leave some blank
-        For some fields there will be a default value,
+        There are quite a few fields, but you can leave some blank
+        For some fields, there will be a default value,
         If you enter '.', the field will be left blank.
         -----
         Country Name (2 letter code) [AU]:US
@@ -110,7 +99,7 @@ You have now configured a CA server with a public and private keypair. You can i
 # openssl rsa -in ca-priv-key.pem -noout -text
 ```
 
-To inspect the public key (cert): `
+To inspect the public key (cert):
 
 ```
 # openssl x509 -in ca.pem -noout -text`
@@ -144,7 +133,7 @@ infrastructure.
 
 Now that you have a working CA, you need to create key pairs for the Swarm
 Manager, Swarm nodes, and remote Docker Engine client. The commands and process
-to create key pairs is identical for all servers.  You'll create the following keys:
+to create key pairs are identical for all servers.  You'll create the following keys:
 
 <table>
   <tr>
@@ -175,11 +164,11 @@ to create key pairs is identical for all servers.  You'll create the following k
 
 The commands below show how to create keys for all of your nodes. You perform this procedure in a working directory located on your CA server.
 
-1. Logon to the terminal of your CA server and elevate to root.
+1. Log on to the terminal of your CA server and elevate to root.
 
         $ sudo su
 
-2. Create a private key `swarm-priv-key.pem` for your Swarm Manager
+2. Create a private key `swarm-priv-key.pem` for your Swarm Manager.
 
         # openssl genrsa -out swarm-priv-key.pem 2048
         Generating RSA private key, 2048 bit long modulus
@@ -265,7 +254,7 @@ To inspect a public key (cert):
 openssl x509 -in <key-name> -noout -text
 ```
 
-The following commands shows the partial contents of the Swarm Manager's public
+The following commands show the partial contents of the Swarm Manager's public
  `swarm-cert.pem` key.
 
 ```
@@ -286,8 +275,7 @@ Signature Algorithm: sha256WithRSAEncryption
 
 ## Step 4: Install the keys
 
-In this step, you install the keys on the relevant servers in the
-infrastructure. Each server needs three files:
+In this step, you install the keys on the relevant servers in the infrastructure. Each server needs three files:
 
 - A copy of the Certificate Authority's public key (`ca.pem`)
 - It's own private key
@@ -303,11 +291,11 @@ follows on each node:
 | `<server>-cert.pem`     | `cert.pem`  |
 | `<server>-priv-key.pem` | `key.pem`   |
 
-1. Logon to the terminal of your CA server and elevate to root.
+1. Log on to the terminal of your CA server and elevate to root.
 
         $ sudo su
 
-2. Create a` ~/.certs` directory on the Swarm manager. Here we assume user account is ubuntu.
+2. Create a` ~/.certs` directory on the Swarm manager. Here, we assume that the user account is ubuntu.
 
         $ ssh ubuntu@swarm 'mkdir -p /home/ubuntu/.certs'
 
@@ -320,7 +308,7 @@ follows on each node:
 
     >**Note**: You may need to provide authentication for the `scp` commands to work. For example, AWS EC2 instances use certificate-based authentication. To copy the files to an EC2 instance associated with a public key called `nigel.pem`, modify the `scp` command as follows: `scp -i /path/to/nigel.pem ./ca.pem ubuntu@swarm:/home/ubuntu/.certs/ca.pem`.
 
-3. Repeat step 2 for each remaining  server in the infrastructure.
+3. Repeat step 2 for each remaining server in the infrastructure.
 
     * `node1`
     * `node2`
@@ -346,7 +334,7 @@ follows on each node:
 In the last step, you created and installed the necessary keys on each of your
 Swarm nodes. In this step, you configure them to listen on the network and only
 accept connections using TLS. Once you complete this step, your Swarm nodes will
-listen on TCP port 2376, and only accept connections using TLS.
+listen on TCP port 2376, and accept only connections using TLS.
 
 On `node1` and `node2` (your Swarm nodes), do the following:
 
@@ -374,12 +362,11 @@ On `node1` and `node2` (your Swarm nodes), do the following:
 
 ## Step 6: Create a Swarm cluster
 
-Next create a Swarm cluster. In this procedure you create a two-node Swarm
+Next create a Swarm cluster. In this procedure, you create a two-node Swarm
 cluster using the default *hosted discovery* backend. The default hosted
 discovery backend uses Docker Hub and is not recommended for production use.
 
-
-1. Logon to the terminal of your Swarm manager node.
+1. Log on to the terminal of your Swarm manager node.
 
 2. Create the cluster and export it's unique ID to the `TOKEN` environment variable.
 
@@ -408,7 +395,7 @@ discovery backend uses Docker Hub and is not recommended for production use.
 
 ## Step 7: Start the Swarm Manager using TLS
 
-1. Launch a new container with TLS enables
+1. Launch a new container with TLS enabled:
 
         $ docker run -d -p 3376:3376 -v /home/ubuntu/.certs:/certs:ro swarm manage --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/cert.pem --tlskey=/certs/key.pem --host=0.0.0.0:3376 token://$TOKEN
 
@@ -434,7 +421,7 @@ Your Swarm cluster is now configured to use TLS.
 
 Now that you have a Swarm cluster built and configured to use TLS, you'll test that it works with a Docker Engine CLI.
 
-1. Open a terminal onto your `client` server.
+1. Open a terminal on your `client` server.
 
 2. Issue the `docker version` command.
 
@@ -535,7 +522,7 @@ your Docker Engine client.
 
             $ source ~/.bash_profile
 
-8. Verify that the procedure worked by issuing a `docker version` command
+8. Verify that the procedure worked by issuing a `docker version` command.
 
         $ docker version
         Client:
@@ -554,7 +541,7 @@ your Docker Engine client.
          Built:
          OS/Arch:      linux/amd64
 
-    The server portion of the output above command shows that your Docker
+    The server portion of the output above shows that your Docker
     client is issuing commands to the Swarm Manager and using TLS.
 
 Congratulations! You have configured a Docker Swarm cluster to use TLS.

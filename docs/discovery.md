@@ -2,7 +2,7 @@
 +++
 title = "Discovery"
 description = "Swarm discovery"
-keywords = ["docker, swarm, clustering,  discovery"]
+keywords = ["docker, swarm, clustering, discovery"]
 [menu.main]
 parent="workw_swarm"
 weight=4
@@ -11,13 +11,12 @@ weight=4
 
 # Docker Swarm Discovery
 
-Docker Swarm comes with multiple discovery backends. You use a hosted discovery service with Docker Swarm. The service maintains a list of IPs in your swarm.
-This page describes the different types of hosted discovery available to you. These are:
-
+Docker Swarm comes with multiple discovery backends. You use a hosted discovery service with Docker Swarm. The service maintains a list of IPs in your Swarm.
+This page describes the different types of hosted discovery available to you.
 
 ## Using a distributed key/value store
 
-The recommended way to do node discovery in Swarm is Docker's libkv project. The libkv project is an abstraction layer over existing distributed key/value stores.  As of this writing, the project supports:
+The recommended way to do node discovery in Swarm is Docker's libkv project. The libkv project is an abstraction layer over existing distributed key/value stores. As of this writing, the project supports:
 
 * Consul 0.5.1 or higher
 * Etcd 2.0 or higher
@@ -29,7 +28,7 @@ For details about libkv and a detailed technical overview of the supported backe
 
 1. On each node, start the Swarm agent.
 
-    The node IP address doesn't have to be public as long as the swarm manager can access it. In a large cluster, the nodes joining swarm may trigger request spikes to discovery. For example, a large number of nodes are added by a script, or recovered from a network partition. This may result in discovery failure. You can use `--delay` option to specify a delay limit. Swarm join will add a random delay less than this limit to reduce pressure to discovery.
+    The node IP address doesn't have to be public as long as the Swarm manager can access it. In a large cluster, the nodes joining Swarm may trigger request spikes to discovery. For example, a large number of nodes are added by a script, or recovered from a network partition. This may result in discovery failure. You can use `--delay` option to specify a delay limit. Swarm join will add a random delay less than this limit to reduce pressure to discovery.
 
     **Etcd**:
 
@@ -86,7 +85,7 @@ For details about libkv and a detailed technical overview of the supported backe
 
 You can securely talk to the distributed k/v store using TLS. To connect
 securely to the store, you must generate the certificates for a node when you
-`join` it to the swarm. You can only use with Consul and Etcd. The following example illustrates this with Consul:
+`join` it to the Swarm. You can only use with Consul and Etcd. The following example illustrates this with Consul:
 
 ```
 swarm join \
@@ -103,7 +102,7 @@ This works the same way for the Swarm `manage` and `list` commands.
 
 You can use a static file or list of nodes for your discovery backend. The file must be stored on a host that is accessible from the Swarm manager. You can also pass a node list as an option when you start Swarm.
 
-Both the static file and the `nodes` option support a IP address ranges. To specify a range supply a pattern, for example, `10.0.0.[10:200]` refers to nodes starting from `10.0.0.10` to `10.0.0.200`.  For example for the `file` discovery method.
+Both the static file and the `nodes` option support IP address ranges. To specify a range supply a pattern, for example, `10.0.0.[10:200]` refers to nodes starting from `10.0.0.10` to `10.0.0.200`. For example for the `file` discovery method.
 
         $ echo "10.0.0.[11:100]:2375"   >> /tmp/my_cluster
         $ echo "10.0.1.[15:20]:2375"    >> /tmp/my_cluster
@@ -115,7 +114,7 @@ Or with node discovery:
 
 ### To create a file
 
-1. Edit the file and add line for each of your nodes.
+1. Edit the file and add a line for each of your nodes.
 
         echo <node_ip1:2375> >> /opt/my_cluster
         echo <node_ip2:2375> >> /opt/my_cluster
@@ -169,7 +168,7 @@ Or with node discovery:
 
 ## Docker Hub as a hosted discovery service
 
-> **Warning**: The Docker Hub Hosted Discovery Service **is not recommended** for production use. It's intended to be used for testing/development. See the  discovery backends for production use.
+> **Warning**: The Docker Hub Hosted Discovery Service **is not recommended** for production use. It's intended to be used for testing/development. See the discovery backends for production use.
 
 This example uses the hosted discovery service on Docker Hub. Using
 Docker Hub's hosted discovery service requires that each node in the
@@ -182,7 +181,7 @@ swarm is connected to the public internet. To create your swarm:
 
 2. Create each node and join them to the cluster.
 
-    On each of your nodes, start the swarm agent. The <node_ip> doesn't have to be public (eg. 192.168.0.X) but the the swarm manager must be able to access it.
+    On each of your nodes, start the Swarm agent. The <node_ip> doesn't have to be public (e.g., 192.168.0.X) but the Swarm manager must be able to access it.
 
         $ swarm join --advertise=<node_ip:2375> token://<cluster_id>
 

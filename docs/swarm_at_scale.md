@@ -13,7 +13,7 @@ weight=-35
 
 Using this example, you'll deploy a voting application on a Swarm cluster. The
 example walks you through creating a Swarm cluster and deploying the application
-against the cluster. This walk through is intended to illustrate one example of
+on the cluster. This walkthrough is intended to illustrate one example of
 a typical development process.
 
 After building and manually deploying the voting application, you'll construct a
@@ -24,17 +24,16 @@ use while developing or deploying the voting application.
 
 ## About the example
 
-Your company is a pet food company that has bought an commercial during the
-Superbowl. The commercial drives viewers to a web survey that asks users to vote &ndash; cats or dogs. You are developing the web survey. Your survey must ensure that
-millions of people can vote concurrently without your website becoming
+Your company is a pet food company that has bought a commercial during the
+Superbowl. The commercial drives viewers to a web survey that asks users to vote &ndash; cats or dogs. You are developing the web survey. Your survey must ensure that millions of people can vote concurrently without your website becoming
 unavailable. You don't need real-time results, a company press release announces
 the results. However, you do need confidence that every vote is counted.
 
 The example assumes you are deploying the application to a Docker Swarm cluster
 running on top of Amazon Web Services (AWS). AWS is an example only. There is
 nothing about this application or deployment that requires it. You could deploy
-the application to a Docker Swarm cluster running on; a different cloud provider
-such as Microsoft Azure, on premises in your own physical data center, or in a
+the application to a Docker Swarm cluster running on a different cloud provider
+such as Microsoft Azure, on-premises in your own physical data center, or in a
 development environment on your laptop.
 
 The example requires you to perform the following high-level steps:
@@ -45,14 +44,14 @@ The example requires you to perform the following high-level steps:
 - [Deploy the voting application](#deploy-the-voting-application)
 - [Test the application](#test-the-application)
 
-Before working through the sample, make sure you understand the application and Swarm cluster architecture.
+Before working through the example, make sure you understand the application and Swarm cluster architecture.
 
 ### Application architecture
 
 The voting application is a Dockerized microservice application. It uses a
 parallel web frontend that sends jobs to asynchronous background workers. The
 application's design can accommodate arbitrarily large scale. The diagram below
-shows the high level architecture of the application.
+shows the high-level architecture of the application.
 
 ![](images/app-architecture.jpg)
 
@@ -63,24 +62,23 @@ The frontend consists of an Interlock load balancer with *n* frontend web
 servers and associated queues. The load balancer can handle an arbitrary number
 of web containers behind it (`frontend01`- `frontendN`). The web containers run
 a simple Python Flask application. Each container accepts votes and queues them
-to a Redis container on the same node. Each web container and Redis queue pair
-operates independently.  
+to a Redis container on the same node. Each of web container and Redis queue pair operates independently.  
 
 The load balancer together with the independent pairs allows the entire
 application to scale to an arbitrary size as needed to meet demand.
 
 Behind the frontend is a worker tier which runs on separate nodes. This tier:
 
-* scans the Redis containers
-* dequeues votes
-* deduplicates votes to prevent double voting
-* commits the results to a Postgres container running on a separate node
+* Scans the Redis containers.
+* Dequeues votes.
+* Deduplicates votes to prevent double voting.
+* Commits the results to a Postgres container running on a separate node.
 
 Just like the front end, the worker tier can also scale arbitrarily.
 
 ### Swarm Cluster Architecture
 
-To support the application the design calls for a Swarm cluster that with a single Swarm manager and 4 nodes as shown below.
+To support the application the design calls for a Swarm cluster that with a single Swarm manager and four nodes, as shown below.
 
 ![](images/swarm-cluster-arch.jpg)
 
@@ -90,8 +88,7 @@ host that is not part of the cluster and is considered out of band for the
 application. The Interlock load balancer could be placed inside of the cluster,
 but for this demonstration it is not.
 
-The diagram below shows the application architecture overlayed on top of the
-Swarm cluster architecture. After completing the example and deploying your
+The diagram below shows the application architecture overlaid on the Swarm cluster architecture. After completing the example and deploying your
 application, this is what your environment should look like.
 
 ![](images/final-result.jpg)
@@ -115,13 +112,14 @@ As previously stated, this article will walk you through deploying the
 application to a Swam cluster in an AWS Virtual Private Cloud (VPC). However,
 you can reproduce the environment design on whatever platform you wish. For
 example, you could place the application on another public cloud platform such
-as DigitalOcean, on premises in your data center, or even in in a test
+as DigitalOcean, on-premises in your data center, or even in a test
 environment on your laptop.
 
 Deploying the AWS infrastructure requires that you first build the VPC and then
-apply apply the [CloudFormation
+apply the [CloudFormation
 template](https://github.com/docker/swarm-microservice-demo-v1/blob/master/AWS/cloudformation.json).
-While you cloud create the entire VPC and all instances via a CloudFormation
+
+While you could create the entire VPC and all instances via a CloudFormation
 template, splitting the deployment into two steps allows the CloudFormation
 template to be easily used to build instances in *existing VPCs*.
 
@@ -135,10 +133,10 @@ be in the `us-west-1` Region (N. California). This Region is required for this
 particular CloudFormation template to work. The VPC network address space is
 `192.168.0.0/16` and single 24-bit public subnet is carved out as
 192.168.33.0/24. The subnet must be configured with a default route to the
-internet via the VPC's internet gateway. All 6 EC2 instances are deployed into
+internet via the VPC's internet gateway. All six EC2 instances are deployed into
 this public subnet.
 
-Once the VPC is created you can deploy the EC2 instances using the
+Once the VPC is created, you can deploy the EC2 instances using the
 CloudFormation template located
 [here](https://github.com/docker/swarm-microservice-demo-v1/blob/master/AWS/cloudformation.json).
 
@@ -147,8 +145,7 @@ CloudFormation template located
 ### Step 1. Build and configure the VPC
 
 This step assumes you know how to configure a VPC either manually
-or using the VPC wizard on Amazon. You can build the VPC manually or by using
-using the VPC Wizard. If you use the wizard, be sure to choose the **VPC with a
+or using the VPC wizard on Amazon. You can build the VPC manually or by using the VPC Wizard. If you use the wizard, be sure to choose the **VPC with a
 Single Public Subnet** option.
 
 Configure your VPC with the following values:
@@ -177,17 +174,17 @@ the private key of an EC2 KeyPair associated with your AWS account in the
 `us-west-1` Region. Follow the steps below to build the remainder of the AWS
 infrastructure using the CloudFormation template.
 
-1. Choose **Create Stack** from the CloudFormation page in the AWS Console
-2. Click the **Choose file** button under the **Choose a template** section
-3. Select the **swarm-scale.json** CloudFormation template available from the [application's GitHub repo](https://github.com/docker/swarm-microservice-demo-v1/blob/master/AWS/cloudformation.json)
-4. Click **Next**
-5. Give the Stack a name. You can name the stack whatever you want, though it is recommended to use a meaningful name
-6. Select a KeyPair form the dropdown list
-7. Select the correct **Subnetid** (PublicSubnet) and **Vpcid** (SwarmCluster) from the dropdowns
-8. Click **Next**
-9. Click **Next** again
-10. Review your settings and click **Create**
-    AWS displays the progress of your stack being created
+1. Choose **Create Stack** from the CloudFormation page in the AWS Console.
+2. Click the **Choose file** button under the **Choose a template** section.
+3. Select the **swarm-scale.json** CloudFormation template available from the [application's GitHub repo](https://github.com/docker/swarm-microservice-demo-v1/blob/master/AWS/cloudformation.json).
+4. Click **Next**.
+5. Give the Stack a name. You can name the stack whatever you want, though it is recommended to use a meaningful name.
+6. Select a KeyPair from the dropdown list.
+7. Select the correct **Subnetid** (PublicSubnet) and **Vpcid** (SwarmCluster) from the dropdowns.
+8. Click **Next**.
+9. Click **Next** again.
+10. Review your settings and click **Create**.
+    AWS displays the progress of your stack being created.
 
 ### Step 3. Check your deployment
 
@@ -213,7 +210,7 @@ the following parameters added to the `DOCKER_OPTS` line in
 --cluster-store=consul://192.168.33.11:8500 --cluster-advertise=eth0:2375 -H=tcp://0.0.0.0:2375 -H=unix:///var/run/docker.sock\
 ```
 
-Once your stack is created successfully you are ready to progress to the next
+Once your stack is successfully created, you are ready to progress to the next
 step and build the Swarm cluster. From this point, the instructions refer to the
 AWS EC2 instances as "nodes".
 
@@ -225,10 +222,9 @@ Now that your underlying network infrastructure is built, you are ready to build
 
 The steps below construct a Swarm cluster by:
 
-* using Consul as the discovery backend
-* join the `frontend`, `worker`
-* `store` EC2 instances to the cluster
-* use the `spread` scheduling strategy.
+* Using Consul as the discovery backend.
+* Joining the `frontend`, `worker`, and `store` EC2 instances to the cluster.
+* Use the `spread` scheduling strategy.
 
 Perform all of the following commands from the `manager` node.
 
@@ -243,31 +239,31 @@ Perform all of the following commands from the `manager` node.
 2. Start a Swarm manager container.
 
     This command maps port 3375 on the `manager` node to port 2375 in the
-    Swarm manager container
+    Swarm manager container:
 
         $ sudo docker run --restart=unless-stopped -d -p 3375:2375 swarm manage consul://192.168.33.11:8500/
 
     This Swarm manager container is the heart of your Swarm cluster. It is
     responsible for receiving all Docker commands sent to the cluster, and for
     scheduling resources against the cluster. In a real-world production
-    deployment you would configure additional replica Swarm managers as
+    deployment, you would configure additional replica Swarm managers as
     secondaries for high availability (HA).
 
 3. Set the `DOCKER_HOST` environment variable.
 
-    This ensures that the default endpoint for Docker commands is the Docker daemon running on the `manager` node
+    This ensures that the default endpoint for Docker commands is the Docker daemon running on the `manager` node.
 
         $ export DOCKER_HOST="tcp://192.168.33.11:3375"
 
 4. While still on the `manager` node, join the nodes to the cluster.
 
-    You can run these commands form the `manager` node because the `-H` flag
+    You can run these commands from the `manager` node because the `-H` flag
     sends the commands to the Docker daemons on the nodes. The command joins a
     node to the cluster and registers it with the Consul discovery service.
 
         sudo docker -H=tcp://<node-private-ip>:2375 run -d swarm join --advertise=<node-private-ip>:2375 consul://192.168.33.11:8500/
 
-    Substitute `<node-private-ip` in the command with the private IP of the
+    Substitute `<node-private-ip` in the command with the private IP of the node
     you are adding. Repeat step 4 for every node you are adding to the cluster -
     `frontend01`, `frontend02`, `worker01`, and `store`.
 
@@ -278,7 +274,7 @@ The diagram below shows the Swarm cluster that you created.
 
 ![](images/review-work.jpg)
 
-The diagram shows the `manager` node is running two containers: `consul` and
+The diagram shows the `manager` node running two containers: `consul` and
 `swarm`. The `consul` container is providing the Swarm discovery service. This
 is where nodes and services register themselves and discover each other. The
 `swarm` container is running the `swarm manage` process which makes it act as
@@ -298,18 +294,18 @@ network that the application containers will be part of.
 
 All containers that are part of the voting application belong to a container
 network called `mynet`. This will be an overlay network that allows all
-application containers to easily communicate irrespective of the underlying
+application containers to communicate easily, irrespective of the underlying
 network that each node is on.
 
 ### Step 1: Create the network
 
-You can create the network and join the containers from any node in your VPC
+You can create the network, and join the containers from any node in your VPC
 that is running Docker Engine. However, best practice when using Docker Swarm is
 to execute commands from the `manager` node, as this is where all management
 tasks happen.
 
 1. Open a terminal on your `manager` node.
-2. Create the overlay network with the `docker network` command
+2. Create the overlay network with the `docker network` command:
 
         $ sudo docker network create --driver overlay mynet
 
@@ -334,28 +330,26 @@ tasks happen.
 
 The diagram below shows the complete cluster configuration including the overlay
 container network, `mynet`. The `mynet` is shown as red and is available to all
-Docker hosts using the Consul discovery backend. Later in the procedure you will
-connect containers to this network.
+Docker hosts using the Consul discovery backend. Later in the procedure, you will connect containers to this network.
 
 ![](images/overlay-review.jpg)
 
 > **Note**: The `swarm` and `consul` containers on the `manager` node are not attached to the `mynet` overlay network.
 
-Your cluster is now built and you are ready to build and run your application on
-it.
+Your cluster is now built, and you are ready to build and run your application on it.
 
 ## Deploy the voting application
 
 Now it's time to configure the application.
 
 Some of the containers in the application are launched from custom images you
-must build. Others are launched form existing images pulled directly from Docker
+must build. Others are launched from existing images pulled directly from Docker
 Hub. Deploying the application requires that you:
 
-- Understand the custom images
-- Build custom images
-- Pull stock images from Docker Hub
-- Launch application containers
+- Understand the custom images.
+- Build custom images.
+- Pull stock images from Docker Hub.
+- Launch application containers.
 
 ### Step 1: Understand the custom images
 
@@ -371,7 +365,7 @@ The list below shows which containers use custom images and which do not:
 All custom built images are built using Dockerfile's pulled from the [application's public GitHub repository](https://github.com/docker/swarm-microservice-demo-v1).
 
 1. Log into the Swarm manager node.
-2. Clone the [application's GitHub repo](https://github.com/docker/swarm-microservice-demo-v1)
+2. Clone the [application's GitHub repo](https://github.com/docker/swarm-microservice-demo-v1):
 
         $ sudo git clone https://github.com/docker/swarm-microservice-demo-v1
 
@@ -386,8 +380,7 @@ All custom built images are built using Dockerfile's pulled from the [applicatio
     other files required to build the custom images for those particular
     components of the application.
 
-
-3. Change directory into the `swarm-microservice-demo-v1/web-vote-app` directory and inspect the contents of the `Dockerfile`
+3. Change directory into the `swarm-microservice-demo-v1/web-vote-app` directory and inspect the contents of the `Dockerfile`:
 
         $ cd swarm-microservice-demo-v1/web-vote-app/
 
@@ -403,14 +396,13 @@ All custom built images are built using Dockerfile's pulled from the [applicatio
     As you can see, the image is based on the official `Python:2.7` tagged
     image, adds a requirements file into the `/app` directory, installs
     requirements, copies files from the build context into the container,
-    exposes port `80` and tells the container which command to run.
+    exposes port `80` and tells the container which commands to run.
 
 ### Step 2. Build custom images
 
 1. Log into the swarm manager node if you haven't already.
 2. Change to the root of your swarm-demo-voting app clone.
-
-2. Build the `web-votes-app` image on `frontend01` and `frontend02`
+3. Build the `web-votes-app` image on `frontend01` and `frontend02`.
 
         $ sudo docker -H tcp://192.168.33.20:2375 build -t web-vote-app ./web-vote-app
         $ sudo docker -H tcp://192.168.33.21:2375 build -t web-vote-app ./web-vote-app
@@ -423,13 +415,13 @@ All custom built images are built using Dockerfile's pulled from the [applicatio
 
     It may take a minute or so for each image to build. Wait for the builds to finish.
 
-3. Build `vote-worker` image on the `worker01` node
+4. Build `vote-worker` image on the `worker01` node.
 
         $ sudo docker -H tcp://192.168.33.200:2375 build -t vote-worker ./vote-worker
 
     It may take a minute or so for the image to build. Wait for the build to finish.
 
-5. Build the `results app` on the `store` node
+5. Build the `results app` on the `store` node.
 
         $ sudo docker -H tcp://192.168.33.250:2375 build -t results-app ./results-app
 
@@ -441,20 +433,20 @@ For performance reasons, it is always better to pull any required Docker Hub ima
 
 1. Log into the Swarm `manager` node.
 
-2. Pull the `redis` image to `frontend01` and `frontend02`
+2. Pull the `redis` image to `frontend01` and `frontend02`.
 
         $ sudo docker -H tcp://192.168.33.20:2375 pull redis
         $ sudo docker -H tcp://192.168.33.21:2375 pull redis
 
-2. Pull the `postgres` image to the `store` node
+2. Pull the `postgres` image to the `store` node.
 
         $ sudo docker -H tcp://192.168.33.250:2375 pull postgres
 
-3. Pull the `ehazlett/interlock` image to the `interlock` node
+3. Pull the `ehazlett/interlock` image to the `interlock` node.
 
         $ sudo docker -H tcp://192.168.33.12:2375 pull ehazlett/interlock
 
-Each node in the cluster, as well as the `interlock` node, now has the required images stored locally as shown below.
+Each node in the cluster, as well as the `interlock` node, now has the required images stored locally, as shown below.
 
 ![](images/interlock.jpg)
 
@@ -462,7 +454,7 @@ Now that all images are built, pulled, and stored locally, the next step is to s
 
 ### Step 4. Start the voting application
 
-The following steps will guide you through the process of starting the application
+The following steps will guide you through the process of starting the application.
 
 * Start the `interlock` load balancer container on `interlock`
 * Start the `redis` containers on `frontend01` and `frontend02`
@@ -475,45 +467,45 @@ Do the following:
 
 1. Log into the Swarm `manager` node.
 
-2. Start the `interlock` container on the `interlock` node
+2. Start the `interlock` container on the `interlock` node:
 
         $ sudo docker -H tcp://192.168.33.12:2375 run --restart=unless-stopped -p 80:80 --name interlock -d ehazlett/interlock --swarm-url tcp://192.168.33.11:3375 --plugin haproxy start
 
-    This command is issued against the `interlock` instance and maps port 80 on the instance to port 80 inside the container. This allows the container to load balance connections coming in over port 80 (HTTP). The command also applies the `--restart=unless-stopped` policy to the container, telling Docker to restart the container if it exits unexpectadly.
+    This command is issued against the `interlock` instance and maps port 80 on the instance to port 80 inside the container. This allows the container to load balance connections coming in over port 80 (HTTP). The command also applies the `--restart=unless-stopped` policy to the container, telling Docker to restart the container if it exits unexpectedly.
 
-2. Start a `redis` container on `frontend01` and `frontend02`
+2. Start a `redis` container on `frontend01` and `frontend02`:
 
         $ sudo docker run --restart=unless-stopped --env="constraint:node==frontend01" -p 6379:6379 --name redis01 --net mynet -d redis
 
         $ sudo docker run --restart=unless-stopped --env="constraint:node==frontend02" -p 6379:6379 --name redis02 --net mynet -d redis
 
-    These two commands are issued against the Swarm cluster. The commands specify *node constraints*, forcing Swarm to start the contaienrs on `frontend01` and `frontend02`. Port 6379 on each instance is mapped to port 6379 inside of each container for debugging purposes. The command also applies the `--restart=unless-stopped` policy to the containers and attaches them to the `mynet` overlay network.
+    These two commands are issued against the Swarm cluster. The commands specify *node constraints*, forcing Swarm to start the containers on `frontend01` and `frontend02`. Port 6379 on each instance is mapped to port 6379 inside of each container for debugging purposes. The command also applies the `--restart=unless-stopped` policy to the containers and attaches them to the `mynet` overlay network.
 
-3. Start a `web-vote-app` container on `frontend01` and `frontend02`
+3. Start a `web-vote-app` container on `frontend01` and `frontend02`:
 
         $ sudo docker run --restart=unless-stopped --env="constraint:node==frontend01" -d -p 5000:80 -e WEB_VOTE_NUMBER='01' --name frontend01 --net mynet --hostname votingapp.local web-vote-app
 
         $ sudo docker run --restart=unless-stopped --env="constraint:node==frontend02" -d -p 5000:80 -e WEB_VOTE_NUMBER='02' --name frontend02 --net mynet --hostname votingapp.local web-vote-app
 
-    These two commands are issued against the Swarm cluster. The commands specify *node constraints*, forcing Swarm to start the contaienrs on `frontend01` and `frontend02`. Port 5000 on each node is mapped to port 80 inside of each container. This allows connections to come in to each node on port 5000 and be forwarded to port 80 inside of each container. Both containers are attached to the `mynet` overlay network and both containers are given the `votingapp-local` hostname. The `--restart=unless-stopped` policy is also applied to these containers.
+    These two commands are issued against the Swarm cluster. The commands specify *node constraints*, forcing Swarm to start the containers on `frontend01` and `frontend02`. Port 5000 on each node is mapped to port 80 inside of each container. This allows connections to come into each node on port 5000 and be forwarded to port 80 inside of each container. Both containers are attached to the `mynet` overlay  both containers are given the `votingapp-local` hostname. The `--restart=unless-stopped` policy is also applied to these containers.
 
-4. Start the `postgres` container on the `store` node
+4. Start the `postgres` container on the `store` node:
 
         $ sudo docker run --restart=unless-stopped --env="constraint:node==store" --name pg -e POSTGRES_PASSWORD=pg8675309 --net mynet -p 5432:5432 -d postgres
 
     This command is issued against the Swarm cluster and starts the container on `store`. It maps port 5432 on the `store` node to port 5432 inside the container and attaches the container to the `mynet` overlay network. It also inserts the database password into the container via the POSTGRES_PASSWORD environment variable and applies the `--restart=unless-stopped` policy to the container. Sharing passwords like this is not recommended for production use cases.
 
-5. Start the `worker01` container on the `worker01` node
+5. Start the `worker01` container on the `worker01` node:
 
         $ sudo docker run --restart=unless-stopped --env="constraint:node==worker01" -d -e WORKER_NUMBER='01' -e FROM_REDIS_HOST=1 -e TO_REDIS_HOST=2 --name worker01 --net mynet vote-worker
 
-    This command is issued against the Swarm manager and uses a constraint to start the container on the `worker01` node. It passes configuration data into the container via environment variables, telling the worker container to clear the queues on `frontend01` and `frontend02`. It adds the container to the `mynet` overlay network and applies the `--restart=unless-stopped` policy to the container.
+    This command is issued against the Swarm manager and uses a constraint to start the container on the `worker01` node. It passes configuration data into the container via environment variables, telling the worker container to clear the queues on `frontend01` and `frontend02`. It adds the container to the `mynet` overlay network, and applies the `--restart=unless-stopped` policy to the container.
 
 6. Start the `results-app` container on the `store` node
 
         $ sudo docker run --restart=unless-stopped --env="constraint:node==store" -p 80:80 -d --name results-app --net mynet results-app
 
-    This command starts the results-app container on the `store` node by means of a *node constraint*. It maps port 80 on the `store` node to port 80 inside the container. It adds the container to the `mynet` overlay network and applies the `--restart=unless-stopped` policy to the container.
+    This command starts the results-app container on the `store` node using a *node constraint*. It maps port 80 on the `store` node to port 80 inside the container. It adds the container to the `mynet` overlay network, and applies the `--restart=unless-stopped` policy to the container.
 
 The application is now fully deployed as shown in the diagram below.
 
@@ -533,7 +525,7 @@ Now that the application is deployed and running, it's time to test it.
 
     Be sure to replace <interlock-public-ip> with the public IP address of your `interlock` node. You can find the `interlock` node's Public IP by selecting your `interlock` EC2 Instance from within the AWS EC2 console.
 
-2. Verify the mapping worked with a ping command from your web browsers machine
+2. Verify the mapping worked with a ping command from your web browsers machine:
 
         C:\Users\nigelpoulton>ping votingapp.local
         Pinging votingapp.local [54.183.164.230] with 32 bytes of data:
@@ -541,7 +533,7 @@ Now that the application is deployed and running, it's time to test it.
         Reply from 54.183.164.230: bytes=32 time=163ms TTL=42
         Reply from 54.183.164.230: bytes=32 time=169ms TTL=42
 
-3. Now that name resolution is configured and you have successfully pinged `votingapp.local`, point your web browser to [http://votingapp.local](http://votingapp.local)
+3. Now that name resolution is configured, and you have successfully pinged `votingapp.local`, point your web browser to [http://votingapp.local](http://votingapp.local).
 
     ![](images/vote-app-test.jpg)
 
@@ -550,13 +542,13 @@ Now that the application is deployed and running, it's time to test it.
     If you refresh your web browser you should see this change as the Interlock
     load balancer shares incoming requests across both web containers.
 
-    To see more detailed load balancer data from the Interlock service, point your web browser to [http://stats:interlock@votingapp.local/haproxy?stats](http://stats:interlock@votingapp.local/haproxy?stats)
+    To see more detailed load balancer data from the Interlock service, point your web browser to [http://stats:interlock@votingapp.local/haproxy?stats](http://stats:interlock@votingapp.local/haproxy?stats).
 
     ![](images/proxy-test.jpg)
 
 4. Cast your vote. It is recommended to choose "Dogs" ;-)
 
-5. To see the results of the poll, you can point your web browser at the public IP of the `store` node
+5. To see the results of the poll, you can point your web browser at the public IP of the `store` node.
 
     ![](images/poll-results.jpg)
 
@@ -595,7 +587,7 @@ or containers until you have a working Swarm manager.
 
 Docker Swarm supports high availability for Swarm managers. This allows a single
 Swarm cluster to have two or more managers. One manager is elected as the
-primary manager and all others operate as secondaries. In the event that the
+primary manager and all others operate as secondaries. If the
 primary manager fails, one of the secondaries is elected as the new primary, and
 cluster operations continue gracefully. If you are deploying multiple Swarm
 managers for high availability, you should consider spreading them across
@@ -641,12 +633,12 @@ or if the Docker daemon itself has failed.
 
 Another way is to have an external tool (external to the cluster) monitor the
 state of your application, and make sure that certain service levels are
-maintained. These service levels can include things like "have at least 10 web
+maintained. These service levels can include things like "have at least ten web
 server containers running". In this scenario, if the number of web containers
-drops below 10, the tool will attempt to start more.
+drops below ten, the tool will attempt to start more.
 
 In our simple voting-app example, the front-end is scalable and serviced by a
-load balancer. In the event that on the of the two web containers fails (or the
+load balancer. If one the of the two web containers fails (or the
 AWS instance that is hosting it), the load balancer will stop routing requests
 to it and send all requests the surviving web container. This solution is highly
 scalable meaning you can have up to *n* web containers behind the load balancer.
@@ -678,8 +670,8 @@ The environment that you have configured has two web-vote-app containers running
 on two separate nodes. They operate behind an Interlock load balancer that
 distributes incoming connections across both.
 
-In the event that one of the web containers or nodes fails, the load balancer
-will start directing all incoming requests to surviving instance. Once the
+If one of the web containers or nodes fails, the load balancer
+will start directing all incoming requests to a surviving instance. Once the
 failed instance is back up, or a replacement is added, the load balancer will
 add it to the configuration and start sending a portion of the incoming requests
 to it.
@@ -711,14 +703,14 @@ with the `--restart=unless-stopped` switch.
 
 This application does not implement any for of HA or replication for Postgres.
 Therefore losing the Postgres container would cause the application to fail and
-potential lose or corrupt data. A better solution would be to implement some
+potentially lose or corrupt data. A better solution would be to implement some
 form of Postgres HA or replication.
 
 ### Results-app failures
 
 If the results-app container exits, you will not be able to browse to the
 results of the poll until the container is back up and running. Results will
-continue to be collected and counted, you will just not be able to view results
+continue to be collected and counted; you will just not be able to view results
 until the container is back up and running.
 
 The results-app container was started with the `--restart=unless-stopped` flag
@@ -750,14 +742,14 @@ This will allow us to lose an entire AZ and still have our cluster and
 application operate.
 
 But it doesn't have to stop there. Some applications can be balanced across AWS
-Regions. In our example we might deploy parts of our cluster and application in
+Regions. In our example, we might deploy parts of our cluster and application in
 the `us-west-1` Region and the rest in `us-east-1`. It's even becoming possible
 to deploy services across cloud providers, or have balance services across
-public cloud providers and your on premises date ceters!
+public cloud providers and your on-premises data centers!
 
 The diagram below shows parts of the application and infrastructure deployed
 across AWS and Microsoft Azure. But you could just as easily replace one of
-those cloud providers with your own on premises data center. In these scenarios,
+those cloud providers with your own on-premises data center. In these scenarios,
 network latency and reliability is key to a smooth and workable solution.  
 
 ![](images/deployed-across.jpg)
