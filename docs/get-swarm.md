@@ -29,15 +29,15 @@ The first time you use any image, Docker Engine checks to see if you already hav
 
 1. Open a terminal on a host running Engine.
 
-    If you are using Mac or Windows, then you must make sure you have started an Docker Engine host running and pointed your terminal environment to it with the Docker Machine commands.  If you aren't sure, you can verify:
+    If you are using Mac or Windows, then you must make sure you have started an Docker Engine host running and pointed your terminal environment to it with the Docker Machine commands. If you aren't sure, you can verify:
 
-      $ docker-machine ls
-      NAME      ACTIVE   URL          STATE     URL                         SWARM   DOCKER    ERRORS
-      default   *       virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1    
+        $ docker-machine ls
+        NAME      ACTIVE   URL          STATE     URL                         SWARM   DOCKER    ERRORS
+        default   *       virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1    
 
     This shows an environment running an Engine host on the `default` instance.
 
-2. Use the Swarm image to execute a command.
+2. Use the `swarm` image to execute a command.
 
     The easiest command is to get the help for the image. This command shows all the options that are available with the image.
 
@@ -75,9 +75,10 @@ The first time you use any image, Docker Engine checks to see if you already hav
 
         Run 'swarm COMMAND --help' for more information on a command.
 
-    In this example, the image did not exist on the Engine host, so the Engine
-    downloaded it.  After it downloaded, the `swarm` image executed the and
-    displayed the help. After displaying the help, the `swarm` image exits and returns your to your terminal command line.
+    In this example, the `swarm` image did not exist on the Engine host, so the
+    Engine downloaded it. After it downloaded, the image executed the `help`
+    subcommand to display the help text. After displaying the help, the `swarm`
+    image exits and returns your to your terminal command line.
 
 3. List the running containers on your Engine host.
 
