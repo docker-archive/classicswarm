@@ -5,8 +5,8 @@ description = "Running a Swarm container on Docker Engine. Run a Swarm binary on
 keywords = ["docker, Swarm, container, binary, clustering, install, installation"]
 [menu.main]
 identifier="how-to-get-and-run-Swarm"
-parent="mn_install"
-weight=9
+parent="workw_swarm"
+weight=-90
 +++
 <![end-metadata]-->
 
