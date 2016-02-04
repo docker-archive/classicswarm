@@ -13,7 +13,6 @@ install:
   - export PATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace/bin:$PATH
   - go get golang.org/x/tools/cmd/vet
   - go get golang.org/x/tools/cmd/cover
-  - go get github.com/mattn/goveralls
   - go get github.com/golang/lint/golint
   - go get github.com/GeertJohan/fgt
 
@@ -28,4 +27,3 @@ script:
   - GOOS=linux go build
   - go test -v -race ./...
   - script/coverage
-  - goveralls -service=travis-ci -coverprofile=goverage.report
