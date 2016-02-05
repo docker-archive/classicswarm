@@ -17,7 +17,33 @@
 			"dongluochen",
 			"jimmyxian",
 			"mhbauer",
+			"nishanttotla",
 			"vieux",
+		]
+
+	[Org."Docs maintainers"]
+
+	# TODO Describe the docs maintainers role.
+
+		people = [
+			"moxiegirl"
+		]									]
+
+
+	[Org.Curators]
+
+	# The curators help ensure that incoming issues and pull requests are properly triaged and
+	# that our various contribution and reviewing processes are respected. With their knowledge of
+	# the repository activity, they can also guide contributors to relevant material or
+	# discussions.
+	#
+	# They are neither code nor docs reviewers, so they are never expected to merge. They can
+	# however:
+	# - close an issue or pull request when it's an exact duplicate
+	# - close an issue or pull request when it's inappropriate or off-topic
+
+		people = [
+			"amitshukla"
 		]
 
 [people]
@@ -38,6 +64,11 @@
 	Email = "al@docker.com"
 	GitHub = "aluzzardi"
 
+	[people.amitshukla]
+	Name = "Amit Shukla"
+	Email = "amit.shukla@docker.com"
+	GitHub = "amitshukla"
+
 	[people.chanwit]
 	Name = "Chanwit Kaewkasi"
 	Email = "chanwit@gmail.com"
@@ -46,12 +77,22 @@
 	[people.dongluochen]
 	Name = "Dongluo Chen"
 	Email = "dong@docker.com"
-	Github = "dongluochen"
+	GitHub = "dongluochen"
 
 	[people.mhbauer]
 	Name = "Morgan Bauer"
 	Email = "mbauer@us.ibm.com"
 	GitHub = "mhbauer"
+
+	[people.moxiegirl]
+	Name = "Mary Anthony"
+	Email = "mary.anthony@docker.com"
+	GitHub = "moxiegirl"
+
+	[people.nishanttotla]
+	Name = "Nishant Totla"
+	Email = "nishanttotla@gmail.com"
+	GitHub = "nishanttotla"
 
 	[people.vieux]
 	Name = "Victor Vieux"
