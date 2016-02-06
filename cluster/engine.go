@@ -436,12 +436,32 @@ func (e *Engine) RemoveImage(image *Image, name string, force bool) ([]*dockercl
 
 }
 
-// RemoveNetwork deletes a network from the engine.
+// RemoveNetwork removes a network from the engine.
 func (e *Engine) RemoveNetwork(network *Network) error {
 	err := e.client.RemoveNetwork(network.ID)
 	e.CheckConnectionErr(err)
-	e.RefreshNetworks()
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Remove the container from the state. Eventually, the state refresh loop
+	// will rewrite this.
+	e.DeleteNetwork(network)
+	return nil
+}
+
+// DeleteNetwork deletes a network from the internal engine state.
+func (e *Engine) DeleteNetwork(network *Network) {
+	e.Lock()
+	delete(e.networks, network.ID)
+	e.Unlock()
+}
+
+// AddNetwork adds a network to the internal engine state.
+func (e *Engine) AddNetwork(network *Network) {
+	e.Lock()
+	e.networks[network.ID] = network
+	e.Unlock()
 }
 
 // RemoveVolume deletes a volume from the engine.
