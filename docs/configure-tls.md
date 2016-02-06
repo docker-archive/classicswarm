@@ -406,44 +406,14 @@ discovery backend uses Docker Hub and is not recommended for production use.
         db3f49d397bad957202e91f0679ff84f526e74d6c5bf1b6734d834f5edcbca6c
 
 
-## Step 7: Create the Swarm Manager using TLS
+## Step 7: Start the Swarm Manager using TLS
 
-To configure and run a containerized Swarm Manager process using TLS, you
-need to create a custom Swarm image that contains the Swarm Manager's keys and
-the CA's trusted public key.
+1. Launch a new container with TLS enables
 
-1. Logon to the terminal of your Swarm manager node.
+        $ docker run -d -p 3376:3376 -v /home/ubuntu/.certs:/certs:ro swarm manage --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/cert.pem --tlskey=/certs/key.pem --host=0.0.0.0:3376 token://$TOKEN
 
-2. Create a build directory and change into it
-
-        $ mkdir build && cd build
-
-3. Copy the Swarm manager's keys in the build directory
-
-        $ cp /home/ubuntu/.certs/{ca,cert,key}.pem /home/ubuntu/build
-
-4. Create a new `Dockerfile` file with the following contents:
-
-        FROM swarm
-        COPY ca.pem /etc/tlsfiles/ca.pem
-        COPY cert.pem /etc/tlsfiles/cert.pem
-        COPY key.pem /etc/tlsfiles/key.pem
-
-    This Dockerfile creates a new image called, `swarm-tls` based on the
-    official `swarm` image. This new image has copies of the required keys in it.
-
-5. Build a new image from the `Dockerfile`.
-
-        $ sudo docker build -t nigel/swarm-tls:latest .
-
-6. Launch a new container with you new `swarm-tls:latest` image.
-
-    The command runs the `swarm manage` command:
-
-        $ docker run -d -p 3376:3376 nigel/swarm-tls manage --tlsverify --tlscacert=/etc/tlsfiles/ca.pem --tlscert=/etc/tlsfiles/cert.pem --tlskey=/etc/tlsfiles/key.pem --host=0.0.0.0:3376 token://$TOKEN
-
-    The command above launches a new container based on the `swarm-tls:latest`
-    image. It also maps port `3376` on the server to port `3376` inside the
+    The command above launches a new container based on the `swarm` image
+    and it maps port `3376` on the server to port `3376` inside the
     container. This mapping ensures that Docker Engine commands sent to the host
     on port `3376` are passed on to port `3376` inside the container. The
     container runs the Swarm `manage` process with the `--tlsverify`,
@@ -451,12 +421,12 @@ the CA's trusted public key.
     force TLS verification and specify the location of the Swarm manager's TLS
     keys.
 
-7. Run a `docker ps` command to verify that your Swarm manager container is up
+2. Run a `docker ps` command to verify that your Swarm manager container is up
 and running.
 
         $ docker ps
         CONTAINER ID   IMAGE               COMMAND                  CREATED          STATUS          PORTS                              NAMES
-        035dbf57b26e   nigel/swarm-tls     "/swarm manage --tlsv"   7 seconds ago    Up 7 seconds    2375/tcp, 0.0.0.0:3376->3376/tcp   compassionate_lovelace
+        035dbf57b26e   swarm               "/swarm manage --tlsv"   7 seconds ago    Up 7 seconds    2375/tcp, 0.0.0.0:3376->3376/tcp   compassionate_lovelace
 
 Your Swarm cluster is now configured to use TLS.
 
