@@ -120,7 +120,7 @@ environment on your laptop.
 
 Deploying the AWS infrastructure requires that you first build the VPC and then
 apply apply the [CloudFormation
-template](https://github.com/docker/swarm-demo-voting-app/blob/master/AWS/cloudformation.json).
+template](https://github.com/docker/swarm-microservice-demo-v1/blob/master/AWS/cloudformation.json).
 While you cloud create the entire VPC and all instances via a CloudFormation
 template, splitting the deployment into two steps allows the CloudFormation
 template to be easily used to build instances in *existing VPCs*.
@@ -140,7 +140,7 @@ this public subnet.
 
 Once the VPC is created you can deploy the EC2 instances using the
 CloudFormation template located
-[here](https://github.com/docker/swarm-demo-voting-app/blob/master/AWS/cloudformation.json).
+[here](https://github.com/docker/swarm-microservice-demo-v1/blob/master/AWS/cloudformation.json).
 
 >**Note**: If you are not deploying to AWS, or are not using the CloudFormation template mentioned above, make sure your Docker hosts are running a 3.16 or higher kernel. This kernel is required by Docker's container networking feature.
 
@@ -179,7 +179,7 @@ infrastructure using the CloudFormation template.
 
 1. Choose **Create Stack** from the CloudFormation page in the AWS Console
 2. Click the **Choose file** button under the **Choose a template** section
-3. Select the **swarm-scale.json** CloudFormation template available from the [application's GitHub repo](https://github.com/docker/swarm-demo-voting-app/blob/master/AWS/cloudformation.json)
+3. Select the **swarm-scale.json** CloudFormation template available from the [application's GitHub repo](https://github.com/docker/swarm-microservice-demo-v1/blob/master/AWS/cloudformation.json)
 4. Click **Next**
 5. Give the Stack a name. You can name the stack whatever you want, though it is recommended to use a meaningful name
 6. Select a KeyPair form the dropdown list
@@ -368,12 +368,12 @@ The list below shows which containers use custom images and which do not:
 - Redis containers: stock image (official `redis` image)
 - Postgres (PostgreSQL) containers: stock image (official `postgres` image)
 
-All custom built images are built using Dockerfile's pulled from the [application's public GitHub repository](https://github.com/docker/swarm-demo-voting-app).
+All custom built images are built using Dockerfile's pulled from the [application's public GitHub repository](https://github.com/docker/swarm-microservice-demo-v1).
 
 1. Log into the Swarm manager node.
-2. Clone the [application's GitHub repo](https://github.com/docker/swarm-demo-voting-app)
+2. Clone the [application's GitHub repo](https://github.com/docker/swarm-microservice-demo-v1)
 
-        $ sudo git clone https://github.com/docker/swarm-demo-voting-app
+        $ sudo git clone https://github.com/docker/swarm-microservice-demo-v1
 
     This command creates a new directory structure inside of your working
     directory. The new directory contains all of the files and folders required
@@ -387,9 +387,9 @@ All custom built images are built using Dockerfile's pulled from the [applicatio
     components of the application.
 
 
-3. Change directory into the `swarm-demo-voting-app/web-vote-app` directory and inspect the contents of the `Dockerfile`
+3. Change directory into the `swarm-microservice-demo-v1/web-vote-app` directory and inspect the contents of the `Dockerfile`
 
-        $ cd swarm-demo-voting-app/web-vote-app/
+        $ cd swarm-microservice-demo-v1/web-vote-app/
 
         $ cat Dockerfile
         FROM python:2.7
@@ -417,7 +417,7 @@ All custom built images are built using Dockerfile's pulled from the [applicatio
 
     These commands build the  `web-vote-app` image on the `frontend01` and
     `frontend02` nodes. To accomplish the operation, each command copies the
-    contents of the `swarm-demo-voting-app/web-vote-app` sub-directory from the
+    contents of the `swarm-microservice-demo-v1/web-vote-app` sub-directory from the
     `manager` node to each frontend node. The command then instructs the
     Docker daemon on each frontend node to build the image and store it locally.
 
