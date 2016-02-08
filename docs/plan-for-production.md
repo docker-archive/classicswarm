@@ -50,8 +50,7 @@ The default Engine and Swarm ports for TLS are:
 - Engine daemon: 2376/tcp
 - Swarm manager: 3376/tcp
 
-For more information on configuring Swarm for TLS, see the **need link to
-securing swarm article**
+For more information on configuring Swarm for TLS, see the [Overview Docker Swarm with TLS](secure-swarm-tls.md) page.
 
 ### Network access control
 
