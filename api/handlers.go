@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"regexp"
+
 	"github.com/docker/docker/pkg/parsers/kernel"
 	versionpkg "github.com/docker/docker/pkg/version"
 	apitypes "github.com/docker/engine-api/types"
@@ -21,7 +23,6 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/experimental"
 	"github.com/docker/swarm/version"
-	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
 )
 
@@ -268,7 +269,10 @@ func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /networks/{networkid:.*}
 func getNetwork(c *context, w http.ResponseWriter, r *http.Request) {
-	var id = mux.Vars(r)["networkid"]
+	networkIDRegExp := regexp.MustCompile(`/networks/(.*)`)
+	idArr := networkIDRegExp.FindStringSubmatch(r.URL.Path)
+	var id = idArr[1]
+
 	if network := c.cluster.Networks().Uniq().Get(id); network != nil {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(network)
@@ -279,7 +283,10 @@ func getNetwork(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /volumes/{volumename:.*}
 func getVolume(c *context, w http.ResponseWriter, r *http.Request) {
-	var name = mux.Vars(r)["volumename"]
+	volumeNameRegExp := regexp.MustCompile(`/volumes/(.*)`)
+	nameArr := volumeNameRegExp.FindStringSubmatch(r.URL.Path)
+	var name = nameArr[1]
+
 	if volume := c.cluster.Volumes().Get(name); volume != nil {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(volume)
@@ -449,7 +456,11 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /containers/{name:.*}/json
 func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
+
+	containerIdRegExp := regexp.MustCompile(`/containers/(.*)/json`)
+	idArr := containerIdRegExp.FindStringSubmatch(r.URL.Path)
+	var name = idArr[1]
+
 	container := c.cluster.Container(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
@@ -548,7 +559,10 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := mux.Vars(r)["name"]
+	containerIdRegExp := regexp.MustCompile(`/containers/(.*)`)
+	idArr := containerIdRegExp.FindStringSubmatch(r.URL.Path)
+	var name = idArr[1]
+
 	force := boolValue(r, "force")
 	volumes := boolValue(r, "v")
 	container := c.cluster.Container(name)
@@ -735,7 +749,10 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /containers/{name:.*}/start
 func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
+	containerIdRegExp := regexp.MustCompile(`/containers/(.*)/start`)
+	idArr := containerIdRegExp.FindStringSubmatch(r.URL.Path)
+	var name = idArr[1]
+
 	container := c.cluster.Container(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
@@ -759,7 +776,10 @@ func postExecStart(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /containers/{name:.*}/exec
 func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
+	containerIdRegExp := regexp.MustCompile(`/containers/(.*)/exec`)
+	idArr := containerIdRegExp.FindStringSubmatch(r.URL.Path)
+	var name = idArr[1]
+
 	container := c.cluster.Container(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
@@ -817,7 +837,10 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	var name = mux.Vars(r)["name"]
+	imageNameRegExp := regexp.MustCompile(`/images/(.*)`)
+	nameArr := imageNameRegExp.FindStringSubmatch(r.URL.Path)
+	var name = nameArr[1]
+
 	force := boolValue(r, "force")
 
 	out, err := c.cluster.RemoveImages(name, force)
@@ -840,8 +863,9 @@ func deleteNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	var id = mux.Vars(r)["networkid"]
+	networkIDRegExp := regexp.MustCompile(`/networks/(.*)`)
+	idArr := networkIDRegExp.FindStringSubmatch(r.URL.Path)
+	var id = idArr[1]
 
 	if network := c.cluster.Networks().Uniq().Get(id); network != nil {
 		if err := c.cluster.RemoveNetwork(network); err != nil {
@@ -861,7 +885,10 @@ func deleteVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	var name = mux.Vars(r)["name"]
+
+	volumesIDRegExp := regexp.MustCompile(`/volumes/(.*)`)
+	idArr := volumesIDRegExp.FindStringSubmatch(r.URL.Path)
+	var name = idArr[1]
 
 	found, err := c.cluster.RemoveVolumes(name)
 	if err != nil {
@@ -883,7 +910,10 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /networks/{networkid:.*}/disconnect
 func proxyNetworkDisconnect(c *context, w http.ResponseWriter, r *http.Request) {
-	var networkid = mux.Vars(r)["networkid"]
+	networksIDRegExp := regexp.MustCompile(`/networks/(.*)/disconnect`)
+	idArr := networksIDRegExp.FindStringSubmatch(r.URL.Path)
+	var networkid = idArr[1]
+
 	network := c.cluster.Networks().Uniq().Get(networkid)
 	if network == nil {
 		httpError(w, fmt.Sprintf("No such network: %s", networkid), http.StatusNotFound)
@@ -939,7 +969,11 @@ func proxyNetworkDisconnect(c *context, w http.ResponseWriter, r *http.Request) 
 
 // POST /networks/{networkid:.*}/connect
 func proxyNetworkConnect(c *context, w http.ResponseWriter, r *http.Request) {
-	var networkid = mux.Vars(r)["networkid"]
+
+	networksIDRegExp := regexp.MustCompile(`/networks/(.*)/connect`)
+	idArr := networksIDRegExp.FindStringSubmatch(r.URL.Path)
+	var networkid = idArr[1]
+
 	network := c.cluster.Networks().Uniq().Get(networkid)
 	if network == nil {
 		httpError(w, fmt.Sprintf("No such network: %s", networkid), http.StatusNotFound)
@@ -982,7 +1016,7 @@ func proxyNetworkConnect(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to the right node
 func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
-	name, container, err := getContainerFromVars(c, mux.Vars(r))
+	name, container, err := getContainerFromVars(c, r)
 	if err != nil {
 		if container == nil {
 			httpError(w, err.Error(), http.StatusNotFound)
@@ -1005,7 +1039,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to the right node and force refresh container
 func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Request) {
-	name, container, err := getContainerFromVars(c, mux.Vars(r))
+	name, container, err := getContainerFromVars(c, r)
 	if err != nil {
 		if container == nil {
 			httpError(w, err.Error(), http.StatusNotFound)
@@ -1033,7 +1067,10 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 
 // Proxy a request to the right node
 func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
+
+	imagesIDRegExp := regexp.MustCompile(`/images/(.*)/(.*)`)
+	idArr := imagesIDRegExp.FindStringSubmatch(r.URL.Path)
+	var name = idArr[1]
 
 	if image := c.cluster.Image(name); image != nil {
 		err := proxy(c.tlsConfig, image.Engine.Addr, w, r)
@@ -1045,7 +1082,9 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy get image request to the right node
 func proxyImageGet(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
+	imagesIDRegExp := regexp.MustCompile(`/images/(.*)/(.*)`)
+	idArr := imagesIDRegExp.FindStringSubmatch(r.URL.Path)
+	var name = idArr[1]
 
 	for _, image := range c.cluster.Images() {
 		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
@@ -1060,7 +1099,9 @@ func proxyImageGet(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy push image request to the right node
 func proxyImagePush(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
+	imagesIDRegExp := regexp.MustCompile(`/images/(.*)/(.*)`)
+	idArr := imagesIDRegExp.FindStringSubmatch(r.URL.Path)
+	var name = idArr[1]
 
 	if err := r.ParseForm(); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
@@ -1085,7 +1126,9 @@ func proxyImagePush(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /images/{name:.*}/tag
 func postTagImage(c *context, w http.ResponseWriter, r *http.Request) {
-	name := mux.Vars(r)["name"]
+	imagesIDRegExp := regexp.MustCompile(`/images/(.*)/(.*)`)
+	idArr := imagesIDRegExp.FindStringSubmatch(r.URL.Path)
+	var name = idArr[1]
 
 	if err := r.ParseForm(); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
@@ -1134,11 +1177,11 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := make(map[string]string)
-	vars["name"] = r.Form.Get("container")
+	//	vars := make(map[string]string)
+	//	vars["name"] = r.Form.Get("container")
 
 	// get container
-	name, container, err := getContainerFromVars(c, vars)
+	name, container, err := getContainerFromVars(c, r)
 	if err != nil {
 		if container == nil {
 			httpError(w, err.Error(), http.StatusNotFound)
@@ -1217,7 +1260,7 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /containers/{name:.*}/rename
 func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
-	_, container, err := getContainerFromVars(c, mux.Vars(r))
+	_, container, err := getContainerFromVars(c, r)
 	if err != nil {
 		if container == nil {
 			httpError(w, err.Error(), http.StatusNotFound)
@@ -1243,7 +1286,7 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a hijack request to the right node
 func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
-	name, container, err := getContainerFromVars(c, mux.Vars(r))
+	name, container, err := getContainerFromVars(c, r)
 	if err != nil {
 		if container == nil {
 			httpError(w, err.Error(), http.StatusNotFound)

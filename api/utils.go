@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -61,8 +62,19 @@ func newClientAndScheme(tlsConfig *tls.Config) (*http.Client, string) {
 	return &http.Client{}, "http"
 }
 
-func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.Container, error) {
-	if name, ok := vars["name"]; ok {
+func getContainerFromVars(c *context, r *http.Request) (string, *cluster.Container, error) {
+
+	var name = r.Form.Get("container")
+	if len(name) == 0 {
+		nameRegExp := regexp.MustCompile(`/containers/(.*)/(.*)`)
+		idArr := nameRegExp.FindStringSubmatch(r.URL.Path)
+		if len(idArr) > 1 {
+			name = idArr[1]
+		}
+	}
+
+	if len(name) > 0 {
+
 		if container := c.cluster.Container(name); container != nil {
 			if !container.Engine.IsHealthy() {
 				return name, container, fmt.Errorf("Container %s running on unhealthy node %s", name, container.Engine.Name)
@@ -72,7 +84,10 @@ func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.
 		return name, nil, fmt.Errorf("No such container: %s", name)
 	}
 
-	if ID, ok := vars["execid"]; ok {
+	idRegExp := regexp.MustCompile(`/exec/(.*)/(.*)`)
+	idArr := idRegExp.FindStringSubmatch(r.URL.Path)
+	if len(idArr) > 1 {
+		ID := idArr[1]
 		for _, container := range c.cluster.Containers() {
 			for _, execID := range container.Info.ExecIDs {
 				if ID == execID {
