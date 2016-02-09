@@ -87,6 +87,10 @@
 			"Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
 		},
 		{
+			"ImportPath": "github.com/docker/leadership",
+			"Rev": "b545f2df5f5cd35a54c5a6bf154dcfe1f29d125b"
+		},
+		{
 			"ImportPath": "github.com/docker/libkv",
 			"Comment": "v0.1.0-6-g2f2380c",
 			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
