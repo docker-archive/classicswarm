@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"strings"
+	"os"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
@@ -122,9 +123,18 @@ func eventParse(r *http.Request) states.EventEnum {
 //Init - Initialize the Validation and Handling APIs
 func (*Hooks) Init() {
 	//TODO - should use a map for all the Pre . Post function like in primary.go
+	log.Debug("In Hooks.Init()")
+	if os.Getenv("SWARM_AUTH_BACKEND") == "Keystone" {
+		log.Debug("SWARM_AUTH_BACKEND == Keystone")
+	    	aclsAPI = new(keystone.KeyStoneAPI)  	
+	} else {	
+	    log.Debug("SWARM_AUTH_BACKEND != Keystone")	
+		aclsAPI = new(DefaultACLsImpl)
+	}
+	aclsAPI.Init()	
+	
 
-	aclsAPI = new(keystone.KeyStoneAPI)
-	aclsAPI.Init()
+
 	authZAPI = new(DefaultImp)
 	authZAPI.Init()
 	//TODO reflection using configuration file tring for the backend type

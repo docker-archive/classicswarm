@@ -157,7 +157,7 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 			}
 			localMethod := method
 
-			if (os.Getenv("SWARM_MULTI_TENANT") != "NATIVE_SWARM") {
+			if (os.Getenv("SWARM_MULTI_TENANT") != "false") {
 				hooks := new(authZ.Hooks)
 				hooks.Init()
 				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
@@ -182,7 +182,7 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 					optionsFct(context, w, r)
 				}
 
-			    if (os.Getenv("SWARM_MULTI_TENANT") != "NATIVE_SWARM") {	
+			    if (os.Getenv("SWARM_MULTI_TENANT") != "false") {	
 					hooks := new(authZ.Hooks)
 					hooks.Init()
 					r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))

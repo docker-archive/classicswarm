@@ -77,7 +77,6 @@ func (this *KeyStoneAPI) Init() error {
 // 2- Get ACLs or Lable for your valid token
 // 3- Set up cache to save Keystone call
 func (this *KeyStoneAPI) ValidateRequest(cluster cluster.Cluster, eventType states.EventEnum, w http.ResponseWriter, r *http.Request, reqBody []byte, containerConfig dockerclient.ContainerConfig) (states.ApprovalEnum, *utils.ValidationOutPutDTO) {
-//func (this *KeyStoneAPI) ValidateRequest(cluster cluster.Cluster, eventType states.EventEnum, r *http.Request, containerConfig dockerclient.ContainerConfig) (states.ApprovalEnum, *utils.ValidationOutPutDTO) {
 	log.Debug("ValidateRequest Keystone")
 	log.Debugf("%+v\n",containerConfig)
 	tokenToValidate := r.Header.Get(headers.AuthZTokenHeaderName)
@@ -85,16 +84,12 @@ func (this *KeyStoneAPI) ValidateRequest(cluster cluster.Cluster, eventType stat
 	tenantIdToValidate := strings.TrimSpace(r.Header.Get(headers.AuthZTenantIdHeaderName))
 
 	log.Debugf("Going to validate token:  %v, for tenant Id: %v, ", tokenToValidate, tenantIdToValidate)
-//	valid := queryKeystone(tenantIdToValidate, tokenToValidate)
+	valid := queryKeystone(tenantIdToValidate, tokenToValidate)
 
-//	if !valid {
-//		return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: "Not Authorized!"}
-//	}
-	
-	if os.Getenv("SWARM_MULTI_TENANT") == "KEYSTONE_AUTH" && !(queryKeystone(tenantIdToValidate, tokenToValidate)) {
+	if !valid {
 		return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: "Not Authorized!"}
 	}
-
+	
 	if isAdminTenant(tenantIdToValidate) {
 		return states.Admin, nil
 	}

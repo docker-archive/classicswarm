@@ -21,8 +21,8 @@ type DefaultACLsImpl struct{}
 /*
 ValidateRequest - Who wants to do what - allow or not
 */
-//func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType states.EventEnum, w http.ResponseWriter, r *http.Request, reqBody []byte, containerConfig dockerclient.ContainerConfig) (states.ApprovalEnum, *utils.ValidationOutPutDTO) {
-func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType states.EventEnum, r *http.Request, containerConfig dockerclient.ContainerConfig) (states.ApprovalEnum, *utils.ValidationOutPutDTO) {
+func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType states.EventEnum, w http.ResponseWriter, r *http.Request, reqBody []byte, containerConfig dockerclient.ContainerConfig) (states.ApprovalEnum, *utils.ValidationOutPutDTO) {
+//func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType states.EventEnum, r *http.Request, containerConfig dockerclient.ContainerConfig) (states.ApprovalEnum, *utils.ValidationOutPutDTO) {
 	tenantIdToValidate := r.Header.Get(headers.AuthZTenantIdHeaderName)
 	log.Debug("**ValidateRequest***")
 
@@ -34,8 +34,11 @@ func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType state
 	case states.ContainerCreate:
 		valid, dto := utils.CheckLinksOwnerShip(cluster, tenantIdToValidate, containerConfig)
 		log.Debug(valid)
-		log.Debug(dto)
+		log.Debugf("dto %+v",dto)
 		log.Debug("-----------------")
+		if !valid {
+			return states.NotApproved, dto			
+		} 
 		return states.Approved, dto
 	case states.ContainersList:
 		return states.ConditionFilter, nil
