@@ -365,6 +365,10 @@
 		{
 			"ImportPath": "golang.org/x/sys/unix",
 			"Rev": "833a04a10549a95dc34458c195cbad61bbb6cb4d"
+		},
+		{
+			"ImportPath": "github.com/jeffail/gabs",
+			"Rev": "b69c9e648a2529c8d7b927ba7f87bc7fe0b3b0ea"
 		}
 	]
 }
