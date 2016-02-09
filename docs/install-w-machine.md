@@ -42,21 +42,21 @@ Here, you use Docker Machine to provision three VMs running Docker Engine.
 
 		$ docker-machine ls
 		NAME         ACTIVE   DRIVER       STATE     URL                         SWARM
-		default    *        virtualbox   Running   tcp://192.168.99.100:2376   
+		default    *        virtualbox   Running   tcp://192.168.99.100:2376
 
 2. Optional: To conserve system resources, stop any virtual machines you are not using. For example, to stop the VM named `default`, enter:
 
 		$ docker-machine stop default
 
-3. Create and run a VM named `manager`.  
+3. Create and run a VM named `manager`.
 
 		$ docker-machine create -d virtualbox manager
 
-4. Create and run a VM named `agent1`.  
+4. Create and run a VM named `agent1`.
 
 		$ docker-machine create -d virtualbox agent1
 
-5. Create and run a VM named `agent2`.  
+5. Create and run a VM named `agent2`.
 
 		$ docker-machine create -d virtualbox agent2
 
@@ -101,20 +101,20 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
 
         $ docker-machine ls
         NAME      ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
-        agent1    -        virtualbox   Running   tcp://192.168.99.102:2376           v1.9.1   
-        agent2    -        virtualbox   Running   tcp://192.168.99.103:2376           v1.9.1   
-        manager   *        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1   
+        agent1    -        virtualbox   Running   tcp://192.168.99.102:2376           v1.9.1
+        agent2    -        virtualbox   Running   tcp://192.168.99.103:2376           v1.9.1
+        manager   *        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1
 
 
 2. Your client should still be pointing to Docker Engine on `manager`. Use the following syntax to run a Swarm container as the primary Swarm manager on `manager`.
 
-        $ docker run -d -p <your_selected_port>:2375 -t swarm manage token://<cluster_id> >
+        $ docker run -d -p <your_selected_port>:3376 -t -v /var/lib/boot2docker:/certs:ro swarm manage -H 0.0.0.0:3376 --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/server.pem --tlskey=/certs/server-key.pm token://<cluster_id>
 
     For example:
 
-        $ docker run -d -p 2375:2375 -t swarm manage token://0ac50ef75c9739f5bfeeaf00503d4e6e
+        $ docker run -d -p 3376:3376 -t -v /var/lib/boot2docker:/certs:ro swarm manage -H 0.0.0.0:3376 --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/server.pem --tlskey=/certs/server-key.pm swarm manage token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
-    The -p option maps a port on the container to a port on the host.
+    The `-p` option maps a port 3376 on the container to port 3376 on the host. The `-v` option mounts the directory containing TLS certificates (`/var/lib/boot2docker` for the `manager` VM) into the container running Swarm manager in read-only mode.
 
 3. Connect Docker Client to `agent1`.
 
@@ -126,7 +126,7 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
 
     For example:
 
-        $ docker run -d swarm join --addr=192.168.99.102:2375 token://0ac50ef75c9739f5bfeeaf00503d4e6e
+        $ docker run -d swarm join --addr=192.168.99.102:2376 token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
 5. Connect Docker Client to `agent2`.
 
@@ -134,17 +134,21 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
 
 6.  Run a Swarm container as an agent on `agent2`. For example:
 
-        $ docker run -d swarm join --addr=192.168.99.103:2375 token://0ac50ef75c9739f5bfeeaf00503d4e6e
+        $ docker run -d swarm join --addr=192.168.99.103:2376 token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
 ## Manage your Swarm
 
-Here, you connect to the cluster and review information about the Swarm manager and nodes. You tell the Swarm run a container and check which node did the work.
+Here, you connect to the cluster and review information about the Swarm manager and nodes. You tell the Swarm to run a container and check which node did the work.
 
-1. Connect the Docker Client to the Swarm.
+1. Connect the Docker Client to the Swarm by updating the `DOCKER_HOST` environment variable.
 
-        $ eval $(docker-machine env swarm)
+        $ DOCKER_HOST=<manager_ip>:<your_selected_port>
 
-    Because Docker Swarm uses the standard Docker API, you can connect to it using  Docker Client and other tools such as Docker Compose, Dokku, Jenkins, and Krane, among others.  
+    For the current example, the `manager` has IP address `192.168.99.100` and we selected port 3376 for the Swarm manager.
+
+        $ DOCKER_HOST=192.168.99.100:3376
+
+    Because Docker Swarm uses the standard Docker API, you can connect to it using  Docker Client and other tools such as Docker Compose, Dokku, Jenkins, and Krane, among others.
 
 2. Get information about the Swarm.
 
@@ -166,7 +170,7 @@ Here, you connect to the cluster and review information about the Swarm manager 
 
 5. Use the `docker ps` command to find out which node the container ran on. For example:
 
-        $ docker ps  -a
+        $ docker ps -a
         CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                      PORTS               NAMES
         0b0628349187        hello-world         "/hello"                 20 minutes ago      Exited (0) 20 minutes ago                       agent1
         .
