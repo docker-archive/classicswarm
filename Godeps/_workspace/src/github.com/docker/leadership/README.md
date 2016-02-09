@@ -3,7 +3,7 @@
 Leadership is a library for a cluster leader election on top of a distributed
 Key/Value store.
 
-It's built using Swarm's `pkg/store` and is designed to work across multiple
+It is built using the `docker/libkv` library and is designed to work across multiple
 storage backends.
 
 You can use `leadership` with `Consul`, `etcd` and `Zookeeper`.
@@ -108,3 +108,7 @@ func run(candidate *leadership.Candidate) {
     }
 }
 ```
+
+## License
+
+leadership is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for the full license text.
