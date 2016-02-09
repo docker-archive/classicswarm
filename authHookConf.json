@@ -1,0 +1,10 @@
+{
+    "TenancyLabel":"com.ibm.tenant.0",
+    "KeystoneUrl":"http://cloud.lab.fi-ware.org:4730/v2.0/",
+    "KeyStoneXAuthToken":"ADMIN",
+    "AuthTokenHeader":"X-Auth-Token",
+    "quotas":{
+        "Memory": 128
+    }
+}
+
