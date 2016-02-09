@@ -79,10 +79,11 @@ intended as a model for how to deploy production-worthy CA.
 1. Logon to the terminal of your CA server and elevate to root.
 
         $ sudo su
+        # 
 
 2. Create a private key called `ca-priv-key.pem` for the CA:
 
-        $ sudo openssl genrsa -out ca-priv-key.pem 2048
+        # openssl genrsa -out ca-priv-key.pem 2048
         Generating RSA private key, 2048 bit long modulus
         ...........................................................+++
         .....+++
@@ -92,7 +93,7 @@ intended as a model for how to deploy production-worthy CA.
 
     The public key is based on the private key created in the previous step.
 
-        $ sudo openssl req -config /usr/lib/ssl/openssl.cnf -new -key ca-priv-key.pem -x509 -days 1825 -out ca.pem
+        # openssl req -config /usr/lib/ssl/openssl.cnf -new -key ca-priv-key.pem -x509 -days 1825 -out ca.pem
         You are about to be asked to enter information that will be incorporated
         into your certificate request.
         What you are about to enter is what is called a Distinguished Name or a DN.
@@ -106,18 +107,18 @@ intended as a model for how to deploy production-worthy CA.
 You have now configured a CA server with a public and private keypair. You can inspect the contents of each key. To inspect the private key:
 
 ```
-$ sudo openssl rsa -in ca-priv-key.pem -noout -text
+# openssl rsa -in ca-priv-key.pem -noout -text
 ```
 
 To inspect the public key (cert): `
 
 ```
-$ sudo openssl x509 -in ca.pem -noout -text`
+# openssl x509 -in ca.pem -noout -text`
 ```
 
 The following command shows the partial contents of the CA's public key.
 
-    $ sudo openssl x509 -in ca.pem -noout -text
+    # openssl x509 -in ca.pem -noout -text
     Certificate:
         Data:
             Version: 3 (0x2)
@@ -180,7 +181,7 @@ The commands below show how to create keys for all of your nodes. You perform th
 
 2. Create a private key `swarm-priv-key.pem` for your Swarm Manager
 
-        $ sudo openssl genrsa -out swarm-priv-key.pem 2048
+        # openssl genrsa -out swarm-priv-key.pem 2048
         Generating RSA private key, 2048 bit long modulus
         ............................................................+++
         ........+++
@@ -188,18 +189,18 @@ The commands below show how to create keys for all of your nodes. You perform th
 
 2. Generate a certificate signing request (CSR) `swarm.csr` using the private key you create in the previous step.
 
-        $ sudo openssl req -subj "/CN=swarm" -new -key swarm-priv-key.pem -out swarm.csr
+        # openssl req -subj "/CN=swarm" -new -key swarm-priv-key.pem -out swarm.csr
 
     Remember, this is only for demonstration purposes. The process to create a
     CSR will be slightly different in real-world production environments.
 
 3. Create the certificate `swarm-cert.pem` based on the CSR created in the previous step.
 
-        $ sudo openssl x509 -req -days 1825 -in swarm.csr -CA ca.pem -CAkey ca-priv-key.pem -CAcreateserial -out swarm-cert.pem -extensions v3_req -extfile /usr/lib/ssl/openssl.cnf
+        # openssl x509 -req -days 1825 -in swarm.csr -CA ca.pem -CAkey ca-priv-key.pem -CAcreateserial -out swarm-cert.pem -extensions v3_req -extfile /usr/lib/ssl/openssl.cnf
         <snip>
-        $ sudo openssl rsa -in swarm-priv-key.pem -out swarm-priv-key.pem
+        # openssl rsa -in swarm-priv-key.pem -out swarm-priv-key.pem
 
-        You now have a keypair for the Swarm Manager.
+   You now have a keypair for the Swarm Manager.
 
 4. Repeat the steps above for the remaining nodes in your infrastructure (`node1`, `node2`, and `client`).
 
@@ -268,7 +269,7 @@ The following commands shows the partial contents of the Swarm Manager's public
  `swarm-cert.pem` key.
 
 ```
-$ sudo openssl x509 -in ca.pem -noout -text
+# openssl x509 -in ca.pem -noout -text
 Certificate:
 Data:
     Version: 3 (0x2)
@@ -306,7 +307,7 @@ follows on each node:
 
         $ sudo su
 
-2. Create a` ~/.certs` directory on the Swarm manager.
+2. Create a` ~/.certs` directory on the Swarm manager. Here we assume user account is ubuntu.
 
         $ ssh ubuntu@swarm 'mkdir -p /home/ubuntu/.certs'
 
@@ -314,7 +315,7 @@ follows on each node:
 
         $ scp ./ca.pem ubuntu@swarm:/home/ubuntu/.certs/ca.pem
         $ scp ./swarm-cert.pem ubuntu@swarm:/home/ubuntu/.certs/cert.pem
-        $ scp ./swarm-key.pem ubuntu@swarm:~/.certs/key.pem
+        $ scp ./swarm-priv-key.pem ubuntu@swarm:/home/ubuntu/.certs/key.pem
 
 
     >**Note**: You may need to provide authentication for the `scp` commands to work. For example, AWS EC2 instances use certificate-based authentication. To copy the files to an EC2 instance associated with a public key called `nigel.pem`, modify the `scp` command as follows: `scp -i /path/to/nigel.pem ./ca.pem ubuntu@swarm:/home/ubuntu/.certs/ca.pem`.
@@ -405,57 +406,27 @@ discovery backend uses Docker Hub and is not recommended for production use.
         db3f49d397bad957202e91f0679ff84f526e74d6c5bf1b6734d834f5edcbca6c
 
 
-## Step 7: Create the Swarm Manager using TLS
+## Step 7: Start the Swarm Manager using TLS
 
-To configure and run a containerized Swarm Manager process using TLS, you
-need to create a custom Swarm image that contains the Swarm Manager's keys and
-the CA's trusted public key.
+1. Launch a new container with TLS enables
 
-1. Logon to the terminal of your Swarm manager node.
+        $ docker run -d -p 3376:3376 -v /home/ubuntu/.certs:/certs:ro swarm manage --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/cert.pem --tlskey=/certs/key.pem --host=0.0.0.0:3376 token://$TOKEN
 
-2. Create a build directory and change into it
-
-        $ mkdir build && cd build
-
-3. Copy the Swarm manager's keys in the build directory
-
-        $ cp /home/ubuntu/.certs/{ca,cert,key}.pem /home/ubuntu/build
-
-4. Create a new `Dockerfile` file with the following contents:
-
-        FROM swarm
-        COPY ca.pem /etc/tlsfiles/ca.pem
-        COPY cert.pem /etc/tlsfiles/cert.pem
-        COPY key.pem /etc/tlsfiles/key.pem
-
-    This Dockerfile creates a new image called, `swarm-tls` based on the
-    official `swarm` image. This new image has copies of the required keys in it.
-
-5. Build a new image from the `Dockerfile`.
-
-        $ sudo docker build -t nigel/swarm-tls:latest .
-
-6. Launch a new container with you new `swarm-tls:latest` image.
-
-    The command runs the `swarm manage` command:
-
-        $ docker run -d -p 3376:2376 nigel/swarm-tls manage --tlsverify --tlscacert=/etc/tlsfiles/ca.pem --tlscert=/etc/tlsfiles/cert.pem --tlskey=/etc/tlsfiles/key.pem --host=0.0.0.0:2376 token://$TOKEN
-
-    The command above launches a new container based on the `swarm-tls:latest`
-    image. It also maps port `3376` on the server to port `2376` inside the
+    The command above launches a new container based on the `swarm` image
+    and it maps port `3376` on the server to port `3376` inside the
     container. This mapping ensures that Docker Engine commands sent to the host
-    on port `3376` are passed on to port `2376` inside the container. The
+    on port `3376` are passed on to port `3376` inside the container. The
     container runs the Swarm `manage` process with the `--tlsverify`,
     `--tlscacert`, `--tlscert` and `--tlskey` options specified. These options
     force TLS verification and specify the location of the Swarm manager's TLS
     keys.
 
-7. Run a `docker ps` command to verify that your Swarm manager container is up
+2. Run a `docker ps` command to verify that your Swarm manager container is up
 and running.
 
         $ docker ps
         CONTAINER ID   IMAGE               COMMAND                  CREATED          STATUS          PORTS                              NAMES
-        035dbf57b26e   nigel/swarm-tls     "/swarm manage --tlsv"   7 seconds ago    Up 7 seconds    2375/tcp, 0.0.0.0:3376->2376/tcp   compassionate_lovelace
+        035dbf57b26e   swarm               "/swarm manage --tlsv"   7 seconds ago    Up 7 seconds    2375/tcp, 0.0.0.0:3376->3376/tcp   compassionate_lovelace
 
 Your Swarm cluster is now configured to use TLS.
 
