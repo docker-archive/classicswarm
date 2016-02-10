@@ -44,6 +44,7 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		BridgeNfIptables:  true,
 		BridgeNfIP6tables: true,
 		OomKillDisable:    true,
+		ServerVersion:     "swarm/" + version.VERSION,
 		OperatingSystem:   runtime.GOOS,
 		Architecture:      runtime.GOARCH,
 		NCPU:              int(c.cluster.TotalCpus()),
