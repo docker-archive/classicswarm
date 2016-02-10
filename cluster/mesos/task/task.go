@@ -166,7 +166,7 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 	t.SlaveId = &mesosproto.SlaveID{Value: &slaveID}
 }
 
-// NewTask fucntion creates a task
+// NewTask function creates a task
 func NewTask(config *cluster.ContainerConfig, name string, timeout time.Duration) (*Task, error) {
 	id := stringid.TruncateID(stringid.GenerateRandomID())
 
