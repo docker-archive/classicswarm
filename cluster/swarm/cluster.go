@@ -216,7 +216,7 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes b
 // RemoveNetwork removes a network from the cluster
 func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
 	err := network.Engine.RemoveNetwork(network)
-	if err == nil {
+	if err == nil && network.Scope == "global" {
 		for _, engine := range c.engines {
 			engine.DeleteNetwork(network)
 		}
@@ -470,9 +470,10 @@ func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (response *
 	if nodes != nil {
 		resp, err := c.engines[nodes[0].ID].CreateNetwork(request)
 		if err == nil {
-			network := c.engines[nodes[0].ID].Networks().Get(resp.ID)
-			for _, engine := range c.engines {
-				engine.AddNetwork(network)
+			if network := c.engines[nodes[0].ID].Networks().Get(resp.ID); network != nil && network.Scope == "global" {
+				for _, engine := range c.engines {
+					engine.AddNetwork(network)
+				}
 			}
 		}
 		return resp, err
