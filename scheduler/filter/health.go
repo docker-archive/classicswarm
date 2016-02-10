@@ -36,3 +36,8 @@ func (f *HealthFilter) Filter(_ *cluster.ContainerConfig, nodes []*node.Node, _ 
 
 	return result, nil
 }
+
+// Implements interface function, but currently redundant since we don't have node constraints
+func (f *HealthFilter) GetAllFilters(config *cluster.ContainerConfig) ([]string, error) {
+	return nil, nil
+}
