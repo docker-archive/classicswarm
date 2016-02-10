@@ -14,6 +14,9 @@ type Filter interface {
 
 	// Return a subset of nodes that were accepted by the filtering policy.
 	Filter(*cluster.ContainerConfig, []*node.Node, bool) ([]*node.Node, error)
+
+	// Return a list of constraints/filters provided
+	GetAllFilters(*cluster.ContainerConfig) ([]string, error)
 }
 
 var (

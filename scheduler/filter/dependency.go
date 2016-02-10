@@ -56,8 +56,8 @@ func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 	return candidates, nil
 }
 
-// Get a string representation of the dependencies found in the container config.
-func (f *DependencyFilter) String(config *cluster.ContainerConfig) string {
+// Get a list of the dependencies found in the container config.
+func (f *DependencyFilter) GetAllFilters(config *cluster.ContainerConfig) ([]string, error) {
 	dependencies := []string{}
 	for _, volume := range config.HostConfig.VolumesFrom {
 		dependencies = append(dependencies, fmt.Sprintf("--volumes-from=%s", volume))
@@ -68,6 +68,12 @@ func (f *DependencyFilter) String(config *cluster.ContainerConfig) string {
 	if strings.HasPrefix(config.HostConfig.NetworkMode, "container:") {
 		dependencies = append(dependencies, fmt.Sprintf("--net=%s", config.HostConfig.NetworkMode))
 	}
+	return dependencies, nil
+}
+
+// Get a string representation of the dependencies found in the container config.
+func (f *DependencyFilter) String(config *cluster.ContainerConfig) string {
+	dependencies, _ := f.GetAllFilters(config)
 	return strings.Join(dependencies, " ")
 }
 
