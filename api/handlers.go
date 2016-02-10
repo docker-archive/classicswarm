@@ -124,9 +124,9 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 	names := r.Form["names"]
 
 	// Create a map of engine address to the list of images it holds.
-	engineImages := make(map[string][]*cluster.Image)
+	engineImages := make(map[*cluster.Engine][]*cluster.Image)
 	for _, image := range c.cluster.Images() {
-		engineImages[image.Engine.Addr] = append(engineImages[image.Engine.Addr], image)
+		engineImages[image.Engine] = append(engineImages[image.Engine], image)
 	}
 
 	// Look for an engine that has all the images we need.
@@ -146,7 +146,7 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 
 		// If the engine has all images, stop our search here.
 		if matchedImages == len(names) {
-			proxy(c.tlsConfig, engine, w, r)
+			proxy(engine, w, r)
 			return
 		}
 	}
@@ -462,7 +462,11 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, scheme := newClientAndScheme(c.tlsConfig)
+	client, scheme := container.Engine.HTTPClientAndScheme()
+	if client == nil {
+		httpError(w, "Cannot connect to docker engine", http.StatusInternalServerError)
+		return
+	}
 
 	resp, err := client.Get(scheme + "://" + container.Engine.Addr + "/containers/" + container.Id + "/json")
 	container.Engine.CheckConnectionErr(err)
@@ -767,7 +771,11 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, scheme := newClientAndScheme(c.tlsConfig)
+	client, scheme := container.Engine.HTTPClientAndScheme()
+	if client == nil {
+		httpError(w, "Cannot connect to docker engine", http.StatusInternalServerError)
+		return
+	}
 
 	resp, err := client.Post(scheme+"://"+container.Engine.Addr+"/containers/"+container.Id+"/exec", "application/json", r.Body)
 	container.Engine.CheckConnectionErr(err)
@@ -931,7 +939,7 @@ func proxyNetworkDisconnect(c *context, w http.ResponseWriter, r *http.Request) 
 	}
 
 	// request is forwarded to the container's address
-	err := proxyAsync(c.tlsConfig, engine.Addr, w, r, cb)
+	err := proxyAsync(engine, w, r, cb)
 	engine.CheckConnectionErr(err)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
@@ -974,7 +982,7 @@ func proxyNetworkConnect(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// request is forwarded to the container's address
-	err := proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb)
+	err := proxyAsync(container.Engine, w, r, cb)
 	container.Engine.CheckConnectionErr(err)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusNotFound)
@@ -997,7 +1005,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
 	}
 
-	err = proxy(c.tlsConfig, container.Engine.Addr, w, r)
+	err = proxy(container.Engine, w, r)
 	container.Engine.CheckConnectionErr(err)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
@@ -1026,7 +1034,7 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 		container.Refresh()
 	}
 
-	err = proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb)
+	err = proxyAsync(container.Engine, w, r, cb)
 	container.Engine.CheckConnectionErr(err)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
@@ -1038,7 +1046,7 @@ func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 
 	if image := c.cluster.Image(name); image != nil {
-		err := proxy(c.tlsConfig, image.Engine.Addr, w, r)
+		err := proxy(image.Engine, w, r)
 		image.Engine.CheckConnectionErr(err)
 		return
 	}
@@ -1052,7 +1060,7 @@ func proxyImageGet(c *context, w http.ResponseWriter, r *http.Request) {
 	for _, image := range c.cluster.Images() {
 		if len(strings.SplitN(name, ":", 2)) == 2 && image.Match(name, true) ||
 			len(strings.SplitN(name, ":", 2)) == 1 && image.Match(name, false) {
-			err := proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			err := proxy(image.Engine, w, r)
 			image.Engine.CheckConnectionErr(err)
 			return
 		}
@@ -1076,7 +1084,7 @@ func proxyImagePush(c *context, w http.ResponseWriter, r *http.Request) {
 	for _, image := range c.cluster.Images() {
 		if tag != "" && image.Match(name, true) ||
 			tag == "" && image.Match(name, false) {
-			err := proxy(c.tlsConfig, image.Engine.Addr, w, r)
+			err := proxy(image.Engine, w, r)
 			image.Engine.CheckConnectionErr(err)
 			return
 		}
@@ -1121,7 +1129,7 @@ func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = proxy(c.tlsConfig, engine.Addr, w, r)
+	err = proxy(engine, w, r)
 	engine.CheckConnectionErr(err)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
@@ -1160,7 +1168,7 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// proxy commit request to the right node
-	err = proxyAsync(c.tlsConfig, container.Engine.Addr, w, r, cb)
+	err = proxyAsync(container.Engine, w, r, cb)
 	container.Engine.CheckConnectionErr(err)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
