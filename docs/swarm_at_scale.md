@@ -99,7 +99,7 @@ application, this is what your environment should look like.
 As the previous diagram shows, each node in the cluster runs the following containers:
 
 - `frontend01`:
-    - Container: Pyhton flask web app (frontend01)
+    - Container: Python flask web app (frontend01)
     - Container: Redis (redis01)
 - `frontend02`:
     - Container: Python flask web app (frontend02)
