@@ -188,8 +188,7 @@ function teardown() {
 
 	# Restart node-0
 	docker_host start ${DOCKER_CONTAINERS[0]}
-	sleep 6
-	[[ $(docker_swarm info | grep -c "Status: Unhealthy") -eq 0 ]]
+	retry 5 1 eval "test \"$(docker_swarm info | grep -c \"Status: Unhealthy\" | wc -l)\" = '0'"
 
 	# Stop node-1
 	docker_host stop ${DOCKER_CONTAINERS[1]}
