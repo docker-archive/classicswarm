@@ -188,8 +188,27 @@ function teardown() {
 
 	# Restart node-0
 	docker_host start ${DOCKER_CONTAINERS[0]}
+	sleep 6
+	[[ $(docker_swarm info | grep -c "Status: Unhealthy") -eq 0 ]]
 
-	sleep 5
-	run docker_swarm ps
-	[ "${#lines[@]}" -eq  3 ]
+	# Stop node-1
+	docker_host stop ${DOCKER_CONTAINERS[1]}
+
+	# Wait for Swarm to detect the node failure.
+	retry 5 1 eval "docker_swarm info | grep -q 'Unhealthy'"
+
+	# Wait for the container to be rescheduled
+	retry 5 1 eval docker_swarm inspect c1
+
+	# c1 should have been rescheduled from node-1 to node-0
+	run docker_swarm inspect c1
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
+
+	# c2 should have been rescheduled from node-1 to node-0
+	run docker_swarm inspect c2
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
 }
