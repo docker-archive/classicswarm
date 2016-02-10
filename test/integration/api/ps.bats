@@ -73,18 +73,17 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	docker_swarm run -d --name c1 busybox echo c1
+	docker_swarm run -d --name container1 busybox echo container1
 	sleep 1 #sleep so the 2 containers don't start at the same second
-	docker_swarm run -d --name c2 busybox echo c2
+	docker_swarm run -d --name container2 busybox echo container2
 
-	run eval "docker_swarm ps --before c1 2>/dev/null"
-	echo $output
+	run eval "docker_swarm ps --before container1 2>/dev/null"
 	[ "${#lines[@]}" -eq  1 ]
 
-	run eval "docker_swarm ps --before c2 2>/dev/null"
+	run eval "docker_swarm ps --before container2 2>/dev/null"
 	[ "${#lines[@]}" -eq  2 ]
 
-	run docker_swarm ps --before c3
+	run docker_swarm ps --before container3
 	[ "$status" -eq 1 ]
 }
 
