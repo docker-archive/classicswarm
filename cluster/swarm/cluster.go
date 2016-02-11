@@ -471,8 +471,10 @@ func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (response *
 		resp, err := c.engines[nodes[0].ID].CreateNetwork(request)
 		if err == nil {
 			if network := c.engines[nodes[0].ID].Networks().Get(resp.ID); network != nil && network.Scope == "global" {
-				for _, engine := range c.engines {
-					engine.AddNetwork(network)
+				for id, engine := range c.engines {
+					if id != nodes[0].ID {
+						engine.AddNetwork(network)
+					}
 				}
 			}
 		}
