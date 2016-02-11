@@ -97,7 +97,7 @@ Here you use the discovery backend hosted on Docker Hub to create a unique disco
 
 Here, you connect to each of the hosts and create a Swarm manager or node.
 
-1. Get the IP addresses of the three VMs. For example:
+1. List the VMs to check that they're set up and running. For example:
 
         $ docker-machine ls
         NAME      ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER   ERRORS
@@ -112,7 +112,7 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
 
     For example:
 
-        $ docker run -d -p 3376:3376 -t -v /var/lib/boot2docker:/certs:ro swarm manage -H 0.0.0.0:3376 --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/server.pem --tlskey=/certs/server-key.pem swarm manage token://0ac50ef75c9739f5bfeeaf00503d4e6e
+        $ docker run -d -p 3376:3376 -t -v /var/lib/boot2docker:/certs:ro swarm manage -H 0.0.0.0:3376 --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/server.pem --tlskey=/certs/server-key.pem token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
     The `-p` option maps a port 3376 on the container to port 3376 on the host. The `-v` option mounts the directory containing TLS certificates (`/var/lib/boot2docker` for the `manager` VM) into the container running Swarm manager in read-only mode.
 
@@ -120,13 +120,13 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
 
         $ eval $(docker-machine env agent1)
 
-4. Use the following syntax to run a Swarm container as an agent on `agent1`. Replace <node_ip> with the IP address of the VM.
+4. Use the following syntax to run a Swarm container as an agent on `agent1`. Replace `<node_ip>` with the IP address of the VM from above, or use the `docker-machine ip` command.
 
         $ docker run -d swarm join --addr=<node_ip>:<node_port> token://<cluster_id>
 
     For example:
 
-        $ docker run -d swarm join --addr=192.168.99.102:2376 token://0ac50ef75c9739f5bfeeaf00503d4e6e
+        $ docker run -d swarm join --addr=$(docker-machine ip agent1):2376 token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
 5. Connect Docker Client to `agent2`.
 
@@ -134,7 +134,7 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
 
 6.  Run a Swarm container as an agent on `agent2`. For example:
 
-        $ docker run -d swarm join --addr=192.168.99.103:2376 token://0ac50ef75c9739f5bfeeaf00503d4e6e
+        $ docker run -d swarm join --addr=$(docker-machine ip agent2):2376 token://0ac50ef75c9739f5bfeeaf00503d4e6e
 
 ## Manage your Swarm
 
@@ -144,9 +144,9 @@ Here, you connect to the cluster and review information about the Swarm manager 
 
         $ DOCKER_HOST=<manager_ip>:<your_selected_port>
 
-    For the current example, the `manager` has IP address `192.168.99.100` and we selected port 3376 for the Swarm manager.
+    We use the `docker-machine ip` command, and we selected port 3376 for the Swarm manager.
 
-        $ DOCKER_HOST=192.168.99.100:3376
+        $ DOCKER_HOST=$(docker-machine ip manager):3376
 
     Because Docker Swarm uses the standard Docker API, you can connect to it using  Docker Client and other tools such as Docker Compose, Dokku, Jenkins, and Krane, among others.
 
