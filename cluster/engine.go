@@ -65,11 +65,12 @@ func newDelayer(rangeMin, rangeMax time.Duration) *delayer {
 	}
 }
 
-func (d *delayer) Wait() <-chan time.Time {
+// Wait returns timeout event after fixed + randomized time duration
+func (d *delayer) Wait(backoffFactor int) <-chan time.Time {
 	d.l.Lock()
 	defer d.l.Unlock()
 
-	waitPeriod := int64(d.rangeMin)
+	waitPeriod := int64(d.rangeMin) * int64(1+backoffFactor)
 	if delta := int64(d.rangeMax) - int64(d.rangeMin); delta > 0 {
 		// Int63n panics if the parameter is 0
 		waitPeriod += d.r.Int63n(delta)
@@ -605,13 +606,21 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 
 // refreshLoop periodically triggers engine refresh.
 func (e *Engine) refreshLoop() {
-
+	const maxBackoffFactor int = 1000
 	for {
 		var err error
 
+		// Engines keep failing should backoff
+		// e.failureCount and e.opts.FailureRetry are type of int
+		backoffFactor := e.failureCount - e.opts.FailureRetry
+		if backoffFactor < 0 {
+			backoffFactor = 0
+		} else if backoffFactor > maxBackoffFactor {
+			backoffFactor = maxBackoffFactor
+		}
 		// Wait for the delayer or quit if we get stopped.
 		select {
-		case <-e.refreshDelayer.Wait():
+		case <-e.refreshDelayer.Wait(backoffFactor):
 		case <-e.stopCh:
 			return
 		}
