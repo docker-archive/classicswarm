@@ -57,9 +57,9 @@ func parseExprs(env []string) ([]expr, error) {
 					if matched == false {
 						return nil, fmt.Errorf("Value '%s' is invalid", parts[1])
 					}
-					exprs = append(exprs, expr{key: strings.ToLower(parts[0]), operator: i, value: strings.TrimLeft(parts[1], "~"), isSoft: isSoft(parts[1])})
+					exprs = append(exprs, expr{key: parts[0], operator: i, value: strings.TrimLeft(parts[1], "~"), isSoft: isSoft(parts[1])})
 				} else {
-					exprs = append(exprs, expr{key: strings.ToLower(parts[0]), operator: i})
+					exprs = append(exprs, expr{key: parts[0], operator: i})
 				}
 
 				found = true

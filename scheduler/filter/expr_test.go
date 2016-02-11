@@ -24,28 +24,40 @@ func TestParseExprs(t *testing.T) {
 	assert.Error(t, err)
 
 	// Allow CAPS in key
-	_, err = parseExprs([]string{"NoDe==node1"})
+	exprs, err := parseExprs([]string{"NoDe==node1"})
 	assert.NoError(t, err)
+	assert.Equal(t, exprs[0].key, "NoDe")
+	assert.Equal(t, exprs[0].value, "node1")
 
 	// Allow dot in key
-	_, err = parseExprs([]string{"no.de==node1"})
+	exprs, err = parseExprs([]string{"no.de==node1"})
 	assert.NoError(t, err)
+	assert.Equal(t, exprs[0].key, "no.de")
+	assert.Equal(t, exprs[0].value, "node1")
 
 	// Allow leading underscore
-	_, err = parseExprs([]string{"_node==_node1"})
+	exprs, err = parseExprs([]string{"_node==_node1"})
 	assert.NoError(t, err)
+	assert.Equal(t, exprs[0].key, "_node")
+	assert.Equal(t, exprs[0].value, "_node1")
 
 	// Allow globbing
-	_, err = parseExprs([]string{"node==*node*"})
+	exprs, err = parseExprs([]string{"node==*node*"})
 	assert.NoError(t, err)
+	assert.Equal(t, exprs[0].key, "node")
+	assert.Equal(t, exprs[0].value, "*node*")
 
 	// Allow regexp in value
-	_, err = parseExprs([]string{"node==/(?i)^[a-b]+c*(n|b)$/"})
+	exprs, err = parseExprs([]string{"node==/(?i)^[a-b]+c*(n|b)$/"})
 	assert.NoError(t, err)
+	assert.Equal(t, exprs[0].key, "node")
+	assert.Equal(t, exprs[0].value, "/(?i)^[a-b]+c*(n|b)$/")
 
 	// Allow space in value
-	_, err = parseExprs([]string{"node==node 1"})
+	exprs, err = parseExprs([]string{"node==node 1"})
 	assert.NoError(t, err)
+	assert.Equal(t, exprs[0].key, "node")
+	assert.Equal(t, exprs[0].value, "node 1")
 }
 
 func TestMatch(t *testing.T) {
