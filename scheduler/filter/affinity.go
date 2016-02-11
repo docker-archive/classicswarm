@@ -77,8 +77,8 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 	return nodes, nil
 }
 
-// Get a list of the affinities found in the container config.
-func (f *AffinityFilter) GetAllFilters(config *cluster.ContainerConfig) ([]string, error) {
+// GetFilters returns a list of the affinities found in the container config.
+func (f *AffinityFilter) GetFilters(config *cluster.ContainerConfig) ([]string, error) {
 	allAffinities := []string{}
 	affinities, err := parseExprs(config.Affinities())
 	if err != nil {
