@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"net"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -129,6 +130,14 @@ func NewEngine(addr string, overcommitRatio float64, opts *EngineOpts) *Engine {
 		opts:            opts,
 	}
 	return e
+}
+
+// HTTPClientAndScheme returns the underlying HTTPClient and the scheme used by the engine
+func (e *Engine) HTTPClientAndScheme() (*http.Client, string) {
+	if dc, ok := e.client.(*dockerclient.DockerClient); ok {
+		return dc.HTTPClient, dc.URL.Scheme
+	}
+	return nil, ""
 }
 
 // Connect will initialize a connection to the Docker daemon running on the
