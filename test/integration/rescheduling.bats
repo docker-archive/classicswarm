@@ -28,6 +28,7 @@ function teardown() {
 	run docker_swarm inspect c1
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
 	run docker_swarm inspect c2
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-0"'* ]]
@@ -51,6 +52,7 @@ function teardown() {
 	run docker_swarm inspect c1
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
 
 	# Check swarm id didn't change for c1
 	[[ "$swarm_id" == $(docker_swarm inspect -f '{{ index .Config.Labels "com.docker.swarm.id" }}' c1) ]]
@@ -93,6 +95,7 @@ function teardown() {
 	run docker_swarm inspect c1
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
 	run docker_swarm inspect c2
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-0"'* ]]
@@ -113,6 +116,7 @@ function teardown() {
 	run docker_swarm inspect c1
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
 
 	# c2 should still be on node-0 since a node constraint was applied.
 	run docker_swarm inspect c2
@@ -155,9 +159,11 @@ function teardown() {
 	run docker_swarm inspect c1
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
 	run docker_swarm inspect c2
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
 
 	# Stop node-0
 	docker_host stop ${DOCKER_CONTAINERS[0]}
@@ -172,16 +178,36 @@ function teardown() {
 	run docker_swarm inspect c1
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
 
 	# c2 should still be on node-1 since it wasn't affected
 	run docker_swarm inspect c2
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
 
 	# Restart node-0
 	docker_host start ${DOCKER_CONTAINERS[0]}
+	retry 5 1 eval "test \"$(docker_swarm info | grep -c \"Status: Unhealthy\" | wc -l)\" = '0'"
 
-	sleep 5
-	run docker_swarm ps
-	[ "${#lines[@]}" -eq  3 ]
+	# Stop node-1
+	docker_host stop ${DOCKER_CONTAINERS[1]}
+
+	# Wait for Swarm to detect the node failure.
+	retry 5 1 eval "docker_swarm info | grep -q 'Unhealthy'"
+
+	# Wait for the container to be rescheduled
+	retry 5 1 eval docker_swarm inspect c1
+
+	# c1 should have been rescheduled from node-1 to node-0
+	run docker_swarm inspect c1
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
+
+	# c2 should have been rescheduled from node-1 to node-0
+	run docker_swarm inspect c2
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-0"'* ]]
+	[[ "${output}" == *'"Status": "running"'* ]]
 }
