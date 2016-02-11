@@ -41,7 +41,7 @@ function setup_discovery_file() {
 	# Restart node
 	docker_host start ${DOCKER_CONTAINERS[0]}
 	# Wait for swarm to detect node recovery
-	retry 5 1 eval "docker_swarm info | grep -q -i 'Status: Healthy'"
+	retry 15 1 eval "docker_swarm info | grep -q -i 'Status: Healthy'"
 }
 
 @test "node pending and recovery" {

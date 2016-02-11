@@ -155,7 +155,8 @@ function containerRunning() {
 	# Restart node-0
 	docker_host start ${DOCKER_CONTAINERS[0]}
 	# Wait for node-0 to be healthy
-	retry 5 1 eval "test \"$(docker_swarm info | grep \"Status: Unhealthy\" | wc -l)\" = '0'"
+	# Failing node refresh interval increases over time. Provide enough retry here.
+	retry 30 1 eval "test \"$(docker_swarm info | grep \"Status: Unhealthy\" | wc -l)\" = '0'"
 
 	# Stop node-1
 	docker_host stop ${DOCKER_CONTAINERS[1]}
