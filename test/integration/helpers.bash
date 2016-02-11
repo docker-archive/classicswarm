@@ -206,6 +206,7 @@ function start_docker() {
 			docker_host run -d --name node-$i --privileged -v /usr/local/bin -v /var/run -it --net=host \
 			${DOCKER_IMAGE}:${DOCKER_VERSION} \
 			bash -c "\
+				rm /var/run/docker.pid ; \
 				hostname node-$i && \
 				docker daemon -H 127.0.0.1:$port \
 					-H=unix:///var/run/docker.sock \
