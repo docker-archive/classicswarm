@@ -52,8 +52,8 @@ func (f *ConstraintFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 	return nodes, nil
 }
 
-// Get a list of the constraints found in the container config.
-func (f *ConstraintFilter) GetAllFilters(config *cluster.ContainerConfig) ([]string, error) {
+// GetFilters returns a list of the constraints found in the container config.
+func (f *ConstraintFilter) GetFilters(config *cluster.ContainerConfig) ([]string, error) {
 	allConstraints := []string{}
 	constraints, err := parseExprs(config.Constraints())
 	if err != nil {

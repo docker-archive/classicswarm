@@ -151,7 +151,8 @@ function teardown() {
 	# Run 3 tests in parallel. One of them must fail.
 	run parallel docker -H "${SWARM_HOSTS[0]}" run --label test.label=true -e affinity:test.label!=true -d busybox:latest ::: top top top
 	[ "$status" -ne 0 ]
-	[[ "${output}" == *'unable to find a node that satisfies test.label!=true'* ]]
+	[[ "${output}" == *"Unable to find a node that satisfies the following conditions"* ]]
+	[[ "${output}" == *"[test.label!=true (soft=false)]"* ]]
 
 	# Only 2 containers should have succeeded.
 	run docker_swarm ps -q
