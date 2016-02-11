@@ -436,12 +436,35 @@ func (e *Engine) RemoveImage(image *Image, name string, force bool) ([]*dockercl
 
 }
 
-// RemoveNetwork deletes a network from the engine.
+// RemoveNetwork removes a network from the engine.
 func (e *Engine) RemoveNetwork(network *Network) error {
 	err := e.client.RemoveNetwork(network.ID)
 	e.CheckConnectionErr(err)
-	e.RefreshNetworks()
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Remove the container from the state. Eventually, the state refresh loop
+	// will rewrite this.
+	e.DeleteNetwork(network)
+	return nil
+}
+
+// DeleteNetwork deletes a network from the internal engine state.
+func (e *Engine) DeleteNetwork(network *Network) {
+	e.Lock()
+	delete(e.networks, network.ID)
+	e.Unlock()
+}
+
+// AddNetwork adds a network to the internal engine state.
+func (e *Engine) AddNetwork(network *Network) {
+	e.Lock()
+	e.networks[network.ID] = &Network{
+		NetworkResource: network.NetworkResource,
+		Engine:          e,
+	}
+	e.Unlock()
 }
 
 // RemoveVolume deletes a volume from the engine.
@@ -913,22 +936,41 @@ func (e *Engine) String() string {
 
 func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
 	// Something changed - refresh our internal state.
-	switch ev.Status {
-	case "pull", "untag", "delete", "commit":
-		// These events refer to images so there's no need to update
-		// containers.
+
+	switch ev.Type {
+	case "network":
+		e.RefreshNetworks()
+	case "volume":
+		e.RefreshVolumes()
+	case "image":
 		e.RefreshImages()
-	case "die", "kill", "oom", "pause", "start", "stop", "unpause", "rename":
-		// If the container state changes, we have to do an inspect in
-		// order to update container.Info and get the new NetworkSettings.
-		e.refreshContainer(ev.ID, true)
-		e.RefreshVolumes()
-		e.RefreshNetworks()
-	default:
-		// Otherwise, do a "soft" refresh of the container.
-		e.refreshContainer(ev.ID, false)
-		e.RefreshVolumes()
-		e.RefreshNetworks()
+	case "container":
+		switch ev.Action {
+		case "die", "kill", "oom", "pause", "start", "stop", "unpause", "rename":
+			e.refreshContainer(ev.ID, true)
+		default:
+			e.refreshContainer(ev.ID, false)
+		}
+	case "":
+		// docker < 1.10
+		switch ev.Status {
+		case "pull", "untag", "delete", "commit":
+			// These events refer to images so there's no need to update
+			// containers.
+			e.RefreshImages()
+		case "die", "kill", "oom", "pause", "start", "stop", "unpause", "rename":
+			// If the container state changes, we have to do an inspect in
+			// order to update container.Info and get the new NetworkSettings.
+			e.refreshContainer(ev.ID, true)
+			e.RefreshVolumes()
+			e.RefreshNetworks()
+		default:
+			// Otherwise, do a "soft" refresh of the container.
+			e.refreshContainer(ev.ID, false)
+			e.RefreshVolumes()
+			e.RefreshNetworks()
+		}
+
 	}
 
 	// If there is no event handler registered, abort right now.

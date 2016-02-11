@@ -216,7 +216,11 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes b
 // RemoveNetwork removes a network from the cluster
 func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
 	err := network.Engine.RemoveNetwork(network)
-	c.refreshNetworks()
+	if err == nil && network.Scope == "global" {
+		for _, engine := range c.engines {
+			engine.DeleteNetwork(network)
+		}
+	}
 	return err
 }
 
@@ -434,18 +438,6 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 	return out, err
 }
 
-func (c *Cluster) refreshNetworks() {
-	var wg sync.WaitGroup
-	for _, e := range c.engines {
-		wg.Add(1)
-		go func(e *cluster.Engine) {
-			e.RefreshNetworks()
-			wg.Done()
-		}(e)
-	}
-	wg.Wait()
-}
-
 func (c *Cluster) refreshVolumes() {
 	var wg sync.WaitGroup
 	for _, e := range c.engines {
@@ -477,7 +469,15 @@ func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (response *
 	}
 	if nodes != nil {
 		resp, err := c.engines[nodes[0].ID].CreateNetwork(request)
-		c.refreshNetworks()
+		if err == nil {
+			if network := c.engines[nodes[0].ID].Networks().Get(resp.ID); network != nil && network.Scope == "global" {
+				for id, engine := range c.engines {
+					if id != nodes[0].ID {
+						engine.AddNetwork(network)
+					}
+				}
+			}
+		}
 		return resp, err
 	}
 	return nil, nil
