@@ -17,7 +17,8 @@ function teardown() {
 
 	run docker_swarm build --build-arg="constraint:node==node-9" $TESTDATA/build
 	[ "$status" -eq 1 ]
-	[[ "$output" == *"Error response from daemon: unable to find a node that satisfies node==node-9"* ]]
+	[[ "${lines[1]}" == *"Unable to find a node that satisfies the following conditions"* ]]
+	[[ "${lines[2]}" == *"[node==node-9]"* ]]
 
 	run docker_swarm images -q
 	[ "$status" -eq 0 ]
