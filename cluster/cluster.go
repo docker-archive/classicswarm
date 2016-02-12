@@ -86,15 +86,11 @@ type Cluster interface {
 	// Unregister an event handler.
 	UnregisterEventHandler(h EventHandler)
 
-	// FIXME: remove this method
-	// Return a random engine
-	RANDOMENGINE() (*Engine, error)
+	// Return an engine
+	GetEngine(config *ContainerConfig) (*Engine, error)
 
 	// RenameContainer rename a container
 	RenameContainer(container *Container, newName string) error
-
-	// BuildImage build an image
-	BuildImage(*dockerclient.BuildImage, io.Writer) error
 
 	// TagImage tag an image
 	TagImage(IDOrName string, repo string, tag string, force bool) error
