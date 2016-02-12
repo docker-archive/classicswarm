@@ -15,6 +15,7 @@ import (
 
 	"github.com/docker/swarm/pkg/authZ/headers"
 	"github.com/docker/swarm/pkg/authZ/utils"
+	"github.com/docker/swarm/pkg/authZ/flavors"
 	"github.com/samalba/dockerclient"
 )
 
@@ -99,6 +100,9 @@ func (this *KeyStoneAPI) ValidateRequest(cluster cluster.Cluster, eventType stat
 		err := this.quotaAPI.ValidateQuota(cluster, reqBody, tenantIdToValidate)
 		if err != nil {
 			return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: err.Error()}
+		}
+		if (!flavors.IsFlavorValid(containerConfig)) {
+			return states.NotApproved,&utils.ValidationOutPutDTO{ErrorMessage: "No flavor matches resource request!"}
 		}
 		valid, dto := utils.CheckLinksOwnerShip(cluster, tenantIdToValidate, containerConfig)
 		log.Debug(valid)

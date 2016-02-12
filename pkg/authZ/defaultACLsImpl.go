@@ -12,6 +12,7 @@ import (
 	//	"github.com/docker/swarm/cluster/swarm"
 	"github.com/docker/swarm/pkg/authZ/headers"
 	"github.com/docker/swarm/pkg/authZ/utils"
+	"github.com/docker/swarm/pkg/authZ/flavors"
 	"github.com/samalba/dockerclient"
 )
 
@@ -32,6 +33,10 @@ func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType state
 	//TODO - Duplication revise
 	switch eventType {
 	case states.ContainerCreate:
+	    if (!flavors.IsFlavorValid(containerConfig)) {
+			return states.NotApproved,&utils.ValidationOutPutDTO{ErrorMessage: "No flavor matches resource request!"}
+	
+		}
 		valid, dto := utils.CheckLinksOwnerShip(cluster, tenantIdToValidate, containerConfig)
 		log.Debug(valid)
 		log.Debugf("dto %+v",dto)
