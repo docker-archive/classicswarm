@@ -19,7 +19,7 @@ The Swarm cluster will contain three types of nodes:
 - Swarm node (aka Swarm agent)
 - Discovery backend node running consul
 
-This example will take you through the following steps: You establish basic network security by creating a security group that restricts inbound traffic by port number, type, and origin. Then, you create four hosts on your network by launching Elastic Cloud (EC2) instances, applying the appropriate security group to each one, and installing Docker Engine on each one. You create a discovery backend by running an consul container on one of the hosts. You create the Swarm cluster by running two Swarm managers in a high-availability configuration. One of the Swarm managers shares a host with consul. Then you run two Swarm nodes. You communicate with the Swarm via the primary manager, running a simple hello world application and then checking which node ran the application. To finish, you test high-availability by making one of Swarm managers fail and checking the status of the managers.
+This example will take you through the following steps: You establish basic network security by creating a security group that restricts inbound traffic by port number, type, and origin. Then, you create four hosts on your network by launching Elastic Cloud (EC2) instances, applying the appropriate security group to each one, and installing Docker Engine on each one. You create a discovery backend by running a consul container on one of the hosts. You create the Swarm cluster by running two Swarm managers in a high-availability configuration. One of the Swarm managers shares a host with consul. Then you run two Swarm nodes. You communicate with the Swarm via the primary manager, running a simple hello world application and then checking which node ran the application. To finish, you test high-availability by making one of Swarm managers fail and checking the status of the managers.
 
 For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](install-w-machine) page.
 
@@ -92,13 +92,13 @@ Give the ec2-user root privileges:
 
  Then, enter `logout`.
 
-> Troubleshooting: If entering a `docker` command produces a message asking whether docker is available on this host, it may be because the user doesn't have root privileges. If so, use `sudo` or give the user root privileges.
+> Troubleshooting: If entering a `docker` command produces a message asking whether Docker is available on this host, it may be because the user doesn't have root privileges. If so, use `sudo` or give the user root privileges.
 > For this example, don't create an AMI image from one of your instances running Docker Engine and then re-use it to create the other instances. Doing so will produce errors.
-> Troubleshooting: If your host cannot reach Docker Hub, the `docker run` commands that pull container images may fail. In that case, check that your VPC is associated with a security group with a rule that allows inbound traffic (e.g., HTTP/TCP/80/0.0.0.0/0). Also Check
+> Troubleshooting: If your host cannot reach Docker Hub, the `docker run` commands that pull container images may fail. In that case, check that your VPC is associated with a security group with a rule that allows inbound traffic (e.g., HTTP/TCP/80/0.0.0.0/0). Also check
 the [Docker Hub status page](http://status.docker.com/) for service
 availability.
 
-## Set up an consul discovery backend
+## Set up a consul discovery backend
 
 Here, you're going to create a minimalist discovery backend. The Swarm managers and nodes use this backend to authenticate themselves as members of the cluster. The Swarm managers also use this information to identify which nodes are available to run containers.
 
@@ -126,7 +126,7 @@ Because this is particular manager is on the same "manager0 & consul0" instance 
 
         $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000  consul://172.30.0.161:8500
 
-Enter `docker ps`. From the output, verify that both a swarm and an consul container are running. Then, disconnect from the "manager0 & consul0" instance.
+Enter `docker ps`. From the output, verify that both a swarm and a consul container are running. Then, disconnect from the "manager0 & consul0" instance.
 
 Connect to the "manager1" instance and use `ifconfig` to get its IP address. Then, enter the following command, replacing `<manager1_ip>`. For example:
 

@@ -26,7 +26,7 @@ And of course, the Docker client itself is also supported.
 
 Like other Docker projects, Docker Swarm follows the "swap, plug, and play"
 principle. As initial development settles, an API will develop to enable
-pluggable backends.  This means you can swap out the scheduling backend
+pluggable backends. This means you can swap out the scheduling backend
 Docker Swarm uses out-of-the-box with a backend you prefer. Swarm's swappable design provides a smooth out-of-box experience for most use cases, and allows large-scale production deployments to swap for more powerful backends, like Mesos.
 
 ## Understand swarm creation

@@ -33,14 +33,7 @@ your company's needs.
 
 Under the `spread` strategy, Swarm optimizes for the node with the least number
 of containers. The `binpack` strategy causes Swarm to optimize for the
-node which is most packed. Note that a container occupies resource during its life
-cycle, including `exited` state. Users should be aware of this condition to schedule
-containers. For example, `spread` strategy only checks number of containers
-disregarding their states. A node with no active containers but high number of
-stopped containers may not be selected, defeating the purpose of load sharing.
-User could either remove stopped containers, or start stopped containers to achieve
-load spreading. The `random` strategy, like it sounds, chooses nodes at random
-regardless of their available CPU or RAM.
+node which is most packed. Note that a container occupies resources during its life cycle, including its `exited` state. Users should be aware of this condition to schedule containers. For example, the `spread` strategy only checks the number of containers, regardless of their state. A node with no active containers but high number of stopped containers may not be selected, defeating the purpose of load sharing. To spread the load, users can remove or restart stopped containers. The `random` strategy, like it sounds, chooses nodes at random regardless of their available CPU or RAM.
 
 Using the `spread` strategy results in containers spread thinly over many
 machines. The advantage of this strategy is that if a node goes down you only
@@ -51,36 +44,32 @@ containers on unused machines. The strategic advantage of `binpack` is that you
 use fewer machines as Swarm tries to pack as many containers as it can on a
 node.
 
-If you do not specify a `--strategy` Swarm uses `spread` by default.
+If you do not specify a `--strategy`, Swarm uses `spread` by default.
 
 ## Spread strategy example
 
 In this example, your swarm is using the `spread` strategy which optimizes for
 nodes that have the fewest containers. In this swarm, both `node-1` and `node-2`
-have 2G of RAM, 2 CPUs, and neither node is running a container. Under this strategy
-`node-1` and `node-2` have the same ranking.
+have 2G of RAM, 2 CPUs, and neither node is running a container. Under this strategy, `node-1` and `node-2` have the same ranking.
 
-When you run a new container, the system chooses `node-1` at random from the swarm
-of two equally ranked nodes:
+When you run a new container, the system chooses `node-1` at random from the swarm of two equally ranked nodes:
 
-      $ docker tcp://<manager_ip:manager_port> run -d -P -m 1G --name db mysql
-      f8b693db9cd6
+        $ docker tcp://<manager_ip:manager_port> run -d -P -m 1G --name db mysql
+        f8b693db9cd6
 
-      $ docker tcp://<manager_ip:manager_port> ps
-      CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-      f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1      db
+        $ docker tcp://<manager_ip:manager_port> ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
+        f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1      db
 
 Now, we start another container and ask for 1G of RAM again.
 
+        $ docker tcp://<manager_ip:manager_port> run -d -P -m 1G --name frontend nginx
+        963841b138d8
 
-    $ docker tcp://<manager_ip:manager_port> run -d -P -m 1G --name frontend nginx
-    963841b138d8
-
-    $ docker tcp://<manager_ip:manager_port> ps
-    CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-    963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:49177->80/tcp      node-2      frontend
-    f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1      db
-
+        $ docker tcp://<manager_ip:manager_port> ps
+        CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
+        963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:49177->80/tcp      node-2      frontend
+        f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1      db
 
 The container `frontend` was started on `node-2` because it was the node the
 least loaded already. If two nodes have the same amount of available RAM and

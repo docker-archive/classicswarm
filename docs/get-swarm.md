@@ -19,17 +19,17 @@ page introduces the two methods and discusses their pros and cons.
 ## Create a cluster with an interactive container
 
 You can use the Docker Swarm official image to create a cluster. The image is
-built by Docker and updated regularly through an automated build. To use the
+built by Docker and regularly updated through an automated build. To use the
 image, you run it a container via the Engine `docker run` command. The image has
 multiple options and subcommands you can use to create and manage a Swarm cluster.
 
-The first time you use any image, Docker Engine checks to see if you already have the image in your environment. By default Docker runs the `swarm:latest` version but you can also specify a tag other than `latest`. If you have an image locally but a newer one exists on Docker Hub, Engine downloads it.
+The first time you use any image, Docker Engine checks to see if you already have the image in your environment. By default, Docker runs the `swarm:latest` version, but you can also specify a tag other than `latest`. If you have an image locally, but a newer one exists on Docker Hub, Engine downloads it.
 
 ### Run the Swarm image from a container
 
 1. Open a terminal on a host running Engine.
 
-    If you are using Mac or Windows, then you must make sure you have started an Docker Engine host running and pointed your terminal environment to it with the Docker Machine commands. If you aren't sure, you can verify:
+    If you are using Mac or Windows, then you must make sure you have started a Docker Engine host running and pointed your terminal environment to it with the Docker Machine commands.  If you aren't sure, you can verify:
 
         $ docker-machine ls
         NAME      ACTIVE   URL          STATE     URL                         SWARM   DOCKER    ERRORS
@@ -92,7 +92,7 @@ The first time you use any image, Docker Engine checks to see if you already hav
 Using a Swarm container has three key benefits over other methods:
 
 * You don't need to install a binary on the system to use the image.
-* The single command `docker run` command gets and run the most recent version of the image every time.
+* The single command `docker run` command gets and runs the most recent version of the image every time.
 * The container isolates Swarm from your host environment. You don't need to perform or maintain shell paths and environments.
 
 Running the Swarm image is the recommended way to create and manage your Swarm cluster. All of Docker's documentation and tutorials use this method.

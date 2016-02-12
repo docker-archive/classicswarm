@@ -20,7 +20,7 @@ provisioning.
 
 This page explains the commands you need to provision a basic Swarm cluster on a
 local Mac or Windows computer using Machine. Once you understand the process,
-you can use it to setup a Swarm cluster on a cloud provider, or inside your
+you can use it to set up a Swarm cluster on a cloud provider, or inside your
 company's data center.
 
 If this is the first time you are creating a Swarm cluster, you should first
@@ -40,7 +40,7 @@ instructions for [Mac OS X](https://docs.docker.com/engine/installation/mac/) or
 
 Machine supports installing on AWS, Digital Ocean, Google Cloud Platform, IBM
 Softlayer, Microsoft Azure and Hyper-V, OpenStack, Rackspace, VirtualBox, VMware
-Fusion&reg;, vCloud&reg; Air<sup>TM</sup> and vSphere&reg;.  In this example,
+Fusion&reg;, vCloud&reg; Air<sup>TM</sup> and vSphere&reg;. In this example,
 you'll use VirtualBox to run several VMs based on the `boot2docker.iso` image.
 This image is a small-footprint Linux distribution for running Engine.
 
@@ -48,7 +48,7 @@ The Toolbox installation gives you VirtualBox and the `boot2docker.iso` image
 you need. It also gives you the ability provision on all the systems Machine
 supports.
 
-**Note**:These examples assume you are using Mac OS X or Windows, if you like you can also [install Docker Machine directly on a Linux
+**Note**: These examples assume you are using Mac OS X or Windows, if you like you can also [install Docker Machine directly on a Linux
 system](http://docs.docker.com/machine/install-machine).
 
 ## Provision a host to generate a Swarm token
@@ -61,7 +61,7 @@ host called `local`, do the following:
 docker-machine create -d virtualbox local
 ```
 
-This examples uses VirtualBox but it could easily be DigitalOcean or a host on
+This example uses VirtualBox, but it could easily be DigitalOcean or a host on
 your data center. The `local` value is the host name. Once you create it,
 configure your terminal's shell environment to interact with the `local` host.
 
@@ -93,7 +93,7 @@ Status: Downloaded newer image for swarm
 
 The output of the `swarm create` command is a cluster token. Copy the token to a
 safe place you will remember. Once you have the token, you can provision the
-Swarm nodes and join them to the cluster_id.  The rest of this documentation,
+Swarm nodes and join them to the cluster_id. The rest of this documentation
 refers to this token as the `SWARM_CLUSTER_TOKEN`.
 
 ## Provision Swarm nodes
@@ -154,7 +154,7 @@ export DOCKER_MACHINE_NAME="swarm-master"
 # eval $(docker-machine env --swarm HOST_NODE_NAME)
 ```
 
-To set your SHELL connect to a Swarm node called `swarm-master`, you would do
+To set your SHELL to connect to a Swarm node called `swarm-master`, you would do
 this:
 
 ```
