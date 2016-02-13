@@ -585,7 +585,10 @@ func (e *Engine) refreshContainer(ID string, full bool) (*Container, error) {
 	}
 
 	_, err = e.updateContainer(containers[0], e.containers, full)
-	return e.containers[containers[0].Id], err
+	e.RLock()
+	container := e.containers[containers[0].Id]
+	e.RUnlock()
+	return container, err
 }
 
 func (e *Engine) updateContainer(c dockerclient.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
