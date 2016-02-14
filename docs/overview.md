@@ -62,7 +62,7 @@ the [Docker remote
 API](http://docs.docker.com/reference/api/docker_remote_api/), and extends it
 with some new endpoints.
 
-# Getting help
+## Getting help
 
 Docker Swarm is still in its infancy and under active development. If you need
 help, would like to contribute, or simply want to talk about the project with
