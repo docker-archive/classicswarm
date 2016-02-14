@@ -11,8 +11,9 @@ import (
 func TestRequest(t *testing.T) {
 	t.Parallel()
 
+	context := &context{}
 	r := mux.NewRouter()
-	setupPrimaryRouter(r, nil, false)
+	setupPrimaryRouter(r, context, false)
 	w := httptest.NewRecorder()
 
 	req, e := http.NewRequest("GET", "/version", nil)
@@ -36,8 +37,9 @@ func TestRequest(t *testing.T) {
 func TestCorsRequest(t *testing.T) {
 	t.Parallel()
 
+	context := &context{}
 	primary := mux.NewRouter()
-	setupPrimaryRouter(primary, nil, true)
+	setupPrimaryRouter(primary, context, true)
 	w := httptest.NewRecorder()
 
 	r, e := http.NewRequest("OPTIONS", "/version", nil)

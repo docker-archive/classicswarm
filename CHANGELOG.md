@@ -1,5 +1,49 @@
 # Changelog
 
+## 1.1.0 (2016-02-04)
+
+#### Scheduler
+
+- Add support for container rescheduling on node failure. (experimental)
+- Use failureCount as a secondary health indicator
+- Add swarm container create retry option
+- Fixed the way soft affinities and handled
+
+#### API
+
+- Support private registry on docker run
+- Expose error and last update time in docker info
+- Sort images by Created
+- Fix error when inspect on unhealthy node
+- Prevent panic in filters when container has no name
+- Add buildtime, kernelversion and experimental to API version
+- Support docker update and new networking related flags in run & network create/connect/disconnect/ls
+- Require `--all` on docker ps to display containers on unhealthy nodes
+- Retry on docker events EOF
+
+#### Node Management
+
+- Add a random delay to avoid synchronized registration at swarm join
+- Use engine connection error to fail engine fast
+- Introduce pending state
+
+#### Mesos integration
+
+- Rename slave to agent
+- Upgrade tests to use mesos 0.25
+- Code refactors
+- Improve debug output
+- Enable checkpoint failover in FrameworkInfo
+- Fix timeout when pulling images
+- Add timeout to refuse offers
+- Fix double start issue
+
+#### Misc
+
+- Fix license grant
+- Documentation update
+- Use discovery from docker/docker
+
 ## 1.0.1 (2015-12-09)
 
 #### Scheduler

@@ -216,8 +216,8 @@ func (client *MockClient) ConnectNetwork(id, container string) error {
 	return args.Error(0)
 }
 
-func (client *MockClient) DisconnectNetwork(id, container string) error {
-	args := client.Mock.Called(id, container)
+func (client *MockClient) DisconnectNetwork(id, container string, force bool) error {
+	args := client.Mock.Called(id, container, force)
 	return args.Error(0)
 }
 

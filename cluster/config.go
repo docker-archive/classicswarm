@@ -2,8 +2,11 @@ package cluster
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"strings"
 
+	"github.com/docker/swarm/experimental"
 	"github.com/samalba/dockerclient"
 )
 
@@ -63,9 +66,10 @@ func consolidateResourceFields(c *dockerclient.ContainerConfig) {
 // BuildContainerConfig creates a cluster.ContainerConfig from a dockerclient.ContainerConfig
 func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 	var (
-		affinities  []string
-		constraints []string
-		env         []string
+		affinities         []string
+		constraints        []string
+		reschedulePolicies []string
+		env                []string
 	)
 
 	// only for tests
@@ -83,18 +87,26 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 		json.Unmarshal([]byte(labels), &constraints)
 	}
 
-	// parse affinities/constraints from env (ex. docker run -e affinity:container==redis -e affinity:image==nginx -e constraint:region==us-east -e constraint:storage==ssd)
+	if experimental.ENABLED {
+		// parse reschedule policy from labels (ex. docker run --label 'com.docker.swarm.reschedule-policies=on-node-failure')
+		if labels, ok := c.Labels[SwarmLabelNamespace+".reschedule-policies"]; ok {
+			json.Unmarshal([]byte(labels), &reschedulePolicies)
+		}
+	}
+	// parse affinities/constraints/reschedule policies from env (ex. docker run -e affinity:container==redis -e affinity:image==nginx -e constraint:region==us-east -e constraint:storage==ssd -e reschedule:off)
 	for _, e := range c.Env {
 		if ok, key, value := parseEnv(e); ok && key == "affinity" {
 			affinities = append(affinities, value)
 		} else if ok && key == "constraint" {
 			constraints = append(constraints, value)
+		} else if experimental.ENABLED && ok && key == "reschedule" {
+			reschedulePolicies = append(reschedulePolicies, value)
 		} else {
 			env = append(env, e)
 		}
 	}
 
-	// remove affinities/constraints from env
+	// remove affinities/constraints/reschedule policies from env
 	c.Env = env
 
 	// store affinities in labels
@@ -108,6 +120,15 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 	if len(constraints) > 0 {
 		if labels, err := json.Marshal(constraints); err == nil {
 			c.Labels[SwarmLabelNamespace+".constraints"] = string(labels)
+		}
+	}
+
+	if experimental.ENABLED {
+		// store reschedule policies in labels
+		if len(reschedulePolicies) > 0 {
+			if labels, err := json.Marshal(reschedulePolicies); err == nil {
+				c.Labels[SwarmLabelNamespace+".reschedule-policies"] = string(labels)
+			}
 		}
 	}
 
@@ -185,4 +206,38 @@ func (c *ContainerConfig) HaveNodeConstraint() bool {
 		}
 	}
 	return false
+}
+
+// HasReschedulePolicy returns true if the specified policy is part of the config
+func (c *ContainerConfig) HasReschedulePolicy(p string) bool {
+	for _, reschedulePolicy := range c.extractExprs("reschedule-policies") {
+		if reschedulePolicy == p {
+			return true
+		}
+	}
+	return false
+}
+
+// Validate returns an error if the config isn't valid
+func (c *ContainerConfig) Validate() error {
+	//TODO: add validation for affinities and constraints
+
+	if experimental.ENABLED {
+		reschedulePolicies := c.extractExprs("reschedule-policies")
+		if len(reschedulePolicies) > 1 {
+			return errors.New("too many reschedule policies")
+		} else if len(reschedulePolicies) == 1 {
+			valid := false
+			for _, validReschedulePolicy := range []string{"off", "on-node-failure"} {
+				if reschedulePolicies[0] == validReschedulePolicy {
+					valid = true
+				}
+			}
+			if !valid {
+				return fmt.Errorf("invalid reschedule policy: %s", reschedulePolicies[0])
+			}
+		}
+	}
+
+	return nil
 }

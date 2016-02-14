@@ -1,38 +1,8 @@
----
-page_title: Docker Swarm API
-page_description: Swarm API
-page_keywords: docker, swarm, clustering, api
----
+# Docker Swarm API README
 
-# Docker Swarm API
-
-The Docker Swarm API is mostly compatible with the [Docker Remote API](https://docs.docker.com/reference/api/docker_remote_api/). This document is an overview of the differences between the Swarm API and the Docker Remote API.
-
-## Endpoints which behave differently
-
-* `GET "/containers/{name:.*}/json"`: New field `Node` added:
-
-```json
-"Node": {
-	"Id": "ODAI:IC6Q:MSBL:TPB5:HIEE:6IKC:VCAM:QRNH:PRGX:ERZT:OK46:PMFX",
-	"Ip": "0.0.0.0",
-	"Addr": "http://0.0.0.0:4243",
-	"Name": "vagrant-ubuntu-saucy-64",
-    },
-```
-* `GET "/containers/{name:.*}/json"`: `HostIP` replaced by the the actual Node's IP if `HostIP` is `0.0.0.0`
-
-* `GET "/containers/json"`: Node's name prepended to the container name.
-
-* `GET "/containers/json"`: `HostIP` replaced by the the actual Node's IP if `HostIP` is `0.0.0.0`
-
-* `GET "/containers/json"` : Containers started from the `swarm` official image are hidden by default, use `all=1` to display them.
-
-* `GET "/images/json"` : Use '--filter node=\<Node name\>' to show images of the specific node.
-
-## Docker Swarm documentation index
-
-- [User guide](https://docs.docker.com/swarm/)
-- [Discovery options](https://docs.docker.com/swarm/discovery/)
-- [Scheduler strategies](https://docs.docker.com/swarm/scheduler/strategy/)
-- [Scheduler filters](https://docs.docker.com/swarm/scheduler/filter/)
+The Docker Swarm API is mostly compatible with the [Docker Remote
+API](https://docs.docker.com/engine/reference/api/docker_remote_api/). To read
+the end-user API documentation, visit [the Swarm API documentation on
+docs.docker.com](https://docs.docker.com/swarm/swarm-api/). If you want to
+modify the discovery API documentation, start with [the `docs/swarm-api.md`
+file](../docs/swarm-api.md) in this project.

@@ -11,13 +11,14 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/docker/docker/pkg/discovery"
+	kvdiscovery "github.com/docker/docker/pkg/discovery/kv"
+	"github.com/docker/leadership"
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos"
 	"github.com/docker/swarm/cluster/swarm"
-	"github.com/docker/swarm/discovery"
-	kvdiscovery "github.com/docker/swarm/discovery/kv"
-	"github.com/docker/swarm/leadership"
+	"github.com/docker/swarm/experimental"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
@@ -33,7 +34,7 @@ type logHandler struct {
 }
 
 func (h *logHandler) Handle(e *cluster.Event) error {
-	id := e.Id
+	id := e.ID
 	// Trim IDs to 12 chars.
 	if len(id) > 12 {
 		id = id[:12]
@@ -48,17 +49,17 @@ type statusHandler struct {
 	follower  *leadership.Follower
 }
 
-func (h *statusHandler) Status() [][]string {
-	var status [][]string
+func (h *statusHandler) Status() [][2]string {
+	var status [][2]string
 
 	if h.candidate != nil && !h.candidate.IsLeader() {
-		status = [][]string{
-			{"\bRole", "replica"},
-			{"\bPrimary", h.follower.Leader()},
+		status = [][2]string{
+			{"Role", "replica"},
+			{"Primary", h.follower.Leader()},
 		}
 	} else {
-		status = [][]string{
-			{"\bRole", "primary"},
+		status = [][2]string{
+			{"Role", "primary"},
 		}
 	}
 
@@ -98,7 +99,7 @@ func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 }
 
 // Initialize the discovery service.
-func createDiscovery(uri string, c *cli.Context, discoveryOpt []string) discovery.Discovery {
+func createDiscovery(uri string, c *cli.Context, discoveryOpt []string) discovery.Backend {
 	hb, err := time.ParseDuration(c.String("heartbeat"))
 	if err != nil {
 		log.Fatalf("invalid --heartbeat: %v", err)
@@ -126,10 +127,13 @@ func getDiscoveryOpt(c *cli.Context) map[string]string {
 		kvpair := strings.SplitN(option, "=", 2)
 		options[kvpair[0]] = kvpair[1]
 	}
+	if _, ok := options["kv.path"]; !ok {
+		options["kv.path"] = "docker/swarm/nodes"
+	}
 	return options
 }
 
-func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, discovery discovery.Discovery, addr string, leaderTTL time.Duration, tlsConfig *tls.Config) {
+func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, discovery discovery.Backend, addr string, leaderTTL time.Duration, tlsConfig *tls.Config) {
 	kvDiscovery, ok := discovery.(*kvdiscovery.Discovery)
 	if !ok {
 		log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
@@ -321,5 +325,9 @@ func manage(c *cli.Context) {
 		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.GlobalBool("debug"), c.Bool("cors")))
 	}
 
+	if experimental.ENABLED {
+		log.Warn("WARNING: rescheduling is currently experimental, use at your own risks")
+		cluster.NewWatchdog(cl)
+	}
 	log.Fatal(server.ListenAndServe())
 }

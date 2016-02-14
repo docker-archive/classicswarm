@@ -1,15 +1,15 @@
 <!--[metadata]>
 +++
-title = "Docker Swarm discovery"
+title = "Discovery"
 description = "Swarm discovery"
 keywords = ["docker, swarm, clustering,  discovery"]
 [menu.main]
-parent="smn_workw_swarm"
+parent="workw_swarm"
 weight=4
 +++
 <![end-metadata]-->
 
-# Discovery
+# Docker Swarm Discovery
 
 Docker Swarm comes with multiple discovery backends. You use a hosted discovery service with Docker Swarm. The service maintains a list of IPs in your swarm.
 This page describes the different types of hosted discovery available to you. These are:
@@ -209,12 +209,13 @@ swarm is connected to the public internet. To create your swarm:
 
 You can contribute a new discovery backend to Swarm. For information on how to
 do this, see <a
-href="https://github.com/docker/swarm/blob/master/discovery/README.md">our
-discovery README in the Docker Swarm repository</a>.
+href="https://github.com/docker/docker/tree/master/pkg/discovery">
+github.com/docker/docker/pkg/discovery</a>.
+
 
 ## Docker Swarm documentation index
 
 - [Docker Swarm overview](index.md)
 - [Scheduler strategies](scheduler/strategy.md)
 - [Scheduler filters](scheduler/filter.md)
-- [Swarm API](api/swarm-api.md)
+- [Swarm API](swarm-api.md)

@@ -3,7 +3,7 @@ package cluster
 import (
 	"strings"
 
-	dockerfilters "github.com/docker/docker/api/types/filters"
+	dockerfilters "github.com/docker/engine-api/types/filters"
 	"github.com/samalba/dockerclient"
 )
 
@@ -83,7 +83,7 @@ type ImageFilterOptions struct {
 type Images []*Image
 
 // Filter returns a new sequence of Images filtered to only the images that
-// matched the filtering paramters
+// matched the filtering parameters
 func (images Images) Filter(opts ImageFilterOptions) Images {
 	includeAll := func(image *Image) bool {
 		// TODO: this is wrong if RepoTags == []

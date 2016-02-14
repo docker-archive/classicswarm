@@ -26,6 +26,9 @@ type Cluster interface {
 	// Return all containers
 	Containers() Containers
 
+	// Start a container
+	StartContainer(container *Container) error
+
 	// Return container the matching `IDOrName`
 	// TODO: remove this method from the interface as we can use
 	// cluster.Containers().Get(IDOrName)
@@ -44,10 +47,7 @@ type Cluster interface {
 	CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error)
 
 	// Return all volumes
-	Volumes() []*Volume
-
-	// Return one volume from the cluster
-	Volume(name string) *Volume
+	Volumes() Volumes
 
 	// Remove volumes from the cluster
 	RemoveVolumes(name string) (bool, error)
@@ -72,7 +72,7 @@ type Cluster interface {
 
 	// Return some info about the cluster, like nb or containers / images
 	// It is pretty open, so the implementation decides what to return.
-	Info() [][]string
+	Info() [][2]string
 
 	// Return the total memory of the cluster
 	TotalMemory() int64
@@ -82,6 +82,9 @@ type Cluster interface {
 
 	// Register an event handler for cluster-wide events.
 	RegisterEventHandler(h EventHandler) error
+
+	// Unregister an event handler.
+	UnregisterEventHandler(h EventHandler)
 
 	// FIXME: remove this method
 	// Return a random engine

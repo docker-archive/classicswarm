@@ -14,7 +14,11 @@ type Network struct {
 	Engine *Engine
 }
 
-// Networks represents a map of networks
+func (network *Network) isPreDefined() bool {
+	return (network.Name == "none" || network.Name == "host" || network.Name == "bridge")
+}
+
+// Networks represents an array of networks
 type Networks []*Network
 
 // Uniq returns all uniq networks
@@ -37,17 +41,40 @@ func (networks Networks) Uniq() Networks {
 }
 
 // Filter returns networks filtered by names or ids
-func (networks Networks) Filter(names []string, ids []string) Networks {
-	if len(names) == 0 && len(ids) == 0 {
-		return networks.Uniq()
+func (networks Networks) Filter(names []string, ids []string, types []string) Networks {
+	typeFilter := func(network *Network) bool {
+		if len(types) > 0 {
+			for _, typ := range types {
+				if typ == "custom" && !network.isPreDefined() {
+					return true
+				}
+				if typ == "builtin" && network.isPreDefined() {
+					return true
+				}
+			}
+		} else {
+			return true
+		}
+		return false
 	}
 
 	out := Networks{}
-	for _, idOrName := range append(names, ids...) {
-		if network := networks.Get(idOrName); network != nil {
-			out = append(out, network)
+	if len(names) == 0 && len(ids) == 0 {
+		for _, network := range networks.Uniq() {
+			if typeFilter(network) {
+				out = append(out, network)
+			}
+		}
+	} else {
+		for _, idOrName := range append(names, ids...) {
+			if network := networks.Get(idOrName); network != nil {
+				if typeFilter(network) {
+					out = append(out, network)
+				}
+			}
 		}
 	}
+
 	return out
 }
 
@@ -65,22 +92,23 @@ func (networks Networks) Get(IDOrName string) *Network {
 		}
 	}
 
-	candidates := []*Network{}
+	candidates := Networks{}
 
-	// Match name, /name or engine/name.
+	// Match name or engine/name.
 	for _, network := range networks {
 		if network.Name == IDOrName || network.Engine.ID+"/"+network.Name == IDOrName || network.Engine.Name+"/"+network.Name == IDOrName {
 			candidates = append(candidates, network)
 		}
 	}
 
-	if size := len(candidates); size == 1 {
+	// Return if we found a unique match.
+	if size := len(candidates.Uniq()); size == 1 {
 		return candidates[0]
 	} else if size > 1 {
 		return nil
 	}
 
-	// Match name, /name or engine/name.
+	// Match /name and return as soon as we find one.
 	for _, network := range networks {
 		if network.Name == "/"+IDOrName {
 			return network
@@ -94,7 +122,7 @@ func (networks Networks) Get(IDOrName string) *Network {
 		}
 	}
 
-	if len(candidates) == 1 {
+	if len(candidates.Uniq()) == 1 {
 		return candidates[0]
 	}
 

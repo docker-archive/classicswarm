@@ -54,6 +54,6 @@ type Client interface {
 	InspectNetwork(id string) (*NetworkResource, error)
 	CreateNetwork(config *NetworkCreate) (*NetworkCreateResponse, error)
 	ConnectNetwork(id, container string) error
-	DisconnectNetwork(id, container string) error
+	DisconnectNetwork(id, container string, force bool) error
 	RemoveNetwork(id string) error
 }

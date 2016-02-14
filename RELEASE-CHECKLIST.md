@@ -5,7 +5,7 @@
 ```
 git checkout -b bump-<version>
 edit version/version.go
-edit CHANGELOG.md 
+edit CHANGELOG.md
 git add .
 git commit -s -m "Bump version to <version>"
 git push $GITHUBUSER bump-<version>
@@ -29,13 +29,13 @@ git push origin <tag>
 git clone git@github.com:docker/swarm-library-image.git
 cd swarm-library-image
 ./update.sh <tag> (example: ./update.sh v0.2.0-rc2)
-check buils is successful (swarm binary should show in git diff)
+check build is successful (swarm binary should show in git diff)
 git add .
 git commit -s -m “<tag>"
 git push origin
 ```
 
-### 4. Update official image 
+### 4. Update official image
 
 fork https://github.com/docker-library/official-images.git
 

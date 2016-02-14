@@ -11,15 +11,15 @@ import (
 func testFixturesAllHealthyNode() []*node.Node {
 	return []*node.Node{
 		{
-			ID:        "node-0-id",
-			Name:      "node-0-name",
-			IsHealthy: true,
+			ID:              "node-0-id",
+			Name:            "node-0-name",
+			HealthIndicator: 100,
 		},
 
 		{
-			ID:        "node-1-id",
-			Name:      "node-1-name",
-			IsHealthy: true,
+			ID:              "node-1-id",
+			Name:            "node-1-name",
+			HealthIndicator: 100,
 		},
 	}
 }
@@ -27,15 +27,15 @@ func testFixturesAllHealthyNode() []*node.Node {
 func testFixturesPartHealthyNode() []*node.Node {
 	return []*node.Node{
 		{
-			ID:        "node-0-id",
-			Name:      "node-0-name",
-			IsHealthy: false,
+			ID:              "node-0-id",
+			Name:            "node-0-name",
+			HealthIndicator: 0,
 		},
 
 		{
-			ID:        "node-1-id",
-			Name:      "node-1-name",
-			IsHealthy: true,
+			ID:              "node-1-id",
+			Name:            "node-1-name",
+			HealthIndicator: 100,
 		},
 	}
 }
@@ -43,15 +43,15 @@ func testFixturesPartHealthyNode() []*node.Node {
 func testFixturesNoHealthyNode() []*node.Node {
 	return []*node.Node{
 		{
-			ID:        "node-0-id",
-			Name:      "node-0-name",
-			IsHealthy: false,
+			ID:              "node-0-id",
+			Name:            "node-0-name",
+			HealthIndicator: 0,
 		},
 
 		{
-			ID:        "node-1-id",
-			Name:      "node-1-name",
-			IsHealthy: false,
+			ID:              "node-1-id",
+			Name:            "node-1-name",
+			HealthIndicator: 0,
 		},
 	}
 }

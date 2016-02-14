@@ -68,3 +68,13 @@ function teardown() {
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" == *"testimage"* ]]
 }
+
+@test "docker images - after commit on engine side" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker -H ${HOSTS[0]} run -d --name test_container busybox sleep 500
+	docker -H ${HOSTS[0]} commit test_container testimage
+
+	retry 5 1 eval "docker_swarm images | grep 'testimage'"
+}

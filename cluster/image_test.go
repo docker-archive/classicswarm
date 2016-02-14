@@ -3,7 +3,7 @@ package cluster
 import (
 	"testing"
 
-	dockerfilters "github.com/docker/docker/api/types/filters"
+	dockerfilters "github.com/docker/engine-api/types/filters"
 	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
@@ -122,4 +122,25 @@ func TestImagesFilterWithNameFilterWithTag(t *testing.T) {
 		NameFilter: "example",
 	})
 	assert.Equal(t, len(result), 2)
+}
+
+func TestParseRepositoryTag(t *testing.T) {
+
+	repo, tag := ParseRepositoryTag("localhost.localdomain:5000/samalba/hipache:latest")
+	if tag != "latest" {
+		t.Errorf("repo=%s tag=%s", repo, tag)
+	}
+	repo, tag = ParseRepositoryTag("localhost:5000/foo/bar@sha256:bc8813ea7b3603864987522f02a76101c17ad122e1c46d790efc0fca78ca7bfb")
+	if tag != "sha256:bc8813ea7b3603864987522f02a76101c17ad122e1c46d790efc0fca78ca7bfb" {
+		t.Logf("repo=%s tag=%s", repo, tag)
+	}
+	repo, tag = ParseRepositoryTag("localhost:5000/foo/bar")
+	if tag != "" {
+		t.Logf("repo=%s tag=%s", repo, tag)
+	}
+	repo, tag = ParseRepositoryTag("localhost:5000/foo/bar:latest")
+	t.Logf("repo=%s tag=%s", repo, tag)
+	if tag != "latest" {
+		t.Logf("repo=%s tag=%s", repo, tag)
+	}
 }

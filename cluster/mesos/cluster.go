@@ -9,12 +9,13 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/cluster/mesos/queue"
+	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/gogo/protobuf/proto"
@@ -27,18 +28,17 @@ import (
 type Cluster struct {
 	sync.RWMutex
 
-	driver              *mesosscheduler.MesosSchedulerDriver
 	dockerEnginePort    string
-	eventHandler        cluster.EventHandler
+	eventHandlers       *cluster.EventHandlers
 	master              string
 	agents              map[string]*agent
-	scheduler           *scheduler.Scheduler
+	scheduler           *Scheduler
 	TLSConfig           *tls.Config
 	options             *cluster.DriverOpts
 	offerTimeout        time.Duration
 	refuseTimeout       time.Duration
 	taskCreationTimeout time.Duration
-	pendingTasks        *queue.Queue
+	pendingTasks        *task.Tasks
 	engineOpts          *cluster.EngineOpts
 }
 
@@ -67,9 +67,9 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	}
 	cluster := &Cluster{
 		dockerEnginePort:    defaultDockerEnginePort,
+		eventHandlers:       cluster.NewEventHandlers(),
 		master:              master,
 		agents:              make(map[string]*agent),
-		scheduler:           scheduler,
 		TLSConfig:           TLSConfig,
 		options:             &options,
 		offerTimeout:        defaultOfferTimeout,
@@ -78,7 +78,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		refuseTimeout:       defaultRefuseTimeout,
 	}
 
-	cluster.pendingTasks = queue.NewQueue()
+	cluster.pendingTasks = task.NewTasks(cluster)
 
 	// Empty string is accepted by the scheduler.
 	user, _ := options.String("mesos.user", "SWARM_MESOS_USER")
@@ -89,7 +89,6 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	hostname, _ := os.Hostname()
 
 	driverConfig := mesosscheduler.DriverConfig{
-		Scheduler:        cluster,
 		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
 		Master:           cluster.master,
 		HostnameOverride: hostname,
@@ -121,6 +120,10 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		driverConfig.BindingAddress = bindingAddress
 	}
 
+	if checkpointFailover, ok := options.Bool("mesos.checkpointfailover", "SWARM_MESOS_CHECKPOINT_FAILOVER"); ok {
+		driverConfig.Framework.Checkpoint = &checkpointFailover
+	}
+
 	if offerTimeout, ok := options.String("mesos.offertimeout", "SWARM_MESOS_OFFER_TIMEOUT"); ok {
 		d, err := time.ParseDuration(offerTimeout)
 		if err != nil {
@@ -137,40 +140,50 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		cluster.refuseTimeout = d
 	}
 
-	driver, err := mesosscheduler.NewMesosSchedulerDriver(driverConfig)
+	sched, err := NewScheduler(driverConfig, cluster, scheduler)
 	if err != nil {
 		return nil, err
 	}
 
-	cluster.driver = driver
-
-	status, err := driver.Start()
+	cluster.scheduler = sched
+	status, err := sched.driver.Start()
 	if err != nil {
 		log.Debugf("Mesos driver started, status/err %v: %v", status, err)
 		return nil, err
 	}
 	log.Debugf("Mesos driver started, status %v", status)
 
+	go func() {
+		status, err := sched.driver.Join()
+		log.Debugf("Mesos driver stopped unexpectedly, status/err %v: %v", status, err)
+
+	}()
+
 	return cluster, nil
 }
 
 // Handle callbacks for the events
 func (c *Cluster) Handle(e *cluster.Event) error {
-	if c.eventHandler == nil {
-		return nil
-	}
-	if err := c.eventHandler.Handle(e); err != nil {
-		log.Error(err)
-	}
+	c.eventHandlers.Handle(e)
 	return nil
 }
 
 // RegisterEventHandler registers an event handler.
 func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
-	if c.eventHandler != nil {
-		return errors.New("event handler already set")
+	return c.eventHandlers.RegisterEventHandler(h)
+}
+
+// UnregisterEventHandler unregisters a previously registered event handler.
+func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
+	c.eventHandlers.UnregisterEventHandler(h)
+}
+
+// StartContainer starts a container
+func (c *Cluster) StartContainer(container *cluster.Container) error {
+	// if the container was started less than a second ago in detach mode, do not start it
+	if time.Now().Unix()-container.Created > 1 || container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.detach"] != "true" {
+		return container.Engine.StartContainer(container.Id)
 	}
-	c.eventHandler = h
 	return nil
 }
 
@@ -180,7 +193,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		return nil, errResourcesNeeded
 	}
 
-	task, err := newTask(c, config, name)
+	task, err := task.NewTask(config, name, c.taskCreationTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -188,13 +201,11 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 	go c.pendingTasks.Add(task)
 
 	select {
-	case container := <-task.container:
+	case container := <-task.GetContainer():
 		return formatContainer(container), nil
-	case err := <-task.error:
-		return nil, err
-	case <-time.After(c.taskCreationTimeout):
+	case err := <-task.Error:
 		c.pendingTasks.Remove(task)
-		return nil, fmt.Errorf("container failed to start after %s", c.taskCreationTimeout)
+		return nil, err
 	}
 }
 
@@ -243,7 +254,47 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDe
 
 // CreateNetwork creates a network in the cluster
 func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error) {
-	return nil, errNotSupported
+	var (
+		parts  = strings.SplitN(request.Name, "/", 2)
+		config = &cluster.ContainerConfig{}
+	)
+
+	if len(parts) == 2 {
+		// a node was specified, create the container only on this node
+		request.Name = parts[1]
+		config = cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:node==" + parts[0]}})
+	}
+
+	c.scheduler.Lock()
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+	c.scheduler.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	if nodes == nil {
+		return nil, errors.New("cannot find node to create network")
+	}
+	n := nodes[0]
+	s, ok := c.agents[n.ID]
+	if !ok {
+		return nil, fmt.Errorf("Unable to create network on agent %q", n.ID)
+	}
+	resp, err := s.engine.CreateNetwork(request)
+	c.refreshNetworks()
+	return resp, err
+}
+
+func (c *Cluster) refreshNetworks() {
+	var wg sync.WaitGroup
+	for _, s := range c.agents {
+		e := s.engine
+		wg.Add(1)
+		go func(e *cluster.Engine) {
+			e.RefreshNetworks()
+			wg.Done()
+		}(e)
+	}
+	wg.Wait()
 }
 
 // CreateVolume creates a volume in the cluster
@@ -253,7 +304,9 @@ func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*clus
 
 // RemoveNetwork removes network from the cluster
 func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
-	return errNotSupported
+	err := network.Engine.RemoveNetwork(network)
+	c.refreshNetworks()
+	return err
 }
 
 // RemoveVolumes removes volumes from the cluster
@@ -333,16 +386,20 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 
 // Networks returns all the networks in the cluster.
 func (c *Cluster) Networks() cluster.Networks {
-	return cluster.Networks{}
+	c.RLock()
+	defer c.RUnlock()
+
+	out := cluster.Networks{}
+	for _, s := range c.agents {
+		out = append(out, s.engine.Networks()...)
+	}
+
+	return out
+
 }
 
 // Volumes returns all the volumes in the cluster.
-func (c *Cluster) Volumes() []*cluster.Volume {
-	return nil
-}
-
-// Volume returns the volume name in the cluster
-func (c *Cluster) Volume(name string) *cluster.Volume {
+func (c *Cluster) Volumes() cluster.Volumes {
 	return nil
 }
 
@@ -400,20 +457,20 @@ func (c *Cluster) TotalCpus() int64 {
 }
 
 // Info gives minimal information about containers and resources on the mesos cluster
-func (c *Cluster) Info() [][]string {
+func (c *Cluster) Info() [][2]string {
 	offers := c.listOffers()
-	info := [][]string{
-		{"\bStrategy", c.scheduler.Strategy()},
-		{"\bFilters", c.scheduler.Filters()},
-		{"\bOffers", fmt.Sprintf("%d", len(offers))},
+	info := [][2]string{
+		{"Strategy", c.scheduler.Strategy()},
+		{"Filters", c.scheduler.Filters()},
+		{"Offers", fmt.Sprintf("%d", len(offers))},
 	}
 
 	sort.Sort(offerSorter(offers))
 
 	for _, offer := range offers {
-		info = append(info, []string{" Offer", offer.Id.GetValue()})
+		info = append(info, [2]string{"  Offer", offer.Id.GetValue()})
 		for _, resource := range offer.Resources {
-			info = append(info, []string{"  └ " + resource.GetName(), formatResource(resource)})
+			info = append(info, [2]string{"   └ " + resource.GetName(), formatResource(resource)})
 		}
 	}
 
@@ -430,7 +487,7 @@ func (c *Cluster) addOffer(offer *mesosproto.Offer) {
 		time.Sleep(c.offerTimeout)
 		// declining Mesos offers to make them available to other Mesos services
 		if c.removeOffer(offer) {
-			if _, err := c.driver.DeclineOffer(offer.Id, &mesosproto.Filters{}); err != nil {
+			if _, err := c.scheduler.driver.DeclineOffer(offer.Id, &mesosproto.Filters{}); err != nil {
 				log.WithFields(log.Fields{"name": "mesos"}).Errorf("Error while declining offer %q: %v", offer.Id.GetValue(), err)
 			} else {
 				log.WithFields(log.Fields{"name": "mesos"}).Debugf("Offer %q declined successfully", offer.Id.GetValue())
@@ -448,16 +505,18 @@ func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 	found := s.removeOffer(offer.Id.GetValue())
 	if s.empty() {
 		// Disconnect from engine
+		s.engine.Disconnect()
 		delete(c.agents, offer.SlaveId.GetValue())
 	}
 	return found
 }
 
-func (c *Cluster) scheduleTask(t *task) bool {
+// LaunchTask method selects node and calls driver to launch a task
+func (c *Cluster) LaunchTask(t *task.Task) bool {
 	c.scheduler.Lock()
 	//change to explicit lock defer c.scheduler.Unlock()
 
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), t.config)
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), t.GetConfig())
 	if err != nil {
 		c.scheduler.Unlock()
 		return false
@@ -465,7 +524,7 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	n := nodes[0]
 	s, ok := c.agents[n.ID]
 	if !ok {
-		t.error <- fmt.Errorf("Unable to create on agent %q", n.ID)
+		t.Error <- fmt.Errorf("Unable to create on agent %q", n.ID)
 		c.scheduler.Unlock()
 		return true
 	}
@@ -479,20 +538,20 @@ func (c *Cluster) scheduleTask(t *task) bool {
 		offerIDs = append(offerIDs, offer.Id)
 	}
 
-	t.build(n.ID, c.agents[n.ID].offers)
+	t.Build(n.ID, c.agents[n.ID].offers)
 
 	offerFilters := &mesosproto.Filters{}
 	refuseSeconds := c.refuseTimeout.Seconds()
 	offerFilters.RefuseSeconds = &refuseSeconds
 
-	if _, err := c.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, offerFilters); err != nil {
+	if _, err := c.scheduler.driver.LaunchTasks(offerIDs, []*mesosproto.TaskInfo{&t.TaskInfo}, offerFilters); err != nil {
 		// TODO: Do not erase all the offers, only the one used
 		for _, offer := range s.offers {
 			c.removeOffer(offer)
 		}
 		c.Unlock()
 		c.scheduler.Unlock()
-		t.error <- err
+		t.Error <- err
 		return true
 	}
 
@@ -505,18 +564,18 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	c.Unlock()
 	c.scheduler.Unlock()
 	// block until we get the container
-	finished, data, err := t.monitor()
+	finished, data, err := t.Monitor()
 	taskID := t.TaskInfo.TaskId.GetValue()
 	if err != nil {
 		//remove task
 		s.removeTask(taskID)
-		t.error <- err
+		t.Error <- err
 		return true
 	}
 	if !finished {
 		go func() {
 			for {
-				finished, _, err := t.monitor()
+				finished, _, err := t.Monitor()
 				if err != nil {
 					// TODO do a better log by sending proper error message
 					log.Error(err)
@@ -538,8 +597,8 @@ func (c *Cluster) scheduleTask(t *task) bool {
 	if data != nil && json.Unmarshal(data, &inspect) == nil && len(inspect) == 1 {
 		container := &cluster.Container{Container: dockerclient.Container{Id: inspect[0].Id}, Engine: s.engine}
 		if container, err := container.Refresh(); err == nil {
-			if !t.done {
-				t.container <- container
+			if !t.Stopped() {
+				t.SetContainer(container)
 			}
 			return true
 		}
@@ -553,15 +612,15 @@ func (c *Cluster) scheduleTask(t *task) bool {
 
 	for _, container := range s.engine.Containers() {
 		if container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"] == taskID {
-			if !t.done {
-				t.container <- container
+			if !t.Stopped() {
+				t.SetContainer(container)
 			}
 			return true
 		}
 	}
 
-	if !t.done {
-		t.error <- fmt.Errorf("Container failed to create")
+	if !t.Stopped() {
+		t.Error <- fmt.Errorf("Container failed to create")
 	}
 	return true
 }

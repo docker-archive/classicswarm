@@ -54,12 +54,6 @@ func sendErrorJSONMessage(w io.Writer, errorCode int, errorMessage string) {
 
 	json.NewEncoder(w).Encode(message)
 }
-func newClientAndScheme(tlsConfig *tls.Config) (*http.Client, string) {
-	if tlsConfig != nil {
-		return &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConfig}}, "https"
-	}
-	return &http.Client{}, "http"
-}
 
 func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.Container, error) {
 	if name, ok := vars["name"]; ok {
@@ -102,14 +96,14 @@ func closeIdleConnections(client *http.Client) {
 	}
 }
 
-func proxyAsync(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request, callback func(*http.Response)) error {
-	// Use a new client for each request
-	client, scheme := newClientAndScheme(tlsConfig)
+func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, callback func(*http.Response)) error {
 	// RequestURI may not be sent to client
 	r.RequestURI = ""
 
+	client, scheme := engine.HTTPClientAndScheme()
+
 	r.URL.Scheme = scheme
-	r.URL.Host = addr
+	r.URL.Host = engine.Addr
 
 	log.WithFields(log.Fields{"method": r.Method, "url": r.URL}).Debug("Proxy request")
 	resp, err := client.Do(r)
@@ -132,8 +126,8 @@ func proxyAsync(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *ht
 	return nil
 }
 
-func proxy(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request) error {
-	return proxyAsync(tlsConfig, addr, w, r, nil)
+func proxy(engine *cluster.Engine, w http.ResponseWriter, r *http.Request) error {
+	return proxyAsync(engine, w, r, nil)
 }
 
 type tlsClientConn struct {

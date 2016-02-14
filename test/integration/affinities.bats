@@ -68,8 +68,6 @@ function teardown() {
 	[ "$status" -eq 0 ]
 
 	run docker_swarm inspect c1
-	# FIXME: This will help debugging the failing test.
-	echo $output
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 
@@ -84,6 +82,26 @@ function teardown() {
 	run docker_swarm inspect c4
 	[ "$status" -eq 0 ]
 	[[ "${output}" != *'"Name": "node-1"'* ]]
+}
+
+@test "images affinity - local registry" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	# Create a new image just on the second host.
+	run docker -H ${HOSTS[1]} tag busybox localhost:5000/test
+
+	# pull busybox to force the refresh images
+	# FIXME: this is slow.
+	run docker_swarm pull busybox
+	[ "$status" -eq 0 ]
+
+	run docker_swarm run --name c1 -e affinity:image==localhost:5000/test -d busybox:latest sh
+	[ "$status" -eq 0 ]
+
+	run docker_swarm inspect c1
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
 }
 
 @test "label affinity" {
@@ -131,7 +149,7 @@ function teardown() {
 	swarm_manage
 
 	# Run 3 tests in parallel. One of them must fail.
-	run parallel docker -H "${SWARM_HOSTS[0]}" run --label test.label=true -e affinity:test.label!=true -d busybox:latest ::: sh sh sh
+	run parallel docker -H "${SWARM_HOSTS[0]}" run --label test.label=true -e affinity:test.label!=true -d busybox:latest ::: top top top
 	[ "$status" -ne 0 ]
 	[[ "${output}" == *'unable to find a node that satisfies test.label!=true'* ]]
 
