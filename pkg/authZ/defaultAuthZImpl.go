@@ -12,6 +12,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/pkg/authZ/states"
 	//	"github.com/docker/swarm/pkg/authZ/keystone"
+	"regexp"
+
 	"github.com/docker/swarm/pkg/authZ/headers"
 	"github.com/docker/swarm/pkg/authZ/utils"
 	"github.com/gorilla/mux"
@@ -44,7 +46,7 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 			newBody = bytes.Replace(newBody, []byte(cName+" :"), []byte(cId+":"), -1)
 			newBody = bytes.Replace(newBody, []byte(cName+":"), []byte(cId+":"), -1)
 		}
-		
+
 //		for cId, _ := range dto.VolumesFrom {
 //			log.Debug(cId)
 //			cName := dto.VolumesFrom[cId]
@@ -62,7 +64,7 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 			newQuery = strings.Replace(r.RequestURI, r.URL.Query().Get("name"), r.URL.Query().Get("name")+r.Header.Get(headers.AuthZTenantIdHeaderName), 1)
 			log.Debug(newQuery)
 		}
-		
+
 		newReq, e1 := utils.ModifyRequest(r, bytes.NewReader(newBody), newQuery, "")
 		if e1 != nil {
 			log.Error(e1)
@@ -144,21 +146,21 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 */
 
 func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter, r *http.Request, next http.Handler, dto *utils.ValidationOutPutDTO, reqBody []byte, containerConfig dockerclient.ContainerConfig) {
-	log.Debugf("HandleEvent %+v\n",eventType)
+	log.Debugf("HandleEvent %+v\n", eventType)
 	switch eventType {
 	case states.ContainerCreate:
 		log.Debug("In create...")
-		log.Debugf("containerConfig In: %+v\n",containerConfig)
+		log.Debugf("containerConfig In: %+v\n", containerConfig)
 		containerConfig.Labels[headers.TenancyLabel] = r.Header.Get(headers.AuthZTenantIdHeaderName)
 		containerConfig.HostConfig.VolumesFrom = dto.VolumesFrom
 		containerConfig.HostConfig.Links = dto.Links
-		log.Debugf("containerConfig Out: %+v\n",containerConfig) 
-		
+		log.Debugf("containerConfig Out: %+v\n", containerConfig)
+
 		var buf bytes.Buffer
-        if err := json.NewEncoder(&buf).Encode(containerConfig); err != nil {
-            log.Error(err)
-            return
-        }
+		if err := json.NewEncoder(&buf).Encode(containerConfig); err != nil {
+			log.Error(err)
+			return
+		}
 
 		var newQuery string
 		if "" != r.URL.Query().Get("name") {
@@ -166,7 +168,7 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 			newQuery = strings.Replace(r.RequestURI, r.URL.Query().Get("name"), r.URL.Query().Get("name")+r.Header.Get(headers.AuthZTenantIdHeaderName), 1)
 			log.Debug(newQuery)
 		}
-		
+
 		newReq, e1 := utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), newQuery, "")
 		if e1 != nil {
 			log.Error(e1)
@@ -225,10 +227,22 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 	case states.ContainerOthers:
 		log.Debug("In others...")
 		r.URL.Path = strings.Replace(r.URL.Path, mux.Vars(r)["name"], dto.ContainerID, 1)
-		mux.Vars(r)["name"] = dto.ContainerID
 
-		next.ServeHTTP(w, r)
-
+		if strings.Contains(r.URL.Path, "rename") {
+			re := regexp.MustCompile(`/containers/(.*)/rename\?name=(.*)`)
+			arr := re.FindStringSubmatch(r.URL.RequestURI())
+			nameParam := arr[2]
+			newQuery := strings.Replace(r.URL.RequestURI(), nameParam, nameParam+r.Header.Get(headers.AuthZTenantIdHeaderName), 1)
+			newReq, e1 := utils.ModifyRequest(r, nil, newQuery, "")
+			if e1 != nil {
+				log.Error(e1)
+			}
+			mux.Vars(r)["name"] = dto.ContainerID
+			next.ServeHTTP(w, newReq)
+		} else {
+			mux.Vars(r)["name"] = dto.ContainerID
+			next.ServeHTTP(w, r)
+		}
 		//TODO - hijack and others are the same because we handle no post and no stream manipulation and no handler override yet
 	case states.StreamOrHijack:
 		log.Debug("In stream/hijack...")
@@ -245,4 +259,3 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 		log.Debug("In default...")
 	}
 }
-
