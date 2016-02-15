@@ -25,6 +25,7 @@ var flavorsEnforced = os.Getenv("SWARM_FLAVORS_ENFORCED")
 
 func init() {
 	log.Info("flavors.init()")
+	flavorsEnforced = "false"
 	readFlavorFile()
 
 } 
