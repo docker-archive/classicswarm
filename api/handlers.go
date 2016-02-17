@@ -740,26 +740,6 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /containers/{name:.*}/start
 func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
-	hostConfig := &dockerclient.HostConfig{
-		MemorySwappiness: -1,
-	}
-
-	buf, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		httpError(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	r.Body.Close()
-
-	if len(buf) == 0 {
-		hostConfig = nil
-	} else {
-		if err := json.Unmarshal(buf, hostConfig); err != nil {
-			httpError(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-
 	name := mux.Vars(r)["name"]
 	container := c.cluster.Container(name)
 	if container == nil {
@@ -767,7 +747,7 @@ func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := c.cluster.StartContainer(container, hostConfig); err != nil {
+	if err := c.cluster.StartContainer(container); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
