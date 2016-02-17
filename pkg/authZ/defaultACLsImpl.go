@@ -56,7 +56,7 @@ func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType state
 			return states.Approved, dto
 		}
 	}
-	return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: "Not Authorized!"}
+	return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: "[Not authorized or no such resource!]"}
 }
 
 //Init - Any required initialization
