@@ -179,10 +179,10 @@ func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 }
 
 // StartContainer starts a container
-func (c *Cluster) StartContainer(container *cluster.Container) error {
+func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *dockerclient.HostConfig) error {
 	// if the container was started less than a second ago in detach mode, do not start it
 	if time.Now().Unix()-container.Created > 1 || container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.detach"] != "true" {
-		return container.Engine.StartContainer(container.Id)
+		return container.Engine.StartContainer(container.Id, hostConfig)
 	}
 	return nil
 }
