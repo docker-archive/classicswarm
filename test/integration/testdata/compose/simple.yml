@@ -1,5 +1,7 @@
 service1:
   image: busybox
+  ports:
+    - "80"
   command: sleep 100
 
 service2:
