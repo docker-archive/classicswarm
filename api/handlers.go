@@ -740,12 +740,21 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /containers/{name:.*}/start
 func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	hostConfig := dockerclient.HostConfig{}
+
+	if err := json.NewDecoder(r.Body).Decode(&hostConfig); err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	name := mux.Vars(r)["name"]
 	container := c.cluster.Container(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
 		return
 	}
+
+	container.Config.HostConfig = hostConfig
 
 	if err := c.cluster.StartContainer(container); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
