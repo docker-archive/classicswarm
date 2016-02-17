@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 (2016-02-17)
+
+- Performance improvements around networking with Docker engine 1.10
+- Fix reschedule issue regarding events
+- Implement engine refresh backoff strategy for failing nodes
+
 ## 1.1.0 (2016-02-04)
 
 #### Scheduler
