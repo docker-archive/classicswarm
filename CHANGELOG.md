@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2 (2016-02-18)
+
+- Fix regression with Docker Compose
+
 ## 1.1.1 (2016-02-17)
 
 - Performance improvements around networking with Docker engine 1.10
