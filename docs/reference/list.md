@@ -58,7 +58,7 @@ Where:
 * `path/to/file` is the path to a file that contains a static list of the Swarm managers and nodes that are members the cluster. <!--tbd - can the file contain ipranges?-->
 * `iprange` is an IP address or a range of IP addresses followed by a port number.
 
-For example:
+Here are a pair of `<discovery>` argument examples:
 
 * A discovery token: `token://0ac50ef75c9739f5bfeeaf00503d4e6e`
 * A Consul node: `consul://172.30.0.165:8500`

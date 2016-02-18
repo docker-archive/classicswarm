@@ -35,7 +35,7 @@ Under the `spread` strategy, Swarm optimizes for the node with the least number
 of containers. The `binpack` strategy causes Swarm to optimize for the
 node which is most packed. Note that a container occupies resource during its life
 cycle, including `exited` state. Users should be aware of this condition to schedule
-containers. For exmaple, `spread` strategy only checks number of containers
+containers. For example, `spread` strategy only checks number of containers
 disregarding their states. A node with no active containers but high number of
 stopped containers may not be selected, defeating the purpose of load sharing.
 User could either remove stopped containers, or start stopped containers to achieve
