@@ -171,3 +171,31 @@ function containerRunning() {
 	# c2 should have been rescheduled from node-1 to node-0
 	retry 5 1 containerRunning "c2" "node-0"
 }
+
+
+@test "rescheduling with exposed ports" {
+	start_docker_with_busybox 2
+	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 ${HOSTS[0]},${HOSTS[1]}
+
+	# c1 on node-0 with reschedule=on-node-failure
+	run docker_swarm run -dit --name c1 -p 80:80 -e constraint:node==~node-0 --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]' busybox sh
+	[ "$status" -eq 0 ]
+
+	run docker_swarm ps -q
+	[ "${#lines[@]}" -eq  1 ]
+
+	# Make sure container is running where it should.
+	containerRunning "c1" "node-0"
+
+	# Stop node-0
+	docker_host stop ${DOCKER_CONTAINERS[0]}
+
+	# Wait for Swarm to detect the node failure.
+	retry 5 1 eval "docker_swarm info | grep -q 'Unhealthy'"
+
+	# Wait for the container to be rescheduled
+	retry 5 1 containerRunning "c1" "node-1"
+
+	run docker_swarm ps
+	[[ "${output}" == *"->80/tcp"* ]]
+}

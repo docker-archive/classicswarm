@@ -634,6 +634,9 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 		}
 		// Convert the ContainerConfig from inspect into our own
 		// cluster.ContainerConfig.
+		if info.HostConfig != nil {
+			info.Config.HostConfig = *info.HostConfig
+		}
 		container.Config = BuildContainerConfig(*info.Config)
 
 		// FIXME remove "duplicate" lines and move this to cluster/config.go
