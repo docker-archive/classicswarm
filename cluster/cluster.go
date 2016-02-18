@@ -27,7 +27,7 @@ type Cluster interface {
 	Containers() Containers
 
 	// Start a container
-	StartContainer(container *Container, hostConfig *dockerclient.HostConfig) error
+	StartContainer(container *Container) error
 
 	// Return container the matching `IDOrName`
 	// TODO: remove this method from the interface as we can use
