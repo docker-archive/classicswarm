@@ -98,7 +98,7 @@ You can use multiple scheduler filters, like this:
 
 `--filter <value> --filter <value>`
 
-For more information and examples, see [Swarm filters](../scheduler/filters.md).
+For more information and examples, see [Swarm filters](../scheduler/filter.md).
 
 ### `--host`, `-H` — Listen to IP/port
 
@@ -205,4 +205,4 @@ Use `--discovery-opt <value>` to discovery options, such as paths to the TLS fil
     --discovery-opt kv.certfile=/path/to/mycert.pem \
     --discovery-opt kv.keyfile=/path/to/mykey.pem \
 
-For more information, see [Use TLS with distributed key/value discovery](../discovery.md/#use-tls-with-distributed-key-value-discovery)
+For more information, see [Use TLS with distributed key/value discovery](../discovery.md)
