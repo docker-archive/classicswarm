@@ -45,6 +45,5 @@ function teardown() {
 
 	run docker_swarm ps
 	# check memory-swappiness
-echo $output
 	[[ "${output}" == *"->80/tcp"* ]]
 }
