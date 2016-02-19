@@ -48,6 +48,26 @@ function teardown() {
 	[[ "${output}" == *"->80/tcp"* ]]
 }
 
+@test "docker-compose up - check bridge network" {
+	# docker network connect --ip is introduced in docker 1.10, skip older version without --ip
+	run docker network connect --help
+	if [[ "${output}" != *"--ip"* ]]; then
+		skip
+	fi
+
+	start_docker_with_busybox 2
+	swarm_manage
+	FILE=$TESTDATA/compose/simple_v2.yml
+
+	docker-compose_swarm -f $FILE up -d
+
+	run docker_swarm ps -q
+	[ "${#lines[@]}" -eq  1 ]
+
+	run docker_swarm inspect compose_service1_1
+	[[ "${output}" == *"testn\""* ]]
+}
+
 function containerRunning() {
 	local container="$1"
 	local node="$2"

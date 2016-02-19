@@ -40,7 +40,6 @@ function teardown() {
 
 	run docker_swarm network ls --filter type=custom
 	[ "${#lines[@]}" -eq 2 ]
-
 }
 
 @test "docker network inspect" {
@@ -172,6 +171,18 @@ function teardown() {
 
 	run docker_swarm inspect test_container
 	[[ "${output}" == *"testa"* ]]
+
+	run docker_swarm network inspect testn
+	[[ "${output}" != *"\"Containers\": {}"* ]]
+}
+
+@test "docker run --net <node>/<network>" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker_swarm network create -d bridge node-1/testn
+
+	docker_swarm run -d --net node-1/testn --name test_container busybox sleep 100
 
 	run docker_swarm network inspect testn
 	[[ "${output}" != *"\"Containers\": {}"* ]]
