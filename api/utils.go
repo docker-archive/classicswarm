@@ -121,7 +121,6 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 
 	// cleanup
 	resp.Body.Close()
-	closeIdleConnections(client)
 
 	return nil
 }

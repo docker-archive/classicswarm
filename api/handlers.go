@@ -477,7 +477,6 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 
 	// cleanup
 	defer resp.Body.Close()
-	defer closeIdleConnections(client)
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -786,7 +785,6 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 
 	// cleanup
 	defer resp.Body.Close()
-	defer closeIdleConnections(client)
 
 	// check status code
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
