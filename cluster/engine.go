@@ -15,6 +15,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/version"
+	engineapi "github.com/docker/engine-api/client"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/nopclient"
 )
@@ -109,6 +110,7 @@ type Engine struct {
 	networks        map[string]*Network
 	volumes         map[string]*Volume
 	client          dockerclient.Client
+	apiClient       engineapi.APIClient
 	eventHandler    EventHandler
 	state           engineState
 	lastError       string
@@ -163,7 +165,6 @@ func (e *Engine) Connect(config *tls.Config) error {
 	if err != nil {
 		return err
 	}
-
 	return e.ConnectWithClient(c)
 }
 
@@ -187,6 +188,14 @@ func (e *Engine) StartMonitorEvents() {
 // ConnectWithClient is exported
 func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 	e.client = client
+
+	// Use HTTP Client used by dockerclient to create engine-api client
+	httpClient, _ := e.HTTPClientAndScheme()
+	apiClient, err := engineapi.NewClient("tcp://"+e.Addr, "", httpClient, nil)
+	if err != nil {
+		return err
+	}
+	e.apiClient = apiClient
 
 	// Fetch the engine labels.
 	if err := e.updateSpecs(); err != nil {
