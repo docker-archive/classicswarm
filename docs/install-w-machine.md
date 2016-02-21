@@ -87,7 +87,7 @@ Here you use the discovery backend hosted on Docker Hub to create a unique disco
         Status: Downloaded newer image for swarm:latest
         0ac50ef75c9739f5bfeeaf00503d4e6e
 
-    The `docker run` command gets the latest `swarm` image and runs it as a container. The `create` argument makes the Swarm container connect to the Docker Hub discovery service and get a unique Swarm ID, also known as a "discovery token". The token appears in the output, it is not saved to a file on the host. The `--rm` option automatically cleans up the container and removes the file system when the container exits.
+    The `docker run` command gets the latest `swarm` image and runs it as a container. The `create` argument makes the Swarm container connect to the Docker Hub discovery service and get a unique Swarm ID, also known as a "discovery token." The token appears in the output, it is not saved to a file on the host. The `--rm` option automatically cleans up the container and removes the file system when the container exits.
 
     The discovery service keeps unused tokens for approximately one week.
 
@@ -106,7 +106,7 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
         manager   *        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1
 
 
-2. Your client should still be pointing to Docker Engine on `manager`. Use the following syntax to run a Swarm container as the primary Swarm manager on `manager`.
+2. Your client should still be pointing to Docker Engine on `manager`. Use the following syntax to run a Swarm container as the primary manager on `manager`.
 
         $ docker run -d -p <your_selected_port>:3376 -t -v /var/lib/boot2docker:/certs:ro swarm manage -H 0.0.0.0:3376 --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/server.pem --tlskey=/certs/server-key.pem token://<cluster_id>
 
@@ -172,18 +172,19 @@ Here, you connect to the cluster and review information about the Swarm manager 
 
         $ docker ps -a
         CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                      PORTS               NAMES
-        0b0628349187        hello-world         "/hello"                 20 minutes ago      Exited (0) 20 minutes ago                       agent1
+        0b0628349187        hello-world         "/hello"                 20 minutes ago      Exited (0) 11 seconds ago                       agent1
         .
         .
         .
 
-    In this case, the Swarm ran 'hello-world' on the 'swarm1'.
+    In this case, the Swarm ran `hello-world` on `agent1`.
 
-    By default, Docker Swarm uses the "spread" strategy to choose which node runs a container. When you run multiple containers, the spread strategy assigns each container to the node with the fewest containers.
+    > By default, Docker Swarm uses the "spread" strategy to choose which node runs a container. When you run multiple containers, the spread strategy assigns each container to the node with the fewest containers.
 
 ## Where to go next
 
 At this point, you've done the following:
+
  - Created a Swarm discovery token.
  - Created Swarm nodes using Docker Machine.
  - Managed a Swarm and run containers on it.
