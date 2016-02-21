@@ -25,19 +25,18 @@ var flavorsEnforced = os.Getenv("SWARM_FLAVORS_ENFORCED")
 
 func init() {
 	log.Info("flavors.init()")
-	flavorsEnforced = "false"
 	readFlavorFile()
 
 } 
 func readFlavorFile() {
-	log.Debug("Flavors.ReadFlavorFile() ..........")
+	log.Info("Flavors.ReadFlavorFile() ..........")
 	if (flavorsEnforced == "false") {
 		log.Info("Flavors not enforced")
 		return
 	}
 	var flavorsFile = os.Getenv("SWARM_FLAVORS_FILE")
 	if flavorsFile == "" {
-		log.Warn("Missing SWARM_FLAVORS_FILE environment variable, using locate deafult flavors.json")
+		log.Warn("Missing SWARM_FLAVORS_FILE environment variable, using locate default ./flavors.json")
 		flavorsFile = "flavors.json"
 	}
 
@@ -58,6 +57,7 @@ func readFlavorFile() {
 
 func IsFlavorValid(containerConfig dockerclient.ContainerConfig) (bool) {
 	log.Debug("isFlavorValid")
+	//log.Debugf("flavors: %+v",flavors)
 	if(flavorsEnforced == "false") {
 		return true
 	}
