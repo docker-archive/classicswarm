@@ -87,7 +87,7 @@ Here you use the discovery backend hosted on Docker Hub to create a unique disco
         Status: Downloaded newer image for swarm:latest
         0ac50ef75c9739f5bfeeaf00503d4e6e
 
-    The `docker run` command gets the latest `swarm` image and runs it as a container. The `create` argument makes the Swarm container connect to the Docker Hub discovery service and get a unique Swarm ID, also known as a "discovery token". The token appears in the output, it is not saved to a file on the host. The `--rm` option automatically cleans up the container and removes the file system when the container exits.
+    The `docker run` command gets the latest `swarm` image and runs it as a container. The `create` argument makes the Swarm container connect to the Docker Hub discovery service and get a unique Swarm ID, also known as a "discovery token".  The token appears in the output, it is not saved to a file on the host. The `--rm` option automatically cleans up the container and removes the file system when the container exits.
 
     The discovery service keeps unused tokens for approximately one week.
 
@@ -106,7 +106,7 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
         manager   *        virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1
 
 
-2. Your client should still be pointing to Docker Engine on `manager`. Use the following syntax to run a Swarm container as the primary manager on `manager`.
+2. Your client should still be pointing to Docker Engine on `manager`. Use the following syntax to run a Swarm container that functions as the primary manager on `manager`.
 
         $ docker run -d -p <your_selected_port>:3376 -t -v /var/lib/boot2docker:/certs:ro swarm manage -H 0.0.0.0:3376 --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/server.pem --tlskey=/certs/server-key.pem token://<cluster_id>
 
