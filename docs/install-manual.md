@@ -120,17 +120,17 @@ After creating the discovery backend, you can create the Swarm managers. Here, y
 
 To create the primary manager in a high-availability Swarm cluster, use the following syntax:
 
-        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise <manager0_ip>:4000  consul://<consul_ip>
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise <manager0_ip>:4000 consul://<consul_ip>
 
 Because this is particular manager is on the same "manager0 & consul0" instance as the consul node, replace both `<manager0_ip>` and `<consul_ip>` with the same IP address. For example:
 
-        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000  consul://172.30.0.161:8500
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000 consul://172.30.0.161:8500
 
 Enter `docker ps`. From the output, verify that both a swarm and an consul container are running. Then, disconnect from the "manager0 & consul0" instance.
 
 Connect to the "manager1" instance and use `ifconfig` to get its IP address. Then, enter the following command, replacing `<manager1_ip>`. For example:
 
-        $ docker run -d swarm manage -H :4000 --replication --advertise <manager1_ip>:4000  consul://172.30.0.161:8500
+        $ docker run -d swarm manage -H :4000 --replication --advertise <manager1_ip>:4000 consul://172.30.0.161:8500
 
 Enter `docker ps` and, from the output, verify that a swarm container is running.
 
@@ -178,7 +178,7 @@ Shut down the primary master, replacing `<id_name>` with the container id or nam
 
 Start the swarm master. For example:
 
-        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000  consul://172.30.0.161:237
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000 consul://172.30.0.161:237
 
 Look at the logs, replacing `<id_name>` with the new container id or name:
 
