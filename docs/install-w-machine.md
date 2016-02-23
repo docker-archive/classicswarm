@@ -87,7 +87,7 @@ Here you use the discovery backend hosted on Docker Hub to create a unique disco
         Status: Downloaded newer image for swarm:latest
         0ac50ef75c9739f5bfeeaf00503d4e6e
 
-    The `docker run` command gets the latest `swarm` image and runs it as a container. The `create` argument makes the Swarm container connect to the Docker Hub discovery service and get a unique Swarm ID, also known as a "discovery token." The token appears in the output, it is not saved to a file on the host. The `--rm` option automatically cleans up the container and removes the file system when the container exits.
+    The `docker run` command gets the latest `swarm` image and runs it as a container. The `create` argument makes the Swarm container connect to the Docker Hub discovery service and get a unique Swarm ID, also known as a "discovery token". The token appears in the output, it is not saved to a file on the host. The `--rm` option automatically cleans up the container and removes the file system when the container exits.
 
     The discovery service keeps unused tokens for approximately one week.
 
@@ -148,7 +148,7 @@ Here, you connect to the cluster and review information about the Swarm manager 
 
         $ DOCKER_HOST=$(docker-machine ip manager):3376
 
-    Because Docker Swarm uses the standard Docker API, you can connect to it using  Docker Client and other tools such as Docker Compose, Dokku, Jenkins, and Krane, among others.
+    Because Docker Swarm uses the standard Docker API, you can connect to it using Docker Client and other tools such as Docker Compose, Dokku, Jenkins, and Krane, among others.
 
 2. Get information about the Swarm.
 
