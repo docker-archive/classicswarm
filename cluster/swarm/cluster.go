@@ -170,6 +170,13 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 		config.SetSwarmID(swarmID)
 	}
 
+	if network := c.Networks().Get(config.HostConfig.NetworkMode); network != nil && network.Scope == "local" {
+		if !config.HaveNodeConstraint() {
+			config.AddConstraint("node==~" + network.Engine.Name)
+		}
+		config.HostConfig.NetworkMode = network.Name
+	}
+
 	if withImageAffinity {
 		config.AddAffinity("image==" + config.Image)
 	}
