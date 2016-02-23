@@ -187,7 +187,7 @@ At this point, you've done the following:
 
  - Created a Swarm discovery token.
  - Created Swarm nodes using Docker Machine.
- - Managed a Swarm and run containers on it.
+ - Managed a Swarm cluster and run containers on it.
  - Learned Swarm-related concepts and terminology.
 
 However, Docker Swarm has many other aspects and capabilities.
