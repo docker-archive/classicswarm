@@ -89,13 +89,6 @@ func copyHeader(dst, src http.Header) {
 	}
 }
 
-// prevents leak with https
-func closeIdleConnections(client *http.Client) {
-	if tr, ok := client.Transport.(*http.Transport); ok {
-		tr.CloseIdleConnections()
-	}
-}
-
 func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, callback func(*http.Response)) error {
 	// RequestURI may not be sent to client
 	r.RequestURI = ""
@@ -121,7 +114,6 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 
 	// cleanup
 	resp.Body.Close()
-	closeIdleConnections(client)
 
 	return nil
 }
