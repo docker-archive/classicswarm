@@ -120,7 +120,7 @@ Here, you connect to each of the hosts and create a Swarm manager or node.
 
         $ eval $(docker-machine env agent1)
 
-4. Use the following syntax to run a Swarm container as an agent on `agent1`. Replace `<node_ip>` with the IP address of the VM from above, or use the `docker-machine ip` command.
+4. Use the following syntax to run a Swarm container that functions as an agent on `agent1`. Replace `<node_ip>` with the IP address of the VM from above, or use the `docker-machine ip` command.
 
         $ docker run -d swarm join --addr=<node_ip>:<node_port> token://<cluster_id>
 
