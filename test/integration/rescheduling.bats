@@ -170,6 +170,9 @@ function containerRunning() {
 
 	# c2 should have been rescheduled from node-1 to node-0
 	retry 5 1 containerRunning "c2" "node-0"
+
+	run docker_swarm ps -aq
+	[ "${#lines[@]}" -eq  2 ]
 }
 
 
