@@ -423,6 +423,10 @@ func (e *Engine) updateSpecs() error {
 	}
 	for _, label := range info.Labels {
 		kv := strings.SplitN(label, "=", 2)
+		if len(kv) != 2 {
+			message := fmt.Sprintf("Engine (ID: %s, Addr: %s) contains an invalid label (%s) not formatted as \"key=value\".", e.ID, e.Addr, label)
+			return fmt.Errorf(message)
+		}
 		e.Labels[kv[0]] = kv[1]
 	}
 	return nil
