@@ -3,6 +3,10 @@
 	"GoVersion": "go1.5",
 	"Deps": [
 		{
+			"ImportPath": "github.com/Microsoft/go-winio",
+			"Rev": "c40bf24f405ab3cc8e1383542d474e813332de6d"
+		},
+		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.8.7-53-g446d1c1",
 			"Rev": "446d1c146faa8ed3f4218f056fcd165f6bcfda81"
@@ -67,19 +71,29 @@
 			"Rev": "b65fd8e879545e8c9b859ea9b6b825ac50c79e46"
 		},
 		{
+			"ImportPath": "github.com/docker/engine-api/client",
+			"Comment": "v0.2.2-99-gadfa32f",
+			"Rev": "adfa32fb6ccad724d73a16d53ce3defa46df27e5"
+		},
+		{
 			"ImportPath": "github.com/docker/engine-api/types",
-			"Comment": "v0.2.2-27-gbdbab71",
-			"Rev": "bdbab71ec21209ef56dffdbe42c9d21843c30862"
+			"Comment": "v0.2.2-99-gadfa32f",
+			"Rev": "adfa32fb6ccad724d73a16d53ce3defa46df27e5"
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/nat",
-			"Comment": "v0.1.2",
-			"Rev": "4e42727957c146776e5de9cec8c39e4059ed9f20"
+			"Comment": "v0.2.0",
+			"Rev": "34b5052da6b11e27f5f2e357b38b571ddddd3928"
+		},
+		{
+			"ImportPath": "github.com/docker/go-connections/sockets",
+			"Comment": "v0.2.0",
+			"Rev": "34b5052da6b11e27f5f2e357b38b571ddddd3928"
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/tlsconfig",
-			"Comment": "v0.1.2",
-			"Rev": "4e42727957c146776e5de9cec8c39e4059ed9f20"
+			"Comment": "v0.2.0",
+			"Rev": "34b5052da6b11e27f5f2e357b38b571ddddd3928"
 		},
 		{
 			"ImportPath": "github.com/docker/go-units",
@@ -162,6 +176,11 @@
 			"Rev": "657252ec6fc27975cd86da9f708acd6f4bb1f9ac"
 		},
 		{
+			"ImportPath": "github.com/opencontainers/runc/libcontainer/user",
+			"Comment": "v0.0.8-45-g2c31154",
+			"Rev": "2c3115481ee1782ad687a9e0b4834f89533c2acf"
+		},
+		{
 			"ImportPath": "github.com/pborman/uuid",
 			"Rev": "dee7705ef7b324f27ceb85a121c61f2c2e8ce988"
 		},
@@ -201,6 +220,10 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
+			"Rev": "4fd4a9fed55e5bdee4a89d6406c2eabe38b60300"
+		},
+		{
+			"ImportPath": "golang.org/x/net/proxy",
 			"Rev": "4fd4a9fed55e5bdee4a89d6406c2eabe38b60300"
 		},
 		{
