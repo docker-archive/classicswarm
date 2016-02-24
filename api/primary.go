@@ -160,7 +160,7 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 
 			if enableCors {
 				optionsMethod := "OPTIONS"
-				localFct = optionsHandler
+				optionsFct := optionsHandler
 
 				wrap := func(w http.ResponseWriter, r *http.Request) {
 					log.WithFields(log.Fields{"method": optionsMethod, "uri": r.RequestURI}).
@@ -169,7 +169,7 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 						writeCorsHeaders(w, r)
 					}
 					context.apiVersion = mux.Vars(r)["version"]
-					localFct(context, w, r)
+					optionsFct(context, w, r)
 				}
 
 				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
