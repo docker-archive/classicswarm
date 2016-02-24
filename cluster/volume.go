@@ -32,6 +32,12 @@ func (volumes Volumes) Get(name string) *Volume {
 	if size := len(candidates); size == 1 {
 		return candidates[0]
 	} else if size > 1 {
+		// Match first volume with non-local driver
+		for _, volume := range candidates {
+			if volume.Name == name && volume.Driver != "local" {
+				return volume
+			}
+		}
 		return nil
 	}
 
