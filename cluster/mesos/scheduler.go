@@ -91,7 +91,15 @@ func (s *Scheduler) ResourceOffers(_ mesosscheduler.SchedulerDriver, offers []*m
 }
 
 // OfferRescinded method
-func (s *Scheduler) OfferRescinded(mesosscheduler.SchedulerDriver, *mesosproto.OfferID) {
+func (s *Scheduler) OfferRescinded(_ mesosscheduler.SchedulerDriver, offerID *mesosproto.OfferID) {
+	log.WithFields(log.Fields{"name": "mesos", "OfferID": offerID.GetValue()}).Debug("Offer Rescinded")
+
+	for _, agent := range s.cluster.agents {
+		if offer, ok := agent.offers[offerID.GetValue()]; ok {
+			s.cluster.removeOffer(offer)
+			break
+		}
+	}
 }
 
 // StatusUpdate method
