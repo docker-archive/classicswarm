@@ -376,8 +376,10 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Skip swarm containers unless -a was specified.
-		if strings.Split(container.Image, ":")[0] == "swarm" && !all {
-			continue
+		if value, exists := container.Config.Labels["com.docker.swarm.hidden"]; exists {
+			if value == "true" && !all {
+				continue
+			}
 		}
 
 		// Apply filters.
