@@ -177,7 +177,7 @@ Here, you connect to the cluster and review information about the Swarm manager 
         .
         .
 
-    In this case, the Swarm ran 'hello-world' on the 'swarm1'.
+    In this case, the Swarm ran 'hello-world' on the 'agent1'.
 
     By default, Docker Swarm uses the "spread" strategy to choose which node runs a container. When you run multiple containers, the spread strategy assigns each container to the node with the fewest containers.
 
