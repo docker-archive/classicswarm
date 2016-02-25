@@ -19,7 +19,14 @@ The Swarm cluster will contain three types of nodes:
 - Swarm node (aka Swarm agent)
 - Discovery backend node running consul
 
-This example will take you through the following steps: You establish basic network security by creating a security group that restricts inbound traffic by port number, type, and origin. Then, you create four hosts on your network by launching Elastic Cloud (EC2) instances, applying the appropriate security group to each one, and installing Docker Engine on each one. You create a discovery backend by running an consul container on one of the hosts. You create the Swarm cluster by running two Swarm managers in a high-availability configuration. One of the Swarm managers shares a host with consul. Then you run two Swarm nodes. You communicate with the Swarm via the primary manager, running a simple hello world application and then checking which node ran the application. To finish, you test high-availability by making one of Swarm managers fail and checking the status of the managers.
+This example will take you through the following steps:
+
+1. You establish basic network security by creating a security group that restricts inbound traffic by port number, type, and origin.
+2. Then, you create four hosts on your network by launching Elastic Cloud (EC2) instances, applying the appropriate security group to each one, and installing Docker Engine on each one.
+3. You create a discovery backend by running a consul container on one of the hosts.
+4. You create the Swarm cluster by running two Swarm managers in a high-availability configuration. One of the Swarm managers shares a host with consul. Then you run two Swarm nodes.
+   You communicate with the Swarm via the primary manager, running a simple hello world application and then checking which node ran the application.
+5. To finish, you test high-availability by making one of Swarm managers fail and checking the status of the managers.
 
 For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](install-w-machine) page.
 
@@ -55,8 +62,9 @@ Open the EC2 Dashboard and launch four EC2 instances, one at a time:
 - During **Step 1: Choose an Amazon Machine Image (AMI)**, pick the *Amazon Linux AMI*.
 
 - During **Step 5: Tag Instance**, under **Value**, give each instance one of these names:
-    - manager0 & consul0
+    - manager0
     - manager1
+    - consul0
     - node0
     - node1
 
@@ -98,7 +106,7 @@ Give the ec2-user root privileges:
 the [Docker Hub status page](http://status.docker.com/) for service
 availability.
 
-## Set up an consul discovery backend
+## Set up a consul discovery backend
 
 Here, you're going to create a minimalist discovery backend. The Swarm managers and nodes use this backend to authenticate themselves as members of the cluster. The Swarm managers also use this information to identify which nodes are available to run containers.
 
@@ -126,7 +134,7 @@ Because this is particular manager is on the same "manager0 & consul0" instance 
 
         $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000 consul://172.30.0.161:8500
 
-Enter `docker ps`. From the output, verify that both a swarm and an consul container are running. Then, disconnect from the "manager0 & consul0" instance.
+Enter `docker ps`. From the output, verify that both a swarm and a consul container are running. Then, disconnect from the "manager0 & consul0" instance.
 
 Connect to the "manager1" instance and use `ifconfig` to get its IP address. Then, enter the following command, replacing `<manager1_ip>`. For example:
 
