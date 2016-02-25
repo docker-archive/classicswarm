@@ -48,15 +48,15 @@ POST "/images/create" : "docker import" flow not implement
 
 # Registry Authentication
 
-During container create calls, the swarm API will optionally accept a X-Registry-Config header.
+During container create calls, the swarm API will optionally accept an X-Registry-Config header.
 If provided, this header will be passed down to the engine if the image must be pulled
 to complete the create operation.
 
-The following two examples demonstrate how to utilize this using the existing docker CLI
+The following two examples demonstrate how to utilize this using the existing Docker CLI
 
 * CLI usage example using username/password:
 
-    ```bash
+```bash
 # Calculate the header
 REPO_USER=yourusername
 read -s PASSWORD
@@ -75,7 +75,7 @@ docker run --rm -it yourprivateimage:latest
 
 * CLI usage example using registry tokens: (Requires engine 1.10 with new auth token support)
 
-    ```bash
+```bash
 REPO=yourrepo/yourimage
 REPO_USER=yourusername
 read -s PASSWORD
@@ -85,13 +85,13 @@ TOKEN=$(curl -s -u "${REPO_USER}:${PASSWORD}" "${AUTH_URL}?scope=repository:${RE
 HEADER=$(echo "{\"registrytoken\":\"${TOKEN}\"}"|base64 -w 0 )
 echo HEADER=$HEADER
 
-# Update the docker config as above, but the token will expire quickly...
+# Update the Docker config as above, but the token will expire quickly...
 ```
 
 
 ## Docker Swarm documentation index
 
-- [Docker Swarm overview](https://docs.docker.com/swarm/)
+- [Docker Swarm overview](https://docs.docker.com/swarm/overview/)
 - [Discovery options](https://docs.docker.com/swarm/discovery/)
 - [Scheduler strategies](https://docs.docker.com/swarm/scheduler/strategy/)
 - [Scheduler filters](https://docs.docker.com/swarm/scheduler/filter/)
