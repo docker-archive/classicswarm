@@ -80,3 +80,26 @@ function teardown() {
 	# verify, container is running
 	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
 }
+
+@test "mesos - docker run with reserved and unreserved resources" {
+	start_docker 1
+
+	# Start Mesos master with the role whitelist specified by flag `--roles`.
+	start_mesos_master "--roles=role1,role2"
+
+	# Start Mesos Slave with the static resource reservation specified by flag `--resources`.
+	start_mesos_slave "--resources=cpus(role1):1;cpus(*):2"
+
+	# Start Swarm manager to register Mesos with the specified role `role1`
+	swarm_manage --cluster-driver mesos-experimental --cluster-opt mesos.tasktimeout=1s --cluster-opt mesos.role=role1 127.0.0.1:$MESOS_MASTER_PORT
+
+	# make sure no container exist
+	run docker_swarm ps -qa
+	[ "${#lines[@]}" -eq 0 ]
+
+	# Create a container with 3 cpus which will contains 2 unreserved cpus and 1 reserved cpus.
+	docker_swarm run --cpu-shares 3 -d --name test_container busybox sleep 100
+
+	# verify, container is running
+	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
+}

@@ -60,7 +60,7 @@ func (t *Task) Stop() {
 }
 
 // Build method builds the task
-func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
+func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer, role string) {
 	t.Command = &mesosproto.CommandInfo{Shell: proto.Bool(false)}
 
 	t.Container = &mesosproto.ContainerInfo{
@@ -135,12 +135,18 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_BRIDGE.Enum()
 	}
 
-	if cpus := t.config.HostConfig.CPUShares; cpus > 0 {
-		t.Resources = append(t.Resources, mesosutil.NewScalarResource("cpus", float64(cpus)))
+	if cpus := t.config.CpuShares; cpus > 0 {
+		resources := buildResourcesForTask(float64(cpus), offers, "cpus", role)
+		for i := range resources {
+			t.Resources = append(t.Resources, resources[i])
+		}
 	}
 
-	if mem := t.config.HostConfig.Memory; mem > 0 {
-		t.Resources = append(t.Resources, mesosutil.NewScalarResource("mem", float64(mem/1024/1024)))
+	if mem := t.config.Memory; mem > 0 {
+		resources := buildResourcesForTask(float64(mem/1024/1024), offers, "mem", role)
+		for i := range resources {
+			t.Resources = append(t.Resources, resources[i])
+		}
 	}
 
 	if len(t.config.Cmd) > 0 && t.config.Cmd[0] != "" {
