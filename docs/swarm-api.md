@@ -58,9 +58,10 @@ The following two examples demonstrate how to utilize this using the existing do
 
     ```bash
 # Calculate the header
+REGISTRY_ADDRESS=private-registry.com
 REPO_USER=yourusername
 read -s PASSWORD
-HEADER=$(echo "{\"username\":\"${REPO_USER}\",\"password\":\"${PASSWORD}\"}"|base64 -w 0 )
+HEADER=$(echo "{\"username\":\"${REPO_USER}\",\"password\":\"${PASSWORD}\", \"serveraddress\":\"${REGISTRY_ADDRESS}\", \"auth\":\"\"}"|base64 -w 0 )
 unset PASSWORD
 echo HEADER=$HEADER
 
