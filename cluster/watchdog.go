@@ -73,7 +73,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 		// will abort because the name is already taken.
 		c.Engine.removeContainer(c)
 
-		newContainer, err := w.cluster.CreateContainer(c.Config, c.Info.Name, nil)
+		newContainer, err := w.cluster.CreateContainer(c.Config, c.Info.Name)
 
 		if err != nil {
 			log.Errorf("Failed to reschedule container %s: %v", c.Id, err)

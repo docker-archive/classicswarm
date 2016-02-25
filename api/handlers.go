@@ -516,23 +516,20 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// Pass auth information along if present
-	var authConfig *dockerclient.AuthConfig
-	buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
-	if err == nil {
-		authConfig = &dockerclient.AuthConfig{}
-		json.Unmarshal(buf, authConfig)
-	}
 	containerConfig := cluster.BuildContainerConfig(config)
 	if err := containerConfig.Validate(); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	container, err := c.cluster.CreateContainer(containerConfig, name, authConfig)
+	container, err := c.cluster.CreateContainer(containerConfig, name)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Conflict") {
 			httpError(w, err.Error(), http.StatusConflict)
+			// Return the same 404 error as the docker engine would when an image is not available / not accessible.
+			// The client can then automatically pull the image (including the auth header if defined).
+		} else if strings.Contains(err.Error(), "no basic auth credentials") || strings.Contains(err.Error(), "not found") {
+			httpError(w, fmt.Sprintf("Error: No such image: %s", containerConfig.Image), http.StatusNotFound)
 		} else {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 		}

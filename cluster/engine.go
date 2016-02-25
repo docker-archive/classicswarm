@@ -740,7 +740,7 @@ func (e *Engine) TotalCpus() int64 {
 }
 
 // Create a new container
-func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, authConfig *dockerclient.AuthConfig) (*Container, error) {
+func (e *Engine) Create(config *ContainerConfig, name string) (*Container, error) {
 	var (
 		err    error
 		id     string
@@ -761,20 +761,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 	id, err = client.CreateContainer(&dockerConfig, name, nil)
 	e.CheckConnectionErr(err)
 	if err != nil {
-		// If the error is other than not found, abort immediately.
-		if err != dockerclient.ErrImageNotFound || !pullImage {
-			return nil, err
-		}
-		// Otherwise, try to pull the image...
-		if err = e.Pull(config.Image, authConfig); err != nil {
-			return nil, err
-		}
-		// ...And try again.
-		id, err = client.CreateContainer(&dockerConfig, name, nil)
-		e.CheckConnectionErr(err)
-		if err != nil {
-			return nil, err
-		}
+	  return nil, err
 	}
 
 	// Register the container immediately while waiting for a state refresh.
