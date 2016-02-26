@@ -200,7 +200,7 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 		return err
 	}
 
-	// Do not check error as older daemon don't support this call
+	// Do not check error as older daemon does't support this call.
 	e.RefreshVolumes()
 	e.RefreshNetworks()
 
@@ -1005,7 +1005,7 @@ func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface
 	e.eventHandler.Handle(event)
 }
 
-// AddContainer inject a container into the internal state.
+// AddContainer injects a container into the internal state.
 func (e *Engine) AddContainer(container *Container) error {
 	e.Lock()
 	defer e.Unlock()
@@ -1057,7 +1057,7 @@ func (e *Engine) StartContainer(id string) error {
 	return err
 }
 
-// RenameContainer rename a container
+// RenameContainer renames a container
 func (e *Engine) RenameContainer(container *Container, newName string) error {
 	// send rename request
 	err := e.client.RenameContainer(container.Id, newName)
@@ -1071,14 +1071,14 @@ func (e *Engine) RenameContainer(container *Container, newName string) error {
 	return err
 }
 
-// BuildImage build an image
+// BuildImage builds an image
 func (e *Engine) BuildImage(buildImage *dockerclient.BuildImage) (io.ReadCloser, error) {
 	reader, err := e.client.BuildImage(buildImage)
 	e.CheckConnectionErr(err)
 	return reader, err
 }
 
-// TagImage tag an image
+// TagImage tags an image
 func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	// send tag request to docker engine
 	err := e.client.TagImage(IDOrName, repo, tag, force)
