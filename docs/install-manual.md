@@ -110,7 +110,7 @@ To start, copy the following launch command to a text file.
 
 Then, use SSH to connect to the "manager0 & consul0" instance. At the command line, enter `ifconfig`. From the output, copy the `eth0` IP address from `inet addr`.
 
-Using SSH, connect to the "manager0 & etc0" instance. Copy the launch command from the text file and paste it into the command line.
+Using SSH, connect to the "manager0 & consul0" instance. Copy the launch command from the text file and paste it into the command line.
 
 Your consul node is up and running, providing your cluster with a discovery backend. To increase its reliability, you can create a high-availability cluster using a trio of consul nodes using the link mentioned at the end of this page. (Before creating a cluster of console nodes, update the VPC security group with rules to allow inbound traffic on the required port numbers.)
 
@@ -148,7 +148,7 @@ Your small Swarm cluster is up and running on multiple hosts, providing you with
 ## Communicate with the Swarm
 
 You can communicate with the Swarm to get information about the managers and nodes using the Swarm API, which is nearly the same as the standard Docker API.  
-In this example, you use SSL to connect to "manager0 & etc0" host again. Then, you address commands to the Swarm manager.
+In this example, you use SSL to connect to "manager0 & consul0" host again. Then, you address commands to the Swarm manager.
 
 Get information about the master and nodes in the cluster:
 
@@ -168,7 +168,7 @@ Check which Swarm node ran the application:
 
 To see the replica instance take over, you're going to shut down the primary manager. Doing so kicks off an election, and the replica becomes the primary manager. When you start the manager you shut down earlier, it becomes the replica.
 
-Using an SSH connection to the "manager0 & etc0" instance, get the container id or name of the swarm container:
+Using an SSH connection to the "manager0 & consul0" instance, get the container id or name of the swarm container:
 
         $ docker ps
 
