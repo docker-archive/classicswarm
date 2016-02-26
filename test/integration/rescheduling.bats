@@ -129,16 +129,20 @@ function containerRunning() {
 	# c1 on node-0 with reschedule=on-node-failure
 	run docker_swarm run -dit --name c1 -e constraint:node==~node-0 --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]' busybox sh
 	[ "$status" -eq 0 ]
-	# c2 on node-1
-	run docker_swarm run -dit --name c2 -e constraint:node==~node-1 --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]' busybox sh
+	# c2 on node-0 with reschedule=off
+	run docker_swarm run -dit --name c2 -e constraint:node==~node-0 --label 'com.docker.swarm.reschedule-policies=["off"]' busybox sh
+	[ "$status" -eq 0 ]
+	# c3 on node-1
+	run docker_swarm run -dit --name c3 -e constraint:node==~node-1 --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]' busybox sh
 	[ "$status" -eq 0 ]
 
 	run docker_swarm ps -q
-	[ "${#lines[@]}" -eq  2 ]
+	[ "${#lines[@]}" -eq  3 ]
 
 	# Make sure containers are running where they should.
 	containerRunning "c1" "node-0"
-	containerRunning "c2" "node-1"
+	containerRunning "c2" "node-0"
+	containerRunning "c3" "node-1"
 
 	# Stop node-0
 	docker_host stop ${DOCKER_CONTAINERS[0]}
@@ -149,14 +153,30 @@ function containerRunning() {
 	# Wait for the container to be rescheduled
 	retry 5 1 containerRunning "c1" "node-1"
 
-	# c2 should still be on node-1 since it wasn't affected
-	containerRunning "c2" "node-1"
+	# Make sure old container was removed
+	run docker_swarm ps -aq
+	[ "${#lines[@]}" -eq  3 ]
+
+
+	# c2 should still be on node-0 since a node constraint was applied.
+	run docker_swarm inspect c2
+	[ "$status" -eq 1 ]
+
+	# c3 should still be on node-1 since it wasn't affected
+	containerRunning "c3" "node-1"
 
 	# Restart node-0
 	docker_host start ${DOCKER_CONTAINERS[0]}
 	# Wait for node-0 to be healthy
 	# Failing node refresh interval increases over time. Provide enough retry here.
 	retry 30 1 eval "test \"$(docker_swarm info | grep \"Status: Unhealthy\" | wc -l)\" = '0'"
+
+	# c1 should still be on node-1
+	containerRunning "c3" "node-1"
+
+	# Make sure there is no duplicate container
+	run docker_swarm ps -aq
+	[ "${#lines[@]}" -eq  3 ]
 
 	# Stop node-1
 	docker_host stop ${DOCKER_CONTAINERS[1]}
@@ -168,11 +188,11 @@ function containerRunning() {
 	# c1 should have been rescheduled from node-1 to node-0
 	retry 5 1 containerRunning "c1" "node-0"
 
-	# c2 should have been rescheduled from node-1 to node-0
-	retry 5 1 containerRunning "c2" "node-0"
+	# c3 should have been rescheduled from node-1 to node-0
+	retry 5 1 containerRunning "c3" "node-0"
 
 	run docker_swarm ps -aq
-	[ "${#lines[@]}" -eq  2 ]
+	[ "${#lines[@]}" -eq  3 ]
 }
 
 
