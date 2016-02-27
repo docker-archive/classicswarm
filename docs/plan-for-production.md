@@ -346,7 +346,7 @@ planning, deployment, and ongoing management of your production Swarm clusters.
 
 ## Related information
 
-* [Try Swarm at scale](swarm_at_scale.md)
+* [Try Swarm at scale](swarm_at_scale/index.md)
 * [Swarm and container networks](networking.md)
 * [High availability in Docker Swarm](multi-manager-setup.md)
 * [Universal Control plane](https://www.docker.com/products/docker-universal-control-plane)
