@@ -218,8 +218,18 @@ func (e *Engine) Disconnect() {
 	// close the chan
 	close(e.stopCh)
 	e.client.StopAllMonitorEvents()
+	// close idle connections
+	if dc, ok := e.client.(*dockerclient.DockerClient); ok {
+		closeIdleConnections(dc.HTTPClient)
+	}
 	e.client = nopclient.NewNopClient()
 	e.emitEvent("engine_disconnect")
+}
+
+func closeIdleConnections(client *http.Client) {
+	if tr, ok := client.Transport.(*http.Transport); ok {
+		tr.CloseIdleConnections()
+	}
 }
 
 // isConnected returns true if the engine is connected to a remote docker API
