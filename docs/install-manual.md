@@ -143,7 +143,7 @@ SSH to each node in turn and do the following.
 
         $ sudo usermod -aG docker ec2-user
 
-6.  Enter `logout`.
+6. Enter `logout`.
 
 #### Troubleshooting
 
@@ -179,9 +179,9 @@ host as one of the Swarm managers.
 
         $ ifconfig
 
-3.    From the output, copy the `eth0` IP address from `inet addr`.
+3. From the output, copy the `eth0` IP address from `inet addr`.
 
-4. Using SSH, connect to the `manager0` and `etc0` instance.
+4. Using SSH, connect to the `manager0` and `consul0` instance.
 
 5. Paste the launch command you created in step 1. into the command line.
 
@@ -199,7 +199,7 @@ After creating the discovery backend, you can create the Swarm managers. In this
 
 1. To create the primary manager in a high-availability Swarm cluster, use the following syntax:
 
-        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise <manager0_ip>:4000 consul://<consul_ip>
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise <manager0_ip>:4000 consul://<consul_ip>:8500
 
     Because this is particular manager is on the same `manager0` and `consul0`
     instance as the consul node, replace both `<manager0_ip>` and `<consul_ip>`
@@ -273,7 +273,7 @@ replica.
 
         $ docker ps
 
-3. Shut down the primary master, replacing `<id_name>` with the container id or name (for example, "8862717fe6d3" or "trusting_lamarr").
+3. Shut down the primary master, replacing `<id_name>` with the container's id or name (for example, "8862717fe6d3" or "trusting_lamarr").
 
         docker rm -f <id_name>
 
@@ -281,7 +281,7 @@ replica.
 
         $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000 consul://172.30.0.161:237
 
-5. Review the Engine's daemon logs the logs, replacing `<id_name>` with the new container id or name:
+5. Review the Engine's daemon logs the logs, replacing `<id_name>` with the new container's id or name:
 
         $ sudo docker logs <id_name>
 
