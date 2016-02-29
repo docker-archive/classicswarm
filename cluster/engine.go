@@ -231,7 +231,7 @@ func (e *Engine) isConnected() bool {
 // IsHealthy returns true if the engine is healthy
 func (e *Engine) IsHealthy() bool {
 	e.RLock()
-	e.RUnlock()
+	defer e.RUnlock()
 	return e.state == stateHealthy
 }
 
