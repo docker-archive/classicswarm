@@ -458,7 +458,7 @@ Each expression must be in the form:
 <filter-type>:<key><operator><value>
 ```
 
-The `<filter-type>` is either the `affinity` or the `container` keyword. It
+The `<filter-type>` is either the `affinity` or the `constraint` keyword. It
 identifies the type filter you intend to use.
 
 The `<key>` is an alpha-numeric and must start with a letter or underscore. The
