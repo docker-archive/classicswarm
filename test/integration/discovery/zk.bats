@@ -85,6 +85,8 @@ function teardown() {
 	# Check that we can add instances back to the cluster
 	start_docker 2
 	swarm_join "$DISCOVERY"
+	run docker_swarm info
+	echo $output
 	retry 10 1 discovery_check_swarm_info 2
 }
 
@@ -106,5 +108,7 @@ function teardown() {
 
 	# After a while, `join` and `manage` should reach the store.
 	retry 20 1 discovery_check_swarm_list "$DISCOVERY"
+	run docker_swarm info
+	echo $output
 	retry 20 1 discovery_check_swarm_info
 }

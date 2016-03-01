@@ -92,7 +92,7 @@ function discovery_check_swarm_info() {
 	local host="$2"
 	[ -z "$host" ] && host="${SWARM_HOSTS[0]}"
 
-	retry 10 1 eval "docker -H $host info | grep -q -e \"Nodes: $total\" -e \"Offers: $total\""
+	eval "docker -H $host info | grep -q -e \"Nodes: $total\" -e \"Offers: $total\""
 }
 
 # Return true if all nodes has been validated
@@ -107,7 +107,7 @@ function swarm_manage() {
 	swarm_manage_no_wait "$@"
 
 	# Wait for nodes to be discovered
-	discovery_check_swarm_info "${#HOSTS[@]}" "${SWARM_HOSTS[$i]}"
+	retry 10 1 discovery_check_swarm_info "${#HOSTS[@]}" "${SWARM_HOSTS[$i]}"
 
 	# All nodes passes pending state
 	retry 15 1 nodes_validated
