@@ -30,7 +30,7 @@ func init() {
 } 
 func readFlavorFile() {
 	log.Info("Flavors.ReadFlavorFile() ..........")
-	if (flavorsEnforced == "false") {
+	if (flavorsEnforced != "true") {
 		log.Info("Flavors not enforced")
 		return
 	}
@@ -58,7 +58,7 @@ func readFlavorFile() {
 func IsFlavorValid(containerConfig dockerclient.ContainerConfig) (bool) {
 	log.Debug("isFlavorValid")
 	//log.Debugf("flavors: %+v",flavors)
-	if(flavorsEnforced == "false") {
+	if(flavorsEnforced != "true") {
 		return true
 	}
 	var flavorIn Flavor
