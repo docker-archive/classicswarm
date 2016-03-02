@@ -1,6 +1,9 @@
 {
 	"ImportPath": "github.com/docker/swarm",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.5.2",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -42,11 +45,6 @@
 			"Rev": "f11b6a2ab313a03d051dd6f69d264d0482df72d6"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/pkg/longpath",
-			"Comment": "v1.4.1-9107-gf11b6a2",
-			"Rev": "f11b6a2ab313a03d051dd6f69d264d0482df72d6"
-		},
-		{
 			"ImportPath": "github.com/docker/docker/pkg/parsers/kernel",
 			"Comment": "v1.4.1-9107-gf11b6a2",
 			"Rev": "f11b6a2ab313a03d051dd6f69d264d0482df72d6"
@@ -73,6 +71,11 @@
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/nat",
+			"Comment": "v0.1.2",
+			"Rev": "4e42727957c146776e5de9cec8c39e4059ed9f20"
+		},
+		{
+			"ImportPath": "github.com/docker/go-connections/sockets",
 			"Comment": "v0.1.2",
 			"Rev": "4e42727957c146776e5de9cec8c39e4059ed9f20"
 		},
@@ -205,7 +208,17 @@
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "833a04a10549a95dc34458c195cbad61bbb6cb4d"
-		}
+			"Rev": "20457ee8ea8546920d3f4e19e405da45250dc5a5"
+		},
+		{
+                        "ImportPath": "github.com/docker/docker/pkg/longpath",
+                        "Comment": "v1.4.1-9107-gf11b6a2",
+                        "Rev": "f11b6a2ab313a03d051dd6f69d264d0482df72d6"
+                },
+                {
+                        "ImportPath": "github.com/opencontainers/runc/libcontainer/user",
+                        "Comment": "v0.0.6-82-g59f3066",
+                        "Rev": "59f3066c39b242a1e34d9c65e582346bf170919e"
+                }
 	]
 }
