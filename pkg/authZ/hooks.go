@@ -127,40 +127,6 @@ func eventParse(r *http.Request) states.EventEnum {
 	if strings.HasSuffix(r.RequestURI, "/version") || strings.Contains(r.RequestURI, "/exec/"){
 		return states.PassAsIs
 	}
-	if strings.Contains(r.RequestURI, "/volumes/create")  {
-		log.Debug("/volumes/create")
-		log.Debug("state is", states.VolumeCreate)
-		return states.VolumeCreate
-	}
-	if strings.Contains(r.RequestURI, "/volumes")  {
-		log.Debug("/volumes/*")
-		log.Debug("Got the method...", r.Method)
-		if r.Method == "DELETE" {
-			log.Debug("Got the volume DELETE")
-			volumeName := r.RequestURI[strings.LastIndex(r.RequestURI,"/")+1:len(r.RequestURI)]
-			log.Debug("delete volume", volumeName)
-			log.Debug("state is", states.VolumeRemove)
-			return states.VolumeRemove
-		}
-		if r.Method == "GET" {
-			log.Debug("Got the volume Inspect or LS", r.Method)
-			if strings.HasSuffix(r.RequestURI,"/volumes") ||
-			   strings.HasSuffix(r.RequestURI,"/volumes/") {
-			   log.Debug("list volumes")
-			   log.Debug("state is", states.VolumesList)
-			   return states.VolumesList
-
-			} else {
-			   volumeName := r.RequestURI[strings.LastIndex(r.RequestURI,"/")+1:len(r.RequestURI)]
-			   log.Debug("Inspect volume: ", volumeName)
-			   log.Debug("state is", states.VolumeInspect)
-			   return states.VolumeInspect
-			}
-
-		}
-
-		return states.NotSupported
-	}
 
 
 
