@@ -130,8 +130,8 @@ func (c *Cluster) StartContainer(container *cluster.Container) error {
 }
 
 // CreateContainer aka schedule a brand new container into the cluster.
-func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
-	container, err := c.createContainer(config, name, false, authConfig)
+func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) (*cluster.Container, error) {
+	container, err := c.createContainer(config, name, false)
 
 	if err != nil {
 		var retries int64
@@ -141,20 +141,20 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 			// Check if the image exists in the cluster
 			// If exists, retry with a image affinity
 			if c.Image(config.Image) != nil {
-				container, err = c.createContainer(config, name, true, authConfig)
+				container, err = c.createContainer(config, name, true)
 				retries++
 			}
 		}
 
 		for ; retries < c.createRetry && err != nil; retries++ {
 			log.WithFields(log.Fields{"Name": "Swarm"}).Warnf("Failed to create container: %s, retrying", err)
-			container, err = c.createContainer(config, name, false, authConfig)
+			container, err = c.createContainer(config, name, false)
 		}
 	}
 	return container, err
 }
 
-func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, withImageAffinity bool, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
+func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, withImageAffinity bool) (*cluster.Container, error) {
 	c.scheduler.Lock()
 
 	// Ensure the name is available
@@ -206,7 +206,7 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 
 	c.scheduler.Unlock()
 
-	container, err := engine.Create(config, name, true, authConfig)
+	container, err := engine.Create(config, name)
 
 	c.scheduler.Lock()
 	delete(c.pendingContainers, swarmID)

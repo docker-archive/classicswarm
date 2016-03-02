@@ -46,49 +46,6 @@ POST "/images/create" : "docker import" flow not implement
 
 * `POST "/containers/create"`: `CpuShares` in `HostConfig` sets the number of CPU cores allocated to the container.
 
-# Registry Authentication
-
-During container create calls, the swarm API will optionally accept a X-Registry-Config header.
-If provided, this header will be passed down to the engine if the image must be pulled
-to complete the create operation.
-
-The following two examples demonstrate how to utilize this using the existing docker CLI
-
-* CLI usage example using username/password:
-
-    ```bash
-# Calculate the header
-REPO_USER=yourusername
-read -s PASSWORD
-HEADER=$(echo "{\"username\":\"${REPO_USER}\",\"password\":\"${PASSWORD}\"}"|base64 -w 0 )
-unset PASSWORD
-echo HEADER=$HEADER
-
-# Then add the following to your ~/.docker/config.json
-"HttpHeaders": {
-    "X-Registry-Auth": "<HEADER string from above>"
-}
-
-# Now run a private image against swarm:
-docker run --rm -it yourprivateimage:latest
-```
-
-* CLI usage example using registry tokens: (Requires engine 1.10 with new auth token support)
-
-    ```bash
-REPO=yourrepo/yourimage
-REPO_USER=yourusername
-read -s PASSWORD
-AUTH_URL=https://auth.docker.io/token
-TOKEN=$(curl -s -u "${REPO_USER}:${PASSWORD}" "${AUTH_URL}?scope=repository:${REPO}:pull&service=registry.docker.io" |
-    jq -r ".token")
-HEADER=$(echo "{\"registrytoken\":\"${TOKEN}\"}"|base64 -w 0 )
-echo HEADER=$HEADER
-
-# Update the docker config as above, but the token will expire quickly...
-```
-
-
 ## Docker Swarm documentation index
 
 - [Docker Swarm overview](https://docs.docker.com/swarm/)
