@@ -2,7 +2,8 @@ package cli
 
 import (
 	"math/rand"
-	"regexp"
+	"net"
+	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -11,8 +12,13 @@ import (
 )
 
 func checkAddrFormat(addr string) bool {
-	m, _ := regexp.MatchString("^[0-9a-zA-Z._-]+:[0-9]{1,5}$", addr)
-	return m
+	// validate addr is in host:port form. Use net function to handle both IPv4/IPv6 cases.
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false
+	}
+	portNum, err := strconv.Atoi(port)
+	return err == nil && portNum >= 0 && portNum <= 65535
 }
 
 func join(c *cli.Context) {
