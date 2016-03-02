@@ -3,7 +3,7 @@ package cli
 import (
 	"math/rand"
 	"net"
-	"regexp"
+	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -17,8 +17,8 @@ func checkAddrFormat(addr string) bool {
 	if err != nil {
 		return false
 	}
-	m, _ := regexp.MatchString("^[0-9]{1,5}$", port)
-	return m
+	portNum, err := strconv.Atoi(port)
+	return err == nil && portNum >= 0 && portNum <= 65535
 }
 
 func join(c *cli.Context) {
