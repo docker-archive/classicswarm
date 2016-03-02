@@ -2,6 +2,7 @@ package cli
 
 import (
 	"math/rand"
+	"net"
 	"regexp"
 	"time"
 
@@ -11,7 +12,12 @@ import (
 )
 
 func checkAddrFormat(addr string) bool {
-	m, _ := regexp.MatchString("^[0-9a-zA-Z._-]+:[0-9]{1,5}$", addr)
+	// validate addr is in host:port form. Use net function to handle both IPv4/IPv6 cases.
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false
+	}
+	m, _ := regexp.MatchString("^[0-9]{1,5}$", port)
 	return m
 }
 
