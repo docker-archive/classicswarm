@@ -10,7 +10,6 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/gorilla/mux"
 	"github.com/docker/swarm/pkg/authZ"
-	"os"
 )
 
 // Primary router context, used by handlers.
@@ -157,16 +156,10 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 			}
 			localMethod := method
 
-			if (os.Getenv("SWARM_MULTI_TENANT") != "false") {
-				hooks := new(authZ.Hooks)
-				hooks.Init()
-				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
-				r.Path(localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
-
-			} else {
-				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
-				r.Path(localRoute).Methods(localMethod).HandlerFunc(wrap)
-			}
+			hooks := new(authZ.Hooks)
+			hooks.Init()
+			r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+			r.Path(localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
 
 			if enableCors {
 				optionsMethod := "OPTIONS"
@@ -182,18 +175,10 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 					optionsFct(context, w, r)
 				}
 
-			    if (os.Getenv("SWARM_MULTI_TENANT") != "false") {	
-					hooks := new(authZ.Hooks)
-					hooks.Init()
-					r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
-					r.Path(localRoute).Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
-
-				} else {
-					r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
-						Methods(optionsMethod).HandlerFunc(wrap)
-					r.Path(localRoute).Methods(optionsMethod).
-						HandlerFunc(wrap)
-				}
+				hooks := new(authZ.Hooks)
+				hooks.Init()
+				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+				r.Path(localRoute).Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
 			}
 		}
 	}

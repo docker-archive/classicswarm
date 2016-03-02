@@ -39,21 +39,36 @@ var aclsAPI ACLsAPI
 //PrePostAuthWrapper - Hook point from primary to the authZ mechanisem
 func (*Hooks) PrePostAuthWrapper(cluster cluster.Cluster, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if (os.Getenv("SWARM_MULTI_TENANT") == "false") {
+			next.ServeHTTP(w, r)
+			return
+		}
 		eventType := eventParse(r)
 		defer r.Body.Close()
 		
 		//Bytes Json will be decoded into this one
         var containerConfig dockerclient.ContainerConfig
+        var volumeCreateRequest dockerclient.VolumeCreateRequest
 		reqBody, _ := ioutil.ReadAll(r.Body)
 		if len(reqBody)== 0 {
 			log.Debug("reqBody 0")
 		} else {
 			log.Debug("reqBody not 0")
-			if err := json.NewDecoder(bytes.NewReader(reqBody)).Decode(&containerConfig); err != nil {
-              log.Error(err)
-              return
-        		}
-			log.Debugf("Requests containerConfig: %+v",containerConfig)
+			if eventType == states.ContainerCreate {
+			  log.Debug("ContainerCreate")				
+			  if err := json.NewDecoder(bytes.NewReader(reqBody)).Decode(&containerConfig); err != nil {
+                log.Error(err)
+                return
+        		  }
+			  log.Debugf("Requests containerConfig: %+v",containerConfig)
+			} else if eventType == states.VolumeCreate {
+			  log.Debug("VolumeCreate")
+			  if err := json.NewDecoder(bytes.NewReader(reqBody)).Decode(&volumeCreateRequest); err != nil {
+                log.Error(err)
+                return
+        		  }
+			  log.Debugf("Requests volumeCreateRequest: %+v",volumeCreateRequest)
+			}
 		}
 
 
@@ -75,7 +90,7 @@ func (*Hooks) PrePostAuthWrapper(cluster cluster.Cluster, next http.Handler) htt
 		}
 		//TODO - all kinds of conditionals
 		if eventType == states.PassAsIs || isAllowed == states.Approved || isAllowed == states.ConditionFilter {
-			authZAPI.HandleEvent(eventType, w, r, next, dto, reqBody, containerConfig)
+			authZAPI.HandleEvent(eventType, w, r, next, dto, reqBody, containerConfig, volumeCreateRequest)
 		} else {
 			log.Debug("Return failure")
 			http.Error(w, dto.ErrorMessage, http.StatusBadRequest)
@@ -86,7 +101,7 @@ func (*Hooks) PrePostAuthWrapper(cluster cluster.Cluster, next http.Handler) htt
 
 /*Probably should use regular expressions here*/
 func eventParse(r *http.Request) states.EventEnum {
-	log.Debug("Got the uri...", r.RequestURI)
+	log.Debug("hooks.eventParse uri: ", r.RequestURI)
 
 	if strings.Contains(r.RequestURI, "/containers") && (strings.Contains(r.RequestURI, "create")) {
 		return states.ContainerCreate
@@ -112,6 +127,42 @@ func eventParse(r *http.Request) states.EventEnum {
 	if strings.HasSuffix(r.RequestURI, "/version") || strings.Contains(r.RequestURI, "/exec/"){
 		return states.PassAsIs
 	}
+	if strings.Contains(r.RequestURI, "/volumes/create")  {
+		log.Debug("/volumes/create")
+		log.Debug("state is", states.VolumeCreate)
+		return states.VolumeCreate
+	}
+	if strings.Contains(r.RequestURI, "/volumes")  {
+		log.Debug("/volumes/*")
+		log.Debug("Got the method...", r.Method)
+		if r.Method == "DELETE" {
+			log.Debug("Got the volume DELETE")
+			volumeName := r.RequestURI[strings.LastIndex(r.RequestURI,"/")+1:len(r.RequestURI)]
+			log.Debug("delete volume", volumeName)
+			log.Debug("state is", states.VolumeRemove)
+			return states.VolumeRemove
+		}
+		if r.Method == "GET" {
+			log.Debug("Got the volume Inspect or LS", r.Method)
+			if strings.HasSuffix(r.RequestURI,"/volumes") ||
+			   strings.HasSuffix(r.RequestURI,"/volumes/") {
+			   log.Debug("list volumes")
+			   log.Debug("state is", states.VolumesList)
+			   return states.VolumesList
+
+			} else {
+			   volumeName := r.RequestURI[strings.LastIndex(r.RequestURI,"/")+1:len(r.RequestURI)]
+			   log.Debug("Inspect volume: ", volumeName)
+			   log.Debug("state is", states.VolumeInspect)
+			   return states.VolumeInspect
+			}
+
+		}
+
+		return states.NotSupported
+	}
+
+
 
 //	if strings.Contains(r.RequestURI, "Will add to here all APIs we explicitly want to block") {
 //		return states.NotSupported
@@ -124,7 +175,11 @@ func eventParse(r *http.Request) states.EventEnum {
 func (*Hooks) Init() {
 	//TODO - should use a map for all the Pre . Post function like in primary.go
 	log.Debug("In Hooks.Init()")
-	if os.Getenv("SWARM_AUTH_BACKEND") == "Keystone" {
+	if (os.Getenv("SWARM_MULTI_TENANT") == "false") {
+		log.Debug("SWARM_MULTI_TENANT is false")
+		return
+	}
+    if os.Getenv("SWARM_AUTH_BACKEND") == "Keystone" {
 		log.Debug("SWARM_AUTH_BACKEND == Keystone")
 	    	aclsAPI = new(keystone.KeyStoneAPI)  	
 	} else {	
@@ -132,9 +187,6 @@ func (*Hooks) Init() {
 		aclsAPI = new(DefaultACLsImpl)
 	}
 	aclsAPI.Init()	
-	
-
-
 	authZAPI = new(DefaultImp)
 	authZAPI.Init()
 	//TODO reflection using configuration file tring for the backend type
