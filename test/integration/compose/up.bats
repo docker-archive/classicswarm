@@ -85,11 +85,12 @@ function containerRunning() {
 	docker-compose_swarm -f $FILE up -d
 	
 	run docker_swarm ps -q
-	[ "${#lines[@]}" -eq  2 ]
+	[ "${#lines[@]}" -eq  3 ]
 
 	# Make sure containers are running where they should.
 	containerRunning "compose_service1_1" "node-0"
 	containerRunning "compose_service2_1" "node-0"
+	containerRunning "compose_service3_1" "node-0"
 
 	# Get service1 swarm id
 	swarm_id=$(docker_swarm inspect -f '{{ index .Config.Labels "com.docker.swarm.id" }}' compose_service1_1)
@@ -111,10 +112,14 @@ function containerRunning() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *'"Name": "node-1"'* ]]
 
-	# service_2 should still be on node-0 since the rescheduling policy was off.
 	run docker_swarm inspect compose_service2_1
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
+
+	# service_3 should still be on node-0 since the rescheduling policy was off.
+	run docker_swarm inspect compose_service3_1
 	[ "$status" -eq 1 ]
 
 	run docker_swarm ps -q
-	[ "${#lines[@]}" -eq  1 ]
+	[ "${#lines[@]}" -eq  2 ]
 }
