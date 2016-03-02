@@ -1,10 +1,11 @@
 # Changelog
 
-## 1.1.3 (2016-02-24)
+## 1.1.3 (2016-03-01)
 
 - Fix missing HostConfig for rescheduled containers
 - Fix TCP connections leak
 - Support `docker run --net <node>/<network> ...`
+- Fix CORS issue in the API
 
 ## 1.1.2 (2016-02-18)
 
