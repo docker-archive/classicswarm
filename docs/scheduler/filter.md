@@ -36,7 +36,7 @@ When you start a Swarm manager with the `swarm manage` command, all the filters
 are enabled. If you want to limit the filters available to your Swarm, specify a subset
 of filters by passing the `--filter` flag and the name:
 
-```
+```bash
 $ swarm manage --filter=health --filter=dependency
 ```
 
@@ -63,7 +63,7 @@ host. Currently, the default tags include:
 
 Custom node labels you apply when you start the `docker daemon`, for example:
 
-```
+```bash
 $ docker daemon --label com.example.environment="production" --label
 com.example.storage="ssd"
 ```
@@ -86,13 +86,17 @@ To specify custom label for a node, pass a list of `--label`
 options at `docker` startup time. For instance, to start `node-1` with the
 `storage=ssd` label:
 
-    $ docker daemon --label storage=ssd
-    $ swarm join --advertise=192.168.0.42:2375 token://XXXXXXXXXXXXXXXXXX
+```bash
+$ docker daemon --label storage=ssd
+$ swarm join --advertise=192.168.0.42:2375 token://XXXXXXXXXXXXXXXXXX
+```
 
 You might start a different `node-2` with `storage=disk`:
 
-    $ docker daemon --label storage=disk
-    $ swarm join --advertise=192.168.0.43:2375 token://XXXXXXXXXXXXXXXXXX
+```bash
+$ docker daemon --label storage=disk
+$ swarm join --advertise=192.168.0.43:2375 token://XXXXXXXXXXXXXXXXXX
+```
 
 Once the nodes are joined to a cluster, the Swarm master pulls their respective
 tags.  Moving forward, the master takes the tags into account when scheduling
@@ -133,35 +137,37 @@ The scheduler selected `node-2` since it was started with the `storage=disk` lab
 Finally, build args can be used to apply node constraints to a `docker build`.
 Again, you'll avoid flash drives.
 
-    $ mkdir sinatra
-    $ cd sinatra
-    $ echo "FROM ubuntu:14.04" > Dockerfile
-    $ echo "MAINTAINER Kate Smith <ksmith@example.com>" >> Dockerfile
-    $ echo "RUN apt-get update && apt-get install -y ruby ruby-dev" >> Dockerfile
-    $ echo "RUN gem install sinatra" >> Dockerfile
-    $ docker build --build-arg=constraint:storage==disk -t ouruser/sinatra:v2 .
-    Sending build context to Docker daemon 2.048 kB
-    Step 1 : FROM ubuntu:14.04
-     ---> a5a467fddcb8
-    Step 2 : MAINTAINER Kate Smith <ksmith@example.com>
-     ---> Running in 49e97019dcb8
-     ---> de8670dcf80e
-    Removing intermediate container 49e97019dcb8
-    Step 3 : RUN apt-get update && apt-get install -y ruby ruby-dev
-     ---> Running in 26c9fbc55aeb
-     ---> 30681ef95fff
-    Removing intermediate container 26c9fbc55aeb
-    Step 4 : RUN gem install sinatra
-     ---> Running in 68671d4a17b0
-     ---> cd70495a1514
-    Removing intermediate container 68671d4a17b0
-    Successfully built cd70495a1514
+```bash
+$ mkdir sinatra
+$ cd sinatra
+$ echo "FROM ubuntu:14.04" > Dockerfile
+$ echo "MAINTAINER Kate Smith <ksmith@example.com>" >> Dockerfile
+$ echo "RUN apt-get update && apt-get install -y ruby ruby-dev" >> Dockerfile
+$ echo "RUN gem install sinatra" >> Dockerfile
+$ docker build --build-arg=constraint:storage==disk -t ouruser/sinatra:v2 .
+Sending build context to Docker daemon 2.048 kB
+Step 1 : FROM ubuntu:14.04
+ ---> a5a467fddcb8
+Step 2 : MAINTAINER Kate Smith <ksmith@example.com>
+ ---> Running in 49e97019dcb8
+ ---> de8670dcf80e
+Removing intermediate container 49e97019dcb8
+Step 3 : RUN apt-get update && apt-get install -y ruby ruby-dev
+ ---> Running in 26c9fbc55aeb
+ ---> 30681ef95fff
+Removing intermediate container 26c9fbc55aeb
+Step 4 : RUN gem install sinatra
+ ---> Running in 68671d4a17b0
+ ---> cd70495a1514
+Removing intermediate container 68671d4a17b0
+Successfully built cd70495a1514
 
-    $ docker images
-    REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
-    dockerswarm/swarm   master              8c2c56438951        2 days ago          795.7 MB
-    ouruser/sinatra     v2                  cd70495a1514        35 seconds ago      318.7 MB
-    ubuntu              14.04               a5a467fddcb8        11 days ago         187.9 MB
+$ docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+dockerswarm/swarm   master              8c2c56438951        2 days ago          795.7 MB
+ouruser/sinatra     v2                  cd70495a1514        35 seconds ago      318.7 MB
+ubuntu              14.04               a5a467fddcb8        11 days ago         187.9 MB
+```
 
 ### Use the health filter
 
