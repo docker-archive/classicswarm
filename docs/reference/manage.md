@@ -118,7 +118,7 @@ Use `--replication-ttl "<delay>s"` to specify the delay, in seconds, before noti
 
 ### `--advertise`, `--addr` — Advertise Docker Engine's IP and port number
 
-Use `--advertise <ip>:<port>` or `--addr <ip>:<port>` to advertise the IP address and port number of the Docker Engine. For example, `--advertise 172.30.0.161:4000`. Other swarm managers MUST be able to reach this swarm manager at this address.
+Use `--advertise <ip>:<port>` or `--addr <ip>:<port>` to advertise the IP address and port number of the Docker Engine. For example, `--advertise 172.30.0.161:4000`. Other Swarm managers MUST be able to reach this Swarm manager at this address.
 
 The environment variable for `--advertise` is `$SWARM_ADVERTISE`.
 

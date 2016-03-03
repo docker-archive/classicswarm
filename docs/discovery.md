@@ -11,7 +11,7 @@ weight=4
 
 # Docker Swarm Discovery
 
-Docker Swarm comes with multiple discovery backends. You use a hosted discovery service with Docker Swarm. The service maintains a list of IPs in your swarm.
+Docker Swarm comes with multiple discovery backends. You use a hosted discovery service with Docker Swarm. The service maintains a list of IPs in your cluster.
 This page describes the different types of hosted discovery available to you. These are:
 
 
@@ -29,7 +29,7 @@ For details about libkv and a detailed technical overview of the supported backe
 
 1. On each node, start the Swarm agent.
 
-    The node IP address doesn't have to be public as long as the swarm manager can access it. In a large cluster, the nodes joining swarm may trigger request spikes to discovery. For example, a large number of nodes are added by a script, or recovered from a network partition. This may result in discovery failure. You can use `--delay` option to specify a delay limit. Swarm join will add a random delay less than this limit to reduce pressure to discovery.
+    The node IP address doesn't have to be public as long as the Swarm manager can access it. In a large cluster, the nodes joining swarm may trigger request spikes to discovery. For example, a large number of nodes are added by a script, or recovered from a network partition. This may result in discovery failure. You can use `--delay` option to specify a delay limit. Swarm join will add a random delay less than this limit to reduce pressure to discovery.
 
     **Etcd**:
 
@@ -173,7 +173,7 @@ Or with node discovery:
 
 This example uses the hosted discovery service on Docker Hub. Using
 Docker Hub's hosted discovery service requires that each node in the
-swarm is connected to the public internet. To create your swarm:
+swarm is connected to the public internet. To create your cluster:
 
 1. Create a cluster.
 
@@ -182,7 +182,7 @@ swarm is connected to the public internet. To create your swarm:
 
 2. Create each node and join them to the cluster.
 
-    On each of your nodes, start the swarm agent. The <node_ip> doesn't have to be public (eg. 192.168.0.X) but the the swarm manager must be able to access it.
+    On each of your nodes, start the swarm agent. The <node_ip> doesn't have to be public (eg. 192.168.0.X) but the the Swarm manager must be able to access it.
 
         $ swarm join --advertise=<node_ip:2375> token://<cluster_id>
 
@@ -192,7 +192,7 @@ swarm is connected to the public internet. To create your swarm:
 
         $ swarm manage -H tcp://<swarm_ip:swarm_port> token://<cluster_id>
 
-4. Use regular Docker commands to interact with your swarm.
+4. Use regular Docker commands to interact with your cluster.
 
         docker -H tcp://<swarm_ip:swarm_port> info
         docker -H tcp://<swarm_ip:swarm_port> run ...
