@@ -11,7 +11,7 @@ weight=3
 
 # High availability in Docker Swarm
 
-In Docker Swarm, the **swarm manager** is responsible for the entire cluster and manages the resources of multiple *Docker hosts* at scale. If the swarm manager dies, you must create a new one and deal with an interruption of service.
+In Docker Swarm, the **Swarm manager** is responsible for the entire cluster and manages the resources of multiple *Docker hosts* at scale. If the Swarm manager dies, you must create a new one and deal with an interruption of service.
 
 The *High Availability* feature allows a Docker Swarm to gracefully handle the failover of a manager instance. Using this feature, you can create a single **primary manager** instance and multiple **replica** instances.
 
@@ -23,7 +23,7 @@ This section explains how to set up Docker Swarm using multiple **managers**.
 
 ### Assumptions
 
-You need either a `Consul`, `etcd`, or `Zookeeper` cluster. This procedure is written assuming a `Consul` server running on address `192.168.42.10:8500`. All hosts will have a Docker Engine configured to listen on port 2375.  We will be configuring the Managers to operate on port 4000. The sample swarm configuration has three machines:
+You need either a `Consul`, `etcd`, or `Zookeeper` cluster. This procedure is written assuming a `Consul` server running on address `192.168.42.10:8500`. All hosts will have a Docker Engine configured to listen on port 2375.  We will be configuring the Managers to operate on port 4000. The sample Swarm configuration has three machines:
 
 - `manager-1` on `192.168.42.200`
 - `manager-2` on `192.168.42.201`
@@ -40,7 +40,7 @@ You use the `swarm manage` command with the `--replication` and `--advertise` fl
       [...]
 
 
-The  `--replication` flag tells swarm that the manager is part of a a multi-manager configuration and that this primary manager competes with other manager instances for the primary role. The primary manager has the authority to manage cluster, replicate logs, and replicate events happening inside the cluster.
+The  `--replication` flag tells Swarm that the manager is part of a a multi-manager configuration and that this primary manager competes with other manager instances for the primary role. The primary manager has the authority to manage cluster, replicate logs, and replicate events happening inside the cluster.
 
 The `--advertise` option specifies the primary manager address. Swarm uses this address to advertise to the cluster when the node is elected as the primary. As you see in the command's output, the address you provided now appears to be the one of the elected Primary manager.
 
@@ -65,7 +65,7 @@ Create an additional, third *manager* instance:
     INFO[0000] New leader elected: 192.168.42.200:4000
     [...]
 
-Once you have established your primary manager and the replicas, create **swarm agents** as you normally would.
+Once you have established your primary manager and the replicas, create **Swarm agents** as you normally would.
 
 
 ### List machines in the cluster

@@ -42,7 +42,7 @@ ready to create a network.
 ## List networks
 
 This example assumes there are two nodes `node-0` and `node-1` in the cluster.
-From a swarm node, list the networks:
+From a Swarm node, list the networks:
 
 ```bash
 $ docker network ls
@@ -60,7 +60,7 @@ As you can see, each network name is prefixed by the node name.
 ## Create a network
 
 By default, Swarm is using the `overlay` network driver, a global-scope network
-driver. A global-scope network driver creates a network across an entire swarm.
+driver. A global-scope network driver creates a network across an entire Swarm cluster.
 When you create an `overlay` network under Swarm, you can omit the `-d` option:
 
 ```bash
@@ -80,7 +80,7 @@ NETWORK ID          NAME                   DRIVER
 
 As you can see here, both the `node-0/swarm_network` and the
 `node-1/swarm_network` have the same ID.  This is because when you create a
-network on the swarm, it is accessible from all the nodes.
+network on the cluster, it is accessible from all the nodes.
 
 To create a local scope network (for example with the `bridge` network driver) you
 should use `<node>/<name>` otherwise your network is created on a random node.
