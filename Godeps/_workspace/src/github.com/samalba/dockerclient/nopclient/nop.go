@@ -46,6 +46,10 @@ func (client *NopClient) ContainerChanges(id string) ([]*dockerclient.ContainerC
 	return nil, ErrNoEngine
 }
 
+func (client *NopClient) ContainerStats(id string, stopChan <-chan struct{}) (<-chan dockerclient.StatsOrError, error) {
+	return nil, ErrNoEngine
+}
+
 func (client *NopClient) AttachContainer(id string, options *dockerclient.AttachOptions) (io.ReadCloser, error) {
 	return nil, ErrNoEngine
 }
@@ -119,6 +123,10 @@ func (client *NopClient) ListImages(all bool) ([]*dockerclient.Image, error) {
 }
 
 func (client *NopClient) RemoveImage(name string, force bool) ([]*dockerclient.ImageDelete, error) {
+	return nil, ErrNoEngine
+}
+
+func (client *NopClient) SearchImages(query, registry string, authConfig *dockerclient.AuthConfig) ([]dockerclient.ImageSearch, error) {
 	return nil, ErrNoEngine
 }
 
