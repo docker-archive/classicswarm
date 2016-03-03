@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.3 (2016-03-01)
+## 1.1.3 (2016-03-03)
 
 - Fix missing HostConfig for rescheduled containers
 - Fix TCP connections leak
