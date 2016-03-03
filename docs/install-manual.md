@@ -209,7 +209,7 @@ After creating the discovery backend, you can create the Swarm managers. In this
 
 2. Enter `docker ps`.
 
-    From the output, verify that both a swarm and a consul container are running.
+    From the output, verify that both a Swarm cluster and a consul container are running.
     Then, disconnect from the `manager0` and `consul0` instance.
 
 3. Connect to the `manager1` node and use `ifconfig` to get its IP address.
@@ -228,7 +228,7 @@ After creating the discovery backend, you can create the Swarm managers. In this
 
     a. Get the node IP addresses with the `ifconfig` command.
 
-    b. Start a swarm container each using the following syntax:
+    b. Start a Swarm container each using the following syntax:
 
         docker run -d swarm join --advertise=<node_ip>:2375 consul://<consul_ip>:8500
 
@@ -269,7 +269,7 @@ replica.
 
 1. SSH connection to the `manager0` instance.
 
-2. Get the container id or name of the swarm container:
+2. Get the container id or name of the `swarm` container:
 
         $ docker ps
 

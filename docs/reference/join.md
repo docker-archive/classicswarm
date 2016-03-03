@@ -36,7 +36,7 @@ The `join` command has only one argument:
 
 Before you create a Swarm node, [create a discovery token](create.md) or [set up a discovery backend](../discovery.md) for your cluster.
 
-When you create the swarm node, use the `<discovery>` argument to specify one of the following discovery backends:
+When you create the Swarm node, use the `<discovery>` argument to specify one of the following discovery backends:
 
 * `token://<token>`
 * `consul://<ip1>/<path>`
