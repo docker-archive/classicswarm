@@ -50,6 +50,11 @@ func (client *MockClient) ContainerChanges(id string) ([]*dockerclient.Container
 	return args.Get(0).([]*dockerclient.ContainerChanges), args.Error(1)
 }
 
+func (client *MockClient) ContainerStats(id string, stopChan <-chan struct{}) (<-chan dockerclient.StatsOrError, error) {
+	args := client.Mock.Called(id, stopChan)
+	return args.Get(0).(<-chan dockerclient.StatsOrError), args.Error(1)
+}
+
 func (client *MockClient) AttachContainer(id string, options *dockerclient.AttachOptions) (io.ReadCloser, error) {
 	args := client.Mock.Called(id, options)
 	return args.Get(0).(io.ReadCloser), args.Error(1)
@@ -139,6 +144,11 @@ func (client *MockClient) ListImages(all bool) ([]*dockerclient.Image, error) {
 func (client *MockClient) RemoveImage(name string, force bool) ([]*dockerclient.ImageDelete, error) {
 	args := client.Mock.Called(name, force)
 	return args.Get(0).([]*dockerclient.ImageDelete), args.Error(1)
+}
+
+func (client *MockClient) SearchImages(query, registry string, authConfig *dockerclient.AuthConfig) ([]dockerclient.ImageSearch, error) {
+	args := client.Mock.Called(query, registry, authConfig)
+	return args.Get(0).([]dockerclient.ImageSearch), args.Error(1)
 }
 
 func (client *MockClient) PauseContainer(name string) error {
