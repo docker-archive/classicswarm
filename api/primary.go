@@ -177,8 +177,10 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 
 				hooks := new(authZ.Hooks)
 				hooks.Init()
-				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
-				r.Path(localRoute).Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
+				    Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+				r.Path(localRoute).Methods(optionsMethod).
+				    Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
 			}
 		}
 	}
