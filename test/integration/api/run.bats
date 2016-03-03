@@ -99,6 +99,35 @@ function teardown() {
 	[[ "${output}" == *"someDnsOption"* ]]
 	# stop-signal
 	[[ "${output}" == *"\"StopSignal\": \"SIGKILL\""* ]]
+
+	# following options are introduced in docker 1.10, skip older version
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* ]]; then
+		skip
+	fi
+
+	docker_swarm run -d --name test_container2 \
+			 --oom-score-adj=350 \
+			 --tmpfs=/tempfs:rw \
+			 --device-read-iops=/dev/null:351 \
+			 --device-write-iops=/dev/null:352 \
+			 --device-read-bps=/dev/null:1mb \
+			 --device-write-bps=/dev/null:2mb \
+			 busybox sleep 1000
+
+	run docker_swarm inspect test_container2
+	# oom-score-adj
+	[[ "${output}" == *"\"OomScoreAdj\": 350"* ]]
+	# tmpfs
+	[[ "${output}" == *"\"/tempfs\": \"rw\""* ]]
+	# device-read-iops
+	[[ "${output}" == *"351"* ]]
+	# device-write-iops
+	[[ "${output}" == *"352"* ]]
+	# device-read-bps
+	[[ "${output}" == *"1048576"* ]]
+	# device-write-bps
+	[[ "${output}" == *"2097152"* ]]
 }
 
 @test "docker run --ip" {
