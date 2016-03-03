@@ -145,8 +145,9 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 }
 */
 
-func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter, r *http.Request, next http.Handler, dto *utils.ValidationOutPutDTO, reqBody []byte, containerConfig dockerclient.ContainerConfig) {
-	log.Debugf("HandleEvent %+v\n", eventType)
+//func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter, r *http.Request, next http.Handler, dto *utils.ValidationOutPutDTO, reqBody []byte, containerConfig dockerclient.ContainerConfig) {
+func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter, r *http.Request, next http.Handler, dto *utils.ValidationOutPutDTO, reqBody []byte, containerConfig dockerclient.ContainerConfig, volumeCreateRequest dockerclient.VolumeCreateRequest) {
+	log.Debugf("defaultAuthZImpl.HandleEvent %+v\n", eventType)
 	switch eventType {
 	case states.ContainerCreate:
 		log.Debug("In create...")
@@ -243,6 +244,135 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 			mux.Vars(r)["name"] = dto.ContainerID
 			next.ServeHTTP(w, r)
 		}
+	case states.VolumeCreate:
+		log.Debug("event: VolumeCreate...")
+		log.Debugf("volumeCreateRequest In: %+v\n", volumeCreateRequest)
+		volumeCreateRequest.Name = volumeCreateRequest.Name + r.Header.Get(headers.AuthZTenantIdHeaderName) 
+		log.Debugf("volumeCreateRequest In: %+v\n", volumeCreateRequest)
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(volumeCreateRequest); err != nil {
+			log.Error(err)
+			return
+		}
+
+		var newQuery string
+		if "" != r.URL.Query().Get("name") {
+			log.Debug("Postfixing name with Label...")
+			newQuery = strings.Replace(r.RequestURI, r.URL.Query().Get("name"), r.URL.Query().Get("name")+r.Header.Get(headers.AuthZTenantIdHeaderName), 1)
+			log.Debug(newQuery)
+		}
+
+		newReq, e1 := utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), newQuery, "")
+		if e1 != nil {
+			log.Error(e1)
+		}
+		next.ServeHTTP(w, newReq)
+		
+
+	case states.VolumesList:
+		log.Debug("event: VolumesList...")
+		//next.ServeHTTP(w, r)
+		rec := httptest.NewRecorder()
+		next.ServeHTTP(rec, r)
+		/*POST Swarm*/
+		log.Debug("after swarm")
+		w.WriteHeader(rec.Code)
+		for k, v := range rec.Header() {
+			w.Header()[k] = v
+		}
+		var volumesListResponse dockerclient.VolumesListResponse 
+		var volumesListResponseOut dockerclient.VolumesListResponse
+		var volumesOut []*dockerclient.Volume
+ 
+		 
+		//responseBody, _ := ioutil.ReadAll(rec.Body)
+		responseBody := rec.Body.Bytes()
+		if len(responseBody)== 0 {
+			log.Debug("responseBody 0")
+		} else {
+			log.Debug("responseBody not 0")
+			if err := json.NewDecoder(bytes.NewReader(responseBody)).Decode(&volumesListResponse); err != nil {
+               log.Error(err)
+                return
+        		}				
+			log.Debugf("volumesListResponse: %+v",volumesListResponse)
+			volumes := volumesListResponse.Volumes
+			log.Debugf("volumesListResponse.Volumes: %+v",volumes)
+			log.Debugf("volumesListResponse.Volumes[0]: %+v",volumes[0])
+			tenantId := r.Header.Get(headers.AuthZTenantIdHeaderName)
+			for _, v := range volumes {
+				if strings.Contains(v.Name,tenantId) {
+					log.Debugf("volume found: %+v",v)
+					v.Name = strings.Replace(v.Name,tenantId,"",1)
+					//v.Mountpoint = strings.Replace(v.Mountpoint,tenantId,"",1)
+					log.Debugf("volume after: %+v",v)
+					volumesOut = append(volumesOut,v)					
+				}
+			}
+			for _, v := range volumesOut {
+				log.Debugf("volumeOut volume : %+v",v)
+			}
+			volumesListResponseOut.Volumes = volumesOut
+			log.Debugf("volumesListResponseOut: %+v",volumesListResponseOut)
+ 
+		}
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(volumesListResponseOut); err != nil {
+			log.Error(err)
+			return
+		}
+		w.Write(buf.Bytes())
+				
+		//newBody := utils.CleanUpLabeling(r, rec)
+		//w.Write(newBody)
+		//w.Write(responseBody)
+
+	case states.VolumeInspect:
+		log.Debug("event: VolumeInspect...")
+		volumeNameIndex := strings.LastIndex(r.RequestURI,"/")+1
+		volumeName := r.RequestURI[volumeNameIndex:len(r.RequestURI)] + r.Header.Get(headers.AuthZTenantIdHeaderName)
+		log.Debugf(" volumeName *%s*", volumeName)
+		//r.URL.Path = strings.Replace(r.URL.Path, mux.Vars(r)["volumename"], volumeName, 1)
+		r.URL.Path = r.RequestURI[0:volumeNameIndex] + volumeName
+		log.Debugf(" r %+v", r)
+		mux.Vars(r)["volumename"] =  volumeName
+		log.Debugf(" mux.Vars(r) %+v", mux.Vars(r))
+		rec := httptest.NewRecorder()
+		next.ServeHTTP(rec, r)
+		/*POST Swarm*/
+		log.Debug("Post Swarm")
+		w.WriteHeader(rec.Code)
+		for k, v := range rec.Header() {
+			w.Header()[k] = v
+		}
+		newBody := utils.CleanUpLabeling(r, rec)
+		w.Write(newBody)
+
+		
+
+	case states.VolumeRemove:
+		log.Debug("event: VolumeRemove...")
+		volumeNameIndex := strings.LastIndex(r.RequestURI,"/")+1
+		volumeName := r.RequestURI[volumeNameIndex:len(r.RequestURI)] + r.Header.Get(headers.AuthZTenantIdHeaderName)
+		log.Debugf(" volumeName *%s*", volumeName)
+		newPath := r.RequestURI[0:volumeNameIndex] + volumeName
+		log.Debug(" newReq: ", newPath)
+		r.URL.Path = newPath
+		log.Debug(" url: ", r.URL)
+		mux.Vars(r)["name"] =  volumeName
+		//next.ServeHTTP(w, r)
+		rec := httptest.NewRecorder()
+		next.ServeHTTP(rec, r)
+		/*POST Swarm*/
+		log.Debug("Post Swarm")
+		w.WriteHeader(rec.Code)
+		for k, v := range rec.Header() {
+			w.Header()[k] = v
+		}
+		newBody := utils.CleanUpLabeling(r, rec)
+		w.Write(newBody)
+		
+		
 		//TODO - hijack and others are the same because we handle no post and no stream manipulation and no handler override yet
 	case states.StreamOrHijack:
 		log.Debug("In stream/hijack...")

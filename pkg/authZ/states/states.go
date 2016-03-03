@@ -9,6 +9,10 @@ const (
 	ContainersList
 	ContainerInspect
 	ContainerOthers
+	VolumeCreate
+	VolumesList
+	VolumeInspect
+	VolumeRemove
 	PassAsIs
 	Unauthorized
 	StreamOrHijack

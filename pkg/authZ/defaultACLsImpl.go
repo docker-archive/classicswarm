@@ -47,7 +47,16 @@ func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType state
 	case states.ContainersList:
 		return states.ConditionFilter, nil
 	case states.Unauthorized:
-		return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: "Not Authorized!"}
+		return states.Approved, &utils.ValidationOutPutDTO{ErrorMessage: "Not Authorized!"}
+	case states.VolumeCreate:
+		return states.Approved, &utils.ValidationOutPutDTO{ErrorMessage: "VolumeCreate Not Supported yet!"}
+	case states.VolumesList:
+		return states.Approved, &utils.ValidationOutPutDTO{ErrorMessage: "VolumeList Not Supported yet!"}
+	case states.VolumeInspect:
+		return states.Approved, &utils.ValidationOutPutDTO{ErrorMessage: "VolumeInspect Not Supported yet!"}
+	case states.VolumeRemove:
+		return states.Approved, &utils.ValidationOutPutDTO{ErrorMessage: "VolumeRemove Not Supported yet!"}
+
 	default:
 		//CONTAINER_INSPECT / CONTAINER_OTHERS / STREAM_OR_HIJACK / PASS_AS_IS
 		isOwner, dto := utils.CheckOwnerShip(cluster, tenantIdToValidate, r)
