@@ -28,7 +28,7 @@ available CPU, its RAM, and the number of containers it has. The `random`
 strategy uses no computation. It selects a node at random and is primarily
 intended for debugging.
 
-Your goal in choosing a strategy is to best optimize your swarm according to
+Your goal in choosing a strategy is to best optimize your cluster according to
 your company's needs.
 
 Under the `spread` strategy, Swarm optimizes for the node with the least number
@@ -55,13 +55,13 @@ If you do not specify a `--strategy` Swarm uses `spread` by default.
 
 ## Spread strategy example
 
-In this example, your swarm is using the `spread` strategy which optimizes for
-nodes that have the fewest containers. In this swarm, both `node-1` and `node-2`
+In this example, your cluster is using the `spread` strategy which optimizes for
+nodes that have the fewest containers. In this cluster, both `node-1` and `node-2`
 have 2G of RAM, 2 CPUs, and neither node is running a container. Under this strategy
 `node-1` and `node-2` have the same ranking.
 
-When you run a new container, the system chooses `node-1` at random from the swarm
-of two equally ranked nodes:
+When you run a new container, the system chooses `node-1` at random from the
+Swarm cluster of two equally ranked nodes:
 
       $ docker tcp://<manager_ip:manager_port> run -d -P -m 1G --name db mysql
       f8b693db9cd6
@@ -90,7 +90,7 @@ CPUs, the `spread` strategy prefers the node with least containers.
 
 In this example, let's says that both `node-1` and `node-2` have 2G of RAM and
 neither is running a container. Again, the nodes are equal. When you run a new
-container, the system chooses `node-1` at random from the swarm:
+container, the system chooses `node-1` at random from the cluster:
 
 
     $ docker tcp://<manager_ip:manager_port> run -d -P -m 1G --name db mysql

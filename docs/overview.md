@@ -29,17 +29,23 @@ principle. As initial development settles, an API will develop to enable
 pluggable backends.  This means you can swap out the scheduling backend
 Docker Swarm uses out-of-the-box with a backend you prefer. Swarm's swappable design provides a smooth out-of-box experience for most use cases, and allows large-scale production deployments to swap for more powerful backends, like Mesos.
 
-## Understand swarm creation
+## Understand Swarm cluster creation
 
-The first step to creating a swarm on your network is to pull the Docker Swarm image. Then, using Docker, you configure the swarm manager and all the nodes to run Docker Swarm. This method requires that you:
+The first step to creating a Swarm cluster on your network is to pull the Docker Swarm image. Then, using Docker, you configure the Swarm manager and all the nodes to run Docker Swarm. This method requires that you:
 
-* open a TCP port on each node for communication with the swarm manager
+* open a TCP port on each node for communication with the Swarm manager
 * install Docker on each node
-* create and manage TLS certificates to secure your swarm
+* create and manage TLS certificates to secure your cluster
 
-As a starting point, the manual method is best suited for experienced administrators or programmers contributing to Docker Swarm. The alternative is to use `docker-machine` to install a swarm.
+As a starting point, the manual method is best suited for experienced
+administrators or programmers contributing to Docker Swarm. The alternative is
+to use `docker-machine` to install a cluster.
 
-Using Docker Machine, you can quickly install a Docker Swarm on cloud providers or inside your own data center. If you have VirtualBox installed on your local machine, you can quickly build and explore Docker Swarm in your local environment. This method automatically generates a certificate to secure your swarm.
+Using Docker Machine, you can quickly install a Docker Swarm on cloud providers
+or inside your own data center. If you have VirtualBox installed on your local
+machine, you can quickly build and explore Docker Swarm in your local
+environment. This method automatically generates a certificate to secure your
+cluster.
 
 Using Docker Machine is the best method for users getting started with Swarm for the first time. To try the recommended method of getting started, see [Get Started with Docker Swarm](install-w-machine.md).
 
