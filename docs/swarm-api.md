@@ -100,7 +100,7 @@ POST "/images/create" : "docker import" flow not implement
 
 ## Registry Authentication
 
-During container create calls, the swarm API will optionally accept an `X-Registry-Auth` header.
+During container create calls, the Swarm API will optionally accept an `X-Registry-Auth` header.
 If provided, this header is passed down to the engine if the image must be pulled
 to complete the create operation.
 
