@@ -37,12 +37,19 @@ git push origin
 
 ### 4. Update official image
 
-fork https://github.com/docker-library/official-images.git
+If you don't have https://github.com/docker-library/official-images.git, fork it.
 
 ```
 git clone https://github.com/docker-library/official-images.git
 cd official-images
 git remote add $GITHUBUSER git@github.com:$GITHUBUSER/official-images.git
+```
+
+Update the official image.
+
+```
+git checkout master
+git pull
 git checkout -b update_swarm_<tag>
 edit library/swarm
 git add library/swarm
