@@ -821,7 +821,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 	return container, err
 }
 
-// RemoveContainer a container from the engine.
+// RemoveContainer removes a container from the engine.
 func (e *Engine) RemoveContainer(container *Container, force, volumes bool) error {
 	err := e.client.RemoveContainer(container.Id, force, volumes)
 	e.CheckConnectionErr(err)
