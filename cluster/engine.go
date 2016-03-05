@@ -36,6 +36,9 @@ const (
 	stateUnhealthy
 	// healthy means an engine is reachable
 	stateHealthy
+	// disconnected means engine is removed from discovery
+	stateDisconnected
+
 	// TODO: add maintenance state. Proposal #1486
 	// maintenance means an engine is under maintenance.
 	// There is no action to migrate a node into maintenance state yet.
@@ -43,9 +46,10 @@ const (
 )
 
 var stateText = map[engineState]string{
-	statePending:   "Pending",
-	stateUnhealthy: "Unhealthy",
-	stateHealthy:   "Healthy",
+	statePending:      "Pending",
+	stateUnhealthy:    "Unhealthy",
+	stateHealthy:      "Healthy",
+	stateDisconnected: "Disconnected",
 	//stateMaintenance: "Maintenance",
 }
 
@@ -214,6 +218,10 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 func (e *Engine) Disconnect() {
 	e.Lock()
 	defer e.Unlock()
+	// Resource clean up should be done only once
+	if e.state == stateDisconnected {
+		return
+	}
 
 	// close the chan
 	close(e.stopCh)
@@ -223,6 +231,7 @@ func (e *Engine) Disconnect() {
 		closeIdleConnections(dc.HTTPClient)
 	}
 	e.client = nopclient.NewNopClient()
+	e.state = stateDisconnected
 	e.emitEvent("engine_disconnect")
 }
 
@@ -233,6 +242,8 @@ func closeIdleConnections(client *http.Client) {
 }
 
 // isConnected returns true if the engine is connected to a remote docker API
+// note that it's not the same as stateDisconnected. Engine isConnected is also true
+// when it is first created but not yet 'Connect' to a remote docker API.
 func (e *Engine) isConnected() bool {
 	_, ok := e.client.(*nopclient.NopClient)
 	return !ok

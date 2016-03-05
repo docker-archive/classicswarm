@@ -398,3 +398,37 @@ func TestContainerRemovedDuringRefresh(t *testing.T) {
 
 	client.Mock.AssertExpectations(t)
 }
+
+func TestDisconnect(t *testing.T) {
+	engine := NewEngine("test", 0, engOpts)
+
+	client := mockclient.NewMockClient()
+	client.On("Info").Return(mockInfo, nil)
+	client.On("Version").Return(mockVersion, nil)
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	client.On("StopAllMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+
+	// The client will return one container at first, then a second one will appear.
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "one"}}, nil).Once()
+	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
+	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
+	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
+	client.On("InspectContainer", "one").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
+	client.On("ListContainers", true, false, fmt.Sprintf("{%q:[%q]}", "id", "two")).Return([]dockerclient.Container{{Id: "two"}}, nil).Once()
+	client.On("InspectContainer", "two").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
+
+	assert.NoError(t, engine.ConnectWithClient(client))
+	assert.True(t, engine.isConnected())
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("TestDisconnect causes panic")
+		}
+	}()
+
+	engine.Disconnect()
+	assert.False(t, engine.isConnected())
+	assert.True(t, engine.state == stateDisconnected)
+	// Double disconnect shouldn't cause panic
+	engine.Disconnect()
+}
