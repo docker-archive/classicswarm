@@ -16,6 +16,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/version"
 	engineapi "github.com/docker/engine-api/client"
+	engineapinop "github.com/docker/swarm/api/nopclient"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/nopclient"
 )
@@ -125,6 +126,7 @@ func NewEngine(addr string, overcommitRatio float64, opts *EngineOpts) *Engine {
 	e := &Engine{
 		Addr:            addr,
 		client:          nopclient.NewNopClient(),
+		apiClient:       engineapinop.NewNopClient(),
 		refreshDelayer:  newDelayer(opts.RefreshMinInterval, opts.RefreshMaxInterval),
 		Labels:          make(map[string]string),
 		stopCh:          make(chan struct{}),
@@ -165,7 +167,13 @@ func (e *Engine) Connect(config *tls.Config) error {
 	if err != nil {
 		return err
 	}
-	return e.ConnectWithClient(c)
+	// Use HTTP Client used by dockerclient to create engine-api client
+	apiClient, err := engineapi.NewClient("tcp://"+e.Addr, "", c.HTTPClient, nil)
+	if err != nil {
+		return err
+	}
+
+	return e.ConnectWithClient(c, apiClient)
 }
 
 // StartMonitorEvents monitors events from the engine
@@ -186,15 +194,8 @@ func (e *Engine) StartMonitorEvents() {
 }
 
 // ConnectWithClient is exported
-func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
+func (e *Engine) ConnectWithClient(client dockerclient.Client, apiClient engineapi.APIClient) error {
 	e.client = client
-
-	// Use HTTP Client used by dockerclient to create engine-api client
-	httpClient, _ := e.HTTPClientAndScheme()
-	apiClient, err := engineapi.NewClient("tcp://"+e.Addr, "", httpClient, nil)
-	if err != nil {
-		return err
-	}
 	e.apiClient = apiClient
 
 	// Fetch the engine labels.
@@ -240,6 +241,7 @@ func (e *Engine) Disconnect() {
 		closeIdleConnections(dc.HTTPClient)
 	}
 	e.client = nopclient.NewNopClient()
+	e.apiClient = engineapinop.NewNopClient()
 	e.state = stateDisconnected
 	e.emitEvent("engine_disconnect")
 }
@@ -255,7 +257,8 @@ func closeIdleConnections(client *http.Client) {
 // when it is first created but not yet 'Connect' to a remote docker API.
 func (e *Engine) isConnected() bool {
 	_, ok := e.client.(*nopclient.NopClient)
-	return !ok
+	_, okAPIClient := e.apiClient.(*engineapinop.NopClient)
+	return (!ok && !okAPIClient)
 }
 
 // IsHealthy returns true if the engine is healthy
@@ -384,8 +387,10 @@ func (e *Engine) CheckConnectionErr(err error) {
 
 	// dockerclient defines ErrConnectionRefused error. but if http client is from swarm, it's not using
 	// dockerclient. We need string matching for these cases. Remove the first character to deal with
-	// case sensitive issue
+	// case sensitive issue.
+	// engine-api returns ErrConnectionFailed error, so we check for that as long as dockerclient exists
 	if err == dockerclient.ErrConnectionRefused ||
+		err == engineapi.ErrConnectionFailed ||
 		strings.Contains(err.Error(), "onnection refused") ||
 		strings.Contains(err.Error(), "annot connect to the docker engine endpoint") {
 		// each connection refused instance may increase failure count so
@@ -413,7 +418,7 @@ func (e *Engine) updateSpecs() error {
 		return fmt.Errorf("cannot get resources for this engine, make sure %s is a Docker Engine, not a Swarm manager", e.Addr)
 	}
 
-	v, err := e.client.Version()
+	v, err := e.apiClient.ServerVersion()
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
