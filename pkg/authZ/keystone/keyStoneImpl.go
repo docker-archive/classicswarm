@@ -105,9 +105,14 @@ func (this *KeyStoneAPI) ValidateRequest(cluster cluster.Cluster, eventType stat
 			return states.NotApproved,&utils.ValidationOutPutDTO{ErrorMessage: "No flavor matches resource request!"}
 		}
 		valid, dto := utils.CheckLinksOwnerShip(cluster, tenantIdToValidate, containerConfig)
+        if valid {
+		  if dto.Binds,err = utils.CheckVolumeBinds(tenantIdToValidate, containerConfig); err != nil {
+			valid = false
+			dto.ErrorMessage = err.Error()
+		  }
+		}
 		log.Debug(valid)
 		log.Debug(dto)
-		log.Debug("-----------------")
 		if !valid {
 			return states.NotApproved, dto			
 		} 
@@ -116,6 +121,14 @@ func (this *KeyStoneAPI) ValidateRequest(cluster cluster.Cluster, eventType stat
 		return states.ConditionFilter, nil
 	case states.Unauthorized:
 		return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: "Not Authorized!"}
+		case states.VolumeCreate:
+		return states.Approved, nil
+	case states.VolumesList:
+		return states.Approved, nil
+	case states.VolumeInspect:
+		return states.Approved, nil
+	case states.VolumeRemove:
+		return states.Approved, nil
 	default:
 		//CONTAINER_INSPECT / CONTAINER_OTHERS / STREAM_OR_HIJACK / PASS_AS_IS
 		isOwner, dto := utils.CheckOwnerShip(cluster, tenantIdToValidate, r)

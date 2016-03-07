@@ -1,15 +1,10 @@
 package authZ
 
 import (
-	//	"bytes"
-	//	"io/ioutil"
 	"net/http"
-
 	"github.com/docker/swarm/cluster"
-	//	"github.com/docker/swarm/cluster/swarm"
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/pkg/authZ/states"
-	//	"github.com/docker/swarm/cluster/swarm"
 	"github.com/docker/swarm/pkg/authZ/headers"
 	"github.com/docker/swarm/pkg/authZ/utils"
 	"github.com/docker/swarm/pkg/authZ/flavors"
@@ -23,7 +18,6 @@ type DefaultACLsImpl struct{}
 ValidateRequest - Who wants to do what - allow or not
 */
 func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType states.EventEnum, w http.ResponseWriter, r *http.Request, reqBody []byte, containerConfig dockerclient.ContainerConfig) (states.ApprovalEnum, *utils.ValidationOutPutDTO) {
-//func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType states.EventEnum, r *http.Request, containerConfig dockerclient.ContainerConfig) (states.ApprovalEnum, *utils.ValidationOutPutDTO) {
 	tenantIdToValidate := r.Header.Get(headers.AuthZTenantIdHeaderName)
 	log.Debug("**DefaultACLsImpl.ValidateRequest***")
 
@@ -37,9 +31,15 @@ func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType state
 			return states.NotApproved,&utils.ValidationOutPutDTO{ErrorMessage: "No flavor matches resource request!"}
 		}
 		valid, dto := utils.CheckLinksOwnerShip(cluster, tenantIdToValidate, containerConfig)
+		var err error
+        if valid {
+		  if dto.Binds,err = utils.CheckVolumeBinds(tenantIdToValidate, containerConfig); err != nil {
+			valid = false
+			dto.ErrorMessage = err.Error()
+		  }
+		}
 		log.Debug(valid)
 		log.Debugf("dto %+v",dto)
-		log.Debug("-----------------")
 		if !valid {
 			return states.NotApproved, dto			
 		} 
@@ -49,14 +49,13 @@ func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType state
 	case states.Unauthorized:
 		return states.Approved, &utils.ValidationOutPutDTO{ErrorMessage: "Not Authorized!"}
 	case states.VolumeCreate:
-		return states.Approved, &utils.ValidationOutPutDTO{ErrorMessage: "VolumeCreate Not Supported yet!"}
+		return states.Approved, nil
 	case states.VolumesList:
-		return states.Approved, &utils.ValidationOutPutDTO{ErrorMessage: "VolumeList Not Supported yet!"}
+		return states.Approved, nil
 	case states.VolumeInspect:
-		return states.Approved, &utils.ValidationOutPutDTO{ErrorMessage: "VolumeInspect Not Supported yet!"}
+		return states.Approved, nil
 	case states.VolumeRemove:
-		return states.Approved, &utils.ValidationOutPutDTO{ErrorMessage: "VolumeRemove Not Supported yet!"}
-
+		return states.Approved, nil
 	default:
 		//CONTAINER_INSPECT / CONTAINER_OTHERS / STREAM_OR_HIJACK / PASS_AS_IS
 		isOwner, dto := utils.CheckOwnerShip(cluster, tenantIdToValidate, r)

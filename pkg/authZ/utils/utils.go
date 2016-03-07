@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"net/http/httptest"
+	"math/rand"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
@@ -27,11 +28,9 @@ import (
 
 type ValidationOutPutDTO struct {
 	ContainerID string
-//	Links       map[string]string
-//	Links       map[string][]string
 	Links       []string
-//	VolumesFrom map[string]string
 	VolumesFrom []string
+	Binds       []string
 	ErrorMessage string
 	//Quota can live here too? Currently quota needs only raise error
 	//What else
@@ -103,6 +102,21 @@ log.Debugf("CheckLinksOwnerShip for tenant %s\n",tenantName)
 
 }
 */
+func CheckVolumeBinds(tenantName string, containerConfig dockerclient.ContainerConfig) ([]string,error) {
+	log.Debug("CheckVolumeBinds")
+	binds := containerConfig.HostConfig.Binds
+	for i,b := range containerConfig.HostConfig.Binds {
+		if index := strings.Index(b,":"); index > -1 {
+		  v := b[0:index]
+		  log.Debug("v: ",v) 		
+		  if strings.Contains(v,"/") {
+			return nil,errors.New("Mount to host file system is prohibited!")
+		  }
+		  binds[i] = strings.Replace(binds[i],v,v + tenantName,1)		  
+		}
+	}
+	return binds,nil
+}
 
 func CheckLinksOwnerShip(cluster cluster.Cluster, tenantName string, containerConfig dockerclient.ContainerConfig) (bool, *ValidationOutPutDTO) {
 	log.Debug("in CheckLinksOwnerShip")
@@ -317,7 +331,7 @@ func CheckOwnerShip(cluster cluster.Cluster, tenantName string, r *http.Request)
 func CleanUpLabeling(r *http.Request, rec *httptest.ResponseRecorder) []byte {
 	newBody := bytes.Replace(rec.Body.Bytes(), []byte(headers.TenancyLabel), []byte(" "), -1)
 	//TODO - Here we just use the token for the tenant name for now so we remove it from the data before returning to user.
-	newBody = bytes.Replace(newBody, []byte(r.Header.Get(headers.AuthZTenantIdHeaderName)), []byte(" "), -1)
+	newBody = bytes.Replace(newBody, []byte(r.Header.Get(headers.AuthZTenantIdHeaderName)), []byte(""), -1)
 	newBody = bytes.Replace(newBody, []byte(",\" \":\" \""), []byte(""), -1)
 	log.Debug("Got this new body...", string(newBody))
 	return newBody
@@ -352,4 +366,14 @@ func ParseField(field string, fieldType interface{}, body []byte) (interface{}, 
 	}
 
 	return nil, errors.New(fmt.Sprintf("failed to parse field %s from request body %s", field, string(body)))
+}
+// RandStringBytesRmndr used to generate a name for docker volume create when no name is supplied
+// The tenant id is then appended to the name by the caller
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+func RandStringBytesRmndr(n int) string {
+    b := make([]byte, n)
+    for i := range b {
+        b[i] = letterBytes[rand.Int63() % int64(len(letterBytes))]
+    }
+    return string(b)
 }
