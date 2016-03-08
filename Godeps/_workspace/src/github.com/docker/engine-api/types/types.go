@@ -148,6 +148,7 @@ type Container struct {
 		NetworkMode string `json:",omitempty"`
 	}
 	NetworkSettings *SummaryNetworkSettings
+	Mounts          []MountPoint
 }
 
 // CopyConfig contains request body of Remote API:
@@ -217,6 +218,7 @@ type Info struct {
 	SystemTime         string
 	ExecutionDriver    string
 	LoggingDriver      string
+	CgroupDriver       string
 	NEventsListener    int
 	KernelVersion      string
 	OperatingSystem    string
@@ -238,8 +240,8 @@ type Info struct {
 	ClusterAdvertise   string
 }
 
-// PluginsInfo is temp struct holds Plugins name
-// registered with docker daemon. It used by Info struct
+// PluginsInfo is a temp struct holding Plugins name
+// registered with docker daemon. It is used by Info struct
 type PluginsInfo struct {
 	// List of Volume plugins registered
 	Volume []string
@@ -387,6 +389,7 @@ type NetworkResource struct {
 	ID         string `json:"Id"`
 	Scope      string
 	Driver     string
+	EnableIPv6 bool
 	IPAM       network.IPAM
 	Internal   bool
 	Containers map[string]EndpointResource
@@ -407,6 +410,7 @@ type NetworkCreate struct {
 	Name           string
 	CheckDuplicate bool
 	Driver         string
+	EnableIPv6     bool
 	IPAM           network.IPAM
 	Internal       bool
 	Options        map[string]string
