@@ -34,7 +34,7 @@ func TestBuild(t *testing.T) {
 	task, err := NewTask(cluster.BuildContainerConfig(containerConfig, hostConfig, networkingConfig), name, 5*time.Second)
 	assert.NoError(t, err)
 
-	task.Build("slave-id", nil)
+	task.Build("slave-id", nil, false)
 
 	assert.Equal(t, task.Container.GetType(), mesosproto.ContainerInfo_DOCKER)
 	assert.Equal(t, task.Container.Docker.GetImage(), "test-image")
@@ -47,12 +47,13 @@ func TestBuild(t *testing.T) {
 	assert.Equal(t, task.Command.GetValue(), "ls")
 	assert.Equal(t, task.Command.GetArguments(), []string{"foo", "bar"})
 
-	parameters := []string{task.Container.Docker.GetParameters()[0].GetValue(), task.Container.Docker.GetParameters()[1].GetValue()}
+	parameters := []string{task.Container.Docker.GetParameters()[0].GetValue(), task.Container.Docker.GetParameters()[1].GetValue(), task.Container.Docker.GetParameters()[2].GetValue()}
 	sort.Strings(parameters)
 
-	assert.Equal(t, len(parameters), 2)
+	assert.Equal(t, len(parameters), 3)
 	assert.Equal(t, parameters[0], "com.docker.swarm.mesos.name="+name)
-	assert.Equal(t, parameters[1], "com.docker.swarm.mesos.task="+*task.TaskId.Value)
+	assert.Equal(t, parameters[1], "com.docker.swarm.mesos.resourceType=Regular")
+	assert.Equal(t, parameters[2], "com.docker.swarm.mesos.task="+*task.TaskId.Value)
 
 	assert.Equal(t, task.SlaveId.GetValue(), "slave-id")
 }

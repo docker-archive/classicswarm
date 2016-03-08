@@ -20,20 +20,20 @@ func (f *AffinityFilter) Name() string {
 
 // Filter is exported
 func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node, soft bool) ([]*node.Node, error) {
-	affinities, err := parseExprs(config.Affinities())
+	affinities, err := ParseExprs(config.Affinities())
 	if err != nil {
 		return nil, err
 	}
 
 	for _, affinity := range affinities {
-		if !soft && affinity.isSoft {
+		if !soft && affinity.IsSoft {
 			continue
 		}
-		log.Debugf("matching affinity: %s%s%s (soft=%t)", affinity.key, OPERATORS[affinity.operator], affinity.value, affinity.isSoft)
+		log.Debugf("matching affinity: %s%s%s (soft=%t)", affinity.Key, OPERATORS[affinity.Operator], affinity.Value, affinity.IsSoft)
 
 		candidates := []*node.Node{}
 		for _, node := range nodes {
-			switch affinity.key {
+			switch affinity.Key {
 			case "container":
 				containers := []string{}
 				for _, container := range node.Containers {
@@ -60,7 +60,7 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 			default:
 				labels := []string{}
 				for _, container := range node.Containers {
-					labels = append(labels, container.Labels[affinity.key])
+					labels = append(labels, container.Labels[affinity.Key])
 				}
 				if affinity.Match(labels...) {
 					candidates = append(candidates, node)

@@ -20,6 +20,7 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
@@ -53,11 +54,21 @@ const (
 	defaultOfferTimeout        = 30 * time.Second
 	defaultRefuseTimeout       = 5 * time.Second
 	defaultTaskCreationTimeout = 5 * time.Second
+	engineResourceType         = "res-type"
+)
+
+// Resource types for engine.
+const (
+	RegularResourceOnly   = "regular"
+	RevocableResourceOnly = "revocable"
+	MixedResource         = "any"
+	UnknownResource       = "unknown"
 )
 
 var (
-	errNotSupported    = errors.New("not supported with mesos")
-	errResourcesNeeded = errors.New("resources constraints (-c and/or -m) are required by mesos")
+	errNotSupported               = errors.New("not supported with mesos")
+	errResourcesNeeded            = errors.New("resources constraints (-c and/or -m) are required by mesos")
+	errMultiResTypeConstraintSpec = errors.New("multiple resources constraint 'res-type' are specified")
 )
 
 // NewCluster for mesos Cluster creation
@@ -141,6 +152,15 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 			return nil, err
 		}
 		cluster.refuseTimeout = d
+	}
+
+	if enableRevocable, ok := options.Bool("mesos.enablerevocable", "SWARM_MESOS_ENABLE_REVOCABLE"); ok {
+		if enableRevocable {
+			driverConfig.Framework.Capabilities = make([]*mesosproto.FrameworkInfo_Capability, 1)
+			driverConfig.Framework.Capabilities[0] = &mesosproto.FrameworkInfo_Capability{
+				Type: mesosproto.FrameworkInfo_Capability_REVOCABLE_RESOURCES.Enum(),
+			}
+		}
 	}
 
 	sched, err := NewScheduler(driverConfig, cluster, scheduler)
@@ -408,19 +428,52 @@ func (c *Cluster) Volumes() cluster.Volumes {
 
 // listNodes returns all the nodes in the cluster.
 func (c *Cluster) listNodes() []*node.Node {
+	return c.listNodesByResType("")
+}
+
+// listNodesByResType returns the nodes by the required resource type in the cluster.
+func (c *Cluster) listNodesByResType(resType string) []*node.Node {
 	c.RLock()
 	defer c.RUnlock()
 
 	out := []*node.Node{}
 	for _, s := range c.agents {
 		n := node.NewNode(s.engine)
+
+		if resType == "" {
+			n.TotalCpus = int64(sumScalarResourceValue(s.offers, "cpus"))
+			n.TotalMemory = int64(sumScalarResourceValue(s.offers, "mem")) * 1024 * 1024
+		} else {
+			agentResType := s.engine.Labels[engineResourceType]
+
+			if (agentResType == UnknownResource) || (agentResType != MixedResource && resType != agentResType) {
+				continue
+			}
+
+			n.Labels = make(map[string]string)
+			for key, value := range s.engine.Labels {
+				n.Labels[key] = value
+			}
+			n.Labels[engineResourceType] = resType
+
+			if resType == RevocableResourceOnly {
+				n.TotalCpus = int64(sumRevocablecalarResourceValue(s.offers, "cpus"))
+				n.TotalMemory = int64(sumRevocablecalarResourceValue(s.offers, "mem")) * 1024 * 1024
+			} else if resType == RegularResourceOnly {
+				n.TotalCpus = int64(sumRegularScalarResourceValue(s.offers, "cpus"))
+				n.TotalMemory = int64(sumRegularScalarResourceValue(s.offers, "mem")) * 1024 * 1024
+			} else {
+				log.WithFields(log.Fields{"name": "mesos"}).Errorf("Unsupported required resource type: %q", resType)
+				continue
+			}
+		}
+
 		n.ID = s.id
-		n.TotalCpus = int64(sumScalarResourceValue(s.offers, "cpus"))
 		n.UsedCpus = 0
-		n.TotalMemory = int64(sumScalarResourceValue(s.offers, "mem")) * 1024 * 1024
 		n.UsedMemory = 0
 		out = append(out, n)
 	}
+
 	return out
 }
 
@@ -519,8 +572,74 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 	c.scheduler.Lock()
 	//change to explicit lock defer c.scheduler.Unlock()
 
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), t.GetConfig())
+	// Parse all constraints.
+	constraints, err := filter.ParseExprs(t.GetConfig().Constraints())
 	if err != nil {
+		log.WithFields(log.Fields{"name": "mesos"}).Errorf("Error while launching task due to %v", err)
+		c.scheduler.Unlock()
+		return false
+	}
+
+	// Get the last `res-type` constraint.
+	var resTypeConstraints filter.Expr
+	resTypeConstraintSpecified := false
+	for _, constraint := range constraints {
+		if constraint.Key != engineResourceType {
+			continue
+		}
+
+		if resTypeConstraintSpecified {
+			log.WithFields(log.Fields{"name": "mesos"}).Errorf("Error while launching task due to %v", errMultiResTypeConstraintSpec)
+			c.scheduler.Unlock()
+			return false
+		}
+
+		resTypeConstraints = constraint
+		resTypeConstraintSpecified = true
+	}
+
+	// Select the nodes by the different `res-type`.
+	var (
+		nodes        []*node.Node
+		errForSelect error
+	)
+
+	useRevocableResources := false
+	// In case the `res-type` constraint does not be specified.
+	if resTypeConstraintSpecified {
+		requiredResourceType, err := requiredResourceType(resTypeConstraints)
+		if err != nil {
+			log.WithFields(log.Fields{"name": "mesos"}).Errorf("Error while launching task due to %v", err)
+			c.scheduler.Unlock()
+			return false
+		}
+		switch requiredResourceType {
+		case RevocableResourceOnly:
+			useRevocableResources = true
+			nodes, errForSelect = c.scheduler.SelectNodesForContainer(c.listNodesByResType(RevocableResourceOnly), t.GetConfig())
+			if errForSelect != nil && resTypeConstraints.IsSoft {
+				useRevocableResources = false
+				nodes, errForSelect = c.scheduler.SelectNodesForContainer(c.listNodesByResType(RegularResourceOnly), t.GetConfig())
+			}
+		case RegularResourceOnly:
+			nodes, errForSelect = c.scheduler.SelectNodesForContainer(c.listNodesByResType(RegularResourceOnly), t.GetConfig())
+			if errForSelect != nil && resTypeConstraints.IsSoft {
+				useRevocableResources = true
+				nodes, errForSelect = c.scheduler.SelectNodesForContainer(c.listNodesByResType(RevocableResourceOnly), t.GetConfig())
+			}
+		default:
+			nodes, errForSelect = c.scheduler.SelectNodesForContainer(c.listNodesByResType(RegularResourceOnly), t.GetConfig())
+			if errForSelect != nil {
+				useRevocableResources = true
+				nodes, errForSelect = c.scheduler.SelectNodesForContainer(c.listNodesByResType(RevocableResourceOnly), t.GetConfig())
+			}
+		}
+	} else {
+		nodes, errForSelect = c.scheduler.SelectNodesForContainer(c.listNodesByResType(RegularResourceOnly), t.GetConfig())
+	}
+
+	if errForSelect != nil {
+		log.WithFields(log.Fields{"name": "mesos"}).Errorf("Error while launching task due to %v", errForSelect)
 		c.scheduler.Unlock()
 		return false
 	}
@@ -541,7 +660,7 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 		offerIDs = append(offerIDs, offer.Id)
 	}
 
-	t.Build(n.ID, c.agents[n.ID].offers)
+	t.Build(n.ID, c.agents[n.ID].offers, useRevocableResources)
 
 	offerFilters := &mesosproto.Filters{}
 	refuseSeconds := c.refuseTimeout.Seconds()

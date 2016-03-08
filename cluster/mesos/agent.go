@@ -28,8 +28,12 @@ func newAgent(sid string, e *cluster.Engine) *agent {
 
 func (s *agent) addOffer(offer *mesosproto.Offer) {
 	s.Lock()
+	defer s.Unlock()
 	s.offers[offer.Id.GetValue()] = offer
-	s.Unlock()
+
+	// Updates the resource type of the corresponding Docker
+	// engine with this new offer.
+	s.updateEngineResourceType(offer)
 }
 
 func (s *agent) addTask(task *task.Task) {
@@ -45,6 +49,14 @@ func (s *agent) removeOffer(offerID string) bool {
 	_, found = s.offers[offerID]
 	if found {
 		delete(s.offers, offerID)
+
+		// Afer an offer is removed from this agent, it needs to go throught
+		// all remaining offers on this agent to reset the resource type of
+		// the corresponding Docker engine.
+		s.engine.Labels[engineResourceType] = UnknownResource
+		for _, offer := range s.offers {
+			s.updateEngineResourceType(offer)
+		}
 	}
 	return found
 }
@@ -76,4 +88,31 @@ func (s *agent) getTasks() map[string]*task.Task {
 	s.RLock()
 	defer s.RUnlock()
 	return s.tasks
+}
+
+// Updates the corresponding Docker engine resource type with this specified offer.
+func (s *agent) updateEngineResourceType(offer *mesosproto.Offer) {
+	if _, existed := s.engine.Labels[engineResourceType]; !existed {
+		s.engine.Labels[engineResourceType] = UnknownResource
+	}
+
+	for _, resource := range offer.Resources {
+		currentType := s.engine.Labels[engineResourceType]
+
+		if resource.GetRevocable() == nil {
+			switch currentType {
+			case RevocableResourceOnly:
+				s.engine.Labels[engineResourceType] = MixedResource
+			case UnknownResource:
+				s.engine.Labels[engineResourceType] = RegularResourceOnly
+			}
+		} else {
+			switch currentType {
+			case RegularResourceOnly:
+				s.engine.Labels[engineResourceType] = MixedResource
+			case UnknownResource:
+				s.engine.Labels[engineResourceType] = RevocableResourceOnly
+			}
+		}
+	}
 }
