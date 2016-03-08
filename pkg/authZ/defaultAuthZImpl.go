@@ -269,6 +269,12 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 			if strings.Contains(r.Method, "DELETE") { 
 				freeResources(quota, nil, r.Header.Get(headers.AuthZTenantIdHeaderName), 0, dto.ContainerID, rec.Code)
 			}
+			// copy everything from recorder to writer
+              	w.WriteHeader(rec.Code)
+        		for k, v := range rec.HeaderMap {
+            			w.Header()[k] = v
+        		}
+        		rec.Body.WriteTo(w)
 		}
 	case states.VolumeCreate:
 		log.Debug("event: VolumeCreate...")
