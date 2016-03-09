@@ -100,7 +100,7 @@ type Engine struct {
 	IP     string
 	Addr   string
 	Name   string
-	Cpus   int64
+	Cpus   int
 	Memory int64
 	Labels map[string]string
 
@@ -408,7 +408,7 @@ func (e *Engine) CheckConnectionErr(err error) {
 
 // Gather engine specs (CPU, memory, constraints, ...).
 func (e *Engine) updateSpecs() error {
-	info, err := e.client.Info()
+	info, err := e.apiClient.Info()
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -665,7 +665,7 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 		container.Config = BuildContainerConfig(*info.Config)
 
 		// FIXME remove "duplicate" lines and move this to cluster/config.go
-		container.Config.CpuShares = container.Config.CpuShares * e.Cpus / 1024.0
+		container.Config.CpuShares = container.Config.CpuShares * int64(e.Cpus) / 1024.0
 		container.Config.HostConfig.CpuShares = container.Config.CpuShares
 
 		// Save the entire inspect back into the container.
@@ -774,8 +774,8 @@ func (e *Engine) TotalMemory() int64 {
 }
 
 // TotalCpus returns the total cpus + overcommit
-func (e *Engine) TotalCpus() int64 {
-	return e.Cpus + (e.Cpus * e.overcommitRatio / 100)
+func (e *Engine) TotalCpus() int {
+	return e.Cpus + (e.Cpus * int(e.overcommitRatio) / 100)
 }
 
 // Create a new container

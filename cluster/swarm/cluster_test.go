@@ -26,7 +26,7 @@ func (nopCloser) Close() error {
 }
 
 var (
-	mockInfo = &dockerclient.Info{
+	mockInfo = types.Info{
 		ID:              "test-engine",
 		Name:            "name",
 		NCPU:            10,
@@ -135,14 +135,13 @@ func TestImportImage(t *testing.T) {
 	// create mock client
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	client.On("Info").Return(mockInfo, nil)
+	apiClient.On("Info").Return(mockInfo, nil)
+	apiClient.On("ServerVersion").Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
-
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
@@ -187,14 +186,13 @@ func TestLoadImage(t *testing.T) {
 	// create mock client
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	client.On("Info").Return(mockInfo, nil)
+	apiClient.On("Info").Return(mockInfo, nil)
+	apiClient.On("ServerVersion").Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
-
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
@@ -242,14 +240,13 @@ func TestTagImage(t *testing.T) {
 	// create mock client
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	client.On("Info").Return(mockInfo, nil)
+	apiClient.On("Info").Return(mockInfo, nil)
+	apiClient.On("ServerVersion").Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return(images, nil)
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
-
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
