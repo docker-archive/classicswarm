@@ -47,7 +47,7 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		ServerVersion:     "swarm/" + version.VERSION,
 		OperatingSystem:   runtime.GOOS,
 		Architecture:      runtime.GOARCH,
-		NCPU:              int(c.cluster.TotalCpus()),
+		NCPU:              c.cluster.TotalCpus(),
 		MemTotal:          c.cluster.TotalMemory(),
 		HTTPProxy:         os.Getenv("http_proxy"),
 		HTTPSProxy:        os.Getenv("https_proxy"),
