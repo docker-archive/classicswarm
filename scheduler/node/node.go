@@ -56,7 +56,7 @@ func (n *Node) Container(IDOrName string) *cluster.Container {
 func (n *Node) AddContainer(container *cluster.Container) error {
 	if container.Config != nil {
 		memory := container.Config.Memory
-		cpus := container.Config.CpuShares
+		cpus := container.Config.CPUShares
 		if n.TotalMemory-memory < 0 || n.TotalCpus-cpus < 0 {
 			return errors.New("not enough resources")
 		}
