@@ -48,9 +48,5 @@ func (volumes Volumes) Get(name string) *Volume {
 		}
 	}
 
-	if len(candidates) == 1 {
-		return candidates[0]
-	}
-
 	return nil
 }
