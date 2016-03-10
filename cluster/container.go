@@ -4,21 +4,21 @@ import (
 	"strings"
 
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/samalba/dockerclient"
+	"github.com/docker/engine-api/types"
 )
 
 // Container is exported
 type Container struct {
-	dockerclient.Container
+	types.Container
 
 	Config *ContainerConfig
-	Info   dockerclient.ContainerInfo
+	Info   types.ContainerJSON
 	Engine *Engine
 }
 
 // Refresh container
 func (c *Container) Refresh() (*Container, error) {
-	return c.Engine.refreshContainer(c.Id, true)
+	return c.Engine.refreshContainer(c.ID, true)
 }
 
 // Containers represents a list of containers
@@ -33,7 +33,7 @@ func (containers Containers) Get(IDOrName string) *Container {
 
 	// Match exact or short Container ID.
 	for _, container := range containers {
-		if container.Id == IDOrName || stringid.TruncateID(container.Id) == IDOrName {
+		if container.ID == IDOrName || stringid.TruncateID(container.ID) == IDOrName {
 			return container
 		}
 	}
@@ -68,7 +68,7 @@ func (containers Containers) Get(IDOrName string) *Container {
 
 	// Match Container ID prefix.
 	for _, container := range containers {
-		if strings.HasPrefix(container.Id, IDOrName) {
+		if strings.HasPrefix(container.ID, IDOrName) {
 			candidates = append(candidates, container)
 		}
 	}
