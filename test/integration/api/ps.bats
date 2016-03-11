@@ -144,3 +144,16 @@ function teardown() {
 	[[ "$output" == *"$secondID"* ]]
 	[[ "$output" != *"$thirdID"* ]]
 }
+
+@test "docker ps --filter node" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker_swarm run --name c1 -e constraint:node==node-0 -d busybox:latest sleep 100
+	docker_swarm run --name c2 -e constraint:node==node-1 -d busybox:latest sleep 100
+
+	run docker_swarm ps --filter node=node-0
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"node-0/c1"* ]]
+	[[ "${output}" != *"node-1/c2"* ]]
+}
