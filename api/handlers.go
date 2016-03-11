@@ -378,6 +378,9 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if !filters.Match("status", container.Info.State.StateString()) {
 			continue
 		}
+		if !filters.Match("node", container.Engine.Name) {
+			continue
+		}
 
 		if len(filtExited) > 0 {
 			shouldSkip := true
