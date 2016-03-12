@@ -501,8 +501,7 @@ The following examples illustrate some possible expressions:
 * `constraint:node!=/foo\[bar\]/` matches all nodes, except `foo[bar]`. You can see the use of escape characters here.
 * `constraint:node==/(?i)node1/` matches node `node1` case-insensitive. So `NoDe1` or `NODE1` also match.
 * `affinity:image==~redis` tries to match for nodes running container with a `redis` image
-* `constraint:region==~us*` searches for nodes in the cluster belongs to the
-* `us` region
+* `constraint:region==~us*` searches for nodes in the cluster belonging to the `us` region
 * `affinity:container!=~redis*` schedule a new `redis5` container to a node
 without a container that satisfies `redis*`
 
