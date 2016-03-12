@@ -336,7 +336,7 @@ containers are running on different nodes, Swarm does not schedule the container
 When the `port` filter is enabled, a container's port configuration is used as a
 unique constraint. Docker Swarm selects a node where a particular port is
 available and unoccupied by another container or process. Required ports may be
-specified by mapping a host port, or using the host networking an exposing a
+specified by mapping a host port, or using the host networking and exposing a
 port using the container configuration.
 
 #### Example in bridge mode
