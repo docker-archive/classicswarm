@@ -40,7 +40,7 @@ You use the `swarm manage` command with the `--replication` and `--advertise` fl
       [...]
 
 
-The  `--replication` flag tells Swarm that the manager is part of a a multi-manager configuration and that this primary manager competes with other manager instances for the primary role. The primary manager has the authority to manage cluster, replicate logs, and replicate events happening inside the cluster.
+The  `--replication` flag tells Swarm that the manager is part of a multi-manager configuration and that this primary manager competes with other manager instances for the primary role. The primary manager has the authority to manage cluster, replicate logs, and replicate events happening inside the cluster.
 
 The `--advertise` option specifies the primary manager address. Swarm uses this address to advertise to the cluster when the node is elected as the primary. As you see in the command's output, the address you provided now appears to be the one of the elected Primary manager.
 
