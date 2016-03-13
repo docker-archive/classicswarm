@@ -529,7 +529,7 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 		return true
 	}
 
-	// build the offer from it's internal config and set the agentID
+	// build the offer from its internal config and set the agentID
 
 	c.Lock()
 	// TODO: Only use the offer we need
