@@ -78,7 +78,7 @@ The first time you use any image, Docker Engine checks to see if you already hav
     In this example, the `swarm` image did not exist on the Engine host, so the
     Engine downloaded it. After it downloaded, the image executed the `help`
     subcommand to display the help text. After displaying the help, the `swarm`
-    image exits and returns your to your terminal command line.
+    image exits and returns you to your terminal command line.
 
 3. List the running containers on your Engine host.
 
