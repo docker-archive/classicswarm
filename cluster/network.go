@@ -78,7 +78,7 @@ func (networks Networks) Filter(names []string, ids []string, types []string) Ne
 	return out
 }
 
-// Get returns a network using it's ID or Name
+// Get returns a network using its ID or Name
 func (networks Networks) Get(IDOrName string) *Network {
 	// Abort immediately if the name is empty.
 	if len(IDOrName) == 0 {
