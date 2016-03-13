@@ -76,7 +76,7 @@ Here you use the discovery backend hosted on Docker Hub to create a unique disco
 
         $ eval $(docker-machine env manager)
 
-    The client will send the `docker` commands in the following steps to the Docker Engine on on `manager`.
+    The client will send the `docker` commands in the following steps to the Docker Engine on `manager`.
 
 2.  Create a unique id for the Swarm cluster.
 
