@@ -112,7 +112,7 @@ docker-machine create \
     swarm-master
 ```
 
-Then, provision additional an additional node. You must supply the
+Then, provision an additional node. You must supply the
 `SWARM_CLUSTER_TOKEN` and a unique name for each host node, `HOST_NODE_NAME`.
 
 ```
