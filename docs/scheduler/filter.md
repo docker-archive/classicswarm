@@ -336,7 +336,7 @@ containers are running on different nodes, Swarm does not schedule the container
 When the `port` filter is enabled, a container's port configuration is used as a
 unique constraint. Docker Swarm selects a node where a particular port is
 available and unoccupied by another container or process. Required ports may be
-specified by mapping a host port, or using the host networking an exposing a
+specified by mapping a host port, or using the host networking and exposing a
 port using the container configuration.
 
 #### Example in bridge mode
@@ -501,8 +501,7 @@ The following examples illustrate some possible expressions:
 * `constraint:node!=/foo\[bar\]/` matches all nodes, except `foo[bar]`. You can see the use of escape characters here.
 * `constraint:node==/(?i)node1/` matches node `node1` case-insensitive. So `NoDe1` or `NODE1` also match.
 * `affinity:image==~redis` tries to match for nodes running container with a `redis` image
-* `constraint:region==~us*` searches for nodes in the cluster belongs to the
-* `us` region
+* `constraint:region==~us*` searches for nodes in the cluster belonging to the `us` region
 * `affinity:container!=~redis*` schedule a new `redis5` container to a node
 without a container that satisfies `redis*`
 
