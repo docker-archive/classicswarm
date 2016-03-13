@@ -71,7 +71,7 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 	return false
 }
 
-// ImageFilterOptions are the set of filtering options supported by
+// ImageFilterOptions is the set of filtering options supported by
 // Images.Filter()
 type ImageFilterOptions struct {
 	All        bool

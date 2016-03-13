@@ -346,7 +346,7 @@ func (e *Engine) Status() string {
 	return stateText[e.state]
 }
 
-// incFailureCount increases engine's failure count, and set engine as unhealthy if threshold is crossed
+// incFailureCount increases engine's failure count, and sets engine as unhealthy if threshold is crossed
 func (e *Engine) incFailureCount() {
 	e.Lock()
 	defer e.Unlock()
@@ -727,7 +727,7 @@ func (e *Engine) refreshLoop() {
 
 		err = e.RefreshContainers(false)
 		if err == nil {
-			// Do not check error as older daemon don't support this call
+			// Do not check error as older daemon doesn't support this call
 			e.RefreshVolumes()
 			e.RefreshNetworks()
 			e.RefreshImages()
@@ -1066,7 +1066,7 @@ func (e *Engine) AddContainer(container *Container) error {
 	return nil
 }
 
-// Inject an image into the internal state.
+// addImage injects an image into the internal state.
 func (e *Engine) addImage(image *Image) {
 	e.Lock()
 	defer e.Unlock()
@@ -1074,7 +1074,7 @@ func (e *Engine) addImage(image *Image) {
 	e.images = append(e.images, image)
 }
 
-// Remove a container from the internal test.
+// removeContainer removes a container from the internal state.
 func (e *Engine) removeContainer(container *Container) error {
 	e.Lock()
 	defer e.Unlock()
@@ -1086,7 +1086,7 @@ func (e *Engine) removeContainer(container *Container) error {
 	return nil
 }
 
-// Wipes the internal container state.
+// cleanupContainers wipes the internal container state.
 func (e *Engine) cleanupContainers() {
 	e.Lock()
 	e.containers = make(map[string]*Container)
