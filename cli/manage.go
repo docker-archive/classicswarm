@@ -319,6 +319,9 @@ func manage(c *cli.Context) {
 		if err != nil {
 			log.Fatalf("invalid --replication-ttl: %v", err)
 		}
+		if leaderTTL <= time.Duration(0)*time.Second {
+			log.Fatalf("--replication-ttl should be a positive number")
+		}
 
 		setupReplication(c, cl, server, discovery, addr, leaderTTL, tlsConfig)
 	} else {
