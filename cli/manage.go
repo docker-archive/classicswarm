@@ -244,8 +244,8 @@ func manage(c *cli.Context) {
 
 	refreshMinInterval := c.Duration("engine-refresh-min-interval")
 	refreshMaxInterval := c.Duration("engine-refresh-max-interval")
-	if refreshMinInterval == time.Duration(0)*time.Second {
-		log.Fatal("minimum refresh interval should be a positive number")
+	if refreshMinInterval <= time.Duration(0)*time.Second {
+		log.Fatal("min refresh interval should be a positive number")
 	}
 	if refreshMaxInterval < refreshMinInterval {
 		log.Fatal("max refresh interval cannot be less than min refresh interval")
