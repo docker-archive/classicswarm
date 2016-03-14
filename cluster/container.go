@@ -24,7 +24,7 @@ func (c *Container) Refresh() (*Container, error) {
 // Containers represents a list a containers
 type Containers []*Container
 
-// Get returns a container using it's ID or Name
+// Get returns a container using its ID or Name
 func (containers Containers) Get(IDOrName string) *Container {
 	// Abort immediately if the name is empty.
 	if len(IDOrName) == 0 {
