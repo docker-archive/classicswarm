@@ -21,6 +21,8 @@ setup()  {
     run rmall $DOCKER_CONFIG1
     run stopall $DOCKER_CONFIG2
     run rmall $DOCKER_CONFIG2
+	run rmall_volumes $DOCKER_CONFIG1
+	run rmall_volumes $DOCKER_CONFIG2
 
 }
 
@@ -75,6 +77,19 @@ rmall() {
    for i in "${lines[@]}"
    do
      run docker -H $SWARM_HOST --config $1 rm -v $i
+     [ "$status" -eq 0 ]
+   done
+}
+
+rmall_volumes() {
+   echo "volume rm all $1"
+   run docker -H $SWARM_HOST --config $1 volume ls -q
+   [ "$status" -eq 0 ]
+   for i in "${lines[@]}"
+   do
+     v=echo $i | cut -d'/' -f2
+	 echo "volume rm all $v"
+     run docker -H $SWARM_HOST --config $1 volume rm -v $v
      [ "$status" -eq 0 ]
    done
 }
