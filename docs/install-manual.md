@@ -190,7 +190,7 @@ host as one of the Swarm managers.
 Your Consul node is up and running, providing your cluster with a discovery
 backend. To increase its reliability, you can create a high-availability cluster
 using a trio of consul nodes using the link mentioned at the end of this page.
-(Before creating a cluster of console nodes, update the VPC security group with
+(Before creating a cluster of consul nodes, update the VPC security group with
 rules to allow inbound traffic on the required port numbers.)
 
 ## Step 5. Create Swarm cluster
