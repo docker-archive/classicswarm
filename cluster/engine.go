@@ -183,10 +183,13 @@ func (e *Engine) StartMonitorEvents() {
 	e.client.StartMonitorEvents(e.handler, ec)
 
 	go func() {
-		if err := <-ec; err != nil && !strings.Contains(err.Error(), "EOF") {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Error monitoring events: %s", err)
-		} else if err != nil {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Debug("EOF monitoring events, restarting")
+		if err := <-ec; err != nil {
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Error monitoring events: %s.", err)
+			if !strings.Contains(err.Error(), "EOF") {
+				// failing node reconnect should use back-off strategy
+				<-e.refreshDelayer.Wait(e.failureCount)
+			}
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Restart event monitoring.")
 			e.StartMonitorEvents()
 		}
 		close(ec)
