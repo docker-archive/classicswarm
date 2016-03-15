@@ -76,3 +76,16 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 
 	return nodes, nil
 }
+
+// GetFilters returns a list of the affinities found in the container config.
+func (f *AffinityFilter) GetFilters(config *cluster.ContainerConfig) ([]string, error) {
+	allAffinities := []string{}
+	affinities, err := parseExprs(config.Affinities())
+	if err != nil {
+		return nil, err
+	}
+	for _, affinity := range affinities {
+		allAffinities = append(allAffinities, fmt.Sprintf("%s%s%s (soft=%t)", affinity.key, OPERATORS[affinity.operator], affinity.value, affinity.isSoft))
+	}
+	return allAffinities, nil
+}
