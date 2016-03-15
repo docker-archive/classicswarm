@@ -20,7 +20,7 @@ $ swarm -experimental join ...
 
 ## Current experimental features
 
- * [Container Rescheduling on node failure](rescheduling.md)
+ * *none*
 
 ## How to comment on an experimental feature
 
