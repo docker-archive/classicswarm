@@ -2,6 +2,7 @@ package filter
 
 import (
 	"errors"
+	"fmt"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
@@ -14,6 +15,9 @@ type Filter interface {
 
 	// Return a subset of nodes that were accepted by the filtering policy.
 	Filter(*cluster.ContainerConfig, []*node.Node, bool) ([]*node.Node, error)
+
+	// Return a list of constraints/filters provided
+	GetFilters(*cluster.ContainerConfig) ([]string, error)
 }
 
 var (
@@ -63,10 +67,29 @@ func ApplyFilters(filters []Filter, config *cluster.ContainerConfig, nodes []*no
 	for _, filter := range filters {
 		candidates, err = filter.Filter(config, candidates, soft)
 		if err != nil {
-			return nil, err
+			// special case for when no healthy nodes are found
+			if filter.Name() == "health" {
+				return nil, err
+			}
+			return nil, fmt.Errorf("Unable to find a node that satisfies the following conditions %s", listAllFilters(filters, config, filter.Name()))
 		}
 	}
 	return candidates, nil
+}
+
+// listAllFilters creates a string containing all applied filters
+func listAllFilters(filters []Filter, config *cluster.ContainerConfig, lastFilter string) string {
+	allFilters := ""
+	for _, filter := range filters {
+		list, err := filter.GetFilters(config)
+		if err == nil && len(list) > 0 {
+			allFilters = fmt.Sprintf("%s\n%v", allFilters, list)
+		}
+		if filter.Name() == lastFilter {
+			return allFilters
+		}
+	}
+	return allFilters
 }
 
 // List returns the names of all the available filters

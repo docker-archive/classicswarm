@@ -36,3 +36,8 @@ func (f *HealthFilter) Filter(_ *cluster.ContainerConfig, nodes []*node.Node, _ 
 
 	return result, nil
 }
+
+// GetFilters returns
+func (f *HealthFilter) GetFilters(config *cluster.ContainerConfig) ([]string, error) {
+	return nil, nil
+}

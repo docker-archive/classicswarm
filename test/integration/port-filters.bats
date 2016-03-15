@@ -21,7 +21,8 @@ function teardown() {
 	# When trying to start the 3rd one, it should be error finding port 80.
 	run docker_swarm run -d --expose=80 --net=host busybox sh
 	[ "$status" -ne 0 ]
-	[[ "${lines[0]}" == *"unable to find a node with port 80/tcp available in the Host mode"* ]]
+	[[ "${lines[0]}" == *"Unable to find a node that satisfies the following conditions"* ]]
+	[[ "${lines[1]}" == *"[port 80/tcp (Host mode)]"* ]]
 
 	# And the number of running containers should be still 2.
 	run docker_swarm ps -n 2
@@ -40,7 +41,8 @@ function teardown() {
 	# When trying to start the 3rd one, it should be error finding port 80.
 	run docker_swarm run --expose=80 -p 80:80 busybox echo 3
 	[ "$status" -ne 0 ]
-	[[ "${lines[0]}" == *"unable to find a node with port 80 available"* ]]
+	[[ "${lines[0]}" == *"Unable to find a node that satisfies the following conditions"* ]]
+	[[ "${lines[1]}" == *"[port 80 (Bridge mode)]"* ]]
 
 	# And the number of running containers should be still 2.
 	run docker_swarm ps -n 2
