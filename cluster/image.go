@@ -43,6 +43,13 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 		return true
 	}
 
+	// trim sha256: and retry
+	if parts := strings.SplitN(image.Id, ":", 2); len(parts) == 2 {
+		if parts[1] == IDOrName || (size > 2 && strings.HasPrefix(parts[1], IDOrName)) {
+			return true
+		}
+	}
+
 	repoName, tag := ParseRepositoryTag(IDOrName)
 
 	// match repotag
