@@ -694,6 +694,12 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 // refreshLoop periodically triggers engine refresh.
 func (e *Engine) refreshLoop() {
 	const maxBackoffFactor int = 1000
+	// engine can hot-plug CPU/Mem or update labels. but there is no events
+	// from engine to trigger spec update.
+	// add an update interval and refresh spec for healthy nodes.
+	const specUpdateInterval = 5 * time.Minute
+	lastSpecUpdatedAt := time.Now()
+
 	for {
 		var err error
 
@@ -712,11 +718,16 @@ func (e *Engine) refreshLoop() {
 			return
 		}
 
-		if !e.IsHealthy() {
+		healthy := e.IsHealthy()
+		if !healthy || time.Since(lastSpecUpdatedAt) > specUpdateInterval {
 			if err = e.updateSpecs(); err != nil {
 				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Update engine specs failed: %v", err)
 				continue
 			}
+			lastSpecUpdatedAt = time.Now()
+		}
+
+		if !healthy {
 			e.client.StopAllMonitorEvents()
 			e.StartMonitorEvents()
 		}
