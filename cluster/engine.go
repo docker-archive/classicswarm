@@ -477,12 +477,12 @@ func (e *Engine) updateSpecs() error {
 }
 
 // RemoveImage deletes an image from the engine.
-func (e *Engine) RemoveImage(image *Image, name string, force bool) ([]*dockerclient.ImageDelete, error) {
-	array, err := e.client.RemoveImage(name, force)
+func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDelete, error) {
+	rmOpts := types.ImageRemoveOptions{name, force, true}
+	dels, err := e.apiClient.ImageRemove(context.TODO(), rmOpts)
 	e.CheckConnectionErr(err)
 	e.RefreshImages()
-	return array, err
-
+	return dels, err
 }
 
 // RemoveNetwork removes a network from the engine.
