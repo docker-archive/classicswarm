@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	engineapi "github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	engineapimock "github.com/docker/swarm/api/mockclient"
@@ -373,9 +375,9 @@ func TestUsedCpus(t *testing.T) {
 				apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 				client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 				client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
-				client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "test"}}, nil).Once()
 				client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 				client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
+				client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "test"}}, nil).Once()
 				client.On("InspectContainer", "test").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: cpuShares}}, nil).Once()
 
 				engine.ConnectWithClient(client, apiClient)
@@ -406,10 +408,10 @@ func TestContainerRemovedDuringRefresh(t *testing.T) {
 	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
 	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
-	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{container1, container2}, nil)
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 	client.On("ListNetworks", mock.Anything).Return([]*dockerclient.NetworkResource{}, nil)
+	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{container1, container2}, nil)
 	client.On("InspectContainer", "c1").Return(info1, errors.New("Not found"))
 	client.On("InspectContainer", "c2").Return(info2, nil)
 
@@ -459,4 +461,25 @@ func TestDisconnect(t *testing.T) {
 	assert.True(t, engine.state == stateDisconnected)
 	// Double disconnect shouldn't cause panic
 	engine.Disconnect()
+}
+
+func TestRemoveImage(t *testing.T) {
+	engine := NewEngine("test", 0, engOpts)
+
+	imageName := "test-image"
+	dIs := []types.ImageDelete{{Deleted: imageName}}
+
+	apiClient := engineapimock.NewMockClient()
+	apiClient.On("ImageRemove", context.TODO(),
+		mock.AnythingOfType("ImageRemoveOptions")).Return(dIs, nil)
+	engine.apiClient = apiClient
+
+	deletedImages, err := engine.RemoveImage("test-image", true)
+	if err != nil {
+		t.Errorf("encountered an unexpected error")
+	}
+	if deletedImages[0].Deleted != imageName {
+		t.Errorf("didn't get the image we removed")
+	}
+	apiClient.Mock.AssertExpectations(t)
 }
