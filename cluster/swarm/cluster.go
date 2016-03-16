@@ -419,17 +419,17 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 }
 
 // RemoveImages removes all the images that match `name` from the cluster
-func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDelete, error) {
+func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, error) {
 	c.Lock()
 	defer c.Unlock()
 
-	out := []*dockerclient.ImageDelete{}
+	out := []types.ImageDelete{}
 	errs := []string{}
 	var err error
 	for _, e := range c.engines {
 		for _, image := range e.Images() {
 			if image.Match(name, true) {
-				content, err := image.Engine.RemoveImage(image, name, force)
+				content, err := image.Engine.RemoveImage(name, force)
 				if err != nil {
 					errs = append(errs, fmt.Sprintf("%s: %s", image.Engine.Name, err.Error()))
 					continue
