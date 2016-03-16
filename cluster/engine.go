@@ -1003,7 +1003,7 @@ func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface
 		e.RefreshImages()
 	case "container":
 		switch ev.Action {
-		case "die", "kill", "oom", "pause", "start", "stop", "unpause", "rename":
+		case "die", "kill", "oom", "pause", "start", "restart", "stop", "unpause", "rename":
 			e.refreshContainer(ev.ID, true)
 		default:
 			e.refreshContainer(ev.ID, false)
