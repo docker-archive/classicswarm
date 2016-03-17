@@ -5,7 +5,7 @@ description = "Swarm strategies"
 keywords = ["docker, swarm, clustering,  strategies"]
 [menu.main]
 parent="swarm_sched"
-weight=5
+weight=6
 +++
 <![end-metadata]-->
 
