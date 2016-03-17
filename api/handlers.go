@@ -751,7 +751,27 @@ func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := c.cluster.StartContainer(container); err != nil {
+	hostConfig := &dockerclient.HostConfig{
+		MemorySwappiness: -1,
+	}
+
+	buf, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	r.Body.Close()
+
+	if len(buf) <= 2 {
+		hostConfig = nil
+	} else {
+		if err := json.Unmarshal(buf, hostConfig); err != nil {
+			httpError(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	if err := c.cluster.StartContainer(container, hostConfig); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
