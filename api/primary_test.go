@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -29,8 +30,8 @@ func TestRequest(t *testing.T) {
 		t.Log(k, " : ", v)
 	}
 
-	if w.Code == 404 {
-		t.Fatalf("failed not found")
+	if w.Code != 200 {
+		t.Fatalf("HTTP response status code is %d, not 200", w.Code)
 	}
 }
 
@@ -56,8 +57,27 @@ func TestCorsRequest(t *testing.T) {
 		t.Log(k, " : ", v)
 	}
 
-	if w.Code == 404 {
-		t.Fatalf("failed not found")
+	// test response status code
+	if w.Code != 200 {
+		t.Fatalf("HTTP response status code is %d, not 200", w.Code)
+	}
+
+	// test Access-Control-Allow-Headers in response headers
+	allowHeaders := w.Header().Get("Access-Control-Allow-Headers")
+
+	for _, value := range []string{"Origin", "X-Requested-With", "Content-Type", "Accept", "X-Registry-Auth"} {
+		if !strings.Contains(allowHeaders, value) {
+			t.Fatalf("Header %s is not in Access-Control-Allow-Headers", value)
+		}
+	}
+
+	// test Access-Control-Allow-Methods in response headers
+	allowMethods := w.Header().Get("Access-Control-Allow-Methods")
+
+	for _, value := range []string{"GET", "POST", "DELETE", "PUT", "OPTIONS", "HEAD"} {
+		if !strings.Contains(allowMethods, value) {
+			t.Fatalf("Method %s is not in Access-Control-Allow-Methods", value)
+		}
 	}
 
 	// test a normal request ( GET /_ping ) when cors enabled
@@ -74,8 +94,7 @@ func TestCorsRequest(t *testing.T) {
 		t.Fatalf("couldn't get body content when cors enabled")
 	}
 
-	if w2.Code == 404 {
-		t.Fatalf("failed not found")
+	if w2.Code != 200 {
+		t.Fatalf("HTTP response status code is %d, not 200", w2.Code)
 	}
-
 }
