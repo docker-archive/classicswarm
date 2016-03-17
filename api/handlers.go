@@ -308,7 +308,7 @@ func getVolume(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /volumes
 func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
-	volumes := struct{ Volumes []*dockerclient.Volume }{}
+	volumes := struct{ Volumes []*apitypes.Volume }{}
 
 	for _, volume := range c.cluster.Volumes() {
 		tmp := (*volume).Volume
@@ -613,7 +613,7 @@ func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /volumes/create
 func postVolumesCreate(c *context, w http.ResponseWriter, r *http.Request) {
-	var request dockerclient.VolumeCreateRequest
+	var request apitypes.VolumeCreateRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		httpError(w, err.Error(), http.StatusBadRequest)

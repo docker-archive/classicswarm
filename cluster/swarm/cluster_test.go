@@ -137,11 +137,13 @@ func TestImportImage(t *testing.T) {
 	apiClient := engineapimock.NewMockClient()
 	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
 	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
-	apiClient.On("NetworkList", mock.Anything).Return([]types.NetworkResource{}, nil)
+	apiClient.On("NetworkList", mock.Anything,
+		mock.AnythingOfType("NetworkListOptions"),
+	).Return([]types.NetworkResource{}, nil)
+	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
-	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
@@ -188,11 +190,13 @@ func TestLoadImage(t *testing.T) {
 	apiClient := engineapimock.NewMockClient()
 	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
 	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
-	apiClient.On("NetworkList", mock.Anything).Return([]types.NetworkResource{}, nil)
+	apiClient.On("NetworkList", mock.Anything,
+		mock.AnythingOfType("NetworkListOptions"),
+	).Return([]types.NetworkResource{}, nil)
+	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
-	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
@@ -242,11 +246,13 @@ func TestTagImage(t *testing.T) {
 	apiClient := engineapimock.NewMockClient()
 	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
 	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
-	apiClient.On("NetworkList", mock.Anything).Return([]types.NetworkResource{}, nil)
+	apiClient.On("NetworkList", mock.Anything,
+		mock.AnythingOfType("NetworkListOptions"),
+	).Return([]types.NetworkResource{}, nil)
+	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return(images, nil)
-	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
