@@ -45,7 +45,7 @@ type Cluster interface {
 	RemoveNetwork(network *Network) error
 
 	// Create a volume
-	CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error)
+	CreateVolume(request *types.VolumeCreateRequest) (*Volume, error)
 
 	// Return all volumes
 	Volumes() Volumes
