@@ -640,6 +640,11 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 	if current, exists := e.containers[c.Id]; exists {
 		// The container is already known.
 		container = current
+		// Restarting is a transit state. Unfortunately Docker doesn't always emit
+		// events when it gets out of Restarting state. Force an inspect to update.
+		if container.Info.State != nil && container.Info.State.Restarting {
+			full = true
+		}
 	} else {
 		// This is a brand new container. We need to do a full refresh.
 		container = &Container{
