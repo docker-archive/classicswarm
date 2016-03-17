@@ -492,7 +492,7 @@ func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (response *
 }
 
 // CreateVolume creates a volume in the cluster
-func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*cluster.Volume, error) {
+func (c *Cluster) CreateVolume(request *types.VolumeCreateRequest) (*cluster.Volume, error) {
 	var (
 		wg     sync.WaitGroup
 		volume *cluster.Volume

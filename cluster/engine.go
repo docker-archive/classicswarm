@@ -569,14 +569,14 @@ func (e *Engine) RefreshNetworks() error {
 
 // RefreshVolumes refreshes the list of volumes on the engine.
 func (e *Engine) RefreshVolumes() error {
-	volumes, err := e.client.ListVolumes()
+	volumesLsRsp, err := e.apiClient.VolumeList(context.TODO(), filters.NewArgs())
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
 	}
 	e.Lock()
 	e.volumes = make(map[string]*Volume)
-	for _, volume := range volumes {
+	for _, volume := range volumesLsRsp.Volumes {
 		e.volumes[volume.Name] = &Volume{Volume: *volume, Engine: e}
 	}
 	e.Unlock()
@@ -887,8 +887,8 @@ func (e *Engine) CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclie
 }
 
 // CreateVolume creates a volume in the engine
-func (e *Engine) CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error) {
-	volume, err := e.client.CreateVolume(request)
+func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, error) {
+	volume, err := e.apiClient.VolumeCreate(context.TODO(), *request)
 
 	e.RefreshVolumes()
 	e.CheckConnectionErr(err)
@@ -896,7 +896,7 @@ func (e *Engine) CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volum
 	if err != nil {
 		return nil, err
 	}
-	return &Volume{Volume: *volume, Engine: e}, nil
+	return &Volume{Volume: volume, Engine: e}, nil
 
 }
 

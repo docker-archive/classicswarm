@@ -1,10 +1,10 @@
 package cluster
 
-import "github.com/samalba/dockerclient"
+import "github.com/docker/engine-api/types"
 
 // Volume is exported
 type Volume struct {
-	dockerclient.Volume
+	types.Volume
 
 	Engine *Engine
 }

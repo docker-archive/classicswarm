@@ -3,7 +3,7 @@ package cluster
 import (
 	"testing"
 
-	"github.com/samalba/dockerclient"
+	"github.com/docker/engine-api/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,56 +16,56 @@ func TestGet(t *testing.T) {
 	}
 	volumes := Volumes{
 		&Volume{
-			Volume: dockerclient.Volume{
+			Volume: types.Volume{
 				Name:   "t1",
 				Driver: "local",
 			},
 			Engine: engines[0],
 		},
 		&Volume{
-			Volume: dockerclient.Volume{
+			Volume: types.Volume{
 				Name:   "t2",
 				Driver: "local",
 			},
 			Engine: engines[0],
 		},
 		&Volume{
-			Volume: dockerclient.Volume{
+			Volume: types.Volume{
 				Name:   "t3",
 				Driver: "rexray",
 			},
 			Engine: engines[0],
 		},
 		&Volume{
-			Volume: dockerclient.Volume{
+			Volume: types.Volume{
 				Name:   "t4",
 				Driver: "flocker",
 			},
 			Engine: engines[0],
 		},
 		&Volume{
-			Volume: dockerclient.Volume{
+			Volume: types.Volume{
 				Name:   "t1",
 				Driver: "local",
 			},
 			Engine: engines[1],
 		},
 		&Volume{
-			Volume: dockerclient.Volume{
+			Volume: types.Volume{
 				Name:   "t2",
 				Driver: "local",
 			},
 			Engine: engines[1],
 		},
 		&Volume{
-			Volume: dockerclient.Volume{
+			Volume: types.Volume{
 				Name:   "t3",
 				Driver: "rexray",
 			},
 			Engine: engines[1],
 		},
 		&Volume{
-			Volume: dockerclient.Volume{
+			Volume: types.Volume{
 				Name:   "t4",
 				Driver: "flocker",
 			},
