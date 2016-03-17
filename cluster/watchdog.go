@@ -6,13 +6,13 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-// Watchdog listen to cluster events ans handle container rescheduling
+// Watchdog listens to cluster events and handles container rescheduling
 type Watchdog struct {
 	sync.Mutex
 	cluster Cluster
 }
 
-// Handle cluster callbacks
+// Handle handles cluster callbacks
 func (w *Watchdog) Handle(e *Event) error {
 	// Skip non-swarm events.
 	if e.From != "swarm" {
@@ -28,7 +28,7 @@ func (w *Watchdog) Handle(e *Event) error {
 	return nil
 }
 
-// Remove Duplicate containers when a node comes back
+// removeDuplicateContainers removes duplicate containers when a node comes back
 func (w *Watchdog) removeDuplicateContainers(e *Engine) {
 	log.Debugf("removing duplicate containers from Node %s", e.ID)
 
@@ -53,7 +53,7 @@ func (w *Watchdog) removeDuplicateContainers(e *Engine) {
 	}
 }
 
-// Reschedule containers as soon as a node fail
+// rescheduleContainers reschedules containers as soon as a node fails
 func (w *Watchdog) rescheduleContainers(e *Engine) {
 	w.Lock()
 	defer w.Unlock()
