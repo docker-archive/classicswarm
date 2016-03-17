@@ -518,7 +518,7 @@ func (e *Engine) AddNetwork(network *Network) {
 
 // RemoveVolume deletes a volume from the engine.
 func (e *Engine) RemoveVolume(name string) error {
-	err := e.client.RemoveVolume(name)
+	err := e.apiClient.VolumeRemove(name)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
