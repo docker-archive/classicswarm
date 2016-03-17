@@ -268,7 +268,7 @@ func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	out := []*dockerclient.NetworkResource{}
+	out := []*apitypes.NetworkResource{}
 	networks := c.cluster.Networks().Filter(filters.Get("name"), filters.Get("id"), types)
 	for _, network := range networks {
 		tmp := (*network).NetworkResource

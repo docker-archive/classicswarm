@@ -19,6 +19,7 @@ import (
 	"github.com/docker/docker/pkg/version"
 	engineapi "github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
+	"github.com/docker/engine-api/types/filters"
 	engineapinop "github.com/docker/swarm/api/nopclient"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/nopclient"
@@ -487,7 +488,7 @@ func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDelete, erro
 
 // RemoveNetwork removes a network from the engine.
 func (e *Engine) RemoveNetwork(network *Network) error {
-	err := e.apiClient.NetworkRemove(network.ID)
+	err := e.apiClient.NetworkRemove(context.TODO(), network.ID)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -518,7 +519,7 @@ func (e *Engine) AddNetwork(network *Network) {
 
 // RemoveVolume deletes a volume from the engine.
 func (e *Engine) RemoveVolume(name string) error {
-	err := e.apiClient.VolumeRemove(name)
+	err := e.apiClient.VolumeRemove(context.TODO(), name)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -551,7 +552,8 @@ func (e *Engine) RefreshImages() error {
 
 // RefreshNetworks refreshes the list of networks on the engine.
 func (e *Engine) RefreshNetworks() error {
-	networks, err := e.client.ListNetworks("")
+	netLsOpts := types.NetworkListOptions{filters.NewArgs()}
+	networks, err := e.apiClient.NetworkList(context.TODO(), netLsOpts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -559,7 +561,7 @@ func (e *Engine) RefreshNetworks() error {
 	e.Lock()
 	e.networks = make(map[string]*Network)
 	for _, network := range networks {
-		e.networks[network.ID] = &Network{NetworkResource: *network, Engine: e}
+		e.networks[network.ID] = &Network{NetworkResource: network, Engine: e}
 	}
 	e.Unlock()
 	return nil
