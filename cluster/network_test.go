@@ -3,26 +3,26 @@ package cluster
 import (
 	"testing"
 
-	"github.com/samalba/dockerclient"
+	"github.com/docker/engine-api/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNetworksFilter(t *testing.T) {
 	engine := &Engine{ID: "id"}
 	networks := Networks{
-		{dockerclient.NetworkResource{
+		{types.NetworkResource{
 			ID:   "ababababab",
 			Name: "something",
 		}, engine},
-		{dockerclient.NetworkResource{
+		{types.NetworkResource{
 			ID:   "aaaaaaaaaa1",
 			Name: "network_name",
 		}, engine},
-		{dockerclient.NetworkResource{
+		{types.NetworkResource{
 			ID:   "bbbbbbbbbb",
 			Name: "somethingelse",
 		}, engine},
-		{dockerclient.NetworkResource{
+		{types.NetworkResource{
 			ID:   "aaaaaaaaa2",
 			Name: "foo",
 		}, engine},
@@ -39,31 +39,31 @@ func TestNetworkUniq(t *testing.T) {
 	engine1 := &Engine{ID: "id1"}
 	engine2 := &Engine{ID: "id2"}
 	networks := Networks{
-		{dockerclient.NetworkResource{
+		{types.NetworkResource{
 			ID:   "global",
 			Name: "global",
-			Containers: map[string]dockerclient.EndpointResource{
+			Containers: map[string]types.EndpointResource{
 				"c1": {},
 			},
 		}, engine1},
-		{dockerclient.NetworkResource{
+		{types.NetworkResource{
 			ID:   "global",
 			Name: "global",
-			Containers: map[string]dockerclient.EndpointResource{
+			Containers: map[string]types.EndpointResource{
 				"c2": {},
 			},
 		}, engine2},
-		{dockerclient.NetworkResource{
+		{types.NetworkResource{
 			ID:   "local1",
 			Name: "local",
-			Containers: map[string]dockerclient.EndpointResource{
+			Containers: map[string]types.EndpointResource{
 				"c3": {},
 			},
 		}, engine1},
-		{dockerclient.NetworkResource{
+		{types.NetworkResource{
 			ID:   "local2",
 			Name: "local",
-			Containers: map[string]dockerclient.EndpointResource{
+			Containers: map[string]types.EndpointResource{
 				"c4": {},
 			},
 		}, engine2},
@@ -84,10 +84,10 @@ func TestNetworkUniq(t *testing.T) {
 func TestRemoveDuplicateEndpoints(t *testing.T) {
 	engine1 := &Engine{ID: "id1"}
 	network := Network{
-		dockerclient.NetworkResource{
+		types.NetworkResource{
 			ID:   "global",
 			Name: "voteappbase_voteapp",
-			Containers: map[string]dockerclient.EndpointResource{
+			Containers: map[string]types.EndpointResource{
 				"028771f7f6a54c486d441ecfc92aad68e0836a1f0a5a0c227c514f14848e2b54": {
 					Name:        "voteappbase_worker_1",
 					EndpointID:  "49f621862a0659f462870a6cd15874da44592e399f41da2a3019d81b7427315b",
