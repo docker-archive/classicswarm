@@ -1,9 +1,6 @@
 package strslice
 
-import (
-	"encoding/json"
-	"strings"
-)
+import "encoding/json"
 
 // StrSlice represents a string or an array of strings.
 // We need to override the json decoder to accept both options.
@@ -30,14 +27,4 @@ func (e *StrSlice) UnmarshalJSON(b []byte) error {
 
 	*e = p
 	return nil
-}
-
-// String gets space separated string of all the parts.
-func (e StrSlice) String() string {
-	return strings.Join([]string(e), " ")
-}
-
-// New creates an StrSlice based on the specified parts (as strings).
-func New(parts ...string) StrSlice {
-	return StrSlice(parts)
 }
