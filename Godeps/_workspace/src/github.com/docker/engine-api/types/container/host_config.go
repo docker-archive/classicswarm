@@ -65,6 +65,51 @@ func (n IpcMode) Container() string {
 	return ""
 }
 
+// UsernsMode represents userns mode in the container.
+type UsernsMode string
+
+// IsHost indicates whether the container uses the host's userns.
+func (n UsernsMode) IsHost() bool {
+	return n == "host"
+}
+
+// IsPrivate indicates whether the container uses the a private userns.
+func (n UsernsMode) IsPrivate() bool {
+	return !(n.IsHost())
+}
+
+// Valid indicates whether the userns is valid.
+func (n UsernsMode) Valid() bool {
+	parts := strings.Split(string(n), ":")
+	switch mode := parts[0]; mode {
+	case "", "host":
+	default:
+		return false
+	}
+	return true
+}
+
+// Cgroup Spec represents the cgroup to use for the container.
+type CgroupSpec string
+
+func (c CgroupSpec) IsContainer() bool {
+	parts := strings.SplitN(string(c), ":", 2)
+	return len(parts) > 1 && parts[0] == "container"
+}
+
+func (c CgroupSpec) Valid() bool {
+	return c.IsContainer() || c == ""
+}
+
+// Container returns the name of the container whose cgroup will be used.
+func (c CgroupSpec) Container() string {
+	parts := strings.SplitN(string(c), ":", 2)
+	if len(parts) > 1 {
+		return parts[1]
+	}
+	return ""
+}
+
 // UTSMode represents the UTS namespace of the container.
 type UTSMode string
 
@@ -166,6 +211,7 @@ type LogConfig struct {
 type Resources struct {
 	// Applicable to all platforms
 	CPUShares int64 `json:"CpuShares"` // CPU shares (relative weight vs. other containers)
+	Memory    int64 // Memory limit (in bytes)
 
 	// Applicable to UNIX platforms
 	CgroupParent         string // Parent cgroup.
@@ -180,14 +226,21 @@ type Resources struct {
 	CpusetCpus           string          // CpusetCpus 0-2, 0,1
 	CpusetMems           string          // CpusetMems 0-2, 0,1
 	Devices              []DeviceMapping // List of devices to map inside the container
+	DiskQuota            int64           // Disk limit (in bytes)
 	KernelMemory         int64           // Kernel memory limit (in bytes)
-	Memory               int64           // Memory limit (in bytes)
 	MemoryReservation    int64           // Memory soft limit (in bytes)
 	MemorySwap           int64           // Total memory usage (memory + swap); set `-1` to enable unlimited swap
 	MemorySwappiness     *int64          // Tuning container memory swappiness behaviour
 	OomKillDisable       *bool           // Whether to disable OOM Killer or not
 	PidsLimit            int64           // Setting pids limit for a container
 	Ulimits              []*units.Ulimit // List of ulimits to be set in the container
+
+	// Applicable to Windows
+	CPUCount    int64  `json:"CpuCount"`   // CPU count
+	CPUPercent  int64  `json:"CpuPercent"` // CPU percent
+	BlkioIOps   uint64 // Maximum IOps for the container system drive
+	BlkioBps    uint64 // Maximum Bytes per second for the container system drive
+	SandboxSize uint64 // System drive will be expanded to at least this size (in bytes)
 }
 
 // UpdateConfig holds the mutable attributes of a Container.
@@ -209,6 +262,7 @@ type HostConfig struct {
 	NetworkMode     NetworkMode   // Network mode to use for the container
 	PortBindings    nat.PortMap   // Port mapping between the exposed port (container) and the host
 	RestartPolicy   RestartPolicy // Restart policy to be used for the container
+	AutoRemove      bool          // Automatically remove container when it exits
 	VolumeDriver    string        // Name of the volume driver used to mount volumes
 	VolumesFrom     []string      // List of volumes to take from other container
 
@@ -221,6 +275,7 @@ type HostConfig struct {
 	ExtraHosts      []string          // List of extra hosts
 	GroupAdd        []string          // List of additional groups that the container process will run as
 	IpcMode         IpcMode           // IPC namespace to use for the container
+	Cgroup          CgroupSpec        // Cgroup to use for the container
 	Links           []string          // List of links (in the name:alias form)
 	OomScoreAdj     int               // Container preference for OOM-killing
 	PidMode         PidMode           // PID namespace to use for the container
@@ -228,9 +283,12 @@ type HostConfig struct {
 	PublishAllPorts bool              // Should docker publish all exposed port for the container
 	ReadonlyRootfs  bool              // Is the container root filesystem in read-only
 	SecurityOpt     []string          // List of string values to customize labels for MLS systems, such as SELinux.
+	StorageOpt      map[string]string // Storage driver options per container.
 	Tmpfs           map[string]string `json:",omitempty"` // List of tmpfs (mounts) used for the container
 	UTSMode         UTSMode           // UTS namespace to use for the container
+	UsernsMode      UsernsMode        // The user namespace to use for the container
 	ShmSize         int64             // Total shm memory usage
+	Sysctls         map[string]string `json:",omitempty"` // List of Namespaced sysctls used for the container
 
 	// Applicable to Windows
 	ConsoleSize [2]int    // Initial console size
