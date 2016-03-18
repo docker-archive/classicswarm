@@ -69,7 +69,7 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 			}
 		}
 		if len(candidates) == 0 {
-			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", affinity.key, OPERATORS[affinity.operator], affinity.value)
+			return nil, fmt.Errorf("unable to find a node that satisfies the affinity %s%s%s", affinity.key, OPERATORS[affinity.operator], affinity.value)
 		}
 		nodes = candidates
 	}
