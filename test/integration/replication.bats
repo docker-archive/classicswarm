@@ -32,6 +32,24 @@ function teardown() {
 	stop_store
 }
 
+@test "replication options" {
+	# Bring up one manager
+	# --advertise
+	run swarm manage --replication --replication-ttl "4s" --advertise "" "$DISCOVERY"
+	[ "$status" -ne 0 ]
+	[[ "${output}" == *"--advertise address must be provided when using --leader-election"* ]]
+
+	# --advertise
+	run swarm manage --replication --replication-ttl "4s" --advertise 127.0.0.1ab:1bcde "$DISCOVERY"
+	[ "$status" -ne 0 ]
+	[[ "${output}" == *"--advertise should be of the form ip:port or hostname:port"* ]]
+
+	# --replication-ttl
+	run swarm manage --replication --replication-ttl "-20s" --advertise 127.0.0.1:$SWARM_BASE_PORT "$DISCOVERY"
+	[ "$status" -ne 0 ]
+	[[ "${output}" == *"--replication-ttl should be a positive number"* ]]
+}
+
 @test "leader election" {
 	local i=${#SWARM_MANAGE_PID[@]}
 	local port=$(($SWARM_BASE_PORT + $i))

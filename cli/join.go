@@ -39,6 +39,9 @@ func join(c *cli.Context) {
 	if err != nil {
 		log.Fatalf("invalid --delay: %v", err)
 	}
+	if joinDelay < time.Duration(0)*time.Second {
+		log.Fatalf("--delay should not be a negative number")
+	}
 
 	hb, err := time.ParseDuration(c.String("heartbeat"))
 	if err != nil {
@@ -60,6 +63,8 @@ func join(c *cli.Context) {
 		log.Fatal(err)
 	}
 
+	// if joinDelay is 0, no delay will be executed
+	// if joinDelay is larger than 0,
 	// add a random delay between 0s and joinDelay at start to avoid synchronized registration
 	if joinDelay > 0 {
 		r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
