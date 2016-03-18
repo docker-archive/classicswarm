@@ -394,7 +394,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if !filters.MatchKVList("label", container.Config.Labels) {
 			continue
 		}
-		if !filters.Match("status", container.Info.State.StateString()) {
+		if !filters.Match("status", cluster.StateString(container.Info.State)) {
 			continue
 		}
 		if !filters.Match("node", container.Engine.Name) {
@@ -423,8 +423,8 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		candidates = candidates[:limit]
 	}
 
-	// Convert cluster.Container back into dockerclient.Container.
-	out := []*dockerclient.Container{}
+	// Convert cluster.Container back into apitypes.Container.
+	out := []*apitypes.Container{}
 	for _, container := range candidates {
 		if before != nil {
 			if container.ID == before.ID {
@@ -432,13 +432,13 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			}
 			continue
 		}
-		// Create a copy of the underlying dockerclient.Container so we can
+		// Create a copy of the underlying apitypes.Container so we can
 		// make changes without messing with cluster.Container.
 		tmp := (*container).Container
 
 		// Update the Status. The one we have is stale from the last `docker ps` the engine sent.
 		// `Status()` will generate a new one
-		tmp.Status = container.Info.State.String()
+		tmp.Status = cluster.FullStateString(container.Info.State)
 		if !container.Engine.IsHealthy() {
 			tmp.Status = "Host Down"
 		}
@@ -455,7 +455,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 
 		// insert node IP
-		tmp.Ports = make([]dockerclient.Port, len(container.Ports))
+		tmp.Ports = make([]apitypes.Port, len(container.Ports))
 		for i, port := range container.Ports {
 			tmp.Ports[i] = port
 			if port.IP == "0.0.0.0" {
@@ -526,15 +526,13 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	var (
-		oldConfig = dockerclient.ContainerConfig{
-			HostConfig: dockerclient.HostConfig{
-				MemorySwappiness: -1,
-			},
-		}
-		name   = r.Form.Get("name")
-		config = cluster.ContainerConfig{
+		defaultMemorySwappiness = int64(-1)
+		name                    = r.Form.Get("name")
+		config                  = cluster.ContainerConfig{
 			HostConfig: containertypes.HostConfig{
-				MemorySwappiness: -1,
+				Resources: containertypes.Resources{
+					MemorySwappiness: &(defaultMemorySwappiness),
+				},
 			},
 		}
 	)

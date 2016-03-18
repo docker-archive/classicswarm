@@ -632,7 +632,7 @@ func (e *Engine) RefreshContainers(full bool) error {
 		All:  true,
 		Size: false,
 	}
-	containers, err := e.apiClient.ContainerList(opts)
+	containers, err := e.apiClient.ContainerList(context.TODO(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -665,7 +665,7 @@ func (e *Engine) refreshContainer(ID string, full bool) (*Container, error) {
 		Size:   false,
 		Filter: filterArgs,
 	}
-	containers, err := e.apiClient.ContainerList(opts)
+	containers, err := e.apiClient.ContainerList(context.TODO(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return nil, err
@@ -720,7 +720,7 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 
 	// Update ContainerInfo.
 	if full {
-		info, err := e.apiClient.ContainerInspect(c.ID)
+		info, err := e.apiClient.ContainerInspect(context.TODO(), c.ID)
 		e.CheckConnectionErr(err)
 		if err != nil {
 			return nil, err
@@ -858,7 +858,7 @@ func (e *Engine) TotalCpus() int {
 }
 
 // Create a new container
-func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, authConfig *dockerclient.AuthConfig) (*Container, error) {
+func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, authConfig *types.AuthConfig) (*Container, error) {
 	var (
 		err        error
 		createResp types.ContainerCreateResponse
@@ -874,7 +874,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 	// FIXME remove "duplicate" lines and move this to cluster/config.go
 	dockerConfig.CPUShares = int64(math.Ceil(float64(config.CPUShares*1024) / float64(e.Cpus)))
 
-	createResp, err = e.apiClient.ContainerCreate(&dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
+	createResp, err = e.apiClient.ContainerCreate(context.TODO(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		// If the error is other than not found, abort immediately.
@@ -886,7 +886,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 			return nil, err
 		}
 		// ...And try again.
-		createResp, err = e.apiClient.ContainerCreate(&dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
+		createResp, err = e.apiClient.ContainerCreate(context.TODO(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
 		e.CheckConnectionErr(err)
 		if err != nil {
 			return nil, err
@@ -951,11 +951,14 @@ func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, erro
 }
 
 // Pull an image on the engine
-func (e *Engine) Pull(image string, authConfig *dockerclient.AuthConfig) error {
+func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
 	if !strings.Contains(image, ":") {
 		image = image + ":latest"
 	}
-	err := e.client.PullImage(image, authConfig)
+	pullOpts := types.ImagePullOptions{
+		ImageID: image,
+	}
+	_, err := e.apiClient.ImagePull(context.TODO(), pullOpts, nil)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
