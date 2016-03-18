@@ -1,10 +1,13 @@
 package cluster
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/engine-api/types"
+	"github.com/docker/go-units"
 )
 
 // Container is exported
@@ -14,6 +17,50 @@ type Container struct {
 	Config *ContainerConfig
 	Info   types.ContainerJSON
 	Engine *Engine
+}
+
+// StateString returns a single string to describe state
+func StateString(state *types.ContainerState) string {
+	if state.Running {
+		if state.Paused {
+			return "paused"
+		}
+		if state.Restarting {
+			return "restarting"
+		}
+		return "running"
+	}
+
+	if state.Dead {
+		return "dead"
+	}
+
+	return "exited"
+}
+
+// FullStateString returns human-readable description of the state
+func FullStateString(state *types.ContainerState) string {
+	startedAt, _ := time.Parse(time.RFC3339Nano, state.StartedAt)
+	finishedAt, _ := time.Parse(time.RFC3339Nano, state.FinishedAt)
+	if state.Running {
+		if state.Paused {
+			return fmt.Sprintf("Up %s (Paused)", units.HumanDuration(time.Now().UTC().Sub(startedAt)))
+		}
+		if state.Restarting {
+			return fmt.Sprintf("Restarting (%d) %s ago", state.ExitCode, units.HumanDuration(time.Now().UTC().Sub(finishedAt)))
+		}
+		return fmt.Sprintf("Up %s", units.HumanDuration(time.Now().UTC().Sub(startedAt)))
+	}
+
+	if state.Dead {
+		return "Dead"
+	}
+
+	if finishedAt.IsZero() {
+		return ""
+	}
+
+	return fmt.Sprintf("Exited (%d) %s ago", state.ExitCode, units.HumanDuration(time.Now().UTC().Sub(finishedAt)))
 }
 
 // Refresh container
