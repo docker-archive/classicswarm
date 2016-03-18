@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 )
@@ -12,7 +14,7 @@ func TestMock(t *testing.T) {
 	mock := NewMockClient()
 	mock.On("ServerVersion").Return(types.Version{Version: "foo"}, nil).Once()
 
-	v, err := mock.ServerVersion()
+	v, err := mock.ServerVersion(context.TODO())
 	if err != nil {
 		t.Fatal(err)
 	}
