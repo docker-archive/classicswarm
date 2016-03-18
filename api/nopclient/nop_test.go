@@ -4,12 +4,14 @@ import (
 	"reflect"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/docker/engine-api/client"
 )
 
 func TestNop(t *testing.T) {
 	nop := NewNopClient()
-	_, err := nop.Info()
+	_, err := nop.Info(context.TODO())
 	if err != errNoEngine {
 		t.Fatalf("Nop client did not return error")
 	}

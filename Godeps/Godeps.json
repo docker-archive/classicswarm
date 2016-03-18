@@ -72,13 +72,13 @@
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client",
-			"Comment": "v0.2.2-99-gadfa32f",
-			"Rev": "adfa32fb6ccad724d73a16d53ce3defa46df27e5"
+			"Comment": "v0.2.2-177-ga72c60a",
+			"Rev": "a72c60aa8980d96d6101970317f8285f3fa48b02"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types",
-			"Comment": "v0.2.2-99-gadfa32f",
-			"Rev": "adfa32fb6ccad724d73a16d53ce3defa46df27e5"
+			"Comment": "v0.2.2-177-ga72c60a",
+			"Rev": "a72c60aa8980d96d6101970317f8285f3fa48b02"
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/nat",

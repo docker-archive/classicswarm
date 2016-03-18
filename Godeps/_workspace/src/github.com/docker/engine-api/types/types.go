@@ -39,6 +39,10 @@ type ContainerUpdateResponse struct {
 type AuthResponse struct {
 	// Status is the authentication status
 	Status string `json:"Status"`
+
+	// IdentityToken is an opaque token used for authenticating
+	// a user after a successful login.
+	IdentityToken string `json:"IdentityToken,omitempty"`
 }
 
 // ContainerWaitResponse contains response of Remote API:
@@ -204,6 +208,7 @@ type Info struct {
 	Plugins            PluginsInfo
 	MemoryLimit        bool
 	SwapLimit          bool
+	KernelMemory       bool
 	CPUCfsPeriod       bool `json:"CpuCfsPeriod"`
 	CPUCfsQuota        bool `json:"CpuCfsQuota"`
 	CPUShares          bool
@@ -363,9 +368,10 @@ type MountPoint struct {
 
 // Volume represents the configuration of a volume for the remote API
 type Volume struct {
-	Name       string // Name is the name of the volume
-	Driver     string // Driver is the Driver name used to create the volume
-	Mountpoint string // Mountpoint is the location on disk of the volume
+	Name       string                 // Name is the name of the volume
+	Driver     string                 // Driver is the Driver name used to create the volume
+	Mountpoint string                 // Mountpoint is the location on disk of the volume
+	Status     map[string]interface{} `json:",omitempty"` // Status provides low-level status information about the volume
 }
 
 // VolumesListResponse contains the response for the remote API:
