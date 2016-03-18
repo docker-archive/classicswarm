@@ -82,12 +82,19 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 	}
 
 	if val, ok := options.Float("swarm.overcommit", ""); ok {
-		cluster.overcommitRatio = val
+		if val <= float64(-1) {
+			log.Fatalf("swarm.overcommit should be larger than -1, %f is invalid", val)
+		} else if val < float64(0) {
+			log.Warn("-1 < swarm.overcommit < 0 will make swarm take less resource than docker engine offers")
+			cluster.overcommitRatio = val
+		} else {
+			cluster.overcommitRatio = val
+		}
 	}
 
 	if val, ok := options.Int("swarm.createretry", ""); ok {
 		if val < 0 {
-			log.Fatalf("swarm.createretry=%d is invalid", val)
+			log.Fatalf("swarm.createretry can not be negative, %d is invalid", val)
 		}
 		cluster.createRetry = val
 	}
