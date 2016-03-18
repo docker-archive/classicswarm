@@ -1,6 +1,10 @@
 {
 	"ImportPath": "github.com/docker/swarm",
 	"GoVersion": "go1.5",
+	"GodepVersion": "v59",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Microsoft/go-winio",
@@ -41,6 +45,21 @@
 			"Rev": "b65fd8e879545e8c9b859ea9b6b825ac50c79e46"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/discovery/file",
+			"Comment": "v1.4.1-10581-gb65fd8e",
+			"Rev": "b65fd8e879545e8c9b859ea9b6b825ac50c79e46"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/discovery/kv",
+			"Comment": "v1.4.1-10581-gb65fd8e",
+			"Rev": "b65fd8e879545e8c9b859ea9b6b825ac50c79e46"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/discovery/nodes",
+			"Comment": "v1.4.1-10581-gb65fd8e",
+			"Rev": "b65fd8e879545e8c9b859ea9b6b825ac50c79e46"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/ioutils",
 			"Comment": "v1.4.1-10581-gb65fd8e",
 			"Rev": "b65fd8e879545e8c9b859ea9b6b825ac50c79e46"
@@ -72,13 +91,58 @@
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client",
-			"Comment": "v0.2.2-99-gadfa32f",
-			"Rev": "adfa32fb6ccad724d73a16d53ce3defa46df27e5"
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/client/transport",
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/client/transport/cancellable",
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types",
-			"Comment": "v0.2.2-99-gadfa32f",
-			"Rev": "adfa32fb6ccad724d73a16d53ce3defa46df27e5"
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/blkiodev",
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/container",
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/filters",
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/network",
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/registry",
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/strslice",
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/time",
+			"Comment": "v0.2.2-179-g68a7b6b",
+			"Rev": "68a7b6bebf8f57d559b7788a46c55045438747b9"
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/nat",
@@ -106,6 +170,26 @@
 		},
 		{
 			"ImportPath": "github.com/docker/libkv",
+			"Comment": "v0.1.0-6-g2f2380c",
+			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/store",
+			"Comment": "v0.1.0-6-g2f2380c",
+			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/store/consul",
+			"Comment": "v0.1.0-6-g2f2380c",
+			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/store/etcd",
+			"Comment": "v0.1.0-6-g2f2380c",
+			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/store/zookeeper",
 			"Comment": "v0.1.0-6-g2f2380c",
 			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
 		},
@@ -146,7 +230,32 @@
 			"Rev": "657252ec6fc27975cd86da9f708acd6f4bb1f9ac"
 		},
 		{
+			"ImportPath": "github.com/mesos/mesos-go/auth/callback",
+			"Comment": "v0.0.2-27-g657252e",
+			"Rev": "657252ec6fc27975cd86da9f708acd6f4bb1f9ac"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/auth/sasl",
+			"Comment": "v0.0.2-27-g657252e",
+			"Rev": "657252ec6fc27975cd86da9f708acd6f4bb1f9ac"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/auth/sasl/mech",
+			"Comment": "v0.0.2-27-g657252e",
+			"Rev": "657252ec6fc27975cd86da9f708acd6f4bb1f9ac"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/auth/sasl/mech/crammd5",
+			"Comment": "v0.0.2-27-g657252e",
+			"Rev": "657252ec6fc27975cd86da9f708acd6f4bb1f9ac"
+		},
+		{
 			"ImportPath": "github.com/mesos/mesos-go/detector",
+			"Comment": "v0.0.2-27-g657252e",
+			"Rev": "657252ec6fc27975cd86da9f708acd6f4bb1f9ac"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/detector/zoo",
 			"Comment": "v0.0.2-27-g657252e",
 			"Rev": "657252ec6fc27975cd86da9f708acd6f4bb1f9ac"
 		},
@@ -157,6 +266,11 @@
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/mesosutil",
+			"Comment": "v0.0.2-27-g657252e",
+			"Rev": "657252ec6fc27975cd86da9f708acd6f4bb1f9ac"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/mesosutil/process",
 			"Comment": "v0.0.2-27-g657252e",
 			"Rev": "657252ec6fc27975cd86da9f708acd6f4bb1f9ac"
 		},
@@ -190,6 +304,14 @@
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
+			"Rev": "5747eb30667cf7088aea1de37b93856b5cd2f010"
+		},
+		{
+			"ImportPath": "github.com/samalba/dockerclient/mockclient",
+			"Rev": "5747eb30667cf7088aea1de37b93856b5cd2f010"
+		},
+		{
+			"ImportPath": "github.com/samalba/dockerclient/nopclient",
 			"Rev": "5747eb30667cf7088aea1de37b93856b5cd2f010"
 		},
 		{
