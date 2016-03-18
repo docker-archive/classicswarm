@@ -135,8 +135,8 @@ func TestImportImage(t *testing.T) {
 	// create mock client
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	apiClient.On("Info").Return(mockInfo, nil)
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
@@ -186,8 +186,8 @@ func TestLoadImage(t *testing.T) {
 	// create mock client
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	apiClient.On("Info").Return(mockInfo, nil)
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
@@ -240,8 +240,8 @@ func TestTagImage(t *testing.T) {
 	// create mock client
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	apiClient.On("Info").Return(mockInfo, nil)
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return(images, nil)
