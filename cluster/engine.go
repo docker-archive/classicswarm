@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/version"
 	engineapi "github.com/docker/engine-api/client"
@@ -411,7 +413,7 @@ func (e *Engine) CheckConnectionErr(err error) {
 
 // Gather engine specs (CPU, memory, constraints, ...).
 func (e *Engine) updateSpecs() error {
-	info, err := e.apiClient.Info()
+	info, err := e.apiClient.Info(context.TODO())
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -421,7 +423,7 @@ func (e *Engine) updateSpecs() error {
 		return fmt.Errorf("cannot get resources for this engine, make sure %s is a Docker Engine, not a Swarm manager", e.Addr)
 	}
 
-	v, err := e.apiClient.ServerVersion()
+	v, err := e.apiClient.ServerVersion(context.TODO())
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
