@@ -115,7 +115,7 @@ func TestEngineConnectionFailure(t *testing.T) {
 	// Always fail.
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	apiClient.On("Info").Return(types.Info{}, errors.New("fail"))
+	apiClient.On("Info", mock.Anything).Return(types.Info{}, errors.New("fail"))
 
 	// Connect() should fail
 	assert.Error(t, engine.ConnectWithClient(client, apiClient))
@@ -134,7 +134,7 @@ func TestOutdatedEngine(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	apiClient.On("Info").Return(types.Info{}, nil)
+	apiClient.On("Info", mock.Anything).Return(types.Info{}, nil)
 
 	assert.Error(t, engine.ConnectWithClient(client, apiClient))
 
@@ -154,8 +154,8 @@ func TestEngineCpusMemory(t *testing.T) {
 
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	apiClient.On("Info").Return(mockInfo, nil)
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
@@ -180,8 +180,8 @@ func TestEngineSpecs(t *testing.T) {
 
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	apiClient.On("Info").Return(mockInfo, nil)
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
 	client.On("ListVolumes", mock.Anything).Return([]*dockerclient.Volume{}, nil)
@@ -211,8 +211,8 @@ func TestEngineState(t *testing.T) {
 
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
-	apiClient.On("Info").Return(mockInfo, nil)
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	// The client will return one container at first, then a second one will appear.
@@ -263,8 +263,8 @@ func TestCreateContainer(t *testing.T) {
 	)
 
 	engine.setState(stateUnhealthy)
-	apiClient.On("Info").Return(mockInfo, nil)
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
@@ -369,8 +369,8 @@ func TestUsedCpus(t *testing.T) {
 				mockInfo.NCPU = hn
 				cpuShares := int64(math.Ceil(float64(cn*1024) / float64(mockInfo.NCPU)))
 
-				apiClient.On("Info").Return(mockInfo, nil).Once()
-				apiClient.On("ServerVersion").Return(mockVersion, nil)
+				apiClient.On("Info", mock.Anything).Return(mockInfo, nil).Once()
+				apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 				client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 				client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
 				client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "test"}}, nil).Once()
@@ -403,8 +403,8 @@ func TestContainerRemovedDuringRefresh(t *testing.T) {
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
 
-	apiClient.On("Info").Return(mockInfo, nil)
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{container1, container2}, nil)
@@ -431,8 +431,8 @@ func TestDisconnect(t *testing.T) {
 	client := mockclient.NewMockClient()
 	apiClient := engineapimock.NewMockClient()
 
-	apiClient.On("Info").Return(mockInfo, nil)
-	apiClient.On("ServerVersion").Return(mockVersion, nil)
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("StopAllMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
