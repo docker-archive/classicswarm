@@ -209,7 +209,7 @@ function teardown() {
 	run docker_swarm run -d --name test_container -e constraint:node==node-1 busyboxabcde sleep 1000
 
 	# check error message
-	[[ "${output}" != *"unable to find a node that satisfies"* ]]
+	[[ "${output}" != *"unable to find a node that satisfies the constraint"* ]]
 	[[ "${output}" == *"not found"* ]]
 }
 

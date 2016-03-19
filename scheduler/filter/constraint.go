@@ -45,7 +45,7 @@ func (f *ConstraintFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 			}
 		}
 		if len(candidates) == 0 {
-			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", constraint.key, OPERATORS[constraint.operator], constraint.value)
+			return nil, fmt.Errorf("unable to find a node that satisfies the constraint %s%s%s", constraint.key, OPERATORS[constraint.operator], constraint.value)
 		}
 		nodes = candidates
 	}
