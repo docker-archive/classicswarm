@@ -10,6 +10,12 @@ function teardown() {
 }
 
 @test "mesos - docker inspect" {
+	local version="new"
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
+			version="old"
+	fi
+
 	start_docker_with_busybox 2
 	start_mesos
 	swarm_manage --cluster-driver mesos-experimental 127.0.0.1:$MESOS_MASTER_PORT
@@ -27,10 +33,15 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"NetworkSettings"* ]]
 	[[ "${output}" == *"TEST=true"* ]]
-	[[ "${output}" == *'"Hostname": "hostname"'* ]]
-	[[ "${output}" == *'"Domainname": "test"'* ]]
 	# the specific information of swarm node
 	[[ "${output}" == *'"Node": {'* ]]
 	[[ "${output}" == *'"Name": "node-'* ]]
+	if [[ "${version}" == "old" ]]; then
+		[[ "${output}" == *'"Hostname": "hostname"'* ]]
+		[[ "${output}" == *'"Domainname": "test"'* ]]
+	else
+		[[ "${output}" == *'"Hostname": "hostname.test"'* ]]
+		[[ "${output}" == *'"Domainname": ""'* ]]
+	fi
 }
 
