@@ -98,7 +98,7 @@ func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 }
 
 // Initialize the discovery service.
-func createDiscovery(uri string, c *cli.Context, discoveryOpt []string) discovery.Backend {
+func createDiscovery(uri string, c *cli.Context) discovery.Backend {
 	hb, err := time.ParseDuration(c.String("heartbeat"))
 	if err != nil {
 		log.Fatalf("invalid --heartbeat: %v", err)
@@ -268,7 +268,7 @@ func manage(c *cli.Context) {
 	if uri == "" {
 		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
 	}
-	discovery := createDiscovery(uri, c, c.StringSlice("discovery-opt"))
+	discovery := createDiscovery(uri, c)
 	s, err := strategy.New(c.String("strategy"))
 	if err != nil {
 		log.Fatal(err)
