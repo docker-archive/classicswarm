@@ -647,7 +647,7 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if image := r.Form.Get("fromImage"); image != "" { //pull
-		authConfig := dockerclient.AuthConfig{}
+		authConfig := apitypes.AuthConfig{}
 		buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
 		if err == nil {
 			json.Unmarshal(buf, &authConfig)
