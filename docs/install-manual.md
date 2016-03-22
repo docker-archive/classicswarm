@@ -245,7 +245,7 @@ nodes using the Swarm API, which is nearly the same as the standard Docker API.
 In this example, you use SSL to connect to `manager0` and `consul0` host again.
 Then, you address commands to the Swarm manager.
 
-1. Get information about the master and nodes in the cluster:
+1. Get information about the manager and nodes in the cluster:
 
         $ docker -H :4000 info
 
@@ -273,11 +273,11 @@ replica.
 
         $ docker ps
 
-3. Shut down the primary master, replacing `<id_name>` with the container's id or name (for example, "8862717fe6d3" or "trusting_lamarr").
+3. Shut down the primary manager, replacing `<id_name>` with the container's id or name (for example, "8862717fe6d3" or "trusting_lamarr").
 
         docker rm -f <id_name>
 
-4. Start the Swarm master. For example:
+4. Start the Swarm manager. For example:
 
         $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000 consul://172.30.0.161:237
 
@@ -290,11 +290,11 @@ replica.
         time="2016-02-02T02:12:32Z" level=info msg="Leader Election: Cluster leadership lost"
         time="2016-02-02T02:12:32Z" level=info msg="New leader elected: 172.30.0.160:4000"
 
-6. To get information about the master and nodes in the cluster, enter:
+6. To get information about the manager and nodes in the cluster, enter:
 
         $ docker -H :4000 info
 
-You can connect to the `master1` node and run the `info` and `logs` commands.
+You can connect to the `manager1` node and run the `info` and `logs` commands.
 They will display corresponding entries for the change in leadership.
 
 ## Additional Resources
