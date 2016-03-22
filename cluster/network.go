@@ -78,6 +78,34 @@ func (networks Networks) Filter(names []string, ids []string, types []string) Ne
 	return out
 }
 
+// RemoveDuplicateEndpoints returns a copy of input network
+// where duplicate container endpoints in the network are removed.
+// See https://github.com/docker/swarm/issues/1969
+// This function should be disabled when the bug is fixed in Docker network
+func (network *Network) RemoveDuplicateEndpoints() *Network {
+	// build a map from endpointID -> endpointIndex
+	endpointMap := make(map[string]string)
+	// traverse the endpoints to find the correct endpointIndex for each endpointID
+	for endpointIndex, endpointResource := range network.NetworkResource.Containers {
+		endpointID := endpointResource.EndpointID
+		// if this endpointID doesn't exist yet, add it
+		// if this endpointID exists, but endpointIndex is not a duplicate, use
+		// this endpointIndex
+		if _, ok := endpointMap[endpointID]; !ok || !strings.Contains(endpointIndex, endpointID) {
+			endpointMap[endpointID] = endpointIndex
+		}
+	}
+	// Make a copy of the network
+	netCopy := *network
+	// clean up existing endpoints
+	netCopy.Containers = make(map[string]dockerclient.EndpointResource)
+	// add the endpoint index from endpointMap
+	for _, index := range endpointMap {
+		netCopy.Containers[index] = network.Containers[index]
+	}
+	return &netCopy
+}
+
 // Get returns a network using its ID or Name
 func (networks Networks) Get(IDOrName string) *Network {
 	// Abort immediately if the name is empty.
