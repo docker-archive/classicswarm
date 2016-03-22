@@ -57,7 +57,7 @@ type Cluster interface {
 	// `callback` can be called multiple time
 	//  `where` is where it is being pulled
 	//  `status` is the current status, like "", "in progress" or "downloaded
-	Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string, err error))
+	Pull(name string, authConfig *types.AuthConfig, callback func(where, status string, err error))
 
 	// Import image
 	// `callback` can be called multiple time
