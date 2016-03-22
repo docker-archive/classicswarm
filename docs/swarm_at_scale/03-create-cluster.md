@@ -140,7 +140,7 @@ the Consul container, you launch a Swarm manager container.
     The command is acting on the Swarm port, so it returns information about the
     entire cluster. You have a manager and no nodes.
 
-9. While still on the `master` node, join each node one-by-one to the cluster.
+9. While still on the `manager` node, join each node one-by-one to the cluster.
 
     You can run these commands to join each node from the `manager` node command
     line. The `-H` flag with the `docker` command specifies a node IP address

@@ -98,8 +98,8 @@ $ docker daemon --label storage=disk
 $ swarm join --advertise=192.168.0.43:2375 token://XXXXXXXXXXXXXXXXXX
 ```
 
-Once the nodes are joined to a cluster, the Swarm master pulls their respective
-tags.  Moving forward, the master takes the tags into account when scheduling
+Once the nodes are joined to a cluster, the Swarm manager pulls their respective
+tags.  Moving forward, the manager takes the tags into account when scheduling
 new containers.
 
 Continuing the previous example, assuming your cluster with `node-1` and
@@ -116,7 +116,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1      db
 ```
 
-In this example, the master selected all nodes that met the `storage=ssd`
+In this example, the manager selected all nodes that met the `storage=ssd`
 constraint and applied resource management on top of them.   Only `node-1` was
 selected because it's the only host running flash.
 
@@ -164,7 +164,7 @@ Successfully built cd70495a1514
 
 $ docker images
 REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
-dockerswarm/swarm   master              8c2c56438951        2 days ago          795.7 MB
+dockerswarm/swarm   manager             8c2c56438951        2 days ago          795.7 MB
 ouruser/sinatra     v2                  cd70495a1514        35 seconds ago      318.7 MB
 ubuntu              14.04               a5a467fddcb8        11 days ago         187.9 MB
 ```

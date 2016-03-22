@@ -100,8 +100,8 @@ refers to this token as the `SWARM_CLUSTER_TOKEN`.
 
 All Swarm nodes in a cluster must have Engine installed. With Machine and the
 `SWARM_CLUSTER_TOKEN` you can provision a host with Engine and configure it as a
-Swarm node with one Machine command. To create a Swarm master node on a new VM
-called `swarm-master`, you do the following:
+Swarm node with one Machine command. To create a Swarm manager node on a new VM
+called `swarm-manager`, you do the following:
 
 ```
 docker-machine create \
@@ -109,7 +109,7 @@ docker-machine create \
     --swarm \
     --swarm-master \
     --swarm-discovery token://SWARM_CLUSTER_TOKEN \
-    swarm-master
+    swarm-manager
 ```
 
 Then, provision an additional node. You must supply the
@@ -148,17 +148,17 @@ connect to Swarm nodes.
 docker-machine env --swarm HOST_NODE_NAME
 export DOCKER_TLS_VERIFY="1"
 export DOCKER_HOST="tcp://192.168.99.101:3376"
-export DOCKER_CERT_PATH="/Users/mary/.docker/machine/machines/swarm-master"
-export DOCKER_MACHINE_NAME="swarm-master"
+export DOCKER_CERT_PATH="/Users/mary/.docker/machine/machines/swarm-manager"
+export DOCKER_MACHINE_NAME="swarm-manager"
 # Run this command to configure your shell:
 # eval $(docker-machine env --swarm HOST_NODE_NAME)
 ```
 
-To set your SHELL connect to a Swarm node called `swarm-master`, you would do
+To set your SHELL connect to a Swarm node called `swarm-manager`, you would do
 this:
 
 ```
-eval "$(docker-machine env --swarm swarm-master)"
+eval "$(docker-machine env --swarm swarm-manager)"
 ```
 
 Now, you can use the Docker CLI to query and interact with your cluster.
@@ -171,7 +171,7 @@ Role: primary
 Strategy: spread
 Filters: health, port, dependency, affinity, constraint
 Nodes: 1
- swarm-master: 192.168.99.101:2376
+ swarm-manager: 192.168.99.101:2376
   └ Status: Healthy
   └ Containers: 2
   └ Reserved CPUs: 0 / 1
@@ -179,7 +179,7 @@ Nodes: 1
   └ Labels: executiondriver=native-0.2, kernelversion=4.1.13-boot2docker, operatingsystem=Boot2Docker 1.9.1 (TCL 6.4.1); master : cef800b - Fri Nov 20 19:33:59 UTC 2015, provider=virtualbox, storagedriver=aufs
 CPUs: 1
 Total Memory: 1.021 GiB
-Name: swarm-master
+Name: swarm-manager
 ```
 
 ## Related information
