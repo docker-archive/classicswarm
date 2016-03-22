@@ -91,7 +91,7 @@ func (network *Network) RemoveDuplicateEndpoints() *Network {
 		// if this endpointID doesn't exist yet, add it
 		// if this endpointID exists, but endpointIndex is not a duplicate, use
 		// this endpointIndex
-		if _, ok := endpointMap[endpointID]; !ok || !strings.HasPrefix(endpointIndex, "ep-") {
+		if _, ok := endpointMap[endpointID]; !ok || !strings.Contains(endpointIndex, endpointID) {
 			endpointMap[endpointID] = endpointIndex
 		}
 	}
