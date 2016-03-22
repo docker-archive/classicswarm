@@ -271,8 +271,11 @@ func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 func getNetwork(c *context, w http.ResponseWriter, r *http.Request) {
 	var id = mux.Vars(r)["networkid"]
 	if network := c.cluster.Networks().Uniq().Get(id); network != nil {
+		// there could be duplicate container endpoints in network, need to remove redundant
+		// see https://github.com/docker/swarm/issues/1969
+		cleanNetwork := network.RemoveDuplicateEndpoints()
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(network)
+		json.NewEncoder(w).Encode(cleanNetwork)
 		return
 	}
 	httpError(w, fmt.Sprintf("No such network: %s", id), http.StatusNotFound)
