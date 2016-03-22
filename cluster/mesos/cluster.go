@@ -15,6 +15,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/engine-api/types"
+	containertypes "github.com/docker/engine-api/types/container"
+	networktypes "github.com/docker/engine-api/types/network"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/docker/swarm/scheduler"
@@ -183,14 +185,14 @@ func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *dockerclient.HostConfig) error {
 	// if the container was started less than a second ago in detach mode, do not start it
 	if time.Now().Unix()-container.Created > 1 || container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.detach"] != "true" {
-		return container.Engine.StartContainer(container.Id, hostConfig)
+		return container.Engine.StartContainer(container.ID, hostConfig)
 	}
 	return nil
 }
 
 // CreateContainer for container creation in Mesos task
-func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
-	if config.Memory == 0 && config.CpuShares == 0 {
+func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *types.AuthConfig) (*cluster.Container, error) {
+	if config.Memory == 0 && config.CPUShares == 0 {
 		return nil, errResourcesNeeded
 	}
 
@@ -263,7 +265,7 @@ func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCre
 	if len(parts) == 2 {
 		// a node was specified, create the container only on this node
 		request.Name = parts[1]
-		config = cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:node==" + parts[0]}})
+		config = cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
 	}
 
 	c.scheduler.Lock()
@@ -363,7 +365,7 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]types.ImageDelete, error)
 }
 
 // Pull pulls images on the cluster nodes
-func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string, err error)) {
+func (c *Cluster) Pull(name string, authConfig *types.AuthConfig, callback func(where, status string, err error)) {
 
 }
 
@@ -596,7 +598,7 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 	// We can use this to find the right container.
 	inspect := []dockerclient.ContainerInfo{}
 	if data != nil && json.Unmarshal(data, &inspect) == nil && len(inspect) == 1 {
-		container := &cluster.Container{Container: dockerclient.Container{Id: inspect[0].Id}, Engine: s.engine}
+		container := &cluster.Container{Container: types.Container{ID: inspect[0].Id}, Engine: s.engine}
 		if container, err := container.Refresh(); err == nil {
 			if !t.Stopped() {
 				t.SetContainer(container)
@@ -644,10 +646,14 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 	c.scheduler.Lock()
 
 	// get an engine
-	config := &cluster.ContainerConfig{dockerclient.ContainerConfig{
-		CpuShares: buildImage.CPUShares,
-		Memory:    buildImage.Memory,
-	}}
+	config := &cluster.ContainerConfig{
+		HostConfig: containertypes.HostConfig{
+			Resources: containertypes.Resources{
+				CPUShares: buildImage.CPUShares,
+				Memory:    buildImage.Memory,
+			},
+		},
+	}
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
 	c.scheduler.Unlock()
 	if err != nil {

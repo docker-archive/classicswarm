@@ -15,6 +15,8 @@ import (
 	"github.com/docker/docker/pkg/discovery"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/engine-api/types"
+	containertypes "github.com/docker/engine-api/types/container"
+	networktypes "github.com/docker/engine-api/types/network"
 	"github.com/docker/go-units"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
@@ -30,12 +32,14 @@ type pendingContainer struct {
 
 func (p *pendingContainer) ToContainer() *cluster.Container {
 	container := &cluster.Container{
-		Container: dockerclient.Container{
+		Container: types.Container{
 			Labels: p.Config.Labels,
 		},
 		Config: p.Config,
-		Info: dockerclient.ContainerInfo{
-			HostConfig: &dockerclient.HostConfig{},
+		Info: types.ContainerJSON{
+			ContainerJSONBase: &types.ContainerJSONBase{
+				HostConfig: &containertypes.HostConfig{},
+			},
 		},
 		Engine: p.Engine,
 	}
@@ -134,7 +138,7 @@ func (c *Cluster) generateUniqueID() string {
 
 // StartContainer starts a container
 func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *dockerclient.HostConfig) error {
-	return container.Engine.StartContainer(container.Id, hostConfig)
+	return container.Engine.StartContainer(container.ID, hostConfig)
 }
 
 // CreateContainer aka schedule a brand new container into the cluster.
@@ -178,11 +182,11 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 		config.SetSwarmID(swarmID)
 	}
 
-	if network := c.Networks().Get(config.HostConfig.NetworkMode); network != nil && network.Scope == "local" {
+	if network := c.Networks().Get(string(config.HostConfig.NetworkMode)); network != nil && network.Scope == "local" {
 		if !config.HaveNodeConstraint() {
 			config.AddConstraint("node==~" + network.Engine.Name)
 		}
-		config.HostConfig.NetworkMode = network.Name
+		config.HostConfig.NetworkMode = containertypes.NetworkMode(network.Name)
 	}
 
 	if withImageAffinity {
@@ -475,7 +479,7 @@ func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (response *types.N
 	if len(parts) == 2 {
 		// a node was specified, create the container only on this node
 		request.Name = parts[1]
-		config = cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:node==" + parts[0]}})
+		config = cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
 	}
 
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
@@ -536,7 +540,7 @@ func (c *Cluster) CreateVolume(request *types.VolumeCreateRequest) (*cluster.Vol
 
 		wg.Wait()
 	} else {
-		config := cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"constraint:node==" + parts[0]}})
+		config := cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
 		nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
 		if err != nil {
 			return nil, err
@@ -580,7 +584,7 @@ func (c *Cluster) RemoveVolumes(name string) (bool, error) {
 }
 
 // Pull is exported
-func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string, err error)) {
+func (c *Cluster) Pull(name string, authConfig *types.AuthConfig, callback func(where, status string, err error)) {
 	var wg sync.WaitGroup
 
 	c.RLock()
@@ -908,11 +912,9 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 	c.scheduler.Lock()
 
 	// get an engine
-	config := cluster.BuildContainerConfig(dockerclient.ContainerConfig{
-		CpuShares: buildImage.CPUShares,
-		Memory:    buildImage.Memory,
-		Env:       convertMapToKVStrings(buildImage.BuildArgs),
-	})
+	config := cluster.BuildContainerConfig(containertypes.Config{Env: convertMapToKVStrings(buildImage.BuildArgs)},
+		containertypes.HostConfig{Resources: containertypes.Resources{CPUShares: buildImage.CPUShares, Memory: buildImage.Memory}},
+		networktypes.NetworkingConfig{})
 	buildImage.BuildArgs = convertKVStringsToMap(config.Env)
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
 	c.scheduler.Unlock()
