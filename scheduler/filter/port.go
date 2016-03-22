@@ -3,9 +3,9 @@ package filter
 import (
 	"fmt"
 
+	"github.com/docker/go-connections/nat"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 )
 
 // PortFilter guarantees that, when scheduling a container binding a public
@@ -32,7 +32,7 @@ func (p *PortFilter) filterHost(config *cluster.ContainerConfig, nodes []*node.N
 	for port := range config.ExposedPorts {
 		candidates := []*node.Node{}
 		for _, node := range nodes {
-			if !p.portAlreadyExposed(node, port) {
+			if !p.portAlreadyExposed(node, string(port)) {
 				candidates = append(candidates, node)
 			}
 		}
@@ -66,7 +66,7 @@ func (p *PortFilter) portAlreadyExposed(node *node.Node, requestedPort string) b
 	for _, c := range node.Containers {
 		if c.Info.HostConfig.NetworkMode == "host" {
 			for port := range c.Info.Config.ExposedPorts {
-				if port == requestedPort {
+				if string(port) == requestedPort {
 					return true
 				}
 			}
@@ -75,7 +75,7 @@ func (p *PortFilter) portAlreadyExposed(node *node.Node, requestedPort string) b
 	return false
 }
 
-func (p *PortFilter) portAlreadyInUse(node *node.Node, requested dockerclient.PortBinding) bool {
+func (p *PortFilter) portAlreadyInUse(node *node.Node, requested nat.PortBinding) bool {
 	for _, c := range node.Containers {
 		// HostConfig.PortBindings contains the requested ports.
 		// NetworkSettings.Ports contains the actual ports.
@@ -96,7 +96,7 @@ func (p *PortFilter) portAlreadyInUse(node *node.Node, requested dockerclient.Po
 	return false
 }
 
-func (p *PortFilter) compare(requested dockerclient.PortBinding, bindings map[string][]dockerclient.PortBinding) bool {
+func (p *PortFilter) compare(requested nat.PortBinding, bindings nat.PortMap) bool {
 	for _, binding := range bindings {
 		for _, b := range binding {
 			if b.HostPort == "" {
@@ -110,7 +110,7 @@ func (p *PortFilter) compare(requested dockerclient.PortBinding, bindings map[st
 				// port/protocol.  Verify if they are requesting the same
 				// binding IP, or if the other container is already binding on
 				// every interface.
-				if requested.HostIp == b.HostIp || bindsAllInterfaces(requested) || bindsAllInterfaces(b) {
+				if requested.HostIP == b.HostIP || bindsAllInterfaces(requested) || bindsAllInterfaces(b) {
 					return true
 				}
 			}
@@ -137,6 +137,6 @@ func (p *PortFilter) GetFilters(config *cluster.ContainerConfig) ([]string, erro
 	return allPortConstraints, nil
 }
 
-func bindsAllInterfaces(binding dockerclient.PortBinding) bool {
-	return binding.HostIp == "0.0.0.0" || binding.HostIp == ""
+func bindsAllInterfaces(binding nat.PortBinding) bool {
+	return binding.HostIP == "0.0.0.0" || binding.HostIP == ""
 }
