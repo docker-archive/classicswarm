@@ -6,22 +6,32 @@ import (
 	"testing"
 	"time"
 
+	containertypes "github.com/docker/engine-api/types/container"
+	networktypes "github.com/docker/engine-api/types/network"
 	"github.com/docker/swarm/cluster"
 	"github.com/mesos/mesos-go/mesosproto"
 	"github.com/mesos/mesos-go/mesosutil"
-	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
 const name = "mesos-swarm-task-name"
 
+var (
+	containerConfig = containertypes.Config{
+		Image: "test-image",
+		Cmd:   []string{"ls", "foo", "bar"},
+	}
+	hostConfig = containertypes.HostConfig{
+		Resources: containertypes.Resources{
+			CPUShares: 42,
+			Memory:    2097152,
+		},
+	}
+	networkingConfig = networktypes.NetworkingConfig{}
+)
+
 func TestBuild(t *testing.T) {
-	task, err := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{
-		Image:     "test-image",
-		CpuShares: 42,
-		Memory:    2097152,
-		Cmd:       []string{"ls", "foo", "bar"},
-	}), name, 5*time.Second)
+	task, err := NewTask(cluster.BuildContainerConfig(containerConfig, hostConfig, networkingConfig), name, 5*time.Second)
 	assert.NoError(t, err)
 
 	task.Build("slave-id", nil)
@@ -48,7 +58,7 @@ func TestBuild(t *testing.T) {
 }
 
 func TestNewTask(t *testing.T) {
-	task, err := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), name, 5*time.Second)
+	task, err := NewTask(cluster.BuildContainerConfig(containertypes.Config{}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), name, 5*time.Second)
 	assert.NoError(t, err)
 
 	assert.Equal(t, *task.Name, name)
@@ -57,7 +67,7 @@ func TestNewTask(t *testing.T) {
 }
 
 func TestSendGetStatus(t *testing.T) {
-	task, err := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "", 5*time.Second)
+	task, err := NewTask(cluster.BuildContainerConfig(containertypes.Config{}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), "", 5*time.Second)
 	assert.NoError(t, err)
 
 	status := mesosutil.NewTaskStatus(nil, mesosproto.TaskState_TASK_RUNNING)

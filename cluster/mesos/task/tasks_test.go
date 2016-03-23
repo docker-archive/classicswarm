@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/docker/swarm/cluster"
-	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,19 +20,9 @@ func (t *testLauncher) LaunchTask(_ *Task) bool {
 func TestAdd(t *testing.T) {
 	q := NewTasks(&testLauncher{count: 1})
 
-	task1, _ := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{
-		Image:     "test-image",
-		CpuShares: 42,
-		Memory:    2097152,
-		Cmd:       []string{"ls", "foo", "bar"},
-	}), "name1", 5*time.Second)
+	task1, _ := NewTask(cluster.BuildContainerConfig(containerConfig, hostConfig, networkingConfig), "name1", 5*time.Second)
 
-	task2, _ := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{
-		Image:     "test-image",
-		CpuShares: 42,
-		Memory:    2097152,
-		Cmd:       []string{"ls", "foo", "bar"},
-	}), "name2", 5*time.Second)
+	task2, _ := NewTask(cluster.BuildContainerConfig(containerConfig, hostConfig, networkingConfig), "name2", 5*time.Second)
 	q.Add(task1)
 	assert.Equal(t, len(q.Tasks), 0)
 
@@ -44,12 +33,7 @@ func TestAdd(t *testing.T) {
 
 func TestRemove(t *testing.T) {
 	q := NewTasks(&testLauncher{count: 2})
-	task1, _ := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{
-		Image:     "test-image",
-		CpuShares: 42,
-		Memory:    2097152,
-		Cmd:       []string{"ls", "foo", "bar"},
-	}), "name1", 5*time.Second)
+	task1, _ := NewTask(cluster.BuildContainerConfig(containerConfig, hostConfig, networkingConfig), "name1", 5*time.Second)
 
 	q.Add(task1)
 	assert.Equal(t, len(q.Tasks), 1)
@@ -60,12 +44,7 @@ func TestRemove(t *testing.T) {
 
 func TestProcess(t *testing.T) {
 	q := NewTasks(&testLauncher{count: 3})
-	task1, _ := NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{
-		Image:     "test-image",
-		CpuShares: 42,
-		Memory:    2097152,
-		Cmd:       []string{"ls", "foo", "bar"},
-	}), "name1", 5*time.Second)
+	task1, _ := NewTask(cluster.BuildContainerConfig(containerConfig, hostConfig, networkingConfig), "name1", 5*time.Second)
 
 	q.Add(task1)
 	assert.Equal(t, len(q.Tasks), 1)
