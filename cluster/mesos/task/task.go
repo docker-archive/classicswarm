@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"os"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
@@ -151,6 +152,12 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 		t.Command.Arguments = t.config.Cmd[1:]
 	}
 
+	if role := os.Getenv("SWARM_MESOS_ROLE"); role != "" {
+		for i := range t.Resources {
+			t.Resources[i].Role = proto.String(role)
+		}
+ 	}
+	
 	for key, value := range t.config.Labels {
 		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("label"), Value: proto.String(fmt.Sprintf("%s=%s", key, value))})
 	}

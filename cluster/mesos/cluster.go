@@ -43,6 +43,7 @@ type Cluster struct {
 	taskCreationTimeout time.Duration
 	pendingTasks        *task.Tasks
 	engineOpts          *cluster.EngineOpts
+	role                string
 }
 
 const (
@@ -91,8 +92,14 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	// Do not check error here, so mesos-go can still try.
 	hostname, _ := os.Hostname()
 
+	if role, found := options.String("mesos.role", "SWARM_MESOS_ROLE"); found {
+		cluster.role = role
+	} else {
+		cluster.role = "*"
+	}
+
 	driverConfig := mesosscheduler.DriverConfig{
-		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
+		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user, Role: &cluster.role},
 		Master:           cluster.master,
 		HostnameOverride: hostname,
 	}
