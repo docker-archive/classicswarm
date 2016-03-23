@@ -73,8 +73,6 @@ func (eh *eventsHandler) cleanupHandler(remoteAddr string) {
 // Handle writes information about a cluster event to each remote address in the cluster that has been added to the events handler.
 // After an unsuccessful write to a remote address, the associated channel is closed and the address is removed from the events handler.
 func (eh *eventsHandler) Handle(e *cluster.Event) error {
-	eh.RLock()
-
 	// remove this hack once 1.10 is broadly adopted
 	from := e.From
 	e.From = e.From + " node:" + e.Engine.Name
@@ -108,6 +106,8 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	data = append(data, []byte(node)...)
 
 	var failed []string
+
+	eh.RLock()
 
 	for key, w := range eh.ws {
 		if _, err := fmt.Fprintf(w, string(data)); err != nil {
