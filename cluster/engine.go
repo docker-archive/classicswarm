@@ -728,7 +728,7 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 		// Convert the ContainerConfig from inspect into our own
 		// cluster.ContainerConfig.
 
-		info.HostConfig.CPUShares = info.HostConfig.CPUShares * int64(e.Cpus) / 1024.0
+		// info.HostConfig.CPUShares = info.HostConfig.CPUShares * int64(e.Cpus) / 1024.0
 		networkingConfig := networktypes.NetworkingConfig{
 			EndpointsConfig: info.NetworkSettings.Networks,
 		}
@@ -878,7 +878,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 	e.CheckConnectionErr(err)
 	if err != nil {
 		// If the error is other than not found, abort immediately.
-		if err != dockerclient.ErrImageNotFound || !pullImage {
+		if (err != dockerclient.ErrImageNotFound && !engineapi.IsErrImageNotFound(err)) || !pullImage {
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
