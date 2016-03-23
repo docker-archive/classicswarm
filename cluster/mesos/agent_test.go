@@ -4,10 +4,11 @@ import (
 	"testing"
 	"time"
 
+	containertypes "github.com/docker/engine-api/types/container"
+	networktypes "github.com/docker/engine-api/types/network"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/mesos/mesos-go/mesosutil"
-	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,11 +44,11 @@ func TestAddTask(t *testing.T) {
 	assert.Empty(t, s.tasks)
 	assert.True(t, s.empty())
 
-	t1, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1", 5*time.Second)
+	t1, err := task.NewTask(cluster.BuildContainerConfig(containertypes.Config{}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), "task1", 5*time.Second)
 	assert.NoError(t, err)
 	s.addTask(t1)
 
-	t2, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1", 5*time.Second)
+	t2, err := task.NewTask(cluster.BuildContainerConfig(containertypes.Config{}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), "task1", 5*time.Second)
 	assert.NoError(t, err)
 	s.addTask(t2)
 	assert.Equal(t, len(s.tasks), 2)
@@ -81,11 +82,11 @@ func TestRemoveTask(t *testing.T) {
 
 	assert.Empty(t, s.tasks)
 
-	t1, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1", 5*time.Second)
+	t1, err := task.NewTask(cluster.BuildContainerConfig(containertypes.Config{}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), "task1", 5*time.Second)
 	assert.NoError(t, err)
 	s.addTask(t1)
 
-	t2, err := task.NewTask(cluster.BuildContainerConfig(dockerclient.ContainerConfig{}), "task1", 5*time.Second)
+	t2, err := task.NewTask(cluster.BuildContainerConfig(containertypes.Config{}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), "task1", 5*time.Second)
 	assert.NoError(t, err)
 	s.addTask(t2)
 	assert.Equal(t, len(s.tasks), 2)
