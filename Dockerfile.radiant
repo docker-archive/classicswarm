@@ -1,0 +1,34 @@
+FROM golang:1.5.3-alpine
+
+COPY . /go/src/github.com/docker/swarm
+WORKDIR /go/src/github.com/docker/swarm
+
+ARG git_commit_id=unknown
+ARG build_id=unknown
+ARG build_number=unknown
+ARG build_date=unknown
+ARG git_tag=unknown
+ARG git_remote_url=unknown
+
+LABEL git-commit-id=${git_commit_id}
+LABEL build-id=${build_id}
+LABEL build-number=${build_number}
+LABEL build-date=${build_date}
+LABEL git-tag=${git_tag}
+LABEL git-remote-url=${git_remote_url}
+
+ENV GOPATH /go/src/github.com/docker/swarm/Godeps/_workspace:$GOPATH
+
+RUN set -ex \
+	&& apk add --no-cache --virtual .build-deps \
+	git \
+	&& CGO_ENABLED=0 go install -v -a -tags netgo -installsuffix netgo -ldflags "-w -X github.com/docker/swarm/version.GITCOMMIT `git rev-parse --short HEAD` -X github.com/docker/swarm/version.BUILDTIME \"`date -u`\""  \
+	&& apk del .build-deps
+
+ENV SWARM_HOST :2375
+EXPOSE 2375
+
+VOLUME $HOME/.swarm
+
+ENTRYPOINT ["swarm"]
+CMD ["--help"]
