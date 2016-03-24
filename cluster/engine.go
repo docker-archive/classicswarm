@@ -18,6 +18,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/version"
 	engineapi "github.com/docker/engine-api/client"
+	"github.com/docker/engine-api/types"
 	engineapinop "github.com/docker/swarm/api/nopclient"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/nopclient"
@@ -1131,10 +1132,13 @@ func (e *Engine) RenameContainer(container *Container, newName string) error {
 }
 
 // BuildImage builds an image
-func (e *Engine) BuildImage(buildImage *dockerclient.BuildImage) (io.ReadCloser, error) {
-	reader, err := e.client.BuildImage(buildImage)
+func (e *Engine) BuildImage(buildImage *types.ImageBuildOptions) (io.ReadCloser, error) {
+	resp, err := e.apiClient.ImageBuild(context.TODO(), *buildImage)
 	e.CheckConnectionErr(err)
-	return reader, err
+	if err != nil {
+		return nil, err
+	}
+	return resp.Body, nil
 }
 
 // TagImage tags an image
