@@ -9,9 +9,9 @@ function teardown() {
 
 @test "scheduler avoids failing node" {
 	# Docker issue #14203 in runC causing this test to fail.
-	# Issue fixed in Docker 1.10
+	# Issue fixed after Docker 1.10
 	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* ]]; then
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
 		skip
 	fi
 
@@ -41,9 +41,9 @@ function teardown() {
 
 @test "refresh loop detects failure" {
 	# Docker issue #14203 in runC causing this test to fail.
-	# Issue fixed in Docker 1.10
+	# Issue fixed after Docker 1.10
 	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* ]]; then
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
 		skip
 	fi
 
@@ -71,9 +71,9 @@ function teardown() {
 
 @test "scheduler retry" {
 	# Docker issue #14203 in runC causing this test to fail.
-	# Issue fixed in Docker 1.10
+	# Issue fixed after Docker 1.10
 	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* ]]; then
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
 		skip
 	fi
 
