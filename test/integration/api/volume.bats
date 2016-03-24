@@ -38,9 +38,12 @@ function teardown() {
 	[ "${#lines[@]}" -eq 1 ]
 	[[ "${output}" == *"node-0/"* ]]
 
-	run docker_swarm volume inspect ${output}
-	[ "${#lines[@]}" -eq 7 ]
+	id=${output}
+
+	run docker_swarm volume inspect $id
 	[[ "${output}" == *"\"Driver\": \"local\""* ]]
+
+	diff <(docker_swarm volume inspect $id) <(docker -H ${HOSTS[0]} volume inspect ${id#node-0/})
 }
 
 @test "docker volume create" {
