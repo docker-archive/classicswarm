@@ -14,6 +14,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/engine-api/types"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/docker/swarm/scheduler"
@@ -639,12 +640,12 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 }
 
 // BuildImage builds an image
-func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer) error {
+func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer) error {
 	c.scheduler.Lock()
 
 	// get an engine
 	config := &cluster.ContainerConfig{dockerclient.ContainerConfig{
-		CpuShares: buildImage.CpuShares,
+		CpuShares: buildImage.CPUShares,
 		Memory:    buildImage.Memory,
 	}}
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
