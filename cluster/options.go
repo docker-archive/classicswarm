@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"strconv"
@@ -10,60 +11,85 @@ import (
 // DriverOpts are key=values options
 type DriverOpts []string
 
+// ErrNoKeyNorEnv is exported
+var ErrNoKeyNorEnv = fmt.Errorf("No key in options and no env")
+
 // String returns a string from the driver options
-func (do DriverOpts) String(key, env string) (string, bool) {
+func (do DriverOpts) String(key, env string) (string, error) {
 	for _, opt := range do {
 		kv := strings.SplitN(opt, "=", 2)
 		if kv[0] == key {
-			return kv[1], true
+			return kv[1], nil
 		}
 	}
 	if env := os.Getenv(env); env != "" {
-		return env, true
+		return env, nil
 	}
-	return "", false
+	return "", ErrNoKeyNorEnv
 }
 
 // Int returns an int64 from the driver options
-func (do DriverOpts) Int(key, env string) (int64, bool) {
-	if value, ok := do.String(key, env); ok {
-		v, _ := strconv.ParseInt(value, 0, 64)
-		return v, true
+func (do DriverOpts) Int(key, env string) (int64, error) {
+	value, err := do.String(key, env)
+	if err != nil {
+		return 0, err
 	}
-	return 0, false
+
+	v, err := strconv.ParseInt(value, 0, 64)
+	if err != nil {
+		return 0, err
+	}
+	return v, nil
 }
 
 // Uint returns an int64 from the driver options
-func (do DriverOpts) Uint(key, env string) (uint64, bool) {
-	if value, ok := do.String(key, env); ok {
-		v, _ := strconv.ParseUint(value, 0, 64)
-		return v, true
+func (do DriverOpts) Uint(key, env string) (uint64, error) {
+	value, err := do.String(key, env)
+	if err != nil {
+		return 0, err
 	}
-	return 0, false
+
+	v, err := strconv.ParseUint(value, 0, 64)
+	if err != nil {
+		return 0, err
+	}
+	return v, nil
 }
 
 // Float returns a float64 from the driver options
-func (do DriverOpts) Float(key, env string) (float64, bool) {
-	if value, ok := do.String(key, env); ok {
-		v, _ := strconv.ParseFloat(value, 64)
-		return v, true
+func (do DriverOpts) Float(key, env string) (float64, error) {
+	value, err := do.String(key, env)
+	if err != nil {
+		return 0.0, err
 	}
-	return 0.0, false
+
+	v, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return 0.0, err
+	}
+	return v, nil
+
 }
 
 // IP returns an IP address from the driver options
-func (do DriverOpts) IP(key, env string) (net.IP, bool) {
-	if value, ok := do.String(key, env); ok {
-		return net.ParseIP(value), true
+func (do DriverOpts) IP(key, env string) (net.IP, error) {
+	value, err := do.String(key, env)
+	if err != nil {
+		return nil, err
 	}
-	return nil, false
+	return net.ParseIP(value), nil
 }
 
-// Bool returns a boolean from the driver options
-func (do DriverOpts) Bool(key, env string) (bool, bool) {
-	if value, ok := do.String(key, env); ok {
-		b, _ := strconv.ParseBool(value)
-		return b, true
+// Bool returns a errorean from the driver options
+func (do DriverOpts) Bool(key, env string) (bool, error) {
+	value, err := do.String(key, env)
+	if err != nil {
+		return false, err
 	}
-	return false, false
+
+	b, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, err
+	}
+	return b, nil
 }

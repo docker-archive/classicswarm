@@ -68,6 +68,13 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	if log.GetLevel() == log.DebugLevel {
 		flag.Lookup("logtostderr").Value.Set("true")
 	}
+
+	// Empty string is accepted by the scheduler.
+	user, err := options.String("mesos.user", "SWARM_MESOS_USER")
+	if err == cluster.ErrNoKeyNorEnv {
+		log.Debug("no mesos.user in cluster options nor SWARM_MESOS_USER in env")
+	}
+
 	cluster := &Cluster{
 		dockerEnginePort:    defaultDockerEnginePort,
 		eventHandlers:       cluster.NewEventHandlers(),
@@ -83,8 +90,10 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 
 	cluster.pendingTasks = task.NewTasks(cluster)
 
-	// Empty string is accepted by the scheduler.
-	user, _ := options.String("mesos.user", "SWARM_MESOS_USER")
+	// Changing port for https
+	if cluster.TLSConfig != nil {
+		cluster.dockerEnginePort = defaultDockerEngineTLSPort
+	}
 
 	// Override the hostname here because mesos-go will try
 	// to shell out to the hostname binary and it won't work with our official image.
@@ -97,51 +106,8 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		HostnameOverride: hostname,
 	}
 
-	if taskCreationTimeout, ok := options.String("mesos.tasktimeout", "SWARM_MESOS_TASK_TIMEOUT"); ok {
-		d, err := time.ParseDuration(taskCreationTimeout)
-		if err != nil {
-			return nil, err
-		}
-		cluster.taskCreationTimeout = d
-	}
-	// Changing port for https
-	if cluster.TLSConfig != nil {
-		cluster.dockerEnginePort = defaultDockerEngineTLSPort
-	}
-
-	if bindingPort, ok := options.Uint("mesos.port", "SWARM_MESOS_PORT"); ok {
-		driverConfig.BindingPort = uint16(bindingPort)
-	}
-
-	if bindingAddress, ok := options.IP("mesos.address", "SWARM_MESOS_ADDRESS"); ok {
-		if bindingAddress == nil {
-			value, _ := options.String("mesos.address", "SWARM_MESOS_ADDRESS")
-			return nil, fmt.Errorf(
-				"invalid IP address for cluster-opt mesos.address: \"%s\"",
-				value)
-		}
-		driverConfig.BindingAddress = bindingAddress
-	}
-
-	if checkpointFailover, ok := options.Bool("mesos.checkpointfailover", "SWARM_MESOS_CHECKPOINT_FAILOVER"); ok {
-		driverConfig.Framework.Checkpoint = &checkpointFailover
-	}
-
-	if offerTimeout, ok := options.String("mesos.offertimeout", "SWARM_MESOS_OFFER_TIMEOUT"); ok {
-		d, err := time.ParseDuration(offerTimeout)
-		if err != nil {
-			return nil, err
-		}
-		cluster.offerTimeout = d
-	}
-
-	if refuseTimeout, ok := options.String("mesos.offerrefusetimeout", "SWARM_MESOS_OFFER_REFUSE_TIMEOUT"); ok {
-		d, err := time.ParseDuration(refuseTimeout)
-		if err != nil {
-			return nil, err
-		}
-		cluster.refuseTimeout = d
-	}
+	parseClusterOpts(options, cluster)
+	parseDriveConfig(options, &driverConfig)
 
 	sched, err := NewScheduler(driverConfig, cluster, scheduler)
 	if err != nil {
