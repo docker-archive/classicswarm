@@ -12,7 +12,7 @@ weight=-89
 # Setup cluster resources
 
 Now that [your underlying network infrastructure is built](02-deploy-infra.md),
-you can deploye and configure the Swarm cluster. A host in a Swarm cluster is
+you can deploy and configure the Swarm cluster. A host in a Swarm cluster is
 called a *node*. So, these instructions refer to each AWS EC2 instances as a
 node and refers to each node by the **Name** it appears as in your EC2
 Dashboard**.
