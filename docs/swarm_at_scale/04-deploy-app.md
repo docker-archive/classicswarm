@@ -29,7 +29,7 @@ not:
 - Worker containers: custom built image
 - Results containers: custom built image
 
-All custom built images are built using Dockerfile's pulled from the
+All custom built images are built using Dockerfiles pulled from the
 [example application's public GitHub
 repository](https://github.com/docker/swarm-microservice-demo-v1).
 
@@ -64,7 +64,7 @@ repository](https://github.com/docker/swarm-microservice-demo-v1).
 
 4. View the Dockerfile contents.
 
-        $ cat Dockerfile  
+        $ cat Dockerfile
         # Using official python runtime base image
         FROM python:2.7
         # Set the application directory
@@ -210,7 +210,7 @@ In the following steps, your launch several containers to the voting application
     specify *node constraints*, forcing Swarm to start the contaienrs on
     `frontend01` and `frontend02`. Port `5000` on each node is mapped to port
     `80` inside of each container. This allows connections to come in to each
-    node on port `5000` and be forwarded to port `80` inside of each container.  
+    node on port `5000` and be forwarded to port `80` inside of each container.
 
     Both containers are attached to the `mynet` overlay network and both
     containers are given the `votingapp-local` hostname. The
