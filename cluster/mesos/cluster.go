@@ -209,7 +209,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 	}
 }
 
-// RemoveContainer to remove containers on mesos cluster
+// RemoveContainer removes containers on mesos cluster
 func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes bool) error {
 	c.scheduler.Lock()
 	defer c.scheduler.Unlock()
@@ -361,7 +361,7 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete
 	return nil, errNotSupported
 }
 
-// Pull will pull images on the cluster nodes
+// Pull pulls images on the cluster nodes
 func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string, err error)) {
 
 }
@@ -376,7 +376,7 @@ func (c *Cluster) Import(source string, repository string, tag string, imageRead
 
 }
 
-// RenameContainer Rename a container
+// RenameContainer renames a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
 	//FIXME this doesn't work as the next refreshcontainer will erase this change (this change is in-memory only)
 	container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.name"] = newName
@@ -403,7 +403,7 @@ func (c *Cluster) Volumes() cluster.Volumes {
 	return nil
 }
 
-// listNodes returns all the nodess in the cluster.
+// listNodes returns all the nodes in the cluster.
 func (c *Cluster) listNodes() []*node.Node {
 	c.RLock()
 	defer c.RUnlock()
@@ -434,7 +434,7 @@ func (c *Cluster) listOffers() []*mesosproto.Offer {
 	return list
 }
 
-// TotalMemory return the total memory of the cluster
+// TotalMemory returns the total memory of the cluster
 func (c *Cluster) TotalMemory() int64 {
 	c.RLock()
 	defer c.RUnlock()
@@ -445,7 +445,7 @@ func (c *Cluster) TotalMemory() int64 {
 	return totalMemory
 }
 
-// TotalCpus return the total memory of the cluster
+// TotalCpus returns the total memory of the cluster
 func (c *Cluster) TotalCpus() int {
 	c.RLock()
 	defer c.RUnlock()
@@ -511,7 +511,7 @@ func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 	return found
 }
 
-// LaunchTask method selects node and calls driver to launch a task
+// LaunchTask selects node and calls driver to launch a task
 func (c *Cluster) LaunchTask(t *task.Task) bool {
 	c.scheduler.Lock()
 	//change to explicit lock defer c.scheduler.Unlock()
@@ -638,7 +638,7 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 	return c.agents[n.ID].engine, nil
 }
 
-// BuildImage build an image
+// BuildImage builds an image
 func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer) error {
 	c.scheduler.Lock()
 
@@ -667,7 +667,7 @@ func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer)
 	return nil
 }
 
-// TagImage tag an image
+// TagImage tags an image
 func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	return errNotSupported
 }
