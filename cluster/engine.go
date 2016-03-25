@@ -182,7 +182,10 @@ func (e *Engine) Connect(config *tls.Config) error {
 	if err != nil {
 		return err
 	}
+
+	e.Lock()
 	e.IP = addr.IP.String()
+	e.Unlock()
 
 	// create the HTTP Client and URL
 	httpClient, url, err := NewHTTPClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), nil)
@@ -227,9 +230,11 @@ func (e *Engine) StartMonitorEvents() {
 
 // ConnectWithClient is exported
 func (e *Engine) ConnectWithClient(client dockerclient.Client, apiClient swarmclient.SwarmAPIClient) error {
+	e.Lock()
 	e.client = client
 	e.apiClient = apiClient
 	e.eventsMonitor = NewEventsMonitor(e.apiClient, e.handler)
+	e.Unlock()
 
 	// Fetch the engine labels.
 	if err := e.updateSpecs(); err != nil {
@@ -325,8 +330,8 @@ func (e *Engine) setState(state engineState) {
 func (e *Engine) TimeToValidate() bool {
 	const validationLimit time.Duration = 4 * time.Hour
 	const minFailureBackoff time.Duration = 30 * time.Second
-	e.Lock()
-	defer e.Unlock()
+	e.RLock()
+	defer e.RUnlock()
 	if e.state != statePending {
 		return false
 	}
@@ -851,10 +856,8 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 	}
 
 	// Update its internal state.
-	e.Lock()
 	container.Container = c
 	containers[container.ID] = container
-	e.Unlock()
 
 	return containers, nil
 }
@@ -959,11 +962,15 @@ func (e *Engine) UsedCpus() int64 {
 
 // TotalMemory returns the total memory + overcommit
 func (e *Engine) TotalMemory() int64 {
+	e.RLock()
+	defer e.RUnlock()
 	return e.Memory + (e.Memory * e.overcommitRatio / 100)
 }
 
 // TotalCpus returns the total cpus + overcommit
 func (e *Engine) TotalCpus() int64 {
+	e.RLock()
+	defer e.RUnlock()
 	return e.Cpus + (e.Cpus * e.overcommitRatio / 100)
 }
 
@@ -1007,9 +1014,9 @@ func (e *Engine) CreateContainer(config *ContainerConfig, name string, pullImage
 	// Force a state refresh to pick up the newly created container.
 	e.refreshContainer(createResp.ID, true)
 
-	e.Lock()
+	e.RLock()
 	container := e.containers[createResp.ID]
-	e.Unlock()
+	e.RUnlock()
 
 	if container == nil {
 		err = errors.New("Container created but refresh didn't report it back")

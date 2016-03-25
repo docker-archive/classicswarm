@@ -465,8 +465,8 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 
 // RemoveImages removes all the images that match `name` from the cluster
 func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, error) {
-	c.Lock()
-	defer c.Unlock()
+	c.RLock()
+	defer c.RUnlock()
 
 	out := []types.ImageDelete{}
 	errs := []string{}
@@ -584,8 +584,8 @@ func (c *Cluster) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume
 
 // RemoveVolumes removes all the volumes that match `name` from the cluster
 func (c *Cluster) RemoveVolumes(name string) (bool, error) {
-	c.Lock()
-	defer c.Unlock()
+	c.RLock()
+	defer c.RUnlock()
 
 	found := false
 	errs := []string{}
@@ -846,6 +846,9 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 
 // TotalMemory returns the total memory of the cluster
 func (c *Cluster) TotalMemory() int64 {
+	c.RLock()
+	defer c.RUnlock()
+
 	var totalMemory int64
 	for _, engine := range c.engines {
 		totalMemory += engine.TotalMemory()
@@ -855,6 +858,9 @@ func (c *Cluster) TotalMemory() int64 {
 
 // TotalCpus returns the total CPUs of the cluster
 func (c *Cluster) TotalCpus() int64 {
+	c.RLock()
+	defer c.RUnlock()
+
 	var totalCpus int64
 	for _, engine := range c.engines {
 		totalCpus += engine.TotalCpus()
