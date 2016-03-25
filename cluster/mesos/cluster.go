@@ -254,7 +254,7 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, er
 }
 
 // CreateNetwork creates a network in the cluster
-func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error) {
+func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
 	var (
 		parts  = strings.SplitN(request.Name, "/", 2)
 		config = &cluster.ContainerConfig{}
