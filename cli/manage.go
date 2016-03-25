@@ -148,7 +148,7 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 
 	go func() {
 		for {
-			run(candidate, server, primary, replica)
+			run(cluster, candidate, server, primary, replica)
 			time.Sleep(defaultRecoverTime)
 		}
 	}()
@@ -163,19 +163,22 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 	server.SetHandler(primary)
 }
 
-func run(candidate *leadership.Candidate, server *api.Server, primary *mux.Router, replica *api.Replica) {
+func run(cl cluster.Cluster, candidate *leadership.Candidate, server *api.Server, primary *mux.Router, replica *api.Replica) {
 	electedCh, errCh, err := candidate.RunForElection()
 	if err != nil {
 		return
 	}
+	var watchdog *cluster.Watchdog
 	for {
 		select {
 		case isElected := <-electedCh:
 			if isElected {
 				log.Info("Leader Election: Cluster leadership acquired")
+				watchdog = cluster.NewWatchdog(cl)
 				server.SetHandler(primary)
 			} else {
 				log.Info("Leader Election: Cluster leadership lost")
+				cl.UnregisterEventHandler(watchdog)
 				server.SetHandler(replica)
 			}
 
@@ -325,8 +328,8 @@ func manage(c *cli.Context) {
 		setupReplication(c, cl, server, discovery, addr, leaderTTL, tlsConfig)
 	} else {
 		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.GlobalBool("debug"), c.Bool("cors")))
+		cluster.NewWatchdog(cl)
 	}
 
-	cluster.NewWatchdog(cl)
 	log.Fatal(server.ListenAndServe())
 }
