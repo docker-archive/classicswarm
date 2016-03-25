@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/docker/engine-api/types"
+	containertypes "github.com/docker/engine-api/types/container"
+	networktypes "github.com/docker/engine-api/types/network"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,14 +26,22 @@ func createNode(ID string, memory int64, cpus int64) *node.Node {
 }
 
 func createConfig(memory int64, cpus int64) *cluster.ContainerConfig {
-	return cluster.BuildContainerConfig(dockerclient.ContainerConfig{Memory: memory * 1024 * 1024 * 1024, CpuShares: cpus})
+	return cluster.BuildContainerConfig(containertypes.Config{}, containertypes.HostConfig{
+		Resources: containertypes.Resources{
+			Memory:    memory * 1024 * 1024 * 1024,
+			CPUShares: cpus,
+		},
+	}, networktypes.NetworkingConfig{})
 }
 
 func createContainer(ID string, config *cluster.ContainerConfig) *cluster.Container {
 	return &cluster.Container{
-		Container: dockerclient.Container{Id: ID},
+		Container: types.Container{ID: ID},
 		Config:    config,
-		Info:      dockerclient.ContainerInfo{Config: &config.ContainerConfig},
+		// FIXMEENGINEAPI - maybe Hostconfig and networkingconfig also need to be stored
+		Info: types.ContainerJSON{
+			Config: &config.Config,
+		},
 	}
 }
 
