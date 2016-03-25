@@ -64,7 +64,7 @@ func (p *PortFilter) filterBridge(config *cluster.ContainerConfig, nodes []*node
 
 func (p *PortFilter) portAlreadyExposed(node *node.Node, requestedPort string) bool {
 	for _, c := range node.Containers {
-		if c.Info.HostConfig.NetworkMode == "host" {
+		if c.Info.HostConfig != nil && c.Info.HostConfig.NetworkMode == "host" {
 			for port := range c.Info.Config.ExposedPorts {
 				if string(port) == requestedPort {
 					return true
@@ -89,7 +89,7 @@ func (p *PortFilter) portAlreadyInUse(node *node.Node, requested nat.PortBinding
 		//    NetworkSettings.Port will be null and we have to check
 		//    HostConfig.PortBindings to find out the mapping.
 
-		if p.compare(requested, c.Info.HostConfig.PortBindings) || p.compare(requested, c.Info.NetworkSettings.Ports) {
+		if (c.Info.HostConfig != nil && p.compare(requested, c.Info.HostConfig.PortBindings)) || (c.Info.NetworkSettings != nil && p.compare(requested, c.Info.NetworkSettings.Ports)) {
 			return true
 		}
 	}
