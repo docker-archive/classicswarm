@@ -101,7 +101,7 @@ This works the same way for the Swarm `manage` and `list` commands.
 
 ## A static file or list of nodes
 
-> ***Warning*** This discovery method is not compatible with replicating swarm masters, so if you require replication, you will need to use a hosted discovery key store.
+> ***Warning*** This discovery method is inompatible with replicating swarm masters. If you require replication, you should use a hosted discovery key store.
 
 You can use a static file or list of nodes for your discovery backend. The file must be stored on a host that is accessible from the Swarm manager. You can also pass a node list as an option when you start Swarm.
 
