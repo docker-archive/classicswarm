@@ -591,7 +591,7 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /networks/create
 func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
-	var request dockerclient.NetworkCreate
+	var request apitypes.NetworkCreate
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		httpError(w, err.Error(), http.StatusBadRequest)

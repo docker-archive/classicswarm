@@ -459,7 +459,7 @@ func (c *Cluster) refreshVolumes() {
 }
 
 // CreateNetwork creates a network in the cluster
-func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (response *dockerclient.NetworkCreateResponse, err error) {
+func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (response *types.NetworkCreateResponse, err error) {
 	var (
 		parts  = strings.SplitN(request.Name, "/", 2)
 		config = &cluster.ContainerConfig{}
