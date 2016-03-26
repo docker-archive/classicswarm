@@ -13,7 +13,7 @@
 - Introduce engine-api client to Swarm
 - Implement 'info' and 'version' with engine-api
 - Fix swarm api response status code
-- Spport ps node filter
+- Support ps node filter
 - Fix HostConfig for /start endpoint
 
 #### Node management
