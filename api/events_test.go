@@ -36,10 +36,10 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	event.Event.Status = "status"
-	event.Event.ID = "id"
-	event.Event.From = "from"
-	event.Event.Time = 0
+	event.Message.Status = "status"
+	event.Message.ID = "id"
+	event.Message.From = "from"
+	event.Message.Time = 0
 	event.Actor.Attributes = make(map[string]string)
 	event.Actor.Attributes["nodevent.name"] = event.Engine.Name
 	event.Actor.Attributes["nodevent.id"] = event.Engine.ID
@@ -48,7 +48,7 @@ func TestHandle(t *testing.T) {
 
 	assert.NoError(t, eh.Handle(event))
 
-	event.Event.From = "from node:node_name"
+	event.Message.From = "from node:node_name"
 
 	data, err := json.Marshal(event)
 	assert.NoError(t, err)
