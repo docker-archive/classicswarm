@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -19,6 +20,7 @@ import (
 	"github.com/docker/docker/pkg/version"
 	engineapi "github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
+	"github.com/docker/engine-api/types/events"
 	"github.com/docker/engine-api/types/filters"
 	engineapinop "github.com/docker/swarm/api/nopclient"
 	"github.com/samalba/dockerclient"
@@ -181,14 +183,35 @@ func (e *Engine) Connect(config *tls.Config) error {
 	return e.ConnectWithClient(c, apiClient)
 }
 
+type eventProcessor func(msg events.Message, err error) error
+
+func decodeEvents(input io.Reader, ep eventProcessor) error {
+	dec := json.NewDecoder(input)
+	for {
+		var event events.Message
+		err := dec.Decode(&event)
+		if err != nil && err == io.EOF {
+			return err
+		}
+
+		if procErr := ep(event, err); procErr != nil {
+			return procErr
+		}
+	}
+}
+
 // StartMonitorEvents monitors events from the engine
-func (e *Engine) StartMonitorEvents() {
+func (e *Engine) StartMonitorEvents() error {
 	log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Debug("Start monitoring events")
-	ec := make(chan error)
-	e.client.StartMonitorEvents(e.handler, ec)
+
+	responseBody, err := e.apiClient.Events(context.TODO(), types.EventsOptions{})
+	if err != nil {
+		return err
+	}
 
 	go func() {
-		if err := <-ec; err != nil {
+		if err := decodeEvents(responseBody, e.handler); err != nil {
+			responseBody.Close()
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Error monitoring events: %s.", err)
 			if !strings.Contains(err.Error(), "EOF") {
 				// failing node reconnect should use back-off strategy
@@ -197,8 +220,8 @@ func (e *Engine) StartMonitorEvents() {
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Restart event monitoring.")
 			e.StartMonitorEvents()
 		}
-		close(ec)
 	}()
+	return nil
 }
 
 // ConnectWithClient is exported
@@ -758,12 +781,12 @@ func (e *Engine) emitEvent(event string) {
 		return
 	}
 	ev := &Event{
-		Event: dockerclient.Event{
+		Message: events.Message{
 			Status: event,
 			From:   "swarm",
 			Type:   "swarm",
 			Action: event,
-			Actor: dockerclient.Actor{
+			Actor: events.Actor{
 				Attributes: make(map[string]string),
 			},
 			Time:     time.Now().Unix(),
@@ -1016,10 +1039,14 @@ func (e *Engine) String() string {
 	return fmt.Sprintf("engine %s addr %s", e.ID, e.Addr)
 }
 
-func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
+func (e *Engine) handler(msg events.Message, err error) error {
+	if err != nil {
+		return err
+	}
+
 	// Something changed - refresh our internal state.
 
-	switch ev.Type {
+	switch msg.Type {
 	case "network":
 		e.RefreshNetworks()
 	case "volume":
@@ -1027,15 +1054,15 @@ func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface
 	case "image":
 		e.RefreshImages()
 	case "container":
-		switch ev.Action {
+		switch msg.Action {
 		case "die", "kill", "oom", "pause", "start", "restart", "stop", "unpause", "rename":
-			e.refreshContainer(ev.ID, true)
+			e.refreshContainer(msg.ID, true)
 		default:
-			e.refreshContainer(ev.ID, false)
+			e.refreshContainer(msg.ID, false)
 		}
 	case "":
 		// docker < 1.10
-		switch ev.Status {
+		switch msg.Status {
 		case "pull", "untag", "delete", "commit":
 			// These events refer to images so there's no need to update
 			// containers.
@@ -1043,12 +1070,12 @@ func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface
 		case "die", "kill", "oom", "pause", "start", "stop", "unpause", "rename":
 			// If the container state changes, we have to do an inspect in
 			// order to update container.Info and get the new NetworkSettings.
-			e.refreshContainer(ev.ID, true)
+			e.refreshContainer(msg.ID, true)
 			e.RefreshVolumes()
 			e.RefreshNetworks()
 		default:
 			// Otherwise, do a "soft" refresh of the container.
-			e.refreshContainer(ev.ID, false)
+			e.refreshContainer(msg.ID, false)
 			e.RefreshVolumes()
 			e.RefreshNetworks()
 		}
@@ -1057,15 +1084,15 @@ func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface
 
 	// If there is no event handler registered, abort right now.
 	if e.eventHandler == nil {
-		return
+		return nil
 	}
 
 	event := &Event{
-		Engine: e,
-		Event:  *ev,
+		Engine:  e,
+		Message: msg,
 	}
 
-	e.eventHandler.Handle(event)
+	return e.eventHandler.Handle(event)
 }
 
 // AddContainer injects a container into the internal state.
