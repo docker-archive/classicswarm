@@ -162,7 +162,7 @@ Here, you connect to the cluster and review information about the Swarm manager 
 
 4. Run a container on the Swarm.
 
-        $ docker run hello-world
+        $ docker run -i hello-world
         Hello from Docker.
         .
         .
