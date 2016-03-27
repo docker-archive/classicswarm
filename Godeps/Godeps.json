@@ -350,6 +350,10 @@
 		{
 			"ImportPath": "golang.org/x/sys/unix",
 			"Rev": "833a04a10549a95dc34458c195cbad61bbb6cb4d"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/authorization",
+			"Rev": "78076d5cf9413476a8d4e27822b96fef7a55e055"
 		}
 	]
 }

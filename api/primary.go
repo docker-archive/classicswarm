@@ -7,6 +7,8 @@ import (
 	"net/http/pprof"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/pkg/authorization"
+
 	"github.com/docker/swarm/cluster"
 	"github.com/gorilla/mux"
 )
@@ -19,6 +21,7 @@ type context struct {
 	debug         bool
 	tlsConfig     *tls.Config
 	apiVersion    string
+	authZPlugins  []authorization.Plugin
 }
 
 type handler func(c *context, w http.ResponseWriter, r *http.Request)
@@ -115,7 +118,7 @@ func profilerSetup(mainRouter *mux.Router, path string) {
 }
 
 // NewPrimary creates a new API router.
-func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHandler, debug, enableCors bool) *mux.Router {
+func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHandler, debug, enableCors bool, authorizationPlugins []string) *mux.Router {
 	// Register the API events handler in the cluster.
 	eventsHandler := newEventsHandler()
 	cluster.RegisterEventHandler(eventsHandler)
@@ -127,6 +130,11 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 		tlsConfig:     tlsConfig,
 	}
 
+	if len(authorizationPlugins) > 0 {
+		context.authZPlugins = authorization.NewPlugins(authorizationPlugins)
+
+	}
+
 	r := mux.NewRouter()
 	setupPrimaryRouter(r, context, enableCors)
 
@@ -135,6 +143,39 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 	}
 
 	return r
+}
+
+func newAuthorizationMiddleware(plugins []authorization.Plugin, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// FIXME: fill when authN gets in
+		// User and UserAuthNMethod are taken from AuthN plugins
+		// Currently tracked in https://github.com/docker/docker/pull/13994
+		user := ""
+		userAuthNMethod := ""
+		authCtx := authorization.NewCtx(plugins, user, userAuthNMethod, r.Method, r.RequestURI)
+
+		if err := authCtx.AuthZRequest(w, r); err != nil {
+			log.Errorf("#1 AuthZRequest for %s %s returned error: %s", r.Method, r.RequestURI, err)
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		rw := authorization.NewResponseModifier(w)
+
+		next.ServeHTTP(rw, r)
+
+		//		if err := handler(rw, r); err != nil {
+
+		//		}
+
+		if err := authCtx.AuthZResponse(rw, r); err != nil {
+			log.Errorf("#2 AuthZResponse for %s %s returned error: %s", r.Method, r.RequestURI, err)
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		//TODO - which cases pass via here missing
+	})
 }
 
 func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
@@ -155,9 +196,17 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 			}
 			localMethod := method
 
-			r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
-			r.Path(localRoute).Methods(localMethod).HandlerFunc(wrap)
+			if context.authZPlugins != nil {
 
+				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).
+					Handler(newAuthorizationMiddleware(context.authZPlugins, http.HandlerFunc(wrap)))
+				r.Path(localRoute).
+					Methods(localMethod).Handler(newAuthorizationMiddleware(context.authZPlugins, http.HandlerFunc(wrap)))
+			} else {
+
+				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
+				r.Path(localRoute).Methods(localMethod).HandlerFunc(wrap)
+			}
 			if enableCors {
 				optionsMethod := "OPTIONS"
 				optionsFct := optionsHandler
@@ -172,10 +221,15 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 					optionsFct(context, w, r)
 				}
 
-				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
-					Methods(optionsMethod).HandlerFunc(wrap)
-				r.Path(localRoute).Methods(optionsMethod).
-					HandlerFunc(wrap)
+				if context.authZPlugins != nil {
+					r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(optionsMethod).Handler(newAuthorizationMiddleware(context.authZPlugins, http.HandlerFunc(wrap)))
+					r.Path(localRoute).Methods(optionsMethod).Handler(newAuthorizationMiddleware(context.authZPlugins, http.HandlerFunc(wrap)))
+				} else {
+					r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
+						Methods(optionsMethod).HandlerFunc(wrap)
+					r.Path(localRoute).Methods(optionsMethod).
+						HandlerFunc(wrap)
+				}
 			}
 		}
 	}

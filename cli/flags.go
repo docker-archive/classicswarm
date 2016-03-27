@@ -151,4 +151,9 @@ var (
 		Value: "20s",
 		Usage: "Leader lock release time on failure",
 	}
+	flAuthorizationPlugins = cli.StringSliceFlag{
+		Name:  "authorization-plugin",
+		Usage: "List authorization plugins in order from first evaluator to last",
+		Value: &cli.StringSlice{},
+	}
 )
