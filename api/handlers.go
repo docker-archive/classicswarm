@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -957,7 +959,7 @@ func proxyNetworkDisconnect(c *context, w http.ResponseWriter, r *http.Request) 
 	var engine *cluster.Engine
 
 	if disconnect.Force && network.Scope == "global" {
-		randomEngine, err := c.cluster.RANDOMENGINE()
+		randomEngine, err := c.cluster.GetEngine(&cluster.ContainerConfig{})
 		if err != nil {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -1079,6 +1081,59 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 	}
 }
 
+// Proxy a request to the right node for build
+func proxyBuild(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	config := dockerclient.ContainerConfig{
+		CpuShares: int64ValueOrZero(r, "cpushares"),
+		Memory:    int64ValueOrZero(r, "memory"),
+	}
+	buildArgs := make(map[string]string)
+	if buildArgsJSON := r.Form.Get("buildargs"); buildArgsJSON != "" {
+		if json.Unmarshal([]byte(buildArgsJSON), &buildArgs) == nil {
+			config.Env = convertMapToKVStrings(buildArgs)
+		}
+	}
+	clusterConfig := cluster.BuildContainerConfig(config)
+
+	raw, err := json.Marshal(convertKVStringsToMap(clusterConfig.Env))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// remove swarm specific buildargs
+	rp := regexp.MustCompile("buildargs=(.*)7D&")
+	r.URL.RawQuery = rp.ReplaceAllString(r.URL.RawQuery, "buildargs="+url.QueryEscape(string(raw))+"&")
+
+	engine, err := c.cluster.GetEngine(clusterConfig)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if engine == nil {
+		httpError(w, "no node available in the cluster", http.StatusInternalServerError)
+		return
+	}
+
+	cb := func(resp *http.Response) {
+		// force fresh images
+		engine.RefreshImages()
+	}
+
+	err = proxyAsync(engine, w, r, cb)
+	err = proxy(engine, w, r)
+	engine.CheckConnectionErr(err)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 // Proxy a request to the right node
 func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
@@ -1156,7 +1211,7 @@ func postTagImage(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Proxy a request to a random node
 func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
-	engine, err := c.cluster.RANDOMENGINE()
+	engine, err := c.cluster.GetEngine(&cluster.ContainerConfig{})
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1208,56 +1263,6 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	// proxy commit request to the right node
 	err = proxyAsync(container.Engine, w, r, cb)
 	container.Engine.CheckConnectionErr(err)
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-// POST /build
-func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	buildImage := &dockerclient.BuildImage{
-		DockerfileName: r.Form.Get("dockerfile"),
-		RepoName:       r.Form.Get("t"),
-		RemoteURL:      r.Form.Get("remote"),
-		NoCache:        boolValue(r, "nocache"),
-		Pull:           boolValue(r, "pull"),
-		Remove:         boolValue(r, "rm"),
-		ForceRemove:    boolValue(r, "forcerm"),
-		SuppressOutput: boolValue(r, "q"),
-		Memory:         int64ValueOrZero(r, "memory"),
-		MemorySwap:     int64ValueOrZero(r, "memswap"),
-		CpuShares:      int64ValueOrZero(r, "cpushares"),
-		CpuPeriod:      int64ValueOrZero(r, "cpuperiod"),
-		CpuQuota:       int64ValueOrZero(r, "cpuquota"),
-		CpuSetCpus:     r.Form.Get("cpusetcpus"),
-		CpuSetMems:     r.Form.Get("cpusetmems"),
-		CgroupParent:   r.Form.Get("cgroupparent"),
-		Context:        r.Body,
-		BuildArgs:      make(map[string]string),
-	}
-
-	buildArgsJSON := r.Form.Get("buildargs")
-	if buildArgsJSON != "" {
-		json.Unmarshal([]byte(buildArgsJSON), &buildImage.BuildArgs)
-	}
-
-	authEncoded := r.Header.Get("X-Registry-Auth")
-	if authEncoded != "" {
-		buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
-		if err == nil {
-			json.Unmarshal(buf, &buildImage.Config)
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	wf := NewWriteFlusher(w)
-
-	err := c.cluster.BuildImage(buildImage, wf)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}

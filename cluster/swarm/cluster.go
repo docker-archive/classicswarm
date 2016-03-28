@@ -870,9 +870,9 @@ func (c *Cluster) Info() [][2]string {
 	return info
 }
 
-// RANDOMENGINE returns a random engine.
-func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), &cluster.ContainerConfig{})
+// GetEngine returns a engine.
+func (c *Cluster) GetEngine(config *cluster.ContainerConfig) (*cluster.Engine, error) {
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
 	if err != nil {
 		return nil, err
 	}
@@ -892,37 +892,6 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	// call engine rename
 	err := container.Engine.RenameContainer(container, newName)
 	return err
-}
-
-// BuildImage build an image
-func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer) error {
-	c.scheduler.Lock()
-
-	// get an engine
-	config := cluster.BuildContainerConfig(dockerclient.ContainerConfig{
-		CpuShares: buildImage.CpuShares,
-		Memory:    buildImage.Memory,
-		Env:       convertMapToKVStrings(buildImage.BuildArgs),
-	})
-	buildImage.BuildArgs = convertKVStringsToMap(config.Env)
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
-	c.scheduler.Unlock()
-	if err != nil {
-		return err
-	}
-	n := nodes[0]
-
-	reader, err := c.engines[n.ID].BuildImage(buildImage)
-	if err != nil {
-		return err
-	}
-
-	if _, err := io.Copy(out, reader); err != nil {
-		return err
-	}
-
-	c.engines[n.ID].RefreshImages()
-	return nil
 }
 
 // TagImage tag an image
