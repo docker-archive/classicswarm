@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/parsers/kernel"
 	versionpkg "github.com/docker/docker/pkg/version"
 	apitypes "github.com/docker/engine-api/types"
@@ -71,9 +72,13 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		info.SystemStatus = status
 	}
 
-	if kernelVersion, err := kernel.GetKernelVersion(); err == nil {
-		info.KernelVersion = kernelVersion.String()
+	kernelVersion := "<unknown>"
+	if kv, err := kernel.GetKernelVersion(); err != nil {
+		log.Warnf("Could not get kernel version: %v", err)
+	} else {
+		kernelVersion = kv.String()
 	}
+	info.KernelVersion = kernelVersion
 
 	for _, c := range c.cluster.Containers() {
 		info.Containers++
@@ -86,9 +91,13 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if hostname, err := os.Hostname(); err == nil {
-		info.Name = hostname
+	hostname := "<unknown>"
+	if hn, err := os.Hostname(); err != nil {
+		log.Warnf("Could not get hostname: %v", err)
+	} else {
+		hostname = hn
 	}
+	info.Name = hostname
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(info)
@@ -107,9 +116,13 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 		BuildTime:    version.BUILDTIME,
 	}
 
-	if kernelVersion, err := kernel.GetKernelVersion(); err == nil {
-		version.KernelVersion = kernelVersion.String()
+	kernelVersion := "<unknown>"
+	if kv, err := kernel.GetKernelVersion(); err != nil {
+		log.Warnf("Could not get kernel version: %v", err)
+	} else {
+		kernelVersion = kv.String()
 	}
+	version.KernelVersion = kernelVersion
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(version)
