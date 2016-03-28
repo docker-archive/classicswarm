@@ -279,7 +279,7 @@ replica.
 
 4. Start the Swarm manager. For example:
 
-        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000 consul://172.30.0.161:237
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000 consul://172.30.0.161:8500
 
 5. Review the Engine's daemon logs the logs, replacing `<id_name>` with the new container's id or name:
 
