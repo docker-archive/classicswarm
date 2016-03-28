@@ -84,7 +84,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			if c.Info.State.Running {
 				log.Infof("Container %s was running, starting container %s", c.Id, newContainer.Id)
 				if err := w.cluster.StartContainer(newContainer, nil); err != nil {
-					log.Errorf("Failed to start rescheduled container %s", newContainer.Id)
+					log.Errorf("Failed to start rescheduled container %s: %v", newContainer.Id, err)
 				}
 			}
 		}
