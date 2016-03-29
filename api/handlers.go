@@ -537,8 +537,7 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	// Pass auth information along if present
 	var authConfig *dockerclient.AuthConfig
-	buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
-	if err == nil {
+	if buf, err := decodeBase64UrlEncodedHeader(r, "X-Registry-Auth"); err == nil {
 		authConfig = &dockerclient.AuthConfig{}
 		json.Unmarshal(buf, authConfig)
 	}
@@ -642,8 +641,7 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 	if image := r.Form.Get("fromImage"); image != "" { //pull
 		authConfig := dockerclient.AuthConfig{}
-		buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
-		if err == nil {
+		if buf, err := decodeBase64UrlEncodedHeader(r, "X-Registry-Auth"); err == nil {
 			json.Unmarshal(buf, &authConfig)
 		}
 
@@ -1246,12 +1244,8 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal([]byte(buildArgsJSON), &buildImage.BuildArgs)
 	}
 
-	authEncoded := r.Header.Get("X-Registry-Auth")
-	if authEncoded != "" {
-		buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
-		if err == nil {
-			json.Unmarshal(buf, &buildImage.Config)
-		}
+	if buf, err := decodeBase64UrlEncodedHeader(r, "X-Registry-Config"); err == nil {
+		json.Unmarshal(buf, &buildImage.Config)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -1318,4 +1312,15 @@ func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
 
 func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+var errReqHeaderNotFound = fmt.Errorf("request header not found")
+
+// Decode base64-url-safe-encoded headers.
+func decodeBase64UrlEncodedHeader(r *http.Request, header string) ([]byte, error) {
+	auth := r.Header.Get(header)
+	if auth == "" {
+		return nil, errReqHeaderNotFound
+	}
+	return base64.URLEncoding.DecodeString(auth)
 }
