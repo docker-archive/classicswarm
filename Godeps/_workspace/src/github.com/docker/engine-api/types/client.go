@@ -142,6 +142,7 @@ type ImageBuildOptions struct {
 	BuildArgs      map[string]string
 	AuthConfigs    map[string]AuthConfig
 	Context        io.Reader
+	Labels         map[string]string
 }
 
 // ImageBuildResponse holds information
@@ -228,7 +229,7 @@ type VersionResponse struct {
 	Server *Version
 }
 
-// ServerOK return true when the client could connect to the docker server
+// ServerOK returns true when the client could connect to the docker server
 // and parse the information received. It returns false otherwise.
 func (v VersionResponse) ServerOK() bool {
 	return v.Server != nil
