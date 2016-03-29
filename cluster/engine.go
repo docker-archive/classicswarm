@@ -98,13 +98,14 @@ type EngineOpts struct {
 type Engine struct {
 	sync.RWMutex
 
-	ID     string
-	IP     string
-	Addr   string
-	Name   string
-	Cpus   int
-	Memory int64
-	Labels map[string]string
+	ID      string
+	IP      string
+	Addr    string
+	Name    string
+	Cpus    int
+	Memory  int64
+	Labels  map[string]string
+	Version string
 
 	stopCh          chan struct{}
 	refreshDelayer  *delayer
@@ -438,6 +439,8 @@ func (e *Engine) updateSpecs() error {
 		e.CheckConnectionErr(err)
 		return err
 	}
+	// update version
+	e.Version = v.Version
 
 	e.Lock()
 	defer e.Unlock()
