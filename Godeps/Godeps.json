@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/docker/swarm",
 	"GoVersion": "go1.5",
+	"GodepVersion": "v60",
 	"Packages": [
 		"./..."
 	],
@@ -303,15 +304,15 @@
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient",
-			"Rev": "5921830c810f8a9d531ac06070390cd99885db63"
+			"Rev": "52fe1c9d696f36d894d2319f1717a383ebc46f19"
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient/mockclient",
-			"Rev": "5921830c810f8a9d531ac06070390cd99885db63"
+			"Rev": "52fe1c9d696f36d894d2319f1717a383ebc46f19"
 		},
 		{
 			"ImportPath": "github.com/samalba/dockerclient/nopclient",
-			"Rev": "5921830c810f8a9d531ac06070390cd99885db63"
+			"Rev": "52fe1c9d696f36d894d2319f1717a383ebc46f19"
 		},
 		{
 			"ImportPath": "github.com/samuel/go-zookeeper/zk",

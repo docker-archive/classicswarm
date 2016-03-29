@@ -195,6 +195,10 @@ func (s *State) String() string {
 		return "Dead"
 	}
 
+	if s.StartedAt.IsZero() {
+		return "Created"
+	}
+
 	if s.FinishedAt.IsZero() {
 		return ""
 	}
@@ -217,6 +221,10 @@ func (s *State) StateString() string {
 
 	if s.Dead {
 		return "dead"
+	}
+
+	if s.StartedAt.IsZero() {
+		return "created"
 	}
 
 	return "exited"
