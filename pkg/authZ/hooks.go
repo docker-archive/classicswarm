@@ -143,7 +143,7 @@ func eventParse(r *http.Request) states.EventEnum {
 			}
 		}
 	}
-	return states.NotSupported
+	return states.PassAsIs
 }
 
 //Init - Initialize the Validation and Handling APIs
