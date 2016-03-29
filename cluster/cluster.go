@@ -22,7 +22,7 @@ type Cluster interface {
 	Image(IDOrName string) *Image
 
 	// Remove images from the cluster
-	RemoveImages(name string, force bool) ([]*dockerclient.ImageDelete, error)
+	RemoveImages(name string, force bool) ([]types.ImageDelete, error)
 
 	// Return all containers
 	Containers() Containers
@@ -45,7 +45,7 @@ type Cluster interface {
 	RemoveNetwork(network *Network) error
 
 	// Create a volume
-	CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error)
+	CreateVolume(request *types.VolumeCreateRequest) (*Volume, error)
 
 	// Return all volumes
 	Volumes() Volumes

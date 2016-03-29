@@ -249,7 +249,7 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 }
 
 // RemoveImages removes images from the cluster
-func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDelete, error) {
+func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, error) {
 	return nil, errNotSupported
 }
 
@@ -299,7 +299,7 @@ func (c *Cluster) refreshNetworks() {
 }
 
 // CreateVolume creates a volume in the cluster
-func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*cluster.Volume, error) {
+func (c *Cluster) CreateVolume(request *types.VolumeCreateRequest) (*cluster.Volume, error) {
 	return nil, errNotSupported
 }
 
@@ -358,7 +358,7 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 }
 
 // RemoveImage removes an image from the cluster
-func (c *Cluster) RemoveImage(image *cluster.Image) ([]*dockerclient.ImageDelete, error) {
+func (c *Cluster) RemoveImage(image *cluster.Image) ([]types.ImageDelete, error) {
 	return nil, errNotSupported
 }
 
