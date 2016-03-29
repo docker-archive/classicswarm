@@ -865,6 +865,7 @@ func (c *Cluster) Info() [][2]string {
 		}
 		info = append(info, [2]string{"  └ Error", errMsg})
 		info = append(info, [2]string{"  └ UpdatedAt", engine.UpdatedAt().UTC().Format(time.RFC3339)})
+		info = append(info, [2]string{"  └ ServerVersion", engine.Version})
 	}
 
 	return info
