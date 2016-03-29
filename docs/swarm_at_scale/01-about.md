@@ -17,7 +17,7 @@ required first.
 
 ## Learn the example back story
 
-Your company is a pet food company that has bought an commercial during the
+Your company is a pet food company that has bought a commercial during the
 Superbowl. The commercial drives viewers to a web survey that asks users to vote
 &ndash; cats or dogs. You are developing the web survey.
 
