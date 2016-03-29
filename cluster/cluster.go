@@ -3,6 +3,7 @@ package cluster
 import (
 	"io"
 
+	"github.com/docker/engine-api/types"
 	"github.com/samalba/dockerclient"
 )
 
@@ -94,7 +95,7 @@ type Cluster interface {
 	RenameContainer(container *Container, newName string) error
 
 	// BuildImage build an image
-	BuildImage(*dockerclient.BuildImage, io.Writer) error
+	BuildImage(*types.ImageBuildOptions, io.Writer) error
 
 	// TagImage tag an image
 	TagImage(IDOrName string, repo string, tag string, force bool) error
