@@ -4,12 +4,12 @@ import (
 	"strings"
 
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/samalba/dockerclient"
+	"github.com/docker/engine-api/types"
 )
 
 // Network is exported
 type Network struct {
-	dockerclient.NetworkResource
+	types.NetworkResource
 
 	Engine *Engine
 }
@@ -98,7 +98,7 @@ func (network *Network) RemoveDuplicateEndpoints() *Network {
 	// Make a copy of the network
 	netCopy := *network
 	// clean up existing endpoints
-	netCopy.Containers = make(map[string]dockerclient.EndpointResource)
+	netCopy.Containers = make(map[string]types.EndpointResource)
 	// add the endpoint index from endpointMap
 	for _, index := range endpointMap {
 		netCopy.Containers[index] = network.Containers[index]
