@@ -60,16 +60,16 @@ the different components of a Swam cluster listen on. You should use these to
 configure your firewalls and other network access control lists.
 
 - **Swarm manager.**
-    - **Inbound 80/tcp (HTTP)**. This is allows `docker pull` commands to work. If you will be pulling from Docker Hub you will need to allow connections on port 80 from the internet.
+    - **Inbound 80/tcp (HTTP)**. This allows `docker pull` commands to work. If you plan to pull images from Docker Hub, you must allow Internet connections through port 80.
     - **Inbound 2375/tcp**. This allows Docker Engine CLI commands direct to the Engine daemon.
     - **Inbound 3375/tcp**. This allows Engine CLI commands to the Swarm manager.
     - **Inbound 22/tcp**. This allows remote management via SSH
 - **Service Discovery**:
-    - **Inbound 80/tcp (HTTP)**. This is allows `docker pull` commands to work. If you will be pulling from Docker Hub you will need to allow connections on port 80 from the internet.
+    - **Inbound 80/tcp (HTTP)**. This allows `docker pull` commands to work. If you plan to pull images from Docker Hub, you must allow Internet connections through port 80.
     - **Inbound *Discovery service port***. This needs setting to the port that the backend discovery service listens on (consul, etcd, or zookeeper).
     - **Inbound 22/tcp**. This allows remote management via SSH
 - **Swarm nodes**:
-    - **Inbound 80/tcp (HTTP)**. This is allows `docker pull` commands to work. If you will be pulling from Docker Hub you will need to allow connections on port 80 from the internet.
+    - **Inbound 80/tcp (HTTP)**. This allows `docker pull` commands to work. If you plan to pull images from Docker Hub, you must allow Internet connections through port 80.
     - **Inbound 2375/tcp**. This allows Engine CLI commands direct to the Docker daemon.
     - **Inbound 22/tcp**. This allows remote management via SSH.
 - **Custom, cross-host container networks**:
@@ -329,7 +329,7 @@ The question of ownership is vital in production environments. It is therefore
 vital that you consider and agree on all of the following when planning,
 documenting, and deploying your production Swarm clusters.
 
-- Who's budget does the production Swarm infrastructure come out of?
+- Whose budget does the production Swarm infrastructure come out of?
 - Who owns the accounts that can administer and manage the production Swarm
 cluster?
 - Who is responsible for monitoring the production Swarm infrastructure?
