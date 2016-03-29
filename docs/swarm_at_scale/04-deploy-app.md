@@ -194,7 +194,7 @@ In the following steps, your launch several containers to the voting application
         $ docker run --restart=unless-stopped --env="constraint:node==frontend02" -p 6379:6379 --name redis02 --net mynet -d redis
         $ docker -H tcp://192.168.33.21:2375 ps
 
-    These two commands are issued against the Swarm cluster. The commands specify *node constraints*, forcing Swarm to start the contaienrs on `frontend01` and `frontend02`. Port 6379 on each instance is mapped to port 6379 inside of each container for debugging purposes. The command also applies the `--restart=unless-stopped` policy to the containers and attaches them to the `mynet` overlay network.
+    These two commands are issued against the Swarm cluster. The commands specify *node constraints*, forcing Swarm to start the containers on `frontend01` and `frontend02`. Port 6379 on each instance is mapped to port 6379 inside of each container for debugging purposes. The command also applies the `--restart=unless-stopped` policy to the containers and attaches them to the `mynet` overlay network.
 
 5. Start a `web-vote-app` container the frontend nodes.
 
@@ -207,7 +207,7 @@ In the following steps, your launch several containers to the voting application
         $ docker run --restart=unless-stopped --env="constraint:node==frontend02" -d -p 5000:80 -e WEB_VOTE_NUMBER='02' --name frontend02 --net mynet --hostname votingapp.local web-vote-app
 
     These two commands are issued against the Swarm cluster. The commands
-    specify *node constraints*, forcing Swarm to start the contaienrs on
+    specify *node constraints*, forcing Swarm to start the containers on
     `frontend01` and `frontend02`. Port `5000` on each node is mapped to port
     `80` inside of each container. This allows connections to come in to each
     node on port `5000` and be forwarded to port `80` inside of each container.
