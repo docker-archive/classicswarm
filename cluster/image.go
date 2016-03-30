@@ -3,13 +3,12 @@ package cluster
 import (
 	"strings"
 
-	dockerfilters "github.com/docker/engine-api/types/filters"
-	"github.com/samalba/dockerclient"
+	"github.com/docker/engine-api/types"
 )
 
 // Image is exported
 type Image struct {
-	dockerclient.Image
+	types.Image
 
 	Engine *Engine
 }
@@ -39,12 +38,12 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 	size := len(IDOrName)
 
 	// TODO: prefix match can cause false positives with image names
-	if image.Id == IDOrName || (size > 2 && strings.HasPrefix(image.Id, IDOrName)) {
+	if image.ID == IDOrName || (size > 2 && strings.HasPrefix(image.ID, IDOrName)) {
 		return true
 	}
 
 	// trim sha256: and retry
-	if parts := strings.SplitN(image.Id, ":", 2); len(parts) == 2 {
+	if parts := strings.SplitN(image.ID, ":", 2); len(parts) == 2 {
 		if parts[1] == IDOrName || (size > 2 && strings.HasPrefix(parts[1], IDOrName)) {
 			return true
 		}
@@ -81,9 +80,7 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 // ImageFilterOptions is the set of filtering options supported by
 // Images.Filter()
 type ImageFilterOptions struct {
-	All        bool
-	NameFilter string
-	Filters    dockerfilters.Args
+	types.ImageListOptions
 }
 
 // Images is a collection of Image objects that can be filtered
@@ -107,12 +104,12 @@ func (images Images) Filter(opts ImageFilterOptions) Images {
 	}
 
 	includeRepoFilter := func(image *Image) bool {
-		if opts.NameFilter == "" {
+		if opts.MatchName == "" {
 			return true
 		}
 		for _, repoTag := range image.RepoTags {
 			repoName, _ := ParseRepositoryTag(repoTag)
-			if repoTag == opts.NameFilter || repoName == opts.NameFilter {
+			if repoTag == opts.MatchName || repoName == opts.MatchName {
 				return true
 			}
 		}

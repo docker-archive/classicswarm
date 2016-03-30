@@ -143,7 +143,7 @@ func TestImportImage(t *testing.T) {
 	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
-	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
@@ -196,7 +196,7 @@ func TestLoadImage(t *testing.T) {
 	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
-	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
@@ -227,10 +227,10 @@ func TestTagImage(t *testing.T) {
 	c := &Cluster{
 		engines: make(map[string]*cluster.Engine),
 	}
-	images := []*dockerclient.Image{}
+	images := []types.Image{}
 
-	image1 := &dockerclient.Image{
-		Id:       "1234567890",
+	image1 := types.Image{
+		ID:       "1234567890",
 		RepoTags: []string{"busybox:latest"},
 	}
 	images = append(images, image1)
@@ -252,7 +252,7 @@ func TestTagImage(t *testing.T) {
 	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
-	client.On("ListImages", mock.Anything).Return(images, nil)
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return(images, nil)
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)

@@ -3,6 +3,7 @@ package filter
 import (
 	"testing"
 
+	"github.com/docker/engine-api/types"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
@@ -26,8 +27,8 @@ func TestApplyFilters(t *testing.T) {
 						Names: []string{"/container-n0-1-name"},
 					}},
 				},
-				Images: []*cluster.Image{{Image: dockerclient.Image{
-					Id:       "image-0-id",
+				Images: []*cluster.Image{{Image: types.Image{
+					ID:       "image-0-id",
 					RepoTags: []string{"image-0:tag1", "image-0:tag2"},
 				}}},
 				HealthIndicator: 100,
@@ -50,8 +51,8 @@ func TestApplyFilters(t *testing.T) {
 						},
 					},
 				},
-				Images: []*cluster.Image{{Image: dockerclient.Image{
-					Id:       "image-1-id",
+				Images: []*cluster.Image{{Image: types.Image{
+					ID:       "image-1-id",
 					RepoTags: []string{"image-1:tag1", "image-0:tag3", "image-1:tag2"},
 				}}},
 				HealthIndicator: 0,
