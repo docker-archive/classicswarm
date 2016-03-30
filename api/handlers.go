@@ -185,11 +185,13 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	accepteds := filters.Get("node")
 	// this struct helps grouping images
 	// but still keeps their Engine infos as an array.
-	groupImages := make(map[string]dockerclient.Image)
+	groupImages := make(map[string]apitypes.Image)
 	opts := cluster.ImageFilterOptions{
-		All:        boolValue(r, "all"),
-		NameFilter: r.FormValue("filter"),
-		Filters:    filters,
+		apitypes.ImageListOptions{
+			All:       boolValue(r, "all"),
+			MatchName: r.FormValue("filter"),
+			Filters:   filters,
+		},
 	}
 	for _, image := range c.cluster.Images().Filter(opts) {
 		if len(accepteds) != 0 {
@@ -206,16 +208,16 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 
 		// grouping images by Id, and concat their RepoTags
-		if entry, existed := groupImages[image.Id]; existed {
+		if entry, existed := groupImages[image.ID]; existed {
 			entry.RepoTags = append(entry.RepoTags, image.RepoTags...)
 			entry.RepoDigests = append(entry.RepoDigests, image.RepoDigests...)
-			groupImages[image.Id] = entry
+			groupImages[image.ID] = entry
 		} else {
-			groupImages[image.Id] = image.Image
+			groupImages[image.ID] = image.Image
 		}
 	}
 
-	images := []dockerclient.Image{}
+	images := []apitypes.Image{}
 
 	for _, image := range groupImages {
 		// de-duplicate RepoTags

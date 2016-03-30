@@ -1,8 +1,8 @@
 package api
 
 import (
+	"github.com/docker/engine-api/types"
 	"github.com/docker/swarm/cluster"
-	"github.com/samalba/dockerclient"
 )
 
 // ContainerSorter implements the Sort interface to sort Docker containers.
@@ -27,7 +27,7 @@ func (s ContainerSorter) Less(i, j int) bool {
 
 // ImageSorter implements the Sort interface to sort Docker Images.
 // It is not guaranteed to be a stable sort.
-type ImageSorter []dockerclient.Image
+type ImageSorter []types.Image
 
 // Len returns the number of images to be sorted.
 func (s ImageSorter) Len() int {
