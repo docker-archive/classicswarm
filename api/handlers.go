@@ -704,7 +704,7 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 // POST /images/load
 func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 
 	// call cluster to load image on every node
 	wf := NewWriteFlusher(w)
@@ -1153,6 +1153,7 @@ func postTagImage(c *context, w http.ResponseWriter, r *http.Request) {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Proxy a request to a random node
@@ -1298,6 +1299,7 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
+	w.WriteHeader(http.StatusNoContent)
 
 }
 
