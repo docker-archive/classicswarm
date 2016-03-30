@@ -68,12 +68,12 @@ func TestImagesFilterWithLabelFilter(t *testing.T) {
 
 	filters := dockerfilters.NewArgs()
 	filters.Add("label", "com.example.project=bar")
-	result := images.Filter(ImageFilterOptions{All: true, Filters: filters})
+	result := images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, Filters: filters}})
 	assert.Equal(t, len(result), 1)
 	assert.Equal(t, result[0].ID, "b")
 }
 
-func TestImagesFilterWithNameFilter(t *testing.T) {
+func TestImagesFilterWithMatchName(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	images := Images{
 		{
@@ -89,15 +89,12 @@ func TestImagesFilterWithNameFilter(t *testing.T) {
 		},
 	}
 
-	result := images.Filter(ImageFilterOptions{
-		All:        true,
-		NameFilter: "example:2",
-	})
+	result := images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, MatchName: "example:2"}})
 	assert.Equal(t, len(result), 1)
 	assert.Equal(t, result[0].ID, "a")
 }
 
-func TestImagesFilterWithNameFilterWithTag(t *testing.T) {
+func TestImagesFilterWithMatchNameWithTag(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	images := Images{
 		{
@@ -117,10 +114,7 @@ func TestImagesFilterWithNameFilterWithTag(t *testing.T) {
 		},
 	}
 
-	result := images.Filter(ImageFilterOptions{
-		All:        true,
-		NameFilter: "example",
-	})
+	result := images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, MatchName: "example"}})
 	assert.Equal(t, len(result), 2)
 }
 

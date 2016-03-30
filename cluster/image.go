@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/docker/engine-api/types"
-	dockerfilters "github.com/docker/engine-api/types/filters"
 )
 
 // Image is exported
@@ -80,11 +79,8 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 
 // ImageFilterOptions is the set of filtering options supported by
 // Images.Filter()
-// FIXMEENGINEAPI: should either embed or be replaced by types.ImageListOptions
 type ImageFilterOptions struct {
-	All        bool
-	NameFilter string
-	Filters    dockerfilters.Args
+	types.ImageListOptions
 }
 
 // Images is a collection of Image objects that can be filtered
@@ -108,12 +104,12 @@ func (images Images) Filter(opts ImageFilterOptions) Images {
 	}
 
 	includeRepoFilter := func(image *Image) bool {
-		if opts.NameFilter == "" {
+		if opts.MatchName == "" {
 			return true
 		}
 		for _, repoTag := range image.RepoTags {
 			repoName, _ := ParseRepositoryTag(repoTag)
-			if repoTag == opts.NameFilter || repoName == opts.NameFilter {
+			if repoTag == opts.MatchName || repoName == opts.MatchName {
 				return true
 			}
 		}
