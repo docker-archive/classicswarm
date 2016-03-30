@@ -18,7 +18,7 @@ func checkAddrFormat(addr string) bool {
 		return false
 	}
 	portNum, err := strconv.Atoi(port)
-	return err == nil && portNum >= 0 && portNum <= 65535
+	return err == nil && portNum > 0 && portNum <= 65535
 }
 
 func join(c *cli.Context) {
