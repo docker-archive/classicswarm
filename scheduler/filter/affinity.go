@@ -47,7 +47,7 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 			case "image":
 				images := []string{}
 				for _, image := range node.Images {
-					images = append(images, image.Id)
+					images = append(images, image.ID)
 					images = append(images, image.RepoTags...)
 					for _, tag := range image.RepoTags {
 						repo, _ := cluster.ParseRepositoryTag(tag)

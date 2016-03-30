@@ -536,7 +536,8 @@ func (e *Engine) RemoveVolume(name string) error {
 
 // RefreshImages refreshes the list of images on the engine.
 func (e *Engine) RefreshImages() error {
-	images, err := e.client.ListImages(true)
+	imgLstOpts := types.ImageListOptions{All: true}
+	images, err := e.apiClient.ImageList(context.TODO(), imgLstOpts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -544,7 +545,7 @@ func (e *Engine) RefreshImages() error {
 	e.Lock()
 	e.images = nil
 	for _, image := range images {
-		e.images = append(e.images, &Image{Image: *image, Engine: e})
+		e.images = append(e.images, &Image{Image: image, Engine: e})
 	}
 	e.Unlock()
 	return nil
