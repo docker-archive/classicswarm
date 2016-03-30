@@ -279,7 +279,15 @@ func (c *Cluster) addEngine(addr string) bool {
 func (c *Cluster) validatePendingEngine(engine *cluster.Engine) bool {
 	// Attempt a connection to the engine. Since this is slow, don't get a hold
 	// of the lock yet.
-	if err := engine.Connect(c.TLSConfig); err != nil {
+	//
+	// call to engine.Connect() spoils cluster-wide c.TLSConfig,
+	// so create a separate TLSConfig for each engine
+	var config *tls.Config
+	if c.TLSConfig != nil {
+		config := &tls.Config{}
+		*config = *c.TLSConfig
+	}
+	if err := engine.Connect(config); err != nil {
 		log.WithFields(log.Fields{"Addr": engine.Addr}).Debugf("Failed to validate pending node: %s", err)
 		return false
 	}
