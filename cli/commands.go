@@ -35,7 +35,7 @@ var (
 		{
 			Name:      "join",
 			ShortName: "j",
-			Usage:     "join a docker cluster",
+			Usage:     "Join a docker cluster",
 			Flags:     []cli.Flag{flJoinAdvertise, flHeartBeat, flTTL, flJoinRandomDelay, flDiscoveryOpt},
 			Action:    join,
 		},
