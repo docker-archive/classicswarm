@@ -25,6 +25,7 @@ func TestCheckAddrFormat(t *testing.T) {
 	assert.True(t, checkAddrFormat("hostname:1111"))
 	assert.True(t, checkAddrFormat("host-name_42:1111"))
 	assert.False(t, checkAddrFormat("1.1.1.1:-1"))
+	assert.False(t, checkAddrFormat("1.1.1.1:0"))
 	assert.True(t, checkAddrFormat("1.1.1.1:65535"))
 	assert.False(t, checkAddrFormat("1.1.1.1:65536"))
 	assert.False(t, checkAddrFormat("1.1.1.1: 4000"))

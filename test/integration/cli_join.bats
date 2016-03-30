@@ -15,6 +15,14 @@ DISCOVERY="consul://127.0.0.1:5555/test"
 	[ "$status" -ne 0 ]
 	[[ "${output}" == *"--advertise should be of the form ip:port or hostname:port"* ]]
 
+	run swarm join --heartbeat=1s --ttl=10s --delay=1s --advertise=127.0.0.1:0 "$DISCOVERY"
+	[ "$status" -ne 0 ]
+	[[ "${output}" == *"--advertise should be of the form ip:port or hostname:port"* ]]
+
+	run swarm join --heartbeat=1s --ttl=10s --delay=1s --advertise=127.0.0.1:65536 "$DISCOVERY"
+	[ "$status" -ne 0 ]
+	[[ "${output}" == *"--advertise should be of the form ip:port or hostname:port"* ]]
+
 	# --delay
 	run swarm join --heartbeat=1s --ttl=10s --delay=asdf --advertise=127.0.0.1:2376 "$DISCOVERY"
 	[ "$status" -ne 0 ]
