@@ -3,15 +3,15 @@ package cluster
 import (
 	"testing"
 
+	"github.com/docker/engine-api/types"
 	dockerfilters "github.com/docker/engine-api/types/filters"
-	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMatch(t *testing.T) {
 	img := Image{}
 
-	img.Id = "378954456789"
+	img.ID = "378954456789"
 	img.RepoTags = []string{"name:latest"}
 	img.RepoDigests = []string{"name@sha256:a973f1415c489a934bf56dd653079d36b4ec717760215645726439de9705911d"}
 
@@ -42,7 +42,7 @@ func TestMatch(t *testing.T) {
 func TestMatchPrivateRepo(t *testing.T) {
 	img := Image{}
 
-	img.Id = "378954456789"
+	img.ID = "378954456789"
 	img.RepoTags = []string{"private.registry.com:5000/name:latest"}
 
 	assert.True(t, img.Match("private.registry.com:5000/name:latest", true))
@@ -58,33 +58,33 @@ func TestMatchPrivateRepo(t *testing.T) {
 func TestImagesFilterWithLabelFilter(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	images := Images{
-		{dockerclient.Image{Id: "a"}, engine},
-		{dockerclient.Image{
-			Id:     "b",
+		{types.Image{ID: "a"}, engine},
+		{types.Image{
+			ID:     "b",
 			Labels: map[string]string{"com.example.project": "bar"},
 		}, engine},
-		{dockerclient.Image{Id: "c"}, engine},
+		{types.Image{ID: "c"}, engine},
 	}
 
 	filters := dockerfilters.NewArgs()
 	filters.Add("label", "com.example.project=bar")
 	result := images.Filter(ImageFilterOptions{All: true, Filters: filters})
 	assert.Equal(t, len(result), 1)
-	assert.Equal(t, result[0].Id, "b")
+	assert.Equal(t, result[0].ID, "b")
 }
 
 func TestImagesFilterWithNameFilter(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	images := Images{
 		{
-			dockerclient.Image{
-				Id:       "a",
+			types.Image{
+				ID:       "a",
 				RepoTags: []string{"example:latest", "example:2"},
 			},
 			engine,
 		},
 		{
-			dockerclient.Image{Id: "b", RepoTags: []string{"example:1"}},
+			types.Image{ID: "b", RepoTags: []string{"example:1"}},
 			engine,
 		},
 	}
@@ -94,25 +94,25 @@ func TestImagesFilterWithNameFilter(t *testing.T) {
 		NameFilter: "example:2",
 	})
 	assert.Equal(t, len(result), 1)
-	assert.Equal(t, result[0].Id, "a")
+	assert.Equal(t, result[0].ID, "a")
 }
 
 func TestImagesFilterWithNameFilterWithTag(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	images := Images{
 		{
-			dockerclient.Image{
-				Id:       "a",
+			types.Image{
+				ID:       "a",
 				RepoTags: []string{"example:latest", "example:2"},
 			},
 			engine,
 		},
 		{
-			dockerclient.Image{Id: "b", RepoTags: []string{"example:1"}},
+			types.Image{ID: "b", RepoTags: []string{"example:1"}},
 			engine,
 		},
 		{
-			dockerclient.Image{Id: "c", RepoTags: []string{"foo:latest"}},
+			types.Image{ID: "c", RepoTags: []string{"foo:latest"}},
 			engine,
 		},
 	}
