@@ -165,7 +165,7 @@ func TestEngineCpusMemory(t *testing.T) {
 		mock.AnythingOfType("Args"),
 	).Return(types.VolumesListResponse{}, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
-	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	assert.NoError(t, engine.ConnectWithClient(client, apiClient))
@@ -195,7 +195,7 @@ func TestEngineSpecs(t *testing.T) {
 		mock.AnythingOfType("Args"),
 	).Return(types.VolumesListResponse{}, nil)
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil)
-	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	assert.NoError(t, engine.ConnectWithClient(client, apiClient))
@@ -233,7 +233,7 @@ func TestEngineState(t *testing.T) {
 
 	// The client will return one container at first, then a second one will appear.
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "one"}}, nil).Once()
-	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
 	client.On("InspectContainer", "one").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf("{%q:[%q]}", "id", "two")).Return([]dockerclient.Container{{Id: "two"}}, nil).Once()
 	client.On("InspectContainer", "two").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
@@ -287,7 +287,7 @@ func TestCreateContainer(t *testing.T) {
 	).Return(types.VolumesListResponse{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
-	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
 
 	assert.NoError(t, engine.ConnectWithClient(client, apiClient))
 	assert.True(t, engine.isConnected())
@@ -302,7 +302,7 @@ func TestCreateContainer(t *testing.T) {
 	var auth *dockerclient.AuthConfig
 	client.On("CreateContainer", &mockConfig, name, auth).Return(id, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
-	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: &config.ContainerConfig}, nil).Once()
 	container, err := engine.Create(config, name, false, auth)
 	assert.Nil(t, err)
@@ -325,7 +325,7 @@ func TestCreateContainer(t *testing.T) {
 	client.On("CreateContainer", &mockConfig, name, auth).Return("", dockerclient.ErrImageNotFound).Once()
 	client.On("CreateContainer", &mockConfig, name, auth).Return(id, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf(`{"id":[%q]}`, id)).Return([]dockerclient.Container{{Id: id}}, nil).Once()
-	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
 	client.On("InspectContainer", id).Return(&dockerclient.ContainerInfo{Config: &config.ContainerConfig}, nil).Once()
 	container, err = engine.Create(config, name, true, auth)
 	assert.Nil(t, err)
@@ -337,9 +337,9 @@ func TestImages(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	engine.setState(stateHealthy)
 	engine.images = []*Image{
-		{dockerclient.Image{Id: "a"}, engine},
-		{dockerclient.Image{Id: "b"}, engine},
-		{dockerclient.Image{Id: "c"}, engine},
+		{types.Image{ID: "a"}, engine},
+		{types.Image{ID: "b"}, engine},
+		{types.Image{ID: "c"}, engine},
 	}
 
 	result := engine.Images()
@@ -392,7 +392,7 @@ func TestUsedCpus(t *testing.T) {
 					mock.AnythingOfType("Args"),
 				).Return(types.VolumesListResponse{}, nil)
 				client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
-				client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
+				apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
 				client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "test"}}, nil).Once()
 				client.On("InspectContainer", "test").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: cpuShares}}, nil).Once()
 
@@ -429,7 +429,7 @@ func TestContainerRemovedDuringRefresh(t *testing.T) {
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
 	).Return(types.VolumesListResponse{}, nil)
-	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil)
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{container1, container2}, nil)
 	client.On("InspectContainer", "c1").Return(info1, errors.New("Not found"))
@@ -466,7 +466,7 @@ func TestDisconnect(t *testing.T) {
 
 	// The client will return one container at first, then a second one will appear.
 	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{{Id: "one"}}, nil).Once()
-	client.On("ListImages", mock.Anything).Return([]*dockerclient.Image{}, nil).Once()
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 	client.On("InspectContainer", "one").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
 	client.On("ListContainers", true, false, fmt.Sprintf("{%q:[%q]}", "id", "two")).Return([]dockerclient.Container{{Id: "two"}}, nil).Once()
 	client.On("InspectContainer", "two").Return(&dockerclient.ContainerInfo{Config: &dockerclient.ContainerConfig{CpuShares: 100}}, nil).Once()
@@ -494,6 +494,7 @@ func TestRemoveImage(t *testing.T) {
 	dIs := []types.ImageDelete{{Deleted: imageName}}
 
 	apiClient := engineapimock.NewMockClient()
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 	apiClient.On("ImageRemove", context.TODO(),
 		mock.AnythingOfType("ImageRemoveOptions")).Return(dIs, nil)
 	engine.apiClient = apiClient
