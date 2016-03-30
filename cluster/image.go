@@ -3,13 +3,13 @@ package cluster
 import (
 	"strings"
 
+	"github.com/docker/engine-api/types"
 	dockerfilters "github.com/docker/engine-api/types/filters"
-	"github.com/samalba/dockerclient"
 )
 
 // Image is exported
 type Image struct {
-	dockerclient.Image
+	types.Image
 
 	Engine *Engine
 }
@@ -39,12 +39,12 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 	size := len(IDOrName)
 
 	// TODO: prefix match can cause false positives with image names
-	if image.Id == IDOrName || (size > 2 && strings.HasPrefix(image.Id, IDOrName)) {
+	if image.ID == IDOrName || (size > 2 && strings.HasPrefix(image.ID, IDOrName)) {
 		return true
 	}
 
 	// trim sha256: and retry
-	if parts := strings.SplitN(image.Id, ":", 2); len(parts) == 2 {
+	if parts := strings.SplitN(image.ID, ":", 2); len(parts) == 2 {
 		if parts[1] == IDOrName || (size > 2 && strings.HasPrefix(parts[1], IDOrName)) {
 			return true
 		}
@@ -80,6 +80,7 @@ func (image *Image) Match(IDOrName string, matchTag bool) bool {
 
 // ImageFilterOptions is the set of filtering options supported by
 // Images.Filter()
+// FIXMEENGINEAPI: should either embed or be replaced by types.ImageListOptions
 type ImageFilterOptions struct {
 	All        bool
 	NameFilter string
