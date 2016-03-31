@@ -4,7 +4,7 @@ Docker Swarm Roadmap
 ####Scheduler
 Swarm comes with a builtin scheduler. It currently provides basic functionalities, such as
 scheduling containers based on constraints or affinity (co-scheduling of containers), persistent
-storage and multiple scheduling strategies like binpacking or random.
+storage and multiple scheduling strategies like binpack or random.
 
 We plan to add more features to the builtin scheduler such as rebalancing (in case of host failure)
 and global scheduling (schedule containers on every node)
