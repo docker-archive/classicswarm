@@ -605,7 +605,7 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 		}
 	}
 
-	log.Debug("Cannot parse docker info from task status, please upgrade Mesos to the last version")
+	log.Debug("Cannot parse docker info from task status, please upgrade Mesos to the latest version")
 	// For mesos <= 0.22 we fallback to a full refresh + using labels
 	// TODO: once 0.23 or 0.24 is released, remove all this block of code as it
 	// doesn't scale very well.

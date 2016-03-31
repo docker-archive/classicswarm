@@ -59,7 +59,7 @@ var (
 	flTTL = cli.StringFlag{
 		Name:  "ttl",
 		Value: "180s",
-		Usage: "sets the expiration of an ephemeral node",
+		Usage: "set the expiration of an ephemeral node",
 	}
 	flTimeout = cli.StringFlag{
 		Name:  "timeout",
