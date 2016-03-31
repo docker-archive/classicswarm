@@ -75,21 +75,49 @@ func TestContainerLookup(t *testing.T) {
 	assert.Equal(t, len(c.Containers()), 2)
 
 	// Invalid lookup
-	assert.Nil(t, c.Container("invalid-id"))
-	assert.Nil(t, c.Container(""))
+	container, err := c.Container("invalid-id")
+	assert.Nil(t, container)
+	assert.NotNil(t, err)
+
+	container, err = c.Container("")
+	assert.Nil(t, container)
+	assert.NotNil(t, err)
+
 	// Container ID lookup.
-	assert.NotNil(t, c.Container("container1-id"))
+	container, err = c.Container("container1-id")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
 	// Container ID prefix lookup.
-	assert.NotNil(t, c.Container("container1-"))
-	assert.Nil(t, c.Container("container"))
+	container, err = c.Container("container1-")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
+	container, err = c.Container("container")
+	assert.Nil(t, container)
+	assert.NotNil(t, err)
+
 	// Container name lookup.
-	assert.NotNil(t, c.Container("container1-name1"))
-	assert.NotNil(t, c.Container("container1-name2"))
+	container, err = c.Container("container1-name1")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
+	container, err = c.Container("container1-name2")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
 	// Container engine/name matching.
-	assert.NotNil(t, c.Container("test-engine/container1-name1"))
-	assert.NotNil(t, c.Container("test-engine/container1-name2"))
-	// Match name before ID prefix
-	cc := c.Container("con")
-	assert.NotNil(t, cc)
-	assert.Equal(t, cc.ID, "container2-id")
+	container, err = c.Container("test-engine/container1-name1")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
+	container, err = c.Container("test-engine/container1-name2")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
+	// Get name before ID prefix
+	container, err = c.Container("con")
+	assert.NotNil(t, container)
+	assert.Equal(t, container.ID, "container2-id")
+
 }

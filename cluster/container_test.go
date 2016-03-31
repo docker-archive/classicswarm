@@ -32,29 +32,96 @@ func TestContainersGet(t *testing.T) {
 				"com.docker.swarm.id": "swarm2-id",
 			},
 		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
+	}, {
+		Container: types.Container{
+			ID:    "container3-id",
+			Names: []string{"/container-dup"},
+		},
+		Engine: &Engine{ID: "test-engine"},
+		Config: BuildContainerConfig(containertypes.Config{
+			Labels: map[string]string{
+				"com.docker.swarm.id": "swarm3-id",
+			},
+		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
+	}, {
+		Container: types.Container{
+			ID:    "container4-id",
+			Names: []string{"/container-dup"},
+		},
+		Engine: &Engine{ID: "test-engine"},
+		Config: BuildContainerConfig(containertypes.Config{
+			Labels: map[string]string{
+				"com.docker.swarm.id": "swarm4-id",
+			},
+		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
 	}})
 
 	// Invalid lookup
-	assert.Nil(t, containers.Get("invalid-id"))
-	assert.Nil(t, containers.Get(""))
+	container, err := containers.Get("invalid-id")
+	assert.Nil(t, container)
+	assert.NotNil(t, err)
+
+	container, err = containers.Get("")
+	assert.Nil(t, container)
+	assert.NotNil(t, err)
+
 	// Container ID lookup.
-	assert.NotNil(t, containers.Get("container1-id"))
+	container, err = containers.Get("container1-id")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
 	// Container ID prefix lookup.
-	assert.NotNil(t, containers.Get("container1-"))
-	assert.Nil(t, containers.Get("container"))
+	container, err = containers.Get("container1-")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
+	container, err = containers.Get("container")
+	assert.Nil(t, container)
+	assert.NotNil(t, err)
+
 	// Container name lookup.
-	assert.NotNil(t, containers.Get("container1-name1"))
-	assert.NotNil(t, containers.Get("container1-name2"))
+	container, err = containers.Get("container1-name1")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
+	container, err = containers.Get("container1-name2")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
 	// Container engine/name matching.
-	assert.NotNil(t, containers.Get("test-engine/container1-name1"))
-	assert.NotNil(t, containers.Get("test-engine/container1-name2"))
+	container, err = containers.Get("test-engine/container1-name1")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
+	container, err = containers.Get("test-engine/container1-name2")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
 	// Swarm ID lookup.
-	assert.NotNil(t, containers.Get("swarm1-id"))
+	container, err = containers.Get("swarm1-id")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
 	// Swarm ID prefix lookup.
-	assert.NotNil(t, containers.Get("swarm1-"))
-	assert.Nil(t, containers.Get("swarm"))
+	container, err = containers.Get("swarm1-")
+	assert.NotNil(t, container)
+	assert.Nil(t, err)
+
+	container, err = containers.Get("swarm")
+	assert.Nil(t, container)
+	assert.NotNil(t, err)
+
+	// Same container name
+	container, err = containers.Get("container-dup")
+	assert.Nil(t, container)
+	assert.NotNil(t, err)
+
+	container, err = containers.Get("test-engine/container-dup")
+	assert.Nil(t, container)
+	assert.NotNil(t, err)
+
 	// Get name before ID prefix
-	cc := containers.Get("con")
-	assert.NotNil(t, cc)
-	assert.Equal(t, cc.ID, "container2-id")
+	container, err = containers.Get("con")
+	assert.NotNil(t, container)
+	assert.Equal(t, container.ID, "container2-id")
 }

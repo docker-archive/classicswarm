@@ -346,17 +346,18 @@ func (c *Cluster) Containers() cluster.Containers {
 	return out
 }
 
-// Container returns the container with IdOrName in the cluster
-func (c *Cluster) Container(IDOrName string) *cluster.Container {
+// Container returns the container with IDOrName in the cluster
+func (c *Cluster) Container(IDOrName string) (*cluster.Container, error) {
 	// Abort immediately if the name is empty.
 	if len(IDOrName) == 0 {
-		return nil
+		return nil, fmt.Errorf("ID or name can not be empty")
 	}
 
 	c.RLock()
 	defer c.RUnlock()
 
-	return formatContainer(cluster.Containers(c.Containers()).Get(IDOrName))
+	container, err := cluster.Containers(c.Containers()).Get(IDOrName)
+	return formatContainer(container), err
 }
 
 // RemoveImage removes an image from the cluster

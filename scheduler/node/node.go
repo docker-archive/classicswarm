@@ -49,7 +49,8 @@ func (n *Node) IsHealthy() bool {
 
 // Container returns the container with IDOrName in the engine.
 func (n *Node) Container(IDOrName string) *cluster.Container {
-	return n.Containers.Get(IDOrName)
+	container, _ := n.Containers.Get(IDOrName)
+	return container
 }
 
 // AddContainer injects a container into the internal state.

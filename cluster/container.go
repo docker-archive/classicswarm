@@ -81,23 +81,23 @@ func (c *Container) Refresh() (*Container, error) {
 type Containers []*Container
 
 // Get returns a container using its ID or Name
-func (containers Containers) Get(IDOrName string) *Container {
+func (containers Containers) Get(IDOrName string) (*Container, error) {
 	// Abort immediately if the name is empty.
 	if len(IDOrName) == 0 {
-		return nil
+		return nil, fmt.Errorf("ID or name can not be empty")
 	}
 
 	// Match exact or short Container ID.
 	for _, container := range containers {
 		if container.ID == IDOrName || stringid.TruncateID(container.ID) == IDOrName {
-			return container
+			return container, nil
 		}
 	}
 
 	// Match exact Swarm ID.
 	for _, container := range containers {
 		if swarmID := container.Config.SwarmID(); swarmID == IDOrName || stringid.TruncateID(swarmID) == IDOrName {
-			return container
+			return container, nil
 		}
 	}
 
@@ -117,9 +117,9 @@ func (containers Containers) Get(IDOrName string) *Container {
 	}
 
 	if size := len(candidates); size == 1 {
-		return candidates[0]
+		return candidates[0], nil
 	} else if size > 1 {
-		return nil
+		return nil, fmt.Errorf("More than one container's name are (%s) in cluster", IDOrName)
 	}
 
 	// Match Container ID prefix.
@@ -129,6 +129,12 @@ func (containers Containers) Get(IDOrName string) *Container {
 		}
 	}
 
+	if size := len(candidates); size == 1 {
+		return candidates[0], nil
+	} else if size > 1 {
+		return nil, fmt.Errorf("More than one container's ID have prefix (%s) in cluster", IDOrName)
+	}
+
 	// Match Swarm ID prefix.
 	for _, container := range containers {
 		if strings.HasPrefix(container.Config.SwarmID(), IDOrName) {
@@ -136,9 +142,11 @@ func (containers Containers) Get(IDOrName string) *Container {
 		}
 	}
 
-	if len(candidates) == 1 {
-		return candidates[0]
+	if size := len(candidates); size == 1 {
+		return candidates[0], nil
+	} else if size > 1 {
+		return nil, fmt.Errorf("More than one container's Swarm ID have prefix (%s) in cluster", IDOrName)
 	}
 
-	return nil
+	return nil, fmt.Errorf("No such container: %s", IDOrName)
 }

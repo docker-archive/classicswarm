@@ -33,7 +33,7 @@ type Cluster interface {
 	// Return container the matching `IDOrName`
 	// TODO: remove this method from the interface as we can use
 	// cluster.Containers().Get(IDOrName)
-	Container(IDOrName string) *Container
+	Container(IDOrName string) (*Container, error)
 
 	// Return all networks
 	Networks() Networks

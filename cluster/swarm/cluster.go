@@ -131,7 +131,9 @@ func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 func (c *Cluster) generateUniqueID() string {
 	for {
 		id := stringid.GenerateRandomID()
-		if c.Container(id) == nil {
+		if _, err := c.Container(id); err != nil {
+			continue
+		} else {
 			return id
 		}
 	}
@@ -755,10 +757,10 @@ func (c *Cluster) checkNameUniqueness(name string) bool {
 }
 
 // Container returns the container with IDOrName in the cluster
-func (c *Cluster) Container(IDOrName string) *cluster.Container {
+func (c *Cluster) Container(IDOrName string) (*cluster.Container, error) {
 	// Abort immediately if the name is empty.
 	if len(IDOrName) == 0 {
-		return nil
+		return nil, fmt.Errorf("ID or name can not be empty")
 	}
 
 	c.RLock()
