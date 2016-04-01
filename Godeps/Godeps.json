@@ -39,6 +39,16 @@
 			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
 		},
 		{
+			"ImportPath": "github.com/docker/distribution/digest",
+			"Comment": "v2.3.0-rc.2-191-gee8450f",
+			"Rev": "ee8450ff13538d829a9a7909da9b979764d56865"
+		},
+		{
+			"ImportPath": "github.com/docker/distribution/reference",
+			"Comment": "v2.3.0-rc.2-191-gee8450f",
+			"Rev": "ee8450ff13538d829a9a7909da9b979764d56865"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/discovery",
 			"Comment": "v1.4.1-10581-gb65fd8e",
 			"Rev": "b65fd8e879545e8c9b859ea9b6b825ac50c79e46"
