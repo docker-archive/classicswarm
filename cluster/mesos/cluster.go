@@ -89,8 +89,15 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	// Do not check error here, so mesos-go can still try.
 	hostname, _ := os.Hostname()
 
+	// Build a framework ID from params, many swarm services can share an ID allowing for HA
+	// If not defined, mesos will assign a random id
+	var frameworkId *mesosproto.FrameworkID 
+	if frameworkUID, ok := options.String("mesos.frameworkid", "SWARM_MESOS_FRAMEWORKID"); ok {
+		frameworkId = &mesosproto.FrameworkID{Value: &frameworkUID}
+	} 
+
 	driverConfig := mesosscheduler.DriverConfig{
-		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user},
+		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user, Id: frameworkId},
 		Master:           cluster.master,
 		HostnameOverride: hostname,
 	}
