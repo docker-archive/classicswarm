@@ -293,7 +293,7 @@ func TestCreateContainer(t *testing.T) {
 		engine     = NewEngine("test", 0, engOpts)
 		client     = mockclient.NewMockClient()
 		apiClient  = engineapimock.NewMockClient()
-		readCloser = nopCloser{bytes.NewBufferString("ok")}
+		readCloser = nopCloser{bytes.NewBufferString("")}
 	)
 
 	engine.setState(stateUnhealthy)
@@ -346,7 +346,7 @@ func TestCreateContainer(t *testing.T) {
 	id = "id3"
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
 	mockConfig.CPUShares = int64(math.Ceil(float64(config.CPUShares*1024) / float64(mockInfo.NCPU)))
-	apiClient.On("ImagePull", mock.Anything, types.ImagePullOptions{ImageID: config.Image}, mock.Anything).Return(readCloser, nil).Once()
+	apiClient.On("ImagePull", mock.Anything, types.ImagePullOptions{ImageID: config.Image, Tag: "latest"}, mock.Anything).Return(readCloser, nil).Once()
 	// FIXMEENGINEAPI : below should return an engine-api error, or something custom
 	apiClient.On("ContainerCreate", mock.Anything, &mockConfig.Config, &mockConfig.HostConfig, &mockConfig.NetworkingConfig, name).Return(types.ContainerCreateResponse{}, dockerclient.ErrImageNotFound).Once()
 	// FIXMEENGINEAPI : below should return an engine-api error, or something custom
