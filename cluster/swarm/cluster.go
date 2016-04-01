@@ -477,20 +477,21 @@ func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (resp
 	if err != nil {
 		return nil, err
 	}
-	if nodes != nil {
-		resp, err := c.engines[nodes[0].ID].CreateNetwork(name, request)
-		if err == nil {
-			if network := c.engines[nodes[0].ID].Networks().Get(resp.ID); network != nil && network.Scope == "global" {
-				for id, engine := range c.engines {
-					if id != nodes[0].ID {
-						engine.AddNetwork(network)
-					}
-				}
+
+	resp, err := c.engines[nodes[0].ID].CreateNetwork(name, request)
+	if err != nil {
+		return nil, err
+	}
+
+	if network := c.engines[nodes[0].ID].Networks().Get(resp.ID); network != nil && network.Scope == "global" {
+		for id, engine := range c.engines {
+			if id != nodes[0].ID {
+				engine.AddNetwork(network)
 			}
 		}
-		return resp, err
 	}
-	return nil, nil
+
+	return resp, nil
 }
 
 // CreateVolume creates a volume in the cluster
