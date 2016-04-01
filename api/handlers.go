@@ -591,7 +591,7 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /networks/create
 func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
-	var request dockerclient.NetworkCreate
+	var request apitypes.NetworkCreate
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		httpError(w, err.Error(), http.StatusBadRequest)
@@ -951,7 +951,7 @@ func proxyNetworkDisconnect(c *context, w http.ResponseWriter, r *http.Request) 
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
 
 	// Extract container info from r.Body copy
-	var disconnect dockerclient.NetworkDisconnect
+	var disconnect apitypes.NetworkDisconnect
 	if err := json.NewDecoder(bodyCopy).Decode(&disconnect); err != nil {
 		httpError(w, fmt.Sprintf("Container is not specified"), http.StatusNotFound)
 		return
@@ -1007,7 +1007,7 @@ func proxyNetworkConnect(c *context, w http.ResponseWriter, r *http.Request) {
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
 
 	// Extract container info from r.Body copy
-	var connect dockerclient.NetworkConnect
+	var connect apitypes.NetworkConnect
 	if err := json.NewDecoder(bodyCopy).Decode(&connect); err != nil {
 		httpError(w, fmt.Sprintf("Container is not specified"), http.StatusNotFound)
 		return
