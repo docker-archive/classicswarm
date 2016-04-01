@@ -124,7 +124,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	if failoverTimeout, ok := options.Float("mesos.failovertimeout", "SWARM_MESOS_FAILOVER_TIMEOUT"); ok {
 		driverConfig.Framework.FailoverTimeout = &failoverTimeout
 	}
-	
+
 	if checkpointFailover, ok := options.Bool("mesos.checkpointfailover", "SWARM_MESOS_CHECKPOINT_FAILOVER"); ok {
 		driverConfig.Framework.Checkpoint = &checkpointFailover
 	}
