@@ -16,6 +16,7 @@ import (
 	"golang.org/x/net/context"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/version"
 	engineapi "github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
@@ -950,15 +951,33 @@ func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, erro
 
 }
 
+// FIXME: This will become unnecessary after docker/engine-api#162 is merged
+func getTagFromNamedRef(dref reference.Named) string {
+	var tag string
+	switch x := dref.(type) {
+	case reference.Digested:
+		tag = x.Digest().String()
+	case reference.NamedTagged:
+		tag = x.Tag()
+	}
+	return tag
+}
+
 // Pull an image on the engine
 func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
-	if !strings.Contains(image, ":") {
-		image = image + ":latest"
+	distributionRef, err := reference.ParseNamed(image)
+	if err != nil {
+		return err
 	}
+
+	repository := distributionRef.Name()
+	tag := getTagFromNamedRef(distributionRef)
+
 	pullOpts := types.ImagePullOptions{
-		ImageID: image,
+		ImageID: repository,
+		Tag:     tag,
 	}
-	_, err := e.apiClient.ImagePull(context.TODO(), pullOpts, nil)
+	_, err = e.apiClient.ImagePull(context.TODO(), pullOpts, nil)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
