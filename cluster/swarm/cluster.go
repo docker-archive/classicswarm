@@ -14,6 +14,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/discovery"
 	"github.com/docker/docker/pkg/stringid"
+	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	containertypes "github.com/docker/engine-api/types/container"
 	networktypes "github.com/docker/engine-api/types/network"
@@ -148,8 +149,9 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 	if err != nil {
 		var retries int64
 		//  fails with image not found, then try to reschedule with image affinity
+		// ENGINEAPIFIXME: The first error can be removed once dockerclient is removed
 		bImageNotFoundError, _ := regexp.MatchString(`image \S* not found`, err.Error())
-		if bImageNotFoundError && !config.HaveNodeConstraint() {
+		if (bImageNotFoundError || client.IsErrImageNotFound(err)) && !config.HaveNodeConstraint() {
 			// Check if the image exists in the cluster
 			// If exists, retry with a image affinity
 			if c.Image(config.Image) != nil {

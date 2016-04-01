@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -952,40 +953,54 @@ func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, erro
 }
 
 // FIXME: This will become unnecessary after docker/engine-api#162 is merged
-func getTagFromNamedRef(dref reference.Named) string {
-	var tag string
-	switch x := dref.(type) {
-	case reference.Digested:
+func buildImagePullOptions(image string) (types.ImagePullOptions, error) {
+	distributionRef, err := reference.ParseNamed(image)
+	if err != nil {
+		return types.ImagePullOptions{}, err
+	}
+
+	name := distributionRef.Name()
+	tag := "latest"
+
+	switch x := distributionRef.(type) {
+	case reference.Canonical:
 		tag = x.Digest().String()
 	case reference.NamedTagged:
 		tag = x.Tag()
 	}
-	return tag
+
+	return types.ImagePullOptions{
+		ImageID: name,
+		Tag:     tag,
+	}, nil
 }
 
 // Pull an image on the engine
 func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
-	distributionRef, err := reference.ParseNamed(image)
+	pullOpts, err := buildImagePullOptions(image)
 	if err != nil {
 		return err
 	}
-
-	repository := distributionRef.Name()
-	tag := getTagFromNamedRef(distributionRef)
-
-	pullOpts := types.ImagePullOptions{
-		ImageID: repository,
-		Tag:     tag,
-	}
-	_, err = e.apiClient.ImagePull(context.TODO(), pullOpts, nil)
+	pullResponse, err := e.apiClient.ImagePull(context.TODO(), pullOpts, nil)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
 	}
 
+	// wait until the image download is finished
+	dec := json.NewDecoder(pullResponse)
+	for {
+		m := map[string]interface{}{}
+		if err := dec.Decode(&m); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+	}
+
 	// force refresh images
 	e.RefreshImages()
-
 	return nil
 }
 
