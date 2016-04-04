@@ -234,7 +234,7 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 
 	case states.VolumeInspect:
 		log.Debug("event: VolumeInspect...")
-		volumeNameIndex := strings.LastIndex(r.RequestURI,"/")+1
+		volumeNameIndex := strings.LastIndex(r.RequestURI,"/volumes/")+len("/volumes/")
 		volumeName := r.RequestURI[volumeNameIndex:len(r.RequestURI)] + r.Header.Get(headers.AuthZTenantIdHeaderName)
 		log.Debugf(" volumeName *%s*", volumeName)
 		r.URL.Path = r.RequestURI[0:volumeNameIndex] + volumeName

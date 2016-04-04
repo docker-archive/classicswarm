@@ -133,10 +133,11 @@ func eventParse(r *http.Request) states.EventEnum {
 	if strings.Contains(r.RequestURI, "/volumes")  {
 		if r.Method == "DELETE" {
 			return states.VolumeRemove
-		}
+		} 
 		if r.Method == "GET" {
 			if strings.HasSuffix(r.RequestURI,"/volumes") ||
-			   strings.HasSuffix(r.RequestURI,"/volumes/") {
+			   strings.HasSuffix(r.RequestURI,"/volumes/") ||
+			   strings.Contains(r.RequestURI,"/volumes?") { 
 			   return states.VolumesList
 			} else {
 			   return states.VolumeInspect
