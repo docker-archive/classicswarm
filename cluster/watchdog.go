@@ -45,9 +45,11 @@ func (w *Watchdog) removeDuplicateContainers(e *Engine) {
 
 		for _, containerInCluster := range w.cluster.Containers() {
 			if containerInCluster.Config.SwarmID() == container.Config.SwarmID() && containerInCluster.Engine.ID != container.Engine.ID {
-				log.Debugf("container %s was rescheduled on node %s, removing it", container.Id, containerInCluster.Engine.ID)
+				log.Debugf("container %s was rescheduled on node %s, removing it", container.Id, containerInCluster.Engine.Name)
 				// container already exists in the cluster, destroy it
-				e.RemoveContainer(container, true, true)
+				if err := e.RemoveContainer(container, true, true); err != nil {
+					log.Errorf("Failed to remove duplicate container %s on node %s: %v", container.Id, containerInCluster.Engine.Name, err)
+				}
 			}
 		}
 	}
