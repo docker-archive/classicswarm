@@ -134,7 +134,7 @@ function containerRunning() {
 
 	# Wait for the container to be rescheduled
 	# c1 should have been rescheduled from node-0 to node-1
-	retry 5 1 containerRunning "c1" "node-1"
+	retry 15 1 containerRunning "c1" "node-1"
 
 	# Check swarm id didn't change for c1
 	[[ "$swarm_id" == $(docker_swarm inspect -f '{{ index .Config.Labels "com.docker.swarm.id" }}' c1) ]]
