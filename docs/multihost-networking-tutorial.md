@@ -180,7 +180,7 @@ To check if the joins has succeed, run the command:
     ab746399f106        swarm               "/swarm manage token:"   25 seconds ago      Up 23 seconds       0.0.0.0:5732->2375/tcp   swarm-master
 
 ### After the discovery of the swarm members
-To check if the Docker cluster is healty and running, run the command:
+To check if the Docker cluster is healthy and running, run the command:
 
     user@master:~$ swarm-docker info
     Containers: 4
@@ -214,7 +214,7 @@ To check if the Docker cluster is healty and running, run the command:
     Name: ab746399f106
 
 
-At this point swarm is deployed and all containers run will be run over different nodes. Sebian containers can be deploy with the command:
+At this point swarm is deployed and all containers will be running over different nodes. Several containers can be deployed with the command:
 
     user@master:~$ swarm-docker run --rm -it debian bash
 
@@ -251,4 +251,4 @@ A network overlay is needed so all the containers can be "plugged in" into the s
 
 **And voilà !**
 
-Once this overlay is created, add `--net=net` to the command `swarm-docker run --rm -it debian bash` and all your containers will be able to communicate natively as if they were on the same LAN. The default network is 10.0.0.0/24. The option `--subnet` allow to specify a subnetwork, i.e., `swarm-docker network create -d overlay --subnet 192.168.0.0/16 custom-subnet`. It then is possible to specify a static IP address to a container with the option `--ip`, i.e., `swarm-docker run --rm -it --net=custom-subnet --ip=192.168.0.13 debian bash`.
+Once this overlay is created, add `--net=net` to the command `swarm-docker run --rm -it debian bash` and all your containers will be able to communicate natively as if they were on the same LAN. The default network is 10.0.0.0/24. The option `--subnet` allows to specify a subnetwork, i.e., `swarm-docker network create -d overlay --subnet 192.168.0.0/16 custom-subnet`. It then is possible to specify a static IP address to a container with the option `--ip`, i.e., `swarm-docker run --rm -it --net=custom-subnet --ip=192.168.0.13 debian bash`.
