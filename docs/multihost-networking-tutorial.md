@@ -17,7 +17,7 @@ This step-by-step tutorial aims to walk you through a full Docker Swarm deployme
 This tutorial has been tested with:
   - docker engine 1.10.2.
   - Swarm server 1.1.3.
-  - [Consul 0.6.3](http://consul.io/), needed for discovery for the [Swarm containers](swarm/discovery/).
+  - [Consul 0.6.3](http://consul.io/), needed for discovery for the [Swarm containers](https://docs.docker.com/swarm/discovery/).
 
 ### Discovery
 Both Swarm agents and containers require a discovery mean; the former is needed to create the cluster itself, while the latter enables the multi-host networking. Note that the container discovery is not necessary if the Swarm containers do not need a common LAN.
