@@ -5,12 +5,12 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/samalba/dockerclient"
+	"github.com/docker/engine-api/types/events"
 )
 
 // Event is exported
 type Event struct {
-	dockerclient.Event
+	events.Message
 	Engine *Engine `json:"-"`
 }
 
