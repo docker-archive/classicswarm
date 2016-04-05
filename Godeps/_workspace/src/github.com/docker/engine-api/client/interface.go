@@ -68,6 +68,7 @@ type APIClient interface {
 	NetworkRemove(ctx context.Context, networkID string) error
 	RegistryLogin(ctx context.Context, auth types.AuthConfig) (types.AuthResponse, error)
 	ServerVersion(ctx context.Context) (types.Version, error)
+	UpdateClientVersion(v string)
 	VolumeCreate(ctx context.Context, options types.VolumeCreateRequest) (types.Volume, error)
 	VolumeInspect(ctx context.Context, volumeID string) (types.Volume, error)
 	VolumeList(ctx context.Context, filter filters.Args) (types.VolumesListResponse, error)
