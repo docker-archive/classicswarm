@@ -222,3 +222,57 @@ function containerRunning() {
 	run docker_swarm ps
 	[[ "${output}" == *"->80/tcp"* ]]
 }
+
+
+@test "rescheduling with default policy" {
+	start_docker_with_busybox 2
+	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 --default-reschedule-policy on-node-failure ${HOSTS[0]},${HOSTS[1]}
+
+	# c1 on node-0 with default-reschedule-policy=on-node-failure
+	run docker_swarm run -dit --name c1 -e constraint:node==~node-0 busybox sh
+	[ "$status" -eq 0 ]
+	# c2 on node-0 with reschedule=off
+	run docker_swarm run -dit --name c2 -e constraint:node==~node-0 --label 'com.docker.swarm.reschedule-policies=["off"]' busybox sh
+	[ "$status" -eq 0 ]
+	# c3 on node-1
+	run docker_swarm run -dit --name c3 -e constraint:node==~node-1 --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]' busybox sh
+	[ "$status" -eq 0 ]
+
+	run docker_swarm ps -q
+	[ "${#lines[@]}" -eq  3 ]
+
+	# Make sure containers are running where they should.
+	containerRunning "c1" "node-0"
+	containerRunning "c2" "node-0"
+	containerRunning "c3" "node-1"
+
+	# Get c1 swarm id
+	swarm_id=$(docker_swarm inspect -f '{{ index .Config.Labels "com.docker.swarm.id" }}' c1)
+
+	# Stop node-0
+	docker_host stop ${DOCKER_CONTAINERS[0]}
+
+	# Wait for Swarm to detect the node failure.
+	retry 5 1 eval "docker_swarm info | grep -q 'Unhealthy'"
+
+	# Wait for the container to be rescheduled
+	# c1 should have been rescheduled from node-0 to node-1
+	retry 5 1 containerRunning "c1" "node-1"
+
+	# Check swarm id didn't change for c1
+	[[ "$swarm_id" == $(docker_swarm inspect -f '{{ index .Config.Labels "com.docker.swarm.id" }}' c1) ]]
+
+	run docker_swarm inspect "$swarm_id"
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *'"Name": "node-1"'* ]]
+
+	# c2 should still be on node-0 since the rescheduling policy was off.
+	run docker_swarm inspect c2
+	[ "$status" -eq 1 ]
+
+	# c3 should still be on node-1 since it wasn't affected
+	containerRunning "c3" "node-1"
+
+	run docker_swarm ps -q
+	[ "${#lines[@]}" -eq  2 ]
+}

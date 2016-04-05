@@ -287,14 +287,19 @@ func manage(c *cli.Context) {
 		log.Fatal(err)
 	}
 
+	reschedulePolicy := c.String("default-reschedule-policy")
+	if reschedulePolicy != "off" && reschedulePolicy != "on-node-failure" {
+		log.Fatalf("unsupported reschedule policy %q", reschedulePolicy)
+	}
+
 	sched := scheduler.New(s, fs)
 	var cl cluster.Cluster
 	switch c.String("cluster-driver") {
 	case "mesos-experimental":
 		log.Warn("WARNING: the mesos driver is currently experimental, use at your own risks")
-		cl, err = mesos.NewCluster(sched, tlsConfig, uri, c.StringSlice("cluster-opt"), engineOpts)
+		cl, err = mesos.NewCluster(sched, tlsConfig, uri, c.StringSlice("cluster-opt"), engineOpts, reschedulePolicy)
 	case "swarm":
-		cl, err = swarm.NewCluster(sched, tlsConfig, discovery, c.StringSlice("cluster-opt"), engineOpts)
+		cl, err = swarm.NewCluster(sched, tlsConfig, discovery, c.StringSlice("cluster-opt"), engineOpts, reschedulePolicy)
 	default:
 		log.Fatalf("unsupported cluster %q", c.String("cluster-driver"))
 	}

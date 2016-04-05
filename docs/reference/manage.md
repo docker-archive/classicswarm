@@ -100,6 +100,14 @@ You can use multiple scheduler filters, like this:
 
 For more information and examples, see [Swarm filters](../scheduler/filter.md).
 
+### `--default-reschedule-policy` Default rescheduling policy
+
+Use `--default-reschedule-policy "<value>"` to specify default rescheduling policy when container does not have any reschedule-policies.
+
+Where `<value>` is:
+  * `off` - Swarm does not restart containers when a node fails.
+  * `on-node-failure` - Swarm will restart containers when a node fails.
+
 ### `--host`, `-H` — Listen to IP/port
 
 Use `--host <ip>:<port>` or `-H <ip>:<port>` to specify the IP address and port number to which the manager listens for incoming messages. If you replace `<ip>` with zeros or omit it altogether, the manager uses the default host IP. For example, `--host=0.0.0.0:3376` or `-H :4000`.

@@ -29,18 +29,19 @@ import (
 type Cluster struct {
 	sync.RWMutex
 
-	dockerEnginePort    string
-	eventHandlers       *cluster.EventHandlers
-	master              string
-	agents              map[string]*agent
-	scheduler           *Scheduler
-	TLSConfig           *tls.Config
-	options             *cluster.DriverOpts
-	offerTimeout        time.Duration
-	refuseTimeout       time.Duration
-	taskCreationTimeout time.Duration
-	pendingTasks        *task.Tasks
-	engineOpts          *cluster.EngineOpts
+	dockerEnginePort        string
+	eventHandlers           *cluster.EventHandlers
+	master                  string
+	agents                  map[string]*agent
+	scheduler               *Scheduler
+	TLSConfig               *tls.Config
+	options                 *cluster.DriverOpts
+	offerTimeout            time.Duration
+	refuseTimeout           time.Duration
+	taskCreationTimeout     time.Duration
+	pendingTasks            *task.Tasks
+	engineOpts              *cluster.EngineOpts
+	defaultReschedulePolicy string
 }
 
 const (
@@ -59,7 +60,7 @@ var (
 )
 
 // NewCluster for mesos Cluster creation
-func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master string, options cluster.DriverOpts, engineOptions *cluster.EngineOpts) (cluster.Cluster, error) {
+func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master string, options cluster.DriverOpts, engineOptions *cluster.EngineOpts, defaultResPolicy string) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "mesos"}).Debug("Initializing cluster")
 
 	// Enabling mesos-go glog logging
@@ -67,16 +68,17 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		flag.Lookup("logtostderr").Value.Set("true")
 	}
 	cluster := &Cluster{
-		dockerEnginePort:    defaultDockerEnginePort,
-		eventHandlers:       cluster.NewEventHandlers(),
-		master:              master,
-		agents:              make(map[string]*agent),
-		TLSConfig:           TLSConfig,
-		options:             &options,
-		offerTimeout:        defaultOfferTimeout,
-		taskCreationTimeout: defaultTaskCreationTimeout,
-		engineOpts:          engineOptions,
-		refuseTimeout:       defaultRefuseTimeout,
+		dockerEnginePort:        defaultDockerEnginePort,
+		eventHandlers:           cluster.NewEventHandlers(),
+		master:                  master,
+		agents:                  make(map[string]*agent),
+		TLSConfig:               TLSConfig,
+		options:                 &options,
+		offerTimeout:            defaultOfferTimeout,
+		taskCreationTimeout:     defaultTaskCreationTimeout,
+		engineOpts:              engineOptions,
+		refuseTimeout:           defaultRefuseTimeout,
+		defaultReschedulePolicy: defaultResPolicy,
 	}
 
 	cluster.pendingTasks = task.NewTasks(cluster)
@@ -190,6 +192,10 @@ func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *docke
 
 // CreateContainer for container creation in Mesos task
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
+	if !config.HasReschedulePolicy("") {
+		config.AddReschedulePolicy(c.defaultReschedulePolicy)
+	}
+
 	if config.Memory == 0 && config.CpuShares == 0 {
 		return nil, errResourcesNeeded
 	}

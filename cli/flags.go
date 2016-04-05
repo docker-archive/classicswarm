@@ -151,4 +151,9 @@ var (
 		Value: "15s",
 		Usage: "Leader lock release time on failure",
 	}
+	flDefaultReschedulePolicy = cli.StringFlag{
+		Name:  "default-reschedule-policy",
+		Value: "off",
+		Usage: "Default rescheduling policy [off, on-node-failure]",
+	}
 )

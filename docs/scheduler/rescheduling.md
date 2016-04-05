@@ -35,6 +35,12 @@ To set the same policy with a `com.docker.swarm.reschedule-policy` label:
 $ docker run -d -l 'com.docker.swarm.reschedule-policy=["on-node-failure"]' redis
 ```
 
+Also, you can set the default rescheduling policy when start swarm manager:
+
+```bash
+$ swarm manage --default-reschedule-policy "off" / "on-node-failure" ...
+```
+
 ## Review reschedule logs
 
 You can use the `docker logs` command to review the rescheduled container

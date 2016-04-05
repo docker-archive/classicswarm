@@ -23,6 +23,7 @@ var (
 			Usage:     "Manage a docker cluster",
 			Flags: []cli.Flag{
 				flStrategy, flFilter,
+				flDefaultReschedulePolicy,
 				flHosts,
 				flLeaderElection, flLeaderTTL, flManageAdvertise,
 				flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
