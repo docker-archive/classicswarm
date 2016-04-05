@@ -297,6 +297,10 @@ func (client *NopClient) ServerVersion(ctx context.Context) (types.Version, erro
 	return types.Version{}, errNoEngine
 }
 
+// UpdateClientVersion updates the client version
+func (client *NopClient) UpdateClientVersion(v string) {
+}
+
 // VolumeCreate creates a volume in the docker host
 func (client *NopClient) VolumeCreate(ctx context.Context, options types.VolumeCreateRequest) (types.Volume, error) {
 	return types.Volume{}, errNoEngine

@@ -414,6 +414,26 @@ func (e *Engine) CheckConnectionErr(err error) {
 	// other errors may be ambiguous.
 }
 
+// Update API Version in apiClient
+func (e *Engine) updateClientVersionFromServer(serverVersion string) {
+	// v will be >= 1.6, since this is checked earlier
+	v := version.Version(serverVersion)
+	switch {
+	case v.LessThan(version.Version("1.7")):
+		e.apiClient.UpdateClientVersion("1.18")
+	case v.LessThan(version.Version("1.8")):
+		e.apiClient.UpdateClientVersion("1.19")
+	case v.LessThan(version.Version("1.9")):
+		e.apiClient.UpdateClientVersion("1.20")
+	case v.LessThan(version.Version("1.10")):
+		e.apiClient.UpdateClientVersion("1.21")
+	case v.LessThan(version.Version("1.11")):
+		e.apiClient.UpdateClientVersion("1.22")
+	default:
+		e.apiClient.UpdateClientVersion("1.23")
+	}
+}
+
 // Gather engine specs (CPU, memory, constraints, ...).
 func (e *Engine) updateSpecs() error {
 	info, err := e.apiClient.Info(context.TODO())
@@ -441,8 +461,10 @@ func (e *Engine) updateSpecs() error {
 		e.CheckConnectionErr(err)
 		return err
 	}
-	// update version
+	// update server version
 	e.Version = v.Version
+	// update client version. engine-api handles backward compatibility where needed
+	e.updateClientVersionFromServer(v.Version)
 
 	e.Lock()
 	defer e.Unlock()
