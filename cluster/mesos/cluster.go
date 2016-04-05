@@ -91,13 +91,13 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 
 	// Build a framework ID from params, many swarm services can share an ID allowing for HA
 	// If not defined, mesos will assign a random id
-	var frameworkId *mesosproto.FrameworkID 
+	var frameworkID *mesosproto.FrameworkID 
 	if frameworkUID, ok := options.String("mesos.frameworkid", "SWARM_MESOS_FRAMEWORKID"); ok {
-		frameworkId = &mesosproto.FrameworkID{Value: &frameworkUID}
+		frameworkID = &mesosproto.FrameworkID{Value: &frameworkUID}
 	} 
 
 	driverConfig := mesosscheduler.DriverConfig{
-		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user, Id: frameworkId},
+		Framework:        &mesosproto.FrameworkInfo{Name: proto.String(frameworkName), User: &user, Id: frameworkID},
 		Master:           cluster.master,
 		HostnameOverride: hostname,
 	}
