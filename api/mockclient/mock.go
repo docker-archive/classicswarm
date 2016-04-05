@@ -347,6 +347,10 @@ func (client *MockClient) ServerVersion(ctx context.Context) (types.Version, err
 	return args.Get(0).(types.Version), args.Error(1)
 }
 
+// UpdateClientVersion updates the client version
+func (client *MockClient) UpdateClientVersion(v string) {
+}
+
 // VolumeCreate creates a volume in the docker host
 func (client *MockClient) VolumeCreate(ctx context.Context, options types.VolumeCreateRequest) (types.Volume, error) {
 	args := client.Mock.Called(ctx, options)
