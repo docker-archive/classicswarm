@@ -494,6 +494,16 @@ func (e *Engine) updateSpecs() error {
 			message := fmt.Sprintf("Engine (ID: %s, Addr: %s) contains an invalid label (%s) not formatted as \"key=value\".", e.ID, e.Addr, label)
 			return fmt.Errorf(message)
 		}
+
+		// If an engine managed by Swarm contains a label with key "node",
+		// such as node=node1
+		// `docker run -e constraint:node==node1 -d nginx` will not work,
+		// since "node" in constraint will match node.Name instead of label.
+		// Log warn message in this case.
+		if kv[0] == "node" {
+			log.Warnf("Engine (ID: %s, Addr: %s) containers a label (%s) with key of \"node\" which cannot be used in Swarm.", e.ID, e.Addr, label)
+		}
+
 		e.Labels[kv[0]] = kv[1]
 	}
 	return nil
