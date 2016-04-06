@@ -263,12 +263,12 @@ $ docker tcp://<manager_ip:manager_port> ps
 CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
 87c4376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1/redis1
 1212386856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1/redis2
-87c4376639a8        redis:latest        "redis"             Less than a second ago   running                                             node-3      redis3
-1234376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis4
-86c2136253a8        redis:latest        "redis"             Less than a second ago   running                                             node-3      redis5
-87c3236856a8        redis:latest        "redis"             Less than a second ago   running                                             node-3      redis6
-87c4376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-3      redis7
-963841b138d8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis8
+87c4376639a8        redis:latest        "redis"             Less than a second ago   running                                             node-3/redis3
+1234376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1/redis4
+86c2136253a8        redis:latest        "redis"             Less than a second ago   running                                             node-3/redis5
+87c3236856a8        redis:latest        "redis"             Less than a second ago   running                                             node-3/redis6
+87c4376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-3/redis7
+963841b138d8        redis:latest        "redis"             Less than a second ago   running                                             node-1/redis8
 ```
 
 As you can see here, the containers were only scheduled on nodes that had the
@@ -379,7 +379,7 @@ $ docker tcp://<manager_ip:manager_port> ps
 CONTAINER ID   IMAGE               COMMAND        PORTS                           NAMES
 f8b693db9cd6   nginx:latest        "nginx"        192.168.0.44:80->80/tcp         node-3/stoic_albattani
 963841b138d8   nginx:latest        "nginx"        192.168.0.43:80->80/tcp         node-2/dreamy_turing
-87c4376856a8   nginx:latest        "nginx"        192.168.0.42:80->80/tcp         node-1      prickly_engelbart
+87c4376856a8   nginx:latest        "nginx"        192.168.0.42:80->80/tcp         node-1/prickly_engelbart
 ```
 
 Finally, Docker Swarm will refuse to run another container that requires port
