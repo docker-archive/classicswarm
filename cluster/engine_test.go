@@ -314,8 +314,8 @@ func TestCreateContainer(t *testing.T) {
 	assert.NoError(t, engine.ConnectWithClient(client, apiClient))
 	assert.True(t, engine.isConnected())
 
-	mockConfig := config
-	mockConfig.CPUShares = int64(math.Ceil(float64(config.CPUShares*1024) / float64(mockInfo.NCPU)))
+	mockConfig := *config
+	mockConfig.HostConfig.CPUShares = int64(math.Ceil(float64(config.HostConfig.CPUShares*1024) / float64(mockInfo.NCPU)))
 
 	// Everything is ok
 	name := "test1"
@@ -334,7 +334,7 @@ func TestCreateContainer(t *testing.T) {
 
 	// Image not found, pullImage == false
 	name = "test2"
-	mockConfig.CPUShares = int64(math.Ceil(float64(config.CPUShares*1024) / float64(mockInfo.NCPU)))
+	mockConfig.HostConfig.CPUShares = int64(math.Ceil(float64(config.HostConfig.CPUShares*1024) / float64(mockInfo.NCPU)))
 	// FIXMEENGINEAPI : below should return an engine-api error, or something custom
 	apiClient.On("ContainerCreate", mock.Anything, &mockConfig.Config, &mockConfig.HostConfig, &mockConfig.NetworkingConfig, name).Return(types.ContainerCreateResponse{}, dockerclient.ErrImageNotFound).Once()
 	container, err = engine.Create(config, name, false, auth)
@@ -345,7 +345,7 @@ func TestCreateContainer(t *testing.T) {
 	name = "test3"
 	id = "id3"
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
-	mockConfig.CPUShares = int64(math.Ceil(float64(config.CPUShares*1024) / float64(mockInfo.NCPU)))
+	mockConfig.HostConfig.CPUShares = int64(math.Ceil(float64(config.HostConfig.CPUShares*1024) / float64(mockInfo.NCPU)))
 	apiClient.On("ImagePull", mock.Anything, types.ImagePullOptions{ImageID: config.Image, Tag: "latest"}, mock.Anything).Return(readCloser, nil).Once()
 	// FIXMEENGINEAPI : below should return an engine-api error, or something custom
 	apiClient.On("ContainerCreate", mock.Anything, &mockConfig.Config, &mockConfig.HostConfig, &mockConfig.NetworkingConfig, name).Return(types.ContainerCreateResponse{}, dockerclient.ErrImageNotFound).Once()
