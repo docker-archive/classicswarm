@@ -135,11 +135,11 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_BRIDGE.Enum()
 	}
 
-	if cpus := t.config.CPUShares; cpus > 0 {
+	if cpus := t.config.HostConfig.CPUShares; cpus > 0 {
 		t.Resources = append(t.Resources, mesosutil.NewScalarResource("cpus", float64(cpus)))
 	}
 
-	if mem := t.config.Memory; mem > 0 {
+	if mem := t.config.HostConfig.Memory; mem > 0 {
 		t.Resources = append(t.Resources, mesosutil.NewScalarResource("mem", float64(mem/1024/1024)))
 	}
 
