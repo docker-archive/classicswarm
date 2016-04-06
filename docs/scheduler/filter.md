@@ -112,8 +112,8 @@ $ docker tcp://<manager_ip:manager_port>  run -d -P -e constraint:storage==ssd -
 f8b693db9cd6
 
 $ docker tcp://<manager_ip:manager_port>  ps
-CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1      db
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1/db
 ```
 
 In this example, the manager selected all nodes that met the `storage=ssd`
@@ -127,9 +127,9 @@ $ docker tcp://<manager_ip:manager_port> run -d -P -e constraint:storage==disk -
 963841b138d8
 
 $ docker tcp://<manager_ip:manager_port> ps
-CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.43:49177->80/tcp      node-2      frontend
-f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1      db
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.43:49177->80/tcp      node-2/frontend
+f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1/db
 ```
 
 The scheduler selected `node-2` since it was started with the `storage=disk` label.
@@ -163,7 +163,7 @@ Removing intermediate container 68671d4a17b0
 Successfully built cd70495a1514
 
 $ docker images
-REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 dockerswarm/swarm   manager             8c2c56438951        2 days ago          795.7 MB
 ouruser/sinatra     v2                  cd70495a1514        35 seconds ago      318.7 MB
 ubuntu              14.04               a5a467fddcb8        11 days ago         187.9 MB
@@ -208,8 +208,8 @@ $ docker tcp://<manager_ip:manager_port>  run -d -p 80:80 --name frontend nginx
 
 
 $ docker tcp://<manager_ip:manager_port> ps
-CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      frontend
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1/frontend
 ```
 
 Then, using `-e affinity:container==frontend` value to schedule a second
@@ -220,9 +220,9 @@ $ docker tcp://<manager_ip:manager_port> run -d --name logger -e affinity:contai
  87c4376856a8
 
 $ docker tcp://<manager_ip:manager_port> ps
-CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      frontend
-963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1      logger
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1/frontend
+963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1/logger
 ```
 
 Because of `name` affinity, the  `logger` container ends up on `node-1` along
@@ -260,9 +260,9 @@ $ docker tcp://<manager_ip:manager_port> run -d --name redis7 -e affinity:image=
 $ docker tcp://<manager_ip:manager_port> run -d --name redis8 -e affinity:image==redis redis
 
 $ docker tcp://<manager_ip:manager_port> ps
-CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-87c4376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis1
-1212386856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis2
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+87c4376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1/redis1
+1212386856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1/redis2
 87c4376639a8        redis:latest        "redis"             Less than a second ago   running                                             node-3      redis3
 1234376856a8        redis:latest        "redis"             Less than a second ago   running                                             node-1      redis4
 86c2136253a8        redis:latest        "redis"             Less than a second ago   running                                             node-3      redis5
@@ -293,8 +293,8 @@ $ docker tcp://<manager_ip:manager_port> run -d -p 80:80 --label com.example.typ
  87c4376856a8
 
 $ docker tcp://<manager_ip:manager_port> ps  --filter "label=com.example.type=frontend"
-CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      trusting_yonath
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1/trusting_yonath
 ```
 
 Then, use `-e affinity:com.example.type==frontend` to schedule a container next
@@ -305,9 +305,9 @@ $ docker tcp://<manager_ip:manager_port> run -d -e affinity:com.example.type==fr
  87c4376856a8
 
 $ docker tcp://<manager_ip:manager_port> ps
-CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1      trusting_yonath
-963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1      happy_hawking
+CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+87c4376856a8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:80->80/tcp         node-1/trusting_yonath
+963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1/happy_hawking
 ```
 
 The `logger` container ends up on `node-1` because its affinity with the
@@ -349,8 +349,8 @@ $ docker tcp://<manager_ip:manager_port> run -d -p 80:80 nginx
 87c4376856a8
 
 $ docker tcp://<manager_ip:manager_port> ps
-CONTAINER ID    IMAGE               COMMAND         PORTS                       NODE        NAMES
-87c4376856a8    nginx:latest        "nginx"         192.168.0.42:80->80/tcp     node-1      prickly_engelbart
+CONTAINER ID    IMAGE               COMMAND         PORTS                       NAMES
+87c4376856a8    nginx:latest        "nginx"         192.168.0.42:80->80/tcp     node-1/prickly_engelbart
 ```
 
 Docker Swarm selects a node where port `80` is available and unoccupied by another
@@ -363,9 +363,9 @@ $ docker tcp://<manager_ip:manager_port> run -d -p 80:80 nginx
 963841b138d8
 
 $ docker tcp://<manager_ip:manager_port> ps
-CONTAINER ID        IMAGE          COMMAND        PORTS                           NODE        NAMES
-963841b138d8        nginx:latest   "nginx"        192.168.0.43:80->80/tcp         node-2      dreamy_turing
-87c4376856a8        nginx:latest   "nginx"        192.168.0.42:80->80/tcp         node-1      prickly_engelbart
+CONTAINER ID        IMAGE          COMMAND        PORTS                           NAMES
+963841b138d8        nginx:latest   "nginx"        192.168.0.43:80->80/tcp         node-2/dreamy_turing
+87c4376856a8        nginx:latest   "nginx"        192.168.0.42:80->80/tcp         node-1/prickly_engelbart
 ```
 
 Again, repeating the same command will result in the selection of `node-3`,
@@ -376,9 +376,9 @@ $ docker tcp://<manager_ip:manager_port> run -d -p 80:80 nginx
 963841b138d8
 
 $ docker tcp://<manager_ip:manager_port> ps
-CONTAINER ID   IMAGE               COMMAND        PORTS                           NODE        NAMES
-f8b693db9cd6   nginx:latest        "nginx"        192.168.0.44:80->80/tcp         node-3      stoic_albattani
-963841b138d8   nginx:latest        "nginx"        192.168.0.43:80->80/tcp         node-2      dreamy_turing
+CONTAINER ID   IMAGE               COMMAND        PORTS                           NAMES
+f8b693db9cd6   nginx:latest        "nginx"        192.168.0.44:80->80/tcp         node-3/stoic_albattani
+963841b138d8   nginx:latest        "nginx"        192.168.0.43:80->80/tcp         node-2/dreamy_turing
 87c4376856a8   nginx:latest        "nginx"        192.168.0.42:80->80/tcp         node-1      prickly_engelbart
 ```
 
