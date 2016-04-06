@@ -192,7 +192,7 @@ func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *docke
 
 // CreateContainer for container creation in Mesos task
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *types.AuthConfig) (*cluster.Container, error) {
-	if config.Memory == 0 && config.CPUShares == 0 {
+	if config.HostConfig.Memory == 0 && config.HostConfig.CPUShares == 0 {
 		return nil, errResourcesNeeded
 	}
 

@@ -736,7 +736,7 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 		}
 		container.Config = BuildContainerConfig(*info.Config, *info.HostConfig, networkingConfig)
 		// FIXME remove "duplicate" line and move this to cluster/config.go
-		container.Config.CPUShares = container.Config.CPUShares * int64(e.Cpus) / 1024.0
+		container.Config.HostConfig.CPUShares = container.Config.HostConfig.CPUShares * int64(e.Cpus) / 1024.0
 
 		// Save the entire inspect back into the container.
 		container.Info = info
@@ -832,7 +832,7 @@ func (e *Engine) UsedMemory() int64 {
 	var r int64
 	e.RLock()
 	for _, c := range e.containers {
-		r += c.Config.Memory
+		r += c.Config.HostConfig.Memory
 	}
 	e.RUnlock()
 	return r
@@ -843,7 +843,7 @@ func (e *Engine) UsedCpus() int64 {
 	var r int64
 	e.RLock()
 	for _, c := range e.containers {
-		r += c.Config.CPUShares
+		r += c.Config.HostConfig.CPUShares
 	}
 	e.RUnlock()
 	return r
@@ -869,12 +869,12 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 	// Convert our internal ContainerConfig into something Docker will
 	// understand.  Start by making a copy of the internal ContainerConfig as
 	// we don't want to mess with the original.
-	dockerConfig := config
+	dockerConfig := *config
 
 	// nb of CPUs -> real CpuShares
 
 	// FIXME remove "duplicate" lines and move this to cluster/config.go
-	dockerConfig.CPUShares = int64(math.Ceil(float64(config.CPUShares*1024) / float64(e.Cpus)))
+	dockerConfig.HostConfig.CPUShares = int64(math.Ceil(float64(config.HostConfig.CPUShares*1024) / float64(e.Cpus)))
 
 	createResp, err = e.apiClient.ContainerCreate(context.TODO(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
 	e.CheckConnectionErr(err)
