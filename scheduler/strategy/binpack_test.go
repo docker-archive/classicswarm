@@ -170,22 +170,22 @@ func TestPlaceContainerOvercommit(t *testing.T) {
 	config := createConfig(0, 0)
 
 	// Below limit should still work.
-	config.Memory = 90 * 1024 * 1024 * 1024
+	config.HostConfig.Memory = 90 * 1024 * 1024 * 1024
 	node := selectTopNode(t, s, config, nodes)
 	assert.Equal(t, node, nodes[0])
 
 	// At memory limit should still work.
-	config.Memory = 100 * 1024 * 1024 * 1024
+	config.HostConfig.Memory = 100 * 1024 * 1024 * 1024
 	node = selectTopNode(t, s, config, nodes)
 	assert.Equal(t, node, nodes[0])
 
 	// Up to 105% it should still work.
-	config.Memory = 105 * 1024 * 1024 * 1024
+	config.HostConfig.Memory = 105 * 1024 * 1024 * 1024
 	node = selectTopNode(t, s, config, nodes)
 	assert.Equal(t, node, nodes[0])
 
 	// Above it should return an error.
-	config.Memory = 106 * 1024 * 1024 * 1024
+	config.HostConfig.Memory = 106 * 1024 * 1024 * 1024
 	_, err = s.RankAndSort(config, nodes)
 	assert.Error(t, err)
 }
