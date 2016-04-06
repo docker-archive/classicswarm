@@ -16,10 +16,9 @@ const SwarmLabelNamespace = "com.docker.swarm"
 // ContainerConfig is exported
 // TODO store affinities and constraints in their own fields
 type ContainerConfig struct {
-	// dockerclient.ContainerConfig
 	container.Config
-	container.HostConfig
-	network.NetworkingConfig
+	HostConfig       container.HostConfig
+	NetworkingConfig network.NetworkingConfig
 }
 
 func parseEnv(e string) (bool, string, string) {
