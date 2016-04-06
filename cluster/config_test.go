@@ -69,10 +69,10 @@ func TestAffinities(t *testing.T) {
 func TestConsolidateResourceFields(t *testing.T) {
 
 	config := BuildContainerConfig(container.Config{}, container.HostConfig{Resources: container.Resources{Memory: 4242, MemorySwap: 4343, CPUShares: 4444, CpusetCpus: "1-2"}}, network.NetworkingConfig{})
-	assert.Equal(t, config.Memory, int64(4242))
-	assert.Equal(t, config.MemorySwap, int64(4343))
-	assert.Equal(t, config.CPUShares, int64(4444))
-	assert.Equal(t, config.CpusetCpus, "1-2")
+	assert.Equal(t, config.HostConfig.Memory, int64(4242))
+	assert.Equal(t, config.HostConfig.MemorySwap, int64(4343))
+	assert.Equal(t, config.HostConfig.CPUShares, int64(4444))
+	assert.Equal(t, config.HostConfig.CpusetCpus, "1-2")
 }
 
 func TestAddAffinity(t *testing.T) {
