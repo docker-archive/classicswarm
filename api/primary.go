@@ -39,7 +39,6 @@ var routes = map[string]map[string]handler{
 		"/images/{name:.*}/get":           proxyImageGet,
 		"/images/{name:.*}/history":       proxyImage,
 		"/images/{name:.*}/json":          proxyImage,
-		"/containers/ps":                  getContainersJSON,
 		"/containers/json":                getContainersJSON,
 		"/containers/{name:.*}/archive":   proxyContainer,
 		"/containers/{name:.*}/export":    proxyContainer,
