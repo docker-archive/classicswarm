@@ -67,8 +67,8 @@ Swarm cluster of two equally ranked nodes:
       f8b693db9cd6
 
       $ docker tcp://<manager_ip:manager_port> ps
-      CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-      f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1      db
+      CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+      f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1/db
 
 Now, we start another container and ask for 1G of RAM again.
 
@@ -77,9 +77,9 @@ Now, we start another container and ask for 1G of RAM again.
     963841b138d8
 
     $ docker tcp://<manager_ip:manager_port> ps
-    CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-    963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:49177->80/tcp      node-2      frontend
-    f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1      db
+    CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+    963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:49177->80/tcp      node-2/frontend
+    f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1/db
 
 
 The container `frontend` was started on `node-2` because it was the node the
@@ -97,8 +97,8 @@ container, the system chooses `node-1` at random from the cluster:
     f8b693db9cd6
 
     $ docker tcp://<manager_ip:manager_port> ps
-    CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-    f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1      db
+    CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+    f8b693db9cd6        mysql:latest        "mysqld"            Less than a second ago   running             192.168.0.42:49178->3306/tcp    node-1/db
 
 
 Now, you start another container, asking for 1G of RAM again.
@@ -108,9 +108,9 @@ Now, you start another container, asking for 1G of RAM again.
     963841b138d8
 
     $ docker tcp://<manager_ip:manager_port> ps
-    CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NODE        NAMES
-    963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:49177->80/tcp      node-1      frontend
-    f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1      db
+    CONTAINER ID        IMAGE               COMMAND             CREATED                  STATUS              PORTS                           NAMES
+    963841b138d8        nginx:latest        "nginx"             Less than a second ago   running             192.168.0.42:49177->80/tcp      node-1/frontend
+    f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute        running             192.168.0.42:49178->3306/tcp    node-1/db
 
 
 The system starts the new `frontend` container on `node-1` because it was the
