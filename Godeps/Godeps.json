@@ -1,7 +1,6 @@
 {
 	"ImportPath": "github.com/docker/swarm",
 	"GoVersion": "go1.5",
-	"GodepVersion": "v60",
 	"Packages": [
 		"./..."
 	],
@@ -166,32 +165,32 @@
 		},
 		{
 			"ImportPath": "github.com/docker/leadership",
-			"Rev": "b545f2df5f5cd35a54c5a6bf154dcfe1f29d125b"
+			"Rev": "bfc7753dd48af19513b29deec23c364bf0f274eb"
 		},
 		{
 			"ImportPath": "github.com/docker/libkv",
-			"Comment": "v0.1.0-6-g2f2380c",
-			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
+			"Comment": "v0.1.0-33-g2a3d365",
+			"Rev": "2a3d365c64a1cdda570493123392c8d800edf766"
 		},
 		{
 			"ImportPath": "github.com/docker/libkv/store",
-			"Comment": "v0.1.0-6-g2f2380c",
-			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
+			"Comment": "v0.1.0-33-g2a3d365",
+			"Rev": "2a3d365c64a1cdda570493123392c8d800edf766"
 		},
 		{
 			"ImportPath": "github.com/docker/libkv/store/consul",
-			"Comment": "v0.1.0-6-g2f2380c",
-			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
+			"Comment": "v0.1.0-33-g2a3d365",
+			"Rev": "2a3d365c64a1cdda570493123392c8d800edf766"
 		},
 		{
 			"ImportPath": "github.com/docker/libkv/store/etcd",
-			"Comment": "v0.1.0-6-g2f2380c",
-			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
+			"Comment": "v0.1.0-33-g2a3d365",
+			"Rev": "2a3d365c64a1cdda570493123392c8d800edf766"
 		},
 		{
 			"ImportPath": "github.com/docker/libkv/store/zookeeper",
-			"Comment": "v0.1.0-6-g2f2380c",
-			"Rev": "2f2380c8698abff4eb662f33b0e088e520ec416e"
+			"Comment": "v0.1.0-33-g2a3d365",
+			"Rev": "2a3d365c64a1cdda570493123392c8d800edf766"
 		},
 		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
