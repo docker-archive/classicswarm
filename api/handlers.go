@@ -537,10 +537,23 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 	)
 
-	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
+	oldconfig := cluster.OldContainerConfig{
+		ContainerConfig: config,
+		Memory:          0,
+		MemorySwap:      0,
+		CPUShares:       0,
+		CPUSet:          "",
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&oldconfig); err != nil {
 		httpError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// make sure HostConfig fields are consolidated before creating container
+	cluster.ConsolidateResourceFields(&oldconfig)
+	config = oldconfig.ContainerConfig
+
 	// Pass auth information along if present
 	var authConfig *apitypes.AuthConfig
 	buf, err := base64.URLEncoding.DecodeString(r.Header.Get("X-Registry-Auth"))
