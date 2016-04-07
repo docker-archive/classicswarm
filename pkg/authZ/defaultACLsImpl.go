@@ -1,6 +1,7 @@
 package authZ
 
 import (
+	"os"
 	"net/http"
 	"github.com/docker/swarm/cluster"
 	log "github.com/Sirupsen/logrus"
@@ -23,6 +24,9 @@ func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType state
 
 	if tenantIdToValidate == "" {
 		return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: "Not Authorized!"}
+	}
+	if tenantIdToValidate == os.Getenv("SWARM_ADMIN_TENANT_ID") {
+		return states.Admin, nil
 	}
 	//TODO - Duplication revise
 	switch eventType {

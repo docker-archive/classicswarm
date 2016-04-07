@@ -124,7 +124,7 @@ rmall_volumes() {
     [ $status = 0 ]
 }
 @test "Check run and inspect" {
-    skip
+    #skip
 	# run non daemons
     run docker -H $SWARM_HOST --config $DOCKER_CONFIG1  run --name  busy1 busybox
     [ "$status" -eq 0 ]
@@ -185,7 +185,7 @@ rmall_volumes() {
     [ $status = 0 ]
 }
 @test "Check --volumes-from" {
-	skip
+	#skip
     run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 create -v /data/db --name mongodbdata mongo:2.6 /bin/echo "Data-only container for mongodb."
     [ "$status" -eq 0 ]
     [[ "$output" != *"Error"* ]]
@@ -327,7 +327,7 @@ rmall_volumes() {
 
 }
 @test "Check volume binding" {
-	skip
+	#skip
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 volume create --name myvolume
     [ "$status" -eq 0 ]
     [[ "$output" == "myvolume" ]]
