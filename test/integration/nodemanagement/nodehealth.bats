@@ -32,7 +32,7 @@ function teardown() {
 	# Try to schedule a container. It'd first select node-1 and fail
 	run docker_swarm run -m 10m busybox sh
 	[ "$status" -ne 0 ]
-	[[ "${lines[0]}" == *"Cannot connect to the docker engine endpoint"* ]]
+	[[ "${lines[0]}" == *"Cannot connect to the docker engine endpoint"* || "${lines[0]}" == *"Cannot connect to the Docker daemon"* ]]
 
 	# Try to run it again. It'd select node-0 and succeed
 	run docker_swarm run -m 10m busybox sh
