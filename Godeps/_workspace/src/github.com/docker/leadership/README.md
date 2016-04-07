@@ -16,10 +16,7 @@ if err != nil {
 }
 
 underwood := leadership.NewCandidate(client, "service/swarm/leader", "underwood", 15*time.Second)
-electedCh, _, err := underwood.RunForElection()
-if err != nil {
-    log.Fatal("Cannot run for election, store is probably down")
-}
+electedCh, _ := underwood.RunForElection()
 
 for isElected := range electedCh {
 	// This loop will run every time there is a change in our leadership
@@ -49,14 +46,13 @@ It is possible to follow an election in real-time and get notified whenever
 there is a change in leadership:
 ```go
 follower := leadership.NewFollower(client, "service/swarm/leader")
-leaderCh, _, err := follower.FollowElection()
-if err != nil {
-    log.Fatal("Cannot follow the election, store is probably down")
-}
+leaderCh, _ := follower.FollowElection()
 for leader := range leaderCh {
 	// Leader is a string containing the value passed to `NewCandidate`.
 	log.Printf("%s is now the leader", leader)
 }
+log.Fatal("Cannot follow the election, store is probably down")
+// Recovery code or exit
 ```
 
 A typical use case for this is to be able to always send requests to the current
@@ -85,26 +81,24 @@ func participate() {
             time.Sleep(waitTime)
             // retry
         }
-    }
+    }()
 }
 
 func run(candidate *leadership.Candidate) {
-    electedCh, errCh, err := candidate.RunForElection()
-    if err != nil {
-        return
-    }
+    electedCh, errCh := candidate.RunForElection()
     for {
         select {
-            case elected := <-electedCh:
+        case isElected := <-electedCh:
             if isElected {
                 // Do something
             } else {
                 // Do something else
             }
 
-            case err := <-errCh:
-                log.Error(err)
-                return
+        case err := <-errCh:
+            log.Error(err)
+            return
+        }
     }
 }
 ```
