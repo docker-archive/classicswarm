@@ -33,18 +33,13 @@ func (f *Follower) Leader() string {
 }
 
 // FollowElection starts monitoring the election.
-func (f *Follower) FollowElection() (<-chan string, <-chan error, error) {
+func (f *Follower) FollowElection() (<-chan string, <-chan error) {
 	f.leaderCh = make(chan string)
 	f.errCh = make(chan error)
 
-	ch, err := f.client.Watch(f.key, f.stopCh)
-	if err != nil {
-		return nil, nil, err
-	}
+	go f.follow()
 
-	go f.follow(ch)
-
-	return f.leaderCh, f.errCh, nil
+	return f.leaderCh, f.errCh
 }
 
 // Stop stops monitoring an election.
@@ -52,9 +47,14 @@ func (f *Follower) Stop() {
 	close(f.stopCh)
 }
 
-func (f *Follower) follow(ch <-chan *store.KVPair) {
+func (f *Follower) follow() {
 	defer close(f.leaderCh)
 	defer close(f.errCh)
+
+	ch, err := f.client.Watch(f.key, f.stopCh)
+	if err != nil {
+		f.errCh <- err
+	}
 
 	f.leader = ""
 	for kv := range ch {

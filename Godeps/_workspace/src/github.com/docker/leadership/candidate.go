@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultLockTTL = 15 * time.Second
+	defaultLockTTL = 20 * time.Second
 )
 
 // Candidate runs the leader election algorithm asynchronously
@@ -22,6 +22,7 @@ type Candidate struct {
 	lockTTL   time.Duration
 	leader    bool
 	stopCh    chan struct{}
+	stopRenew chan struct{}
 	resignCh  chan bool
 	errCh     chan error
 }
@@ -51,28 +52,13 @@ func (c *Candidate) IsLeader() bool {
 // ElectedCh is used to get a channel which delivers signals on
 // acquiring or losing leadership. It sends true if we become
 // the leader, and false if we lose it.
-func (c *Candidate) RunForElection() (<-chan bool, <-chan error, error) {
+func (c *Candidate) RunForElection() (<-chan bool, <-chan error) {
 	c.electedCh = make(chan bool)
 	c.errCh = make(chan error)
 
-	lockOpts := &store.LockOptions{
-		Value: []byte(c.node),
-	}
+	go c.campaign()
 
-	if c.lockTTL != defaultLockTTL {
-		lockOpts.TTL = c.lockTTL
-		lockOpts.RenewLock = make(chan struct{})
-	}
-
-	lock, err := c.client.NewLock(c.key, lockOpts)
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	go c.campaign(lock)
-
-	return c.electedCh, c.errCh, nil
+	return c.electedCh, c.errCh
 }
 
 // Stop running for election.
@@ -101,13 +87,41 @@ func (c *Candidate) update(status bool) {
 	c.electedCh <- status
 }
 
-func (c *Candidate) campaign(lock store.Locker) {
+func (c *Candidate) initLock() (store.Locker, error) {
+	// Give up on the lock session if
+	// we recovered from a store failure
+	if c.stopRenew != nil {
+		close(c.stopRenew)
+	}
+
+	lockOpts := &store.LockOptions{
+		Value: []byte(c.node),
+	}
+
+	if c.lockTTL != defaultLockTTL {
+		lockOpts.TTL = c.lockTTL
+	}
+
+	lockOpts.RenewLock = make(chan struct{})
+	c.stopRenew = lockOpts.RenewLock
+
+	lock, err := c.client.NewLock(c.key, lockOpts)
+	return lock, err
+}
+
+func (c *Candidate) campaign() {
 	defer close(c.electedCh)
 	defer close(c.errCh)
 
 	for {
 		// Start as a follower.
 		c.update(false)
+
+		lock, err := c.initLock()
+		if err != nil {
+			c.errCh <- err
+			return
+		}
 
 		lostCh, err := lock.Lock(nil)
 		if err != nil {
