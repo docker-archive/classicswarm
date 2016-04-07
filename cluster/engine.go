@@ -991,11 +991,19 @@ func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
 	dec := json.NewDecoder(pullResponse)
 	for {
 		m := map[string]interface{}{}
-		if err := dec.Decode(&m); err != nil {
+		err := dec.Decode(&m)
+		if err != nil {
 			if err == io.EOF {
 				break
 			}
 			return err
+		}
+		// if the stream contains an error, return it
+		if val, ok := m["error"]; ok {
+			if errmsg, strok := val.(string); strok {
+				return errors.New(errmsg)
+			}
+			return errors.New("Error while downloading image")
 		}
 	}
 
