@@ -21,12 +21,49 @@ type ContainerConfig struct {
 	NetworkingConfig network.NetworkingConfig
 }
 
+// OldContainerConfig contains additional fields for backward compatibility
+// This should be removed after we stop supporting API versions <= 1.8
+type OldContainerConfig struct {
+	ContainerConfig
+	Memory     int64
+	MemorySwap int64
+	CPUShares  int64  `json:"CpuShares"`
+	CPUSet     string `json:"Cpuset"`
+}
+
 func parseEnv(e string) (bool, string, string) {
 	parts := strings.SplitN(e, ":", 2)
 	if len(parts) == 2 {
 		return true, parts[0], parts[1]
 	}
 	return false, "", ""
+}
+
+// ConsolidateResourceFields is a temporary fix to handle forward/backward compatibility between Docker <1.6 and >=1.7
+func ConsolidateResourceFields(c *OldContainerConfig) {
+	if c.Memory != c.HostConfig.Memory {
+		if c.Memory != 0 {
+			c.HostConfig.Memory = c.Memory
+		}
+	}
+
+	if c.MemorySwap != c.HostConfig.MemorySwap {
+		if c.MemorySwap != 0 {
+			c.HostConfig.MemorySwap = c.MemorySwap
+		}
+	}
+
+	if c.CPUShares != c.HostConfig.CPUShares {
+		if c.CPUShares != 0 {
+			c.HostConfig.CPUShares = c.CPUShares
+		}
+	}
+
+	if c.CPUSet != c.HostConfig.CpusetCpus {
+		if c.CPUSet != "" {
+			c.HostConfig.CpusetCpus = c.CPUSet
+		}
+	}
 }
 
 // BuildContainerConfig creates a cluster.ContainerConfig from a Config, HostConfig, and NetworkingConfig

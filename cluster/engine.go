@@ -989,22 +989,18 @@ func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
 
 	// wait until the image download is finished
 	dec := json.NewDecoder(pullResponse)
+	m := map[string]interface{}{}
 	for {
-		m := map[string]interface{}{}
-		err := dec.Decode(&m)
-		if err != nil {
+		if err := dec.Decode(&m); err != nil {
 			if err == io.EOF {
 				break
 			}
 			return err
 		}
-		// if the stream contains an error, return it
-		if val, ok := m["error"]; ok {
-			if errmsg, strok := val.(string); strok {
-				return errors.New(errmsg)
-			}
-			return errors.New("Error while downloading image")
-		}
+	}
+	// if the final stream object contained an error, return it
+	if errMsg, ok := m["error"]; ok {
+		return fmt.Errorf("%v", errMsg)
 	}
 
 	// force refresh images
