@@ -93,7 +93,11 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 	// RequestURI may not be sent to client
 	r.RequestURI = ""
 
-	client, scheme := engine.HTTPClientAndScheme()
+	client, scheme, err := engine.HTTPClientAndScheme()
+
+	if err != nil {
+		return err
+	}
 
 	r.URL.Scheme = scheme
 	r.URL.Host = engine.Addr
