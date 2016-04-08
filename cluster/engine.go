@@ -147,11 +147,11 @@ func NewEngine(addr string, overcommitRatio float64, opts *EngineOpts) *Engine {
 }
 
 // HTTPClientAndScheme returns the underlying HTTPClient and the scheme used by the engine
-func (e *Engine) HTTPClientAndScheme() (*http.Client, string) {
+func (e *Engine) HTTPClientAndScheme() (*http.Client, string, error) {
 	if dc, ok := e.client.(*dockerclient.DockerClient); ok {
-		return dc.HTTPClient, dc.URL.Scheme
+		return dc.HTTPClient, dc.URL.Scheme, nil
 	}
-	return nil, ""
+	return nil, "", fmt.Errorf("Possibly lost connection to Engine (name: %s, ID: %s) ", e.Name, e.ID)
 }
 
 // Connect will initialize a connection to the Docker daemon running on the

@@ -484,9 +484,9 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, scheme := container.Engine.HTTPClientAndScheme()
-	if client == nil {
-		httpError(w, "Cannot connect to docker engine", http.StatusInternalServerError)
+	client, scheme, err := container.Engine.HTTPClientAndScheme()
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -814,9 +814,9 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, scheme := container.Engine.HTTPClientAndScheme()
-	if client == nil {
-		httpError(w, "Cannot connect to docker engine", http.StatusInternalServerError)
+	client, scheme, err := container.Engine.HTTPClientAndScheme()
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
