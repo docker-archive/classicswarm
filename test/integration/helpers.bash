@@ -207,6 +207,8 @@ function start_docker() {
 			${DOCKER_IMAGE}:${DOCKER_VERSION} \
 			bash -c "\
 				rm /var/run/docker.pid ; \
+				rm /var/run/docker/libcontainerd/docker-containerd.pid ; \ 
+				rm /var/run/docker/libcontainerd/docker-containerd.sock ; \
 				hostname node-$i && \
 				docker daemon -H 127.0.0.1:$port \
 					-H=unix:///var/run/docker.sock \
