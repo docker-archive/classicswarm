@@ -16,6 +16,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/parsers/kernel"
+	"github.com/docker/docker/pkg/parsers/operatingsystem"
 	versionpkg "github.com/docker/docker/pkg/version"
 	apitypes "github.com/docker/engine-api/types"
 	containertypes "github.com/docker/engine-api/types/container"
@@ -47,7 +48,6 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		BridgeNfIP6tables: true,
 		OomKillDisable:    true,
 		ServerVersion:     "swarm/" + version.VERSION,
-		OperatingSystem:   runtime.GOOS,
 		Architecture:      runtime.GOARCH,
 		NCPU:              c.cluster.TotalCpus(),
 		MemTotal:          c.cluster.TotalMemory(),
@@ -72,6 +72,14 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	} else {
 		info.SystemStatus = status
 	}
+
+	operatingSystem := "<unknown>"
+	if s, err := operatingsystem.GetOperatingSystem(); err != nil {
+		log.Warnf("Could not get operating system name: %v", err)
+	} else {
+		operatingSystem = s
+	}
+	info.OperatingSystem = operatingSystem
 
 	kernelVersion := "<unknown>"
 	if kv, err := kernel.GetKernelVersion(); err != nil {
