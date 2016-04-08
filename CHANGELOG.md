@@ -8,7 +8,8 @@
 - Differentiate constraint errors from affinity errors
 - Printing unsatisfiable constraints for container scheduling failure
 - Enable rescheduling on master manager to prevent replica managers from rescheduling containers
-- Output error when starting a rescheduled container fails
+- Output error when starting a rescheduled container fails, and when removing container fails at node recovery
+- Validate cluster swarm.overcommit option
 
 #### API
 
@@ -22,6 +23,7 @@
 - Print container 'created' state at ps
 - Update dockerclient to get labels on volumes, networks, images
 - Support private images, labels and other new flags in docker build
+- Select apiClient version according to node docker version
 
 #### Node management
 
@@ -32,6 +34,14 @@
 - Increase max thread count to 50k to accommodate large cluster or heavy workload
 - Force to validate min and max refresh interval to be positive
 - Skip unstable tests from Docker bug 14203
+- Fix race condition between node removal from discovery and scheduler
+- Fix data race with node failureCount
+- Display warning message if an engine has labels with "node=xxx"
+
+#### Discovery
+
+- Remove parameter which is not used in createDiscovery
+- Fix Consul leader election failure on multi-server
 
 #### Mesos integration
 
@@ -41,7 +51,6 @@
 #### Misc
 
 - Skip redundant endpoints in "network inspect"
-- Remove parameter which is not used in createDiscovery
 - Validate duration flags:--delay, --timeout, --replication-ttl
 - Fix image matching via id
 - Make port 0 invalid as listening port
