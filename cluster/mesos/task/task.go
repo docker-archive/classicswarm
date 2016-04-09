@@ -78,13 +78,13 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 		}
 	}
 
-    networkMode := t.config.HostConfig.NetworkMode
+	networkMode := t.config.HostConfig.NetworkMode
 	switch networkMode {
 	case "none":
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_NONE.Enum()
 	case "host":
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_HOST.Enum()
-    default:
+	default:
 		var ports []uint64
 
 		for _, offer := range offers {
