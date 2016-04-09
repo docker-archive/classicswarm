@@ -109,8 +109,8 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 		dectedCompleted = make(chan bool)
 	)
 
-    //if docker server didnot write any data in body , this line will wait for reading data
-    //and the client may close request . so we should dected it and  cancel the request to docker server.
+    //if docker server did not write any data in body ( just like request /containers/xxx/stats to stopped container) , `io.Copy(NewWriteFlusher(w), resp.Body)` will wait for reading data.
+    //But the client that connect to swarm may close the request . So we should dected it and  cancel the request to docker server.
 	go func() {
 
 		var (
