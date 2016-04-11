@@ -27,6 +27,8 @@ func getDiscovery(c *cli.Context) string {
 }
 
 var (
+	maintenanceNode string
+
 	flJoinAdvertise = cli.StringFlag{
 		Name:   "advertise, addr",
 		Usage:  "Address of the Docker Engine joining the cluster. Swarm manager(s) MUST be able to reach the Docker Engine at this address.",
@@ -45,6 +47,12 @@ var (
 	// hack for go vet
 	flHostsValue = cli.StringSlice([]string{"tcp://127.0.0.1:2375"})
 
+	flNode = cli.StringFlag{
+		Name:   "node, N",
+		Value:  "tcp://127.0.0.1:2375",
+		Usage:  "node to operate on",
+		Destination: &maintenanceNode,
+	}
 	flHosts = cli.StringSliceFlag{
 		Name:   "host, H",
 		Value:  &flHostsValue,

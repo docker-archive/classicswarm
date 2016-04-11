@@ -39,5 +39,16 @@ var (
 			Flags:     []cli.Flag{flJoinAdvertise, flHeartBeat, flTTL, flJoinRandomDelay, flDiscoveryOpt},
 			Action:    join,
 		},
+		{
+			Name:      "maintenance",
+			//ShortName: "m",
+			Usage:     "Set maintenance mode for a Swarm node",
+			Flags: []cli.Flag{
+				flNode,
+				//flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
+				//flEnableCors,},
+			    },
+			Action: maintenance,
+		},
 	}
 )
