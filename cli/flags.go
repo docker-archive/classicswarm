@@ -49,7 +49,6 @@ var (
 
 	flNode = cli.StringFlag{
 		Name:   "node, N",
-		Value:  "tcp://127.0.0.1:2375",
 		Usage:  "node to operate on",
 		Destination: &maintenanceNode,
 	}
