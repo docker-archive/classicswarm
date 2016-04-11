@@ -103,17 +103,66 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 	r.URL.Host = engine.Addr
 
 	log.WithFields(log.Fields{"method": r.Method, "url": r.URL}).Debug("Proxy request")
+
+	var (
+		writeCompleted  = make(chan bool)
+		dectedCompleted = make(chan bool)
+	)
+
+    //if docker server did not write any data in body ( just like request /containers/xxx/stats to stopped container) , `io.Copy(NewWriteFlusher(w), resp.Body)` will wait for reading data.
+    //But the client that connect to swarm may close the request . So we should dected it and  cancel the request to docker server.
+	go func() {
+
+		var (
+			closeNotifier http.CloseNotifier
+			ok            bool
+		)
+
+		type canceler interface {
+			CancelRequest(*http.Request)
+		}
+
+		if closeNotifier, ok = w.(http.CloseNotifier); ok == false {
+			log.Error("ResponseWriter was not support CloseNotify")
+			return
+		}
+
+		select {
+		case <-closeNotifier.CloseNotify():
+			{
+                var cancel canceler
+				if cancel, ok = client.Transport.(canceler); ok == false {
+					log.Error("client.Transport was not support CancelRequest")
+					return
+				}
+
+				cancel.CancelRequest(r)
+				dectedCompleted <- true
+			}
+		case <-writeCompleted:
+			break
+		}
+
+	}()
+
 	resp, err := client.Do(r)
 	if err != nil {
 		return err
 	}
 
 	copyHeader(w.Header(), resp.Header)
-	w.WriteHeader(resp.StatusCode)
+	w.WriteHeader(resp.StatusCode) 
 	io.Copy(NewWriteFlusher(w), resp.Body)
 
 	if callback != nil {
 		callback(resp)
+	}
+
+	select {
+	case <-dectedCompleted://goroutine already return , there is no need to send `writeCompleted``
+		break
+	case writeCompleted <- true://tell goroutine to return if every thing is normal
+		break
 	}
 
 	// cleanup
