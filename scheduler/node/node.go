@@ -21,6 +21,7 @@ type Node struct {
 	TotalMemory int64
 	TotalCpus   int64
 
+	MaintenanceMode bool
 	HealthIndicator int64
 }
 
