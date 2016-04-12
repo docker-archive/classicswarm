@@ -276,6 +276,13 @@ func (e *Engine) IsHealthy() bool {
 	return e.state == StateHealthy
 }
 
+// IsMaintenance returns true if the engine is under maintenance
+func (e *Engine) IsMaintenance() bool {
+	e.RLock()
+	defer e.RUnlock()
+	return e.state == StateMaintenance
+}
+
 // HealthIndicator returns degree of healthiness between 0 and 100.
 // 0 means node is not healthy (unhealthy, pending), 100 means last connectivity was successful
 // other values indicate recent failures but haven't moved engine out of healthy state

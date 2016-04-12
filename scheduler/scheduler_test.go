@@ -77,7 +77,7 @@ func TestSelectNodesForContainerMaintenance(t *testing.T) {
 				ID:              "node-1-id",
 				Name:            "node-1-name",
 				Addr:            "node-1",
-				MaintenanceMode: true,
+				Maintenance: 	 true,
 				TotalMemory:     1 * 1024 * 1024 * 1024,
 				TotalCpus:       2,
 				Labels: map[string]string{
