@@ -105,12 +105,12 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 	log.WithFields(log.Fields{"method": r.Method, "url": r.URL}).Debug("Proxy request")
 
 	var (
-		writeCompleted  = make(chan bool)
-		dectedCompleted = make(chan bool)
+		writeCompleted    = make(chan bool)
+		detectedCompleted = make(chan bool)
 	)
 
-    //if docker server did not write any data in body ( just like request /containers/xxx/stats to stopped container) , `io.Copy(NewWriteFlusher(w), resp.Body)` will wait for reading data.
-    //But the client that connect to swarm may close the request . So we should dected it and  cancel the request to docker server.
+	//if docker server did not write any data in body ( just like request /containers/xxx/stats to stopped container) , `io.Copy(NewWriteFlusher(w), resp.Body)` will wait for reading data.
+	//But the client that connect to swarm may close the request . So we should detect it and  cancel the request to docker server.
 	go func() {
 
 		var (
@@ -130,14 +130,14 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 		select {
 		case <-closeNotifier.CloseNotify():
 			{
-                var cancel canceler
+				var cancel canceler
 				if cancel, ok = client.Transport.(canceler); ok == false {
 					log.Error("client.Transport was not support CancelRequest")
 					return
 				}
 
 				cancel.CancelRequest(r)
-				dectedCompleted <- true
+				detectedCompleted <- true
 			}
 		case <-writeCompleted:
 			break
@@ -151,7 +151,7 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 	}
 
 	copyHeader(w.Header(), resp.Header)
-	w.WriteHeader(resp.StatusCode) 
+	w.WriteHeader(resp.StatusCode)
 	io.Copy(NewWriteFlusher(w), resp.Body)
 
 	if callback != nil {
@@ -159,9 +159,9 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 	}
 
 	select {
-	case <-dectedCompleted://goroutine already return , there is no need to send `writeCompleted``
+	case <-detectedCompleted: //goroutine already return , there is no need to send `writeCompleted``
 		break
-	case writeCompleted <- true://tell goroutine to return if every thing is normal
+	case writeCompleted <- true: //tell goroutine to return if every thing is normal
 		break
 	}
 
