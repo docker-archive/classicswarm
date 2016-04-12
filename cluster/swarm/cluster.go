@@ -761,6 +761,21 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	return c.Containers().Get(IDOrName)
 }
 
+// GetMaintenance returns if container with IDOrName in the cluster is in maintenance mode
+func (c *Cluster) GetMaintenance(container string) bool {
+	c.RLock()
+	defer c.RUnlock()
+
+	// TODO: raise error if applicable
+	for _, e := range c.engines {
+		if e.ID == container {
+			// Test if state resembles maintenance
+			return e.GetState() == cluster.StateMaintenance
+		}
+	}
+	return false
+}
+
 // Networks returns all the networks in the cluster.
 func (c *Cluster) Networks() cluster.Networks {
 	c.RLock()
@@ -804,6 +819,22 @@ func (c *Cluster) listNodes() []*node.Node {
 	}
 
 	return out
+}
+
+// SetMaintenance set maintenance on engine
+func (c *Cluster) SetMaintenance(container string) error {
+	c.RLock()
+	defer c.RUnlock()
+
+	// TODO: check if container foo is in c.engines, if it is, change it's state to maintenance
+	// TODO: raise error if applicable
+	for _, e := range c.engines {
+		if e.ID == container { // TODO: use ID
+			e.SetState(cluster.StateMaintenance)
+		}
+	}
+
+	return nil
 }
 
 // listEngines returns all the engines in the cluster.
