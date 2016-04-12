@@ -266,7 +266,8 @@ tasks happen.
 
 3.  Now, run the same command to get cluster information.
 
-    Provided you set `export DOCKER_HOST="tcp://192.168.33.11:3375"``, the
+
+    Provided you set `export DOCKER_HOST="tcp://192.168.33.11:3375"`, the
     command directs to the Swarm port and returns information from each node in
     the cluster.
 

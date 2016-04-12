@@ -43,11 +43,11 @@ The configuration is a single VPC with a single public subnet. The VPC
 deployment relies on a <a
 href="https://raw.githubusercontent.com/docker/swarm-microservice-demo-v1/master/AWS/cloudformation.json">cloudformation.json
 template</a> which specifies in the `us-west-1` Region (N. California) or
-`us-west-2` (Oregon). The ability to create instances one of these regions is
+`us-west-2` (Oregon). The ability to create instances in one of these regions is
 **required** for this particular CloudFormation template to work. If you want to
 use a different region, edit the template before the import step.
 
-The VPC network address space is `192.168.0.0/16` and single 24-bit public
+The VPC network address space is `192.168.0.0/16` and a single 24-bit public
 subnet is carved out as 192.168.33.0/24. The subnet must be configured with a
 default route to the internet via the VPC's internet gateway. All six EC2
 instances are deployed into this public subnet.
