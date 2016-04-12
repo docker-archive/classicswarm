@@ -63,23 +63,23 @@ func TestSelectNodesForContainerMaintenance(t *testing.T) {
 
 		nodes = []*node.Node{
 			{
-				ID:              "node-0-id",
-				Name:            "node-0-name",
-				Addr:            "node-0",
-				TotalMemory:     1 * 1024 * 1024 * 1024,
-				TotalCpus:       2,
+				ID:          "node-0-id",
+				Name:        "node-0-name",
+				Addr:        "node-0",
+				TotalMemory: 1 * 1024 * 1024 * 1024,
+				TotalCpus:   2,
 				Labels: map[string]string{
 					"group": "1",
 				},
 			},
 
 			{
-				ID:          "node-1-id",
-				Name:        "node-1-name",
-				Addr:        "node-1",
+				ID:              "node-1-id",
+				Name:            "node-1-name",
+				Addr:            "node-1",
 				MaintenanceMode: true,
-				TotalMemory: 1 * 1024 * 1024 * 1024,
-				TotalCpus:   2,
+				TotalMemory:     1 * 1024 * 1024 * 1024,
+				TotalCpus:       2,
 				Labels: map[string]string{
 					"group": "2",
 				},
@@ -88,7 +88,7 @@ func TestSelectNodesForContainerMaintenance(t *testing.T) {
 
 		config = cluster.BuildContainerConfig(dockerclient.ContainerConfig{
 			Memory:    1024 * 1024 * 1024,
-			 CpuShares: 2,
+			CpuShares: 2,
 		})
 	)
 	candidates, err := s.SelectNodesForContainer(nodes, config)

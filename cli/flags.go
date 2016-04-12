@@ -48,8 +48,8 @@ var (
 	flHostsValue = cli.StringSlice([]string{"tcp://127.0.0.1:2375"})
 
 	flNode = cli.StringFlag{
-		Name:   "node, N",
-		Usage:  "node to operate on",
+		Name:        "node, N",
+		Usage:       "node to operate on",
 		Destination: &maintenanceNode,
 	}
 	flHosts = cli.StringSliceFlag{

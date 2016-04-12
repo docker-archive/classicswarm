@@ -268,7 +268,6 @@ func manage(c *cli.Context) {
 	discovery := createDiscovery(uri, c)
 	s, err := strategy.New(c.String("strategy"))
 	if err != nil {
-		log.Fatal(err)
 	}
 
 	// see https://github.com/codegangsta/cli/issues/160

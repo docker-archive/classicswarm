@@ -411,6 +411,7 @@ func (e *Engine) CheckConnectionErr(err error) {
 	// engine-api returns ErrConnectionFailed error, so we check for that as long as dockerclient exists
 	if err == dockerclient.ErrConnectionRefused ||
 		err == engineapi.ErrConnectionFailed ||
+		// TODO: consider strings tolower on the error, and be more precise
 		strings.Contains(err.Error(), "onnection refused") ||
 		strings.Contains(err.Error(), "annot connect to the docker engine endpoint") {
 		// each connection refused instance may increase failure count so

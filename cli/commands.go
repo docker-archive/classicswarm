@@ -40,14 +40,14 @@ var (
 			Action:    join,
 		},
 		{
-			Name:      "maintenance",
+			Name: "maintenance",
 			//ShortName: "m",
-			Usage:     "Set maintenance mode for a Swarm node",
+			Usage: "Set maintenance mode for a Swarm node",
 			Flags: []cli.Flag{
 				flNode,
 				//flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
 				//flEnableCors,},
-			    },
+			},
 			Action: maintenance,
 		},
 	}
