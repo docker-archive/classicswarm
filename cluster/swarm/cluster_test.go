@@ -96,14 +96,24 @@ func TestSetMaintenance(t *testing.T) {
 	assert.Equal(t, len(c.Containers()), 2)
 
 	// Test setting of maintenance
-	assert.Equal(t, c.GetMaintenance(c.engines[n.ID].ID), false)
-
-	err := c.SetMaintenance(c.engines[n.ID].ID)
+	v, err := c.GetMaintenance(c.engines[n.ID].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, c.GetMaintenance(c.engines[n.ID].ID), true)
+	assert.Equal(t, v, false)
+
+	err = c.SetMaintenance(c.engines[n.ID].ID, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	v, err = c.GetMaintenance(c.engines[n.ID].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, v, true)
 
 }
 

@@ -99,4 +99,11 @@ type Cluster interface {
 
 	// Tag an image
 	TagImage(IDOrName string, repo string, tag string, force bool) error
+
+	// TODO: refactor Set and Get into one, taking an argument?
+	// Set maintenance mode on a given node/engine
+	SetMaintenance(IDOrName string, toggle bool) error
+
+	// Get maintenance mode on a given node/engine
+	GetMaintenance(IDOrName string) (bool, error)
 }

@@ -672,3 +672,13 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	return errNotSupported
 }
+
+// GetMaintenance returns if container with IDOrName in the cluster is in maintenance mode
+func (c *Cluster) GetMaintenance(container string) (bool, error) {
+	return false, errNotSupported
+}
+
+// SetMaintenance returns if container with IDOrName in the cluster is in maintenance mode
+func (c *Cluster) SetMaintenance(container string, toggle bool) error {
+	return errNotSupported
+}

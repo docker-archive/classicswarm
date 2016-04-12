@@ -22,7 +22,7 @@ type Node struct {
 	TotalCpus   int64
 
 	HealthIndicator int64
-	Maintenance 	bool
+	Maintenance     bool
 }
 
 // NewNode creates a node from an engine.
