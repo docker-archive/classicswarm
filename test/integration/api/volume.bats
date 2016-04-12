@@ -85,7 +85,7 @@ function teardown() {
 	run docker_swarm volume rm $volume
 	[ "$status" -ne 0 ]
 
-	docker_swarm rm test_container
+	docker_swarm rm -f test_container
 	
 	run docker_swarm volume rm $volume
 	[ "$status" -eq 0 ]
