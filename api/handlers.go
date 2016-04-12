@@ -1082,8 +1082,10 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 	}
 }
 
-// Get maintenance mode on a container
-func postContainerGetMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
+// Get maintenance mode on an engine
+func postEngineGetMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
+	// TODO: it's not a container, do look at getContainerFromVars, it checks
+	//       healhtyness and some other goodness.
 	name, container, err := getContainerFromVars(c, mux.Vars(r))
 	if err != nil {
 		if container == nil {
@@ -1112,34 +1114,9 @@ func postContainerGetMaintenance(c *context, w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// Set maintenance mode on a container
-func postContainerSetMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
-	name, container, err := getContainerFromVars(c, mux.Vars(r))
-	if err != nil {
-		if container == nil {
-			httpError(w, err.Error(), http.StatusNotFound)
-		}
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Set the full container ID in the proxied URL path.
-	if name != "" {
-		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
-	}
-
-	// TODO: do things
-
-	cb := func(resp *http.Response) {
-		// force fresh container
-		container.Refresh()
-	}
-
-	err = proxyAsync(container.Engine, w, r, cb)
-	container.Engine.CheckConnectionErr(err)
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-	}
+// Set maintenance mode on an engine
+func postEngineSetMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
+	return
 }
 
 // Proxy a request to the right node
