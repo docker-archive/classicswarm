@@ -25,7 +25,9 @@ load ../helpers
     [ "${lines[1]}"="Nodes: 2" ]
 
     # Not sure which host is the swarm manager, created by swarm_manage
-    run curl ${HOSTS[0]}:2375/engines/foo/getmaintenance
+    # TODO: need to get the management IP.... how?!
+    run curl -v localhost:${SWARM_BASE_PORT}/engines/foo/maintenance
+
     echo $output
     [ "$status" -eq 0 ]
     [[ "${lines[0]}" == "No such container: foo" ]]

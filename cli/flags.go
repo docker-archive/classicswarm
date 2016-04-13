@@ -27,7 +27,7 @@ func getDiscovery(c *cli.Context) string {
 }
 
 var (
-	maintenanceNode string
+	maintenanceEngine string
 
 	flJoinAdvertise = cli.StringFlag{
 		Name:   "advertise, addr",
@@ -48,9 +48,9 @@ var (
 	flHostsValue = cli.StringSlice([]string{"tcp://127.0.0.1:2375"})
 
 	flNode = cli.StringFlag{
-		Name:        "node, N",
-		Usage:       "node to operate on",
-		Destination: &maintenanceNode,
+		Name:        "engine, E",
+		Usage:       "engine to operate on",
+		Destination: &maintenanceEngine,
 	}
 	flHosts = cli.StringSliceFlag{
 		Name:   "host, H",

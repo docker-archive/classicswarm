@@ -8,16 +8,14 @@ import (
 )
 
 func maintenance(c *cli.Context) {
-	if maintenanceNode == "" {
-		log.Fatalf("need node to manage. See '%s maintenance --help'.", c.App.Name)
+	if maintenanceEngine == "" {
+		log.Fatalf("need engine to manage. See '%s maintenance --help'.", c.App.Name)
 	}
 
-	fmt.Printf("Setting maintenance on %s\n", maintenanceNode)
-	/*
-		Goal: set maintenance flag for a node
+	fmt.Printf("Setting maintenance on %s\n", maintenanceEngine)
 
-		Look at list for inspiration, one prerequisite is that we find them, list does this. Can we update config to any node
-		in a cluster?
+	/*
+	    TODO: chat with Brad about how we hook this in
 
 		TODO: find where our node struct lives, and update it
 		Q: should we set maintenance *on* the swarm node, and will/should discovery/replication propagate it?
