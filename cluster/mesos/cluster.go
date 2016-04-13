@@ -39,6 +39,8 @@ type Cluster struct {
 	offerTimeout        time.Duration
 	refuseTimeout       time.Duration
 	taskCreationTimeout time.Duration
+	defaultCpuShares    int64
+	defaultMemory       int64
 	pendingTasks        *task.Tasks
 	engineOpts          *cluster.EngineOpts
 }
@@ -51,6 +53,8 @@ const (
 	defaultOfferTimeout        = 30 * time.Second
 	defaultRefuseTimeout       = 5 * time.Second
 	defaultTaskCreationTimeout = 5 * time.Second
+	unsetDefaultCpuShares      = 0
+	unsetDefaultMemory         = 0
 )
 
 var (
@@ -77,6 +81,8 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		taskCreationTimeout: defaultTaskCreationTimeout,
 		engineOpts:          engineOptions,
 		refuseTimeout:       defaultRefuseTimeout,
+		defaultCpuShares:    unsetDefaultCpuShares,
+		defaultMemory:       unsetDefaultMemory,
 	}
 
 	cluster.pendingTasks = task.NewTasks(cluster)
@@ -141,6 +147,14 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		cluster.refuseTimeout = d
 	}
 
+	if defaultCpuShares, ok := options.Int("mesos.defaultcpushares", "SWARM_MESOS_DEFAULT_CPU_SHARES"); ok {
+		cluster.defaultCpuShares = defaultCpuShares
+	}
+
+	if defaultMemory, ok := options.Int("mesos.defaultmemory", "SWARM_MESOS_DEFAULT_MEMORY"); ok {
+		cluster.defaultMemory = defaultMemory
+	}
+
 	sched, err := NewScheduler(driverConfig, cluster, scheduler)
 	if err != nil {
 		return nil, err
@@ -190,6 +204,13 @@ func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *docke
 
 // CreateContainer for container creation in Mesos task
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
+	if config.Memory == 0 {
+		config.Memory = c.defaultMemory
+	}
+	if config.CpuShares == 0 {
+		config.CpuShares = c.defaultCpuShares
+	}
+
 	if config.Memory == 0 && config.CpuShares == 0 {
 		return nil, errResourcesNeeded
 	}
