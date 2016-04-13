@@ -1,4 +1,4 @@
-FROM golang:1.5.3-alpine
+FROM golang:1.5.4-alpine
 
 ARG GOOS
 
