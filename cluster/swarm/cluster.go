@@ -763,9 +763,6 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 
 // GetMaintenance returns if container with IDOrName in the cluster is in maintenance mode
 func (c *Cluster) GetMaintenance(container string) (bool, error) {
-	c.RLock()
-	defer c.RUnlock()
-
 	// TODO: raise error if applicable
 	for _, e := range c.engines {
 		if e.ID == container {
