@@ -72,14 +72,13 @@ LTS.
 
 In this step, you configure a Linux server as a CA. You use this CA to create
 and sign keys. This step included so that readers without access to an existing
-CA (external or corpoate) and certificates can follow along and complete the
+CA (external or corporate) and certificates can follow along and complete the
 later steps that require installing and using certificates. It is `not`
 intended as a model for how to deploy production-worthy CA.
 
 1. Logon to the terminal of your CA server and elevate to root.
 
         $ sudo su
-        # 
 
 2. Create a private key called `ca-priv-key.pem` for the CA:
 
