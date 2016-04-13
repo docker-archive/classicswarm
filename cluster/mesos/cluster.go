@@ -682,3 +682,11 @@ func (c *Cluster) GetMaintenance(container string) (bool, error) {
 func (c *Cluster) SetMaintenance(container string, toggle bool) error {
 	return errNotSupported
 }
+
+func (c *Cluster) EngineExists(engineName string) (bool, error) {
+	return false, errNotSupported
+}
+
+func (c *Cluster) EngineHealthy(engineName string) (bool, error) {
+	return false, errNotSupported
+}

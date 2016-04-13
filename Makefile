@@ -1,5 +1,8 @@
 TEST?="./..."
 
+build:
+	docker build -t swarm .
+
 install:
 	godep go install .
 
@@ -9,6 +12,15 @@ fmt:
 
 test:
 	go test -v $(TEST)
+
+race:
+	go test -v -race $(TEST)
+
+lint:
+	golint ./...
+
+integration:
+	test/integration/run.sh
 
 vet:
 	@go vet 2>/dev/null ; if [ $$? -eq 3 ]; then \

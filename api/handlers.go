@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -1084,39 +1085,86 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 
 // Get maintenance mode on an engine
 func postEngineGetMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
-	// TODO: it's not a container, do look at getContainerFromVars, it checks
-	//       healhtyness and some other goodness.
-	name, container, err := getContainerFromVars(c, mux.Vars(r))
-	if err != nil {
-		if container == nil {
-			httpError(w, err.Error(), http.StatusNotFound)
-		}
-		httpError(w, err.Error(), http.StatusInternalServerError)
+	name, ok := mux.Vars(r)["name"]
+	if !ok {
+		httpError(w, "Need engine name to operate on", http.StatusInternalServerError)
 		return
 	}
 
-	// TODO: do things
-	// Set the full container ID in the proxied URL path.
-	if name != "" {
-		r.URL.Path = strings.Replace(r.URL.Path, name, container.Id, 1)
+	// engineHelper will have written an error to the user, we are done here
+	if err := engineHelper(c, w, r); err != nil {
+		return
 	}
 
-	cb := func(resp *http.Response) {
-		// force fresh container
-		container.Refresh()
-	}
-
-	// TODO: WTF?
-	err = proxyAsync(container.Engine, w, r, cb)
-	container.Engine.CheckConnectionErr(err)
+	// TODO: need to get value from request, now hard coded to true -ie: set maintenance mode
+	err := c.cluster.SetMaintenance(name, true)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
+
+	// Check if we were succesfull TODO: give some time to perculate?
+	status, err := c.cluster.GetMaintenance(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	// TODO: improve reply
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(fmt.Sprintf("Engine maintenance status now: %v", status))
 }
 
 // Set maintenance mode on an engine
 func postEngineSetMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
-	return
+	name, ok := mux.Vars(r)["name"]
+	if !ok {
+		httpError(w, "Need engine name to operate on", http.StatusInternalServerError)
+		return
+	}
+
+	// engineHelper will have written an error to the user, we are done here
+	if err := engineHelper(c, w, r); err != nil {
+		return
+	}
+
+	status, err := c.cluster.GetMaintenance(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	// TODO: improve reply
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(fmt.Sprintf("Engine maintenance status: %v", status))
+}
+
+// helper for engine functions maintenance mode on an engine TODO: could do with some TLC (return error string and code, let caller write)
+func engineHelper(c *context, w http.ResponseWriter, r *http.Request) error {
+	name, ok := mux.Vars(r)["name"]
+	if !ok {
+		httpError(w, "Need engine name to operate on", http.StatusInternalServerError)
+		return errors.New("Need engine to operate on")
+	}
+
+	exists, err := c.cluster.EngineExists(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	if !exists {
+		httpError(w, fmt.Sprintf("No such container: %s", name), http.StatusNotFound)
+		return errors.New("No such container")
+	}
+
+	res, err := c.cluster.EngineHealthy(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	if !res {
+		httpError(w, "Engine unhealthy", http.StatusInternalServerError)
+		return errors.New("Engine unhealthy")
+	}
+	return nil
 }
 
 // Proxy a request to the right node

@@ -853,6 +853,28 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 	return out
 }
 
+// EngineExists checks if an engine exists
+func (c *Cluster) EngineExists(engineName string) (bool, error) {
+	for _, n := range c.engines {
+		if n.ID == engineName {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// EngineHealthy returns if engine is healthy
+func (c *Cluster) EngineHealthy(engineName string) (bool, error) {
+	for _, n := range c.engines {
+		if n.ID == engineName {
+			return n.IsHealthy(), nil
+		}
+	}
+
+	return false, nil
+}
+
 // TotalMemory return the total memory of the cluster
 func (c *Cluster) TotalMemory() int64 {
 	var totalMemory int64

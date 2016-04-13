@@ -100,6 +100,12 @@ type Cluster interface {
 	// Tag an image
 	TagImage(IDOrName string, repo string, tag string, force bool) error
 
+	// TODO: add way to list nodes
+	EngineExists(IDOrNAme string) (bool, error)
+
+	// TODO: add way to list nodes
+	EngineHealthy(IDOrNAme string) (bool, error)
+
 	// TODO: refactor Set and Get into one, taking an argument?
 	// Set maintenance mode on a given node/engine
 	SetMaintenance(IDOrName string, toggle bool) error
