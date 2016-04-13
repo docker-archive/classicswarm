@@ -818,20 +818,19 @@ func (c *Cluster) listNodes() []*node.Node {
 	return out
 }
 
-// SetMaintenance set maintenance on engine
-func (c *Cluster) SetMaintenance(container string, toggle bool) error {
+// SetMaintenance sets maintenance on engine
+func (c *Cluster) SetMaintenance(containerID string, toggle bool) error {
 	c.RLock()
 	defer c.RUnlock()
 
-	// TODO: check if container foo is in c.engines, if it is, change it's state to maintenance
-	// TODO: raise error if applicable
 	for _, e := range c.engines {
-		if e.ID == container { // TODO: use ID
+		if e.ID == containerID {
 			e.SetState(cluster.StateMaintenance)
+			return nil
 		}
 	}
 
-	return nil
+	return errors.New("Container not found")
 }
 
 // listEngines returns all the engines in the cluster.

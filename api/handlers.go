@@ -1097,8 +1097,7 @@ func postEngineGetMaintenance(c *context, w http.ResponseWriter, r *http.Request
 	}
 
 	// TODO: need to get value from request, now hard coded to true -ie: set maintenance mode
-	err := c.cluster.SetMaintenance(name, true)
-	if err != nil {
+	if err := c.cluster.SetMaintenance(name, true); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
