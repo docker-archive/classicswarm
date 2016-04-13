@@ -122,8 +122,8 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 			CancelRequest(*http.Request)
 		}
 
-		if closeNotifier, ok = w.(http.CloseNotifier); ok == false {
-			log.Error("ResponseWriter was not support CloseNotify")
+		if closeNotifier, ok = w.(http.CloseNotifier); !ok {
+			log.Error("ResponseWriter does not support CloseNotify")
 			return
 		}
 
@@ -131,8 +131,8 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 		case <-closeNotifier.CloseNotify():
 			{
 				var cancel canceler
-				if cancel, ok = client.Transport.(canceler); ok == false {
-					log.Error("client.Transport was not support CancelRequest")
+				if cancel, ok = client.Transport.(canceler); !ok {
+					log.Error("client.Transport does not support CancelRequest")
 					return
 				}
 
