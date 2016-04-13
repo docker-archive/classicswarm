@@ -84,7 +84,7 @@ repository](https://github.com/docker/swarm-microservice-demo-v1).
     requirements, copies files from the build context into the container,
     exposes port `80` and tells the container which command to run.
 
-5. Spend time investigating the other parts of the application by viewing the `results-app/Dockefile` and the `vote-worker/Dockerfile` in the application.
+5. Spend time investigating the other parts of the application by viewing the `results-app/Dockerfile` and the `vote-worker/Dockerfile` in the application.
 
 ## Step 2. Build custom images
 
