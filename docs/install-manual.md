@@ -86,7 +86,7 @@ From your AWS home console, do the following:
 ## Step 2. Create your instances
 
 In this step, you create five Linux hosts that are part of your default security
-gorup. When complete, the example deployment contains three types of nodes:
+group. When complete, the example deployment contains three types of nodes:
 
 | Node Description                     | Name                    |
 |--------------------------------------|-------------------------|
