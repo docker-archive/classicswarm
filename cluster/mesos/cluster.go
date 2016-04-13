@@ -673,20 +673,22 @@ func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool)
 	return errNotSupported
 }
 
-// GetMaintenance returns if container with IDOrName in the cluster is in maintenance mode
-func (c *Cluster) GetMaintenance(container string) (bool, error) {
+// EngineExists verifies an engine exists
+func (c *Cluster) EngineExists(engineID string) (bool, error) {
 	return false, errNotSupported
 }
 
-// SetMaintenance returns if container with IDOrName in the cluster is in maintenance mode
-func (c *Cluster) SetMaintenance(container string, toggle bool) error {
+// EngineHealthy verifies an engine is healthy
+func (c *Cluster) EngineHealthy(engineID string) (bool, error) {
+	return false, errNotSupported
+}
+
+// GetMaintenance gets maintenance mode for an engine
+func (c *Cluster) GetMaintenance(engineID string) (bool, error) {
+	return false, errNotSupported
+}
+
+// SetMaintenance sets maintenance mode for an engine
+func (c *Cluster) SetMaintenance(engineID string, toggle bool) error {
 	return errNotSupported
-}
-
-func (c *Cluster) EngineExists(engineName string) (bool, error) {
-	return false, errNotSupported
-}
-
-func (c *Cluster) EngineHealthy(engineName string) (bool, error) {
-	return false, errNotSupported
 }

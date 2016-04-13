@@ -1083,7 +1083,7 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 	}
 }
 
-// Get maintenance mode on an engine
+// Set maintenance mode on an engine
 func postEngineGetMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
 	name, ok := mux.Vars(r)["name"]
 	if !ok {
@@ -1091,6 +1091,32 @@ func postEngineGetMaintenance(c *context, w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// TODO: get err, body and code to write and do it here.
+	// engineHelper will have written an error to the user, we are done here
+	if err := engineHelper(c, w, r); err != nil {
+		return
+	}
+
+	status, err := c.cluster.GetMaintenance(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: improve reply
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(fmt.Sprintf("Engine maintenance status: %v", status))
+}
+
+// Set maintenance mode on an engine
+func postEngineSetMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
+	name, ok := mux.Vars(r)["name"]
+	if !ok {
+		httpError(w, "Need engine name to operate on", http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: get err, body and code to write and do it here.
 	// engineHelper will have written an error to the user, we are done here
 	if err := engineHelper(c, w, r); err != nil {
 		return
@@ -1112,30 +1138,6 @@ func postEngineGetMaintenance(c *context, w http.ResponseWriter, r *http.Request
 	// TODO: improve reply
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(fmt.Sprintf("Engine maintenance status now: %v", status))
-}
-
-// Set maintenance mode on an engine
-func postEngineSetMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
-	name, ok := mux.Vars(r)["name"]
-	if !ok {
-		httpError(w, "Need engine name to operate on", http.StatusInternalServerError)
-		return
-	}
-
-	// engineHelper will have written an error to the user, we are done here
-	if err := engineHelper(c, w, r); err != nil {
-		return
-	}
-
-	status, err := c.cluster.GetMaintenance(name)
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// TODO: improve reply
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(fmt.Sprintf("Engine maintenance status: %v", status))
 }
 
 // helper for engine functions maintenance mode on an engine TODO: could do with some TLC (return error string and code, let caller write)

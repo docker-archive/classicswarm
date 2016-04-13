@@ -761,18 +761,6 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	return c.Containers().Get(IDOrName)
 }
 
-// GetMaintenance returns if container with IDOrName in the cluster is in maintenance mode
-func (c *Cluster) GetMaintenance(container string) (bool, error) {
-	// TODO: raise error if applicable
-	for _, e := range c.engines {
-		if e.ID == container {
-			// Test if state resembles maintenance
-			return e.GetState() == cluster.StateMaintenance, nil
-		}
-	}
-	return false, nil
-}
-
 // Networks returns all the networks in the cluster.
 func (c *Cluster) Networks() cluster.Networks {
 	c.RLock()
@@ -818,7 +806,19 @@ func (c *Cluster) listNodes() []*node.Node {
 	return out
 }
 
-// SetMaintenance sets maintenance on engine
+// GetMaintenance gets maintenance mode for an engine
+func (c *Cluster) GetMaintenance(container string) (bool, error) {
+	// TODO: raise error if applicable
+	for _, e := range c.engines {
+		if e.ID == container {
+			// Test if state resembles maintenance
+			return e.GetState() == cluster.StateMaintenance, nil
+		}
+	}
+	return false, nil
+}
+
+// SetMaintenance sets maintenance mode for an engine
 func (c *Cluster) SetMaintenance(containerID string, toggle bool) error {
 	c.RLock()
 	defer c.RUnlock()
@@ -849,7 +849,7 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 	return out
 }
 
-// EngineExists checks if an engine exists
+// EngineExists verifies an engine exists
 func (c *Cluster) EngineExists(engineName string) (bool, error) {
 	for _, n := range c.engines {
 		if n.ID == engineName {
@@ -860,7 +860,7 @@ func (c *Cluster) EngineExists(engineName string) (bool, error) {
 	return false, nil
 }
 
-// EngineHealthy returns if engine is healthy
+// EngineHealthy verifies an engine is healthy
 func (c *Cluster) EngineHealthy(engineName string) (bool, error) {
 	for _, n := range c.engines {
 		if n.ID == engineName {
