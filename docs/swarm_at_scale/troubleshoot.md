@@ -1,5 +1,6 @@
 <!--[metadata]>
 +++
+aliases = ["/swarm/swarm_at_scale/05-troubleshoot/"]
 title = "Troubleshoot the application"
 description = "Try Swarm at scale"
 keywords = ["docker, swarm, scale, voting, application,  certificates"]
@@ -17,7 +18,7 @@ following sections cover different failure scenarios:
 - [Swarm manager failures](#swarm-manager-failures)
 - [Consul (discovery backend) failures](#consul-discovery-backend-failures)
 - [Interlock load balancer failures](#interlock-load-balancer-failures)
-- [Web (web-vote-app) failures](#web-web-vote-app-failures)
+- [Web (voting-app) failures](#web-voting-app-failures)
 - [Redis failures](#redis-failures)
 - [Worker (vote-worker) failures](#worker-vote-worker-failures)
 - [Postgres failures](#postgres-failures)
@@ -93,9 +94,9 @@ drops below 10, the tool will attempt to start more.
 
 In our simple voting-app example, the front-end is scalable and serviced by a
 load balancer. In the event that on the of the two web containers fails (or the
-AWS instance that is hosting it), the load balancer will stop routing requests
-to it and send all requests the surviving web container. This solution is highly
-scalable meaning you can have up to *n* web containers behind the load balancer.
+node that is hosting it), the load balancer will stop routing requests to it and
+send all requests the surviving web container. This solution is highly scalable
+meaning you can have up to *n* web containers behind the load balancer.
 
 ## Interlock load balancer failures
 
@@ -118,9 +119,9 @@ will continue to service requests.
 If you deploy multiple interlock load balancers, you should consider spreading
 them across multiple failure domains within your infrastructure.
 
-## Web (web-vote-app) failures
+## Web (voting-app) failures
 
-The environment that you have configured has two web-vote-app containers running
+The environment that you have configured has two voting-app containers running
 on two separate nodes. They operate behind an Interlock load balancer that
 distributes incoming connections across both.
 
@@ -136,10 +137,10 @@ infrastructure. You should also consider deploying more.
 
 ## Redis failures
 
-If the a `redis` container fails, it's partnered `web-vote-app` container will
+If the a `redis` container fails, it's partnered `voting-app` container will
 not function correctly. The best solution in this instance might be to configure
 health monitoring that verifies the ability to write to each Redis instance. If
-an unhealthy `redis` instance is encountered, remove the `web-vote-app` and
+an unhealthy `redis` instance is encountered, remove the `voting-app` and
 `redis` combination and attempt remedial actions.
 
 ## Worker (vote-worker) failures
@@ -196,21 +197,24 @@ This will allow us to lose an entire AZ and still have our cluster and
 application operate.
 
 But it doesn't have to stop there. Some applications can be balanced across AWS
-Regions. In our example we might deploy parts of our cluster and application in
-the `us-west-1` Region and the rest in `us-east-1`. It's even becoming possible
-to deploy services across cloud providers, or have balance services across
-public cloud providers and your on premises date centers!
+Regions. It's even becoming possible to deploy services across cloud providers,
+or have balance services across public cloud providers and your on premises date
+centers!
 
 The diagram below shows parts of the application and infrastructure deployed
 across AWS and Microsoft Azure. But you could just as easily replace one of
 those cloud providers with your own on premises data center. In these scenarios,
-network latency and reliability is key to a smooth and workable solution.  
+network latency and reliability is key to a smooth and workable solution.
 
 ![](../images/deployed-across.jpg)
 
 ## Related information
 
-The application in this example could be deployed on Docker Universal Control Plane (UCP) which is currently in Beta release. To try the application on UCP in your environment, [request access to the UCP Beta release](https://www.docker.com/products/docker-universal-control-plane). Other useful documentation:
+The application in this example could be deployed on Docker Universal Control
+Plane (UCP) which is currently in Beta release. To try the application on UCP in
+your environment, [request access to the UCP Beta
+release](https://www.docker.com/products/docker-universal-control-plane). Other
+useful documentation:
 
 * [Plan for Swarm in production](../plan-for-production.md)
 * [Swarm and container networks](../networking.md)
