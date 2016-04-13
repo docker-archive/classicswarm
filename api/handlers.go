@@ -1100,12 +1100,14 @@ func postEngineGetMaintenance(c *context, w http.ResponseWriter, r *http.Request
 	err := c.cluster.SetMaintenance(name, true)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// Check if we were succesfull TODO: give some time to perculate?
 	status, err := c.cluster.GetMaintenance(name)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// TODO: improve reply
@@ -1129,6 +1131,7 @@ func postEngineSetMaintenance(c *context, w http.ResponseWriter, r *http.Request
 	status, err := c.cluster.GetMaintenance(name)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// TODO: improve reply
