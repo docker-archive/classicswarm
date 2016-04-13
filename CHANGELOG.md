@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 (2016-04-01)
+## 1.2.0 (2016-04-13)
 
 #### Scheduler
 
@@ -50,6 +50,7 @@
 
 #### Misc
 
+- Update golang version to 1.5.4
 - Skip redundant endpoints in "network inspect"
 - Validate duration flags:--delay, --timeout, --replication-ttl
 - Fix image matching via id
