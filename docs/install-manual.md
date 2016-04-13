@@ -16,14 +16,15 @@ This page teaches you to deploy a high-availability Docker Swarm cluster.
 Although the example installation uses the Amazon Web Services (AWS) platform,
 you can deploy an equivalent Docker Swarm cluster on many other platforms. In this example, you do the following:
 
-- Verify you have [prerequisites](#prerequisites) necessary to complete the example.
-- [Establish basic network security](#step-1-add-network-security-rules) by creating a security group that restricts inbound traffic by port number, type, and origin.
-- [Create your hosts](#step-2-create-your-instances) on your network by launching and configuring Elastic Cloud (EC2) instances.
-- [Install Docker Engine on each instance](#step-3-install-engine-on-each-node)
-- [Create a discovery backend](#step-4-set-up-a-discovery-backend) by running a consul container on one of the hosts.
-- [Create a Swarm cluster](#step-5-create-swarm-cluster) by running two Swarm managers in a high-availability configuration.
-- [Communicate with the Swarm](#step-6-communicate-with-the-swarm) and run a simple hello world application.
-- [Test the high-availability Swarm managers](#step-7-test-swarm-failover) by causing a Swarm manager to fail.
+- [Verify you have the prequisites](#prerequisites)
+- [Establish basic network security](#step-1-add-network-security-rules)
+- [Create your nodes](#step-2-create-your-instances)
+- [Install Engine on each node](#step-3-install-engine-on-each-node)
+- [Configure a discovery backend](#step-4-set-up-a-discovery-backend)
+- [Create Swarm cluster](#step-5-create-swarm-cluster)
+- [Communicate with the Swarm](#step-6-communicate-with-the-swarm)
+- [Test the high-availability Swarm managers](#step-7-test-swarm-failover)
+- [Additional Resources](#additional-resources)
 
 For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](install-w-machine) page.
 
@@ -300,8 +301,7 @@ They will display corresponding entries for the change in leadership.
 ## Additional Resources
 
 - [Installing Docker Engine on a cloud provider](http://docs.docker.com/engine/installation/cloud/cloud-ex-aws/)
-- [Docker Swarm 1.0 with Multi-host Networking: Manual Setup](http://goelzer.com/blog/2015/12/29/docker-swarmoverlay-networks-manual-method/)
-- [High availability in Docker Swarm](multi-manager-setup/)
-- [Discovery](discovery/)
+- [High availability in Docker Swarm](multi-manager-setup.md)
+- [Discovery](discovery.md)
 - [High-availability cluster using a trio of consul nodes](https://hub.docker.com/r/progrium/consul/)
-- [Networking](https://docs.docker.com/swarm/networking/)
+- [Networking](networking.md)
