@@ -217,13 +217,29 @@ func (c *ContainerConfig) HaveNodeConstraint() bool {
 }
 
 // HasReschedulePolicy returns true if the specified policy is part of the config
+// If the poliy is nil, then return true if have any reschedule policies
 func (c *ContainerConfig) HasReschedulePolicy(p string) bool {
+	if p == "" {
+		return len(c.extractExprs("reschedule-policies")) != 0
+	}
 	for _, reschedulePolicy := range c.extractExprs("reschedule-policies") {
 		if reschedulePolicy == p {
 			return true
 		}
 	}
 	return false
+}
+
+// AddReschedulePolicy to config
+func (c *ContainerConfig) AddReschedulePolicy(policy string) error {
+	reschedulePolicies := c.extractExprs("reschedule-policies")
+	reschedulePolicies = append(reschedulePolicies, policy)
+	labels, err := json.Marshal(reschedulePolicies)
+	if err != nil {
+		return err
+	}
+	c.Labels[SwarmLabelNamespace+".reschedule-policies"] = string(labels)
+	return nil
 }
 
 // Validate returns an error if the config isn't valid

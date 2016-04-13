@@ -58,27 +58,29 @@ type Cluster struct {
 	discovery         discovery.Backend
 	pendingContainers map[string]*pendingContainer
 
-	overcommitRatio float64
-	engineOpts      *cluster.EngineOpts
-	createRetry     int64
-	TLSConfig       *tls.Config
+	overcommitRatio         float64
+	engineOpts              *cluster.EngineOpts
+	createRetry             int64
+	TLSConfig               *tls.Config
+	defaultReschedulePolicy string
 }
 
 // NewCluster is exported
-func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery discovery.Backend, options cluster.DriverOpts, engineOptions *cluster.EngineOpts) (cluster.Cluster, error) {
+func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery discovery.Backend, options cluster.DriverOpts, engineOptions *cluster.EngineOpts, defaultResPolicy string) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
-		eventHandlers:     cluster.NewEventHandlers(),
-		engines:           make(map[string]*cluster.Engine),
-		pendingEngines:    make(map[string]*cluster.Engine),
-		scheduler:         scheduler,
-		TLSConfig:         TLSConfig,
-		discovery:         discovery,
-		pendingContainers: make(map[string]*pendingContainer),
-		overcommitRatio:   0.05,
-		engineOpts:        engineOptions,
-		createRetry:       0,
+		eventHandlers:           cluster.NewEventHandlers(),
+		engines:                 make(map[string]*cluster.Engine),
+		pendingEngines:          make(map[string]*cluster.Engine),
+		scheduler:               scheduler,
+		TLSConfig:               TLSConfig,
+		discovery:               discovery,
+		pendingContainers:       make(map[string]*pendingContainer),
+		overcommitRatio:         0.05,
+		engineOpts:              engineOptions,
+		createRetry:             0,
+		defaultReschedulePolicy: defaultResPolicy,
 	}
 
 	if val, ok := options.Float("swarm.overcommit", ""); ok {
@@ -139,6 +141,10 @@ func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *docke
 
 // CreateContainer aka schedule a brand new container into the cluster.
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *dockerclient.AuthConfig) (*cluster.Container, error) {
+	if !config.HasReschedulePolicy("") {
+		config.AddReschedulePolicy(c.defaultReschedulePolicy)
+	}
+
 	container, err := c.createContainer(config, name, false, authConfig)
 
 	if err != nil {
