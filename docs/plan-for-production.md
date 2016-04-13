@@ -306,7 +306,7 @@ network bandwidth.
 If your Swarm nodes are balanced across multiple failure domains, the spread
 strategy evenly balance containers across those failure domains. However,
 spread on its own is not aware of the roles of any of those containers, so has
-no inteligence to spread multiple instances of the same service across failure
+no intelligence to spread multiple instances of the same service across failure
 domains. To achieve this you should use tags and constraints.
 
 The **binpack** strategy runs as many containers as possible on a node,
