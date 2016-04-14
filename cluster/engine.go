@@ -1199,7 +1199,12 @@ func (e *Engine) cleanupContainers() {
 
 // StartContainer starts a container
 func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) error {
-	err := e.client.StartContainer(id, hostConfig)
+	var err error
+	if hostConfig != nil {
+		err = e.client.StartContainer(id, hostConfig)
+	} else {
+		err = e.apiClient.ContainerStart(context.TODO(), id)
+	}
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
