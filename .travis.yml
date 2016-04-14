@@ -9,18 +9,16 @@ sudo: false
 install:
   # Symlink below is needed for Travis CI to work correctly on personal forks of swarm
   - ln -s $HOME/gopath/src/github.com/${TRAVIS_REPO_SLUG///swarm/} $HOME/gopath/src/github.com/docker
-  - export GOPATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH
-  - export PATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace/bin:$PATH
   - go get github.com/golang/lint/golint
   - go get github.com/GeertJohan/fgt
 
 script:
   - script/validate-gofmt
-  - go vet ./...
-  - fgt golint ./...
+  - go vet `go list ./... | grep -v /vendor/`
+  - fgt golint ./... | grep -v vendor/ | tee /dev/stderr
   # Lint shell files and make sure they are not space indented.
   - fgt find test/ -type f \( -name "*.sh" -or -name "*.bash" -or -name "*.bats" \) -exec grep -Hn -e "^ " {} \;
   - GOOS=darwin go build
   - GOOS=windows go build
   - GOOS=linux go build
-  - go test -v -race ./...
+  - go test -v -race `go list ./... | grep -v /vendor/`
