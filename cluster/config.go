@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/samalba/dockerclient"
+	"github.com/docker/engine-api/types/container"
+	"github.com/docker/engine-api/types/network"
 )
 
 // SwarmLabelNamespace defines the key prefix in all custom labels
@@ -15,7 +16,19 @@ const SwarmLabelNamespace = "com.docker.swarm"
 // ContainerConfig is exported
 // TODO store affinities and constraints in their own fields
 type ContainerConfig struct {
-	dockerclient.ContainerConfig
+	container.Config
+	HostConfig       container.HostConfig
+	NetworkingConfig network.NetworkingConfig
+}
+
+// OldContainerConfig contains additional fields for backward compatibility
+// This should be removed after we stop supporting API versions <= 1.8
+type OldContainerConfig struct {
+	ContainerConfig
+	Memory     int64
+	MemorySwap int64
+	CPUShares  int64  `json:"CpuShares"`
+	CPUSet     string `json:"Cpuset"`
 }
 
 func parseEnv(e string) (bool, string, string) {
@@ -26,44 +39,35 @@ func parseEnv(e string) (bool, string, string) {
 	return false, "", ""
 }
 
-// FIXME: Temporary fix to handle forward/backward compatibility between Docker <1.6 and >=1.7
-// ContainerConfig should be handling converting to/from different docker versions
-func consolidateResourceFields(c *dockerclient.ContainerConfig) {
+// ConsolidateResourceFields is a temporary fix to handle forward/backward compatibility between Docker <1.6 and >=1.7
+func ConsolidateResourceFields(c *OldContainerConfig) {
 	if c.Memory != c.HostConfig.Memory {
 		if c.Memory != 0 {
 			c.HostConfig.Memory = c.Memory
-		} else {
-			c.Memory = c.HostConfig.Memory
 		}
 	}
 
 	if c.MemorySwap != c.HostConfig.MemorySwap {
 		if c.MemorySwap != 0 {
 			c.HostConfig.MemorySwap = c.MemorySwap
-		} else {
-			c.MemorySwap = c.HostConfig.MemorySwap
 		}
 	}
 
-	if c.CpuShares != c.HostConfig.CpuShares {
-		if c.CpuShares != 0 {
-			c.HostConfig.CpuShares = c.CpuShares
-		} else {
-			c.CpuShares = c.HostConfig.CpuShares
+	if c.CPUShares != c.HostConfig.CPUShares {
+		if c.CPUShares != 0 {
+			c.HostConfig.CPUShares = c.CPUShares
 		}
 	}
 
-	if c.Cpuset != c.HostConfig.CpusetCpus {
-		if c.Cpuset != "" {
-			c.HostConfig.CpusetCpus = c.Cpuset
-		} else {
-			c.Cpuset = c.HostConfig.CpusetCpus
+	if c.CPUSet != c.HostConfig.CpusetCpus {
+		if c.CPUSet != "" {
+			c.HostConfig.CpusetCpus = c.CPUSet
 		}
 	}
 }
 
-// BuildContainerConfig creates a cluster.ContainerConfig from a dockerclient.ContainerConfig
-func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
+// BuildContainerConfig creates a cluster.ContainerConfig from a Config, HostConfig, and NetworkingConfig
+func BuildContainerConfig(c container.Config, h container.HostConfig, n network.NetworkingConfig) *ContainerConfig {
 	var (
 		affinities         []string
 		constraints        []string
@@ -128,9 +132,7 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 		}
 	}
 
-	consolidateResourceFields(&c)
-
-	return &ContainerConfig{c}
+	return &ContainerConfig{c, h, n}
 }
 
 func (c *ContainerConfig) extractExprs(key string) []string {

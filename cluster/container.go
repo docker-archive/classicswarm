@@ -1,24 +1,80 @@
 package cluster
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/samalba/dockerclient"
+	"github.com/docker/engine-api/types"
+	"github.com/docker/go-units"
 )
 
 // Container is exported
 type Container struct {
-	dockerclient.Container
+	types.Container
 
 	Config *ContainerConfig
-	Info   dockerclient.ContainerInfo
+	Info   types.ContainerJSON
 	Engine *Engine
+}
+
+// StateString returns a single string to describe state
+func StateString(state *types.ContainerState) string {
+	startedAt, _ := time.Parse(time.RFC3339Nano, state.StartedAt)
+	if state.Running {
+		if state.Paused {
+			return "paused"
+		}
+		if state.Restarting {
+			return "restarting"
+		}
+		return "running"
+	}
+
+	if state.Dead {
+		return "dead"
+	}
+
+	if startedAt.IsZero() {
+		return "created"
+	}
+
+	return "exited"
+}
+
+// FullStateString returns human-readable description of the state
+func FullStateString(state *types.ContainerState) string {
+	startedAt, _ := time.Parse(time.RFC3339Nano, state.StartedAt)
+	finishedAt, _ := time.Parse(time.RFC3339Nano, state.FinishedAt)
+	if state.Running {
+		if state.Paused {
+			return fmt.Sprintf("Up %s (Paused)", units.HumanDuration(time.Now().UTC().Sub(startedAt)))
+		}
+		if state.Restarting {
+			return fmt.Sprintf("Restarting (%d) %s ago", state.ExitCode, units.HumanDuration(time.Now().UTC().Sub(finishedAt)))
+		}
+		return fmt.Sprintf("Up %s", units.HumanDuration(time.Now().UTC().Sub(startedAt)))
+	}
+
+	if state.Dead {
+		return "Dead"
+	}
+
+	if startedAt.IsZero() {
+		return "Created"
+	}
+
+	if finishedAt.IsZero() {
+		return ""
+	}
+
+	return fmt.Sprintf("Exited (%d) %s ago", state.ExitCode, units.HumanDuration(time.Now().UTC().Sub(finishedAt)))
 }
 
 // Refresh container
 func (c *Container) Refresh() (*Container, error) {
-	return c.Engine.refreshContainer(c.Id, true)
+	return c.Engine.refreshContainer(c.ID, true)
 }
 
 // Containers represents a list of containers
@@ -33,7 +89,7 @@ func (containers Containers) Get(IDOrName string) *Container {
 
 	// Match exact or short Container ID.
 	for _, container := range containers {
-		if container.Id == IDOrName || stringid.TruncateID(container.Id) == IDOrName {
+		if container.ID == IDOrName || stringid.TruncateID(container.ID) == IDOrName {
 			return container
 		}
 	}
@@ -68,7 +124,7 @@ func (containers Containers) Get(IDOrName string) *Container {
 
 	// Match Container ID prefix.
 	for _, container := range containers {
-		if strings.HasPrefix(container.Id, IDOrName) {
+		if strings.HasPrefix(container.ID, IDOrName) {
 			candidates = append(candidates, container)
 		}
 	}

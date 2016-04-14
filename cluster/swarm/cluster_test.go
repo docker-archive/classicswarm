@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/docker/engine-api/types"
+	containertypes "github.com/docker/engine-api/types/container"
+	networktypes "github.com/docker/engine-api/types/network"
 	engineapimock "github.com/docker/swarm/api/mockclient"
 	"github.com/docker/swarm/cluster"
-	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/mockclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,6 +50,7 @@ var (
 	}
 )
 
+// FIXMEENGINEAPI : Need to write more unit tests for creating/inspecting containers with engine-api
 func createEngine(t *testing.T, ID string, containers ...*cluster.Container) *cluster.Engine {
 	engine := cluster.NewEngine(ID, 0, engOpts)
 	engine.Name = ID
@@ -67,27 +69,27 @@ func TestContainerLookup(t *testing.T) {
 		engines: make(map[string]*cluster.Engine),
 	}
 	container1 := &cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container1-id",
+		Container: types.Container{
+			ID:    "container1-id",
 			Names: []string{"/container1-name1", "/container1-name2"},
 		},
-		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
+		Config: cluster.BuildContainerConfig(containertypes.Config{
 			Labels: map[string]string{
 				"com.docker.swarm.id": "swarm1-id",
 			},
-		}),
+		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
 	}
 
 	container2 := &cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container2-id",
+		Container: types.Container{
+			ID:    "container2-id",
 			Names: []string{"/con"},
 		},
-		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
+		Config: cluster.BuildContainerConfig(containertypes.Config{
 			Labels: map[string]string{
 				"com.docker.swarm.id": "swarm2-id",
 			},
-		}),
+		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
 	}
 
 	n := createEngine(t, "test-engine", container1, container2)
@@ -117,7 +119,7 @@ func TestContainerLookup(t *testing.T) {
 	// Match name before ID prefix
 	cc := c.Container("con")
 	assert.NotNil(t, cc)
-	assert.Equal(t, cc.Id, "container2-id")
+	assert.Equal(t, cc.ID, "container2-id")
 }
 
 func TestImportImage(t *testing.T) {
@@ -142,8 +144,8 @@ func TestImportImage(t *testing.T) {
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
-	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
+	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
@@ -195,8 +197,8 @@ func TestLoadImage(t *testing.T) {
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
-	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
+	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
@@ -251,8 +253,8 @@ func TestTagImage(t *testing.T) {
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
 	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
-	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return(images, nil)
+	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)

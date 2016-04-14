@@ -4,8 +4,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/engine-api/types"
+	containertypes "github.com/docker/engine-api/types/container"
+	networktypes "github.com/docker/engine-api/types/network"
 	"github.com/docker/swarm/cluster"
-	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,38 +33,39 @@ func TestContainerLookup(t *testing.T) {
 	c := &Cluster{
 		agents: make(map[string]*agent),
 	}
+
 	container1 := &cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container1-id",
+		Container: types.Container{
+			ID:    "container1-id",
 			Names: []string{"/container1-name1", "/container1-name2"},
 		},
-		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
+		Config: cluster.BuildContainerConfig(containertypes.Config{
 			Labels: map[string]string{
 				"com.docker.swarm.mesos.task": "task1-id",
-				"com.docker.swarm.mesos.name": "container1-name1",
+				"com.docker.swarm.mesos.name": "container1-name",
 			},
-		}),
+		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
 	}
 
 	container2 := &cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container2-id",
+		Container: types.Container{
+			ID:    "container2-id",
 			Names: []string{"/con"},
 		},
-		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
+		Config: cluster.BuildContainerConfig(containertypes.Config{
 			Labels: map[string]string{
 				"com.docker.swarm.mesos.task": "task2-id",
 				"com.docker.swarm.mesos.name": "con",
 			},
-		}),
+		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
 	}
 
 	container3 := &cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container3-id",
+		Container: types.Container{
+			ID:    "container3-id",
 			Names: []string{"/container3-name"},
 		},
-		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{}),
+		Config: cluster.BuildContainerConfig(containertypes.Config{}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
 	}
 
 	s := createAgent(t, "test-engine", container1, container2, container3)
@@ -88,5 +91,5 @@ func TestContainerLookup(t *testing.T) {
 	// Match name before ID prefix
 	cc := c.Container("con")
 	assert.NotNil(t, cc)
-	assert.Equal(t, cc.Id, "container2-id")
+	assert.Equal(t, cc.ID, "container2-id")
 }

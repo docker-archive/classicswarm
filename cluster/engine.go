@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -16,10 +17,12 @@ import (
 	"golang.org/x/net/context"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/version"
 	engineapi "github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/types/filters"
+	networktypes "github.com/docker/engine-api/types/network"
 	engineapinop "github.com/docker/swarm/api/nopclient"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/nopclient"
@@ -627,7 +630,11 @@ func (e *Engine) RefreshVolumes() error {
 // true, each container will be inspected.
 // FIXME: unexport this method after mesos scheduler stops using it directly
 func (e *Engine) RefreshContainers(full bool) error {
-	containers, err := e.client.ListContainers(true, false, "")
+	opts := types.ContainerListOptions{
+		All:  true,
+		Size: false,
+	}
+	containers, err := e.apiClient.ContainerList(context.TODO(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -637,7 +644,7 @@ func (e *Engine) RefreshContainers(full bool) error {
 	for _, c := range containers {
 		mergedUpdate, err := e.updateContainer(c, merged, full)
 		if err != nil {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q: %v", c.Id, err)
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q: %v", c.ID, err)
 		} else {
 			merged = mergedUpdate
 		}
@@ -653,7 +660,14 @@ func (e *Engine) RefreshContainers(full bool) error {
 // Refresh the status of a container running on the engine. If `full` is true,
 // the container will be inspected.
 func (e *Engine) refreshContainer(ID string, full bool) (*Container, error) {
-	containers, err := e.client.ListContainers(true, false, fmt.Sprintf("{%q:[%q]}", "id", ID))
+	filterArgs := filters.NewArgs()
+	filterArgs.Add("id", ID)
+	opts := types.ContainerListOptions{
+		All:    true,
+		Size:   false,
+		Filter: filterArgs,
+	}
+	containers, err := e.apiClient.ContainerList(context.TODO(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return nil, err
@@ -676,16 +690,16 @@ func (e *Engine) refreshContainer(ID string, full bool) (*Container, error) {
 
 	_, err = e.updateContainer(containers[0], e.containers, full)
 	e.RLock()
-	container := e.containers[containers[0].Id]
+	container := e.containers[containers[0].ID]
 	e.RUnlock()
 	return container, err
 }
 
-func (e *Engine) updateContainer(c dockerclient.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
+func (e *Engine) updateContainer(c types.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
 	var container *Container
 
 	e.RLock()
-	if current, exists := e.containers[c.Id]; exists {
+	if current, exists := e.containers[c.ID]; exists {
 		// The container is already known.
 		container = current
 		// Restarting is a transit state. Unfortunately Docker doesn't always emit
@@ -708,30 +722,30 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 
 	// Update ContainerInfo.
 	if full {
-		info, err := e.client.InspectContainer(c.Id)
+		info, err := e.apiClient.ContainerInspect(context.TODO(), c.ID)
 		e.CheckConnectionErr(err)
 		if err != nil {
 			return nil, err
 		}
 		// Convert the ContainerConfig from inspect into our own
 		// cluster.ContainerConfig.
-		if info.HostConfig != nil {
-			info.Config.HostConfig = *info.HostConfig
-		}
-		container.Config = BuildContainerConfig(*info.Config)
 
-		// FIXME remove "duplicate" lines and move this to cluster/config.go
-		container.Config.CpuShares = container.Config.CpuShares * int64(e.Cpus) / 1024.0
-		container.Config.HostConfig.CpuShares = container.Config.CpuShares
+		// info.HostConfig.CPUShares = info.HostConfig.CPUShares * int64(e.Cpus) / 1024.0
+		networkingConfig := networktypes.NetworkingConfig{
+			EndpointsConfig: info.NetworkSettings.Networks,
+		}
+		container.Config = BuildContainerConfig(*info.Config, *info.HostConfig, networkingConfig)
+		// FIXME remove "duplicate" line and move this to cluster/config.go
+		container.Config.HostConfig.CPUShares = container.Config.HostConfig.CPUShares * int64(e.Cpus) / 1024.0
 
 		// Save the entire inspect back into the container.
-		container.Info = *info
+		container.Info = info
 	}
 
 	// Update its internal state.
 	e.Lock()
 	container.Container = c
-	containers[container.Id] = container
+	containers[container.ID] = container
 	e.Unlock()
 
 	return containers, nil
@@ -818,7 +832,7 @@ func (e *Engine) UsedMemory() int64 {
 	var r int64
 	e.RLock()
 	for _, c := range e.containers {
-		r += c.Config.Memory
+		r += c.Config.HostConfig.Memory
 	}
 	e.RUnlock()
 	return r
@@ -829,7 +843,7 @@ func (e *Engine) UsedCpus() int64 {
 	var r int64
 	e.RLock()
 	for _, c := range e.containers {
-		r += c.Config.CpuShares
+		r += c.Config.HostConfig.CPUShares
 	}
 	e.RUnlock()
 	return r
@@ -846,29 +860,27 @@ func (e *Engine) TotalCpus() int {
 }
 
 // Create a new container
-func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, authConfig *dockerclient.AuthConfig) (*Container, error) {
+func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, authConfig *types.AuthConfig) (*Container, error) {
 	var (
-		err    error
-		id     string
-		client = e.client
+		err        error
+		createResp types.ContainerCreateResponse
 	)
 
 	// Convert our internal ContainerConfig into something Docker will
 	// understand.  Start by making a copy of the internal ContainerConfig as
 	// we don't want to mess with the original.
-	dockerConfig := config.ContainerConfig
+	dockerConfig := *config
 
 	// nb of CPUs -> real CpuShares
 
 	// FIXME remove "duplicate" lines and move this to cluster/config.go
-	dockerConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(e.Cpus)))
-	dockerConfig.HostConfig.CpuShares = dockerConfig.CpuShares
+	dockerConfig.HostConfig.CPUShares = int64(math.Ceil(float64(config.HostConfig.CPUShares*1024) / float64(e.Cpus)))
 
-	id, err = client.CreateContainer(&dockerConfig, name, nil)
+	createResp, err = e.apiClient.ContainerCreate(context.TODO(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		// If the error is other than not found, abort immediately.
-		if err != dockerclient.ErrImageNotFound || !pullImage {
+		if (err != dockerclient.ErrImageNotFound && !engineapi.IsErrImageNotFound(err)) || !pullImage {
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
@@ -876,7 +888,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 			return nil, err
 		}
 		// ...And try again.
-		id, err = client.CreateContainer(&dockerConfig, name, nil)
+		createResp, err = e.apiClient.ContainerCreate(context.TODO(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
 		e.CheckConnectionErr(err)
 		if err != nil {
 			return nil, err
@@ -885,12 +897,12 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
-	e.refreshContainer(id, true)
+	e.refreshContainer(createResp.ID, true)
 	e.RefreshVolumes()
 	e.RefreshNetworks()
 
 	e.Lock()
-	container := e.containers[id]
+	container := e.containers[createResp.ID]
 	e.Unlock()
 
 	if container == nil {
@@ -901,7 +913,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 
 // RemoveContainer removes a container from the engine.
 func (e *Engine) RemoveContainer(container *Container, force, volumes bool) error {
-	err := e.client.RemoveContainer(container.Id, force, volumes)
+	err := e.client.RemoveContainer(container.ID, force, volumes)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -911,7 +923,7 @@ func (e *Engine) RemoveContainer(container *Container, force, volumes bool) erro
 	// will rewrite this.
 	e.Lock()
 	defer e.Unlock()
-	delete(e.containers, container.Id)
+	delete(e.containers, container.ID)
 
 	return nil
 }
@@ -940,20 +952,59 @@ func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, erro
 
 }
 
-// Pull an image on the engine
-func (e *Engine) Pull(image string, authConfig *dockerclient.AuthConfig) error {
-	if !strings.Contains(image, ":") {
-		image = image + ":latest"
+// FIXME: This will become unnecessary after docker/engine-api#162 is merged
+func buildImagePullOptions(image string) (types.ImagePullOptions, error) {
+	distributionRef, err := reference.ParseNamed(image)
+	if err != nil {
+		return types.ImagePullOptions{}, err
 	}
-	err := e.client.PullImage(image, authConfig)
+
+	name := distributionRef.Name()
+	tag := "latest"
+
+	switch x := distributionRef.(type) {
+	case reference.Canonical:
+		tag = x.Digest().String()
+	case reference.NamedTagged:
+		tag = x.Tag()
+	}
+
+	return types.ImagePullOptions{
+		ImageID: name,
+		Tag:     tag,
+	}, nil
+}
+
+// Pull an image on the engine
+func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
+	pullOpts, err := buildImagePullOptions(image)
+	if err != nil {
+		return err
+	}
+	pullResponse, err := e.apiClient.ImagePull(context.TODO(), pullOpts, nil)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
 	}
 
+	// wait until the image download is finished
+	dec := json.NewDecoder(pullResponse)
+	m := map[string]interface{}{}
+	for {
+		if err := dec.Decode(&m); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+	}
+	// if the final stream object contained an error, return it
+	if errMsg, ok := m["error"]; ok {
+		return fmt.Errorf("%v", errMsg)
+	}
+
 	// force refresh images
 	e.RefreshImages()
-
 	return nil
 }
 
@@ -1112,10 +1163,10 @@ func (e *Engine) AddContainer(container *Container) error {
 	e.Lock()
 	defer e.Unlock()
 
-	if _, ok := e.containers[container.Id]; ok {
+	if _, ok := e.containers[container.ID]; ok {
 		return errors.New("container already exists")
 	}
-	e.containers[container.Id] = container
+	e.containers[container.ID] = container
 	return nil
 }
 
@@ -1132,10 +1183,10 @@ func (e *Engine) removeContainer(container *Container) error {
 	e.Lock()
 	defer e.Unlock()
 
-	if _, ok := e.containers[container.Id]; !ok {
+	if _, ok := e.containers[container.ID]; !ok {
 		return errors.New("container not found")
 	}
-	delete(e.containers, container.Id)
+	delete(e.containers, container.ID)
 	return nil
 }
 
@@ -1162,14 +1213,14 @@ func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) 
 // RenameContainer renames a container
 func (e *Engine) RenameContainer(container *Container, newName string) error {
 	// send rename request
-	err := e.client.RenameContainer(container.Id, newName)
+	err := e.client.RenameContainer(container.ID, newName)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
 	}
 
 	// refresh container
-	_, err = e.refreshContainer(container.Id, true)
+	_, err = e.refreshContainer(container.ID, true)
 	return err
 }
 
