@@ -674,21 +674,21 @@ func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool)
 }
 
 // EngineExists verifies an engine exists
-func (c *Cluster) EngineExists(engineID string) (bool, error) {
+func (c *Cluster) EngineExists(engineName string) (bool, error) {
 	return false, errNotSupported
 }
 
 // EngineHealthy verifies an engine is healthy
-func (c *Cluster) EngineHealthy(engineID string) (bool, error) {
+func (c *Cluster) EngineHealthy(engineName string) (bool, error) {
 	return false, errNotSupported
 }
 
 // GetMaintenance gets maintenance mode for an engine
-func (c *Cluster) GetMaintenance(engineID string) (bool, error) {
+func (c *Cluster) GetMaintenance(engineName string) (bool, error) {
 	return false, errNotSupported
 }
 
 // SetMaintenance sets maintenance mode for an engine
-func (c *Cluster) SetMaintenance(engineID string, toggle bool) error {
+func (c *Cluster) SetMaintenance(engineName string, toggle bool) error {
 	return errNotSupported
 }

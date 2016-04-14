@@ -852,7 +852,7 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 // EngineExists verifies an engine exists
 func (c *Cluster) EngineExists(engineName string) (bool, error) {
 	for _, n := range c.engines {
-		if n.ID == engineName {
+		if n.Name == engineName {
 			return true, nil
 		}
 	}
@@ -863,7 +863,7 @@ func (c *Cluster) EngineExists(engineName string) (bool, error) {
 // EngineHealthy verifies an engine is healthy
 func (c *Cluster) EngineHealthy(engineName string) (bool, error) {
 	for _, n := range c.engines {
-		if n.ID == engineName {
+		if n.Name == engineName {
 			return n.IsHealthy(), nil
 		}
 	}
