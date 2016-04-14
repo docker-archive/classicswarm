@@ -40,6 +40,7 @@ mkdir ~/gocode    # any name is fine
 
 Add these to your `.bashrc`:
 ```sh
+export GO15VENDOREXPERIMENT=1 # only required for go 1.5.x
 export GOROOT=/usr/local/go
 export GOPATH=~/gocode
 export PATH=$PATH:$GOPATH/bin:$GOROOT/bin
@@ -118,7 +119,7 @@ Build the binary, installing it to `$GOPATH/bin/swarm`:
 
 ```sh
 cd $GOPATH/src/github.com/docker/swarm
-godep go install .
+go install .
 ```
  
 Run the binary you just created:
@@ -154,7 +155,7 @@ For complete documentation on how to use Swarm, refer to the Swarm section of [d
 To run unit tests:
 
 ```sh
-godep go test -race ./...
+go test -race ./...
 ```
 
 To run integration tests:
@@ -228,7 +229,7 @@ git diff # check what added or removed in Godep/Godeps.json
 To make sure you newly added codes will make the build process happy, you can try building Swarm in the same way as defined in `Dockerfile`.
 
 ```sh
-$GOBIN/godep go install
+go install
 ```
 Then you should find the `swarm` binary under the `$GOBIN` directory.
 
