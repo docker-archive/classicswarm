@@ -36,8 +36,8 @@ func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 
 	// Check if --net points to a container.
 	net := []string{}
-	if strings.HasPrefix(config.HostConfig.NetworkMode, "container:") {
-		net = append(net, strings.TrimPrefix(config.HostConfig.NetworkMode, "container:"))
+	if strings.HasPrefix(string(config.HostConfig.NetworkMode), "container:") {
+		net = append(net, strings.TrimPrefix(string(config.HostConfig.NetworkMode), "container:"))
 	}
 
 	candidates := []*node.Node{}
@@ -65,7 +65,7 @@ func (f *DependencyFilter) GetFilters(config *cluster.ContainerConfig) ([]string
 	for _, link := range config.HostConfig.Links {
 		dependencies = append(dependencies, fmt.Sprintf("--link=%s", link))
 	}
-	if strings.HasPrefix(config.HostConfig.NetworkMode, "container:") {
+	if strings.HasPrefix(string(config.HostConfig.NetworkMode), "container:") {
 		dependencies = append(dependencies, fmt.Sprintf("--net=%s", config.HostConfig.NetworkMode))
 	}
 	return dependencies, nil

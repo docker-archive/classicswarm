@@ -45,10 +45,10 @@ func (w *Watchdog) removeDuplicateContainers(e *Engine) {
 
 		for _, containerInCluster := range w.cluster.Containers() {
 			if containerInCluster.Config.SwarmID() == container.Config.SwarmID() && containerInCluster.Engine.ID != container.Engine.ID {
-				log.Debugf("container %s was rescheduled on node %s, removing it", container.Id, containerInCluster.Engine.Name)
+				log.Debugf("container %s was rescheduled on node %s, removing it", container.ID, containerInCluster.Engine.Name)
 				// container already exists in the cluster, destroy it
 				if err := e.RemoveContainer(container, true, true); err != nil {
-					log.Errorf("Failed to remove duplicate container %s on node %s: %v", container.Id, containerInCluster.Engine.Name, err)
+					log.Errorf("Failed to remove duplicate container %s on node %s: %v", container.ID, containerInCluster.Engine.Name, err)
 				}
 			}
 		}
@@ -65,7 +65,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 
 		// Skip containers which don't have an "on-node-failure" reschedule policy.
 		if !c.Config.HasReschedulePolicy("on-node-failure") {
-			log.Debugf("Skipping rescheduling of %s based on rescheduling policies", c.Id)
+			log.Debugf("Skipping rescheduling of %s based on rescheduling policies", c.ID)
 			continue
 		}
 
@@ -78,15 +78,15 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 		newContainer, err := w.cluster.CreateContainer(c.Config, c.Info.Name, nil)
 
 		if err != nil {
-			log.Errorf("Failed to reschedule container %s: %v", c.Id, err)
+			log.Errorf("Failed to reschedule container %s: %v", c.ID, err)
 			// add the container back, so we can retry later
 			c.Engine.AddContainer(c)
 		} else {
-			log.Infof("Rescheduled container %s from %s to %s as %s", c.Id, c.Engine.Name, newContainer.Engine.Name, newContainer.Id)
+			log.Infof("Rescheduled container %s from %s to %s as %s", c.ID, c.Engine.Name, newContainer.Engine.Name, newContainer.ID)
 			if c.Info.State.Running {
-				log.Infof("Container %s was running, starting container %s", c.Id, newContainer.Id)
+				log.Infof("Container %s was running, starting container %s", c.ID, newContainer.ID)
 				if err := w.cluster.StartContainer(newContainer, nil); err != nil {
-					log.Errorf("Failed to start rescheduled container %s: %v", newContainer.Id, err)
+					log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
 				}
 			}
 		}

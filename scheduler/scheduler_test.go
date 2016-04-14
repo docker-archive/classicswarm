@@ -3,11 +3,12 @@ package scheduler
 import (
 	"testing"
 
+	containertypes "github.com/docker/engine-api/types/container"
+	networktypes "github.com/docker/engine-api/types/network"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/docker/swarm/scheduler/strategy"
-	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,11 +43,14 @@ func TestSelectNodesForContainer(t *testing.T) {
 			},
 		}
 
-		config = cluster.BuildContainerConfig(dockerclient.ContainerConfig{
-			Memory:    1024 * 1024 * 1024,
-			CpuShares: 2,
-			Env:       []string{"constraint:group==~1"},
-		})
+		config = cluster.BuildContainerConfig(containertypes.Config{
+			Env: []string{"constraint:group==~1"},
+		}, containertypes.HostConfig{
+			Resources: containertypes.Resources{
+				Memory:    1024 * 1024 * 1024,
+				CPUShares: 2,
+			},
+		}, networktypes.NetworkingConfig{})
 	)
 	candidates, err := s.SelectNodesForContainer(nodes, config)
 	assert.NoError(t, err)

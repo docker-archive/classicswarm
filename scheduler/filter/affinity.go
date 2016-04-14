@@ -38,7 +38,7 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 				containers := []string{}
 				for _, container := range node.Containers {
 					if len(container.Names) > 0 {
-						containers = append(containers, container.Id, strings.TrimPrefix(container.Names[0], "/"))
+						containers = append(containers, container.ID, strings.TrimPrefix(container.Names[0], "/"))
 					}
 				}
 				if affinity.Match(containers...) {
