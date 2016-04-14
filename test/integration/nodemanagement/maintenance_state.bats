@@ -86,7 +86,15 @@ function teardown() {
     [ "$status" -eq 0 ]
     [ "${lines[1]}"="Nodes: 2" ]
 
+    run curl localhost:${SWARM_BASE_PORT}/engines/node-1/state
+    echo "XX state result: ${output}"
+
     run curl localhost:${SWARM_BASE_PORT}/engines/node-1/maintenance
+    echo "XX maintenance result: ${output}"
+
+    run curl localhost:${SWARM_BASE_PORT}/engines/node-1/state
+    echo "XX state result: ${output}"
+
 
     echo $output
     [ "$status" -eq 0 ]

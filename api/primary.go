@@ -50,6 +50,7 @@ var routes = map[string]map[string]handler{
 		"/containers/{name:.*}/stats":     proxyContainer,
 		"/containers/{name:.*}/attach/ws": proxyHijack,
 		"/engines/{name:.*}/maintenance":  getEngineMaintenance,
+		"/engines/{name:.*}/state":        getEngineState,
 		"/exec/{execid:.*}/json":          proxyContainer,
 		"/networks":                       getNetworks,
 		"/networks/{networkid:.*}":        getNetwork,

@@ -825,12 +825,27 @@ func (c *Cluster) SetMaintenance(containerName string, toggle bool) error {
 
 	for _, e := range c.engines {
 		if e.Name == containerName {
-			e.SetState(cluster.StateMaintenance)
+			if toggle {
+				e.SetState(cluster.StateMaintenance)
+			}
+			// TODO: implement "unsetting state" -what to?
 			return nil
+			//return errors.New(fmt.Sprintf("%V", e))
 		}
 	}
 
 	return errors.New("Container not found")
+}
+
+// SetMaintenance sets maintenance mode for an engine
+func (c *Cluster) GetState(containerName string) string {
+	for _, e := range c.engines {
+		if e.Name == containerName {
+			return (fmt.Sprintf("State: %V", e.GetState()))
+		}
+	}
+
+	return ""
 }
 
 // listEngines returns all the engines in the cluster.

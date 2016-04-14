@@ -692,3 +692,8 @@ func (c *Cluster) GetMaintenance(engineName string) (bool, error) {
 func (c *Cluster) SetMaintenance(engineName string, toggle bool) error {
 	return errNotSupported
 }
+
+// GetState gets mode for an engine
+func (c *Cluster) GetState(engineName string) string {
+	return "not supported with mesos"
+}
