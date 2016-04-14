@@ -69,27 +69,27 @@ func TestSetMaintenance(t *testing.T) {
 		engines: make(map[string]*cluster.Engine),
 	}
 	container1 := &cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container1-id",
+		Container: types.Container{
+			ID:    "container1-id",
 			Names: []string{"/container1-name1", "/container1-name2"},
 		},
-		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
+		Config: cluster.BuildContainerConfig(containertypes.Config{
 			Labels: map[string]string{
 				"com.docker.swarm.id": "swarm1-id",
 			},
-		}),
+		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
 	}
 
 	container2 := &cluster.Container{
-		Container: dockerclient.Container{
-			Id:    "container2-id",
+		Container: types.Container{
+			ID:    "container2-id",
 			Names: []string{"/con"},
 		},
-		Config: cluster.BuildContainerConfig(dockerclient.ContainerConfig{
+		Config: cluster.BuildContainerConfig(containertypes.Config{
 			Labels: map[string]string{
 				"com.docker.swarm.id": "swarm2-id",
 			},
-		}),
+		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
 	}
 
 	n := createEngine(t, "test-engine", container1, container2)

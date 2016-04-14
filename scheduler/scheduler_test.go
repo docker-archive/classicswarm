@@ -90,10 +90,12 @@ func TestSelectNodesForContainerMaintenance(t *testing.T) {
 			},
 		}
 
-		config = cluster.BuildContainerConfig(dockerclient.ContainerConfig{
-			Memory:    1024 * 1024 * 1024,
-			CpuShares: 2,
-		})
+		config = cluster.BuildContainerConfig(containertypes.Config{}, containertypes.HostConfig{
+			Resources: containertypes.Resources{
+				Memory:    1024 * 1024 * 1024,
+				CPUShares: 2,
+			},
+		}, networktypes.NetworkingConfig{})
 	)
 	candidates, err := s.SelectNodesForContainer(nodes, config)
 	assert.NoError(t, err)
