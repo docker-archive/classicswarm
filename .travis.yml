@@ -3,6 +3,11 @@ language: go
 go:
   - 1.6.1
 
+env:
+  - BUILD_GOOS=darwin
+  - BUILD_GOOS=windows
+  - BUILD_GOOS=linux
+
 # let us have speedy Docker-based Travis workers
 sudo: false
 
@@ -20,7 +25,5 @@ script:
   - fgt golint ./...
   # Lint shell files and make sure they are not space indented.
   - fgt find test/ -type f \( -name "*.sh" -or -name "*.bash" -or -name "*.bats" \) -exec grep -Hn -e "^ " {} \;
-  - GOOS=darwin go build
-  - GOOS=windows go build
-  - GOOS=linux go build
-  - go test -v -race ./...
+  - GOOS=${BUILD_GOOS} go build
+  - if [[ ${BUILD_GOOS} == 'linux' ]] ; then GOOS=${BUILD_GOOS} go test -v -race ./... ; else true ; fi
