@@ -30,7 +30,7 @@ load ../helpers
 
     echo $output
     [ "$status" -eq 0 ]
-    [[ "${lines[0]}" == "No such container: foo" ]]
+    [[ "${lines[0]}" == *"No such container: foo"* ]]
 }
 
 @test "Maintenance State: setting maintenance state" {
