@@ -810,7 +810,7 @@ func (c *Cluster) listNodes() []*node.Node {
 func (c *Cluster) GetMaintenance(container string) (bool, error) {
 	// TODO: raise error if applicable
 	for _, e := range c.engines {
-		if e.ID == container {
+		if e.Name == container {
 			return e.GetMaintenance(), nil
 		}
 	}
@@ -820,7 +820,7 @@ func (c *Cluster) GetMaintenance(container string) (bool, error) {
 // GetState gets maintenance mode for an engine
 func (c *Cluster) GetState(container string) string {
 	for _, e := range c.engines {
-		if e.ID == container {
+		if e.Name == container {
 			return e.GetState()
 		}
 	}
@@ -835,8 +835,8 @@ func (c *Cluster) SetMaintenance(containerName string, toggle bool) error {
 	for _, e := range c.engines {
 		if e.Name == containerName {
 			e.SetMaintenance(toggle)
+			return nil
 		}
-		return nil
 		//return errors.New(fmt.Sprintf("%V", e)) TODO: remove me
 	}
 

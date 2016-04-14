@@ -1130,16 +1130,16 @@ func postEngineSetMaintenance(c *context, w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// TODO: remove if tests consistently succeeed
 	time.Sleep(5 * time.Second)
-	// Check if we were successful TODO: give some time to perculate?
-	_, err := c.cluster.GetMaintenance(name)
+	status, err := c.cluster.GetMaintenance(name)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Check what state we are, for degging.
-	status := c.cluster.GetState(name)
+	// Check what state we are, for debugging.
+	// status := c.cluster.GetState(name)
 
 	// TODO: improve reply
 	w.Header().Set("Content-Type", "application/json")
