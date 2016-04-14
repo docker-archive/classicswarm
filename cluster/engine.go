@@ -100,14 +100,15 @@ type EngineOpts struct {
 type Engine struct {
 	sync.RWMutex
 
-	ID      string
-	IP      string
-	Addr    string
-	Name    string
-	Cpus    int
-	Memory  int64
-	Labels  map[string]string
-	Version string
+	ID          string
+	IP          string
+	Addr        string
+	Name        string
+	Cpus        int
+	Memory      int64
+	Labels      map[string]string
+	Version     string
+	Maintenance bool
 
 	stopCh          chan struct{}
 	refreshDelayer  *delayer
@@ -280,7 +281,7 @@ func (e *Engine) IsHealthy() bool {
 func (e *Engine) IsMaintenance() bool {
 	e.RLock()
 	defer e.RUnlock()
-	return e.state == StateMaintenance
+	return e.Maintenance == true
 }
 
 // HealthIndicator returns degree of healthiness between 0 and 100.
@@ -296,6 +297,13 @@ func (e *Engine) HealthIndicator() int64 {
 }
 
 // SetState sets engine state
+func (e *Engine) SetMaintenance(state bool) {
+	e.Lock()
+	defer e.Unlock()
+	e.Maintenance = state
+}
+
+// SetState sets engine state
 func (e *Engine) SetState(state EngineState) {
 	e.Lock()
 	defer e.Unlock()
@@ -303,8 +311,13 @@ func (e *Engine) SetState(state EngineState) {
 }
 
 // GetState gets engine state
-func (e *Engine) GetState() EngineState {
-	return e.state
+func (e *Engine) GetState() string {
+	return fmt.Sprint(e.state)
+}
+
+// GetState gets engine state
+func (e *Engine) GetMaintenance() bool {
+	return e.Maintenance
 }
 
 // TimeToValidate returns true if a pending node is up for validation
