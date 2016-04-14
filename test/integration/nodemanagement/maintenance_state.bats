@@ -26,11 +26,11 @@ load ../helpers
 
     # Not sure which host is the swarm manager, created by swarm_manage
     # TODO: need to get the management IP.... how?!
-    run curl -v localhost:${SWARM_BASE_PORT}/engines/foo/maintenance
+    run curl localhost:${SWARM_BASE_PORT}/engines/foo/maintenance
 
     echo $output
     [ "$status" -eq 0 ]
-    [[ "${lines[0]}" == *"No such container: foo"* ]]
+    [[ "${output}" == *"No such container: foo"* ]]
 }
 
 @test "Maintenance State: setting maintenance state" {
