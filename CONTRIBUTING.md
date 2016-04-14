@@ -25,7 +25,7 @@ sudo apt-get install git
 
 You also need Go 1.5 or higher.  Download Go from [https://golang.org/dl/](https://golang.org/dl/).  To install on Linux:
 ```sh
-tar xzvf go1.5.4.linux-amd64.tar.gz
+tar xzvf go1.6.1.linux-amd64.tar.gz
 sudo mv go /usr/local
 ```
 
