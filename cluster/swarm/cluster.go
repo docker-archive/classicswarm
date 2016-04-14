@@ -819,12 +819,12 @@ func (c *Cluster) GetMaintenance(container string) (bool, error) {
 }
 
 // SetMaintenance sets maintenance mode for an engine
-func (c *Cluster) SetMaintenance(containerID string, toggle bool) error {
+func (c *Cluster) SetMaintenance(containerName string, toggle bool) error {
 	c.RLock()
 	defer c.RUnlock()
 
 	for _, e := range c.engines {
-		if e.ID == containerID {
+		if e.Name == containerName {
 			e.SetState(cluster.StateMaintenance)
 			return nil
 		}

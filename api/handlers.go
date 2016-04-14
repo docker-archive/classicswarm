@@ -1122,6 +1122,10 @@ func postEngineSetMaintenance(c *context, w http.ResponseWriter, r *http.Request
 
 	name, _ := mux.Vars(r)["name"]
 	if err := c.cluster.SetMaintenance(name, toggle); err != nil {
+		if strings.Contains(err.Error(), "Container not found") {
+			httpError(w, err.Error(), http.StatusNotFound)
+			return
+		}
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
