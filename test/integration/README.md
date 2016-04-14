@@ -47,7 +47,7 @@ are provided in order to facilitate writing tests.
 # This will load the helpers.
 load helpers
 
-# teardown is called at the end, but defined at the beginning of every test
+# teardown is called at the end of every test
 function teardown() {
 	# This will stop the swarm manager:
 	swarm_manage_cleanup
