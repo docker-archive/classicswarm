@@ -39,7 +39,7 @@ function teardown() {
     [[ "${output}" == *"No such container: foo"* ]]
 }
 
-@test "Maintenance State: getting maintenance state" {
+@test "Maintenance State: Getting maintenance state" {
     # start_docker will start a given number of engines:
     start_docker 3
 
@@ -66,7 +66,7 @@ function teardown() {
     [[ "${output}" == *"Engine maintenance status: false"* ]]
 }
 
-@test "Maintenance State: setting maintenance state" {
+@test "Maintenance State: Setting maintenance state" {
     # start_docker will start a given number of engines:
     start_docker 3
 
@@ -95,7 +95,7 @@ function teardown() {
 
     echo $output
     [ "$status" -eq 0 ]
-    #[[ "${output}" == *"Engine maintenance status: true"* ]]
+    [[ "${output}" == *"Engine maintenance status: true"* ]]
 
     run curl localhost:${SWARM_BASE_PORT}/engines/node-1/maintenance
     echo $output
