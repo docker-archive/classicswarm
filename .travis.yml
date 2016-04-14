@@ -1,7 +1,7 @@
 language: go
 
 go:
-  - 1.5.4
+  - 1.6.1
 
 # let us have speedy Docker-based Travis workers
 sudo: false
@@ -9,8 +9,6 @@ sudo: false
 install:
   # Symlink below is needed for Travis CI to work correctly on personal forks of swarm
   - ln -s $HOME/gopath/src/github.com/${TRAVIS_REPO_SLUG///swarm/} $HOME/gopath/src/github.com/docker
-  - export GOPATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH
-  - export PATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace/bin:$PATH
   - go get github.com/golang/lint/golint
   - go get github.com/GeertJohan/fgt
 
