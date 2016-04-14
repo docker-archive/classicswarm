@@ -102,3 +102,49 @@ function teardown() {
     [ "$status" -eq 0 ]
     [[ "${output}" == *"Engine maintenance status: true"* ]]
 }
+
+@test "Maintenance State: Verify nodes are not scheduled on nodes in maintenance state" {
+	# TODO: What scenario do we chose? Take a preference for a node, verify it *not* be scheduled on node
+	# in maintenance mode?
+    start_docker_with_busybox 2
+    swarm_manage
+
+    # TODO: limit amount of containers started
+    run docker_swarm run --name c1 -e constraint:node==node-1 -d busybox:latest sh
+    [ "$status" -eq 0 ]
+    run docker_swarm run --name c2 -e affinity:container==c1 -d busybox:latest sh
+    [ "$status" -eq 0 ]
+    # 116 failed with:
+    # time="2016-04-15T00:02:18Z" level=error msg="HTTP error:
+    # Unable to find a node that satisfies the following conditions \n[node==node-1 (soft=false)]" status=500
+
+    run docker_swarm inspect c1
+    # FIXME: This will help debugging the failing test.
+    echo $output
+    [ "$status" -eq 0 ]
+    [[ "${output}" == *'"Name": "node-1"'* ]]
+
+    run docker_swarm inspect c2
+    [ "$status" -eq 0 ]
+    [[ "${output}" == *'"Name": "node-1"'* ]]
+
+    # Set node-1 into maintenance mode, we expect no new nodes to be scheduled on them, no matter their affinity for it.
+    run curl localhost:${SWARM_BASE_PORT}/engines/node-1/maintenance
+    echo $output
+    [ "$status" -eq 0 ]
+    [[ "${output}" == *"Engine maintenance status: false"* ]]
+
+    run curl -X POST localhost:${SWARM_BASE_PORT}/engines/node-1/maintenance/start
+
+    echo $output
+    [ "$status" -eq 0 ]
+    [[ "${output}" == *"Engine maintenance status: true"* ]]
+
+    # TODO: limit amount of containers started
+    run docker_swarm run --name c3 -e affinity:container==~c2 -d busybox:latest sh
+    [ "$status" -eq 0 ]
+
+    run docker_swarm inspect c3
+    [ "$status" -eq 0 ]
+    [[ "${output}" != *'"Name": "node-1"'* ]]
+}
