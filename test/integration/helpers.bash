@@ -16,7 +16,7 @@ SWARM_BINARY=${SWARM_BINARY:-${SWARM_ROOT}/swarm}
 DOCKER_IMAGE=${DOCKER_IMAGE:-dockerswarm/dind-master}
 DOCKER_VERSION=${DOCKER_VERSION:-latest}
 DOCKER_BINARY=${DOCKER_BINARY:-`command -v docker`}
-DOCKER_COMPOSE_VERSION=${DOCKER_COMPOSE_VERSION:-1.6.2}
+DOCKER_COMPOSE_VERSION=${DOCKER_COMPOSE_VERSION:-1.7.0}
 
 # Port on which the manager will listen to (random port between 6000 and 7000).
 SWARM_BASE_PORT=$(( ( RANDOM % 1000 )  + 6000 ))
@@ -205,7 +205,7 @@ function start_docker() {
 			# -v /usr/local/bin -v /var/run are specific to mesos, so the slave can do a --volumes-from and use the docker cli
 			docker_host run -d --name node-$i --privileged -v /usr/local/bin -v /var/run -it --net=host \
 			${DOCKER_IMAGE}:${DOCKER_VERSION} \
-			bash -c "\
+			sh -c "\
 				rm /var/run/docker.pid ; \
 				rm /var/run/docker/libcontainerd/docker-containerd.pid ; \ 
 				rm /var/run/docker/libcontainerd/docker-containerd.sock ; \
