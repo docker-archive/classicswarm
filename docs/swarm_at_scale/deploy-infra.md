@@ -264,7 +264,7 @@ in Step 4.
     ```
 
     This error usually means you weren't starting the `docker run` from the same
-    `config` directory where the `config.toml` fie is. If you run the coammand
+    `config` directory where the `config.toml` file is. If you run the command
     and get a Conflict error such as:
 
     ```bash

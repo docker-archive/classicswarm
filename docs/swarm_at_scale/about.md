@@ -43,7 +43,7 @@ The frontend consists of an load balancer with *N* frontend instances. Each
 frontend consists of a web server and a Redis queue. The load balancer can
 handle an arbitrary number of web containers behind it (`frontend01`-
 `frontendN`). The web containers run a simple Python application that takes a
-vote between two options. It queus the votes to a Redist container running on
+vote between two options. It queues the votes to a Redis container running on
 the datastore.
 
 Behind the frontend is a worker tier which runs on separate nodes. This tier:
