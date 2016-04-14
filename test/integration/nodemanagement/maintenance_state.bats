@@ -28,7 +28,7 @@ load ../helpers
     run curl ${HOSTS[0]}:2375/engines/foo/getmaintenance
     echo $output
     [ "$status" -eq 0 ]
-    [[ "${lines[0]}" == "No such container: foo" ]]
+    [[ "${lines[0]}" == *"No such container: foo"* ]]
 }
 
 @test "Maintenance State: setting maintenance state" {
