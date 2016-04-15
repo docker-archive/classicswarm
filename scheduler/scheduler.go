@@ -53,7 +53,6 @@ func (s *Scheduler) selectNodesForContainer(nodes []*node.Node, config *cluster.
 	}
 
 	accepted := make([]*node.Node, 0)
-	// TODO: potentially move filtering of hosts in maintenance mode into Applyfilters or another helper
 	for _, n := range nominees {
 		if !n.IsMaintenance() {
 			accepted = append(accepted, n)

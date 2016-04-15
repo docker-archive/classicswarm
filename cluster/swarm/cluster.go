@@ -812,25 +812,15 @@ func (c *Cluster) listNodes() []*node.Node {
 	return out
 }
 
-// GetMaintenance gets maintenance mode for an engine
+// GetMaintenance gets maintenance mode of an engine
 func (c *Cluster) GetMaintenance(container string) (bool, error) {
-	// TODO: raise error if applicable
 	for _, e := range c.engines {
 		if e.Name == container {
 			return e.GetMaintenance(), nil
 		}
 	}
-	return false, nil
-}
 
-// GetState gets maintenance mode for an engine
-func (c *Cluster) GetState(container string) string {
-	for _, e := range c.engines {
-		if e.Name == container {
-			return e.GetState()
-		}
-	}
-	return ""
+	return false, errors.New("Container not found")
 }
 
 // SetMaintenance sets maintenance mode for an engine
@@ -843,10 +833,20 @@ func (c *Cluster) SetMaintenance(containerName string, toggle bool) error {
 			e.SetMaintenance(toggle)
 			return nil
 		}
-		//return errors.New(fmt.Sprintf("%V", e)) TODO: remove me
 	}
 
 	return errors.New("Container not found")
+}
+
+// GetState gets state mode of an engine
+func (c *Cluster) GetState(container string) (string, error) {
+	for _, e := range c.engines {
+		if e.Name == container {
+			return e.GetState(), nil
+		}
+	}
+
+	return "", errors.New("Container not found")
 }
 
 // listEngines returns all the engines in the cluster.

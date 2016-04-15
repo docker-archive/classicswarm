@@ -109,9 +109,9 @@ type Cluster interface {
 	// Set maintenance mode on an engine
 	SetMaintenance(engineName string, toggle bool) error
 
-	// Get maintenance mode on an engine
+	// Get maintenance mode of an engine
 	GetMaintenance(engineName string) (bool, error)
 
-	// Get maintenance mode on an engine
-	GetState(engineName string) string
+	// Get state of an engine
+	GetState(engineName string) (string, error)
 }

@@ -1113,8 +1113,7 @@ func getEngineMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(fmt.Sprintf("Engine maintenance status: %v", status))
+	fmt.Fprintf(w, "Engine maintenance status: %v", status)
 }
 
 // Start maintenance on an engine
@@ -1145,16 +1144,13 @@ func postEngineSetMaintenance(c *context, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// TODO: remove if tests consistently succeeed
-	time.Sleep(5 * time.Second)
 	status, err := c.cluster.GetMaintenance(name)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(fmt.Sprintf("Engine maintenance status: %v", status))
+	fmt.Fprintf(w, "Engine maintenance status: %v", status)
 }
 
 // Get state for an engine
@@ -1166,10 +1162,13 @@ func getEngineState(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	name, _ := mux.Vars(r)["name"]
-	status := c.cluster.GetState(name)
+	status, err := c.cluster.GetState(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(fmt.Sprintf("Engine maintenance status: %v", status))
+	fmt.Fprintf(w, "Engine maintenance status: %v", status)
 }
 
 // sanity checks for engines

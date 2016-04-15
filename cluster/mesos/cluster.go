@@ -689,7 +689,7 @@ func (c *Cluster) EngineHealthy(engineName string) (bool, error) {
 	return false, errNotSupported
 }
 
-// GetMaintenance gets maintenance mode for an engine
+// GetMaintenance gets maintenance mode of an engine
 func (c *Cluster) GetMaintenance(engineName string) (bool, error) {
 	return false, errNotSupported
 }
@@ -699,7 +699,7 @@ func (c *Cluster) SetMaintenance(engineName string, toggle bool) error {
 	return errNotSupported
 }
 
-// GetState gets mode for an engine
-func (c *Cluster) GetState(engineName string) string {
-	return "not supported with mesos"
+// GetState gets state of an engine
+func (c *Cluster) GetState(engineName string) (string, error) {
+	return "", errNotSupported
 }
