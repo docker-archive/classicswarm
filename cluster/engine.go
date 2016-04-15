@@ -913,7 +913,12 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 
 // RemoveContainer removes a container from the engine.
 func (e *Engine) RemoveContainer(container *Container, force, volumes bool) error {
-	err := e.client.RemoveContainer(container.ID, force, volumes)
+	opts := types.ContainerRemoveOptions{
+		ContainerID:   container.ID,
+		Force:         force,
+		RemoveVolumes: volumes,
+	}
+	err := e.apiClient.ContainerRemove(context.TODO(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -1218,7 +1223,7 @@ func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) 
 // RenameContainer renames a container
 func (e *Engine) RenameContainer(container *Container, newName string) error {
 	// send rename request
-	err := e.client.RenameContainer(container.ID, newName)
+	err := e.apiClient.ContainerRename(context.TODO(), container.ID, newName)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
