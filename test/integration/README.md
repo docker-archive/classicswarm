@@ -47,6 +47,15 @@ are provided in order to facilitate writing tests.
 # This will load the helpers.
 load helpers
 
+# teardown is called at the end of every test
+function teardown() {
+	# This will stop the swarm manager:
+	swarm_manage_cleanup
+
+	# This will stop and remove all engines launched by the test:
+	stop_docker
+}
+
 @test "this is a simple test" {
 	# start_docker will start a given number of engines:
 	start_docker 2
@@ -74,14 +83,5 @@ load helpers
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[ "${lines[1]}"="Nodes: 4" ]
-}
-
-# teardown is called at the end of every test.
-function teardown() {
-	# This will stop the swarm manager:
-	swarm_manage_cleanup
-
-	# This will stop and remove all engines launched by the test:
-	stop_docker
 }
 ```
