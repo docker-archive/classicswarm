@@ -13,9 +13,6 @@ RUN curl -sSL https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
 ENV GOPATH /go
 
-# Go dependencies
-RUN go get github.com/tools/godep
-
 # install bats
 RUN cd /usr/local/src/ \
     && git clone https://github.com/sstephenson/bats.git \
@@ -24,6 +21,5 @@ RUN cd /usr/local/src/ \
 
 RUN mkdir -p /go/src/github.com/docker/swarm
 WORKDIR /go/src/github.com/docker/swarm/test/integration
-ENV GOPATH /go/src/github.com/docker/swarm/Godeps/_workspace:$GOPATH
 
 ENTRYPOINT ["/dind"]
