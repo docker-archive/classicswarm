@@ -1113,7 +1113,6 @@ func getEngineMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: improve reply
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(fmt.Sprintf("Engine maintenance status: %v", status))
 }
@@ -1154,10 +1153,6 @@ func postEngineSetMaintenance(c *context, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Check what state we are, for debugging.
-	// status := c.cluster.GetState(name)
-
-	// TODO: improve reply
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(fmt.Sprintf("Engine maintenance status: %v", status))
 }
