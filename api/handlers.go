@@ -894,6 +894,7 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 	if err != nil {
 		if container == nil {
 			httpError(w, err.Error(), http.StatusNotFound)
+			return
 		}
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
