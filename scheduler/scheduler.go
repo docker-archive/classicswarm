@@ -43,9 +43,20 @@ func (s *Scheduler) SelectNodesForContainer(nodes []*node.Node, config *cluster.
 }
 
 func (s *Scheduler) selectNodesForContainer(nodes []*node.Node, config *cluster.ContainerConfig, soft bool) ([]*node.Node, error) {
-	accepted, err := filter.ApplyFilters(s.filters, config, nodes, soft)
+	nominees, err := filter.ApplyFilters(s.filters, config, nodes, soft)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(nominees) == 0 {
+		return nil, errNoNodeAvailable
+	}
+
+	var accepted []*node.Node
+	for _, n := range nominees {
+		if !n.IsMaintenance() {
+			accepted = append(accepted, n)
+		}
 	}
 
 	if len(accepted) == 0 {
