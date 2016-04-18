@@ -538,3 +538,10 @@ func TestRemoveImage(t *testing.T) {
 	}
 	apiClient.Mock.AssertExpectations(t)
 }
+
+func TestEngineMaintenance(t *testing.T) {
+	engine := NewEngine("test", 0, engOpts)
+	assert.True(t, engine.GetMaintenance() == false)
+	engine.SetMaintenance(true)
+	assert.True(t, engine.GetMaintenance() == true)
+}
