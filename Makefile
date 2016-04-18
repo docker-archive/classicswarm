@@ -1,4 +1,4 @@
-TEST?="./..."
+TEST?=$$(go list ./... | grep -v vendor)
 
 build:
 	docker build -t swarm .
