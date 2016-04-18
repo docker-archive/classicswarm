@@ -36,30 +36,25 @@ const (
 	minSupportedVersion = version.Version("1.6.0")
 )
 
-type engineState int
+// EngineState represents the state of a Docker Engine
+type EngineState int
 
 const (
-	// pending means an engine added to cluster has not been validated
-	statePending engineState = iota
-	// unhealthy means an engine is unreachable
-	stateUnhealthy
-	// healthy means an engine is reachable
-	stateHealthy
-	// disconnected means engine is removed from discovery
-	stateDisconnected
-
-	// TODO: add maintenance state. Proposal #1486
-	// maintenance means an engine is under maintenance.
-	// There is no action to migrate a node into maintenance state yet.
-	//stateMaintenance
+	// StatePending means an engine added to cluster has not been validated
+	StatePending EngineState = iota
+	// StateUnhealthy means an engine is unreachable
+	StateUnhealthy
+	// StateHealthy means an engine is reachable
+	StateHealthy
+	// StateDisconnected means engine is removed from discovery
+	StateDisconnected
 )
 
-var stateText = map[engineState]string{
-	statePending:      "Pending",
-	stateUnhealthy:    "Unhealthy",
-	stateHealthy:      "Healthy",
-	stateDisconnected: "Disconnected",
-	//stateMaintenance: "Maintenance",
+var stateText = map[EngineState]string{
+	StatePending:      "Pending",
+	StateUnhealthy:    "Unhealthy",
+	StateHealthy:      "Healthy",
+	StateDisconnected: "Disconnected",
 }
 
 // delayer offers a simple API to random delay within a given time range.
@@ -103,14 +98,15 @@ type EngineOpts struct {
 type Engine struct {
 	sync.RWMutex
 
-	ID      string
-	IP      string
-	Addr    string
-	Name    string
-	Cpus    int
-	Memory  int64
-	Labels  map[string]string
-	Version string
+	ID          string
+	IP          string
+	Addr        string
+	Name        string
+	Cpus        int
+	Memory      int64
+	Labels      map[string]string
+	Version     string
+	Maintenance bool
 
 	stopCh          chan struct{}
 	refreshDelayer  *delayer
@@ -121,7 +117,7 @@ type Engine struct {
 	client          dockerclient.Client
 	apiClient       engineapi.APIClient
 	eventHandler    EventHandler
-	state           engineState
+	state           EngineState
 	lastError       string
 	updatedAt       time.Time
 	failureCount    int
@@ -141,7 +137,7 @@ func NewEngine(addr string, overcommitRatio float64, opts *EngineOpts) *Engine {
 		containers:      make(map[string]*Container),
 		networks:        make(map[string]*Network),
 		volumes:         make(map[string]*Volume),
-		state:           statePending,
+		state:           StatePending,
 		updatedAt:       time.Now(),
 		overcommitRatio: int64(overcommitRatio * 100),
 		opts:            opts,
@@ -240,7 +236,7 @@ func (e *Engine) Disconnect() {
 	e.Lock()
 	defer e.Unlock()
 	// Resource clean up should be done only once
-	if e.state == stateDisconnected {
+	if e.state == StateDisconnected {
 		return
 	}
 
@@ -253,7 +249,7 @@ func (e *Engine) Disconnect() {
 	}
 	e.client = nopclient.NewNopClient()
 	e.apiClient = engineapinop.NewNopClient()
-	e.state = stateDisconnected
+	e.state = StateDisconnected
 	e.emitEvent("engine_disconnect")
 }
 
@@ -276,7 +272,14 @@ func (e *Engine) isConnected() bool {
 func (e *Engine) IsHealthy() bool {
 	e.RLock()
 	defer e.RUnlock()
-	return e.state == stateHealthy
+	return e.state == StateHealthy
+}
+
+// IsMaintenance returns true if the engine is under maintenance
+func (e *Engine) IsMaintenance() bool {
+	e.RLock()
+	defer e.RUnlock()
+	return e.Maintenance == true
 }
 
 // HealthIndicator returns degree of healthiness between 0 and 100.
@@ -285,17 +288,34 @@ func (e *Engine) IsHealthy() bool {
 func (e *Engine) HealthIndicator() int64 {
 	e.RLock()
 	defer e.RUnlock()
-	if e.state != stateHealthy || e.failureCount >= e.opts.FailureRetry {
+	if e.state != StateHealthy || e.failureCount >= e.opts.FailureRetry {
 		return 0
 	}
 	return int64(100 - e.failureCount*100/e.opts.FailureRetry)
 }
 
-// setState sets engine state
-func (e *Engine) setState(state engineState) {
+// GetMaintenance returns true if an engine is in maintenance mode
+func (e *Engine) GetMaintenance() bool {
+	return e.Maintenance
+}
+
+// SetMaintenance sets maintenance to true or false
+func (e *Engine) SetMaintenance(state bool) {
+	e.Lock()
+	defer e.Unlock()
+	e.Maintenance = state
+}
+
+// SetState sets engine state
+func (e *Engine) SetState(state EngineState) {
 	e.Lock()
 	defer e.Unlock()
 	e.state = state
+}
+
+// GetState gets engine state
+func (e *Engine) GetState() string {
+	return fmt.Sprint(e.state)
 }
 
 // TimeToValidate returns true if a pending node is up for validation
@@ -304,7 +324,7 @@ func (e *Engine) TimeToValidate() bool {
 	const minFailureBackoff time.Duration = 30 * time.Second
 	e.Lock()
 	defer e.Unlock()
-	if e.state != statePending {
+	if e.state != StatePending {
 		return false
 	}
 	sinceLastUpdate := time.Since(e.updatedAt)
@@ -322,10 +342,10 @@ func (e *Engine) TimeToValidate() bool {
 func (e *Engine) ValidationComplete() {
 	e.Lock()
 	defer e.Unlock()
-	if e.state != statePending {
+	if e.state != StatePending {
 		return
 	}
-	e.state = stateHealthy
+	e.state = StateHealthy
 	e.failureCount = 0
 	go e.refreshLoop()
 }
@@ -362,8 +382,8 @@ func (e *Engine) incFailureCount() {
 	e.Lock()
 	defer e.Unlock()
 	e.failureCount++
-	if e.state == stateHealthy && e.failureCount >= e.opts.FailureRetry {
-		e.state = stateUnhealthy
+	if e.state == StateHealthy && e.failureCount >= e.opts.FailureRetry {
+		e.state = StateUnhealthy
 		log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as unhealthy. Connect failed %d times", e.failureCount)
 		e.emitEvent("engine_disconnect")
 	}
@@ -394,10 +414,10 @@ func (e *Engine) CheckConnectionErr(err error) {
 	if err == nil {
 		e.setErrMsg("")
 		// If current state is unhealthy, change it to healthy
-		if e.state == stateUnhealthy {
+		if e.state == StateUnhealthy {
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.getFailureCount())
 			e.emitEvent("engine_reconnect")
-			e.setState(stateHealthy)
+			e.SetState(StateHealthy)
 		}
 		e.resetFailureCount()
 		return
@@ -484,7 +504,7 @@ func (e *Engine) updateSpecs() error {
 	if e.ID == "" {
 		e.ID = info.ID
 	} else if e.ID != info.ID {
-		e.state = statePending
+		e.state = StatePending
 		message := fmt.Sprintf("Engine (ID: %s, Addr: %s) shows up with another ID:%s. Please remove it from cluster, it can be added back.", e.ID, e.Addr, info.ID)
 		e.lastError = message
 		return fmt.Errorf(message)
