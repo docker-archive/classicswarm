@@ -30,6 +30,7 @@ func init() {
 	filters = []Filter{
 		&HealthFilter{},
 		&PortFilter{},
+		&SlotsFilter{},
 		&DependencyFilter{},
 		&AffinityFilter{},
 		&ConstraintFilter{},
