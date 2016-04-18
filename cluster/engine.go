@@ -36,19 +36,18 @@ const (
 	minSupportedVersion = version.Version("1.6.0")
 )
 
+// EngineState represents the state of a Docker Engine
 type EngineState int
 
 const (
-	// pending means an engine added to cluster has not been validated
+	// StatePending means an engine added to cluster has not been validated
 	StatePending EngineState = iota
-	// unhealthy means an engine is unreachable
+	// StateUnhealthy means an engine is unreachable
 	StateUnhealthy
-	// healthy means an engine is reachable
+	// StateHealthy means an engine is reachable
 	StateHealthy
-	// disconnected means engine is removed from discovery
+	// StateDisconnected means engine is removed from discovery
 	StateDisconnected
-	// maintenance means an engine is under maintenance.
-	StateMaintenance
 )
 
 var stateText = map[EngineState]string{
@@ -56,7 +55,6 @@ var stateText = map[EngineState]string{
 	StateUnhealthy:    "Unhealthy",
 	StateHealthy:      "Healthy",
 	StateDisconnected: "Disconnected",
-	StateMaintenance:  "Maintenance",
 }
 
 // delayer offers a simple API to random delay within a given time range.
@@ -296,7 +294,12 @@ func (e *Engine) HealthIndicator() int64 {
 	return int64(100 - e.failureCount*100/e.opts.FailureRetry)
 }
 
-// SetState sets engine state
+// GetMaintenance returns true if an engine is in maintenance mode
+func (e *Engine) GetMaintenance() bool {
+	return e.Maintenance
+}
+
+// SetMaintenance sets maintenance to true or false
 func (e *Engine) SetMaintenance(state bool) {
 	e.Lock()
 	defer e.Unlock()
@@ -313,11 +316,6 @@ func (e *Engine) SetState(state EngineState) {
 // GetState gets engine state
 func (e *Engine) GetState() string {
 	return fmt.Sprint(e.state)
-}
-
-// GetState gets engine state
-func (e *Engine) GetMaintenance() bool {
-	return e.Maintenance
 }
 
 // TimeToValidate returns true if a pending node is up for validation

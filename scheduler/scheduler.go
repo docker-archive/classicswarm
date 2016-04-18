@@ -52,7 +52,7 @@ func (s *Scheduler) selectNodesForContainer(nodes []*node.Node, config *cluster.
 		return nil, errNoNodeAvailable
 	}
 
-	accepted := make([]*node.Node, 0)
+	var accepted []*node.Node
 	for _, n := range nominees {
 		if !n.IsMaintenance() {
 			accepted = append(accepted, n)

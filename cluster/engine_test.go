@@ -65,8 +65,6 @@ func TestSetEngineState(t *testing.T) {
 	assert.True(t, engine.state == StateUnhealthy)
 	engine.SetState(StateHealthy)
 	assert.True(t, engine.state == StateHealthy)
-	engine.SetState(StateMaintenance)
-	assert.True(t, engine.state == StateMaintenance)
 }
 
 func TestErrMsg(t *testing.T) {
