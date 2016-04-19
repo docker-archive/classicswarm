@@ -31,15 +31,18 @@ function teardown() {
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Running: 1"* ]]
+	[[ "${output}" == *"Containers: 1 (1 Running, 0 Paused, 0 Stopped)"* ]]
 
 	docker_swarm pause test
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Paused: 1"* ]]
+	[[ "${output}" == *"Containers: 1 (0 Running, 1 Paused, 0 Stopped)"* ]]
 
 	docker_swarm unpause test
 	docker_swarm kill test
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Stopped: 1"* ]]
+	[[ "${output}" == *"Containers: 1 (0 Running, 0 Paused, 1 Stopped)"* ]]
 }

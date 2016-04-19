@@ -865,7 +865,24 @@ func (c *Cluster) Info() [][2]string {
 		info = append(info, [2]string{" " + engineName, engine.Addr})
 		info = append(info, [2]string{"  └ ID", engine.ID})
 		info = append(info, [2]string{"  └ Status", engine.Status()})
-		info = append(info, [2]string{"  └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
+
+		// if engine's status is healthy, show container details of the node
+		if engine.IsHealthy() {
+			var paused, running, stopped int = 0, 0, 0
+			for _, c := range engine.Containers() {
+				if c.Info.State.Paused {
+					paused++
+				} else if c.Info.State.Running {
+					running++
+				} else {
+					stopped++
+				}
+			}
+			info = append(info, [2]string{"  └ Containers", fmt.Sprintf("%d (%d Running, %d Paused, %d Stopped)", len(engine.Containers()), running, paused, stopped)})
+		} else {
+			info = append(info, [2]string{"  └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
+		}
+
 		info = append(info, [2]string{"  └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
 		info = append(info, [2]string{"  └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
 		labels := make([]string, 0, len(engine.Labels))
