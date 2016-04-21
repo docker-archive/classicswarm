@@ -130,8 +130,8 @@
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/events",
-			"Comment": "v0.3.1-16-g6ca9064",
-			"Rev": "6ca9064650fd3d66ea1722c24e475ec0138feb11"
+			"Comment": "v0.3.1-34-g5b9e86c",
+			"Rev": "5b9e86c11862e755be8871b64aada2a65ded4b8b"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/filters",
