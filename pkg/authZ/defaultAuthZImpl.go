@@ -36,7 +36,7 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 	case states.ContainerCreate:
 		log.Debug("In create...")
 
-              memory := containerConfig.HostConfig.Memory
+        memory := containerConfig.HostConfig.Memory
 		tenant := r.Header.Get(headers.AuthZTenantIdHeaderName)
 		// validate that quota limit isn't exceeded.
 		err := quota.ValidateQuota(memory, tenant)
@@ -49,6 +49,7 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 		containerConfig.HostConfig.VolumesFrom = dto.VolumesFrom
 		containerConfig.HostConfig.Links = dto.Links
 		containerConfig.HostConfig.Binds = dto.Binds
+		containerConfig.Env = dto.Env
 		log.Debugf("containerConfig Out: %+v\n", containerConfig)
 
 		var buf bytes.Buffer
@@ -234,7 +235,7 @@ func (*DefaultImp) HandleEvent(eventType states.EventEnum, w http.ResponseWriter
 
 	case states.VolumeInspect:
 		log.Debug("event: VolumeInspect...")
-		volumeNameIndex := strings.LastIndex(r.RequestURI,"/volumes/")+len("/volumes/")
+		volumeNameIndex := strings.Index(r.RequestURI,"/volumes/")+len("/volumes/")
 		volumeName := r.RequestURI[volumeNameIndex:len(r.RequestURI)] + r.Header.Get(headers.AuthZTenantIdHeaderName)
 		log.Debugf(" volumeName *%s*", volumeName)
 		r.URL.Path = r.RequestURI[0:volumeNameIndex] + volumeName

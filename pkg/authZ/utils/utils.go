@@ -31,6 +31,7 @@ type ValidationOutPutDTO struct {
 	Links       []string
 	VolumesFrom []string
 	Binds       []string
+	Env         []string
 	ErrorMessage string
 	//Quota can live here too? Currently quota needs only raise error
 	//What else
@@ -118,24 +119,52 @@ func CheckVolumeBinds(tenantName string, containerConfig dockerclient.ContainerC
 	return binds,nil
 }
 
-func CheckLinksOwnerShip(cluster cluster.Cluster, tenantName string, containerConfig dockerclient.ContainerConfig) (bool, *ValidationOutPutDTO) {
-	log.Debug("in CheckLinksOwnerShip")
+//Check that tenant references only containers that it owns and modify reference name to use tenantName suffix or the container id
+func CheckContainerReferences(cluster cluster.Cluster, tenantName string, containerConfig dockerclient.ContainerConfig) (bool, *ValidationOutPutDTO) {
+	log.Debug("in CheckContainerReferences")
 	log.Debugf("containerConfig: %+v",containerConfig)
 	linksSize := len(containerConfig.HostConfig.Links)
 	volumesFrom := containerConfig.HostConfig.VolumesFrom
 	volumesFromSize := len(containerConfig.HostConfig.VolumesFrom)
-	if linksSize < 1 && volumesFromSize < 1 {
-		return true, &ValidationOutPutDTO{ContainerID: ""}
-		
-	}
-	log.Debug("Checking links...")
+	env := containerConfig.Env
 	containers := cluster.Containers()
 	linkSet := make(map[string]bool)
 	links := make([]string,0)
 	var v int  // count of volumesFrom links validated 
 	var l int  // count of links validated
-	
-	log.Debug("**************************************************")
+	var affinityContainerRef string  // docker affinity container env var ( affinity:container==<container ref> ) 
+	var affinityContainerIndex int   // index of affinity container env element in env[]
+	var affinityLabelRef string  // docker affinity label env var ( affinity:<label>==<label value> ) 
+	var affinityLabelIndex int   // index of affinity label env element in env[]
+	// check whether affinity container env is in env.  If yes save it for checking whether it belongs to tenant.
+	affinityContainerCheckRequired := false
+	for i, e := range env {
+		if strings.HasPrefix(e,"affinity:container==") {
+			affinityContainerCheckRequired = true
+			containerRefIndex := strings.Index(e,"affinity:container==")+len("affinity:container==")
+			affinityContainerRef = e[containerRefIndex:len(e)]
+			affinityContainerIndex = i
+			break
+		}
+	}
+	affinityLabelCheckRequired := false
+	if !affinityContainerCheckRequired {
+		for i, e := range env {
+			if strings.HasPrefix(e,"affinity:") && !strings.HasPrefix(e,"affinity:image==") {
+				affinityLabelCheckRequired = true
+				labelRefIndex := strings.Index(e,"affinity:")+len("affinity:")
+				affinityLabelRef = e[labelRefIndex:len(e)]
+				affinityLabelIndex = i
+				break
+			}
+		}
+	}
+
+		
+
+	if linksSize < 1 && volumesFromSize < 1 && !affinityContainerCheckRequired && !affinityLabelCheckRequired {
+		return true, &ValidationOutPutDTO{ContainerID: ""}
+	}
 	for _, container := range containers {
 		if(strings.HasSuffix(container.Info.Name,tenantName)) {
 			log.Debugf("Examine container %s %s",container.Info.Name,container.Info.Id)
@@ -185,17 +214,42 @@ func CheckLinksOwnerShip(cluster cluster.Cluster, tenantName string, containerCo
 					l++
 				}
 			}
+			// modify affinity container environment variable to reference container+tenantName
+			if affinityContainerCheckRequired {
+				if strings.HasPrefix(container.Info.Id,affinityContainerRef) {
+				  affinityContainerCheckRequired = false				     
+				} else if container.Info.Name == "/"+affinityContainerRef+tenantName {
+				  env[affinityContainerIndex] = env[affinityContainerIndex] + tenantName
+				  log.Debugf("Updated environment variable %s ",env[affinityContainerIndex])
+				  affinityContainerCheckRequired = false	  
+				}
+			}
+			// modify affinity label container environment variable with affinity container env var to reference container id
+			if affinityLabelCheckRequired {
+				kv := strings.Split(affinityLabelRef,"==")
+				log.Debugf("Look for affinity %s %s",kv)
+				for k,v := range container.Config.Labels {
+					log.Debugf("Examine labels %s %s",k,v)
+					if k == kv[0] && v == kv[1] {
+						affinityLabelCheckRequired=false
+						env[affinityLabelIndex] = "affinity:container==" + container.Info.Id
+						log.Debugf("Updated environment variable %s ",env[affinityLabelIndex])
+						break						
+					} 
+				}
+			}
+
 		}
 		// are we done?
-		if v == volumesFromSize && l == linksSize {
+		if v == volumesFromSize && l == linksSize && !affinityContainerCheckRequired && !affinityLabelCheckRequired {
 			break
 		}
 	}
 
-	if v != volumesFromSize || l != linksSize {
-		return false, &ValidationOutPutDTO{ContainerID: "", ErrorMessage: "Tenant does not own containers in volumesFrom or links."}
+	if v != volumesFromSize || l != linksSize || affinityContainerCheckRequired || affinityLabelCheckRequired {
+		return false, &ValidationOutPutDTO{ContainerID: "", ErrorMessage: "Tenant references containers that it does not own."}
 	}
-	return true, &ValidationOutPutDTO{ContainerID: "", Links: links, VolumesFrom: volumesFrom}
+	return true, &ValidationOutPutDTO{ContainerID: "", Links: links, VolumesFrom: volumesFrom, Env: env}
 
 }
 
@@ -204,7 +258,7 @@ func CheckLinksOwnerShip(cluster cluster.Cluster, tenantName string, containerCo
 type Config struct {
     HostConfig struct {
 		Links []interface{}
-    	VolumesFrom []interface{}
+    	    VolumesFrom []interface{}
 	}
 }
 /*

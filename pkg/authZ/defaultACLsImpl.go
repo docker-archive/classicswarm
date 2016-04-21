@@ -34,7 +34,7 @@ func (*DefaultACLsImpl) ValidateRequest(cluster cluster.Cluster, eventType state
 	    if (!flavors.IsFlavorValid(containerConfig)) {
 			return states.NotApproved,&utils.ValidationOutPutDTO{ErrorMessage: "No flavor matches resource request!"}
 		}
-		valid, dto := utils.CheckLinksOwnerShip(cluster, tenantIdToValidate, containerConfig)
+		valid, dto := utils.CheckContainerReferences(cluster, tenantIdToValidate, containerConfig)
 		var err error
         if valid {
 		  if dto.Binds,err = utils.CheckVolumeBinds(tenantIdToValidate, containerConfig); err != nil {

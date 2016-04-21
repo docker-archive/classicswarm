@@ -104,7 +104,7 @@ func (this *KeyStoneAPI) ValidateRequest(cluster cluster.Cluster, eventType stat
 		if (!flavors.IsFlavorValid(containerConfig)) {
 			return states.NotApproved,&utils.ValidationOutPutDTO{ErrorMessage: "No flavor matches resource request!"}
 		}
-		valid, dto := utils.CheckLinksOwnerShip(cluster, tenantIdToValidate, containerConfig)
+		valid, dto := utils.CheckContainerReferences(cluster, tenantIdToValidate, containerConfig)
         if valid {
 		  if dto.Binds,err = utils.CheckVolumeBinds(tenantIdToValidate, containerConfig); err != nil {
 			valid = false
