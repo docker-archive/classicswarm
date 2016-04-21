@@ -18,7 +18,7 @@ function teardown() {
 
 	run docker_swarm top test_container
 	[ "$status" -eq 0 ]
-	[[ "${lines[0]}" == *"UID"* ]]
-	[[ "${lines[0]}" == *"CMD"* ]]
+	[[ "${lines[0]}" == *"UID"* ]] || [[ "${lines[0]}" == *"PID"* ]]
+	[[ "${lines[0]}" == *"CMD"* ]] || [[ "${lines[0]}" == *"COMMAND"* ]]
 	[[ "${lines[1]}" == *"sleep 500"* ]]
 }
