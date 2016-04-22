@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.1 (2016-04-22)
+
+#### API
+
+Use engine-api to handle large number of API calls
+Update ContainerConfig to embed HostConfig and NetworkingConfig
+stop/restart/kill an non-existent container should returns 500 rather than 404
+Return an error when assertion fails in hijack
+Return error when Image Pull fails
+Fix image pull bug (wait until download finishes)
+
+#### Build
+
+Switch to go 1.6.2
+Move dependencies to vendor/
+Updating Image Pull to use docker/distribution package
+
+#### Misc
+
+Documentation clean up
+
 ## 1.2.0 (2016-04-13)
 
 #### Scheduler
