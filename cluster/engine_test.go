@@ -14,6 +14,7 @@ import (
 	engineapi "github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	containertypes "github.com/docker/engine-api/types/container"
+	"github.com/docker/engine-api/types/events"
 	"github.com/docker/engine-api/types/filters"
 	networktypes "github.com/docker/engine-api/types/network"
 	engineapimock "github.com/docker/swarm/api/mockclient"
@@ -24,6 +25,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+type infiniteRead struct{}
+
+func (infiniteRead) Read(p []byte) (n int, err error) {
+	p = append(p, 1)
+	return 1, nil
+}
 
 var (
 	mockInfo = types.Info{
@@ -180,7 +188,7 @@ func TestEngineCpusMemory(t *testing.T) {
 	).Return(types.VolumesListResponse{}, nil)
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{infiniteRead{}}, nil)
 
 	assert.NoError(t, engine.ConnectWithClient(client, apiClient))
 	assert.True(t, engine.isConnected())
@@ -210,7 +218,7 @@ func TestEngineSpecs(t *testing.T) {
 	).Return(types.VolumesListResponse{}, nil)
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{infiniteRead{}}, nil)
 
 	assert.NoError(t, engine.ConnectWithClient(client, apiClient))
 	assert.True(t, engine.isConnected())
@@ -243,7 +251,7 @@ func TestEngineState(t *testing.T) {
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
 	).Return(types.VolumesListResponse{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{infiniteRead{}}, nil)
 
 	// The client will return one container at first, then a second one will appear.
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
@@ -265,7 +273,7 @@ func TestEngineState(t *testing.T) {
 	}
 
 	// Fake an event which will trigger a refresh. The second container will appear.
-	engine.handler(&dockerclient.Event{ID: "two", Status: "created"}, nil)
+	engine.handler(events.Message{ID: "two", Status: "created"})
 	containers = engine.Containers()
 	assert.Len(t, containers, 2)
 	if containers[0].ID != "one" && containers[1].ID != "one" {
@@ -305,7 +313,8 @@ func TestCreateContainer(t *testing.T) {
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
 	).Return(types.VolumesListResponse{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{infiniteRead{}}, nil)
+	client.On("ListContainers", true, false, "").Return([]dockerclient.Container{}, nil).Once()
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
 	// filterArgs1 := filters.NewArgs()
 	// filterArgs1.Add("id", id)
@@ -419,7 +428,7 @@ func TestUsedCpus(t *testing.T) {
 				apiClient.On("VolumeList", mock.Anything,
 					mock.AnythingOfType("Args"),
 				).Return(types.VolumesListResponse{}, nil)
-				client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+				apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{infiniteRead{}}, nil)
 				apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
 				apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{{ID: "test"}}, nil).Once()
 				apiClient.On("ContainerInspect", mock.Anything, "test").Return(types.ContainerJSON{ContainerJSONBase: &types.ContainerJSONBase{HostConfig: &containertypes.HostConfig{Resources: containertypes.Resources{CPUShares: cpuShares}}}, Config: &containertypes.Config{}, NetworkSettings: &types.NetworkSettings{Networks: nil}}, nil).Once()
@@ -458,7 +467,7 @@ func TestContainerRemovedDuringRefresh(t *testing.T) {
 		mock.AnythingOfType("Args"),
 	).Return(types.VolumesListResponse{}, nil)
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{infiniteRead{}}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{container1, container2}, nil)
 	apiClient.On("ContainerInspect", mock.Anything, "c1").Return(info1, errors.New("Not found"))
 	apiClient.On("ContainerInspect", mock.Anything, "c2").Return(info2, nil)
@@ -489,8 +498,7 @@ func TestDisconnect(t *testing.T) {
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
 	).Return(types.VolumesListResponse{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
-	client.On("StopAllMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{infiniteRead{}}, nil)
 
 	// The client will return one container at first, then a second one will appear.
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
