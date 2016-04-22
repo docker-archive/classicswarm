@@ -84,6 +84,11 @@
 			"Rev": "b65fd8e879545e8c9b859ea9b6b825ac50c79e46"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/parsers/operatingsystem",
+			"Comment": "v1.4.1-10581-gb65fd8e",
+			"Rev": "b65fd8e879545e8c9b859ea9b6b825ac50c79e46"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/random",
 			"Comment": "v1.4.1-10581-gb65fd8e",
 			"Rev": "b65fd8e879545e8c9b859ea9b6b825ac50c79e46"
@@ -232,6 +237,11 @@
 			"ImportPath": "github.com/hashicorp/serf/coordinate",
 			"Comment": "v0.7.0-1-g39c7c06",
 			"Rev": "39c7c06298b480560202bec00c2c77e974e88792"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-shellwords",
+			"Comment": "v1.0.0-1-g525bede",
+			"Rev": "525bedee691b5a8df547cb5cf9f86b7fb1883e24"
 		},
 		{
 			"ImportPath": "github.com/mesos/mesos-go/auth",
