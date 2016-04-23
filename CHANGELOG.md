@@ -4,22 +4,22 @@
 
 #### API
 
-Use engine-api to handle large number of API calls
-Update ContainerConfig to embed HostConfig and NetworkingConfig
-stop/restart/kill an non-existent container should returns 500 rather than 404
-Return an error when assertion fails in hijack
-Return error when Image Pull fails
-Fix image pull bug (wait until download finishes)
+- Use engine-api to handle large number of API calls
+- Update ContainerConfig to embed HostConfig and NetworkingConfig
+- stop/restart/kill a non-existent container should return 500 rather than 404
+- Return an error when assertion fails in hijack
+- Return an error when Image Pull fails
+- Fix image pull bug (wait until download finishes)
 
 #### Build
 
-Switch to go 1.6.2
-Move dependencies to vendor/
-Updating Image Pull to use docker/distribution package
+- Switch to go 1.6.2
+- Move dependencies to vendor/
+- Update Image Pull to use docker/distribution package
 
 #### Misc
 
-Documentation clean up
+- Documentation clean up
 
 ## 1.2.0 (2016-04-13)
 
