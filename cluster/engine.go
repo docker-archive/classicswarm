@@ -1017,10 +1017,26 @@ func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
 
 // Load an image on the engine
 func (e *Engine) Load(reader io.Reader) error {
-	err := e.client.LoadImage(reader)
+	loadResponse, err := e.apiClient.ImageLoad(context.TODO(), reader, false)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
+	}
+
+	// wait until the image load is finished
+	dec := json.NewDecoder(loadResponse.Body)
+	m := map[string]interface{}{}
+	for {
+		if err := dec.Decode(&m); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+	}
+	// if the final stream object contained an error, return it
+	if errMsg, ok := m["error"]; ok {
+		return fmt.Errorf("%v", errMsg)
 	}
 
 	// force fresh images
@@ -1031,7 +1047,13 @@ func (e *Engine) Load(reader io.Reader) error {
 
 // Import image
 func (e *Engine) Import(source string, repository string, tag string, imageReader io.Reader) error {
-	_, err := e.client.ImportImage(source, repository, tag, imageReader)
+	opts := types.ImageImportOptions{
+		SourceName:     source,
+		RepositoryName: repository,
+		Tag:            tag,
+		Source:         imageReader,
+	}
+	_, err := e.apiClient.ImageImport(context.TODO(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -1249,7 +1271,13 @@ func (e *Engine) BuildImage(buildImage *types.ImageBuildOptions) (io.ReadCloser,
 // TagImage tags an image
 func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	// send tag request to docker engine
-	err := e.client.TagImage(IDOrName, repo, tag, force)
+	opts := types.ImageTagOptions{
+		ImageID:        IDOrName,
+		RepositoryName: repo,
+		Tag:            tag,
+		Force:          force,
+	}
+	err := e.apiClient.ImageTag(context.TODO(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
