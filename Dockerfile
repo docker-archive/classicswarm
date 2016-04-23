@@ -1,11 +1,11 @@
-FROM golang:1.6.2-alpine
+FROM golang:1.5.4-alpine
 
 ARG GOOS
 
 COPY . /go/src/github.com/docker/swarm
 WORKDIR /go/src/github.com/docker/swarm
 
-ENV GOPATH /go/src/github.com/docker/swarm/Godeps/_workspace:$GOPATH
+ENV GO15VENDOREXPERIMENT=1
 
 RUN set -ex \
 	&& apk add --no-cache --virtual .build-deps \
