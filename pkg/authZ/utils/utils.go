@@ -336,10 +336,14 @@ func CheckOwnerShip(cluster cluster.Cluster, tenantName string, r *http.Request)
 	}
 	tenantSet := make(map[string]bool)
 	for _, container := range containers {
-		if "/"+mux.Vars(r)["name"]+tenantName == container.Info.Name {
-			log.Debug("Match By name!")
-			return true, &ValidationOutPutDTO{ContainerID: container.Info.Id, Links: nil}
-		} else if "/"+mux.Vars(r)["name"] == container.Info.Name {
+		names := container.Names
+		for _, name := range names {
+			if "/"+mux.Vars(r)["name"]+tenantName == name {
+				log.Debug("Match by name.")
+				return true, &ValidationOutPutDTO{ContainerID: container.Info.Id, Links: nil}
+			}
+		}
+		if "/"+mux.Vars(r)["name"] == container.Info.Name {
 			if container.Labels[headers.TenancyLabel] == tenantName {
 				return true, &ValidationOutPutDTO{ContainerID: container.Info.Id, Links: nil}
 			}
