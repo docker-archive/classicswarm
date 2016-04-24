@@ -95,8 +95,8 @@ git remote set-url --push upstream no-pushing
 You can check your configuration like this:
 ```sh
 $ git remote -v
-origin     https://github.com/mgoelzer/swarm.git (fetch)
-origin     https://github.com/mgoelzer/swarm.git (push)
+origin     https://github.com/<username>/swarm.git (fetch)
+origin     https://github.com/<username>/swarm.git (push)
 upstream   https://github.com/docker/swarm.git (fetch)
 upstream   no-pushing (push)
 ```
@@ -121,7 +121,7 @@ Build the binary, installing it to `$GOPATH/bin/swarm`:
 cd $GOPATH/src/github.com/docker/swarm
 go install .
 ```
- 
+
 Run the binary you just created:
 
 ```sh
