@@ -20,7 +20,7 @@ func (w *Watchdog) Handle(e *Event) error {
 	}
 
 	switch e.Status {
-	case "engine_reconnect":
+	case "engine_connect", "engine_reconnect":
 		go w.removeDuplicateContainers(e.Engine)
 	case "engine_disconnect":
 		go w.rescheduleContainers(e.Engine)
