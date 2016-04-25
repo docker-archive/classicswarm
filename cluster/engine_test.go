@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
-
 	engineapi "github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	containertypes "github.com/docker/engine-api/types/container"
@@ -533,7 +531,7 @@ func TestRemoveImage(t *testing.T) {
 
 	apiClient := engineapimock.NewMockClient()
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
-	apiClient.On("ImageRemove", context.TODO(),
+	apiClient.On("ImageRemove", mock.Anything,
 		mock.AnythingOfType("ImageRemoveOptions")).Return(dIs, nil)
 	engine.apiClient = apiClient
 
