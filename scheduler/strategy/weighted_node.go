@@ -63,9 +63,11 @@ func weighNodes(config *cluster.ContainerConfig, nodes []*node.Node, healthiness
 		if cpuScore <= 100 && memoryScore <= 100 {
 			weightedNodes = append(weightedNodes, &weightedNode{Node: node, Weight: cpuScore + memoryScore + healthinessFactor*node.HealthIndicator})
 		}
+		log.WithFields(log.Fields{"node": node }).Debugf("XXXX: weighNodes loop")
 	}
 
 	if len(weightedNodes) == 0 {
+		log.WithFields(log.Fields{"cpuScore": cpuScore, "memoryScore": memoryScore, "nodes": nodes }).Debugf("XXXX: ErrNoResourcesAvailable")
 		return nil, ErrNoResourcesAvailable
 	}
 

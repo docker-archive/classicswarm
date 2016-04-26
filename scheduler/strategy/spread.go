@@ -28,6 +28,7 @@ func (p *SpreadPlacementStrategy) RankAndSort(config *cluster.ContainerConfig, n
 	const healthFactor int64 = -10
 	weightedNodes, err := weighNodes(config, nodes, healthFactor)
 	if err != nil {
+		log.WithFields(log.Fields{"weightedNodes": weightedNodes, "config": config, "nodes": nodes }).Debugf("XXXX: RankAndSort")
 		return nil, err
 	}
 
