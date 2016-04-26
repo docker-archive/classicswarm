@@ -224,7 +224,7 @@ func TestEngineSpecs(t *testing.T) {
 	assert.True(t, engine.isConnected())
 	assert.True(t, engine.IsHealthy())
 
-	assert.Equal(t, engine.Cpus, mockInfo.NCPU)
+	assert.Equal(t, engine.Cpus, int64(mockInfo.NCPU))
 	assert.Equal(t, engine.Memory, mockInfo.MemTotal)
 	assert.Equal(t, engine.Labels["storagedriver"], mockInfo.Driver)
 	assert.Equal(t, engine.Labels["executiondriver"], mockInfo.ExecutionDriver)
@@ -396,17 +396,17 @@ func TestTotalMemory(t *testing.T) {
 func TestTotalCpus(t *testing.T) {
 	engine := NewEngine("test", 0.05, engOpts)
 	engine.Cpus = 2
-	assert.Equal(t, engine.TotalCpus(), 2+2*5/100)
+	assert.Equal(t, engine.TotalCpus(), int64(2+2*5/100))
 
 	engine = NewEngine("test", 0, engOpts)
 	engine.Cpus = 2
-	assert.Equal(t, engine.TotalCpus(), 2)
+	assert.Equal(t, engine.TotalCpus(), int64(2))
 }
 
 func TestUsedCpus(t *testing.T) {
 	var (
 		containerNcpu = []int64{1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47}
-		hostNcpu      = []int{1, 2, 4, 8, 10, 12, 16, 20, 32, 36, 40, 48}
+		hostNcpu      = []int64{1, 2, 4, 8, 10, 12, 16, 20, 32, 36, 40, 48}
 	)
 
 	engine := NewEngine("test", 0, engOpts)
@@ -416,8 +416,8 @@ func TestUsedCpus(t *testing.T) {
 
 	for _, hn := range hostNcpu {
 		for _, cn := range containerNcpu {
-			if int(cn) <= hn {
-				mockInfo.NCPU = hn
+			if cn <= hn {
+				mockInfo.NCPU = int(hn)
 				cpuShares := int64(math.Ceil(float64(cn*1024) / float64(mockInfo.NCPU)))
 
 				apiClient.On("Info", mock.Anything).Return(mockInfo, nil).Once()
@@ -435,7 +435,7 @@ func TestUsedCpus(t *testing.T) {
 
 				engine.ConnectWithClient(client, apiClient)
 
-				assert.Equal(t, engine.Cpus, mockInfo.NCPU)
+				assert.Equal(t, engine.Cpus, int64(mockInfo.NCPU))
 				assert.Equal(t, engine.UsedCpus(), cn)
 			}
 		}
