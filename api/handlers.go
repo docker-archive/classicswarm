@@ -1053,6 +1053,7 @@ func proxyContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if container == nil {
 			httpError(w, err.Error(), http.StatusNotFound)
+			return
 		}
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1168,8 +1169,10 @@ func postTagImage(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := c.cluster.TagImage(name, repo, tag, force); err != nil {
 		if strings.HasPrefix(err.Error(), "No such image") {
 			httpError(w, err.Error(), http.StatusNotFound)
+			return
 		} else {
 			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -1211,6 +1214,7 @@ func postCommit(c *context, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if container == nil {
 			httpError(w, err.Error(), http.StatusNotFound)
+			return
 		}
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1301,6 +1305,7 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if container == nil {
 			httpError(w, err.Error(), http.StatusNotFound)
+			return
 		}
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1314,8 +1319,10 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	if err = c.cluster.RenameContainer(container, r.Form.Get("name")); err != nil {
 		if strings.HasPrefix(err.Error(), "Conflict") {
 			httpError(w, err.Error(), http.StatusConflict)
+			return
 		} else {
 			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -1328,6 +1335,7 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if container == nil {
 			httpError(w, err.Error(), http.StatusNotFound)
+			return
 		}
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
