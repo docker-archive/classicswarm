@@ -12,7 +12,7 @@ DISCOVERY="consul://${STORE_HOST}/test"
 CONTAINER_NAME=swarm_consul
 
 function start_store() {
-	docker_host run -v $(pwd)/discovery/consul/config:/config --name=$CONTAINER_NAME -h $CONTAINER_NAME -p $STORE_HOST:8500 -d progrium/consul -server -bootstrap-expect 1 -config-file=/config/consul.json
+	docker_host run -v $(pwd)/discovery/consul/config:/config --name=$CONTAINER_NAME -h $CONTAINER_NAME -p $STORE_HOST:8500 -d consul -server -bootstrap-expect 1 -config-file=/config/consul.json
 }
 
 function stop_store() {
@@ -93,7 +93,7 @@ function teardown() {
 	# is resilient to it.
 
 	# At this point, the store is not yet started.
-	
+
 	# Start 2 engines and join the cluster. They should keep retrying
 	start_docker 2
 	swarm_join "$DISCOVERY"

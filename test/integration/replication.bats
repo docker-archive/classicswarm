@@ -21,14 +21,14 @@ NODE_2_URL="consul://${STORE_HOST_2}/test"
 NODE_3_URL="consul://${STORE_HOST_3}/test"
 
 function start_store_cluster() {
-	docker_host run -v $(pwd)/discovery/consul/config:/config --name=$NODE_1 -h $NODE_1 -p $STORE_HOST_1:8500 -d progrium/consul -server -bootstrap-expect 3 -config-file=/config/consul.json
+	docker_host run -v $(pwd)/discovery/consul/config:/config --name=$NODE_1 -h $NODE_1 -p $STORE_HOST_1:8500 -d consul -server -bootstrap-expect 3 -config-file=/config/consul.json
 
 	# Grab node_1 address required for other nodes to join the cluster
 	JOIN_ENDPOINT=$(docker_host inspect -f '{{.NetworkSettings.IPAddress}}' $NODE_1)
 
-	docker_host run -v $(pwd)/discovery/consul/config:/config --name=$NODE_2 -h $NODE_2 -p $STORE_HOST_2:8500 -d progrium/consul -server -join $JOIN_ENDPOINT -config-file=/config/consul.json
+	docker_host run -v $(pwd)/discovery/consul/config:/config --name=$NODE_2 -h $NODE_2 -p $STORE_HOST_2:8500 -d consul -server -join $JOIN_ENDPOINT -config-file=/config/consul.json
 
-	docker_host run -v $(pwd)/discovery/consul/config:/config --name=$NODE_3 -h $NODE_3 -p $STORE_HOST_3:8500 -d progrium/consul -server -join $JOIN_ENDPOINT -config-file=/config/consul.json
+	docker_host run -v $(pwd)/discovery/consul/config:/config --name=$NODE_3 -h $NODE_3 -p $STORE_HOST_3:8500 -d consul -server -join $JOIN_ENDPOINT -config-file=/config/consul.json
 
 	# Wait for the cluster to be available.
 	sleep 2
