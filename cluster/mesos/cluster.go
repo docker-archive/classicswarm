@@ -449,12 +449,12 @@ func (c *Cluster) TotalMemory() int64 {
 }
 
 // TotalCpus returns the total memory of the cluster
-func (c *Cluster) TotalCpus() int {
+func (c *Cluster) TotalCpus() int64 {
 	c.RLock()
 	defer c.RUnlock()
-	var totalCpus int
+	var totalCpus int64
 	for _, s := range c.agents {
-		totalCpus += int(sumScalarResourceValue(s.offers, "cpus"))
+		totalCpus += int64(sumScalarResourceValue(s.offers, "cpus"))
 	}
 	return totalCpus
 }
