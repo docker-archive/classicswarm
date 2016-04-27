@@ -11,14 +11,14 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# make sure no contaienr exist
+	# make sure no container exists
 	run docker_swarm ps -qa
 	[ "${#lines[@]}" -eq 0 ]
 
 	# create
 	docker_swarm create --name test_container busybox sleep 1000
 
-	# verify, created container exists
+	# verify created container exists
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" ==  *"test_container"* ]]
