@@ -34,7 +34,7 @@ func NewEventsMonitor(cli client.APIClient, handler func(msg events.Message) err
 func (em *EventsMonitor) Start(ec chan error) {
 	em.stopChan = make(chan struct{})
 
-	responseBody, err := em.cli.Events(context.TODO(), types.EventsOptions{})
+	responseBody, err := em.cli.Events(context.Background(), types.EventsOptions{})
 	if err != nil {
 		ec <- err
 		return

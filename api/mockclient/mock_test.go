@@ -15,7 +15,7 @@ func TestMock(t *testing.T) {
 	mockClient := NewMockClient()
 	mockClient.On("ServerVersion", mock.Anything).Return(types.Version{Version: "foo"}, nil).Once()
 
-	v, err := mockClient.ServerVersion(context.TODO())
+	v, err := mockClient.ServerVersion(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

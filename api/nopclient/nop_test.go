@@ -11,7 +11,7 @@ import (
 
 func TestNop(t *testing.T) {
 	nop := NewNopClient()
-	_, err := nop.Info(context.TODO())
+	_, err := nop.Info(context.Background())
 	if err != errNoEngine {
 		t.Fatalf("Nop client did not return error")
 	}
