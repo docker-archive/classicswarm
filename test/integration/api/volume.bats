@@ -11,7 +11,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# make sure no volume exist
+	# make sure no volume exists
 	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 1 ]
 
@@ -73,11 +73,11 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# check for failure when removing a nonexistant volume
+	# check for failure when removing a non-existent volume
 	run docker_swarm volume rm test_volume
 	[ "$status" -ne 0 ]
 
-	# run a container that exits imediately but stays around and
+	# run a container that exits immediately but stays around and
 	# connected to the volume. Wait for it to finish.
 	docker_swarm run -d --name=test_container -v=/tmp busybox true
 	docker_swarm wait test_container
