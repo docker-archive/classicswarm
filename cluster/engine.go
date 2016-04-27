@@ -448,7 +448,7 @@ func (e *Engine) updateClientVersionFromServer(serverVersion string) {
 
 // Gather engine specs (CPU, memory, constraints, ...).
 func (e *Engine) updateSpecs() error {
-	info, err := e.apiClient.Info(context.TODO())
+	info, err := e.apiClient.Info(context.Background())
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -458,7 +458,7 @@ func (e *Engine) updateSpecs() error {
 		return fmt.Errorf("cannot get resources for this engine, make sure %s is a Docker Engine, not a Swarm manager", e.Addr)
 	}
 
-	v, err := e.apiClient.ServerVersion(context.TODO())
+	v, err := e.apiClient.ServerVersion(context.Background())
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -524,7 +524,7 @@ func (e *Engine) updateSpecs() error {
 // RemoveImage deletes an image from the engine.
 func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDelete, error) {
 	rmOpts := types.ImageRemoveOptions{name, force, true}
-	dels, err := e.apiClient.ImageRemove(context.TODO(), rmOpts)
+	dels, err := e.apiClient.ImageRemove(context.Background(), rmOpts)
 	e.CheckConnectionErr(err)
 	e.RefreshImages()
 	return dels, err
@@ -532,7 +532,7 @@ func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDelete, erro
 
 // RemoveNetwork removes a network from the engine.
 func (e *Engine) RemoveNetwork(network *Network) error {
-	err := e.apiClient.NetworkRemove(context.TODO(), network.ID)
+	err := e.apiClient.NetworkRemove(context.Background(), network.ID)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -563,7 +563,7 @@ func (e *Engine) AddNetwork(network *Network) {
 
 // RemoveVolume deletes a volume from the engine.
 func (e *Engine) RemoveVolume(name string) error {
-	err := e.apiClient.VolumeRemove(context.TODO(), name)
+	err := e.apiClient.VolumeRemove(context.Background(), name)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -581,7 +581,7 @@ func (e *Engine) RemoveVolume(name string) error {
 // RefreshImages refreshes the list of images on the engine.
 func (e *Engine) RefreshImages() error {
 	imgLstOpts := types.ImageListOptions{All: true}
-	images, err := e.apiClient.ImageList(context.TODO(), imgLstOpts)
+	images, err := e.apiClient.ImageList(context.Background(), imgLstOpts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -598,7 +598,7 @@ func (e *Engine) RefreshImages() error {
 // RefreshNetworks refreshes the list of networks on the engine.
 func (e *Engine) RefreshNetworks() error {
 	netLsOpts := types.NetworkListOptions{filters.NewArgs()}
-	networks, err := e.apiClient.NetworkList(context.TODO(), netLsOpts)
+	networks, err := e.apiClient.NetworkList(context.Background(), netLsOpts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -614,7 +614,7 @@ func (e *Engine) RefreshNetworks() error {
 
 // RefreshVolumes refreshes the list of volumes on the engine.
 func (e *Engine) RefreshVolumes() error {
-	volumesLsRsp, err := e.apiClient.VolumeList(context.TODO(), filters.NewArgs())
+	volumesLsRsp, err := e.apiClient.VolumeList(context.Background(), filters.NewArgs())
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -636,7 +636,7 @@ func (e *Engine) RefreshContainers(full bool) error {
 		All:  true,
 		Size: false,
 	}
-	containers, err := e.apiClient.ContainerList(context.TODO(), opts)
+	containers, err := e.apiClient.ContainerList(context.Background(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -669,7 +669,7 @@ func (e *Engine) refreshContainer(ID string, full bool) (*Container, error) {
 		Size:   false,
 		Filter: filterArgs,
 	}
-	containers, err := e.apiClient.ContainerList(context.TODO(), opts)
+	containers, err := e.apiClient.ContainerList(context.Background(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return nil, err
@@ -724,7 +724,7 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 
 	// Update ContainerInfo.
 	if full {
-		info, err := e.apiClient.ContainerInspect(context.TODO(), c.ID)
+		info, err := e.apiClient.ContainerInspect(context.Background(), c.ID)
 		e.CheckConnectionErr(err)
 		if err != nil {
 			return nil, err
@@ -878,7 +878,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 	// FIXME remove "duplicate" lines and move this to cluster/config.go
 	dockerConfig.HostConfig.CPUShares = int64(math.Ceil(float64(config.HostConfig.CPUShares*1024) / float64(e.Cpus)))
 
-	createResp, err = e.apiClient.ContainerCreate(context.TODO(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
+	createResp, err = e.apiClient.ContainerCreate(context.Background(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		// If the error is other than not found, abort immediately.
@@ -890,7 +890,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 			return nil, err
 		}
 		// ...And try again.
-		createResp, err = e.apiClient.ContainerCreate(context.TODO(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
+		createResp, err = e.apiClient.ContainerCreate(context.Background(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
 		e.CheckConnectionErr(err)
 		if err != nil {
 			return nil, err
@@ -920,7 +920,7 @@ func (e *Engine) RemoveContainer(container *Container, force, volumes bool) erro
 		Force:         force,
 		RemoveVolumes: volumes,
 	}
-	err := e.apiClient.ContainerRemove(context.TODO(), opts)
+	err := e.apiClient.ContainerRemove(context.Background(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -937,7 +937,7 @@ func (e *Engine) RemoveContainer(container *Container, force, volumes bool) erro
 
 // CreateNetwork creates a network in the engine
 func (e *Engine) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
-	response, err := e.apiClient.NetworkCreate(context.TODO(), *request)
+	response, err := e.apiClient.NetworkCreate(context.Background(), *request)
 	e.CheckConnectionErr(err)
 
 	e.RefreshNetworks()
@@ -947,7 +947,7 @@ func (e *Engine) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCrea
 
 // CreateVolume creates a volume in the engine
 func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, error) {
-	volume, err := e.apiClient.VolumeCreate(context.TODO(), *request)
+	volume, err := e.apiClient.VolumeCreate(context.Background(), *request)
 
 	e.RefreshVolumes()
 	e.CheckConnectionErr(err)
@@ -988,7 +988,7 @@ func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
 	if err != nil {
 		return err
 	}
-	pullResponse, err := e.apiClient.ImagePull(context.TODO(), pullOpts, nil)
+	pullResponse, err := e.apiClient.ImagePull(context.Background(), pullOpts, nil)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -1017,7 +1017,7 @@ func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
 
 // Load an image on the engine
 func (e *Engine) Load(reader io.Reader) error {
-	loadResponse, err := e.apiClient.ImageLoad(context.TODO(), reader, false)
+	loadResponse, err := e.apiClient.ImageLoad(context.Background(), reader, false)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -1053,7 +1053,7 @@ func (e *Engine) Import(source string, repository string, tag string, imageReade
 		Tag:            tag,
 		Source:         imageReader,
 	}
-	_, err := e.apiClient.ImageImport(context.TODO(), opts)
+	_, err := e.apiClient.ImageImport(context.Background(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -1232,7 +1232,7 @@ func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) 
 	if hostConfig != nil {
 		err = e.client.StartContainer(id, hostConfig)
 	} else {
-		err = e.apiClient.ContainerStart(context.TODO(), id)
+		err = e.apiClient.ContainerStart(context.Background(), id)
 	}
 	e.CheckConnectionErr(err)
 	if err != nil {
@@ -1247,7 +1247,7 @@ func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) 
 // RenameContainer renames a container
 func (e *Engine) RenameContainer(container *Container, newName string) error {
 	// send rename request
-	err := e.apiClient.ContainerRename(context.TODO(), container.ID, newName)
+	err := e.apiClient.ContainerRename(context.Background(), container.ID, newName)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -1260,7 +1260,7 @@ func (e *Engine) RenameContainer(container *Container, newName string) error {
 
 // BuildImage builds an image
 func (e *Engine) BuildImage(buildImage *types.ImageBuildOptions) (io.ReadCloser, error) {
-	resp, err := e.apiClient.ImageBuild(context.TODO(), *buildImage)
+	resp, err := e.apiClient.ImageBuild(context.Background(), *buildImage)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return nil, err
@@ -1277,7 +1277,7 @@ func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) 
 		Tag:            tag,
 		Force:          force,
 	}
-	err := e.apiClient.ImageTag(context.TODO(), opts)
+	err := e.apiClient.ImageTag(context.Background(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
