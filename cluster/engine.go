@@ -988,14 +988,16 @@ func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
 	if err != nil {
 		return err
 	}
-	pullResponse, err := e.apiClient.ImagePull(context.Background(), pullOpts, nil)
+	pullResponseBody, err := e.apiClient.ImagePull(context.Background(), pullOpts, nil)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
 	}
 
+	defer pullResponseBody.Close()
+
 	// wait until the image download is finished
-	dec := json.NewDecoder(pullResponse)
+	dec := json.NewDecoder(pullResponseBody)
 	m := map[string]interface{}{}
 	for {
 		if err := dec.Decode(&m); err != nil {
@@ -1023,8 +1025,11 @@ func (e *Engine) Load(reader io.Reader) error {
 		return err
 	}
 
+	defer loadResponse.Body.Close()
+
 	// wait until the image load is finished
 	dec := json.NewDecoder(loadResponse.Body)
+
 	m := map[string]interface{}{}
 	for {
 		if err := dec.Decode(&m); err != nil {
