@@ -400,7 +400,20 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if !filters.Match("node", container.Engine.Name) {
 			continue
 		}
-
+		if filters.Include("volume") {
+			volumeExist := fmt.Errorf("volume mounted in container")
+			err := filters.WalkValues("volume", func(value string) error {
+				for _, mount := range container.Info.Mounts {
+					if mount.Name == value || mount.Destination == value {
+						return volumeExist
+					}
+				}
+				return nil
+			})
+			if err != volumeExist {
+				continue
+			}
+		}
 		if len(filtExited) > 0 {
 			shouldSkip := true
 			for _, code := range filtExited {
