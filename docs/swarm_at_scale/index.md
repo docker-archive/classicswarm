@@ -22,10 +22,10 @@ Docker Compose file. You (or others) can use the file to deploy and scale the
 application further. The article also provides a troubleshooting section you can
 use while developing or deploying the voting application.
 
-The sample is written for a novice network administrator. You should have a
-basic skills on Linux systems and `ssh` experience. Some knowledge of Git is
-also useful but not strictly required. This example takes approximately an hour
-to complete and has the following steps:
+The sample is written for a novice network administrator. You should have basic
+skills on Linux systems and `ssh` experience. Some knowledge of Git is also
+useful but not strictly required. This example takes approximately an hour to
+complete and has the following steps:
 
 - [Learn the application architecture](about.md)
 - [Deploy your infrastructure](deploy-infra.md)
