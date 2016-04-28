@@ -214,9 +214,6 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 
 // RemoveContainer removes containers on mesos cluster
 func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes bool) error {
-	c.scheduler.Lock()
-	defer c.scheduler.Unlock()
-
 	return container.Engine.RemoveContainer(container, force, volumes)
 }
 
@@ -268,9 +265,7 @@ func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (*typ
 		config = cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
 	}
 
-	c.scheduler.Lock()
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
-	c.scheduler.Unlock()
 	if err != nil {
 		return nil, err
 	}
@@ -516,19 +511,14 @@ func (c *Cluster) removeOffer(offer *mesosproto.Offer) bool {
 
 // LaunchTask selects node and calls driver to launch a task
 func (c *Cluster) LaunchTask(t *task.Task) bool {
-	c.scheduler.Lock()
-	//change to explicit lock defer c.scheduler.Unlock()
-
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), t.GetConfig())
 	if err != nil {
-		c.scheduler.Unlock()
 		return false
 	}
 	n := nodes[0]
 	s, ok := c.agents[n.ID]
 	if !ok {
 		t.Error <- fmt.Errorf("Unable to create on agent %q", n.ID)
-		c.scheduler.Unlock()
 		return true
 	}
 
@@ -553,7 +543,6 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 			c.removeOffer(offer)
 		}
 		c.Unlock()
-		c.scheduler.Unlock()
 		t.Error <- err
 		return true
 	}
@@ -565,7 +554,6 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 		c.removeOffer(offer)
 	}
 	c.Unlock()
-	c.scheduler.Unlock()
 	// block until we get the container
 	finished, data, err := t.Monitor()
 	taskID := t.TaskInfo.TaskId.GetValue()
@@ -643,8 +631,6 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 
 // BuildImage builds an image
 func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, out io.Writer) error {
-	c.scheduler.Lock()
-
 	// get an engine
 	config := &cluster.ContainerConfig{
 		HostConfig: containertypes.HostConfig{
@@ -655,7 +641,6 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 		},
 	}
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
-	c.scheduler.Unlock()
 	if err != nil {
 		return err
 	}

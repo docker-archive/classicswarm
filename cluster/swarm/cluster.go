@@ -169,11 +169,8 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 }
 
 func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, withImageAffinity bool, authConfig *types.AuthConfig) (*cluster.Container, error) {
-	c.scheduler.Lock()
-
 	// Ensure the name is available
 	if !c.checkNameUniqueness(name) {
-		c.scheduler.Unlock()
 		return nil, fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
 	}
 
@@ -202,13 +199,11 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	}
 
 	if err != nil {
-		c.scheduler.Unlock()
 		return nil, err
 	}
 	n := nodes[0]
 	engine, ok := c.engines[n.ID]
 	if !ok {
-		c.scheduler.Unlock()
 		return nil, fmt.Errorf("error creating container")
 	}
 
@@ -218,13 +213,9 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 		Engine: engine,
 	}
 
-	c.scheduler.Unlock()
-
 	container, err := engine.Create(config, name, true, authConfig)
 
-	c.scheduler.Lock()
 	delete(c.pendingContainers, swarmID)
-	c.scheduler.Unlock()
 
 	return container, err
 }
@@ -892,18 +883,17 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 
 // BuildImage builds an image
 func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, out io.Writer) error {
-	c.scheduler.Lock()
-
 	// get an engine
 	config := cluster.BuildContainerConfig(containertypes.Config{Env: convertMapToKVStrings(buildImage.BuildArgs)},
 		containertypes.HostConfig{Resources: containertypes.Resources{CPUShares: buildImage.CPUShares, Memory: buildImage.Memory}},
 		networktypes.NetworkingConfig{})
 	buildImage.BuildArgs = convertKVStringsToMap(config.Env)
+
 	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
-	c.scheduler.Unlock()
 	if err != nil {
 		return err
 	}
+
 	n := nodes[0]
 
 	reader, err := c.engines[n.ID].BuildImage(buildContext, buildImage)
