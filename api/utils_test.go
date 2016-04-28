@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBoolValue(t *testing.T) {
@@ -23,13 +25,13 @@ func TestBoolValue(t *testing.T) {
 	for c, e := range cases {
 		v := url.Values{}
 		v.Set("test", c)
-		r, _ := http.NewRequest("POST", "", nil)
+		r, err := http.NewRequest("POST", "", nil)
+		assert.NoError(t, err)
+
 		r.Form = v
 
 		a := boolValue(r, "test")
-		if a != e {
-			t.Fatalf("Value: %s, expected: %v, actual: %v", c, e, a)
-		}
+		assert.Equal(t, a, e)
 	}
 }
 
@@ -44,13 +46,13 @@ func TestIntValueOrZero(t *testing.T) {
 	for c, e := range cases {
 		v := url.Values{}
 		v.Set("test", c)
-		r, _ := http.NewRequest("POST", "", nil)
+		r, err := http.NewRequest("POST", "", nil)
+		assert.NoError(t, err)
+
 		r.Form = v
 
 		a := intValueOrZero(r, "test")
-		if a != e {
-			t.Fatalf("Value: %s, expected: %v, actual: %v", c, e, a)
-		}
+		assert.Equal(t, a, e)
 	}
 }
 
@@ -65,12 +67,12 @@ func TestInt64ValueOrZero(t *testing.T) {
 	for c, e := range cases {
 		v := url.Values{}
 		v.Set("test", c)
-		r, _ := http.NewRequest("POST", "", nil)
+		r, err := http.NewRequest("POST", "", nil)
+		assert.NoError(t, err)
+
 		r.Form = v
 
 		a := int64ValueOrZero(r, "test")
-		if a != e {
-			t.Fatalf("Value: %s, expected: %v, actual: %v", c, e, a)
-		}
+		assert.Equal(t, a, e)
 	}
 }

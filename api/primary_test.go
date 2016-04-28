@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRequest(t *testing.T) {
@@ -17,10 +18,8 @@ func TestRequest(t *testing.T) {
 	setupPrimaryRouter(r, context, false)
 	w := httptest.NewRecorder()
 
-	req, e := http.NewRequest("GET", "/version", nil)
-	if nil != e {
-		t.Fatalf("couldn't set up test request")
-	}
+	req, err := http.NewRequest("GET", "/version", nil)
+	assert.NoError(t, err)
 
 	r.ServeHTTP(w, req)
 
@@ -44,10 +43,8 @@ func TestCorsRequest(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// test an OPTIONS request when cors enabled
-	r, e := http.NewRequest("OPTIONS", "/version", nil)
-	if nil != e {
-		t.Fatalf("couldn't set up test request")
-	}
+	r, err := http.NewRequest("OPTIONS", "/version", nil)
+	assert.NoError(t, err)
 
 	primary.ServeHTTP(w, r)
 
@@ -83,13 +80,12 @@ func TestCorsRequest(t *testing.T) {
 	// test a normal request ( GET /_ping ) when cors enabled
 	w2 := httptest.NewRecorder()
 
-	r2, e2 := http.NewRequest("GET", "/_ping", nil)
-	if nil != e2 {
-		t.Fatalf("couldn't set up test request")
-	}
+	r2, err2 := http.NewRequest("GET", "/_ping", nil)
+	assert.NoError(t, err2)
 
 	primary.ServeHTTP(w2, r2)
 
+<<<<<<< HEAD
 	if w2.Body.String() != "OK" {
 		t.Fatalf("couldn't get body content when cors enabled")
 	}
@@ -97,4 +93,8 @@ func TestCorsRequest(t *testing.T) {
 	if w2.Code != 200 {
 		t.Fatalf("HTTP response status code is %d, not 200", w2.Code)
 	}
+=======
+	assert.Equal(t, w2.Body.String(), "OK")
+	assert.Equal(t, w.Code, 200)
+>>>>>>> make all unit tests use assert for consistency
 }
