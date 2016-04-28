@@ -14,7 +14,7 @@ weight=-80
 
 You've [deployed the load balancer, the discovery backend, and a Swarm
 cluster](deploy-infra.md) so now you can build and deploy the voting application
-itself. You do this by starting a number of "dockerized applications" running in
+itself. You do this by starting a number of "Dockerized applications" running in
 containers.
 
 The diagram below shows the final application configuration including the overlay
@@ -139,7 +139,7 @@ command below, look for the value constraint.
     --name results-app docker/example-voting-app-result-app
     ```
 
-7. Start the voting application twice. Once on each frontend node.
+7. Start the voting application twice; once on each frontend node.
 
     ```bash
     $ docker -H $(docker-machine ip manager):3376 run -t -d \
