@@ -108,7 +108,7 @@ type Engine struct {
 	IP      string
 	Addr    string
 	Name    string
-	Cpus    int
+	Cpus    int64
 	Memory  int64
 	Labels  map[string]string
 	Version string
@@ -492,7 +492,7 @@ func (e *Engine) updateSpecs() error {
 		return fmt.Errorf(message)
 	}
 	e.Name = info.Name
-	e.Cpus = info.NCPU
+	e.Cpus = int64(info.NCPU)
 	e.Memory = info.MemTotal
 	e.Labels = map[string]string{
 		"storagedriver":   info.Driver,
@@ -738,7 +738,7 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 		}
 		container.Config = BuildContainerConfig(*info.Config, *info.HostConfig, networkingConfig)
 		// FIXME remove "duplicate" line and move this to cluster/config.go
-		container.Config.HostConfig.CPUShares = container.Config.HostConfig.CPUShares * int64(e.Cpus) / 1024.0
+		container.Config.HostConfig.CPUShares = container.Config.HostConfig.CPUShares * e.Cpus / 1024.0
 
 		// Save the entire inspect back into the container.
 		container.Info = info
@@ -857,8 +857,8 @@ func (e *Engine) TotalMemory() int64 {
 }
 
 // TotalCpus returns the total cpus + overcommit
-func (e *Engine) TotalCpus() int {
-	return e.Cpus + (e.Cpus * int(e.overcommitRatio) / 100)
+func (e *Engine) TotalCpus() int64 {
+	return e.Cpus + (e.Cpus * e.overcommitRatio / 100)
 }
 
 // Create a new container
