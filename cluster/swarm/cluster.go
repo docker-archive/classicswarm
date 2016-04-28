@@ -838,8 +838,8 @@ func (c *Cluster) TotalMemory() int64 {
 }
 
 // TotalCpus return the total memory of the cluster
-func (c *Cluster) TotalCpus() int {
-	var totalCpus int
+func (c *Cluster) TotalCpus() int64 {
+	var totalCpus int64
 	for _, engine := range c.engines {
 		totalCpus += engine.TotalCpus()
 	}
