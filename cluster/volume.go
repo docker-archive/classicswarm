@@ -1,10 +1,10 @@
 package cluster
 
-import "github.com/samalba/dockerclient"
+import "github.com/docker/engine-api/types"
 
 // Volume is exported
 type Volume struct {
-	dockerclient.Volume
+	types.Volume
 
 	Engine *Engine
 }
@@ -12,7 +12,7 @@ type Volume struct {
 // Volumes represents an array of volumes
 type Volumes []*Volume
 
-// Get returns a volume using it's ID or Name
+// Get returns a volume using its ID or Name
 func (volumes Volumes) Get(name string) *Volume {
 	// Abort immediately if the name is empty.
 	if len(name) == 0 {
@@ -32,6 +32,12 @@ func (volumes Volumes) Get(name string) *Volume {
 	if size := len(candidates); size == 1 {
 		return candidates[0]
 	} else if size > 1 {
+		// Match first volume with non-local driver
+		for _, volume := range candidates {
+			if volume.Name == name && volume.Driver != "local" {
+				return volume
+			}
+		}
 		return nil
 	}
 
@@ -40,10 +46,6 @@ func (volumes Volumes) Get(name string) *Volume {
 		if volume.Name == "/"+name {
 			return volume
 		}
-	}
-
-	if len(candidates) == 1 {
-		return candidates[0]
 	}
 
 	return nil

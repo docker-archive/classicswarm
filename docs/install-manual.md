@@ -1,170 +1,307 @@
 <!--[metadata]>
 +++
-title = "Create a swarm for development"
-description = "Swarm: a Docker-native clustering system"
-keywords = ["docker, swarm,  clustering"]
+title = "Build a Swarm cluster for production"
+description = "Deploying Swarm on AWS EC2 AMI's in a VPC"
+keywords = ["docker, swarm, clustering, examples, Amazon, AWS EC2"]
 [menu.main]
-parent="smn_workw_swarm"
-weight=2
+parent="workw_swarm"
+weight=-40
 +++
 <![end-metadata]-->
 
-# Create a swarm for development
 
-This section tells you how to create a Docker Swarm on your network to use only for debugging, testing, or development purposes. You can also use this type of installation if you are developing custom applications for Docker Swarm or contributing to it.  
+# Build a Swarm cluster for production
 
-> **Caution**: Only use this set up if your network environment is secured by a firewall or other measures.
+This page teaches you to deploy a high-availability Docker Swarm cluster.
+Although the example installation uses the Amazon Web Services (AWS) platform,
+you can deploy an equivalent Docker Swarm cluster on many other platforms. In this example, you do the following:
 
-## Prerequisites 
+- [Verify you have the prequisites](#prerequisites)
+- [Establish basic network security](#step-1-add-network-security-rules)
+- [Create your nodes](#step-2-create-your-instances)
+- [Install Engine on each node](#step-3-install-engine-on-each-node)
+- [Configure a discovery backend](#step-4-set-up-a-discovery-backend)
+- [Create Swarm cluster](#step-5-create-swarm-cluster)
+- [Communicate with the Swarm](#step-6-communicate-with-the-swarm)
+- [Test the high-availability Swarm managers](#step-7-test-swarm-failover)
+- [Additional Resources](#additional-resources)
 
-You install Docker Swarm on a single system which is known as your Docker Swarm
-manager. You create the cluster, or swarm, on one or more additional nodes on
-your network.  Each node in your swarm must:
+For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](install-w-machine) page.
 
-* be accessible by the swarm manager across your network
-* have Docker Engine 1.6.0+ installed
-* open a TCP port to listen for the manager
-* *do not* install on a VM or from an image created through cloning
+## Prerequisites
 
-Docker generates a unique ID for the Engine that is located in the
-`/etc/docker/key.json` file. If a VM is cloned from an instance where a
-Docker daemon was previously pre-installed, Swarm will be unable to differentiate
-among the remote Docker engines. This is because the cloning process copied the
-the identical ID to each image and the ID is no longer unique.
+- An Amazon Web Services (AWS) account
+- Familiarity with AWS features and tools, such as:
+  - Elastic Cloud (EC2) Dashboard
+  - Virtual Private Cloud (VPC) Dashboard
+  - VPC Security groups
+  - Connecting to an EC2 instance using SSH
 
-If you forget this restriction and create a node anyway, Swarm displays a single
-Docker engine as registered. To workaround this problem, you can generate a new
-ID for each node with affected by this issue. To do this stop the daemon on a node,
-delete its `/etc/docker/key.json` file, and restart the daemon.
+## Step 1. Add network security rules
 
-You can run Docker Swarm on Linux 64-bit architectures. You can also install and
-run it on 64-bit Windows and Max OSX but these architectures are *not* regularly
-tested for compatibility.
+AWS uses a "security group" to allow specific types of network traffic on your
+VPC network. The **default** security group's initial set of rules deny all
+inbound traffic, allow all outbound traffic, and allow all traffic between
+instances.
 
-Take a moment and identify the systems on your network that you intend to use.
-Ensure each node meets the requirements listed above.
+You're  going to add a couple of rules to allow inbound SSH connections and
+inbound container images. This set of rules somewhat protects the Engine, Swarm,
+and Consul ports. For a production environment, you would apply more restrictive
+security measures. Do not leave Docker Engine ports unprotected.
 
-## Pull the swarm image and create a cluster.
+From your AWS home console, do the following:
 
-The easiest way to get started with Swarm is to use the
-[official Docker image](https://registry.hub.docker.com/_/swarm/).
+1. Click **VPC - Isolated Cloud Resources**.
 
-1. Pull the swarm image.
+    The VPC Dashboard opens.
 
-		$ docker pull swarm
+2. Navigate to **Security Groups**.
 
-1. Create a Swarm cluster using the `docker` command.
+3. Select the **default** security group that's associated with your default VPC.
 
-		$ docker run --rm swarm create
-		6856663cdefdec325839a4b7e1de38e8 # 
+4. Add the following two rules.
 
-	The `create` command returns a unique cluster ID (`cluster_id`). You'll need
-	this ID when starting the Docker Swarm agent on a node.
+    <table>
+    <tr>
+      <th>Type</th>
+      <th>Protocol</th>
+      <th>Port Range</th>
+      <th>Source</th>
+    </tr>
+    <tr>
+      <td>SSH</td>
+      <td>TCP</td>
+      <td>22</td>
+      <td>0.0.0.0/0</td>
+    </tr>
+    <tr>
+      <td>HTTP</td>
+      <td>TCP</td>
+      <td>80</td>
+      <td>0.0.0.0/0</td>
+    </tr>
+    </table>
 
-##  Create swarm nodes
+  The SSH connection allows you to connect to the host while the HTTP is for container images.
 
-Each Swarm node will run a Swarm node agent. The agent registers the referenced
-Docker daemon, monitors it, and updates the discovery backend with the node's status.
+## Step 2. Create your instances
 
-This example uses the Docker Hub based `token` discovery service (only for testing/dev, not for production).
-Log into **each node** and do the following.
+In this step, you create five Linux hosts that are part of your default security
+group. When complete, the example deployment contains three types of nodes:
 
-1. Start the Docker daemon with the `-H` flag. This ensures that the
-Docker remote API on *Swarm Agents* is available over TCP for the
-*Swarm Manager*, as well as the standard unix socket which is
-available in default docker installs.
+| Node Description                     | Name                    |
+|--------------------------------------|-------------------------|
+| Swarm primary and secondary managers | `manager0`,  `manager1` |
+| Swarm node                           | `node0`, `node1`        |
+| Discovery backend                    | `consul0`               |
 
-		$ docker daemon -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock
+To create the instances do the following:
 
-	> **Note**: versions of docker prior to 1.8 used the `-d` flag instead of the `docker daemon` subcommand.
+1. Open the EC2 Dashboard and launch four EC2 instances, one at a time.
 
-2. Register the Swarm agents to the discovery service. The node's IP must be accessible from the Swarm Manager. Use the following command and replace with the proper `node_ip` and `cluster_id` to start an agent:
+    - During **Step 1: Choose an Amazon Machine Image (AMI)**, pick the *Amazon Linux AMI*.
 
-		docker run -d swarm join --addr=<node_ip:2375> token://<cluster_id>
+    - During **Step 5: Tag Instance**, under **Value**, give each instance one of these names:
 
-	For example:
+        - `manager0`
+        - `manager1`
+        - `consul0`
+        - `node0`
+        - `node1`
 
-		$ docker run -d swarm join --addr=172.31.40.100:2375 token://6856663cdefdec325839a4b7e1de38e8
+    - During **Step 6: Configure Security Group**, choose **Select an existing security group** and pick the "default" security group.
 
-## Configure a manager
+2. Review and launch your instances.
 
-Once you have your nodes established, set up a manager to control the swarm.
+## Step 3. Install Engine on each node
 
-1. Start the Swarm manager on any machine or your laptop. 
+In this step, you install Docker Engine on each node. By installing Engine, you enable the Swarm manager to address the nodes via the Engine CLI and API.
 
-	The following command illustrates how to do this:
+SSH to each node in turn and do the following.
 
-		docker run -d -p <manager_port>:2375 swarm manage token://<cluster_id>
+1. Update the yum packages.
 
-	The manager is exposed and listening on `<manager_port>`.
+    Keep an eye out for the "y/n/abort" prompt:
 
-2. Once the manager is running, check your configuration by running `docker info` as follows:
+        $ sudo yum update
 
-		docker -H tcp://<manager_ip:manager_port> info
+2. Run the installation script.
 
-	For example, if you run the manager locally on your machine:
+        $ curl -sSL https://get.docker.com/ | sh
 
-		$ docker -H tcp://0.0.0.0:2375 info
-		Containers: 0
-		Nodes: 3
-		 agent-2: 172.31.40.102:2375
-			└ Containers: 0
-			└ Reserved CPUs: 0 / 1
-			└ Reserved Memory: 0 B / 514.5 MiB
-		 agent-1: 172.31.40.101:2375
-			└ Containers: 0
-			└ Reserved CPUs: 0 / 1
-			└ Reserved Memory: 0 B / 514.5 MiB
-		 agent-0: 172.31.40.100:2375
-			└ Containers: 0
-			└ Reserved CPUs: 0 / 1
-			└ Reserved Memory: 0 B / 514.5 MiB
+3. Configure and start Engine so it listens for Swarm nodes on port `2375`.
 
-  If you are running a test cluster without TLS enabled, you may get an error.
-  In that case, be sure to unset `DOCKER_TLS_VERIFY` with:
+        $ sudo docker daemon -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock
 
-    $ unset DOCKER_TLS_VERIFY
-  
-## Using the docker CLI
+4. Verify that Docker Engine is installed correctly:
 
-You can now use the regular Docker CLI to access your nodes:
+        $ sudo docker run hello-world
 
-	docker -H tcp://<manager_ip:manager_port> info
-	docker -H tcp://<manager_ip:manager_port> run ...
-	docker -H tcp://<manager_ip:manager_port> ps
-	docker -H tcp://<manager_ip:manager_port> logs ...
+    The output should display a "Hello World" message and other text without any
+    error messages.
 
+5. Give the `ec2-user` root privileges:
 
-## List nodes in your cluster
+        $ sudo usermod -aG docker ec2-user
 
-You can get a list of all your running nodes using the `swarm list` command:
+6. Enter `logout`.
 
-	docker run --rm swarm list token://<cluster_id>
-	<node_ip:2375>
+#### Troubleshooting
 
+* If entering a `docker` command produces a message asking whether docker is
+available on this host, it may be because the user doesn't have root privileges.
+If so, use `sudo` or give the user root privileges.
 
-For example:
+* For this example, don't create an AMI image from one of your instances running
+Docker Engine and then re-use it to create the other instances. Doing so will
+produce errors.
 
-	$ docker run --rm swarm list token://6856663cdefdec325839a4b7e1de38e8
-	172.31.40.100:2375
-	172.31.40.101:2375
-	172.31.40.102:2375
+* If your host cannot reach Docker Hub, the `docker run` commands that pull
+container images may fail. In that case, check that your VPC is associated with
+a security group with a rule that allows inbound traffic (e.g.,
+HTTP/TCP/80/0.0.0.0/0). Also Check the [Docker Hub status
+page](http://status.docker.com/) for service availability.
 
-## TLS
+## Step 4. Set up a discovery backend
 
-Swarm supports TLS authentication between the CLI and Swarm but also between
-Swarm and the Docker nodes. _However_, all the Docker daemon certificates and client
-certificates **must** be signed using the same CA-certificate.
+Here, you're going to create a minimalist discovery backend. The Swarm managers
+and nodes use this backend to authenticate themselves as members of the cluster.
+The Swarm managers also use this information to identify which nodes are
+available to run containers.
 
-In order to enable TLS for both client and server, the same command line options
-as Docker can be specified:
+To keep things simple, you are going to run a single consul daemon on the same
+host as one of the Swarm managers.
 
+1. To start, copy the following launch command to a text file.
 
-	swarm manage --tlsverify --tlscacert=<CACERT> --tlscert=<CERT> --tlskey=<KEY> [...]
+        $ docker run -d -p 8500:8500 --name=consul progrium/consul -server -bootstrap
 
+2. Use SSH to connect to the `manager0` and `consul0` instance.
 
-Please refer to the [Docker documentation](https://docs.docker.com/articles/https/)
-for more information on how to set up TLS authentication on Docker and generating
-the certificates.
+        $ ifconfig
 
-> **Note**: Swarm certificates must be generated with `extendedKeyUsage = clientAuth,serverAuth`.
+3. From the output, copy the `eth0` IP address from `inet addr`.
+
+4. Using SSH, connect to the `manager0` and `consul0` instance.
+
+5. Paste the launch command you created in step 1. into the command line.
+
+        $ docker run -d -p 8500:8500 --name=consul progrium/consul -server -bootstrap
+
+Your Consul node is up and running, providing your cluster with a discovery
+backend. To increase its reliability, you can create a high-availability cluster
+using a trio of consul nodes using the link mentioned at the end of this page.
+(Before creating a cluster of consul nodes, update the VPC security group with
+rules to allow inbound traffic on the required port numbers.)
+
+## Step 5. Create Swarm cluster
+
+After creating the discovery backend, you can create the Swarm managers. In this step, you are going to create two Swarm managers in a high-availability configuration. The first manager you run becomes the Swarm's *primary manager*. Some documentation still refers to a primary manager as a "master", but that term has been superseded. The second manager you run serves as a *replica*. If the primary manager becomes unavailable, the cluster elects the replica as the primary manager.
+
+1. To create the primary manager in a high-availability Swarm cluster, use the following syntax:
+
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise <manager0_ip>:4000 consul://<consul_ip>:8500
+
+    Because this is particular manager is on the same `manager0` and `consul0`
+    instance as the consul node, replace both `<manager0_ip>` and `<consul_ip>`
+    with the same IP address. For example:
+
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000 consul://172.30.0.161:8500
+
+2. Enter `docker ps`.
+
+    From the output, verify that both a Swarm cluster and a consul container are running.
+    Then, disconnect from the `manager0` and `consul0` instance.
+
+3. Connect to the `manager1` node and use `ifconfig` to get its IP address.
+
+        $ ifconfig
+
+4. Start the secondary Swarm manager using following command.
+
+      Replacing `<manager1_ip>` with the IP address from the previous command, for example:
+
+        $ docker run -d swarm manage -H :4000 --replication --advertise <manager1_ip>:4000 consul://172.30.0.161:8500
+
+5. Enter `docker ps`to verify that a Swarm container is running.
+
+6. Connect to `node0` and `node1` in turn and join them to the cluster.
+
+    a. Get the node IP addresses with the `ifconfig` command.
+
+    b. Start a Swarm container each using the following syntax:
+
+        docker run -d swarm join --advertise=<node_ip>:2375 consul://<consul_ip>:8500
+
+      For example:
+
+        $ docker run -d swarm join --advertise=172.30.0.69:2375 consul://172.30.0.161:8500
+
+Your small Swarm cluster is up and running on multiple hosts, providing you with a high-availability virtual Docker Engine. To increase its reliability and capacity, you can add more Swarm managers, nodes, and a high-availability discovery backend.
+
+## Step 6. Communicate with the Swarm
+
+You can communicate with the Swarm to get information about the managers and
+nodes using the Swarm API, which is nearly the same as the standard Docker API.
+In this example, you use SSL to connect to `manager0` and `consul0` host again.
+Then, you address commands to the Swarm manager.
+
+1. Get information about the manager and nodes in the cluster:
+
+        $ docker -H :4000 info
+
+    The output gives the manager's role as primary (`Role: primary`) and
+    information about each of the nodes.
+
+2. Run an application on the Swarm:
+
+        $ docker -H :4000 run hello-world
+
+3. Check which Swarm node ran the application:
+
+        $ docker -H :4000 ps
+
+## Step 7. Test Swarm failover
+
+To see the replica instance take over, you're going to shut down the primary
+manager. Doing so kicks off an election, and the replica becomes the primary
+manager. When you start the manager you shut down earlier, it becomes the
+replica.
+
+1. SSH connection to the `manager0` instance.
+
+2. Get the container id or name of the `swarm` container:
+
+        $ docker ps
+
+3. Shut down the primary manager, replacing `<id_name>` with the container's id or name (for example, "8862717fe6d3" or "trusting_lamarr").
+
+        docker rm -f <id_name>
+
+4. Start the Swarm manager. For example:
+
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000 consul://172.30.0.161:8500
+
+5. Review the Engine's daemon logs the logs, replacing `<id_name>` with the new container's id or name:
+
+        $ sudo docker logs <id_name>
+
+    The output shows will show two entries like these ones:
+
+        time="2016-02-02T02:12:32Z" level=info msg="Leader Election: Cluster leadership lost"
+        time="2016-02-02T02:12:32Z" level=info msg="New leader elected: 172.30.0.160:4000"
+
+6. To get information about the manager and nodes in the cluster, enter:
+
+        $ docker -H :4000 info
+
+You can connect to the `manager1` node and run the `info` and `logs` commands.
+They will display corresponding entries for the change in leadership.
+
+## Additional Resources
+
+- [Installing Docker Engine on a cloud provider](http://docs.docker.com/engine/installation/cloud/cloud-ex-aws/)
+- [High availability in Docker Swarm](multi-manager-setup.md)
+- [Discovery](discovery.md)
+- [High-availability cluster using a trio of consul nodes](https://hub.docker.com/r/progrium/consul/)
+- [Networking](networking.md)

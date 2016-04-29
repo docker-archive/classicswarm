@@ -2,18 +2,29 @@ package cluster
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math"
 	"math/rand"
 	"net"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/version"
+	engineapi "github.com/docker/engine-api/client"
+	"github.com/docker/engine-api/types"
+	"github.com/docker/engine-api/types/events"
+	"github.com/docker/engine-api/types/filters"
+	networktypes "github.com/docker/engine-api/types/network"
+	engineapinop "github.com/docker/swarm/api/nopclient"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/nopclient"
 )
@@ -35,6 +46,9 @@ const (
 	stateUnhealthy
 	// healthy means an engine is reachable
 	stateHealthy
+	// disconnected means engine is removed from discovery
+	stateDisconnected
+
 	// TODO: add maintenance state. Proposal #1486
 	// maintenance means an engine is under maintenance.
 	// There is no action to migrate a node into maintenance state yet.
@@ -42,9 +56,10 @@ const (
 )
 
 var stateText = map[engineState]string{
-	statePending:   "Pending",
-	stateUnhealthy: "Unhealthy",
-	stateHealthy:   "Healthy",
+	statePending:      "Pending",
+	stateUnhealthy:    "Unhealthy",
+	stateHealthy:      "Healthy",
+	stateDisconnected: "Disconnected",
 	//stateMaintenance: "Maintenance",
 }
 
@@ -65,11 +80,12 @@ func newDelayer(rangeMin, rangeMax time.Duration) *delayer {
 	}
 }
 
-func (d *delayer) Wait() <-chan time.Time {
+// Wait returns timeout event after fixed + randomized time duration
+func (d *delayer) Wait(backoffFactor int) <-chan time.Time {
 	d.l.Lock()
 	defer d.l.Unlock()
 
-	waitPeriod := int64(d.rangeMin)
+	waitPeriod := int64(d.rangeMin) * int64(1+backoffFactor)
 	if delta := int64(d.rangeMax) - int64(d.rangeMin); delta > 0 {
 		// Int63n panics if the parameter is 0
 		waitPeriod += d.r.Int63n(delta)
@@ -88,13 +104,14 @@ type EngineOpts struct {
 type Engine struct {
 	sync.RWMutex
 
-	ID     string
-	IP     string
-	Addr   string
-	Name   string
-	Cpus   int64
-	Memory int64
-	Labels map[string]string
+	ID      string
+	IP      string
+	Addr    string
+	Name    string
+	Cpus    int64
+	Memory  int64
+	Labels  map[string]string
+	Version string
 
 	stopCh          chan struct{}
 	refreshDelayer  *delayer
@@ -103,6 +120,7 @@ type Engine struct {
 	networks        map[string]*Network
 	volumes         map[string]*Volume
 	client          dockerclient.Client
+	apiClient       engineapi.APIClient
 	eventHandler    EventHandler
 	state           engineState
 	lastError       string
@@ -110,6 +128,7 @@ type Engine struct {
 	failureCount    int
 	overcommitRatio int64
 	opts            *EngineOpts
+	eventsMonitor   *EventsMonitor
 }
 
 // NewEngine is exported
@@ -117,6 +136,7 @@ func NewEngine(addr string, overcommitRatio float64, opts *EngineOpts) *Engine {
 	e := &Engine{
 		Addr:            addr,
 		client:          nopclient.NewNopClient(),
+		apiClient:       engineapinop.NewNopClient(),
 		refreshDelayer:  newDelayer(opts.RefreshMinInterval, opts.RefreshMaxInterval),
 		Labels:          make(map[string]string),
 		stopCh:          make(chan struct{}),
@@ -129,6 +149,14 @@ func NewEngine(addr string, overcommitRatio float64, opts *EngineOpts) *Engine {
 		opts:            opts,
 	}
 	return e
+}
+
+// HTTPClientAndScheme returns the underlying HTTPClient and the scheme used by the engine
+func (e *Engine) HTTPClientAndScheme() (*http.Client, string, error) {
+	if dc, ok := e.client.(*dockerclient.DockerClient); ok {
+		return dc.HTTPClient, dc.URL.Scheme, nil
+	}
+	return nil, "", fmt.Errorf("Possibly lost connection to Engine (name: %s, ID: %s) ", e.Name, e.ID)
 }
 
 // Connect will initialize a connection to the Docker daemon running on the
@@ -149,21 +177,45 @@ func (e *Engine) Connect(config *tls.Config) error {
 	if err != nil {
 		return err
 	}
+	// Use HTTP Client used by dockerclient to create engine-api client
+	apiClient, err := engineapi.NewClient("tcp://"+e.Addr, "", c.HTTPClient, nil)
+	if err != nil {
+		return err
+	}
 
-	return e.ConnectWithClient(c)
+	return e.ConnectWithClient(c, apiClient)
+}
+
+// StartMonitorEvents monitors events from the engine
+func (e *Engine) StartMonitorEvents() {
+	log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Debug("Start monitoring events")
+	ec := make(chan error)
+	e.eventsMonitor.Start(ec)
+
+	go func() {
+		if err := <-ec; err != nil {
+			if !strings.Contains(err.Error(), "EOF") {
+				// failing node reconnect should use back-off strategy
+				<-e.refreshDelayer.Wait(e.getFailureCount())
+			}
+			e.StartMonitorEvents()
+		}
+		close(ec)
+	}()
 }
 
 // ConnectWithClient is exported
-func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
+func (e *Engine) ConnectWithClient(client dockerclient.Client, apiClient engineapi.APIClient) error {
 	e.client = client
+	e.apiClient = apiClient
+	e.eventsMonitor = NewEventsMonitor(e.apiClient, e.handler)
 
 	// Fetch the engine labels.
 	if err := e.updateSpecs(); err != nil {
 		return err
 	}
 
-	// Start monitoring events from the engine.
-	e.client.StartMonitorEvents(e.handler, nil)
+	e.StartMonitorEvents()
 
 	// Force a state update before returning.
 	if err := e.RefreshContainers(true); err != nil {
@@ -174,7 +226,7 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 		return err
 	}
 
-	// Do not check error as older daemon don't support this call
+	// Do not check error as older daemon does't support this call.
 	e.RefreshVolumes()
 	e.RefreshNetworks()
 
@@ -188,24 +240,44 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client) error {
 func (e *Engine) Disconnect() {
 	e.Lock()
 	defer e.Unlock()
+	// Resource clean up should be done only once
+	if e.state == stateDisconnected {
+		return
+	}
 
 	// close the chan
 	close(e.stopCh)
-	e.client.StopAllMonitorEvents()
+	e.eventsMonitor.Stop()
+
+	// close idle connections
+	if dc, ok := e.client.(*dockerclient.DockerClient); ok {
+		closeIdleConnections(dc.HTTPClient)
+	}
 	e.client = nopclient.NewNopClient()
+	e.apiClient = engineapinop.NewNopClient()
+	e.state = stateDisconnected
 	e.emitEvent("engine_disconnect")
 }
 
+func closeIdleConnections(client *http.Client) {
+	if tr, ok := client.Transport.(*http.Transport); ok {
+		tr.CloseIdleConnections()
+	}
+}
+
 // isConnected returns true if the engine is connected to a remote docker API
+// note that it's not the same as stateDisconnected. Engine isConnected is also true
+// when it is first created but not yet 'Connect' to a remote docker API.
 func (e *Engine) isConnected() bool {
 	_, ok := e.client.(*nopclient.NopClient)
-	return !ok
+	_, okAPIClient := e.apiClient.(*engineapinop.NopClient)
+	return (!ok && !okAPIClient)
 }
 
 // IsHealthy returns true if the engine is healthy
 func (e *Engine) IsHealthy() bool {
 	e.RLock()
-	e.RUnlock()
+	defer e.RUnlock()
 	return e.state == stateHealthy
 }
 
@@ -264,7 +336,7 @@ func (e *Engine) ValidationComplete() {
 func (e *Engine) setErrMsg(errMsg string) {
 	e.Lock()
 	defer e.Unlock()
-	e.lastError = errMsg
+	e.lastError = strings.TrimSpace(errMsg)
 	e.updatedAt = time.Now()
 }
 
@@ -287,7 +359,7 @@ func (e *Engine) Status() string {
 	return stateText[e.state]
 }
 
-// incFailureCount increases engine's failure count, and set engine as unhealthy if threshold is crossed
+// incFailureCount increases engine's failure count, and sets engine as unhealthy if threshold is crossed
 func (e *Engine) incFailureCount() {
 	e.Lock()
 	defer e.Unlock()
@@ -297,6 +369,13 @@ func (e *Engine) incFailureCount() {
 		log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as unhealthy. Connect failed %d times", e.failureCount)
 		e.emitEvent("engine_disconnect")
 	}
+}
+
+// getFailureCount returns a copy on the getFailureCount, thread-safe
+func (e *Engine) getFailureCount() int {
+	e.RLock()
+	defer e.RUnlock()
+	return e.failureCount
 }
 
 // UpdatedAt returns the previous updatedAt time
@@ -318,7 +397,7 @@ func (e *Engine) CheckConnectionErr(err error) {
 		e.setErrMsg("")
 		// If current state is unhealthy, change it to healthy
 		if e.state == stateUnhealthy {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.failureCount)
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.getFailureCount())
 			e.emitEvent("engine_reconnect")
 			e.setState(stateHealthy)
 		}
@@ -326,13 +405,12 @@ func (e *Engine) CheckConnectionErr(err error) {
 		return
 	}
 
-	// update engine error message
-	e.setErrMsg(err.Error())
-
 	// dockerclient defines ErrConnectionRefused error. but if http client is from swarm, it's not using
 	// dockerclient. We need string matching for these cases. Remove the first character to deal with
-	// case sensitive issue
+	// case sensitive issue.
+	// engine-api returns ErrConnectionFailed error, so we check for that as long as dockerclient exists
 	if err == dockerclient.ErrConnectionRefused ||
+		err == engineapi.ErrConnectionFailed ||
 		strings.Contains(err.Error(), "onnection refused") ||
 		strings.Contains(err.Error(), "annot connect to the docker engine endpoint") {
 		// each connection refused instance may increase failure count so
@@ -341,14 +419,36 @@ func (e *Engine) CheckConnectionErr(err error) {
 		// can track last error time. Only increase failure count if last error is
 		// not too recent, e.g., last error is at least 1 seconds ago.
 		e.incFailureCount()
+		// update engine error message
+		e.setErrMsg(err.Error())
 		return
 	}
 	// other errors may be ambiguous.
 }
 
+// Update API Version in apiClient
+func (e *Engine) updateClientVersionFromServer(serverVersion string) {
+	// v will be >= 1.6, since this is checked earlier
+	v := version.Version(serverVersion)
+	switch {
+	case v.LessThan(version.Version("1.7")):
+		e.apiClient.UpdateClientVersion("1.18")
+	case v.LessThan(version.Version("1.8")):
+		e.apiClient.UpdateClientVersion("1.19")
+	case v.LessThan(version.Version("1.9")):
+		e.apiClient.UpdateClientVersion("1.20")
+	case v.LessThan(version.Version("1.10")):
+		e.apiClient.UpdateClientVersion("1.21")
+	case v.LessThan(version.Version("1.11")):
+		e.apiClient.UpdateClientVersion("1.22")
+	default:
+		e.apiClient.UpdateClientVersion("1.23")
+	}
+}
+
 // Gather engine specs (CPU, memory, constraints, ...).
 func (e *Engine) updateSpecs() error {
-	info, err := e.client.Info()
+	info, err := e.apiClient.Info(context.Background())
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -358,7 +458,7 @@ func (e *Engine) updateSpecs() error {
 		return fmt.Errorf("cannot get resources for this engine, make sure %s is a Docker Engine, not a Swarm manager", e.Addr)
 	}
 
-	v, err := e.client.Version()
+	v, err := e.apiClient.ServerVersion(context.Background())
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -369,8 +469,14 @@ func (e *Engine) updateSpecs() error {
 	// Older versions of Docker don't expose the ID field, Labels and are not supported
 	// by Swarm.  Catch the error ASAP and refuse to connect.
 	if engineVersion.LessThan(minSupportedVersion) {
-		return fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade to at least %s", e.Addr, minSupportedVersion)
+		err = fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade to at least %s", e.Addr, minSupportedVersion)
+		e.CheckConnectionErr(err)
+		return err
 	}
+	// update server version
+	e.Version = v.Version
+	// update client version. engine-api handles backward compatibility where needed
+	e.updateClientVersionFromServer(v.Version)
 
 	e.Lock()
 	defer e.Unlock()
@@ -386,7 +492,7 @@ func (e *Engine) updateSpecs() error {
 		return fmt.Errorf(message)
 	}
 	e.Name = info.Name
-	e.Cpus = info.NCPU
+	e.Cpus = int64(info.NCPU)
 	e.Memory = info.MemTotal
 	e.Labels = map[string]string{
 		"storagedriver":   info.Driver,
@@ -396,31 +502,68 @@ func (e *Engine) updateSpecs() error {
 	}
 	for _, label := range info.Labels {
 		kv := strings.SplitN(label, "=", 2)
+		if len(kv) != 2 {
+			message := fmt.Sprintf("Engine (ID: %s, Addr: %s) contains an invalid label (%s) not formatted as \"key=value\".", e.ID, e.Addr, label)
+			return fmt.Errorf(message)
+		}
+
+		// If an engine managed by Swarm contains a label with key "node",
+		// such as node=node1
+		// `docker run -e constraint:node==node1 -d nginx` will not work,
+		// since "node" in constraint will match node.Name instead of label.
+		// Log warn message in this case.
+		if kv[0] == "node" {
+			log.Warnf("Engine (ID: %s, Addr: %s) containers a label (%s) with key of \"node\" which cannot be used in Swarm.", e.ID, e.Addr, label)
+		}
+
 		e.Labels[kv[0]] = kv[1]
 	}
 	return nil
 }
 
 // RemoveImage deletes an image from the engine.
-func (e *Engine) RemoveImage(image *Image, name string, force bool) ([]*dockerclient.ImageDelete, error) {
-	array, err := e.client.RemoveImage(name, force)
+func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDelete, error) {
+	rmOpts := types.ImageRemoveOptions{name, force, true}
+	dels, err := e.apiClient.ImageRemove(context.Background(), rmOpts)
 	e.CheckConnectionErr(err)
 	e.RefreshImages()
-	return array, err
-
+	return dels, err
 }
 
-// RemoveNetwork deletes a network from the engine.
+// RemoveNetwork removes a network from the engine.
 func (e *Engine) RemoveNetwork(network *Network) error {
-	err := e.client.RemoveNetwork(network.ID)
+	err := e.apiClient.NetworkRemove(context.Background(), network.ID)
 	e.CheckConnectionErr(err)
-	e.RefreshNetworks()
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Remove the container from the state. Eventually, the state refresh loop
+	// will rewrite this.
+	e.DeleteNetwork(network)
+	return nil
+}
+
+// DeleteNetwork deletes a network from the internal engine state.
+func (e *Engine) DeleteNetwork(network *Network) {
+	e.Lock()
+	delete(e.networks, network.ID)
+	e.Unlock()
+}
+
+// AddNetwork adds a network to the internal engine state.
+func (e *Engine) AddNetwork(network *Network) {
+	e.Lock()
+	e.networks[network.ID] = &Network{
+		NetworkResource: network.NetworkResource,
+		Engine:          e,
+	}
+	e.Unlock()
 }
 
 // RemoveVolume deletes a volume from the engine.
 func (e *Engine) RemoveVolume(name string) error {
-	err := e.client.RemoveVolume(name)
+	err := e.apiClient.VolumeRemove(context.Background(), name)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -437,7 +580,8 @@ func (e *Engine) RemoveVolume(name string) error {
 
 // RefreshImages refreshes the list of images on the engine.
 func (e *Engine) RefreshImages() error {
-	images, err := e.client.ListImages(true)
+	imgLstOpts := types.ImageListOptions{All: true}
+	images, err := e.apiClient.ImageList(context.Background(), imgLstOpts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -445,7 +589,7 @@ func (e *Engine) RefreshImages() error {
 	e.Lock()
 	e.images = nil
 	for _, image := range images {
-		e.images = append(e.images, &Image{Image: *image, Engine: e})
+		e.images = append(e.images, &Image{Image: image, Engine: e})
 	}
 	e.Unlock()
 	return nil
@@ -453,7 +597,8 @@ func (e *Engine) RefreshImages() error {
 
 // RefreshNetworks refreshes the list of networks on the engine.
 func (e *Engine) RefreshNetworks() error {
-	networks, err := e.client.ListNetworks("")
+	netLsOpts := types.NetworkListOptions{filters.NewArgs()}
+	networks, err := e.apiClient.NetworkList(context.Background(), netLsOpts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -461,7 +606,7 @@ func (e *Engine) RefreshNetworks() error {
 	e.Lock()
 	e.networks = make(map[string]*Network)
 	for _, network := range networks {
-		e.networks[network.ID] = &Network{NetworkResource: *network, Engine: e}
+		e.networks[network.ID] = &Network{NetworkResource: network, Engine: e}
 	}
 	e.Unlock()
 	return nil
@@ -469,14 +614,14 @@ func (e *Engine) RefreshNetworks() error {
 
 // RefreshVolumes refreshes the list of volumes on the engine.
 func (e *Engine) RefreshVolumes() error {
-	volumes, err := e.client.ListVolumes()
+	volumesLsRsp, err := e.apiClient.VolumeList(context.Background(), filters.NewArgs())
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
 	}
 	e.Lock()
 	e.volumes = make(map[string]*Volume)
-	for _, volume := range volumes {
+	for _, volume := range volumesLsRsp.Volumes {
 		e.volumes[volume.Name] = &Volume{Volume: *volume, Engine: e}
 	}
 	e.Unlock()
@@ -494,7 +639,11 @@ func (e *Engine) RefreshContainers(full bool) error {
 	}
 	e.RUnlock()
 
-	containers, err := e.client.ListContainers(true, false, "")
+	opts := types.ContainerListOptions{
+		All:  true,
+		Size: false,
+	}
+	containers, err := e.apiClient.ContainerList(context.Background(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -504,7 +653,7 @@ func (e *Engine) RefreshContainers(full bool) error {
 	for _, c := range containers {
 		mergedUpdate, err := e.updateContainer(c, merged, full)
 		if err != nil {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q: %v", c.Id, err)
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q: %v", c.ID, err)
 		} else {
 			merged = mergedUpdate
 		}
@@ -527,7 +676,14 @@ func (e *Engine) RefreshContainers(full bool) error {
 // Refresh the status of a container running on the engine. If `full` is true,
 // the container will be inspected.
 func (e *Engine) refreshContainer(ID string, full bool) (*Container, error) {
-	containers, err := e.client.ListContainers(true, false, fmt.Sprintf("{%q:[%q]}", "id", ID))
+	filterArgs := filters.NewArgs()
+	filterArgs.Add("id", ID)
+	opts := types.ContainerListOptions{
+		All:    true,
+		Size:   false,
+		Filter: filterArgs,
+	}
+	containers, err := e.apiClient.ContainerList(context.Background(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return nil, err
@@ -549,16 +705,24 @@ func (e *Engine) refreshContainer(ID string, full bool) (*Container, error) {
 	}
 
 	_, err = e.updateContainer(containers[0], e.containers, full)
-	return e.containers[containers[0].Id], err
+	e.RLock()
+	container := e.containers[containers[0].ID]
+	e.RUnlock()
+	return container, err
 }
 
-func (e *Engine) updateContainer(c dockerclient.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
+func (e *Engine) updateContainer(c types.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
 	var container *Container
 
 	e.RLock()
-	if current, exists := e.containers[c.Id]; exists {
+	if current, exists := e.containers[c.ID]; exists {
 		// The container is already known.
 		container = current
+		// Restarting is a transit state. Unfortunately Docker doesn't always emit
+		// events when it gets out of Restarting state. Force an inspect to update.
+		if container.Info.State != nil && container.Info.State.Restarting {
+			full = true
+		}
 	} else {
 		// This is a brand new container. We need to do a full refresh.
 		container = &Container{
@@ -574,27 +738,30 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 
 	// Update ContainerInfo.
 	if full {
-		info, err := e.client.InspectContainer(c.Id)
+		info, err := e.apiClient.ContainerInspect(context.Background(), c.ID)
 		e.CheckConnectionErr(err)
 		if err != nil {
 			return nil, err
 		}
 		// Convert the ContainerConfig from inspect into our own
 		// cluster.ContainerConfig.
-		container.Config = BuildContainerConfig(*info.Config)
 
-		// FIXME remove "duplicate" lines and move this to cluster/config.go
-		container.Config.CpuShares = container.Config.CpuShares * e.Cpus / 1024.0
-		container.Config.HostConfig.CpuShares = container.Config.CpuShares
+		// info.HostConfig.CPUShares = info.HostConfig.CPUShares * int64(e.Cpus) / 1024.0
+		networkingConfig := networktypes.NetworkingConfig{
+			EndpointsConfig: info.NetworkSettings.Networks,
+		}
+		container.Config = BuildContainerConfig(*info.Config, *info.HostConfig, networkingConfig)
+		// FIXME remove "duplicate" line and move this to cluster/config.go
+		container.Config.HostConfig.CPUShares = container.Config.HostConfig.CPUShares * e.Cpus / 1024.0
 
 		// Save the entire inspect back into the container.
-		container.Info = *info
+		container.Info = info
 	}
 
 	// Update its internal state.
 	e.Lock()
 	container.Container = c
-	containers[container.Id] = container
+	containers[container.ID] = container
 	e.Unlock()
 
 	return containers, nil
@@ -602,29 +769,48 @@ func (e *Engine) updateContainer(c dockerclient.Container, containers map[string
 
 // refreshLoop periodically triggers engine refresh.
 func (e *Engine) refreshLoop() {
+	const maxBackoffFactor int = 1000
+	// engine can hot-plug CPU/Mem or update labels. but there is no events
+	// from engine to trigger spec update.
+	// add an update interval and refresh spec for healthy nodes.
+	const specUpdateInterval = 5 * time.Minute
+	lastSpecUpdatedAt := time.Now()
 
 	for {
 		var err error
 
+		// Engines keep failing should backoff
+		// e.failureCount and e.opts.FailureRetry are type of int
+		backoffFactor := e.getFailureCount() - e.opts.FailureRetry
+		if backoffFactor < 0 {
+			backoffFactor = 0
+		} else if backoffFactor > maxBackoffFactor {
+			backoffFactor = maxBackoffFactor
+		}
 		// Wait for the delayer or quit if we get stopped.
 		select {
-		case <-e.refreshDelayer.Wait():
+		case <-e.refreshDelayer.Wait(backoffFactor):
 		case <-e.stopCh:
 			return
 		}
 
-		if !e.IsHealthy() {
+		healthy := e.IsHealthy()
+		if !healthy || time.Since(lastSpecUpdatedAt) > specUpdateInterval {
 			if err = e.updateSpecs(); err != nil {
 				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Update engine specs failed: %v", err)
 				continue
 			}
-			e.client.StopAllMonitorEvents()
-			e.client.StartMonitorEvents(e.handler, nil)
+			lastSpecUpdatedAt = time.Now()
+		}
+
+		if !healthy {
+			e.eventsMonitor.Stop()
+			e.StartMonitorEvents()
 		}
 
 		err = e.RefreshContainers(false)
 		if err == nil {
-			// Do not check error as older daemon don't support this call
+			// Do not check error as older daemon doesn't support this call
 			e.RefreshVolumes()
 			e.RefreshNetworks()
 			e.RefreshImages()
@@ -641,12 +827,12 @@ func (e *Engine) emitEvent(event string) {
 		return
 	}
 	ev := &Event{
-		Event: dockerclient.Event{
+		Message: events.Message{
 			Status: event,
 			From:   "swarm",
 			Type:   "swarm",
 			Action: event,
-			Actor: dockerclient.Actor{
+			Actor: events.Actor{
 				Attributes: make(map[string]string),
 			},
 			Time:     time.Now().Unix(),
@@ -662,7 +848,7 @@ func (e *Engine) UsedMemory() int64 {
 	var r int64
 	e.RLock()
 	for _, c := range e.containers {
-		r += c.Config.Memory
+		r += c.Config.HostConfig.Memory
 	}
 	e.RUnlock()
 	return r
@@ -673,7 +859,7 @@ func (e *Engine) UsedCpus() int64 {
 	var r int64
 	e.RLock()
 	for _, c := range e.containers {
-		r += c.Config.CpuShares
+		r += c.Config.HostConfig.CPUShares
 	}
 	e.RUnlock()
 	return r
@@ -690,29 +876,27 @@ func (e *Engine) TotalCpus() int64 {
 }
 
 // Create a new container
-func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, authConfig *dockerclient.AuthConfig) (*Container, error) {
+func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, authConfig *types.AuthConfig) (*Container, error) {
 	var (
-		err    error
-		id     string
-		client = e.client
+		err        error
+		createResp types.ContainerCreateResponse
 	)
 
 	// Convert our internal ContainerConfig into something Docker will
 	// understand.  Start by making a copy of the internal ContainerConfig as
 	// we don't want to mess with the original.
-	dockerConfig := config.ContainerConfig
+	dockerConfig := *config
 
 	// nb of CPUs -> real CpuShares
 
 	// FIXME remove "duplicate" lines and move this to cluster/config.go
-	dockerConfig.CpuShares = int64(math.Ceil(float64(config.CpuShares*1024) / float64(e.Cpus)))
-	dockerConfig.HostConfig.CpuShares = dockerConfig.CpuShares
+	dockerConfig.HostConfig.CPUShares = int64(math.Ceil(float64(config.HostConfig.CPUShares*1024) / float64(e.Cpus)))
 
-	id, err = client.CreateContainer(&dockerConfig, name, nil)
+	createResp, err = e.apiClient.ContainerCreate(context.Background(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		// If the error is other than not found, abort immediately.
-		if err != dockerclient.ErrImageNotFound || !pullImage {
+		if (err != dockerclient.ErrImageNotFound && !engineapi.IsErrImageNotFound(err)) || !pullImage {
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
@@ -720,7 +904,7 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 			return nil, err
 		}
 		// ...And try again.
-		id, err = client.CreateContainer(&dockerConfig, name, nil)
+		createResp, err = e.apiClient.ContainerCreate(context.Background(), &dockerConfig.Config, &dockerConfig.HostConfig, &dockerConfig.NetworkingConfig, name)
 		e.CheckConnectionErr(err)
 		if err != nil {
 			return nil, err
@@ -729,23 +913,28 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
-	e.refreshContainer(id, true)
+	e.refreshContainer(createResp.ID, true)
 	e.RefreshVolumes()
 	e.RefreshNetworks()
 
-	e.RLock()
-	defer e.RUnlock()
+	e.Lock()
+	container := e.containers[createResp.ID]
+	e.Unlock()
 
-	container := e.containers[id]
 	if container == nil {
 		err = errors.New("Container created but refresh didn't report it back")
 	}
 	return container, err
 }
 
-// RemoveContainer a container from the engine.
+// RemoveContainer removes a container from the engine.
 func (e *Engine) RemoveContainer(container *Container, force, volumes bool) error {
-	err := e.client.RemoveContainer(container.Id, force, volumes)
+	opts := types.ContainerRemoveOptions{
+		ContainerID:   container.ID,
+		Force:         force,
+		RemoveVolumes: volumes,
+	}
+	err := e.apiClient.ContainerRemove(context.Background(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -755,24 +944,24 @@ func (e *Engine) RemoveContainer(container *Container, force, volumes bool) erro
 	// will rewrite this.
 	e.Lock()
 	defer e.Unlock()
-	delete(e.containers, container.Id)
+	delete(e.containers, container.ID)
 
 	return nil
 }
 
 // CreateNetwork creates a network in the engine
-func (e *Engine) CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error) {
-	response, err := e.client.CreateNetwork(request)
+func (e *Engine) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
+	response, err := e.apiClient.NetworkCreate(context.Background(), *request)
 	e.CheckConnectionErr(err)
 
 	e.RefreshNetworks()
 
-	return response, err
+	return &response, err
 }
 
 // CreateVolume creates a volume in the engine
-func (e *Engine) CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volume, error) {
-	volume, err := e.client.CreateVolume(request)
+func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, error) {
+	volume, err := e.apiClient.VolumeCreate(context.Background(), *request)
 
 	e.RefreshVolumes()
 	e.CheckConnectionErr(err)
@@ -780,33 +969,93 @@ func (e *Engine) CreateVolume(request *dockerclient.VolumeCreateRequest) (*Volum
 	if err != nil {
 		return nil, err
 	}
-	return &Volume{Volume: *volume, Engine: e}, nil
+	return &Volume{Volume: volume, Engine: e}, nil
 
 }
 
-// Pull an image on the engine
-func (e *Engine) Pull(image string, authConfig *dockerclient.AuthConfig) error {
-	if !strings.Contains(image, ":") {
-		image = image + ":latest"
+// FIXME: This will become unnecessary after docker/engine-api#162 is merged
+func buildImagePullOptions(image string) (types.ImagePullOptions, error) {
+	distributionRef, err := reference.ParseNamed(image)
+	if err != nil {
+		return types.ImagePullOptions{}, err
 	}
-	err := e.client.PullImage(image, authConfig)
+
+	name := distributionRef.Name()
+	tag := "latest"
+
+	switch x := distributionRef.(type) {
+	case reference.Canonical:
+		tag = x.Digest().String()
+	case reference.NamedTagged:
+		tag = x.Tag()
+	}
+
+	return types.ImagePullOptions{
+		ImageID: name,
+		Tag:     tag,
+	}, nil
+}
+
+// Pull an image on the engine
+func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
+	pullOpts, err := buildImagePullOptions(image)
+	if err != nil {
+		return err
+	}
+	pullResponseBody, err := e.apiClient.ImagePull(context.Background(), pullOpts, nil)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
 	}
 
+	defer pullResponseBody.Close()
+
+	// wait until the image download is finished
+	dec := json.NewDecoder(pullResponseBody)
+	m := map[string]interface{}{}
+	for {
+		if err := dec.Decode(&m); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+	}
+	// if the final stream object contained an error, return it
+	if errMsg, ok := m["error"]; ok {
+		return fmt.Errorf("%v", errMsg)
+	}
+
 	// force refresh images
 	e.RefreshImages()
-
 	return nil
 }
 
 // Load an image on the engine
 func (e *Engine) Load(reader io.Reader) error {
-	err := e.client.LoadImage(reader)
+	loadResponse, err := e.apiClient.ImageLoad(context.Background(), reader, false)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
+	}
+
+	defer loadResponse.Body.Close()
+
+	// wait until the image load is finished
+	dec := json.NewDecoder(loadResponse.Body)
+
+	m := map[string]interface{}{}
+	for {
+		if err := dec.Decode(&m); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+	}
+	// if the final stream object contained an error, return it
+	if errMsg, ok := m["error"]; ok {
+		return fmt.Errorf("%v", errMsg)
 	}
 
 	// force fresh images
@@ -817,7 +1066,13 @@ func (e *Engine) Load(reader io.Reader) error {
 
 // Import image
 func (e *Engine) Import(source string, repository string, tag string, imageReader io.Reader) error {
-	_, err := e.client.ImportImage(source, repository, tag, imageReader)
+	opts := types.ImageImportOptions{
+		SourceName:     source,
+		RepositoryName: repository,
+		Tag:            tag,
+		Source:         imageReader,
+	}
+	_, err := e.apiClient.ImageImport(context.Background(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -899,52 +1154,71 @@ func (e *Engine) String() string {
 	return fmt.Sprintf("engine %s addr %s", e.ID, e.Addr)
 }
 
-func (e *Engine) handler(ev *dockerclient.Event, _ chan error, args ...interface{}) {
+func (e *Engine) handler(msg events.Message) error {
 	// Something changed - refresh our internal state.
-	switch ev.Status {
-	case "pull", "untag", "delete", "commit":
-		// These events refer to images so there's no need to update
-		// containers.
+
+	switch msg.Type {
+	case "network":
+		e.RefreshNetworks()
+	case "volume":
+		e.RefreshVolumes()
+	case "image":
 		e.RefreshImages()
-	case "die", "kill", "oom", "pause", "start", "stop", "unpause", "rename":
-		// If the container state changes, we have to do an inspect in
-		// order to update container.Info and get the new NetworkSettings.
-		e.refreshContainer(ev.ID, true)
-		e.RefreshVolumes()
-		e.RefreshNetworks()
-	default:
-		// Otherwise, do a "soft" refresh of the container.
-		e.refreshContainer(ev.ID, false)
-		e.RefreshVolumes()
-		e.RefreshNetworks()
+	case "container":
+		switch msg.Action {
+		case "die", "kill", "oom", "pause", "start", "restart", "stop", "unpause", "rename":
+			e.refreshContainer(msg.ID, true)
+		default:
+			e.refreshContainer(msg.ID, false)
+		}
+	case "":
+		// docker < 1.10
+		switch msg.Status {
+		case "pull", "untag", "delete", "commit":
+			// These events refer to images so there's no need to update
+			// containers.
+			e.RefreshImages()
+		case "die", "kill", "oom", "pause", "start", "stop", "unpause", "rename":
+			// If the container state changes, we have to do an inspect in
+			// order to update container.Info and get the new NetworkSettings.
+			e.refreshContainer(msg.ID, true)
+			e.RefreshVolumes()
+			e.RefreshNetworks()
+		default:
+			// Otherwise, do a "soft" refresh of the container.
+			e.refreshContainer(msg.ID, false)
+			e.RefreshVolumes()
+			e.RefreshNetworks()
+		}
+
 	}
 
 	// If there is no event handler registered, abort right now.
 	if e.eventHandler == nil {
-		return
+		return nil
 	}
 
 	event := &Event{
-		Engine: e,
-		Event:  *ev,
+		Engine:  e,
+		Message: msg,
 	}
 
-	e.eventHandler.Handle(event)
+	return e.eventHandler.Handle(event)
 }
 
-// AddContainer inject a container into the internal state.
+// AddContainer injects a container into the internal state.
 func (e *Engine) AddContainer(container *Container) error {
 	e.Lock()
 	defer e.Unlock()
 
-	if _, ok := e.containers[container.Id]; ok {
+	if _, ok := e.containers[container.ID]; ok {
 		return errors.New("container already exists")
 	}
-	e.containers[container.Id] = container
+	e.containers[container.ID] = container
 	return nil
 }
 
-// Inject an image into the internal state.
+// addImage injects an image into the internal state.
 func (e *Engine) addImage(image *Image) {
 	e.Lock()
 	defer e.Unlock()
@@ -952,50 +1226,77 @@ func (e *Engine) addImage(image *Image) {
 	e.images = append(e.images, image)
 }
 
-// Remove a container from the internal test.
+// removeContainer removes a container from the internal state.
 func (e *Engine) removeContainer(container *Container) error {
 	e.Lock()
 	defer e.Unlock()
 
-	if _, ok := e.containers[container.Id]; !ok {
+	if _, ok := e.containers[container.ID]; !ok {
 		return errors.New("container not found")
 	}
-	delete(e.containers, container.Id)
+	delete(e.containers, container.ID)
 	return nil
 }
 
-// Wipes the internal container state.
+// cleanupContainers wipes the internal container state.
 func (e *Engine) cleanupContainers() {
 	e.Lock()
 	e.containers = make(map[string]*Container)
 	e.Unlock()
 }
 
-// RenameContainer rename a container
-func (e *Engine) RenameContainer(container *Container, newName string) error {
-	// send rename request
-	err := e.client.RenameContainer(container.Id, newName)
+// StartContainer starts a container
+func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) error {
+	var err error
+	if hostConfig != nil {
+		err = e.client.StartContainer(id, hostConfig)
+	} else {
+		err = e.apiClient.ContainerStart(context.Background(), id)
+	}
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
 	}
 
 	// refresh container
-	_, err = e.refreshContainer(container.Id, true)
+	_, err = e.refreshContainer(id, true)
 	return err
 }
 
-// BuildImage build an image
-func (e *Engine) BuildImage(buildImage *dockerclient.BuildImage) (io.ReadCloser, error) {
-	reader, err := e.client.BuildImage(buildImage)
+// RenameContainer renames a container
+func (e *Engine) RenameContainer(container *Container, newName string) error {
+	// send rename request
+	err := e.apiClient.ContainerRename(context.Background(), container.ID, newName)
 	e.CheckConnectionErr(err)
-	return reader, err
+	if err != nil {
+		return err
+	}
+
+	// refresh container
+	_, err = e.refreshContainer(container.ID, true)
+	return err
 }
 
-// TagImage tag an image
+// BuildImage builds an image
+func (e *Engine) BuildImage(buildImage *types.ImageBuildOptions) (io.ReadCloser, error) {
+	resp, err := e.apiClient.ImageBuild(context.Background(), *buildImage)
+	e.CheckConnectionErr(err)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Body, nil
+}
+
+// TagImage tags an image
 func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	// send tag request to docker engine
-	err := e.client.TagImage(IDOrName, repo, tag, force)
+	opts := types.ImageTagOptions{
+		ImageID:        IDOrName,
+		RepositoryName: repo,
+		Tag:            tag,
+		Force:          force,
+	}
+	err := e.apiClient.ImageTag(context.Background(), opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err

@@ -3,9 +3,11 @@ package filter
 import (
 	"testing"
 
+	"github.com/docker/engine-api/types"
+	containertypes "github.com/docker/engine-api/types/container"
+	networktypes "github.com/docker/engine-api/types/network"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/samalba/dockerclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,17 +20,17 @@ func TestAffinityFilter(t *testing.T) {
 				Name: "node-0-name",
 				Addr: "node-0",
 				Containers: []*cluster.Container{
-					{Container: dockerclient.Container{
-						Id:    "container-n0-0-id",
+					{Container: types.Container{
+						ID:    "container-n0-0-id",
 						Names: []string{"/container-n0-0-name"},
 					}},
-					{Container: dockerclient.Container{
-						Id:    "container-n0-1-id",
+					{Container: types.Container{
+						ID:    "container-n0-1-id",
 						Names: []string{"/container-n0-1-name"},
 					}},
 				},
-				Images: []*cluster.Image{{Image: dockerclient.Image{
-					Id:       "image-0-id",
+				Images: []*cluster.Image{{Image: types.Image{
+					ID:       "image-0-id",
 					RepoTags: []string{"image-0:tag1", "image-0:tag2"},
 				}}},
 			},
@@ -37,17 +39,17 @@ func TestAffinityFilter(t *testing.T) {
 				Name: "node-1-name",
 				Addr: "node-1",
 				Containers: []*cluster.Container{
-					{Container: dockerclient.Container{
-						Id:    "container-n1-0-id",
+					{Container: types.Container{
+						ID:    "container-n1-0-id",
 						Names: []string{"/container-n1-0-name"},
 					}},
-					{Container: dockerclient.Container{
-						Id:    "container-n1-1-id",
+					{Container: types.Container{
+						ID:    "container-n1-1-id",
 						Names: []string{"/container-n1-1-name"},
 					}},
 				},
-				Images: []*cluster.Image{{Image: dockerclient.Image{
-					Id:       "image-1-id",
+				Images: []*cluster.Image{{Image: types.Image{
+					ID:       "image-1-id",
 					RepoTags: []string{"image-1:tag1", "image-0:tag3", "image-1:tag2"},
 				}}},
 			},
@@ -67,135 +69,135 @@ func TestAffinityFilter(t *testing.T) {
 	assert.Equal(t, result, nodes)
 
 	// Set a constraint that cannot be fulfilled and expect an error back.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container==does_not_exsits"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container==does_not_exist"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.Error(t, err)
 
 	// Set a constraint that can only be filled by a single node.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container==container-n0*"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container==container-n0*"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
 	// This constraint can only be fulfilled by a subset of nodes.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container==container-*"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container==container-*"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[2])
 
 	// Validate by id.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container==container-n0-0-id"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container==container-n0-0-id"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
 	// Validate by id.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n0-0-id"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container!=container-n0-0-id"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[0])
 
 	// Validate by id.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n0-1-id"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container!=container-n0-1-id"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[0])
 
 	// Validate by name.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container==container-n1-0-name"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container==container-n1-0-name"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
 	// Validate by name.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n1-0-name"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container!=container-n1-0-name"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[1])
 
 	// Validate by name.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n1-1-name"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container!=container-n1-1-name"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 	assert.NotContains(t, result, nodes[1])
 
 	// Conflicting Constraint
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n1-1-name", "affinity:container==container-n1-1-name"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container!=container-n1-1-name", "affinity:container==container-n1-1-name"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 	// Validate images by id
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==image-0-id"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image==image-0-id"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
 	// Validate images by name
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==image-0:tag3"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image==image-0:tag3"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
 	// Validate images by name
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image!=image-0:tag3"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image!=image-0:tag3"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	// Validate images by name
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==image-1"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image==image-1"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
 	// Validate images by name
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image!=image-1"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image!=image-1"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	// Ensure that constraints can be chained.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container!=container-n0-1-id", "affinity:container!=container-n1-1-id"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container!=container-n0-1-id", "affinity:container!=container-n1-1-id"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[2])
 
 	// Ensure that constraints can be chained.
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:container==container-n0-1-id", "affinity:container==container-n1-1-id"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:container==container-n0-1-id", "affinity:container==container-n1-1-id"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.Error(t, err)
 
 	//Tests for Soft affinity
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==~image-0:tag3"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image==~image-0:tag3"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==~ima~ge-0:tag3"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image==~ima~ge-0:tag3"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==~image-1:tag3"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image==~image-1:tag3"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==~image-1:tag3"}}), nodes, false)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image==~image-1:tag3"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, false)
 	assert.NoError(t, err)
 	assert.Len(t, result, 3)
 
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==~image-*"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image==~image-*"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image!=~image-*"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image!=~image-*"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[2])
 
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==~/image-\\d*/"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image==~/image-\\d*/"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 
 	// Not support = any more
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image=image-0:tag3"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image=image-0:tag3"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 
 	// Not support =! any more
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image=!image-0:tag3"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image=!image-0:tag3"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.Error(t, err)
 	assert.Len(t, result, 0)
 
@@ -210,13 +212,13 @@ func TestAffinityFilterLabels(t *testing.T) {
 				Name: "node-0-name",
 				Addr: "node-0",
 				Containers: []*cluster.Container{
-					{Container: dockerclient.Container{
-						Id:    "container-n0-id",
+					{Container: types.Container{
+						ID:    "container-n0-id",
 						Names: []string{"/container-n0-name"},
 					}},
 				},
-				Images: []*cluster.Image{{Image: dockerclient.Image{
-					Id:       "image-0-id",
+				Images: []*cluster.Image{{Image: types.Image{
+					ID:       "image-0-id",
 					RepoTags: []string{"image-0:tag0"},
 				}}},
 			},
@@ -225,13 +227,13 @@ func TestAffinityFilterLabels(t *testing.T) {
 				Name: "node-1-name",
 				Addr: "node-1",
 				Containers: []*cluster.Container{
-					{Container: dockerclient.Container{
-						Id:    "container-n1-id",
+					{Container: types.Container{
+						ID:    "container-n1-id",
 						Names: []string{"/container-n1-name"},
 					}},
 				},
-				Images: []*cluster.Image{{Image: dockerclient.Image{
-					Id:       "image-1-id",
+				Images: []*cluster.Image{{Image: types.Image{
+					ID:       "image-1-id",
 					RepoTags: []string{"image-1:tag1"},
 				}}},
 			},
@@ -240,22 +242,22 @@ func TestAffinityFilterLabels(t *testing.T) {
 		err    error
 	)
 
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image==image-1"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image==image-1"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Env: []string{"affinity:image!=image-1"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Env: []string{"affinity:image!=image-1"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])
 
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Labels: map[string]string{"com.docker.swarm.affinities": "[\"image==image-1\"]"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Labels: map[string]string{"com.docker.swarm.affinities": "[\"image==image-1\"]"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[1])
 
-	result, err = f.Filter(cluster.BuildContainerConfig(dockerclient.ContainerConfig{Labels: map[string]string{"com.docker.swarm.affinities": "[\"image!=image-1\"]"}}), nodes, true)
+	result, err = f.Filter(cluster.BuildContainerConfig(containertypes.Config{Labels: map[string]string{"com.docker.swarm.affinities": "[\"image!=image-1\"]"}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}), nodes, true)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 	assert.Equal(t, result[0], nodes[0])

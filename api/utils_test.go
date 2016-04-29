@@ -54,7 +54,7 @@ func TestIntValueOrZero(t *testing.T) {
 	}
 }
 
-func TestInti64ValueOrZero(t *testing.T) {
+func TestInt64ValueOrZero(t *testing.T) {
 	cases := map[string]int64{
 		"":     0,
 		"asdf": 0,

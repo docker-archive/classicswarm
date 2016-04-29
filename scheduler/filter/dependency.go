@@ -36,8 +36,8 @@ func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 
 	// Check if --net points to a container.
 	net := []string{}
-	if strings.HasPrefix(config.HostConfig.NetworkMode, "container:") {
-		net = append(net, strings.TrimPrefix(config.HostConfig.NetworkMode, "container:"))
+	if strings.HasPrefix(string(config.HostConfig.NetworkMode), "container:") {
+		net = append(net, strings.TrimPrefix(string(config.HostConfig.NetworkMode), "container:"))
 	}
 
 	candidates := []*node.Node{}
@@ -56,8 +56,8 @@ func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 	return candidates, nil
 }
 
-// Get a string representation of the dependencies found in the container config.
-func (f *DependencyFilter) String(config *cluster.ContainerConfig) string {
+// GetFilters returns a list of the dependencies found in the container config.
+func (f *DependencyFilter) GetFilters(config *cluster.ContainerConfig) ([]string, error) {
 	dependencies := []string{}
 	for _, volume := range config.HostConfig.VolumesFrom {
 		dependencies = append(dependencies, fmt.Sprintf("--volumes-from=%s", volume))
@@ -65,9 +65,15 @@ func (f *DependencyFilter) String(config *cluster.ContainerConfig) string {
 	for _, link := range config.HostConfig.Links {
 		dependencies = append(dependencies, fmt.Sprintf("--link=%s", link))
 	}
-	if strings.HasPrefix(config.HostConfig.NetworkMode, "container:") {
+	if strings.HasPrefix(string(config.HostConfig.NetworkMode), "container:") {
 		dependencies = append(dependencies, fmt.Sprintf("--net=%s", config.HostConfig.NetworkMode))
 	}
+	return dependencies, nil
+}
+
+// Get a string representation of the dependencies found in the container config.
+func (f *DependencyFilter) String(config *cluster.ContainerConfig) string {
+	dependencies, _ := f.GetFilters(config)
 	return strings.Join(dependencies, " ")
 }
 

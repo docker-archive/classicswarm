@@ -1,7 +1,7 @@
 language: go
 
 go:
-  - 1.5.2
+  - 1.5.4
 
 # let us have speedy Docker-based Travis workers
 sudo: false
@@ -9,23 +9,17 @@ sudo: false
 install:
   # Symlink below is needed for Travis CI to work correctly on personal forks of swarm
   - ln -s $HOME/gopath/src/github.com/${TRAVIS_REPO_SLUG///swarm/} $HOME/gopath/src/github.com/docker
-  - export GOPATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace:$GOPATH
-  - export PATH=${TRAVIS_BUILD_DIR}/Godeps/_workspace/bin:$PATH
-  - go get golang.org/x/tools/cmd/vet
-  - go get golang.org/x/tools/cmd/cover
-  - go get github.com/mattn/goveralls
   - go get github.com/golang/lint/golint
   - go get github.com/GeertJohan/fgt
 
 script:
   - script/validate-gofmt
-  - go vet ./...
-  - fgt golint ./...
+  - go vet `go list ./... | grep -v /vendor/`
+  - fgt golint ./... | grep -v vendor/ | tee /dev/stderr
   # Lint shell files and make sure they are not space indented.
   - fgt find test/ -type f \( -name "*.sh" -or -name "*.bash" -or -name "*.bats" \) -exec grep -Hn -e "^ " {} \;
+  - export GO15VENDOREXPERIMENT=1
   - GOOS=darwin go build
   - GOOS=windows go build
   - GOOS=linux go build
-  - go test -v -race ./...
-  - script/coverage
-  - goveralls -service=travis-ci -coverprofile=goverage.report
+  - go test -v -race `go list ./... | grep -v /vendor/`

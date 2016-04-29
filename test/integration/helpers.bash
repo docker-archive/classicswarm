@@ -16,7 +16,7 @@ SWARM_BINARY=${SWARM_BINARY:-${SWARM_ROOT}/swarm}
 DOCKER_IMAGE=${DOCKER_IMAGE:-dockerswarm/dind-master}
 DOCKER_VERSION=${DOCKER_VERSION:-latest}
 DOCKER_BINARY=${DOCKER_BINARY:-`command -v docker`}
-DOCKER_COMPOSE_VERSION=${DOCKER_COMPOSE_VERSION:-1.5.2}
+DOCKER_COMPOSE_VERSION=${DOCKER_COMPOSE_VERSION:-1.7.0}
 
 # Port on which the manager will listen to (random port between 6000 and 7000).
 SWARM_BASE_PORT=$(( ( RANDOM % 1000 )  + 6000 ))
@@ -85,14 +85,20 @@ function wait_until_reachable() {
 	retry 15 1 docker -H $1 info
 }
 
-# Returns true if all nodes have joined the swarm.
+# Returns true if all nodes have been added to swarm. Note some may be in pending state.
 function discovery_check_swarm_info() {
 	local total="$1"
 	[ -z "$total" ] && total="${#HOSTS[@]}"
 	local host="$2"
 	[ -z "$host" ] && host="${SWARM_HOSTS[0]}"
 
-	retry 10 1 eval "docker -H $host info | grep -q -e \"Nodes: $total\" -e \"Offers: $total\""
+	eval "docker -H $host info | grep -q -e \"Nodes: $total\" -e \"Offers: $total\""
+}
+
+# Return true if all nodes has been validated
+function nodes_validated() {
+	# Nodes are not in Pending state
+	[[ $(docker_swarm info | grep -c "Status: Pending") -eq 0 ]]
 }
 
 function swarm_manage() {
@@ -101,7 +107,10 @@ function swarm_manage() {
 	swarm_manage_no_wait "$@"
 
 	# Wait for nodes to be discovered
-	discovery_check_swarm_info "${#HOSTS[@]}" "${SWARM_HOSTS[$i]}"
+	retry 10 1 discovery_check_swarm_info "${#HOSTS[@]}" "${SWARM_HOSTS[$i]}"
+
+	# All nodes passes pending state
+	retry 15 1 nodes_validated
 }
 
 # Start the swarm manager in background.
@@ -196,7 +205,10 @@ function start_docker() {
 			# -v /usr/local/bin -v /var/run are specific to mesos, so the slave can do a --volumes-from and use the docker cli
 			docker_host run -d --name node-$i --privileged -v /usr/local/bin -v /var/run -it --net=host \
 			${DOCKER_IMAGE}:${DOCKER_VERSION} \
-			bash -c "\
+			sh -c "\
+				rm /var/run/docker.pid ; \
+				rm /var/run/docker/libcontainerd/docker-containerd.pid ; \ 
+				rm /var/run/docker/libcontainerd/docker-containerd.sock ; \
 				hostname node-$i && \
 				docker daemon -H 127.0.0.1:$port \
 					-H=unix:///var/run/docker.sock \

@@ -45,9 +45,22 @@ func (f *ConstraintFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 			}
 		}
 		if len(candidates) == 0 {
-			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", constraint.key, OPERATORS[constraint.operator], constraint.value)
+			return nil, fmt.Errorf("unable to find a node that satisfies the constraint %s%s%s", constraint.key, OPERATORS[constraint.operator], constraint.value)
 		}
 		nodes = candidates
 	}
 	return nodes, nil
+}
+
+// GetFilters returns a list of the constraints found in the container config.
+func (f *ConstraintFilter) GetFilters(config *cluster.ContainerConfig) ([]string, error) {
+	allConstraints := []string{}
+	constraints, err := parseExprs(config.Constraints())
+	if err != nil {
+		return nil, err
+	}
+	for _, constraint := range constraints {
+		allConstraints = append(allConstraints, fmt.Sprintf("%s%s%s", constraint.key, OPERATORS[constraint.operator], constraint.value))
+	}
+	return allConstraints, nil
 }

@@ -8,13 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends git file parall
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install golang
-ENV GO_VERSION 1.5.2
+ENV GO_VERSION 1.5.4
 RUN curl -sSL https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz | tar -v -C /usr/local -xz
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
 ENV GOPATH /go
-
-# Go dependencies
-RUN go get github.com/tools/godep
 
 # install bats
 RUN cd /usr/local/src/ \
@@ -24,6 +21,5 @@ RUN cd /usr/local/src/ \
 
 RUN mkdir -p /go/src/github.com/docker/swarm
 WORKDIR /go/src/github.com/docker/swarm/test/integration
-ENV GOPATH /go/src/github.com/docker/swarm/Godeps/_workspace:$GOPATH
 
 ENTRYPOINT ["/dind"]

@@ -91,7 +91,7 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 
 		for containerProtoPort, bindings := range t.config.HostConfig.PortBindings {
 			for _, binding := range bindings {
-				containerInfo := strings.SplitN(containerProtoPort, "/", 2)
+				containerInfo := strings.SplitN(string(containerProtoPort), "/", 2)
 				containerPort, err := strconv.ParseUint(containerInfo[0], 10, 32)
 				if err != nil {
 					log.Warn(err)
@@ -135,11 +135,11 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_BRIDGE.Enum()
 	}
 
-	if cpus := t.config.CpuShares; cpus > 0 {
+	if cpus := t.config.HostConfig.CPUShares; cpus > 0 {
 		t.Resources = append(t.Resources, mesosutil.NewScalarResource("cpus", float64(cpus)))
 	}
 
-	if mem := t.config.Memory; mem > 0 {
+	if mem := t.config.HostConfig.Memory; mem > 0 {
 		t.Resources = append(t.Resources, mesosutil.NewScalarResource("mem", float64(mem/1024/1024)))
 	}
 
@@ -159,10 +159,14 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("env"), Value: proto.String(value)})
 	}
 
+	if !t.config.AttachStdin && !t.config.AttachStdout && !t.config.AttachStderr {
+		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("label"), Value: proto.String(fmt.Sprintf("%s=true", cluster.SwarmLabelNamespace+".mesos.detach"))})
+	}
+
 	t.SlaveId = &mesosproto.SlaveID{Value: &slaveID}
 }
 
-// NewTask fucntion creates a task
+// NewTask function creates a task
 func NewTask(config *cluster.ContainerConfig, name string, timeout time.Duration) (*Task, error) {
 	id := stringid.TruncateID(stringid.GenerateRandomID())
 

@@ -11,8 +11,9 @@ import (
 func TestRequest(t *testing.T) {
 	t.Parallel()
 
+	context := &context{}
 	r := mux.NewRouter()
-	setupPrimaryRouter(r, nil, false)
+	setupPrimaryRouter(r, context, false)
 	w := httptest.NewRecorder()
 
 	req, e := http.NewRequest("GET", "/version", nil)
@@ -36,10 +37,12 @@ func TestRequest(t *testing.T) {
 func TestCorsRequest(t *testing.T) {
 	t.Parallel()
 
+	context := &context{}
 	primary := mux.NewRouter()
-	setupPrimaryRouter(primary, nil, true)
+	setupPrimaryRouter(primary, context, true)
 	w := httptest.NewRecorder()
 
+	// test an OPTIONS request when cors enabled
 	r, e := http.NewRequest("OPTIONS", "/version", nil)
 	if nil != e {
 		t.Fatalf("couldn't set up test request")
@@ -56,4 +59,23 @@ func TestCorsRequest(t *testing.T) {
 	if w.Code == 404 {
 		t.Fatalf("failed not found")
 	}
+
+	// test a normal request ( GET /_ping ) when cors enabled
+	w2 := httptest.NewRecorder()
+
+	r2, e2 := http.NewRequest("GET", "/_ping", nil)
+	if nil != e2 {
+		t.Fatalf("couldn't set up test request")
+	}
+
+	primary.ServeHTTP(w2, r2)
+
+	if w2.Body.String() != "OK" {
+		t.Fatalf("couldn't get body content when cors enabled")
+	}
+
+	if w2.Code == 404 {
+		t.Fatalf("failed not found")
+	}
+
 }

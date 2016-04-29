@@ -1,0 +1,13 @@
+version: "2"
+
+services:
+
+  service1:
+    image: busybox
+    command: sleep 100
+    networks:
+      - testn
+
+networks:
+  testn:
+    driver: bridge

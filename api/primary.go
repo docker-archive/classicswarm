@@ -18,6 +18,7 @@ type context struct {
 	statusHandler StatusHandler
 	debug         bool
 	tlsConfig     *tls.Config
+	apiVersion    string
 }
 
 type handler func(c *context, w http.ResponseWriter, r *http.Request)
@@ -68,7 +69,7 @@ var routes = map[string]map[string]handler{
 		"/containers/{name:.*}/unpause":       proxyContainerAndForceRefresh,
 		"/containers/{name:.*}/rename":        postRenameContainer,
 		"/containers/{name:.*}/restart":       proxyContainerAndForceRefresh,
-		"/containers/{name:.*}/start":         proxyContainerAndForceRefresh,
+		"/containers/{name:.*}/start":         postContainersStart,
 		"/containers/{name:.*}/stop":          proxyContainerAndForceRefresh,
 		"/containers/{name:.*}/update":        proxyContainerAndForceRefresh,
 		"/containers/{name:.*}/wait":          proxyContainerAndForceRefresh,
@@ -79,8 +80,8 @@ var routes = map[string]map[string]handler{
 		"/exec/{execid:.*}/start":             postExecStart,
 		"/exec/{execid:.*}/resize":            proxyContainer,
 		"/networks/create":                    postNetworksCreate,
-		"/networks/{networkid:.*}/connect":    proxyNetworkContainerOperation,
-		"/networks/{networkid:.*}/disconnect": proxyNetworkContainerOperation,
+		"/networks/{networkid:.*}/connect":    proxyNetworkConnect,
+		"/networks/{networkid:.*}/disconnect": proxyNetworkDisconnect,
 		"/volumes/create":                     postVolumesCreate,
 	},
 	"PUT": {
@@ -97,7 +98,7 @@ var routes = map[string]map[string]handler{
 func writeCorsHeaders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
-	w.Header().Add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS")
+	w.Header().Add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD")
 }
 
 func profilerSetup(mainRouter *mux.Router, path string) {
@@ -149,16 +150,17 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 				if enableCors {
 					writeCorsHeaders(w, r)
 				}
+				context.apiVersion = mux.Vars(r)["version"]
 				localFct(context, w, r)
 			}
 			localMethod := method
 
-			r.Path("/v{version:[0-9.]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
+			r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).HandlerFunc(wrap)
 			r.Path(localRoute).Methods(localMethod).HandlerFunc(wrap)
 
 			if enableCors {
 				optionsMethod := "OPTIONS"
-				localFct = optionsHandler
+				optionsFct := optionsHandler
 
 				wrap := func(w http.ResponseWriter, r *http.Request) {
 					log.WithFields(log.Fields{"method": optionsMethod, "uri": r.RequestURI}).
@@ -166,10 +168,11 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 					if enableCors {
 						writeCorsHeaders(w, r)
 					}
-					localFct(context, w, r)
+					context.apiVersion = mux.Vars(r)["version"]
+					optionsFct(context, w, r)
 				}
 
-				r.Path("/v{version:[0-9.]+}" + localRoute).
+				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
 					Methods(optionsMethod).HandlerFunc(wrap)
 				r.Path(localRoute).Methods(optionsMethod).
 					HandlerFunc(wrap)

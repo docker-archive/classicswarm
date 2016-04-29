@@ -1,0 +1,24 @@
+service1:
+  image: busybox
+  ports:
+    - "80"
+  command: sleep 100
+  labels:
+    com.docker.swarm.constraints: '["node==~node-0"]'
+    com.docker.swarm.reschedule-policies: '["on-node-failure"]'
+
+service2:
+  image: busybox
+  ports:
+    - "80"
+  command: sleep 100
+  environment:
+    - reschedule:on-node-failure
+  labels:
+    com.docker.swarm.constraints: '["node==~node-0"]'
+
+service3:
+  image: busybox
+  command: sleep 100
+  labels:
+    com.docker.swarm.constraints: '["node==~node-0"]'

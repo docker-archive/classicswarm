@@ -7,6 +7,30 @@ function teardown() {
 	stop_docker
 }
 
+@test "docker ps - host down" {
+	start_docker_with_busybox 2
+	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 ${HOSTS[0]},${HOSTS[1]}
+
+	docker_swarm run -d -e constraint:node==node-0 busybox sleep 42
+	docker_swarm run -d -e constraint:node==node-1 busybox sleep 42
+
+	run docker_swarm ps
+	[ "${#lines[@]}" -eq  3 ]
+
+	# Stop node-0
+	docker_host stop ${DOCKER_CONTAINERS[0]}
+
+	# Wait for Swarm to detect the node failure.
+	retry 5 1 eval "docker_swarm info | grep -q 'Unhealthy'"
+
+	run docker_swarm ps
+	# container with host down shouldn't be displyed since they are not `running`
+	[ "${#lines[@]}" -eq  2 ]
+
+	run docker_swarm ps -a
+	[ "${#lines[@]}" -eq  3 ]
+}
+
 @test "docker ps -n" {
 	start_docker_with_busybox 2
 	swarm_manage
@@ -49,18 +73,17 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	docker_swarm run -d --name c1 busybox echo c1
+	docker_swarm run -d --name container1 busybox echo container1
 	sleep 1 #sleep so the 2 containers don't start at the same second
-	docker_swarm run -d --name c2 busybox echo c2
+	docker_swarm run -d --name container2 busybox echo container2
 
-	run eval "docker_swarm ps --before c1 2>/dev/null"
-	echo $output
+	run eval "docker_swarm ps --before container1 2>/dev/null"
 	[ "${#lines[@]}" -eq  1 ]
 
-	run eval "docker_swarm ps --before c2 2>/dev/null"
+	run eval "docker_swarm ps --before container2 2>/dev/null"
 	[ "${#lines[@]}" -eq  2 ]
 
-	run docker_swarm ps --before c3
+	run docker_swarm ps --before container3
 	[ "$status" -eq 1 ]
 }
 
@@ -120,4 +143,36 @@ function teardown() {
 	[[ "$output" == *"$firstID"* ]]
 	[[ "$output" == *"$secondID"* ]]
 	[[ "$output" != *"$thirdID"* ]]
+}
+
+@test "docker ps --filter node" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker_swarm run --name c1 -e constraint:node==node-0 -d busybox:latest sleep 100
+	docker_swarm run --name c2 -e constraint:node==node-1 -d busybox:latest sleep 100
+
+	run docker_swarm ps --filter node=node-0
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"node-0/c1"* ]]
+	[[ "${output}" != *"node-1/c2"* ]]
+}
+
+@test "docker ps --filter node" {
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
+		skip
+	fi
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker_swarm run --name c1 -v test_volume1:/abc -d busybox:latest sleep 100
+	docker_swarm run --name c2 -v test_volume2:/def -d busybox:latest sleep 100
+	docker_swarm run --name c3 -v test_volume3:/ghi -d busybox:latest sleep 100
+
+	run docker_swarm ps --filter volume=test_volume1 --filter volume=/def
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"node-0/c1"* ]]
+	[[ "${output}" == *"node-1/c2"* ]]
+	[[ "${output}" != *"node-1/c3"* ]]
 }

@@ -8,6 +8,13 @@ function teardown() {
 }
 
 @test "scheduler avoids failing node" {
+	# Docker issue #14203 in runC causing this test to fail.
+	# Issue fixed after Docker 1.10
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
+		skip
+	fi
+
 	# Start 1 engine and register it in the file.
 	start_docker 2
 	# Start swarm and check it can reach the node
@@ -25,7 +32,7 @@ function teardown() {
 	# Try to schedule a container. It'd first select node-1 and fail
 	run docker_swarm run -m 10m busybox sh
 	[ "$status" -ne 0 ]
-	[[ "${lines[0]}" == *"Cannot connect to the docker engine endpoint"* ]]
+	[[ "${lines[0]}" == *"Cannot connect to the docker engine endpoint"* || "${lines[0]}" == *"Cannot connect to the Docker daemon"* ]]
 
 	# Try to run it again. It'd select node-0 and succeed
 	run docker_swarm run -m 10m busybox sh
@@ -33,6 +40,13 @@ function teardown() {
 }
 
 @test "refresh loop detects failure" {
+	# Docker issue #14203 in runC causing this test to fail.
+	# Issue fixed after Docker 1.10
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
+		skip
+	fi
+
 	# Start 1 engine and register it in the file.
 	start_docker 2
 	# Start swarm and check it can reach the node
@@ -56,6 +70,13 @@ function teardown() {
 }
 
 @test "scheduler retry" {
+	# Docker issue #14203 in runC causing this test to fail.
+	# Issue fixed after Docker 1.10
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
+		skip
+	fi
+
 	# Start 1 engine and register it in the file.
 	start_docker 2
 	# Start swarm and check it can reach the node

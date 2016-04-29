@@ -99,6 +99,70 @@ function teardown() {
 	[[ "${output}" == *"someDnsOption"* ]]
 	# stop-signal
 	[[ "${output}" == *"\"StopSignal\": \"SIGKILL\""* ]]
+
+	# following options are introduced in docker 1.10, skip older version
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* ]]; then
+		skip
+	fi
+
+	docker_swarm run -d --name test_container2 \
+			 --oom-score-adj=350 \
+			 --tmpfs=/tempfs:rw \
+			 --device-read-iops=/dev/null:351 \
+			 --device-write-iops=/dev/null:352 \
+			 --device-read-bps=/dev/null:1mb \
+			 --device-write-bps=/dev/null:2mb \
+			 busybox sleep 1000
+
+	run docker_swarm inspect test_container2
+	# oom-score-adj
+	[[ "${output}" == *"\"OomScoreAdj\": 350"* ]]
+	# tmpfs
+	[[ "${output}" == *"\"/tempfs\": \"rw\""* ]]
+	# device-read-iops
+	[[ "${output}" == *"351"* ]]
+	# device-write-iops
+	[[ "${output}" == *"352"* ]]
+	# device-read-bps
+	[[ "${output}" == *"1048576"* ]]
+	# device-write-bps
+	[[ "${output}" == *"2097152"* ]]
+}
+
+@test "docker run --ip" {
+	# docker run --ip is introduced in docker 1.10, skip older version without --ip
+	# look for --ip6 because --ip will match --ipc
+	run docker run --help
+	if [[ "${output}" != *"--ip6"* ]]; then
+		skip
+	fi
+
+	start_docker_with_busybox 1
+	swarm_manage
+
+	docker_swarm network create -d bridge --subnet 10.0.0.0/24 testn
+
+	docker_swarm run --name testc --net testn -d --ip 10.0.0.42 busybox sh
+	run docker_swarm inspect testc
+	[[ "${output}" == *"10.0.0.42"* ]]
+}
+
+@test "docker run --net-alias" {
+	# docker run --net-alias is introduced in docker 1.10, skip older version without --net-alias
+	run docker run --help
+	if [[ "${output}" != *"--net-alias"* ]]; then
+		skip
+	fi
+
+	start_docker_with_busybox 1
+	swarm_manage
+
+	docker_swarm network create -d bridge testn
+
+	docker_swarm run --name testc --net testn -d --net-alias=testa busybox sh
+	run docker_swarm inspect testc
+	[[ "${output}" == *"testa"* ]]
 }
 
 @test "docker run - reschedule with image affinity" {
@@ -145,7 +209,7 @@ function teardown() {
 	run docker_swarm run -d --name test_container -e constraint:node==node-1 busyboxabcde sleep 1000
 
 	# check error message
-	[[ "${output}" != *"unable to find a node that satisfies"* ]]
+	[[ "${output}" != *"unable to find a node that satisfies the constraint"* ]]
 	[[ "${output}" == *"not found"* ]]
 }
 

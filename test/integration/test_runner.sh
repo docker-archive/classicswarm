@@ -12,7 +12,7 @@ function execute() {
 }
 
 # Tests to run. Defaults to all.
-TESTS=${@:-. compose discovery api mesos/api mesos/compose mesos/zk}
+TESTS=${@:-. compose discovery api nodemanagement mesos/api mesos/compose mesos/zk}
 
 # Generate a temporary binary for the tests.
 export SWARM_BINARY=`mktemp`
@@ -20,6 +20,8 @@ export SWARM_BINARY=`mktemp`
 # Download docker-compose
 execute time curl -L --silent https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
 execute chmod +x /usr/local/bin/docker-compose
+
+export GO15VENDOREXPERIMENT=1
 
 # Build Swarm.
 execute time go build -o "$SWARM_BINARY" ../..

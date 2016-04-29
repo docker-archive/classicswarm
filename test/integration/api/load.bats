@@ -23,11 +23,11 @@ function teardown() {
 
 	docker_swarm load -i $IMAGE_FILE
 
-	# and now swarm should have cought the image just loaded.
+	# and now swarm should have caught the image just loaded.
 	run docker_swarm images -q
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -ge  1 ]
-	
+
 	# check node0
 	run docker -H ${HOSTS[0]} images
 	[ "${#lines[@]}" -eq  2 ]

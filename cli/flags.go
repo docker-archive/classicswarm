@@ -59,7 +59,7 @@ var (
 	flTTL = cli.StringFlag{
 		Name:  "ttl",
 		Value: "180s",
-		Usage: "sets the expiration of an ephemeral node",
+		Usage: "set the expiration of an ephemeral node",
 	}
 	flTimeout = cli.StringFlag{
 		Name:  "timeout",
@@ -148,7 +148,7 @@ var (
 	}
 	flLeaderTTL = cli.StringFlag{
 		Name:  "replication-ttl",
-		Value: "15s",
+		Value: "20s",
 		Usage: "Leader lock release time on failure",
 	}
 )

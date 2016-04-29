@@ -1,6 +1,102 @@
 # Changelog
 
-## 1.1.0 (2016-01-14)
+## 1.2.1 (2016-04-22)
+
+#### API
+
+- Use engine-api to handle large number of API calls
+- Update ContainerConfig to embed HostConfig and NetworkingConfig
+- stop/restart/kill a non-existent container should return 500 rather than 404
+- Return an error when assertion fails in hijack
+- Return an error when Image Pull fails
+- Fix image pull bug (wait until download finishes)
+
+#### Build
+
+- Switch to go 1.6.2
+- Move dependencies to vendor/
+- Update Image Pull to use docker/distribution package
+
+#### Misc
+
+- Documentation clean up
+
+## 1.2.0 (2016-04-13)
+
+#### Scheduler
+
+- Move rescheduling out of experimental
+- Differentiate constraint errors from affinity errors
+- Printing unsatisfiable constraints for container scheduling failure
+- Enable rescheduling on master manager to prevent replica managers from rescheduling containers
+- Output error when starting a rescheduled container fails, and when removing container fails at node recovery
+- Validate cluster swarm.overcommit option
+
+#### API
+
+- Introduce engine-api client to Swarm
+- Implement 'info' and 'version' with engine-api
+- Use apiClient for some volume, network, image operations
+- Print engine version in Info
+- Fix swarm api response status code
+- Support ps node filter
+- Fix HostConfig for /start endpoint
+- Print container 'created' state at ps
+- Update dockerclient to get labels on volumes, networks, images
+- Support private images, labels and other new flags in docker build
+- Select apiClient version according to node docker version
+
+#### Node management
+
+- Prevent crash on channel double close
+- Manager retries EventMonitoring on failure.
+- Docker engine updates hostname/domainname
+- Force inspect for containers in Restarting state.
+- Increase max thread count to 50k to accommodate large cluster or heavy workload
+- Force to validate min and max refresh interval to be positive
+- Skip unstable tests from Docker bug 14203
+- Fix race condition between node removal from discovery and scheduler
+- Fix data race with node failureCount
+- Display warning message if an engine has labels with "node=xxx"
+
+#### Discovery
+
+- Remove parameter which is not used in createDiscovery
+- Fix Consul leader election failure on multi-server
+
+#### Mesos integration
+
+- Support rescind offer in swarm
+- Update mesos tests
+
+#### Misc
+
+- Update golang version to 1.5.4
+- Skip redundant endpoints in "network inspect"
+- Validate duration flags:--delay, --timeout, --replication-ttl
+- Fix image matching via id
+- Make port 0 invalid as listening port
+- Improve volume inspect test
+- Add read lock for eventsHandler when only it is necessary
+
+## 1.1.3 (2016-03-03)
+
+- Fix missing HostConfig for rescheduled containers
+- Fix TCP connections leak
+- Support `docker run --net <node>/<network> ...`
+- Fix CORS issue in the API
+
+## 1.1.2 (2016-02-18)
+
+- Fix regression with Docker Compose
+
+## 1.1.1 (2016-02-17)
+
+- Performance improvements around networking with Docker engine 1.10
+- Fix reschedule issue regarding events
+- Implement engine refresh backoff strategy for failing nodes
+
+## 1.1.0 (2016-02-04)
 
 #### Scheduler
 
@@ -17,8 +113,11 @@
 - Fix error when inspect on unhealthy node
 - Prevent panic in filters when container has no name
 - Add buildtime, kernelversion and experimental to API version
+- Support docker update and new networking related flags in run & network create/connect/disconnect/ls
+- Require `--all` on docker ps to display containers on unhealthy nodes
+- Retry on docker events EOF
 
-#### Node Managment
+#### Node Management
 
 - Add a random delay to avoid synchronized registration at swarm join
 - Use engine connection error to fail engine fast
@@ -33,6 +132,7 @@
 - Enable checkpoint failover in FrameworkInfo
 - Fix timeout when pulling images
 - Add timeout to refuse offers
+- Fix double start issue
 
 #### Misc
 

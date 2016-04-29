@@ -1,15 +1,15 @@
 <!--[metadata]>
 +++
-title = "Docker Swarm Networking"
-description = "Swarm Networking"
+title = "Swarm and container networks"
+description = "Swarm and container networks"
 keywords = ["docker, swarm, clustering,  networking"]
 [menu.main]
-parent="smn_workw_swarm"
-weight=4
+parent="workw_swarm"
+weight=3
 +++
 <![end-metadata]-->
 
-# Networking
+# Swarm and container networks
 
 Docker Swarm is fully compatible with Docker's networking features. This
 includes the multi-host networking feature which allows creation of custom
@@ -42,7 +42,7 @@ ready to create a network.
 ## List networks
 
 This example assumes there are two nodes `node-0` and `node-1` in the cluster.
-From a swarm node, list the networks:
+From a Swarm node, list the networks:
 
 ```bash
 $ docker network ls
@@ -60,7 +60,7 @@ As you can see, each network name is prefixed by the node name.
 ## Create a network
 
 By default, Swarm is using the `overlay` network driver, a global-scope network
-driver. A global-scope network driver creates a network across an entire swarm.
+driver. A global-scope network driver creates a network across an entire Swarm cluster.
 When you create an `overlay` network under Swarm, you can omit the `-d` option:
 
 ```bash
@@ -80,7 +80,7 @@ NETWORK ID          NAME                   DRIVER
 
 As you can see here, both the `node-0/swarm_network` and the
 `node-1/swarm_network` have the same ID.  This is because when you create a
-network on the swarm, it is accessible from all the nodes.
+network on the cluster, it is accessible from all the nodes.
 
 To create a local scope network (for example with the `bridge` network driver) you
 should use `<node>/<name>` otherwise your network is created on a random node.
@@ -96,7 +96,7 @@ NETWORK ID          NAME                   DRIVER
 09138343e80e        node-0/bridge          bridge
 8834dbd552e5        node-0/none            null
 42131321acab        node-0/swarm_network   overlay
-921817fefea5        node-0/bridge2         brige
+921817fefea5        node-0/bridge2         bridge
 45782acfe427        node-1/host            host
 8926accb25fd        node-1/bridge          bridge
 6382abccd23d        node-1/none            null
@@ -133,4 +133,4 @@ from `node-0`.
 - [Docker Swarm overview](index.md)
 - [Scheduler strategies](scheduler/strategy.md)
 - [Scheduler filters](scheduler/filter.md)
-- [Swarm API](api/swarm-api.md)
+- [Swarm API](swarm-api.md)

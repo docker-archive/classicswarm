@@ -38,7 +38,7 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 				containers := []string{}
 				for _, container := range node.Containers {
 					if len(container.Names) > 0 {
-						containers = append(containers, container.Id, strings.TrimPrefix(container.Names[0], "/"))
+						containers = append(containers, container.ID, strings.TrimPrefix(container.Names[0], "/"))
 					}
 				}
 				if affinity.Match(containers...) {
@@ -47,10 +47,11 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 			case "image":
 				images := []string{}
 				for _, image := range node.Images {
-					images = append(images, image.Id)
+					images = append(images, image.ID)
 					images = append(images, image.RepoTags...)
 					for _, tag := range image.RepoTags {
-						images = append(images, strings.Split(tag, ":")[0])
+						repo, _ := cluster.ParseRepositoryTag(tag)
+						images = append(images, repo)
 					}
 				}
 				if affinity.Match(images...) {
@@ -68,10 +69,23 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 			}
 		}
 		if len(candidates) == 0 {
-			return nil, fmt.Errorf("unable to find a node that satisfies %s%s%s", affinity.key, OPERATORS[affinity.operator], affinity.value)
+			return nil, fmt.Errorf("unable to find a node that satisfies the affinity %s%s%s", affinity.key, OPERATORS[affinity.operator], affinity.value)
 		}
 		nodes = candidates
 	}
 
 	return nodes, nil
+}
+
+// GetFilters returns a list of the affinities found in the container config.
+func (f *AffinityFilter) GetFilters(config *cluster.ContainerConfig) ([]string, error) {
+	allAffinities := []string{}
+	affinities, err := parseExprs(config.Affinities())
+	if err != nil {
+		return nil, err
+	}
+	for _, affinity := range affinities {
+		allAffinities = append(allAffinities, fmt.Sprintf("%s%s%s (soft=%t)", affinity.key, OPERATORS[affinity.operator], affinity.value, affinity.isSoft))
+	}
+	return allAffinities, nil
 }
