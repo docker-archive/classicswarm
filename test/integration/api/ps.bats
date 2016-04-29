@@ -157,3 +157,22 @@ function teardown() {
 	[[ "${output}" == *"node-0/c1"* ]]
 	[[ "${output}" != *"node-1/c2"* ]]
 }
+
+@test "docker ps --filter node" {
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
+		skip
+	fi
+	start_docker_with_busybox 2
+	swarm_manage
+
+	docker_swarm run --name c1 -v test_volume1:/abc -d busybox:latest sleep 100
+	docker_swarm run --name c2 -v test_volume2:/def -d busybox:latest sleep 100
+	docker_swarm run --name c3 -v test_volume3:/ghi -d busybox:latest sleep 100
+
+	run docker_swarm ps --filter volume=test_volume1 --filter volume=/def
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"node-0/c1"* ]]
+	[[ "${output}" == *"node-1/c2"* ]]
+	[[ "${output}" != *"node-1/c3"* ]]
+}
