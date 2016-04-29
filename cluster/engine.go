@@ -634,7 +634,7 @@ func (e *Engine) RefreshVolumes() error {
 func (e *Engine) RefreshContainers(full bool) error {
 	oldContainers := []string{}
 	e.RLock()
-	for id, _ := range e.containers {
+	for id := range e.containers {
 		oldContainers = append(oldContainers, id)
 	}
 	e.RUnlock()
