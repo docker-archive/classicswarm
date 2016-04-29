@@ -632,6 +632,13 @@ func (e *Engine) RefreshVolumes() error {
 // true, each container will be inspected.
 // FIXME: unexport this method after mesos scheduler stops using it directly
 func (e *Engine) RefreshContainers(full bool) error {
+	oldContainers := []string{}
+	e.RLock()
+	for id, _ := range e.containers {
+		oldContainers = append(oldContainers, id)
+	}
+	e.RUnlock()
+
 	opts := types.ContainerListOptions{
 		All:  true,
 		Size: false,
@@ -654,7 +661,14 @@ func (e *Engine) RefreshContainers(full bool) error {
 
 	e.Lock()
 	defer e.Unlock()
-	e.containers = merged
+	for id, c := range merged {
+		e.containers[id] = c
+	}
+	for _, id := range oldContainers {
+		if _, exists := merged[id]; !exists {
+			delete(e.containers, id)
+		}
+	}
 
 	return nil
 }
