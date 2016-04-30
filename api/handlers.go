@@ -810,7 +810,7 @@ func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	r.Body.Close()
 
-	if len(buf) <= 2 {
+	if len(buf) <= 2 || (len(buf) == 4 && string(buf) == "null") {
 		hostConfig = nil
 	} else {
 		if err := json.Unmarshal(buf, hostConfig); err != nil {
