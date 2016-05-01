@@ -85,7 +85,7 @@ function teardown() {
 
 	swarm_manage
 
-	# make sure same image id have two repo-tags
+	# make sure same image id has two repo-tags
 	docker_swarm tag busybox:latest testimage:latest
 
 	run docker_swarm images
@@ -145,7 +145,7 @@ function teardown() {
 
 	swarm_manage
 
-	# make sure same image id have two repo-tags
+	# make sure same image id has two repo-tags
 	docker_swarm tag busybox:latest testimage:tag1
 	docker_swarm tag busybox:latest testimage:tag2
 

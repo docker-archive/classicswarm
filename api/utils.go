@@ -283,7 +283,7 @@ func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.R
 	// On 2, stdin copy should return immediately now since the out stream is closed.
 	// Note that we probably don't actually even need to wait here.
 	//
-	// If we don't close the stream when stdout is done, in some cases stdin will hange
+	// If we don't close the stream when stdout is done, in some cases stdin will hang
 	select {
 	case <-inDone:
 		// wait for out to be done

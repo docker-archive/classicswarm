@@ -24,7 +24,7 @@ function teardown() {
 	retry 5 1 eval "docker_swarm info | grep -q 'Unhealthy'"
 
 	run docker_swarm ps
-	# container with host down shouldn't be displyed since they are not `running`
+	# container with host down shouldn't be displayed since they are not `running`
 	[ "${#lines[@]}" -eq  2 ]
 
 	run docker_swarm ps -a

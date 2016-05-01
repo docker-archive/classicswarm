@@ -15,7 +15,7 @@ function teardown() {
 
 	docker_swarm run -d --name another_container busybox sleep 500
 
-	# make sure container exist
+	# make sure container exists
 	run docker_swarm ps -a
 	[ "${#lines[@]}" -eq 3 ]
 	[[ "${output}" == *"test_container"* ]]
