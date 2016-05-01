@@ -136,28 +136,30 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 	var affinityContainerIndex int   // index of affinity container env element in env[]
 	var affinityLabelRef string  // docker affinity label env var ( affinity:<label>==<label value> ) 
 	var affinityLabelIndex int   // index of affinity label env element in env[]
-	// check whether affinity container env is in env.  If yes save it for checking whether it belongs to tenant.
+	// check for affinity in environment vars.  
+	// If yes save it for checking whether it belongs to tenant.
 	affinityContainerCheckRequired := false
+	affinityLabelCheckRequired := false
 	for i, e := range env {
-		if strings.HasPrefix(e,"affinity:container==") {
+		if strings.HasPrefix(e,"affinity:") {
+		  if strings.HasPrefix(e,"affinity:image==") {
+			break  // we ignore affinity for images 
+		  } else if strings.HasPrefix(e,"affinity:container==") {
 			affinityContainerCheckRequired = true
 			containerRefIndex := strings.Index(e,"affinity:container==")+len("affinity:container==")
 			affinityContainerRef = e[containerRefIndex:len(e)]
 			affinityContainerIndex = i
 			break
+		  } else {
+			affinityLabelCheckRequired = true
+			labelRefIndex := strings.Index(e,"affinity:")+len("affinity:")
+			affinityLabelRef = e[labelRefIndex:len(e)]
+			log.Debug("affinityLabelRef: ",affinityLabelRef)
+			affinityLabelIndex = i
+			break
+		  }
 		}
-	}
-	affinityLabelCheckRequired := false
-	if !affinityContainerCheckRequired {
-		for i, e := range env {
-			if strings.HasPrefix(e,"affinity:") && !strings.HasPrefix(e,"affinity:image==") {
-				affinityLabelCheckRequired = true
-				labelRefIndex := strings.Index(e,"affinity:")+len("affinity:")
-				affinityLabelRef = e[labelRefIndex:len(e)]
-				affinityLabelIndex = i
-				break
-			}
-		}
+
 	}
 
 		
@@ -166,8 +168,10 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 		return true, &ValidationOutPutDTO{ContainerID: ""}
 	}
 	for _, container := range containers {
-		if(strings.HasSuffix(container.Info.Name,tenantName)) {
-			log.Debugf("Examine container %s %s",container.Info.Name,container.Info.Id)
+		//log.Debugf("Examine container %s %s",container.Info.Name,container.Info.Id)
+		if(container.Config.Labels[headers.TenancyLabel] == tenantName) {
+			log.Debugf("Look for container references in container %s %s for tenant %s",container.Info.Name,container.Info.Id,tenantName)
+			// check for volumeFrom reference
 			for i := 0; i < volumesFromSize; i++ {
 				if v == volumesFromSize {
 					break
@@ -189,9 +193,8 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 					}
 					v++					
 				}
-
-
 			}
+			// check for links reference
 			for i := 0; i < linksSize; i++ {
 				if l == linksSize {
 						break
@@ -214,6 +217,7 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 					l++
 				}
 			}
+			// check for affinity:container==<container> reference
 			// modify affinity container environment variable to reference container+tenantName
 			if affinityContainerCheckRequired {
 				if strings.HasPrefix(container.Info.Id,affinityContainerRef) {
@@ -224,12 +228,11 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 				  affinityContainerCheckRequired = false	  
 				}
 			}
+			// check for affinity:<label key>==<label value> reference
 			// modify affinity label container environment variable with affinity container env var to reference container id
 			if affinityLabelCheckRequired {
 				kv := strings.Split(affinityLabelRef,"==")
-				log.Debugf("Look for affinity %s %s",kv)
 				for k,v := range container.Config.Labels {
-					log.Debugf("Examine labels %s %s",k,v)
 					if k == kv[0] && v == kv[1] {
 						affinityLabelCheckRequired=false
 						env[affinityLabelIndex] = "affinity:container==" + container.Info.Id

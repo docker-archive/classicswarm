@@ -224,7 +224,7 @@ rmall_volumes() {
 }
 
 @test "Check volume management" {
-
+    #skip
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 volume create --name t1volume
     [ "$status" -eq 0 ]
     [[ "$output" == "t1volume" ]]
@@ -326,6 +326,7 @@ rmall_volumes() {
     [[ "$output" == "t2volume" ]]	
 
 }
+
 @test "Check volume binding" {
 	#skip
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 volume create --name myvolume
@@ -444,6 +445,119 @@ EOF)
     echo $output
     [ $status = 0 ]  
 }
+
+@test "Check affinity:container==" {
+    #skip
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 run -d --name frontend busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	frontendid=$output
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 run -d -e affinity:container==frontend busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	refer1=$output
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 run -d -e affinity:container==$frontendid busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	refer2=$output
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 run -d -e affinity:container==frontend busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	refer3=$output	
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 inspect --format={{.Node.Name}} $frontendid
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	nodeName="$output"
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 inspect --format={{.Node.Name}} $refer1
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	[[ $nodeName == "$output" ]]
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 inspect --format={{.Node.Name}} $refer2
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	[[ $nodeName == "$output" ]]
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 inspect --format={{.Node.Name}} $refer3
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	[[ $nodeName == "$output" ]]
+	#validate tenant isolation
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 run -d -e affinity:container==frontend busybox true
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Error"* ]]
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 run -d --name frontend busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	frontendid=$output
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 run -d -e affinity:container==frontend busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	refer1=$output
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 inspect --format={{.Node.Name}} $frontendid
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	nodeName="$output"
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 inspect --format={{.Node.Name}} $refer1
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	[[ $nodeName == "$output" ]]
+		
+    run checkInvariant
+    [ $status = 0 ]  
+
+}
+@test "Check affinity:<label>==" {
+    #skip
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 run -d --label com.example.type=frontend busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	frontendid=$output
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 run -d -e affinity:com.example.type==frontend busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	refer1=$output
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 run -d -e affinity:com.example.type==frontend busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	refer3=$output	
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 inspect --format={{.Node.Name}} $frontendid
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	nodeName="$output"
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 inspect --format={{.Node.Name}} $refer1
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	[[ $nodeName == "$output" ]]
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 inspect --format={{.Node.Name}} $refer3
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	[[ $nodeName == "$output" ]]
+	#validate tenant isolation
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 run -d -e affinity:com.example.type==frontend busybox true
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Error"* ]]
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 run -d --label com.example.type=frontend busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	frontendid=$output
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 run -d -e affinity:com.example.type==frontend busybox true
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	refer1=$output
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 inspect --format={{.Node.Name}} $frontendid
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	nodeName="$output"
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 inspect --format={{.Node.Name}} $refer1
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	[[ $nodeName == "$output" ]]
+		
+    run checkInvariant
+    [ $status = 0 ]  
+
+}
+
+
 
 
 
