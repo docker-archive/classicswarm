@@ -153,7 +153,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		bImageNotFoundError, _ := regexp.MatchString(`image \S* not found`, err.Error())
 		if (bImageNotFoundError || client.IsErrImageNotFound(err)) && !config.HaveNodeConstraint() {
 			// Check if the image exists in the cluster
-			// If exists, retry with a image affinity
+			// If exists, retry with an image affinity
 			if c.Image(config.Image) != nil {
 				container, err = c.createContainer(config, name, true, authConfig)
 				retries++

@@ -19,7 +19,7 @@ function teardown() {
 	# run container
 	docker_swarm run -d -e TEST=true -h hostname.test --name test_container busybox sleep 500
 
-	# make sure container exsists
+	# make sure container exists
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" == *"test_container"* ]]
@@ -50,7 +50,7 @@ function teardown() {
 	# run container
 	docker_swarm run -d --name test_container busybox sleep 500
 
-	# make sure container exsists
+	# make sure container exists
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" == *"test_container"* ]]
