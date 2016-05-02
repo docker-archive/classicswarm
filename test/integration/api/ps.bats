@@ -69,24 +69,6 @@ function teardown() {
 	[[ "${lines[1]}" == *"false"* ]]
 }
 
-@test "docker ps --before" {
-	start_docker_with_busybox 2
-	swarm_manage
-
-	docker_swarm run -d --name container1 busybox echo container1
-	sleep 1 #sleep so the 2 containers don't start at the same second
-	docker_swarm run -d --name container2 busybox echo container2
-
-	run eval "docker_swarm ps --before container1 2>/dev/null"
-	[ "${#lines[@]}" -eq  1 ]
-
-	run eval "docker_swarm ps --before container2 2>/dev/null"
-	[ "${#lines[@]}" -eq  2 ]
-
-	run docker_swarm ps --before container3
-	[ "$status" -eq 1 ]
-}
-
 @test "docker ps --filter" {
 	start_docker_with_busybox 2
 	swarm_manage
@@ -158,7 +140,7 @@ function teardown() {
 	[[ "${output}" != *"node-1/c2"* ]]
 }
 
-@test "docker ps --filter node" {
+@test "docker ps --filter volume" {
 	run docker --version
 	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
 		skip
@@ -166,9 +148,9 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	docker_swarm run --name c1 -v test_volume1:/abc -d busybox:latest sleep 100
-	docker_swarm run --name c2 -v test_volume2:/def -d busybox:latest sleep 100
-	docker_swarm run --name c3 -v test_volume3:/ghi -d busybox:latest sleep 100
+	docker_swarm run --name c1 -e constraint:node==node-0 -v test_volume1:/abc -d busybox:latest sleep 100
+	docker_swarm run --name c2 -e constraint:node==node-1 -v test_volume2:/def -d busybox:latest sleep 100
+	docker_swarm run --name c3 -e constraint:node==node-1 -v test_volume3:/ghi -d busybox:latest sleep 100
 
 	run docker_swarm ps --filter volume=test_volume1 --filter volume=/def
 	[ "$status" -eq 0 ]
