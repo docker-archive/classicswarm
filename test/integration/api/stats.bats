@@ -18,9 +18,8 @@ function teardown() {
 	# make sure container is up
 	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
 
-	# storage the stats output in TEMP_FILE
-	# it will stop automatically when manager stop
-	docker_swarm stats test_container > $TEMP_FILE &
+	# save the stats output in TEMP_FILE
+	docker_swarm stats --no-stream test_container > $TEMP_FILE &
 
 	# retry until TEMP_FILE is not empty
 	retry 5 1 eval "[ -s $TEMP_FILE ]"
