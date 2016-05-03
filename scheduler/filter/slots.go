@@ -2,9 +2,10 @@ package filter
 
 import (
 	"errors"
+	"strconv"
+
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
-	"strconv"
 )
 
 var (
@@ -33,7 +34,7 @@ func (f *SlotsFilter) Filter(_ *cluster.ContainerConfig, nodes []*node.Node, _ b
 				result = append(result, node)
 			}
 		} else {
-			//no limit if label is missing
+			//no limit if there is no containerslots label
 			result = append(result, node)
 		}
 	}
@@ -47,5 +48,5 @@ func (f *SlotsFilter) Filter(_ *cluster.ContainerConfig, nodes []*node.Node, _ b
 
 // GetFilters returns just the info that this node failed, because there where no free slots
 func (f *SlotsFilter) GetFilters(config *cluster.ContainerConfig) ([]string, error) {
-	return []string{"free slots"}, nil
+	return []string{"available container slots"}, nil
 }
