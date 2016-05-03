@@ -25,8 +25,8 @@ function teardown() {
 	# When trying to start the 5th one, it should be error finding a node with free slots.
 	run docker_swarm run -d -t busybox sh
 	[ "$status" -ne 0 ]
-	[[ "${lines[0]}" == *"Unable to find a node that satisfies the following conditions"* ]]
-	[[ "${lines[1]}" == *"free slots"* ]]
+	[[ "${output}" == *"Unable to find a node that satisfies the following conditions"* ]]
+	[[ "${output}" == *"available container slots"* ]]
 
 	# And the number of running containers should be still 4.
 	run docker_swarm ps

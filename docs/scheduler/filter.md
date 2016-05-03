@@ -49,7 +49,7 @@ $ swarm manage --filter=health --filter=dependency
 
 When creating a container or building an image, you use a `constraint` or
 `health` filter to select a subset of nodes to consider for scheduling.
-If there are nodes in the swarm that have a label with key as `containerslots`
+If a node in Swarm cluster has a label with key `containerslots`
 and a number-value, Swarm will not launch more containers than the given number.
 
 ### Use a constraint filter
@@ -181,12 +181,15 @@ can't communicate with the cluster store.
 ### Use the containerslots filter
 
 You may give your Docker nodes the containerslots label
+
 ```bash
 $ docker daemon --label containerslots=3
 ```
-Swarm will prevent running more than three containers at this node, if
-all nodes are "full", an error is thrown. If the value is not castable
-to an integer number or is not present, there will be no limit.
+
+Swarm will run up to 3 containers at this node, if all nodes are "full",
+an error is thrown indicating no suitable node can be found.
+If the value is not castable to an integer number or is not present,
+there will be no limit on container number.
 
 ## Container filters
 
