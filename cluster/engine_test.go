@@ -118,7 +118,7 @@ func TestEngineFailureCount(t *testing.T) {
 	assert.True(t, engine.failureCount == 0)
 }
 
-func TestHealthINdicator(t *testing.T) {
+func TestHealthIndicator(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	assert.True(t, engine.state == statePending)
 	assert.True(t, engine.HealthIndicator() == 0)
@@ -222,13 +222,20 @@ func TestEngineSpecs(t *testing.T) {
 	assert.True(t, engine.isConnected())
 	assert.True(t, engine.IsHealthy())
 
-	assert.Equal(t, engine.Cpus, int64(mockInfo.NCPU))
-	assert.Equal(t, engine.Memory, mockInfo.MemTotal)
-	assert.Equal(t, engine.Labels["storagedriver"], mockInfo.Driver)
-	assert.Equal(t, engine.Labels["executiondriver"], mockInfo.ExecutionDriver)
-	assert.Equal(t, engine.Labels["kernelversion"], mockInfo.KernelVersion)
-	assert.Equal(t, engine.Labels["operatingsystem"], mockInfo.OperatingSystem)
+	mockInfo2 := mockInfo
+	mockInfo2.Labels = []string{"foo=bar", "executiondriver=newdriver", "node=node1"}
+
+	assert.Equal(t, engine.Cpus, int64(mockInfo2.NCPU))
+	assert.Equal(t, engine.Memory, mockInfo2.MemTotal)
+	assert.Equal(t, engine.Labels["storagedriver"], mockInfo2.Driver)
+
+	assert.Equal(t, engine.Labels["executiondriver"], mockInfo2.ExecutionDriver)
+
+	assert.Equal(t, engine.Labels["kernelversion"], mockInfo2.KernelVersion)
+	assert.Equal(t, engine.Labels["operatingsystem"], mockInfo2.OperatingSystem)
 	assert.Equal(t, engine.Labels["foo"], "bar")
+
+	assert.NotEqual(t, engine.Labels["node"], "node1")
 
 	client.Mock.AssertExpectations(t)
 	apiClient.Mock.AssertExpectations(t)
