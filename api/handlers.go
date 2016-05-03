@@ -22,6 +22,7 @@ import (
 	dockerfilters "github.com/docker/docker/api/types/filters"
 	typesversions "github.com/docker/docker/api/types/versions"
 	volumetypes "github.com/docker/docker/api/types/volume"
+	"github.com/docker/docker/pkg/fileutils"
 	"github.com/docker/docker/pkg/parsers/kernel"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/experimental"
@@ -43,6 +44,8 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := apitypes.Info{
 		Images:            len(c.cluster.Images().Filter(cluster.ImageFilterOptions{})),
 		NEventsListener:   int(atomic.LoadUint64(c.listenerCount)),
+		NFd:               fileutils.GetTotalUsedFds(),
+		NGoroutines:       runtime.NumGoroutine(),
 		Debug:             c.debug,
 		MemoryLimit:       true,
 		SwapLimit:         true,

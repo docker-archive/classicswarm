@@ -151,6 +151,7 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 		listenerCount: &listenerCount,
 		statusHandler: status,
 		tlsConfig:     tlsConfig,
+		debug:         debug,
 	}
 
 	r := mux.NewRouter()
