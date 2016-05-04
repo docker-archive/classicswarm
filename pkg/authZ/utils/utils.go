@@ -88,7 +88,7 @@ log.Debugf("CheckLinksOwnerShip for tenant %s\n",tenantName)
 			log.Debug("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 			if "/"+link+tenantName == container.Info.Name || "/"+link == container.Info.Name {
 				log.Debug("XXXXXXXXXXXXXXLINK FOUNDXXXXXXXXXXXXXXXXXXXXXXXX")
-				linkSet[container.Info.Id] = link
+				linkSet[container.Info.ID] = link
 				l++
 			}
 		}
@@ -168,9 +168,9 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 		return true, &ValidationOutPutDTO{ContainerID: ""}
 	}
 	for _, container := range containers {
-		//log.Debugf("Examine container %s %s",container.Info.Name,container.Info.Id)
+		//log.Debugf("Examine container %s %s",container.Info.Name,container.Info.ID)
 		if(container.Config.Labels[headers.TenancyLabel] == tenantName) {
-			log.Debugf("Look for container references in container %s %s for tenant %s",container.Info.Name,container.Info.Id,tenantName)
+			log.Debugf("Look for container references in container %s %s for tenant %s",container.Info.Name,container.Info.ID,tenantName)
 			// check for volumeFrom reference
 			for i := 0; i < volumesFromSize; i++ {
 				if v == volumesFromSize {
@@ -180,13 +180,13 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 				// volumesFrom element format <container_name>:<RW|RO>
 				volumeFromArray := strings.SplitN(strings.TrimSpace(containerConfig.HostConfig.VolumesFrom[i]),":",2)
 				volumeFrom := strings.TrimSpace(volumeFromArray[0])				
-				if strings.HasPrefix(container.Info.Id,volumeFrom) {
+				if strings.HasPrefix(container.Info.ID,volumeFrom) {
 					log.Debug("volumesFrom element with container id matches tenant container")
 					// no need to modify volumesFrom
 					v++					
 				} else if container.Info.Name == "/"+volumeFrom+tenantName {
 					log.Debug("volumesFrom element with container name matches tenant container")
-					volumesFrom[i] = container.Info.Id
+					volumesFrom[i] = container.Info.ID
 					if len(volumeFromArray) > 1 {
 						volumesFrom[i] += ":"
 						volumesFrom[i] += strings.TrimSpace(volumeFromArray[1])
@@ -203,16 +203,16 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 
 				linkArray := strings.SplitN(containerConfig.HostConfig.Links[i],":",2)
 				link := strings.TrimSpace(linkArray[0])
-				if strings.HasPrefix(container.Info.Id,link) || "/"+link+tenantName == container.Info.Name {
+				if strings.HasPrefix(container.Info.ID,link) || "/"+link+tenantName == container.Info.Name {
 					log.Debug("Add link and alias to linkset")
 					_, ok := linkSet[link]
 					if !ok {
 						linkSet[link] = true
-						links = append(links,container.Info.Id + ":" + link)						
+						links = append(links,container.Info.ID + ":" + link)						
 					}
 					// check for alias  
 					if len(linkArray) > 1 {						
-						links = append(links,container.Info.Id + ":" + strings.TrimSpace(linkArray[1]))
+						links = append(links,container.Info.ID + ":" + strings.TrimSpace(linkArray[1]))
 					}
 					l++
 				}
@@ -220,7 +220,7 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 			// check for affinity:container==<container> reference
 			// modify affinity container environment variable to reference container+tenantName
 			if affinityContainerCheckRequired {
-				if strings.HasPrefix(container.Info.Id,affinityContainerRef) {
+				if strings.HasPrefix(container.Info.ID,affinityContainerRef) {
 				  affinityContainerCheckRequired = false				     
 				} else if container.Info.Name == "/"+affinityContainerRef+tenantName {
 				  env[affinityContainerIndex] = env[affinityContainerIndex] + tenantName
@@ -235,7 +235,7 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 				for k,v := range container.Config.Labels {
 					if k == kv[0] && v == kv[1] {
 						affinityLabelCheckRequired=false
-						env[affinityLabelIndex] = "affinity:container==" + container.Info.Id
+						env[affinityLabelIndex] = "affinity:container==" + container.Info.ID
 						log.Debugf("Updated environment variable %s ",env[affinityLabelIndex])
 						break						
 					} 
@@ -302,7 +302,7 @@ func CheckConfigOwnerShip(cluster cluster.Cluster, tenantName string, r *http.Re
 				log.Debug("Comparing with: " + "/" + vol + tenantName)
 				
 				if "/" + vol + tenantName == container.Info.Name || "/"+vol == container.Info.Name {
-					volSet[container.Info.Id] = vol
+					volSet[container.Info.ID] = vol
 					v++
 				}
 			}
@@ -313,7 +313,7 @@ func CheckConfigOwnerShip(cluster cluster.Cluster, tenantName string, r *http.Re
 				log.Debug("Comparing with: " + "/" + link + tenantName)
 				
 				if "/" + link + tenantName == container.Info.Name || "/"+link == container.Info.Name {
-					linkSet[container.Info.Id] = link
+					linkSet[container.Info.ID] = link
 					l++
 				}
 			}
@@ -343,25 +343,25 @@ func CheckOwnerShip(cluster cluster.Cluster, tenantName string, r *http.Request)
 		for _, name := range names {
 			if "/"+mux.Vars(r)["name"]+tenantName == name {
 				log.Debug("Match by name.")
-				return true, &ValidationOutPutDTO{ContainerID: container.Info.Id, Links: nil}
+				return true, &ValidationOutPutDTO{ContainerID: container.Info.ID, Links: nil}
 			}
 		}
 		if "/"+mux.Vars(r)["name"] == container.Info.Name {
 			if container.Labels[headers.TenancyLabel] == tenantName {
-				return true, &ValidationOutPutDTO{ContainerID: container.Info.Id, Links: nil}
+				return true, &ValidationOutPutDTO{ContainerID: container.Info.ID, Links: nil}
 			}
-		} else if mux.Vars(r)["name"] == container.Info.Id {
+		} else if mux.Vars(r)["name"] == container.Info.ID {
 			log.Debug("Match By full ID! Checking Ownership...")
 			log.Debug("Tenant name: ", tenantName)
 			log.Debug("Tenant Lable: ", container.Labels[headers.TenancyLabel])
 			if container.Labels[headers.TenancyLabel] == tenantName {
-				return true, &ValidationOutPutDTO{ContainerID: container.Info.Id, Links: nil}
+				return true, &ValidationOutPutDTO{ContainerID: container.Info.ID, Links: nil}
 			}
 			return false, nil
 
 		}
 		if container.Labels[headers.TenancyLabel] == tenantName {
-			tenantSet[container.Id] = true
+			tenantSet[container.Info.ID] = true
 		}
 	}
 
@@ -369,9 +369,9 @@ func CheckOwnerShip(cluster cluster.Cluster, tenantName string, r *http.Request)
 	ambiguityCounter := 0
 	var returnID string
 	for k := range tenantSet {
-		if strings.HasPrefix(cluster.Container(k).Info.Id, mux.Vars(r)["name"]) {
+		if strings.HasPrefix(cluster.Container(k).Info.ID, mux.Vars(r)["name"]) {
 			ambiguityCounter++
-			returnID = cluster.Container(k).Info.Id
+			returnID = cluster.Container(k).Info.ID
 		}
 		if ambiguityCounter == 1 {
 			log.Debug("Matched by short ID")

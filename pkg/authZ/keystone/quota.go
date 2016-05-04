@@ -52,10 +52,10 @@ func (this *QuotaImpl) ValidateQuota(myCluster cluster.Cluster, reqBody []byte, 
 
 	var tenantMemoryTotal int64 = 0
 	for _, container := range containers {
-		log.Debugf("Container %v tenant Label: %v", container.Id, container.Labels[tenancyLabel])
+		log.Debugf("Container %v tenant Label: %v", container.Info.ID, container.Labels[tenancyLabel])
 		log.Debugf("Container name: %v", container.Names[0])
 		if container.Labels[tenancyLabel] == tenant {
-			memory := container.Config.Memory
+			memory := container.Config.HostConfig.Resources.Memory
 			log.Debugf("Incrementing total memory %v by %v", tenantMemoryTotal, memory)
 			tenantMemoryTotal += memory
 		}
