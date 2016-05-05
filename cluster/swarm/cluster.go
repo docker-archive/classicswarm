@@ -760,10 +760,6 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	if len(IDOrName) == 0 {
 		return nil
 	}
-
-	c.RLock()
-	defer c.RUnlock()
-
 	return c.Containers().Get(IDOrName)
 }
 
@@ -801,9 +797,9 @@ func (c *Cluster) listNodes() []*node.Node {
 	out := make([]*node.Node, 0, len(c.engines))
 	for _, e := range c.engines {
 		node := node.NewNode(e)
-		for _, c := range c.pendingContainers {
-			if c.Engine.ID == e.ID && node.Container(c.Config.SwarmID()) == nil {
-				node.AddContainer(c.ToContainer())
+		for _, pc := range c.pendingContainers {
+			if pc.Engine.ID == e.ID && node.Container(pc.Config.SwarmID()) == nil {
+				node.AddContainer(pc.ToContainer())
 			}
 		}
 		out = append(out, node)
@@ -897,9 +893,6 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 
 // RenameContainer rename a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
-	c.RLock()
-	defer c.RUnlock()
-
 	// check new name whether available
 	if !c.checkNameUniqueness(newName) {
 		return fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, newName)
