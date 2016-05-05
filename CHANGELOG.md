@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2 (2016-05-05)
+
+#### Cluster management
+
+- Fix deadlock that causes Swarm to hang
+
 ## 1.2.1 (2016-05-03)
 
 #### Scheduler
