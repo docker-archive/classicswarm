@@ -101,6 +101,10 @@ This works the same way for the Swarm `manage` and `list` commands.
 
 ## A static file or list of nodes
 
+> **Note***: This discovery method is incompatible with replicating Swarm
+managers. If you require replication, you should use a hosted discovery key
+store.
+
 You can use a static file or list of nodes for your discovery backend. The file must be stored on a host that is accessible from the Swarm manager. You can also pass a node list as an option when you start Swarm.
 
 Both the static file and the `nodes` option support a IP address ranges. To specify a range supply a pattern, for example, `10.0.0.[10:200]` refers to nodes starting from `10.0.0.10` to `10.0.0.200`.  For example for the `file` discovery method.
