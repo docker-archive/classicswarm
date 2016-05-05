@@ -171,13 +171,13 @@ support the container network you'll create later.
 
 ## Task 3. Add the load balancer
 
-The application uses an <a
-href="https://github.com/ehazlett/interlock">Interlock</a> and an Nginx as a
+The application uses <a
+href="https://github.com/ehazlett/interlock">Interlock</a> and Nginx as a
 loadblancer. Before you build the load balancer host, you'll create the
-cnofiguration you'll use for Nginx.
+configuration you'll use for Nginx.
 
-1. On your local host, create a `config` diretory.
-2. Change to `config` directory.
+1. On your local host, create a `config` directory.
+2. Change directories to the `config` directory.
 
     ```bash
     $ cd config
@@ -191,7 +191,7 @@ cnofiguration you'll use for Nginx.
     192.168.99.101
     ```
 
-5. Use your favorte editor to create a `config.toml` file and add this content
+5. Use your favorite editor to create a `config.toml` file and add this content
 to the file:
 
     ```json
@@ -294,12 +294,13 @@ node. Here, the task is to create each virtual host for each node. There are
 three commands required:
 
 * create the host with Docker Machine
-* point the local environmnet to the new host
+* point the local environment to the new host
 * join the host to the Swarm cluster
 
 If you were building this in a non-Mac/Windows environment, you'd only need to
-run the `join` command to add node to Swarm and registers it with the Consul
-discovery service. When you create a node, you'll label it also, for example:
+run the `join` command to add a node to the Swarm cluster and register it with
+the Consul discovery service. When you create a node, you also give it a label,
+for example:
 
 ```
 --engine-opt="label=com.function=frontend01"
