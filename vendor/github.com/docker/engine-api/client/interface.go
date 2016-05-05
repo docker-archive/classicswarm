@@ -18,6 +18,7 @@ type APIClient interface {
 	ContainerAttach(ctx context.Context, options types.ContainerAttachOptions) (types.HijackedResponse, error)
 	ContainerCommit(ctx context.Context, options types.ContainerCommitOptions) (types.ContainerCommitResponse, error)
 	ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) (types.ContainerCreateResponse, error)
+	ContainerCheckpoint(ctx context.Context, containerID string, options types.CriuConfig) error
 	ContainerDiff(ctx context.Context, ontainerID string) ([]types.ContainerChange, error)
 	ContainerExecAttach(ctx context.Context, execID string, config types.ExecConfig) (types.HijackedResponse, error)
 	ContainerExecCreate(ctx context.Context, config types.ExecConfig) (types.ContainerExecCreateResponse, error)
@@ -35,6 +36,7 @@ type APIClient interface {
 	ContainerRename(ctx context.Context, containerID, newContainerName string) error
 	ContainerResize(ctx context.Context, options types.ResizeOptions) error
 	ContainerRestart(ctx context.Context, containerID string, timeout int) error
+	ContainerRestore(ctx context.Context, containerID string, options types.CriuConfig, forceRestore bool) error
 	ContainerStatPath(ctx context.Context, containerID, path string) (types.ContainerPathStat, error)
 	ContainerStats(ctx context.Context, containerID string, stream bool) (io.ReadCloser, error)
 	ContainerStart(ctx context.Context, containerID string) error

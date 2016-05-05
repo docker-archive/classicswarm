@@ -37,6 +37,11 @@ func (client *NopClient) ContainerAttach(ctx context.Context, options types.Cont
 	return types.HijackedResponse{}, errNoEngine
 }
 
+// ContainerCheckpoint checkpoints a running container
+func (cli *NopClient) ContainerCheckpoint(ctx context.Context, containerID string, options types.CriuConfig) error {
+	return errNoEngine
+}
+
 // ContainerCommit applies changes into a container and creates a new tagged image
 func (client *NopClient) ContainerCommit(ctx context.Context, options types.ContainerCommitOptions) (types.ContainerCommitResponse, error) {
 	return types.ContainerCommitResponse{}, errNoEngine
@@ -129,6 +134,11 @@ func (client *NopClient) ContainerResize(ctx context.Context, options types.Resi
 
 // ContainerRestart stops and starts a container again
 func (client *NopClient) ContainerRestart(ctx context.Context, containerID string, timeout int) error {
+	return errNoEngine
+}
+
+// ContainerRestore restores a running container
+func (cli *NopClient) ContainerRestore(ctx context.Context, containerID string, options types.CriuConfig, forceRestore bool) error {
 	return errNoEngine
 }
 

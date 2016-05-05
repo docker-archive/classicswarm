@@ -288,6 +288,8 @@ type ContainerState struct {
 	Error      string
 	StartedAt  string
 	FinishedAt string
+	Checkpointed   bool
+ 	CheckpointedAt string
 }
 
 // NodeData stores information about the node that a container

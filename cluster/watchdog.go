@@ -68,6 +68,11 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			log.Debugf("Skipping rescheduling of %s based on rescheduling policies", c.ID)
 			continue
 		}
+		
+		if !c.Config.HasReschedulePolicy("check-point") {
+			log.Debugf("Skipping rescheduling of %s based on rescheduling check-point policies", c.ID)
+			continue
+		}
 
 		// Remove the container from the dead engine. If we don't, then both
 		// the old and new one will show up in docker ps.
@@ -85,8 +90,14 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			log.Infof("Rescheduled container %s from %s to %s as %s", c.ID, c.Engine.Name, newContainer.Engine.Name, newContainer.ID)
 			if c.Info.State.Running {
 				log.Infof("Container %s was running, starting container %s", c.ID, newContainer.ID)
-				if err := w.cluster.StartContainer(newContainer, nil); err != nil {
-					log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
+				if c.Config.HasReschedulePolicy("on-node-failure") {
+					if err := w.cluster.StartContainer(newContainer, nil); err != nil {
+						log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
+					}
+				}else if c.Config.HasReschedulePolicy("on-node-failure") {
+					if err := w.cluster.StartContainer(newContainer, nil); err != nil {
+						log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
+					}
 				}
 			}
 		}
