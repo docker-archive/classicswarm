@@ -14,7 +14,7 @@ weight=-80
 
 You've [deployed the load balancer, the discovery backend, and a Swarm
 cluster](deploy-infra.md) so now you can build and deploy the voting application
-itself. You do this by starting a number of "dockerized applications" running in
+itself. You do this by starting a number of "Dockerized applications" running in
 containers.
 
 The diagram below shows the final application configuration including the overlay
@@ -33,7 +33,7 @@ This application relies on both an overlay container network and a container
 volume. The Docker Engine provides these two features. You'll create them both
 on the Swarm `manager` instance.
 
-1. Direct your local environmen to the Swarm manager host.
+1. Direct your local environment to the Swarm manager host.
 
     ```bash
     $ eval $(docker-machine env manager)
@@ -139,7 +139,7 @@ command below, look for the value constraint.
     --name results-app docker/example-voting-app-result-app
     ```
 
-7. Start voting application twice, on each frontend node.
+7. Start the voting application twice; once on each frontend node.
 
     ```bash
     $ docker -H $(docker-machine ip manager):3376 run -t -d \

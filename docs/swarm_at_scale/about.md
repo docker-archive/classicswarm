@@ -37,9 +37,9 @@ shows the appliation's high level architecture:
 ![](../images/app-architecture.png)
 
 All the servers are running Docker Engine. The entire application is fully
-"dockerized" in that all services are running inside of containers.
+"Dockerized" in that all services are running inside of containers.
 
-The frontend consists of an load balancer with *N* frontend instances. Each
+The frontend consists of a load balancer with *N* frontend instances. Each
 frontend consists of a web server and a Redis queue. The load balancer can
 handle an arbitrary number of web containers behind it (`frontend01`-
 `frontendN`). The web containers run a simple Python application that takes a
@@ -56,7 +56,7 @@ Behind the frontend is a worker tier which runs on separate nodes. This tier:
 Just like the frontend, the worker tier can also scale arbitrarily. The worker
 count and frontend count are independent from each other.
 
-The applications dockerized microservices are deployed to a container network.
+The application's Dockerized microservices are deployed to a container network.
 Container networks are a feature of Docker Engine that allows communication
 between multiple containers across multiple Docker hosts.
 
