@@ -824,7 +824,7 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 	return out
 }
 
-// TotalMemory return the total memory of the cluster
+// TotalMemory returns the total memory of the cluster
 func (c *Cluster) TotalMemory() int64 {
 	var totalMemory int64
 	for _, engine := range c.engines {
@@ -833,7 +833,7 @@ func (c *Cluster) TotalMemory() int64 {
 	return totalMemory
 }
 
-// TotalCpus return the total memory of the cluster
+// TotalCpus returns the total memory of the cluster
 func (c *Cluster) TotalCpus() int64 {
 	var totalCpus int64
 	for _, engine := range c.engines {
@@ -891,7 +891,7 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 	return c.engines[nodes[0].ID], nil
 }
 
-// RenameContainer rename a container
+// RenameContainer renames a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
 	// check new name whether available
 	if !c.checkNameUniqueness(newName) {
@@ -903,7 +903,7 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	return err
 }
 
-// BuildImage build an image
+// BuildImage builds an image
 func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer) error {
 	c.scheduler.Lock()
 
@@ -932,7 +932,7 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 	return nil
 }
 
-// TagImage tag an image
+// TagImage tags an image
 func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	c.RLock()
 	defer c.RUnlock()
