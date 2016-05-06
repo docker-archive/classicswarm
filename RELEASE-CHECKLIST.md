@@ -13,15 +13,18 @@ git push $GITHUBUSER bump-<version>
 
 Open PR on docker/swarm. Merge the PR before moving to next step.
 
-### 2. Rebase release branch on top of master branch and tag
+### 2. Rebase release branch on top of updated master branch and tag
 
 ```
+git checkout master
+git pull origin
 git checkout release
 git rebase master
 git push origin
 git tag <tag>
 git push origin <tag>
 ```
+The tag must be of the form `v1.2.1-rc1`.
 
 ### 3. Update library image
 
@@ -37,7 +40,7 @@ Build and update Swarm image.
 cd swarm-library-image
 git pull
 ./update.sh <tag> (example: ./update.sh v0.2.0-rc2)
-check build is successful (swarm binary should show in git diff)
+check build is successful (swarm binaries should show in git diff)
 git add .
 git commit -s -m “<tag>"
 git push origin
