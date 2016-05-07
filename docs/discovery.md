@@ -222,4 +222,4 @@ github.com/docker/docker/pkg/discovery</a>.
 - [Docker Swarm overview](index.md)
 - [Scheduler strategies](scheduler/strategy.md)
 - [Scheduler filters](scheduler/filter.md)
-- [Swarm API](swarm-api.md)
+- [Swarm API](api/swarm-api.md)

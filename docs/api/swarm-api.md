@@ -3,7 +3,7 @@
 aliases = ["/api/swarm-api/", "/swarm/api/"]
 title = "Docker Swarm API"
 description = "Swarm API"
-keywords = ["docker, swarm, clustering,  api"]
+keywords = ["docker, swarm, clustering, api"]
 [menu.main]
 parent="workw_swarm"
 weight=99
@@ -19,13 +19,13 @@ Remote API.
 
 ## Missing endpoints
 
-Some endpoints have not yet been implemented and will return a 404 error.
-
-```
-POST "/images/create" : "docker import" flow not implement
-```
+As of Swarm version 1.1.0 or higher, Swarm supports the API version 1.22 or 
+lower. There are no missing endpoints for Swarm in API version 1.22.
 
 ## Endpoints which behave differently
+
+Though the newest version has no missing api endpoint, there are still some which
+behave differently between Swarm and Docker Engine. 
 
 <table>
     <tr>
@@ -33,6 +33,81 @@ POST "/images/create" : "docker import" flow not implement
         <th>Differences</th>
     </tr>
     <tr>
+        <td>
+            <code>GET "/version"</code>
+        </td>
+        <td>
+            Field <code>Version</code> replaces Docker server version with Swarm version
+        </td>
+    </tr>
+        <td>
+            <code>GET "/info"</code>
+        </td>
+        <td>
+            Field <code>ServerVersion</code> replaces Docker server version with Swarm version<br/>
+            New field <code>SystemStatus</code> added with <code>Role</code>,<code>Strategy</code>,<code>Filters</code>,<code>Nodes</code>:<br />
+<pre>
+  "SystemStatus": [
+    [
+      "Role",
+      "primary"
+    ],
+    [
+      "Strategy",
+      "spread"
+    ],
+    [
+      "Filters",
+      "health, port, dependency, affinity, constraint"
+    ],
+    [
+      "Nodes",
+      "1"
+    ],
+    [
+      " ubuntu",
+      "10.1.0.108:2376"
+    ],
+    [
+      "  └ ID",
+      "RDEJ:ZCV6:CJH5:UCNB:P5RR:66LB:JZSO:YACX:TBL3:PYMV:2F77:KBUA"
+    ],
+    [
+      "  └ Status",
+      "Healthy"
+    ],
+    [
+      "  └ Containers",
+      "10"
+    ],
+    [
+      "  └ Reserved CPUs",
+      "1 / 1"
+    ],
+    [
+      "  └ Reserved Memory",
+      "8 GiB / 2.052 GiB"
+    ],
+    [
+      "  └ Labels",
+      "executiondriver=, kernelversion=3.19.0-25-generic, operatingsystem=Ubuntu 14.04.3 LTS, storagedriver=aufs"
+    ],
+    [
+      "  └ Error",
+      "(none)"
+    ],
+    [
+      "  └ UpdatedAt",
+      "2016-05-07T03:44:25Z"
+    ],
+    [
+      "  └ ServerVersion",
+      "1.11.0"
+    ]
+  ],
+</pre>
+        </td>
+    </tr>
         <td>
             <code>GET "/containers/{name:.*}/json"</code>
         </td>
@@ -96,6 +171,33 @@ POST "/images/create" : "docker import" flow not implement
             <code>CpuShares</code> in <code>HostConfig</code> sets the number of CPU cores allocated to the container.
         </td>
     </tr>
+    <tr>
+        <td>
+            <code>GET "/volumes"</code>
+        </td>
+        <td>
+            Volume name adds a prefix of Node Name:
+<pre>
+"Volumes": [
+    {
+      "Name": "ubuntu/tardis",
+      ...
+    },
+]
+</pre>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>GET "/networks"</code>
+        </td>
+        <td>
+            Network name adds a prefix of Node Name:
+<pre>
+"Name": "ubuntu/bridge",
+</pre>
+        </td>
+    </tr>
 </table>
 
 ## Registry Authentication
@@ -141,16 +243,13 @@ You can now authenticate to the registry, and run private images on Swarm:
 $ docker run --rm -it yourprivateimage:latest
 ```
 
-
 Be aware that tokens are short-lived and will expire quickly.
-
 
 ### Authenticate using username and password
 
 > **Note:** this authentication method stores your credentials unencrypted
 > on the filesystem. Refer to [Authenticate using registry tokens](#authenticate-using-registry-tokens)
 > for a more secure approach.
-
 
 First, calculate the header
 
@@ -175,8 +274,6 @@ You can now authenticate to the registry, and run private images on Swarm:
 ```bash
 $ docker run --rm -it yourprivateimage:latest
 ```
-
-
 
 ## Docker Swarm documentation index
 

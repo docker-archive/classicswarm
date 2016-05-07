@@ -125,4 +125,4 @@ strategy prefers the node with most containers.
 - [Docker Swarm overview](../index.md)
 - [Discovery options](../discovery.md)
 - [Scheduler filters](filter.md)
-- [Swarm API](../swarm-api.md)
+- [Swarm API](../api/swarm-api.md)
