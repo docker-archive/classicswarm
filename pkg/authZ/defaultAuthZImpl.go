@@ -7,7 +7,7 @@ import (
 	"net/url"
 //	"os"
 //	"errors"
-	"container/list"
+	//"container/list"
 	"strings"
 
 	"net/http/httptest"
@@ -32,12 +32,12 @@ func (*DefaultImp) Init() error {
 	return nil
 }
 
-func (*DefaultImp) Handle(cluster cluster.Cluster, eventType states.EventEnum, w http.ResponseWriter, r *http.Request, next http.Handler, plugins *list.List) error {
+func (*DefaultImp) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 
 	log.Debug("In AuthZImpl.Handle ...")
-	log.Debug(plugins.Len())
+	//log.Debug(plugins.Len())
 	
-	next.ServeHTTP(w, r) //will be called last
+	swarmHandler.ServeHTTP(w, r) //will be called last
 	return nil
 }
 

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"os"
-	"container/list"
+	//"container/list"
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 //	"github.com/docker/swarm/pkg/authZ/keystone"
@@ -17,25 +17,18 @@ import (
 //Hooks - Entry point to AuthZ mechanisem
 type MultiTenant struct{}
 
-var plugins=list.New() // plugins list
+var authenticationHandler handler.Handler
 
 //Handle - Hook point from primary to plugins
-func (*MultiTenant) Handle(cluster cluster.Cluster, next http.Handler) http.Handler {
+func (*MultiTenant) Handle(cluster cluster.Cluster, swarmHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Debug("In multiTenant.Handle ...")	
 		if (os.Getenv("SWARM_MULTI_TENANT") == "false") {
-			next.ServeHTTP(w, r)
+			swarmHandler.ServeHTTP(w, r)
 			return
 		}
-		eventType := eventParse(r)
-//		aclsAPI.HandleRequest(cluster, eventType, w, r, next)      
-//        flist := []handler{new(authN.DefaultAuthNImpl).Handle};
-//        err := flist[0](cluster, eventType, w, r, next);
-
-		plugin := plugins.Front()
-        log.Debug(plugins.Len())
-        plugins.Remove(plugins.Front())
-        err := plugin.Value.(handler.Handler)(cluster, eventType, w, r, next, plugins)
+//		eventType := eventParse(r)
+		err := authenticationHandler("", cluster, w, r, swarmHandler)
         if err != nil {
         	log.Error(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -103,11 +96,10 @@ func (*MultiTenant) Init() {
 		log.Debug("Keystone not supported")
 //	    	aclsAPI = new(keystone.KeyStoneAPI)  	
 	} else {
-		if plugins.Len()<1{	
-	    	log.Debug("SWARM_AUTH_BACKEND != Keystone")	
-        	plugins.PushBack(handler.Handler(new(authN.DefaultAuthNImpl).Handle))
-        	plugins.PushBack(handler.Handler(new(authZ.DefaultImp).Handle))
-		}
+		authorization := handler.Handler(new(authZ.DefaultImp).Handle)
+		authentication := new(authN.DefaultAuthNImpl)
+		authentication.Next = authorization
+		authenticationHandler = handler.Handler(authentication.Handle)
 	}
 	log.Info("Init provision engine OK")
 }
