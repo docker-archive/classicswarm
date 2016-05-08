@@ -83,10 +83,10 @@ func (*Hooks) PrePostAuthWrapper(cluster cluster.Cluster, next http.Handler) htt
 		log.Debug(r)
 		log.Debug("*************************")
 
-		err := authNAPI.Authenticate(r)
-		if err != nil {
-
-		}
+//		err := authNAPI.Authenticate(r)
+//		if err != nil {
+//
+//		}
 		isAllowed, dto := aclsAPI.ValidateRequest(cluster, eventType, w, r, reqBody, containerConfig)
 		//		isAllowed, dto := aclsAPI.ValidateRequest(cluster, eventType, r, containerConfig)
 		if isAllowed == states.Admin {
@@ -166,7 +166,7 @@ func (*Hooks) Init() {
 	} else {
 		log.Debug("SWARM_AUTH_BACKEND != Keystone")
 		aclsAPI = new(DefaultACLsImpl)
-		authNAPI = new(authN.DefaultAuthNImpl)
+//		authNAPI = new(authN.DefaultAuthNImpl)
 	}
 	aclsAPI.Init()
 	authZAPI = new(DefaultImp)

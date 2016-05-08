@@ -9,7 +9,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/gorilla/mux"
-	"github.com/docker/swarm/pkg/authZ"
+	"github.com/docker/swarm/pkg/multiTenancy"
+	//"github.com/docker/swarm/pkg/authZ"
 )
 
 // Primary router context, used by handlers.
@@ -156,10 +157,15 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 			}
 			localMethod := method
 
-			hooks := new(authZ.Hooks)
-			hooks.Init()
-			r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
-			r.Path(localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+//			hooks := new(authZ.Hooks)
+//			hooks.Init()
+//			r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+//			r.Path(localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+
+			multiTenant := new(multiTenancy.MultiTenant)
+			multiTenant.Init()
+			r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))
+			r.Path(localRoute).Methods(localMethod).Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))
 
 			if enableCors {
 				optionsMethod := "OPTIONS"
@@ -175,12 +181,19 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 					optionsFct(context, w, r)
 				}
 
-				hooks := new(authZ.Hooks)
-				hooks.Init()
+//				hooks := new(authZ.Hooks)
+//				hooks.Init()
+//				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
+//				    Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+//				r.Path(localRoute).Methods(optionsMethod).
+//				    Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+				
+				multiTenant := new(multiTenancy.MultiTenant)
+				multiTenant.Init()
 				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
-				    Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+				    Methods(optionsMethod).Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))
 				r.Path(localRoute).Methods(optionsMethod).
-				    Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
+				    Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))	
 			}
 		}
 	}

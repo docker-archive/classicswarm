@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+//	"os"
+//	"errors"
+	"container/list"
 	"strings"
 
 	"net/http/httptest"
@@ -13,11 +16,12 @@ import (
 	"github.com/docker/swarm/pkg/authZ/states"
 	//	"github.com/docker/swarm/pkg/authZ/keystone"
 	"regexp"
-       "github.com/docker/swarm/pkg/quota"
+    "github.com/docker/swarm/pkg/quota"
 	"github.com/docker/swarm/pkg/authZ/headers"
 	"github.com/docker/swarm/pkg/authZ/utils"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
+	"github.com/docker/swarm/cluster"
 )
 
 //DefaultImp - Default basic label based implementation of ACLs & tenancy enforcment
@@ -25,6 +29,15 @@ type DefaultImp struct{}
 
 //Init - Any required initialization
 func (*DefaultImp) Init() error {
+	return nil
+}
+
+func (*DefaultImp) Handle(cluster cluster.Cluster, eventType states.EventEnum, w http.ResponseWriter, r *http.Request, next http.Handler, plugins *list.List) error {
+
+	log.Debug("In AuthZImpl.Handle ...")
+	log.Debug(plugins.Len())
+	
+	next.ServeHTTP(w, r) //will be called last
 	return nil
 }
 
