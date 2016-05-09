@@ -5,7 +5,6 @@ import (
 	"os"
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
-	//"github.com/docker/swarm/pkg/authZ/keystone"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authentication"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
@@ -15,8 +14,6 @@ import (
 type Executor struct{}
 
 var startHandler pluginAPI.Handler
-var authenticationPlugin pluginAPI.PluginAPI
-var authorizationPlugin pluginAPI.PluginAPI
 
 //Handle - Hook point from primary to plugins
 func (*Executor) Handle(cluster cluster.Cluster, swarmHandler http.Handler) http.Handler {
@@ -43,13 +40,10 @@ func (*Executor) Init() {
 	return
     }
     if os.Getenv("SWARM_AUTH_BACKEND") == "Keystone" {
-	log.Debug("SWARM_AUTH_BACKEND == Keystone")
-	log.Debug("Keystone not supported")
-	//aclsAPI = new(keystone.KeyStoneAPI)  	
+	log.Debug("Keystone not supported")	
     } else {
-	authorizationPlugin = new(authorization.DefaultImp)
-	authorizationHandler := pluginAPI.Handler(authorizationPlugin.Handle)
-	authenticationPlugin = authentication.NewAuthentication(authorizationHandler)
-	startHandler = pluginAPI.Handler(authenticationPlugin.Handle)
+	authorizationPlugin := new(authorization.DefaultImp)
+	authenticationPlugin := authentication.NewAuthentication(authorizationPlugin.Handle)
+	startHandler = authenticationPlugin.Handle
     }
 }
