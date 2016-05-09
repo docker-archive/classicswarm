@@ -11,7 +11,7 @@ import (
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 )
 
-//Hooks - Entry point to AuthZ mechanisem
+//Executor - Entry point to multi-tenancy plugins
 type Executor struct{}
 
 var startHandler pluginAPI.Handler
