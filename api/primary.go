@@ -9,8 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/gorilla/mux"
-	"github.com/docker/swarm/pkg/multiTenancy"
-	//"github.com/docker/swarm/pkg/authZ"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins"
 )
 
 // Primary router context, used by handlers.
@@ -140,61 +139,47 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 }
 
 func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
-	for method, mappings := range routes {
-		for route, fct := range mappings {
-			log.WithFields(log.Fields{"method": method, "route": route}).Debug("Registering HTTP route")
+    for method, mappings := range routes {
+	for route, fct := range mappings {
+	    log.WithFields(log.Fields{"method": method, "route": route}).Debug("Registering HTTP route")
 
-			localRoute := route
-			localFct := fct
+	    localRoute := route
+	    localFct := fct
 
-			wrap := func(w http.ResponseWriter, r *http.Request) {
-				log.WithFields(log.Fields{"method": r.Method, "uri": r.RequestURI}).Debug("HTTP request received")
-				if enableCors {
-					writeCorsHeaders(w, r)
-				}
-				context.apiVersion = mux.Vars(r)["version"]
-				localFct(context, w, r)
-			}
-			localMethod := method
-
-//			hooks := new(authZ.Hooks)
-//			hooks.Init()
-//			r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
-//			r.Path(localRoute).Methods(localMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
-
-			multiTenant := new(multiTenancy.MultiTenant)
-			multiTenant.Init()
-			r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))
-			r.Path(localRoute).Methods(localMethod).Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))
-
-			if enableCors {
-				optionsMethod := "OPTIONS"
-				optionsFct := optionsHandler
-
-				wrap := func(w http.ResponseWriter, r *http.Request) {
-					log.WithFields(log.Fields{"method": optionsMethod, "uri": r.RequestURI}).
-						Debug("HTTP request received")
-					if enableCors {
-						writeCorsHeaders(w, r)
-					}
-					context.apiVersion = mux.Vars(r)["version"]
-					optionsFct(context, w, r)
-				}
-
-//				hooks := new(authZ.Hooks)
-//				hooks.Init()
-//				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
-//				    Methods(optionsMethod).Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
-//				r.Path(localRoute).Methods(optionsMethod).
-//				    Handler(hooks.PrePostAuthWrapper(context.cluster, http.HandlerFunc(wrap)))
-				
-				multiTenant := new(multiTenancy.MultiTenant)
-				multiTenant.Init()
-				r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
-				    Methods(optionsMethod).Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))
-				r.Path(localRoute).Methods(optionsMethod).
-				    Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))	
-			}
+	    wrap := func(w http.ResponseWriter, r *http.Request) {
+		log.WithFields(log.Fields{"method": r.Method, "uri": r.RequestURI}).Debug("HTTP request received")
+		if enableCors {
+			writeCorsHeaders(w, r)
 		}
+		context.apiVersion = mux.Vars(r)["version"]
+		localFct(context, w, r)
+	    }
+	    localMethod := method
+	    multiTenant := new(multiTenancyPlugins.Executor)
+	    multiTenant.Init()
+	    r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).Methods(localMethod).Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))
+	    r.Path(localRoute).Methods(localMethod).Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))
+
+	    if enableCors {
+		optionsMethod := "OPTIONS"
+		optionsFct := optionsHandler
+
+		wrap := func(w http.ResponseWriter, r *http.Request) {
+		    log.WithFields(log.Fields{"method": optionsMethod, "uri": r.RequestURI}).
+			Debug("HTTP request received")
+		    if enableCors {
+			writeCorsHeaders(w, r)
+		    }
+		    context.apiVersion = mux.Vars(r)["version"]
+		    optionsFct(context, w, r)
+		}
+		multiTenant := new(multiTenancyPlugins.Executor)
+		multiTenant.Init()
+		r.Path("/v{version:[0-9]+.[0-9]+}" + localRoute).
+		    Methods(optionsMethod).Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))
+		r.Path(localRoute).Methods(optionsMethod).
+		    Handler(multiTenant.Handle(context.cluster, http.HandlerFunc(wrap)))	
+	    }
 	}
+    }
 }
