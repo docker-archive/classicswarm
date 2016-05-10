@@ -28,6 +28,7 @@ func (d *dispatcher) SetHandler(handler http.Handler) {
 func (d *dispatcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if d.handler == nil {
 		httpError(w, "No dispatcher defined", http.StatusInternalServerError)
+		return
 	}
 	d.handler.ServeHTTP(w, r)
 }
