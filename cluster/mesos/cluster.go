@@ -196,6 +196,10 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		return nil, errResourcesNeeded
 	}
 
+	if !c.checkNameUniqueness(name) {
+		return nil, fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
+	}
+
 	task, err := task.NewTask(config, name, c.taskCreationTimeout)
 	if err != nil {
 		return nil, err
@@ -677,4 +681,28 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 // TagImage tags an image
 func (c *Cluster) TagImage(IDOrName string, ref string, force bool) error {
 	return errNotSupported
+}
+
+func (c *Cluster) checkNameUniqueness(name string) bool {
+	// Abort immediately if the name is empty.
+	if len(name) == 0 {
+		return true
+	}
+
+	c.RLock()
+	defer c.RUnlock()
+
+	for _, s := range c.agents {
+		for _, container := range s.engine.Containers() {
+			for _, cname := range container.Names {
+				log.Debugf("***************  cont:%v  name:%v", container.Info.ID, cname)				
+				if cname == name || cname == "/"+name {
+					return false
+				}
+			}
+		}
+	}
+
+
+	return true
 }
