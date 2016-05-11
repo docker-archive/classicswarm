@@ -86,7 +86,7 @@ func BuildContainerConfig(c dockerclient.ContainerConfig) *ContainerConfig {
 		json.Unmarshal([]byte(labels), &constraints)
 	}
 
-	// parse reschedule policy from labels (ex. docker run --label 'com.docker.swarm.reschedule-policies=on-node-failure')
+	// parse reschedule policy from labels (ex. docker run --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]')
 	if labels, ok := c.Labels[SwarmLabelNamespace+".reschedule-policies"]; ok {
 		json.Unmarshal([]byte(labels), &reschedulePolicies)
 	}

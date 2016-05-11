@@ -19,7 +19,7 @@ running on fail.
 
 You set the reschedule policy when you start a container. You can do this with
 the `reschedule` environment variable  or the
-`com.docker.swarm.reschedule-policy` label. If you don't specify a policy, the
+`com.docker.swarm.reschedule-policies` label. If you don't specify a policy, the
 default rescheduling policy is `off` which means that Swarm does not restart a
 container when a node fails.
 
@@ -29,10 +29,10 @@ To set the `on-node-failure` policy with a `reschedule` environment variable:
 $ docker run -d -e reschedule:on-node-failure redis
 ```
 
-To set the same policy with a `com.docker.swarm.reschedule-policy` label:
+To set the same policy with a `com.docker.swarm.reschedule-policies` label:
 
 ```bash
-$ docker run -d -l 'com.docker.swarm.reschedule-policy=["on-node-failure"]' redis
+$ docker run -d -l 'com.docker.swarm.reschedule-policies=["on-node-failure"]' redis
 ```
 
 ## Review reschedule logs
