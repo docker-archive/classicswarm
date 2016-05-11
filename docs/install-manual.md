@@ -221,7 +221,7 @@ After creating the discovery backend, you can create the Swarm managers. In this
 
       Replacing `<manager1_ip>` with the IP address from the previous command, for example:
 
-        $ docker run -d swarm manage -H :4000 --replication --advertise <manager1_ip>:4000 consul://172.30.0.161:8500
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise <manager1_ip>:4000 consul://172.30.0.161:8500
 
 5. Enter `docker ps`to verify that a Swarm container is running.
 
