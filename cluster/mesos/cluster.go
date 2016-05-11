@@ -197,7 +197,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 	}
 
 	if !c.checkNameUniqueness(name) {
-		return nil, fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
+		return nil, fmt.Errorf("Conflict: The name %s is already assigned or in pending tasks. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
 	}
 
 	task, err := task.NewTask(config, name, c.taskCreationTimeout)
@@ -386,6 +386,11 @@ func (c *Cluster) Import(source string, ref string, tag string, imageReader io.R
 // RenameContainer renames a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
 	//FIXME this doesn't work as the next refreshcontainer will erase this change (this change is in-memory only)
+
+	if !c.checkNameUniqueness(newName) {
+		return fmt.Errorf("Conflict: The name %s is already assigned, or in pending tasks. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, newName)
+	}
+
 	container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.name"] = newName
 
 	return nil
@@ -695,7 +700,6 @@ func (c *Cluster) checkNameUniqueness(name string) bool {
 	for _, s := range c.agents {
 		for _, container := range s.engine.Containers() {
 			for _, cname := range container.Names {
-				log.Debugf("***************  cont:%v  name:%v", container.Info.ID, cname)				
 				if cname == name || cname == "/"+name {
 					return false
 				}
@@ -703,6 +707,16 @@ func (c *Cluster) checkNameUniqueness(name string) bool {
 		}
 	}
 
+	for _, task := range c.pendingTasks.Tasks {
+		config := task.GetConfig()
+		if config.Labels != nil {
+			if tname, ok := config.Labels[cluster.SwarmLabelNamespace+".mesos.name"]; ok {
+				if tname == name || tname == "/"+name {
+					return false
+				}
+			}
+		}
+	}
 
 	return true
 }
