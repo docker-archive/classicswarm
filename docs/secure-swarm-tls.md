@@ -26,7 +26,7 @@ risks, Docker Swarm and the Docker Engine daemon support Transport Layer Securit
 Before going further, it is important to understand the basic concepts of TLS
 and public key infrastructure (PKI).
 
-Public key infrastructure is a combination of security-related technologies,
+Public key infrastructure is a combination of security related technologies,
 policies, and procedures, that are used to create and manage digital
 certificates. These certificates and infrastructure secure digital
 communication using mechanisms such as authentication and encryption.
@@ -51,7 +51,7 @@ Signature Algorithm: sha256WithRSAEncryption
     Subject: CN=swarm
 ```
 
-This certificate identifies a computer called **swarm**. The certificate is valid between January 2016 and January 2026 and was issued by Docker Inc based in the state of California in the US.
+This certificate identifies a computer called **swarm**. The certificate is valid between January 2016 and January 2026 and was issued by Docker Inc. based in the state of California in the US.
 
 Just as passports authenticate individuals as they board flights and clear
 customs, digital certificates authenticate computers on a network.
@@ -73,15 +73,15 @@ certificates to increase security.
 
 <!--[metadata]>Need to know about encryption too<![end-metadata]-->
 
-You can configure both the Docker Engine CLI and the Engine daemon to require
-TLS for authentication.  Configuring TLS means that all communications between
-the Engine CLI and the Engine daemon must be accompanied with, and signed by a
-trusted digital certificate. The Engine CLI must provide its digital certificate
-before the Engine daemon will accept incoming commands from it.
+You can configure both the Docker Egnine CLI and the Docker Engine daemon to require
+TLS for authentication. Configuring TLS means that all communications between
+the Docker Engine CLI and the Docker Engine daemon must be accompanied with, and signed by a
+trusted digital certificate. The Docker Engine CLI must provide its digital certificate
+before the Docker Engine daemon will accept incoming commands from it.
 
-The Engine daemon must also trust the certificate that the Engine CLI uses.
-This trust is usually established by way of a trusted third party. The Engine
-CLI and daemon in the diagram below are configured to require TLS
+The Docker Engine daemon must also trust the certificate that the Docker Engine CLI uses.
+This trust is usually established by way of a trusted third party. The Docker Engine
+CLI and Docker Engine daemon in the diagram below are configured to require TLS
 authentication.
 
 ![](images/trust-diagram.jpg)
@@ -89,33 +89,33 @@ authentication.
 The trusted third party in this diagram is the the Certificate Authority (CA)
 server. Like the country in the passport example, a CA creates, signs, issues,
 revokes certificates. Trust is established by installing the CA's root
-certificate on the host running the Engine daemon. The Engine CLI then requests
+certificate on the host running the Docker Engine daemon. The Docker Engine CLI then requests
 its own certificate from the CA server, which the CA server signs and issues to
 the client.
 
-The Engine CLI  sends its certificate to the Engine daemon before issuing
-commands. The daemon inspects the certificate, and because daemon trusts the CA,
-the daemon automatically trusts any certificates signed by the CA. Assuming the
+The Docker Engine CLI sends its certificate to the Docker Engine daemon before issuing
+commands. The Docker Engine daemon inspects the certificate, and because the Docker Engine daemon trusts the CA,
+the Docker Engine daemon automatically trusts any certificates signed by the CA. Assuming the
 certificate is in order (the certificate has not expired or been revoked etc.)
-the Engine daemon accepts commands from this trusted Engine CLI.
+the Docker Engine daemon accepts commands from this trusted Docker Engine CLI.
 
-The Docker Engine CLI is simply a client that uses the Docker Remote API to
-communicate with the Engine daemon. Any client that uses this Docker Remote API can use
-TLS. For example, other Engine clients such as Docker Universal Control Plane
-(UCP) have TLS support built-in. Other, third party products, that use Docker's
+The Docker Engine CLI is simply a client that uses the Docker Engine Remote API to
+communicate with the Docker Engine daemon. Any client that uses this Docker Engine Remote API can use
+TLS. For example, Dcoker Engine clients such as 'Docker Universal Control Plane'
+(UCP) have TLS support built-in. Other, third party products, that use Docker Engine
 Remote API, can also be configured this way.
 
 ## TLS modes with Docker and Swarm
 
-Now that you know how certificates are used by Docker Engine for authentication,
+Now that you know how certificates are used by the Docker Engine daemon for authentication,
 it's important to be aware of the three TLS configurations possible with Docker
-Engine and its clients:
+Engine daemon and its clients:
 
 - External 3rd party CA
 - Internal corporate CA
 - Self-signed certificates
 
-These configurations are differentiated by the type of entity acting as the  Certificate Authority (CA).
+These configurations are differentiated by the type of entity acting as the Certificate Authority (CA).
 
 ### External 3rd party CA
 
@@ -156,7 +156,7 @@ correctly, they can be better than using no certificates.
 
 Because self-signed certificates lack of a full-blown PKI, they do not scale
 well and lack many of the advantages offered by the other options. One of their
-disadvantages is you cannot revoke self-signed certificates. Due to this, and
+disadvantages is that you cannot revoke self-signed certificates. Due to this, and
 other limitations, self-signed certificates are considered the least secure of
 the three options. Self-signed certificates are not recommended for public
 facing production workloads exposed to untrusted networks.
