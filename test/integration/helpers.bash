@@ -123,8 +123,7 @@ function swarm_manage_no_wait() {
 	fi
 
 	local i=${#SWARM_MANAGE_PID[@]}
-	#local port=$(($SWARM_BASE_PORT + $i))
-	local port=$(($SWARM_BASE_PORT))
+	local port=$(($SWARM_BASE_PORT + $i))
 	local host=127.0.0.1:$port
 
 	"$SWARM_BINARY" -l debug -experimental manage -H "$host" --heartbeat=1s $discovery &
