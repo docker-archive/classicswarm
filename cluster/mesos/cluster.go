@@ -449,12 +449,12 @@ func (c *Cluster) TotalMemory() int64 {
 }
 
 // TotalCpus returns the total memory of the cluster
-func (c *Cluster) TotalCpus() int {
+func (c *Cluster) TotalCpus() int64 {
 	c.RLock()
 	defer c.RUnlock()
-	var totalCpus int
+	var totalCpus int64
 	for _, s := range c.agents {
-		totalCpus += int(sumScalarResourceValue(s.offers, "cpus"))
+		totalCpus += int64(sumScalarResourceValue(s.offers, "cpus"))
 	}
 	return totalCpus
 }
@@ -596,9 +596,9 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 
 	// In mesos 0.23+ the docker inspect will be sent back in the taskStatus.Data
 	// We can use this to find the right container.
-	inspect := []dockerclient.ContainerInfo{}
+	inspect := []types.ContainerJSONBase{}
 	if data != nil && json.Unmarshal(data, &inspect) == nil && len(inspect) == 1 {
-		container := &cluster.Container{Container: types.Container{ID: inspect[0].Id}, Engine: s.engine}
+		container := &cluster.Container{Container: types.Container{ID: inspect[0].ID}, Engine: s.engine}
 		if container, err := container.Refresh(); err == nil {
 			if !t.Stopped() {
 				t.SetContainer(container)

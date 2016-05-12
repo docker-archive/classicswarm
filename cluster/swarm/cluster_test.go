@@ -198,7 +198,7 @@ func TestImportImage(t *testing.T) {
 		mock.AnythingOfType("NetworkListOptions"),
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{bytes.NewBufferString("")}, nil)
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
 
@@ -210,7 +210,7 @@ func TestImportImage(t *testing.T) {
 
 	// import success
 	readCloser := nopCloser{bytes.NewBufferString("ok")}
-	client.On("ImportImage", mock.Anything, mock.Anything, mock.Anything, mock.AnythingOfType("*io.PipeReader")).Return(readCloser, nil).Once()
+	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, nil).Once()
 
 	callback := func(what, status string, err error) {
 		// import success
@@ -221,7 +221,7 @@ func TestImportImage(t *testing.T) {
 	// import error
 	readCloser = nopCloser{bytes.NewBufferString("error")}
 	err := fmt.Errorf("Import error")
-	client.On("ImportImage", mock.Anything, mock.Anything, mock.Anything, mock.AnythingOfType("*io.PipeReader")).Return(readCloser, err).Once()
+	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, err).Once()
 
 	callback = func(what, status string, err error) {
 		// import error
@@ -251,7 +251,7 @@ func TestLoadImage(t *testing.T) {
 		mock.AnythingOfType("NetworkListOptions"),
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{bytes.NewBufferString("")}, nil)
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
 
@@ -262,7 +262,8 @@ func TestLoadImage(t *testing.T) {
 	c.engines[engine.ID] = engine
 
 	// load success
-	client.On("LoadImage", mock.AnythingOfType("*io.PipeReader")).Return(nil).Once()
+	readCloser := nopCloser{bytes.NewBufferString("")}
+	apiClient.On("ImageLoad", mock.Anything, mock.AnythingOfType("*io.PipeReader"), false).Return(types.ImageLoadResponse{Body: readCloser}, nil).Once()
 	callback := func(what, status string, err error) {
 		//if load OK, err will be nil
 		assert.Nil(t, err)
@@ -271,7 +272,7 @@ func TestLoadImage(t *testing.T) {
 
 	// load error
 	err := fmt.Errorf("Load error")
-	client.On("LoadImage", mock.AnythingOfType("*io.PipeReader")).Return(err).Once()
+	apiClient.On("ImageLoad", mock.Anything, mock.AnythingOfType("*io.PipeReader"), false).Return(types.ImageLoadResponse{}, err).Once()
 	callback = func(what, status string, err error) {
 		// load error, err is not nil
 		assert.NotNil(t, err)
@@ -307,7 +308,7 @@ func TestTagImage(t *testing.T) {
 		mock.AnythingOfType("NetworkListOptions"),
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
-	client.On("StartMonitorEvents", mock.Anything, mock.Anything, mock.Anything).Return()
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{bytes.NewBufferString("")}, nil)
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return(images, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
 
@@ -318,7 +319,7 @@ func TestTagImage(t *testing.T) {
 	c.engines[engine.ID] = engine
 
 	// tag image
-	client.On("TagImage", mock.Anything, mock.Anything, mock.Anything, false).Return(nil).Once()
+	apiClient.On("ImageTag", mock.Anything, mock.AnythingOfType("types.ImageTagOptions")).Return(nil).Once()
 	assert.Nil(t, c.TagImage("busybox", "test_busybox", "latest", false))
 	assert.NotNil(t, c.TagImage("busybox_not_exists", "test_busybox", "latest", false))
 }

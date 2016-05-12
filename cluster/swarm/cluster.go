@@ -153,7 +153,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		bImageNotFoundError, _ := regexp.MatchString(`image \S* not found`, err.Error())
 		if (bImageNotFoundError || client.IsErrImageNotFound(err)) && !config.HaveNodeConstraint() {
 			// Check if the image exists in the cluster
-			// If exists, retry with a image affinity
+			// If exists, retry with an image affinity
 			if c.Image(config.Image) != nil {
 				container, err = c.createContainer(config, name, true, authConfig)
 				retries++
@@ -760,10 +760,6 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 	if len(IDOrName) == 0 {
 		return nil
 	}
-
-	c.RLock()
-	defer c.RUnlock()
-
 	return c.Containers().Get(IDOrName)
 }
 
@@ -801,9 +797,9 @@ func (c *Cluster) listNodes() []*node.Node {
 	out := make([]*node.Node, 0, len(c.engines))
 	for _, e := range c.engines {
 		node := node.NewNode(e)
-		for _, c := range c.pendingContainers {
-			if c.Engine.ID == e.ID && node.Container(c.Config.SwarmID()) == nil {
-				node.AddContainer(c.ToContainer())
+		for _, pc := range c.pendingContainers {
+			if pc.Engine.ID == e.ID && node.Container(pc.Config.SwarmID()) == nil {
+				node.AddContainer(pc.ToContainer())
 			}
 		}
 		out = append(out, node)
@@ -896,9 +892,9 @@ func (c *Cluster) TotalMemory() int64 {
 	return totalMemory
 }
 
-// TotalCpus return the total memory of the cluster
-func (c *Cluster) TotalCpus() int {
-	var totalCpus int
+// TotalCpus returns the total memory of the cluster
+func (c *Cluster) TotalCpus() int64 {
+	var totalCpus int64
 	for _, engine := range c.engines {
 		totalCpus += engine.TotalCpus()
 	}
@@ -922,6 +918,7 @@ func (c *Cluster) Info() [][2]string {
 			engineName = engine.Name
 		}
 		info = append(info, [2]string{" " + engineName, engine.Addr})
+		info = append(info, [2]string{"  └ ID", engine.ID})
 		info = append(info, [2]string{"  └ Status", engine.Status()})
 		info = append(info, [2]string{"  └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
 		info = append(info, [2]string{"  └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
@@ -933,10 +930,9 @@ func (c *Cluster) Info() [][2]string {
 		sort.Strings(labels)
 		info = append(info, [2]string{"  └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
 		errMsg := engine.ErrMsg()
-		if len(errMsg) == 0 {
-			errMsg = "(none)"
+		if len(errMsg) != 0 {
+			info = append(info, [2]string{"  └ Error", errMsg})
 		}
-		info = append(info, [2]string{"  └ Error", errMsg})
 		info = append(info, [2]string{"  └ UpdatedAt", engine.UpdatedAt().UTC().Format(time.RFC3339)})
 		info = append(info, [2]string{"  └ ServerVersion", engine.Version})
 	}
@@ -953,11 +949,8 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 	return c.engines[nodes[0].ID], nil
 }
 
-// RenameContainer rename a container
+// RenameContainer renames a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
-	c.RLock()
-	defer c.RUnlock()
-
 	// check new name whether available
 	if !c.checkNameUniqueness(newName) {
 		return fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, newName)
@@ -968,7 +961,7 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	return err
 }
 
-// BuildImage build an image
+// BuildImage builds an image
 func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer) error {
 	c.scheduler.Lock()
 
@@ -997,7 +990,7 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 	return nil
 }
 
-// TagImage tag an image
+// TagImage tags an image
 func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	c.RLock()
 	defer c.RUnlock()

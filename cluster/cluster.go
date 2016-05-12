@@ -79,7 +79,7 @@ type Cluster interface {
 	TotalMemory() int64
 
 	// Return the number of CPUs in the cluster
-	TotalCpus() int
+	TotalCpus() int64
 
 	// Register an event handler for cluster-wide events.
 	RegisterEventHandler(h EventHandler) error

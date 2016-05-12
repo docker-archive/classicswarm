@@ -13,7 +13,7 @@ function teardown() {
 
 	docker_swarm create --name test_container busybox
 	
-	# make sure container exsists
+	# make sure container exists
 	run docker_swarm ps -l
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" == *"test_container"* ]]
@@ -31,7 +31,7 @@ function teardown() {
 
 	docker_swarm run -d --name test_container busybox sleep 500
 
-	# make sure container exsists and is up
+	# make sure container exists and is up
 	[ -n $(docker_swarm ps -q --filter=name=test_container --filter=status=running) ]
 
 	# rm, remove a running container, return error
