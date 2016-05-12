@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -959,6 +960,15 @@ func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, erro
 
 }
 
+// encodeAuthToBase64 serializes the auth configuration as JSON base64 payload
+func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
+	buf, err := json.Marshal(authConfig)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(buf), nil
+}
+
 // FIXME: This will become unnecessary after docker/engine-api#162 is merged
 func buildImagePullOptions(image string) (types.ImagePullOptions, error) {
 	distributionRef, err := reference.ParseNamed(image)
@@ -988,6 +998,14 @@ func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
 	if err != nil {
 		return err
 	}
+	if authConfig != nil {
+		encodedAuth, err := encodeAuthToBase64(*authConfig)
+		if err != nil {
+			return err
+		}
+		pullOpts.RegistryAuth = encodedAuth
+	}
+
 	pullResponseBody, err := e.apiClient.ImagePull(context.Background(), pullOpts, nil)
 	e.CheckConnectionErr(err)
 	if err != nil {
