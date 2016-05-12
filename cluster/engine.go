@@ -99,14 +99,14 @@ type EngineOpts struct {
 type Engine struct {
 	sync.RWMutex
 
-	ID      string
-	IP      string
-	Addr    string
-	Name    string
-	Cpus    int64
-	Memory  int64
-	Labels  map[string]string
-	Version string
+	ID          string
+	IP          string
+	Addr        string
+	Name        string
+	Cpus        int64
+	Memory      int64
+	Labels      map[string]string
+	Version     string
 	Maintenance bool
 
 	stopCh          chan struct{}
