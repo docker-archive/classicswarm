@@ -1152,7 +1152,7 @@ func (e *Engine) handler(msg events.Message) error {
 		e.RefreshImages()
 	case "container":
 		switch msg.Action {
-		case "die", "kill", "oom", "pause", "start", "restart", "stop", "unpause", "rename":
+		case "die", "kill", "oom", "pause", "start", "restart", "stop", "unpause", "rename", "update":
 			e.refreshContainer(msg.ID, true)
 		default:
 			e.refreshContainer(msg.ID, false)
