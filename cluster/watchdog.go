@@ -3,6 +3,8 @@ package cluster
 import (
 	"sync"
 
+	"golang.org/x/net/context"
+
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -82,12 +84,23 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			// add the container back, so we can retry later
 			c.Engine.AddContainer(c)
 		} else {
+
 			log.Infof("Rescheduled container %s from %s to %s as %s", c.ID, c.Engine.Name, newContainer.Engine.Name, newContainer.ID)
+
 			if c.Info.State.Running {
+
+				oldName := c.Names[0]
+				e1 := newContainer.Engine.apiClient.ContainerRename(context.Background(), newContainer.ID, c.Names[0]+"Resc")
+
+				if e1 != nil {
+					log.Error(e1)
+				}
+
 				log.Infof("Container %s was running, starting container %s", c.ID, newContainer.ID)
 				if err := w.cluster.StartContainer(newContainer, nil); err != nil {
 					log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
 				}
+				newContainer.Engine.apiClient.ContainerRename(context.Background(), newContainer.ID, oldName)
 			}
 		}
 	}
