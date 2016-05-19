@@ -127,6 +127,7 @@ type Engine struct {
 	failureCount    int
 	overcommitRatio int64
 	opts            *EngineOpts
+	DockerRootDir   string
 }
 
 // NewEngine is exported
@@ -492,6 +493,7 @@ func (e *Engine) updateSpecs() error {
 	e.Name = info.Name
 	e.Cpus = info.NCPU
 	e.Memory = info.MemTotal
+	e.DockerRootDir = info.DockerRootDir
 	e.Labels = map[string]string{
 		"storagedriver":   info.Driver,
 		"executiondriver": info.ExecutionDriver,
@@ -1255,4 +1257,32 @@ func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) 
 
 	// refresh image
 	return e.RefreshImages()
+}
+
+// CheckpointContainer checkpoint container
+func (e *Engine) CheckpointContainer(containerID string, options types.CriuConfig) error{
+	// send restore request
+	err := e.apiClient.ContainerCheckpoint(context.TODO(), containerID, options)
+	e.CheckConnectionErr(err)
+	if err != nil {
+		return err
+	}
+
+	// refresh container
+	_, err = e.refreshContainer(containerID, true)
+	return err
+}
+
+// RestoreContainer restore container
+func (e *Engine) RestoreContainer(containerID string, options types.CriuConfig, forceRestore bool) error{
+	// send restore request
+	err := e.apiClient.ContainerRestore(context.TODO(), containerID, options, forceRestore)
+	e.CheckConnectionErr(err)
+	if err != nil {
+		return err
+	}
+
+	// refresh container
+	_, err = e.refreshContainer(containerID, true)
+	return err
 }

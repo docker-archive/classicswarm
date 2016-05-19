@@ -236,7 +236,7 @@ func (c *ContainerConfig) Validate() error {
 		return errors.New("too many reschedule policies")
 	} else if len(reschedulePolicies) == 1 {
 		valid := false
-		for _, validReschedulePolicy := range []string{"off", "on-node-failure"} {
+		for _, validReschedulePolicy := range []string{"off", "on-node-failure", "check-point"} {
 			if reschedulePolicies[0] == validReschedulePolicy {
 				valid = true
 			}

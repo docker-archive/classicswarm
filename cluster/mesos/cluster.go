@@ -678,3 +678,13 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	return errNotSupported
 }
+
+// CheckpointContainer checkpoint a container
+func (c *Cluster) CheckpointContainer(container *cluster.Container, options types.CriuConfig) error{
+	return container.Engine.CheckpointContainer(container.ID, options)
+}
+
+// RestoreContainer restore a container
+func (c *Cluster) RestoreContainer(container *cluster.Container, options types.CriuConfig, forceRestore bool) error{
+	return container.Engine.RestoreContainer(container.ID, options, forceRestore)
+}

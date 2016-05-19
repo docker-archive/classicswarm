@@ -2,7 +2,9 @@ package cluster
 
 import (
 	"sync"
+	"path/filepath"
 
+	"github.com/docker/engine-api/types"
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -59,18 +61,13 @@ func (w *Watchdog) removeDuplicateContainers(e *Engine) {
 func (w *Watchdog) rescheduleContainers(e *Engine) {
 	w.Lock()
 	defer w.Unlock()
-
+	log.Infof("Rescheduled container start")
 	log.Debugf("Node %s failed - rescheduling containers", e.ID)
 	for _, c := range e.Containers() {
 
 		// Skip containers which don't have an "on-node-failure" reschedule policy.
-		if !c.Config.HasReschedulePolicy("on-node-failure") {
+		if !c.Config.HasReschedulePolicy("on-node-failure") && !c.Config.HasReschedulePolicy("check-point"){
 			log.Debugf("Skipping rescheduling of %s based on rescheduling policies", c.ID)
-			continue
-		}
-		
-		if !c.Config.HasReschedulePolicy("check-point") {
-			log.Debugf("Skipping rescheduling of %s based on rescheduling check-point policies", c.ID)
 			continue
 		}
 
@@ -94,9 +91,19 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 					if err := w.cluster.StartContainer(newContainer, nil); err != nil {
 						log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
 					}
-				}else if c.Config.HasReschedulePolicy("on-node-failure") {
-					if err := w.cluster.StartContainer(newContainer, nil); err != nil {
-						log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
+				}else if c.Config.HasReschedulePolicy("check-point") {
+					criuOpts := types.CriuConfig{
+						ImagesDirectory: filepath.Join(newContainer.Engine.DockerRootDir, "checkpoint", c.ID, "criu.image"),
+						WorkDirectory: filepath.Join(newContainer.Engine.DockerRootDir, "checkpoint", c.ID, "criu.work"),
+					}
+					if err := w.cluster.RestoreContainer(newContainer, criuOpts, true); err != nil {
+						log.Errorf("Failed to restore rescheduled container %s: %v", newContainer.ID, err)
+						//if restore fail, try to start a new container
+						if err := w.cluster.StartContainer(newContainer, nil); err != nil {
+							log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
+						}
+					}else{
+						log.Infof("restore %s to %s", c.ID, newContainer.ID)
 					}
 				}
 			}
