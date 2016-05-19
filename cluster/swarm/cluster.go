@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/pkg/discovery"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/engine-api/client"
+	engineapi "github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	containertypes "github.com/docker/engine-api/types/container"
 	networktypes "github.com/docker/engine-api/types/network"
@@ -238,10 +239,27 @@ func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes b
 // RemoveNetwork removes a network from the cluster
 func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
 	err := network.Engine.RemoveNetwork(network)
-	if err == nil && network.Scope == "global" {
-		for _, engine := range c.engines {
-			engine.DeleteNetwork(network)
+	if err == nil {
+		if network.Scope == "global" {
+			for _, engine := range c.engines {
+				engine.DeleteNetwork(network)
+			}
 		}
+	} else if engineapi.ErrConnectionFailed == err && network.Scope == "global" {
+		log.Debug("The original engine is unreachable - Attempting to remove global network from the reachable engines...")
+		for _, engine := range c.engines {
+			e1 := engine.RemoveNetwork(network)
+			if e1 == nil {
+				for _, engine := range c.engines {
+					engine.DeleteNetwork(network)
+				}
+				err = nil
+				break
+			}
+		}
+	}
+	if err != nil && network.Scope == "global" {
+		log.Debugf("Failed to remove global scope network %s from any engine...", network.ID)
 	}
 	return err
 }
