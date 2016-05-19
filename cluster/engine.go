@@ -690,6 +690,28 @@ func (e *Engine) RefreshVolumes() error {
 	return nil
 }
 
+// refreshVolume refreshes single volume on the engine.
+func (e *Engine) refreshVolume(IDOrName string) error {
+	volume, err := e.apiClient.VolumeInspect(context.Background(), IDOrName)
+	e.CheckConnectionErr(err)
+	if err != nil {
+		if strings.Contains(err.Error(), "No such volume") {
+			e.Lock()
+			delete(e.volumes, IDOrName)
+			e.Unlock()
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	e.Lock()
+	e.volumes[volume.Name] = &Volume{Volume: volume, Engine: e}
+	e.Unlock()
+
+	return nil
+}
+
 // RefreshContainers will refresh the list and status of containers running on the engine. If `full` is
 // true, each container will be inspected.
 // FIXME: unexport this method after mesos scheduler stops using it directly
@@ -1026,7 +1048,7 @@ func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*types.Volume
 		return nil, err
 	}
 
-	e.RefreshVolumes()
+	e.refreshVolume(volume.Name)
 
 	return &volume, err
 }
@@ -1216,7 +1238,7 @@ func (e *Engine) handler(msg events.Message) error {
 	case "network":
 		e.refreshNetwork(msg.Actor.ID)
 	case "volume":
-		e.RefreshVolumes()
+		e.refreshVolume(msg.Actor.ID)
 	case "image":
 		e.RefreshImages()
 	case "container":
