@@ -595,6 +595,27 @@ func (e *Engine) RefreshImages() error {
 	return nil
 }
 
+// refreshNetwork refreshes single network on the engine.
+func (e *Engine) refreshNetwork(ID string) error {
+	network, err := e.apiClient.NetworkInspect(context.Background(), ID)
+	e.CheckConnectionErr(err)
+	if err != nil {
+		if strings.Contains(err.Error(), "No such network") {
+			e.Lock()
+			delete(e.networks, ID)
+			e.Unlock()
+			return nil
+		}
+		return err
+	}
+
+	e.Lock()
+	e.networks[ID] = &Network{NetworkResource: network, Engine: e}
+	e.Unlock()
+
+	return nil
+}
+
 // RefreshNetworks refreshes the list of networks on the engine.
 func (e *Engine) RefreshNetworks() error {
 	netLsOpts := types.NetworkListOptions{filters.NewArgs()}
@@ -939,7 +960,11 @@ func (e *Engine) CreateNetwork(name string, request *types.NetworkCreate) (*type
 	response, err := e.apiClient.NetworkCreate(context.Background(), name, *request)
 	e.CheckConnectionErr(err)
 
-	e.RefreshNetworks()
+	if err != nil {
+		return nil, err
+	}
+
+	e.refreshNetwork(response.ID)
 
 	return &response, err
 }
@@ -1140,7 +1165,7 @@ func (e *Engine) handler(msg events.Message) error {
 
 	switch msg.Type {
 	case "network":
-		e.RefreshNetworks()
+		e.refreshNetwork(msg.Actor.ID)
 	case "volume":
 		e.RefreshVolumes()
 	case "image":
