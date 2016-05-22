@@ -1,23 +1,24 @@
 package authentication
 
 import (
+	"errors"
 	"net/http"
 	"os"
-	"errors"
+
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization/headers"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
-	log "github.com/Sirupsen/logrus"
 )
 
 //AuthenticationImpl - implementation of plugin API
-type AuthenticationImpl struct{
+type AuthenticationImpl struct {
 	nextHandler pluginAPI.Handler
 }
 
-func NewAuthentication(handler pluginAPI.Handler) pluginAPI.PluginAPI{
+func NewAuthentication(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 	authN := &AuthenticationImpl{
-		nextHandler:     handler,
+		nextHandler: handler,
 	}
 	return authN
 }
@@ -25,16 +26,16 @@ func NewAuthentication(handler pluginAPI.Handler) pluginAPI.PluginAPI{
 //Handle authentication on request and call next plugin handler.
 func (authentication *AuthenticationImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	tenantIdToValidate := r.Header.Get(headers.AuthZTenantIdHeaderName)
-	log.Debug("In AuthenticationImpl.Handle ...")
+	log.Debug(tenantIdToValidate)
 	if tenantIdToValidate == "" {
-		return  errors.New("Not Authorized!")
+		return errors.New("Not Authorized!")
 	}
 	if tenantIdToValidate == os.Getenv("SWARM_ADMIN_TENANT_ID") {
 		return nil
 	}
-	err := authentication.nextHandler("", cluster, w, r, swarmHandler)
+	err := authentication.nextHandler(command, cluster, w, r, swarmHandler)
 	if err != nil {
-        	log.Error(err)
+		log.Error(err)
 		return err
 	}
 	return nil

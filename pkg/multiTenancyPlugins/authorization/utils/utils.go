@@ -11,8 +11,8 @@ import (
 
 	"strings"
 
-	"net/http/httptest"
 	"math/rand"
+	"net/http/httptest"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
@@ -22,22 +22,27 @@ import (
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization/headers"
 	"github.com/gorilla/mux"
 	"github.com/jeffail/gabs"
-//	"encoding/json"
+	//	"encoding/json"
 	"github.com/samalba/dockerclient"
 )
 
 type ValidationOutPutDTO struct {
-	ContainerID string
-	Links       []string
-	VolumesFrom []string
-	Binds       []string
-	Env         []string
+	ContainerID  string
+	Links        []string
+	VolumesFrom  []string
+	Binds        []string
+	Env          []string
 	ErrorMessage string
 	//Quota can live here too? Currently quota needs only raise error
 	//What else
 }
 
 //UTILS
+
+func ParseCommand(r *http.Request) string {
+	//	return "containerCreate"
+	return "containerInspect"
+}
 
 func ModifyRequest(r *http.Request, body io.Reader, urlStr string, containerID string) (*http.Request, error) {
 
@@ -58,119 +63,73 @@ func ModifyRequest(r *http.Request, body io.Reader, urlStr string, containerID s
 
 	return r, nil
 }
-/*
-func CheckLinksOwnerShip(cluster cluster.Cluster, tenantName string, r *http.Request, reqBody []byte, containerConfig dockerclient.ContainerConfig) (bool, *ValidationOutPutDTO) {
-log.Debugf("CheckLinksOwnerShip for tenant %s\n",tenantName)
-	jsonParsed, _ := gabs.ParseJSON(reqBody)
 
-	//TODO - Consider refactor all to use json parse and not regexp and maybe save memory on de duplication
-	log.Debug("Checking links...")
-	children, _ := jsonParsed.Path("HostConfig.Links").Children()
-	containers := cluster.Containers()
-	linkSet := make(map[string]string)
-	var c int
-	var l int
-	log.Debug("**************************************************")
-	for _, child := range children {
-		log.Debug("_________________")
-		c++
-
-		pair := child.Data().(string)
-		linkPair := strings.Split(pair, ":")
-		link := strings.TrimSpace(linkPair[0])
-		log.Debug("Pair:" + pair)
-		log.Debug(linkPair)
-		log.Debug("Link:" + link)
-		for _, container := range containers {
-			log.Debug("containerName: " + container.Info.Name)
-			log.Debug("Comparing with: " + "/"+link+tenantName)
-			log.Debug("or Comparing with: " + "/"+link)
-			log.Debug("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-			if "/"+link+tenantName == container.Info.Name || "/"+link == container.Info.Name {
-				log.Debug("XXXXXXXXXXXXXXLINK FOUNDXXXXXXXXXXXXXXXXXXXXXXXX")
-				linkSet[container.Info.ID] = link
-				l++
-			}
-		}
-	}
-	log.Debug("**************************************************")
-	if l != c {
-		//TODO - Change to pointer and return nil
-		return false, &ValidationOutPutDTO{ContainerID: "", Links: linkSet}
-	}
-	v := ValidationOutPutDTO{ContainerID: "", Links: linkSet}
-	return true, &v
-
-}
-*/
-func CheckVolumeBinds(tenantName string, containerConfig dockerclient.ContainerConfig) ([]string,error) {
+func CheckVolumeBinds(tenantName string, containerConfig dockerclient.ContainerConfig) ([]string, error) {
 	log.Debug("CheckVolumeBinds")
 	binds := containerConfig.HostConfig.Binds
-	for i,b := range containerConfig.HostConfig.Binds {
-		if index := strings.Index(b,":"); index > -1 {
-		  v := b[0:index]
-		  log.Debug("v: ",v) 		
-		  if strings.Contains(v,"/") {
-			return nil,errors.New("Mount to host file system is prohibited!")
-		  }
-		  binds[i] = strings.Replace(binds[i],v,v + tenantName,1)		  
+	for i, b := range containerConfig.HostConfig.Binds {
+		if index := strings.Index(b, ":"); index > -1 {
+			v := b[0:index]
+			log.Debug("v: ", v)
+			if strings.Contains(v, "/") {
+				return nil, errors.New("Mount to host file system is prohibited!")
+			}
+			binds[i] = strings.Replace(binds[i], v, v+tenantName, 1)
 		}
 	}
-	return binds,nil
+	return binds, nil
 }
 
 //Check that tenant references only containers that it owns and modify reference name to use tenantName suffix or the container id
 func CheckContainerReferences(cluster cluster.Cluster, tenantName string, containerConfig dockerclient.ContainerConfig) (bool, *ValidationOutPutDTO) {
 	log.Debug("in CheckContainerReferences")
-	log.Debugf("containerConfig: %+v",containerConfig)
+	log.Debugf("containerConfig: %+v", containerConfig)
 	linksSize := len(containerConfig.HostConfig.Links)
 	volumesFrom := containerConfig.HostConfig.VolumesFrom
 	volumesFromSize := len(containerConfig.HostConfig.VolumesFrom)
 	env := containerConfig.Env
 	containers := cluster.Containers()
 	linkSet := make(map[string]bool)
-	links := make([]string,0)
-	var v int  // count of volumesFrom links validated 
-	var l int  // count of links validated
-	var affinityContainerRef string  // docker affinity container env var ( affinity:container==<container ref> ) 
-	var affinityContainerIndex int   // index of affinity container env element in env[]
-	var affinityLabelRef string  // docker affinity label env var ( affinity:<label>==<label value> ) 
-	var affinityLabelIndex int   // index of affinity label env element in env[]
-	// check for affinity in environment vars.  
+	links := make([]string, 0)
+	var v int                       // count of volumesFrom links validated
+	var l int                       // count of links validated
+	var affinityContainerRef string // docker affinity container env var ( affinity:container==<container ref> )
+	var affinityContainerIndex int  // index of affinity container env element in env[]
+	var affinityLabelRef string     // docker affinity label env var ( affinity:<label>==<label value> )
+	var affinityLabelIndex int      // index of affinity label env element in env[]
+	// check for affinity in environment vars.
 	// If yes save it for checking whether it belongs to tenant.
 	affinityContainerCheckRequired := false
 	affinityLabelCheckRequired := false
 	for i, e := range env {
-		if strings.HasPrefix(e,"affinity:") {
-		  if strings.HasPrefix(e,"affinity:image==") {
-			break  // we ignore affinity for images 
-		  } else if strings.HasPrefix(e,"affinity:container==") {
-			affinityContainerCheckRequired = true
-			containerRefIndex := strings.Index(e,"affinity:container==")+len("affinity:container==")
-			affinityContainerRef = e[containerRefIndex:len(e)]
-			affinityContainerIndex = i
-			break
-		  } else {
-			affinityLabelCheckRequired = true
-			labelRefIndex := strings.Index(e,"affinity:")+len("affinity:")
-			affinityLabelRef = e[labelRefIndex:len(e)]
-			log.Debug("affinityLabelRef: ",affinityLabelRef)
-			affinityLabelIndex = i
-			break
-		  }
+		if strings.HasPrefix(e, "affinity:") {
+			if strings.HasPrefix(e, "affinity:image==") {
+				break // we ignore affinity for images
+			} else if strings.HasPrefix(e, "affinity:container==") {
+				affinityContainerCheckRequired = true
+				containerRefIndex := strings.Index(e, "affinity:container==") + len("affinity:container==")
+				affinityContainerRef = e[containerRefIndex:len(e)]
+				affinityContainerIndex = i
+				break
+			} else {
+				affinityLabelCheckRequired = true
+				labelRefIndex := strings.Index(e, "affinity:") + len("affinity:")
+				affinityLabelRef = e[labelRefIndex:len(e)]
+				log.Debug("affinityLabelRef: ", affinityLabelRef)
+				affinityLabelIndex = i
+				break
+			}
 		}
 
 	}
-
-		
 
 	if linksSize < 1 && volumesFromSize < 1 && !affinityContainerCheckRequired && !affinityLabelCheckRequired {
 		return true, &ValidationOutPutDTO{ContainerID: ""}
 	}
 	for _, container := range containers {
 		//log.Debugf("Examine container %s %s",container.Info.Name,container.Info.ID)
-		if(container.Config.Labels[headers.TenancyLabel] == tenantName) {
-			log.Debugf("Look for container references in container %s %s for tenant %s",container.Info.Name,container.Info.ID,tenantName)
+		if container.Config.Labels[headers.TenancyLabel] == tenantName {
+			log.Debugf("Look for container references in container %s %s for tenant %s", container.Info.Name, container.Info.ID, tenantName)
 			// check for volumeFrom reference
 			for i := 0; i < volumesFromSize; i++ {
 				if v == volumesFromSize {
@@ -178,12 +137,12 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 				}
 				log.Debugf("Examine VolumeFrom[%d] == %s", i, containerConfig.HostConfig.VolumesFrom[i])
 				// volumesFrom element format <container_name>:<RW|RO>
-				volumeFromArray := strings.SplitN(strings.TrimSpace(containerConfig.HostConfig.VolumesFrom[i]),":",2)
-				volumeFrom := strings.TrimSpace(volumeFromArray[0])				
-				if strings.HasPrefix(container.Info.ID,volumeFrom) {
+				volumeFromArray := strings.SplitN(strings.TrimSpace(containerConfig.HostConfig.VolumesFrom[i]), ":", 2)
+				volumeFrom := strings.TrimSpace(volumeFromArray[0])
+				if strings.HasPrefix(container.Info.ID, volumeFrom) {
 					log.Debug("volumesFrom element with container id matches tenant container")
 					// no need to modify volumesFrom
-					v++					
+					v++
 				} else if container.Info.Name == "/"+volumeFrom+tenantName {
 					log.Debug("volumesFrom element with container name matches tenant container")
 					volumesFrom[i] = container.Info.ID
@@ -191,28 +150,28 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 						volumesFrom[i] += ":"
 						volumesFrom[i] += strings.TrimSpace(volumeFromArray[1])
 					}
-					v++					
+					v++
 				}
 			}
 			// check for links reference
 			for i := 0; i < linksSize; i++ {
 				if l == linksSize {
-						break
+					break
 				}
 				log.Debugf("Examine links[%d] == %s", i, containerConfig.HostConfig.Links[i])
 
-				linkArray := strings.SplitN(containerConfig.HostConfig.Links[i],":",2)
+				linkArray := strings.SplitN(containerConfig.HostConfig.Links[i], ":", 2)
 				link := strings.TrimSpace(linkArray[0])
-				if strings.HasPrefix(container.Info.ID,link) || "/"+link+tenantName == container.Info.Name {
+				if strings.HasPrefix(container.Info.ID, link) || "/"+link+tenantName == container.Info.Name {
 					log.Debug("Add link and alias to linkset")
 					_, ok := linkSet[link]
 					if !ok {
 						linkSet[link] = true
-						links = append(links,container.Info.ID + ":" + link)						
+						links = append(links, container.Info.ID+":"+link)
 					}
-					// check for alias  
-					if len(linkArray) > 1 {						
-						links = append(links,container.Info.ID + ":" + strings.TrimSpace(linkArray[1]))
+					// check for alias
+					if len(linkArray) > 1 {
+						links = append(links, container.Info.ID+":"+strings.TrimSpace(linkArray[1]))
 					}
 					l++
 				}
@@ -220,25 +179,25 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 			// check for affinity:container==<container> reference
 			// modify affinity container environment variable to reference container+tenantName
 			if affinityContainerCheckRequired {
-				if strings.HasPrefix(container.Info.ID,affinityContainerRef) {
-				  affinityContainerCheckRequired = false				     
+				if strings.HasPrefix(container.Info.ID, affinityContainerRef) {
+					affinityContainerCheckRequired = false
 				} else if container.Info.Name == "/"+affinityContainerRef+tenantName {
-				  env[affinityContainerIndex] = env[affinityContainerIndex] + tenantName
-				  log.Debugf("Updated environment variable %s ",env[affinityContainerIndex])
-				  affinityContainerCheckRequired = false	  
+					env[affinityContainerIndex] = env[affinityContainerIndex] + tenantName
+					log.Debugf("Updated environment variable %s ", env[affinityContainerIndex])
+					affinityContainerCheckRequired = false
 				}
 			}
 			// check for affinity:<label key>==<label value> reference
 			// modify affinity label container environment variable with affinity container env var to reference container id
 			if affinityLabelCheckRequired {
-				kv := strings.Split(affinityLabelRef,"==")
-				for k,v := range container.Config.Labels {
+				kv := strings.Split(affinityLabelRef, "==")
+				for k, v := range container.Config.Labels {
 					if k == kv[0] && v == kv[1] {
-						affinityLabelCheckRequired=false
+						affinityLabelCheckRequired = false
 						env[affinityLabelIndex] = "affinity:container==" + container.Info.ID
-						log.Debugf("Updated environment variable %s ",env[affinityLabelIndex])
-						break						
-					} 
+						log.Debugf("Updated environment variable %s ", env[affinityLabelIndex])
+						break
+					}
 				}
 			}
 
@@ -256,85 +215,18 @@ func CheckContainerReferences(cluster cluster.Cluster, tenantName string, contai
 
 }
 
-
-
 type Config struct {
-    HostConfig struct {
-		Links []interface{}
-    	    VolumesFrom []interface{}
+	HostConfig struct {
+		Links       []interface{}
+		VolumesFrom []interface{}
 	}
 }
-/*
-func CheckConfigOwnerShip(cluster cluster.Cluster, tenantName string, r *http.Request, reqBody []byte) (bool, *ValidationOutPutDTO) {
-	
-	config := &Config{}
-	
-	err := json.Unmarshal(reqBody, &config)
-    if err != nil {
-        panic(err)
-    }
-
-	log.Debug("*******************XXXXXXXXXX*******************************")
-	log.Debug(fmt.Println(config.HostConfig.Links))
-	log.Debug(fmt.Println(config.HostConfig.VolumesFrom))
-	
-	containers := cluster.Containers()
-	
-	log.Debug("*******************OOOOOOOOOOOOOOOO***********************")
-	log.Debugf("vLength: %d", len(config.HostConfig.VolumesFrom))
-	log.Debugf("lLength: %d", len(config.HostConfig.Links))
-	log.Debug("*******************OOOOOOOOOOOOOOOO***********************")
-	log.Debug("LL: " + string(len(config.HostConfig.Links)))
-	
-	volSet := make(map[string]string)
-	linkSet := make(map[string]string)
-	var v int
-	var l int
-	
-	if len(config.HostConfig.VolumesFrom) != 0 || len(config.HostConfig.Links) != 0 {
-		for _, container := range containers {
-			log.Debug("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-			
-			for _, volume := range config.HostConfig.VolumesFrom {
-				vol := volume.(string)
-				log.Debug("VolumesFrom: #" + vol + "#")
-				log.Debug("containerName: " + container.Info.Name)
-				log.Debug("Comparing with: " + "/" + vol + tenantName)
-				
-				if "/" + vol + tenantName == container.Info.Name || "/"+vol == container.Info.Name {
-					volSet[container.Info.ID] = vol
-					v++
-				}
-			}
-			for _, link := range config.HostConfig.Links {
-				link := link.(string)
-				log.Debug("Link: #" + link + "#")
-				log.Debug("containerName: " + container.Info.Name)
-				log.Debug("Comparing with: " + "/" + link + tenantName)
-				
-				if "/" + link + tenantName == container.Info.Name || "/"+link == container.Info.Name {
-					linkSet[container.Info.ID] = link
-					l++
-				}
-			}
-		}
-		
-		if v != len(config.HostConfig.VolumesFrom) || l != len(config.HostConfig.Links) {
-			return false, nil
-		}
-	}
-	log.Debug("*********************XXXXXXXXX*****************************")
-	
-	res := ValidationOutPutDTO{ContainerID: "", Links: linkSet, VolumesFrom: volSet}
-	return true, &res
-}
-*/
 
 //TODO - Pass by ref ?
 func CheckOwnerShip(cluster cluster.Cluster, tenantName string, r *http.Request) (bool, *ValidationOutPutDTO) {
 	containers := cluster.Containers()
 	log.Debug("got name: ", mux.Vars(r)["name"])
-	if mux.Vars(r)["name"] == ""{
+	if mux.Vars(r)["name"] == "" {
 		return true, nil
 	}
 	tenantSet := make(map[string]bool)
@@ -444,10 +336,11 @@ func ParseID(body []byte) (string, error) {
 // RandStringBytesRmndr used to generate a name for docker volume create when no name is supplied
 // The tenant id is then appended to the name by the caller
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 func RandStringBytesRmndr(n int) string {
-    b := make([]byte, n)
-    for i := range b {
-        b[i] = letterBytes[rand.Int63() % int64(len(letterBytes))]
-    }
-    return string(b)
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Int63()%int64(len(letterBytes))]
+	}
+	return string(b)
 }
