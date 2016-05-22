@@ -1286,3 +1286,12 @@ func (e *Engine) RestoreContainer(containerID string, options types.CriuConfig, 
 	_, err = e.refreshContainer(containerID, true)
 	return err
 }
+
+//WaitContainer wait container
+func (e *Engine) WaitContainer(containerID string) error{
+	_, err := e.apiClient.ContainerWait(context.TODO(), containerID)
+	if err != nil {
+		return err
+	}
+	return nil
+}

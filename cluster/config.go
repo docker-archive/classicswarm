@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/docker/engine-api/types/container"
 	"github.com/docker/engine-api/types/network"
@@ -72,6 +73,7 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 		affinities         []string
 		constraints        []string
 		reschedulePolicies []string
+		checkpointTime    []string
 		env                []string
 	)
 
@@ -95,6 +97,11 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 		json.Unmarshal([]byte(labels), &reschedulePolicies)
 	}
 
+	// parse checkpoint-time policy from labels (ex. docker run --label 'com.docker.swarm.reschedule-policies=on-node-failure')
+	if labels, ok := c.Labels[SwarmLabelNamespace+".checkpoint-time"]; ok {
+		json.Unmarshal([]byte(labels), &checkpointTime)
+	}
+
 	// parse affinities/constraints/reschedule policies from env (ex. docker run -e affinity:container==redis -e affinity:image==nginx -e constraint:region==us-east -e constraint:storage==ssd -e reschedule:off)
 	for _, e := range c.Env {
 		if ok, key, value := parseEnv(e); ok && key == "affinity" {
@@ -103,6 +110,8 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 			constraints = append(constraints, value)
 		} else if ok && key == "reschedule" {
 			reschedulePolicies = append(reschedulePolicies, value)
+		} else if ok && key == "checkpoint-time" {
+			checkpointTime = append(checkpointTime, value)
 		} else {
 			env = append(env, e)
 		}
@@ -129,6 +138,13 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 	if len(reschedulePolicies) > 0 {
 		if labels, err := json.Marshal(reschedulePolicies); err == nil {
 			c.Labels[SwarmLabelNamespace+".reschedule-policies"] = string(labels)
+		}
+	}
+
+	// store checkpoint-time policies in labels
+	if len(checkpointTime) > 0 {
+		if labels, err := json.Marshal(checkpointTime); err == nil {
+			c.Labels[SwarmLabelNamespace+".checkpoint-time"] = string(labels)
 		}
 	}
 
@@ -228,6 +244,19 @@ func (c *ContainerConfig) HasReschedulePolicy(p string) bool {
 	return false
 }
 
+
+// HasCheckpointTimePolicy returns true if the specified policy is part of the config
+func (c *ContainerConfig) HasCheckpointTimePolicy() (checkpointTime time.Duration, err error) {
+	for _, checkpointTimePolicy := range c.extractExprs("checkpoint-time") {
+		if checkpointTime, err = time.ParseDuration(checkpointTimePolicy) ; err != nil {
+			return checkpointTime, err
+		}
+		return checkpointTime, err
+	}
+	zeroDuration, _ := time.ParseDuration("0s")
+	return zeroDuration, err
+}
+
 // Validate returns an error if the config isn't valid
 func (c *ContainerConfig) Validate() error {
 	//TODO: add validation for affinities and constraints
@@ -236,7 +265,7 @@ func (c *ContainerConfig) Validate() error {
 		return errors.New("too many reschedule policies")
 	} else if len(reschedulePolicies) == 1 {
 		valid := false
-		for _, validReschedulePolicy := range []string{"off", "on-node-failure", "check-point"} {
+		for _, validReschedulePolicy := range []string{"off", "on-node-failure", "restore"} {
 			if reschedulePolicies[0] == validReschedulePolicy {
 				valid = true
 			}

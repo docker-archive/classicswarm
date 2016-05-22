@@ -61,12 +61,12 @@ func (w *Watchdog) removeDuplicateContainers(e *Engine) {
 func (w *Watchdog) rescheduleContainers(e *Engine) {
 	w.Lock()
 	defer w.Unlock()
-	log.Infof("Rescheduled container start")
+
 	log.Debugf("Node %s failed - rescheduling containers", e.ID)
 	for _, c := range e.Containers() {
 
 		// Skip containers which don't have an "on-node-failure" reschedule policy.
-		if !c.Config.HasReschedulePolicy("on-node-failure") && !c.Config.HasReschedulePolicy("check-point"){
+		if !c.Config.HasReschedulePolicy("on-node-failure") && !c.Config.HasReschedulePolicy("restore"){
 			log.Debugf("Skipping rescheduling of %s based on rescheduling policies", c.ID)
 			continue
 		}
@@ -91,7 +91,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 					if err := w.cluster.StartContainer(newContainer, nil); err != nil {
 						log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
 					}
-				}else if c.Config.HasReschedulePolicy("check-point") {
+				}else if c.Config.HasReschedulePolicy("restore") {
 					criuOpts := types.CriuConfig{
 						ImagesDirectory: filepath.Join(newContainer.Engine.DockerRootDir, "checkpoint", c.ID, "criu.image"),
 						WorkDirectory: filepath.Join(newContainer.Engine.DockerRootDir, "checkpoint", c.ID, "criu.work"),

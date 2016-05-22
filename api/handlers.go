@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -810,6 +811,13 @@ func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	
+	if checkpointTime, err := container.Config.HasCheckpointTimePolicy() ; err != nil {
+		log.Errorf("Fails to set checkpoint time, %s",err)
+	} else if checkpointTime > 0 {
+		checkpointContainer(container, checkpointTime)
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -1351,4 +1359,38 @@ func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
 
 func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+func checkpointContainer(container *cluster.Container, checkpointTime time.Duration){
+	var ticker = time.NewTicker(checkpointTime)
+	var stopCh = make(chan bool)
+	
+	criuOpts := apitypes.CriuConfig {
+		ImagesDirectory: filepath.Join(container.Engine.DockerRootDir, "checkpoint", container.ID, "criu.image"),
+		WorkDirectory: filepath.Join(container.Engine.DockerRootDir, "checkpoint", container.ID, "criu.work"),
+		LeaveRunning: true,
+	}
+	
+	go func() {
+		container.Engine.WaitContainer(container.ID)
+		log.Infof("wait %s stop", container.ID)
+		stopCh <- true
+	}()
+	go func() {
+		for {
+			select {
+        	case <-ticker.C:
+				err := container.Engine.CheckpointContainer(container.ID, criuOpts)
+				if err != nil {
+					log.Errorf("Error to checkpoint %s, %s",container.ID, err)
+				} else {
+					log.Infof("checkpoint %s", container.ID)
+				}
+     	   case <-stopCh:
+				ticker.Stop()
+				log.Infof("%s stop checkpoint", container.ID)
+				return
+			}
+		}
+	}()
 }
