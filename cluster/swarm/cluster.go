@@ -459,18 +459,6 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, er
 	return out, err
 }
 
-func (c *Cluster) refreshVolumes() {
-	var wg sync.WaitGroup
-	for _, e := range c.engines {
-		wg.Add(1)
-		go func(e *cluster.Engine) {
-			e.RefreshVolumes()
-			wg.Done()
-		}(e)
-	}
-	wg.Wait()
-}
-
 // CreateNetwork creates a network in the cluster
 func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (response *types.NetworkCreateResponse, err error) {
 	var (
