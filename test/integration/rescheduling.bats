@@ -16,6 +16,33 @@ function containerRunning() {
 	[[ "${output}" == *"\"Status\": \"running\""* ]]
 }
 
+function containerPaused() {
+	local container="$1"
+	local node="$2"
+	run docker_swarm inspect "$container"
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"\"Name\": \"$node\""* ]]
+	[[ "${output}" == *"\"Status\": \"paused\""* ]]
+}
+
+function containerCreated() {
+	local container="$1"
+	local node="$2"
+	run docker_swarm inspect "$container"
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"\"Name\": \"$node\""* ]]
+	[[ "${output}" == *"\"Status\": \"created\""* ]]
+}
+
+function containerExited() {
+	local container="$1"
+	local node="$2"
+	run docker_swarm inspect "$container"
+	[ "$status" -eq 0 ]
+	[[ "${output}" == *"\"Name\": \"$node\""* ]]
+	[[ "${output}" == *"\"Status\": \"exited\""* ]]
+}
+
 @test "rescheduling" {
 	start_docker_with_busybox 2
 	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 ${HOSTS[0]},${HOSTS[1]}
@@ -31,7 +58,7 @@ function containerRunning() {
 	[ "$status" -eq 0 ]
 
 	run docker_swarm ps -q
-	[ "${#lines[@]}" -eq  3 ]
+	[ "${#lines[@]}" -eq 3 ]
 
 	# Make sure containers are running where they should.
 	containerRunning "c1" "node-0"
@@ -66,7 +93,7 @@ function containerRunning() {
 	containerRunning "c3" "node-1"
 
 	run docker_swarm ps -q
-	[ "${#lines[@]}" -eq  2 ]
+	[ "${#lines[@]}" -eq 2 ]
 }
 
 @test "rescheduling with constraints" {
@@ -84,7 +111,7 @@ function containerRunning() {
 	[ "$status" -eq 0 ]
 
 	run docker_swarm ps -q
-	[ "${#lines[@]}" -eq  3 ]
+	[ "${#lines[@]}" -eq 3 ]
 
 	# Make sure containers are running where they should.
 	containerRunning "c1" "node-0"
@@ -137,7 +164,7 @@ function containerRunning() {
 	[ "$status" -eq 0 ]
 
 	run docker_swarm ps -q
-	[ "${#lines[@]}" -eq  3 ]
+	[ "${#lines[@]}" -eq 3 ]
 
 	# Make sure containers are running where they should.
 	containerRunning "c1" "node-0"
@@ -155,7 +182,7 @@ function containerRunning() {
 
 	# Make sure old container was removed
 	run docker_swarm ps -aq
-	[ "${#lines[@]}" -eq  3 ]
+	[ "${#lines[@]}" -eq 3 ]
 
 
 	# c2 should still be on node-0 since a node constraint was applied.
@@ -176,7 +203,7 @@ function containerRunning() {
 
 	# Make sure there is no duplicate container
 	run docker_swarm ps -aq
-	[ "${#lines[@]}" -eq  3 ]
+	[ "${#lines[@]}" -eq 3 ]
 
 	# Stop node-1
 	docker_host stop ${DOCKER_CONTAINERS[1]}
@@ -192,7 +219,7 @@ function containerRunning() {
 	retry 5 1 containerRunning "c3" "node-0"
 
 	run docker_swarm ps -aq
-	[ "${#lines[@]}" -eq  3 ]
+	[ "${#lines[@]}" -eq 3 ]
 }
 
 
@@ -205,7 +232,7 @@ function containerRunning() {
 	[ "$status" -eq 0 ]
 
 	run docker_swarm ps -q
-	[ "${#lines[@]}" -eq  1 ]
+	[ "${#lines[@]}" -eq 1 ]
 
 	# Make sure container is running where it should.
 	containerRunning "c1" "node-0"
@@ -221,4 +248,102 @@ function containerRunning() {
 
 	run docker_swarm ps
 	[[ "${output}" == *"->80/tcp"* ]]
+}
+
+@test "rescheduling and desired state running" {
+	start_docker_with_busybox 2
+	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 ${HOSTS[0]},${HOSTS[1]}
+
+	# c1 on node-0 with reschedule=on-node-failure
+	run docker_swarm run -d --name c1 -e constraint:node==~node-0 -e reschedule:on-node-failure busybox sleep 1000
+	[ "$status" -eq 0 ]
+	# c2 on node-1 with reschedule=on-node-failure
+	run docker_swarm run -d --name c2 -e constraint:node==~node-1 -e reschedule:on-node-failure busybox sleep 1000
+	[ "$status" -eq 0 ]
+
+	run docker_swarm ps -q
+	[ "${#lines[@]}" -eq 2 ]
+
+	# Make sure containers are running where they should.
+	containerRunning "c1" "node-0"
+	containerRunning "c2" "node-1"
+
+	# Stop node-0
+	docker_host stop ${DOCKER_CONTAINERS[0]}
+
+	# Wait for Swarm to detect the node failure.
+	retry 5 1 eval "docker_swarm info | grep -q 'Unhealthy'"
+
+	# Wait for the container to be rescheduled
+	# c1 should have been rescheduled from node-0 to node-1
+	retry 5 1 containerRunning "c1" "node-1"
+}
+
+@test "rescheduling and desired state paused" {
+	start_docker_with_busybox 2
+	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 ${HOSTS[0]},${HOSTS[1]}
+
+	# c1 on node-0 with reschedule=on-node-failure
+	run docker_swarm run -d --name c1 -e constraint:node==~node-0 -e reschedule:on-node-failure busybox sleep 1000
+	[ "$status" -eq 0 ]
+	# c2 on node-1 with reschedule=on-node-failure
+	run docker_swarm run -d --name c2 -e constraint:node==~node-1 -e reschedule:on-node-failure busybox sleep 1000
+	[ "$status" -eq 0 ]
+
+	run docker_swarm ps -q
+	[ "${#lines[@]}" -eq 2 ]
+
+	# Make sure containers are running where they should.
+	containerRunning "c1" "node-0"
+	containerRunning "c2" "node-1"
+
+	# pause c1 on node-0
+	docker_swarm pause c1
+
+	# Make sure container c1 is paused on node-0.
+	retry 5 1 containerPaused "c1" "node-0"
+
+	# Stop node-0
+	docker_host stop ${DOCKER_CONTAINERS[0]}
+
+	# Wait for Swarm to detect the node failure.
+	retry 5 1 eval "docker_swarm info | grep -q 'Unhealthy'"
+
+	# Wait for the container to be rescheduled
+	# c1 should have been rescheduled from node-0 to node-1
+	# Make sure container c1 is paused on node-1.
+	retry 5 1 containerPaused "c1" "node-1"
+}
+
+@test "rescheduling and desired state exited" {
+	start_docker_with_busybox 2
+	swarm_manage --engine-refresh-min-interval=1s --engine-refresh-max-interval=1s --engine-failure-retry=1 ${HOSTS[0]},${HOSTS[1]}
+
+	# c1 on node-0 with reschedule=on-node-failure
+	run docker_swarm run -d --name c1 -e constraint:node==~node-0 -e reschedule:on-node-failure busybox true
+	[ "$status" -eq 0 ]
+	
+	# c2 on node-1 with reschedule=on-node-failure
+	run docker_swarm run -d --name c2 -e constraint:node==~node-1 -e reschedule:on-node-failure busybox sleep 1000
+	[ "$status" -eq 0 ]
+
+	run docker_swarm ps -q
+	[ "${#lines[@]}" -eq 2 ]
+
+	# Make sure container c1 is exited on where they should.
+	containerExited "c1" "node-0"
+
+	# Make sure container c2 is running on where they should.
+	containerRunning "c2" "node-1"
+
+	# Stop node-0
+	docker_host stop ${DOCKER_CONTAINERS[0]}
+
+	# Wait for Swarm to detect the node failure.
+	retry 5 1 eval "docker_swarm info | grep -q 'Unhealthy'"
+
+	# Wait for the container to be rescheduled
+	# c1 should have been rescheduled from node-0 to node-1
+	# Make sure container c1 is paused on node-1.
+	retry 5 1 containerPaused "c1" "node-1"
 }

@@ -913,6 +913,18 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 	return container, err
 }
 
+// PauseContainer pauses a container from the engine.
+func (e *Engine) PauseContainer(ID string) error {
+	err := e.apiClient.ContainerPause(context.Background(), ID)
+	e.CheckConnectionErr(err)
+	if err != nil {
+		return err
+	}
+
+	e.refreshContainer(ID, true)
+	return nil
+}
+
 // RemoveContainer removes a container from the engine.
 func (e *Engine) RemoveContainer(container *Container, force, volumes bool) error {
 	opts := types.ContainerRemoveOptions{

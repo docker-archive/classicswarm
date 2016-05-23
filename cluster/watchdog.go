@@ -62,36 +62,82 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 
 	log.Debugf("Node %s failed - rescheduling containers", e.ID)
 	for _, c := range e.Containers() {
-
 		// Skip containers which don't have an "on-node-failure" reschedule policy.
 		if !c.Config.HasReschedulePolicy("on-node-failure") {
 			log.Debugf("Skipping rescheduling of %s based on rescheduling policies", c.ID)
 			continue
 		}
 
-		// Remove the container from the dead engine. If we don't, then both
-		// the old and new one will show up in docker ps.
-		// We have to do this before calling `CreateContainer`, otherwise it
-		// will abort because the name is already taken.
-		c.Engine.removeContainer(c)
+		// start to reschedule container
+		w.rescheduleContainer(c)
+	}
+}
 
-		newContainer, err := w.cluster.CreateContainer(c.Config, c.Info.Name, nil)
+// rescheduleContainer Removes the container from the dead engine.
+// If we don't, then both the old and new one will show up in docker ps.
+// We have to do this before calling `CreateContainer`, otherwise it
+// will abort because the name is already taken.
+func (w *Watchdog) rescheduleContainer(c *Container) {
+	c.Engine.removeContainer(c)
 
-		if err != nil {
-			log.Errorf("Failed to reschedule container %s: %v", c.ID, err)
-			// add the container back, so we can retry later
-			c.Engine.AddContainer(c)
-		} else {
-			log.Infof("Rescheduled container %s from %s to %s as %s", c.ID, c.Engine.Name, newContainer.Engine.Name, newContainer.ID)
-			if c.Info.State.Running {
-				log.Infof("Container %s was running, starting container %s", c.ID, newContainer.ID)
-				if err := w.cluster.StartContainer(newContainer, nil); err != nil {
-					log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
-				}
+	newContainer, err := w.cluster.CreateContainer(c.Config, c.Info.Name, nil)
+	if err != nil {
+		log.Errorf("Failed to reschedule container %s: %v", c.ID, err)
+		// add the container back, so we can retry later
+		c.Engine.AddContainer(c)
+		return
+	}
+
+	log.Infof("Rescheduled container %s from %s to %s as %s", c.ID, c.Engine.Name, newContainer.Engine.Name, newContainer.ID)
+	w.setDesiredState(c, newContainer)
+}
+
+// setDesiredState sets desired state for the rescheduled container.
+func (w *Watchdog) setDesiredState(c, newCon *Container) {
+	// Original state of rescheduled container is running.
+	// State Running can be divided into 3 types: Paused, Restarting, Running.
+	state := StateString(c.Info.State)
+	if c.Info.State.Running {
+		log.Debugf("Container %s is running, start container %s", c.ID, newCon.ID)
+		// no matter running, restarting or paused, start it first.
+		if err := w.cluster.StartContainer(newCon, nil); err != nil {
+			log.Errorf("Failed to start rescheduled container %s: %v", newCon.ID, err)
+			return
+		}
+
+		// If container's state is Paused, we need to pause it.
+		if state == "paused" {
+			log.Debugf("Container %s is paused, pause container %s", c.ID, newCon.ID)
+			if err := w.cluster.PauseContainer(newCon); err != nil {
+				log.Errorf("Failed to pause rescheduled container %s: %v", newCon.ID, err)
+				return
 			}
+		}
+		return
+	}
+
+	// Original state of rescheduled container is dead or created.
+	// Do nothing.
+	if state == "dead" || state == "created" {
+		return
+	}
+
+	// Original state of rescheduled container is exited.
+	// Start and pause it.
+	if state == "exited" {
+		log.Debugf("Container %s is exited, start and pause container %s", c.ID, newCon.ID)
+		if err := w.cluster.StartContainer(newCon, nil); err != nil {
+			log.Errorf("Failed to start rescheduled container %s: %v", newCon.ID, err)
+			return
+		}
+
+		if err := w.cluster.PauseContainer(newCon); err != nil {
+			log.Errorf("Failed to pause rescheduled container %s: %v", newCon.ID, err)
+			return
 		}
 	}
 
+	return
 }
 
 // NewWatchdog creates a new watchdog

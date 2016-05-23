@@ -142,6 +142,11 @@ func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *docke
 	return container.Engine.StartContainer(container.ID, hostConfig)
 }
 
+// PauseContainer pauses a container
+func (c *Cluster) PauseContainer(container *cluster.Container) error {
+	return container.Engine.PauseContainer(container.ID)
+}
+
 // CreateContainer aka schedule a brand new container into the cluster.
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *types.AuthConfig) (*cluster.Container, error) {
 	container, err := c.createContainer(config, name, false, authConfig)

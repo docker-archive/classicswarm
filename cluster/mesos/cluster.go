@@ -190,6 +190,11 @@ func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *docke
 	return nil
 }
 
+// PauseContainer pauses a container
+func (c *Cluster) PauseContainer(container *cluster.Container) error {
+	return container.Engine.PauseContainer(container.ID)
+}
+
 // CreateContainer for container creation in Mesos task
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *types.AuthConfig) (*cluster.Container, error) {
 	if config.HostConfig.Memory == 0 && config.HostConfig.CPUShares == 0 {
