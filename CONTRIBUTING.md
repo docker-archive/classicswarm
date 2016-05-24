@@ -15,9 +15,9 @@ Otherwise, go read Docker's
 
 ### Development Environment Setup
 
-Swarm is written in [the Go programming language](http://golang.org) and manages its dependencies using [Godep](http://github.com/tools/godep).  This guide will walk you through installing Go, forking the Swarm repo, building Swarm from source and contributing pull requests (PRs) back to the Swarm project.
+Swarm is written in [the Go programming language](http://golang.org). It manages its dependencies using [Godep](http://github.com/tools/godep) before version 1.2.0 (included) and using [Govendor](https://github.com/kardianos/govendor) after version 1.2.0. This guide will walk you through installing Go environment, forking the Swarm repo, building Swarm from source and contributing pull requests (PRs) back to the Swarm project.
 
-#### Install git, Go and Godep
+#### Install git, Go and govendor
 If you don't already have `git` installed, you should install it.  For example, on Ubuntu:
 ```sh
 sudo apt-get install git
@@ -48,10 +48,10 @@ export PATH=$PATH:$GOPATH/bin:$GOROOT/bin
 
 Close and reopen your terminal.
 
-Install Godep:
+Install govendor:
 
 ```sh
-go get github.com/tools/godep
+go get github.com/kardianos/govendor
 ```
 
 Install golint:
@@ -155,7 +155,7 @@ For complete documentation on how to use Swarm, refer to the Swarm section of [d
 To run unit tests:
 
 ```sh
-go test -race ./...
+go test -v -race `go list ./... | grep -v /vendor/`
 ```
 
 To run integration tests:
@@ -217,13 +217,11 @@ You can also find maintainers' email addresses in `MAINTAINERS`.
 
 ### Advanced:  Adding New Dependencies
 
-To make sure other will not miss dependencies you've added to Swarm, you'll need to call `godep save` to make changes to the config file, `Godep/Godeps.json`. An important thing is that `godep` will replace the config file by the dependency information it learnt from your local machine. This step will mess the upstream config. So, changes to `Godep/Godeps.json` must be performed with care.
+Swarm now uses `govendor` to manage golang dependencies after version 1.2.0. Users running older versions should check CONTRIBUTING.md in the corresponding source. If you need to add a new dependency, you can follow steps below:
 
 ```sh
-$GOBIN/godep save ./...
-$GOBIN/godep update <an updated package>
-git diff # check what added or removed in Godep/Godeps.json
-         # then manually add missing dependencies
+$GOBIN/govendor get <package_url>
+$GOBIN/govendor add <package_url>
 ```
 
 To make sure you newly added codes will make the build process happy, you can try building Swarm in the same way as defined in `Dockerfile`.
