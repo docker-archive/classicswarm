@@ -36,6 +36,10 @@ func StateString(state *types.ContainerState) string {
 		return "dead"
 	}
 
+	if state.Checkpointed {
+		return "checkpointed"
+	}
+
 	if startedAt.IsZero() {
 		return "created"
 	}
@@ -47,6 +51,7 @@ func StateString(state *types.ContainerState) string {
 func FullStateString(state *types.ContainerState) string {
 	startedAt, _ := time.Parse(time.RFC3339Nano, state.StartedAt)
 	finishedAt, _ := time.Parse(time.RFC3339Nano, state.FinishedAt)
+	checkpointedAt, _ := time.Parse(time.RFC3339Nano, state.CheckpointedAt)
 	if state.Running {
 		if state.Paused {
 			return fmt.Sprintf("Up %s (Paused)", units.HumanDuration(time.Now().UTC().Sub(startedAt)))
@@ -59,6 +64,10 @@ func FullStateString(state *types.ContainerState) string {
 
 	if state.Dead {
 		return "Dead"
+	}
+
+	if state.Checkpointed {
+		return fmt.Sprintf("Checkpointed %s ago", units.HumanDuration(time.Now().UTC().Sub(checkpointedAt)))
 	}
 
 	if startedAt.IsZero() {
