@@ -12,6 +12,7 @@
 	[Org."Core maintainers"]
 		people = [
 			"abronan",
+			"allencloud",
 			"aluzzardi",
 			"chanwit",
 			"dongluochen",
@@ -63,6 +64,11 @@
 	Name = "Andrea Luzzardi"
 	Email = "al@docker.com"
 	GitHub = "aluzzardi"
+
+	[people.allencloud]
+	Name = "Allen Sun"
+	Email = "allen.sun@daocloud.io"
+	GitHub = "allencloud"
 
 	[people.amitshukla]
 	Name = "Amit Shukla"
