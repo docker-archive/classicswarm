@@ -472,15 +472,15 @@ func (c *Cluster) refreshVolumes() {
 }
 
 // CreateNetwork creates a network in the cluster
-func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (response *types.NetworkCreateResponse, err error) {
+func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (response *types.NetworkCreateResponse, err error) {
 	var (
-		parts  = strings.SplitN(request.Name, "/", 2)
+		parts  = strings.SplitN(name, "/", 2)
 		config = &cluster.ContainerConfig{}
 	)
 
 	if len(parts) == 2 {
 		// a node was specified, create the container only on this node
-		request.Name = parts[1]
+		name = parts[1]
 		config = cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
 	}
 
@@ -489,7 +489,7 @@ func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (response *types.N
 		return nil, err
 	}
 	if nodes != nil {
-		resp, err := c.engines[nodes[0].ID].CreateNetwork(request)
+		resp, err := c.engines[nodes[0].ID].CreateNetwork(name, request)
 		if err == nil {
 			if network := c.engines[nodes[0].ID].Networks().Get(resp.ID); network != nil && network.Scope == "global" {
 				for id, engine := range c.engines {
@@ -903,7 +903,7 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 }
 
 // BuildImage builds an image
-func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer) error {
+func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, out io.Writer) error {
 	c.scheduler.Lock()
 
 	// get an engine
@@ -918,7 +918,7 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 	}
 	n := nodes[0]
 
-	reader, err := c.engines[n.ID].BuildImage(buildImage)
+	reader, err := c.engines[n.ID].BuildImage(buildContext, buildImage)
 	if err != nil {
 		return err
 	}
