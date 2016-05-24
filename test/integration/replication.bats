@@ -35,7 +35,8 @@ function start_store_cluster() {
 }
 
 function restart_leader() {
-	# TODO find out who is the leader
+	# TODO at this point we know the leader is node_1 but the function would be more
+	# useful if we find out who is the leader by polling the Consul leader endpoint
 	docker_host restart -t 5 $NODE_1
 }
 
@@ -205,7 +206,7 @@ function containerRunning() {
 
 	# Wait a little bit for the re-election to occur
 	# This is specific to Consul (liveness over safety)
-	sleep 10
+	sleep 20
 
 	# Make sure the managers are either in the 'primary' or the 'replica' state.
 	for host in "${SWARM_HOSTS[@]}"; do
