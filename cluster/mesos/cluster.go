@@ -256,15 +256,15 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, er
 }
 
 // CreateNetwork creates a network in the cluster
-func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
+func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
 	var (
-		parts  = strings.SplitN(request.Name, "/", 2)
+		parts  = strings.SplitN(name, "/", 2)
 		config = &cluster.ContainerConfig{}
 	)
 
 	if len(parts) == 2 {
 		// a node was specified, create the container only on this node
-		request.Name = parts[1]
+		name = parts[1]
 		config = cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
 	}
 
@@ -282,7 +282,7 @@ func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCre
 	if !ok {
 		return nil, fmt.Errorf("Unable to create network on agent %q", n.ID)
 	}
-	resp, err := s.engine.CreateNetwork(request)
+	resp, err := s.engine.CreateNetwork(name, request)
 	c.refreshNetworks()
 	return resp, err
 }
@@ -642,7 +642,7 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 }
 
 // BuildImage builds an image
-func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer) error {
+func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, out io.Writer) error {
 	c.scheduler.Lock()
 
 	// get an engine
@@ -661,7 +661,7 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 	}
 	n := nodes[0]
 
-	reader, err := c.agents[n.ID].engine.BuildImage(buildImage)
+	reader, err := c.agents[n.ID].engine.BuildImage(buildContext, buildImage)
 	if err != nil {
 		return err
 	}
