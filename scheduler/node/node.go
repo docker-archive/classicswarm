@@ -55,7 +55,7 @@ func (n *Node) Container(IDOrName string) *cluster.Container {
 // AddContainer injects a container into the internal state.
 func (n *Node) AddContainer(container *cluster.Container) error {
 	if container.Config != nil {
-		memory := container.Config.Memory
+		memory := container.Config.HostConfig.MemoryReservation
 		cpus := container.Config.CpuShares
 		if n.TotalMemory-memory < 0 || n.TotalCpus-cpus < 0 {
 			return errors.New("not enough resources")
