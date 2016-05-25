@@ -33,10 +33,12 @@ func NewAuthorization(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin AuthZ got command: " + command)
 	switch command {
-	case "containerCreate":
+	case "containercreate":
+
 		defer r.Body.Close()
 		reqBody, _ := ioutil.ReadAll(r.Body)
 		if len(reqBody) > 0 {
+			log.Debug("AAAAAAAA")
 			var containerConfig dockerclient.ContainerConfig
 			if err := json.NewDecoder(bytes.NewReader(reqBody)).Decode(&containerConfig); err != nil {
 				return err

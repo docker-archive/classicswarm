@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 
 	"math/rand"
 	"net/http/httptest"
@@ -33,8 +34,9 @@ type ValidationOutPutDTO struct {
 
 //Use something else...
 func ParseCommand(r *http.Request) string {
+	return commandParser(r)
 	//	return "containerCreate"
-	return "containerInspect"
+	//	return "containerInspect"
 }
 
 func ModifyRequest(r *http.Request, body io.Reader, urlStr string, containerID string) (*http.Request, error) {
@@ -89,4 +91,29 @@ func RandStringBytesRmndr(n int) string {
 		b[i] = letterBytes[rand.Int63()%int64(len(letterBytes))]
 	}
 	return string(b)
+}
+
+//Maybe merge to one regExp
+var containers = regexp.MustCompile(`/containers/(.*)`)
+var containersWithIdentifier = regexp.MustCompile(`/containers/(.*)/(.*)`)
+
+//TODO - Do the same for networks, images, and so on. What is not supported will fail because of the generic message will go to default
+
+func commandParser(r *http.Request) string {
+
+	paramsArr1 := containers.FindStringSubmatch(r.URL.Path)
+	paramsArr2 := containersWithIdentifier.FindStringSubmatch(r.URL.Path)
+	//assert the it is not possible for two of them to co-Exist
+
+	//Order IS important
+	if len(paramsArr2) == 3 {
+		//inspect / delete / start ...
+		return "container" + paramsArr2[2]
+	}
+	if len(paramsArr1) == 2 {
+		//ps / json / Create...
+		return "container" + paramsArr1[1]
+	}
+
+	return "This is not supported yet and will end up in the default of the Switch"
 }

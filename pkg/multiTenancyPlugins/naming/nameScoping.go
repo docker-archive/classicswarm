@@ -32,11 +32,14 @@ func NewNameScoping(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 func (nameScoping *DefaultNameScopingImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin nameScoping Got command: " + command)
 	switch command {
-	case "containerCreate":
-		//It is not optimal to do this without condition
-		defer r.Body.Close()
-		reqBody, _ := ioutil.ReadAll(r.Body)
-		if "" != r.URL.Query().Get("name") && len(reqBody) > 0 {
+	case "containercreate":
+		//TODO Ezra - Because of that original name label now we have to read and write body Again here!
+		if "" != r.URL.Query().Get("name") {
+
+			defer r.Body.Close()
+			reqBody, _ := ioutil.ReadAll(r.Body)
+			//		len(reqBody) > 0
+
 			var newQuery string
 			var buf bytes.Buffer
 			var containerConfig dockerclient.ContainerConfig
@@ -55,10 +58,13 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command string, cluster cluste
 
 			r, _ := utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), newQuery, "")
 			return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
+			//TOOD - refactor
+
 		}
+		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 
 	//Find the container and replace the name with ID
-	case "containerInspect":
+	case "containerjson":
 		resourceName := mux.Vars(r)["name"]
 		tenantId := r.Header.Get(headers.AuthZTenantIdHeaderName)
 		for _, container := range cluster.Containers() {
