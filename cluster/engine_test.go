@@ -353,8 +353,8 @@ func TestCreateContainer(t *testing.T) {
 	id = "id3"
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil).Once()
 	mockConfig.HostConfig.CPUShares = int64(math.Ceil(float64(config.HostConfig.CPUShares*1024) / float64(mockInfo.NCPU)))
-	apiClient.On("ImagePull", mock.Anything, types.ImagePullOptions{ImageID: config.Image, Tag: "latest"}, mock.Anything).Return(readCloser, nil).Once()
-	// FIXMEENGINEAPI : below should return an engine-api error, or something custom
+	apiClient.On("ImagePull", mock.Anything, config.Image, mock.AnythingOfType("types.ImagePullOptions")).Return(readCloser, nil).Once()
+	// TODO(nishanttotla): below should return an engine-api error, or something custom, so that we can get rid of dockerclient
 	apiClient.On("ContainerCreate", mock.Anything, &mockConfig.Config, &mockConfig.HostConfig, &mockConfig.NetworkingConfig, name).Return(types.ContainerCreateResponse{}, dockerclient.ErrImageNotFound).Once()
 	// FIXMEENGINEAPI : below should return an engine-api error, or something custom
 	apiClient.On("ContainerCreate", mock.Anything, &mockConfig.Config, &mockConfig.HostConfig, &mockConfig.NetworkingConfig, name).Return(types.ContainerCreateResponse{ID: id}, nil).Once()
@@ -531,7 +531,7 @@ func TestRemoveImage(t *testing.T) {
 
 	apiClient := engineapimock.NewMockClient()
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
-	apiClient.On("ImageRemove", mock.Anything,
+	apiClient.On("ImageRemove", mock.Anything, mock.Anything,
 		mock.AnythingOfType("ImageRemoveOptions")).Return(dIs, nil)
 	engine.apiClient = apiClient
 

@@ -959,10 +959,14 @@ func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, erro
 
 // Pull an image on the engine
 func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
-	// TODO(nishanttotla): RegistryAuth probably needs fixing
+	// TODO(nishanttotla): RegistryAuth needs fixing
+	registryAuth := ""
+	if authConfig != nil {
+		registryAuth = authConfig.Auth
+	}
 	pullOpts := types.ImagePullOptions{
 		All:           false,
-		RegistryAuth:  authConfig.Auth,
+		RegistryAuth:  registryAuth,
 		PrivilegeFunc: nil,
 	}
 	// image is a ref here
@@ -1256,7 +1260,6 @@ func (e *Engine) RenameContainer(container *Container, newName string) error {
 
 // BuildImage builds an image
 func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions) (io.ReadCloser, error) {
-	// TODO(nishanttotla): buildcontext for image could be specific instead of nil
 	resp, err := e.apiClient.ImageBuild(context.Background(), buildContext, *buildImage)
 	e.CheckConnectionErr(err)
 	if err != nil {
