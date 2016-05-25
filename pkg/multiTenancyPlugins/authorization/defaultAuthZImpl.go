@@ -31,12 +31,12 @@ func NewAuthorization(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 }
 
 func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
-	log.Debug(command)
+	log.Debug("Plugin AuthZ got command: " + command)
 	switch command {
 	case "containerCreate":
 		defer r.Body.Close()
 		reqBody, _ := ioutil.ReadAll(r.Body)
-		if len(reqBody) != 0 {
+		if len(reqBody) > 0 {
 			var containerConfig dockerclient.ContainerConfig
 			if err := json.NewDecoder(bytes.NewReader(reqBody)).Decode(&containerConfig); err != nil {
 				return err
@@ -56,16 +56,14 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 		}
 
 	case "containerInspect":
-		isOwner, _ := utils.CheckOwnerShip(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r)
-		if isOwner {
+
+		if utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
 			swarmHandler.ServeHTTP(w, r)
 			log.Debug("Returned from Swarm")
 		}
 
 	default:
-		tenant := r.Header.Get(headers.AuthZTenantIdHeaderName)
-		isOwner, _ := utils.CheckOwnerShip(cluster, tenant, r)
-		if !isOwner {
+		if !utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
 			return errors.New("Not Authorized!")
 		}
 	}

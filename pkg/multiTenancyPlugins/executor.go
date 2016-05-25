@@ -9,6 +9,7 @@ import (
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authentication"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization/utils"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/naming"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 )
 
@@ -20,7 +21,6 @@ var startHandler pluginAPI.Handler
 //Handle - Hook point from primary to plugins
 func (*Executor) Handle(cluster cluster.Cluster, swarmHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Debug(r)
 		if os.Getenv("SWARM_MULTI_TENANT") == "false" {
 			swarmHandler.ServeHTTP(w, r)
 			return
@@ -43,7 +43,8 @@ func (*Executor) Init() {
 		log.Debug("Keystone not supported")
 	} else {
 		authorizationPlugin := new(authorization.DefaultAuthZImpl)
-		authenticationPlugin := authentication.NewAuthentication(authorizationPlugin.Handle)
+		nameScoping := namescoping.NewNameScoping(authorizationPlugin.Handle)
+		authenticationPlugin := authentication.NewAuthentication(nameScoping.Handle)
 		startHandler = authenticationPlugin.Handle
 	}
 }

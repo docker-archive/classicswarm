@@ -25,18 +25,14 @@ func NewAuthentication(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 
 //Handle authentication on request and call next plugin handler.
 func (authentication *AuthenticationImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
+	log.Debug("Plugin authN got command: " + command)
 	tenantIdToValidate := r.Header.Get(headers.AuthZTenantIdHeaderName)
-	log.Debug(tenantIdToValidate)
 	if tenantIdToValidate == "" {
+
 		return errors.New("Not Authorized!")
 	}
 	if tenantIdToValidate == os.Getenv("SWARM_ADMIN_TENANT_ID") {
 		return nil
 	}
-	err := authentication.nextHandler(command, cluster, w, r, swarmHandler)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
+	return authentication.nextHandler(command, cluster, w, r, swarmHandler)
 }
