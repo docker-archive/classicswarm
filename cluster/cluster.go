@@ -30,11 +30,6 @@ type Cluster interface {
 	// Start a container
 	StartContainer(container *Container, hostConfig *dockerclient.HostConfig) error
 
-	// Return container the matching `IDOrName`
-	// TODO: remove this method from the interface as we can use
-	// cluster.Containers().Get(IDOrName)
-	Container(IDOrName string) *Container
-
 	// Return all networks
 	Networks() Networks
 

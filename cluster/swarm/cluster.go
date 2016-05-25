@@ -131,7 +131,7 @@ func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 func (c *Cluster) generateUniqueID() string {
 	for {
 		id := stringid.GenerateRandomID()
-		if c.Container(id) == nil {
+		if c.Containers().Get(id) == nil {
 			return id
 		}
 	}
@@ -752,15 +752,6 @@ func (c *Cluster) checkNameUniqueness(name string) bool {
 	}
 
 	return true
-}
-
-// Container returns the container with IDOrName in the cluster
-func (c *Cluster) Container(IDOrName string) *cluster.Container {
-	// Abort immediately if the name is empty.
-	if len(IDOrName) == 0 {
-		return nil
-	}
-	return c.Containers().Get(IDOrName)
 }
 
 // Networks returns all the networks in the cluster.
