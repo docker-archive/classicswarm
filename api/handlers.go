@@ -291,7 +291,7 @@ func getNetwork(c *context, w http.ResponseWriter, r *http.Request) {
 		// see https://github.com/docker/swarm/issues/1969
 		cleanNetwork := network.RemoveDuplicateEndpoints()
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(cleanNetwork)
+		json.NewEncoder(w).Encode(cleanNetwork.NetworkResource)
 		return
 	}
 	httpError(w, fmt.Sprintf("No such network: %s", id), http.StatusNotFound)
@@ -302,7 +302,7 @@ func getVolume(c *context, w http.ResponseWriter, r *http.Request) {
 	var name = mux.Vars(r)["volumename"]
 	if volume := c.cluster.Volumes().Get(name); volume != nil {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(volume)
+		json.NewEncoder(w).Encode(volume.Volume)
 		return
 	}
 	httpError(w, fmt.Sprintf("No such volume: %s", name), http.StatusNotFound)
