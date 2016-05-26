@@ -678,14 +678,8 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			json.Unmarshal(buf, &authConfig)
 		}
-
-		if tag := r.Form.Get("tag"); tag != "" {
-			if tagHasDigest(tag) {
-				image += "@" + tag
-			} else {
-				image += ":" + tag
-			}
-		}
+		tag := r.Form.Get("tag")
+		image := getImageRef(image, tag)
 
 		var errorMessage string
 		errorFound := false
@@ -724,7 +718,8 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 			}
 			sendJSONMessage(wf, what, status)
 		}
-		c.cluster.Import(source, repo, tag, r.Body, callback)
+		ref := getImageRef(repo, tag)
+		c.cluster.Import(source, ref, tag, r.Body, callback)
 		if errorFound {
 			sendErrorJSONMessage(wf, 1, errorMessage)
 		}
@@ -1178,8 +1173,9 @@ func postTagImage(c *context, w http.ResponseWriter, r *http.Request) {
 	tag := r.Form.Get("tag")
 	force := boolValue(r, "force")
 
+	ref := getImageRef(repo, tag)
 	// call cluster tag image
-	if err := c.cluster.TagImage(name, repo, tag, force); err != nil {
+	if err := c.cluster.TagImage(name, ref, force); err != nil {
 		if strings.HasPrefix(err.Error(), "No such image") {
 			httpError(w, err.Error(), http.StatusNotFound)
 			return

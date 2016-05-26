@@ -375,7 +375,7 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string
 }
 
 // Import image
-func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string, err error)) {
+func (c *Cluster) Import(source string, ref string, tag string, imageReader io.Reader, callback func(what, status string, err error)) {
 
 }
 
@@ -675,6 +675,6 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 }
 
 // TagImage tags an image
-func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
+func (c *Cluster) TagImage(IDOrName string, ref string, force bool) error {
 	return errNotSupported
 }
