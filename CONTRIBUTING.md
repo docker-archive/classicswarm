@@ -155,7 +155,7 @@ For complete documentation on how to use Swarm, refer to the Swarm section of [d
 To run unit tests:
 
 ```sh
-go test -race ./...
+go test -v -race `go list ./... | grep -v /vendor/`
 ```
 
 To run integration tests:
