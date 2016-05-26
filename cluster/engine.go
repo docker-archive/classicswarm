@@ -1045,7 +1045,7 @@ func (e *Engine) Load(reader io.Reader) error {
 }
 
 // Import image
-func (e *Engine) Import(source string, repository string, tag string, imageReader io.Reader) error {
+func (e *Engine) Import(source string, ref string, tag string, imageReader io.Reader) error {
 	importSrc := types.ImageImportSource{
 		Source:     imageReader,
 		SourceName: source,
@@ -1053,17 +1053,7 @@ func (e *Engine) Import(source string, repository string, tag string, imageReade
 	opts := types.ImageImportOptions{
 		Tag: tag,
 	}
-	// TODO(nishanttotla): There might be a better way to pass a ref string than construct it here
 
-	// generate ref string
-	ref := repository
-	if tag != "" {
-		if strings.Contains(tag, ":") {
-			ref += "@" + tag
-		} else {
-			ref += ":" + tag
-		}
-	}
 	_, err := e.apiClient.ImageImport(context.Background(), importSrc, ref, opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
@@ -1281,22 +1271,12 @@ func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuild
 }
 
 // TagImage tags an image
-func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) error {
+func (e *Engine) TagImage(IDOrName string, ref string, force bool) error {
 	// send tag request to docker engine
 	opts := types.ImageTagOptions{
 		Force: force,
 	}
-	// TODO(nishanttotla): There might be a better way to pass a ref string than construct it here
 
-	// generate ref string
-	ref := repo
-	if tag != "" {
-		if strings.Contains(tag, ":") {
-			ref += "@" + tag
-		} else {
-			ref += ":" + tag
-		}
-	}
 	err := e.apiClient.ImageTag(context.Background(), IDOrName, ref, opts)
 	e.CheckConnectionErr(err)
 	if err != nil {

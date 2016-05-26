@@ -320,3 +320,17 @@ func int64ValueOrZero(r *http.Request, k string) int64 {
 func tagHasDigest(tag string) bool {
 	return strings.Contains(tag, ":")
 }
+
+// TODO(nishanttotla): There might be a better way to pass a ref string than construct it here
+// getImageRef returns a string containing the registry reference given a repo and tag
+func getImageRef(repo, tag string) string {
+	ref := repo
+	if tag != "" {
+		if tagHasDigest(tag) {
+			ref += "@" + tag
+		} else {
+			ref += ":" + tag
+		}
+	}
+	return ref
+}
