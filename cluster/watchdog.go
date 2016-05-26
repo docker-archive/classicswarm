@@ -1,11 +1,12 @@
 package cluster
 
 import (
-	"sync"
 	"path/filepath"
+	"strconv"
+	"sync"
 
-	"github.com/docker/engine-api/types"
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/engine-api/types"
 )
 
 // Watchdog listens to cluster events and handles container rescheduling
@@ -66,7 +67,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 	for _, c := range e.Containers() {
 
 		// Skip containers which don't have an "on-node-failure" reschedule policy.
-		if !c.Config.HasReschedulePolicy("on-node-failure") && !c.Config.HasReschedulePolicy("restore"){
+		if !c.Config.HasReschedulePolicy("on-node-failure") && !c.Config.HasReschedulePolicy("restore") {
 			log.Debugf("Skipping rescheduling of %s based on rescheduling policies", c.ID)
 			continue
 		}
@@ -91,25 +92,44 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 					if err := w.cluster.StartContainer(newContainer, nil); err != nil {
 						log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
 					}
-				}else if c.Config.HasReschedulePolicy("restore") {
-					criuOpts := types.CriuConfig{
-						ImagesDirectory: filepath.Join(newContainer.Engine.DockerRootDir, "checkpoint", c.ID, "criu.image"),
-						WorkDirectory: filepath.Join(newContainer.Engine.DockerRootDir, "checkpoint", c.ID, "criu.work"),
-					}
-					if err := w.cluster.RestoreContainer(newContainer, criuOpts, true); err != nil {
-						log.Errorf("Failed to restore rescheduled container %s: %v", newContainer.ID, err)
-						//if restore fail, try to start a new container
-						if err := w.cluster.StartContainer(newContainer, nil); err != nil {
-							log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
+				} else if c.Config.HasReschedulePolicy("restore") {
+					w.restoreContainer(c, newContainer)
+					if checkpointTime, err := c.Config.HasCheckpointTimePolicy(); err != nil {
+						log.Errorf("Fails to set container %s checkpoint time, %s", c.ID, err)
+					} else if checkpointTime > 0 {
+						if c.CheckpointTicker.Ticker == false {
+							c.CheckpointContainerTicker(checkpointTime)
 						}
-					}else{
-						log.Infof("restore %s to %s", c.ID, newContainer.ID)
 					}
 				}
 			}
 		}
 	}
+}
 
+func (w *Watchdog) restoreContainer(c *Container, newContainer *Container) {
+	var err error
+	for version := c.CheckpointTicker.Version; version >= 0 && version >= c.CheckpointTicker.Version-2; version-- {
+		if c.CheckpointTicker.Checkpointed[version] != true {
+			continue
+		}
+		criuOpts := types.CriuConfig{
+			ImagesDirectory: filepath.Join(newContainer.Engine.DockerRootDir, "checkpoint", c.ID, strconv.Itoa(version), "criu.image"),
+			WorkDirectory:   filepath.Join(newContainer.Engine.DockerRootDir, "checkpoint", c.ID, strconv.Itoa(version), "criu.work"),
+		}
+		if err = w.cluster.RestoreContainer(newContainer, criuOpts, true); err != nil {
+			log.Errorf("Failed to restore rescheduled container %s version %d: %v", newContainer.ID, version, err)
+		} else {
+			log.Infof("restore %s to %s on version %d", c.ID, newContainer.ID, version)
+			break
+		}
+	}
+	//if restore fail 3 times, try to start a new container
+	if err != nil {
+		if err := w.cluster.StartContainer(newContainer, nil); err != nil {
+			log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
+		}
+	}
 }
 
 // NewWatchdog creates a new watchdog

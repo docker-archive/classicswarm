@@ -139,7 +139,17 @@ func (c *Cluster) generateUniqueID() string {
 
 // StartContainer starts a container
 func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *dockerclient.HostConfig) error {
-	return container.Engine.StartContainer(container.ID, hostConfig)
+	startContainer := container.Engine.StartContainer(container.ID, hostConfig)
+
+	if checkpointTime, err := container.Config.HasCheckpointTimePolicy(); err != nil {
+		log.Errorf("Fails to set container %s checkpoint time, %s", container.ID, err)
+	} else if checkpointTime > 0 {
+		if container.CheckpointTicker.Ticker == false {
+			container.CheckpointContainerTicker(checkpointTime)
+		}
+	}
+
+	return startContainer
 }
 
 // CreateContainer aka schedule a brand new container into the cluster.
@@ -969,11 +979,11 @@ func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool)
 }
 
 // CheckpointContainer checkpoint a container
-func (c *Cluster) CheckpointContainer(container *cluster.Container, options types.CriuConfig) error{
+func (c *Cluster) CheckpointContainer(container *cluster.Container, options types.CriuConfig) error {
 	return container.Engine.CheckpointContainer(container.ID, options)
 }
 
 // RestoreContainer restore a container
-func (c *Cluster) RestoreContainer(container *cluster.Container, options types.CriuConfig, forceRestore bool) error{
+func (c *Cluster) RestoreContainer(container *cluster.Container, options types.CriuConfig, forceRestore bool) error {
 	return container.Engine.RestoreContainer(container.ID, options, forceRestore)
 }

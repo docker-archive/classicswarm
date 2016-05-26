@@ -73,7 +73,7 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 		affinities         []string
 		constraints        []string
 		reschedulePolicies []string
-		checkpointTime    []string
+		checkpointTime     []string
 		env                []string
 	)
 
@@ -244,11 +244,10 @@ func (c *ContainerConfig) HasReschedulePolicy(p string) bool {
 	return false
 }
 
-
 // HasCheckpointTimePolicy returns true if the specified policy is part of the config
 func (c *ContainerConfig) HasCheckpointTimePolicy() (checkpointTime time.Duration, err error) {
 	for _, checkpointTimePolicy := range c.extractExprs("checkpoint-time") {
-		if checkpointTime, err = time.ParseDuration(checkpointTimePolicy) ; err != nil {
+		if checkpointTime, err = time.ParseDuration(checkpointTimePolicy); err != nil {
 			return checkpointTime, err
 		}
 		return checkpointTime, err

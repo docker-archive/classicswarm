@@ -2,21 +2,32 @@ package cluster
 
 import (
 	"fmt"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/go-units"
 )
 
+// CheckpointTicker is exported
+type CheckpointTicker struct {
+	Version      int
+	Checkpointed map[int]bool
+	Ticker       bool
+}
+
 // Container is exported
 type Container struct {
 	types.Container
 
-	Config *ContainerConfig
-	Info   types.ContainerJSON
-	Engine *Engine
+	Config           *ContainerConfig
+	Info             types.ContainerJSON
+	Engine           *Engine
+	CheckpointTicker CheckpointTicker
 }
 
 // StateString returns a single string to describe state
@@ -84,6 +95,54 @@ func FullStateString(state *types.ContainerState) string {
 // Refresh container
 func (c *Container) Refresh() (*Container, error) {
 	return c.Engine.refreshContainer(c.ID, true)
+}
+
+// CheckpointContainerTicker set a checkpoint ticker
+func (c *Container) CheckpointContainerTicker(checkpointTime time.Duration) {
+	var ticker = time.NewTicker(checkpointTime)
+	var stopCh = make(chan bool)
+	c.CheckpointTicker = CheckpointTicker{
+		Checkpointed: make(map[int]bool),
+		Version:      0,
+		Ticker:       true,
+	}
+
+	go func() {
+		c.Engine.WaitContainer(c.ID)
+		log.Infof("wait %s stop", c.ID)
+		stopCh <- true
+	}()
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				c.CheckpointTicker.Checkpointed[c.CheckpointTicker.Version] = false
+				criuOpts := types.CriuConfig{
+					ImagesDirectory: filepath.Join(c.Engine.DockerRootDir, "checkpoint", c.ID, strconv.Itoa(c.CheckpointTicker.Version), "criu.image"),
+					WorkDirectory:   filepath.Join(c.Engine.DockerRootDir, "checkpoint", c.ID, strconv.Itoa(c.CheckpointTicker.Version), "criu.work"),
+					LeaveRunning:    true,
+				}
+
+				err := c.Engine.CheckpointContainer(c.ID, criuOpts)
+				if err != nil {
+					log.Errorf("Error to checkpoint %s, %s", c.ID, err)
+				} else {
+					log.Infof("checkpoint container %s,  version %d", c.ID, c.CheckpointTicker.Version)
+				}
+				//c.checkpointContainers["container.ID"] = version
+				c.CheckpointTicker.Checkpointed[c.CheckpointTicker.Version] = true
+				c.CheckpointTicker.Version++
+			case <-stopCh:
+				ticker.Stop()
+				/*if _, exist := c.checkpointContainers[container.ID]; exist != false {
+					delete(c.checkpointContainers, container.ID)
+				}*/
+				c.CheckpointTicker.Ticker = false
+				log.Infof("%s stop checkpoint", c.ID)
+				return
+			}
+		}
+	}()
 }
 
 // Containers represents a list of containers
