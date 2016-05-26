@@ -112,6 +112,9 @@ func commandParser(r *http.Request) string {
 	}
 	if len(paramsArr1) == 2 {
 		//ps / json / Create...
+		if paramsArr1[1] == "json" {
+			return "listContainers"
+		}
 		return "container" + paramsArr1[1]
 	}
 

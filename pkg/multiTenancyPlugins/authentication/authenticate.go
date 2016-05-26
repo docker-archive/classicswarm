@@ -28,7 +28,6 @@ func (authentication *AuthenticationImpl) Handle(command string, cluster cluster
 	log.Debug("Plugin authN got command: " + command)
 	tenantIdToValidate := r.Header.Get(headers.AuthZTenantIdHeaderName)
 	if tenantIdToValidate == "" {
-
 		return errors.New("Not Authorized!")
 	}
 	if tenantIdToValidate == os.Getenv("SWARM_ADMIN_TENANT_ID") {

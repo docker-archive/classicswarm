@@ -36,9 +36,7 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 	case "containercreate":
 
 		defer r.Body.Close()
-		reqBody, _ := ioutil.ReadAll(r.Body)
-		if len(reqBody) > 0 {
-			log.Debug("AAAAAAAA")
+		if reqBody, _ := ioutil.ReadAll(r.Body); len(reqBody) > 0 {
 			var containerConfig dockerclient.ContainerConfig
 			if err := json.NewDecoder(bytes.NewReader(reqBody)).Decode(&containerConfig); err != nil {
 				return err
@@ -50,20 +48,24 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 				return err
 			}
 
-			r, _ := utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), "", "")
+			r, _ = utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), "", "")
 
-			swarmHandler.ServeHTTP(w, r)
-			log.Debug("Returned from Swarm")
 			//			defaultauthZ.nextHandler("containerCreate", cluster, w, r, swarmHandler)
 		}
+		swarmHandler.ServeHTTP(w, r)
+		log.Debug("Returned from Swarm")
 
-	case "containerInspect":
+		//In case of container json - should record and clean - consider seperating..
+	case "containerjson", "containerstart", "containerstop", "containerdelete":
 
 		if utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
 			swarmHandler.ServeHTTP(w, r)
 			log.Debug("Returned from Swarm")
 		}
+	case "listContainers":
+		//record to clean up host names and labeling etc..
 
+	//Always allow or not?
 	default:
 		if !utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
 			return errors.New("Not Authorized!")
