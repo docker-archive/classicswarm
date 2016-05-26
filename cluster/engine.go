@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -957,16 +958,27 @@ func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, erro
 
 }
 
+// encodeAuthToBase64 serializes the auth configuration as JSON base64 payload
+func encodeAuthToBase64(authConfig *types.AuthConfig) (string, error) {
+	if authConfig == nil {
+		return "", nil
+	}
+	buf, err := json.Marshal(*authConfig)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(buf), nil
+}
+
 // Pull an image on the engine
 func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
-	// TODO(nishanttotla): RegistryAuth needs fixing
-	registryAuth := ""
-	if authConfig != nil {
-		registryAuth = authConfig.Auth
+	encodedAuth, err := encodeAuthToBase64(authConfig)
+	if err != nil {
+		return err
 	}
 	pullOpts := types.ImagePullOptions{
 		All:           false,
-		RegistryAuth:  registryAuth,
+		RegistryAuth:  encodedAuth,
 		PrivilegeFunc: nil,
 	}
 	// image is a ref here
