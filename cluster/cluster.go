@@ -39,7 +39,7 @@ type Cluster interface {
 	Networks() Networks
 
 	// Create a network
-	CreateNetwork(request *types.NetworkCreate) (*types.NetworkCreateResponse, error)
+	CreateNetwork(name string, request *types.NetworkCreate) (*types.NetworkCreateResponse, error)
 
 	// Remove a network from the cluster
 	RemoveNetwork(network *Network) error
@@ -95,7 +95,7 @@ type Cluster interface {
 	RenameContainer(container *Container, newName string) error
 
 	// Build an image
-	BuildImage(*types.ImageBuildOptions, io.Writer) error
+	BuildImage(io.Reader, *types.ImageBuildOptions, io.Writer) error
 
 	// Tag an image
 	TagImage(IDOrName string, repo string, tag string, force bool) error

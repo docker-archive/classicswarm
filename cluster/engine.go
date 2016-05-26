@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,7 +18,6 @@ import (
 	"golang.org/x/net/context"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/pkg/version"
 	engineapi "github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
@@ -523,8 +523,8 @@ func (e *Engine) updateSpecs() error {
 
 // RemoveImage deletes an image from the engine.
 func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDelete, error) {
-	rmOpts := types.ImageRemoveOptions{name, force, true}
-	dels, err := e.apiClient.ImageRemove(context.Background(), rmOpts)
+	rmOpts := types.ImageRemoveOptions{force, true}
+	dels, err := e.apiClient.ImageRemove(context.Background(), name, rmOpts)
 	e.CheckConnectionErr(err)
 	e.RefreshImages()
 	return dels, err
@@ -916,11 +916,10 @@ func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, au
 // RemoveContainer removes a container from the engine.
 func (e *Engine) RemoveContainer(container *Container, force, volumes bool) error {
 	opts := types.ContainerRemoveOptions{
-		ContainerID:   container.ID,
 		Force:         force,
 		RemoveVolumes: volumes,
 	}
-	err := e.apiClient.ContainerRemove(context.Background(), opts)
+	err := e.apiClient.ContainerRemove(context.Background(), container.ID, opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -936,8 +935,8 @@ func (e *Engine) RemoveContainer(container *Container, force, volumes bool) erro
 }
 
 // CreateNetwork creates a network in the engine
-func (e *Engine) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
-	response, err := e.apiClient.NetworkCreate(context.Background(), *request)
+func (e *Engine) CreateNetwork(name string, request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
+	response, err := e.apiClient.NetworkCreate(context.Background(), name, *request)
 	e.CheckConnectionErr(err)
 
 	e.RefreshNetworks()
@@ -959,36 +958,31 @@ func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, erro
 
 }
 
-// FIXME: This will become unnecessary after docker/engine-api#162 is merged
-func buildImagePullOptions(image string) (types.ImagePullOptions, error) {
-	distributionRef, err := reference.ParseNamed(image)
+// encodeAuthToBase64 serializes the auth configuration as JSON base64 payload
+func encodeAuthToBase64(authConfig *types.AuthConfig) (string, error) {
+	if authConfig == nil {
+		return "", nil
+	}
+	buf, err := json.Marshal(*authConfig)
 	if err != nil {
-		return types.ImagePullOptions{}, err
+		return "", err
 	}
-
-	name := distributionRef.Name()
-	tag := "latest"
-
-	switch x := distributionRef.(type) {
-	case reference.Canonical:
-		tag = x.Digest().String()
-	case reference.NamedTagged:
-		tag = x.Tag()
-	}
-
-	return types.ImagePullOptions{
-		ImageID: name,
-		Tag:     tag,
-	}, nil
+	return base64.URLEncoding.EncodeToString(buf), nil
 }
 
 // Pull an image on the engine
 func (e *Engine) Pull(image string, authConfig *types.AuthConfig) error {
-	pullOpts, err := buildImagePullOptions(image)
+	encodedAuth, err := encodeAuthToBase64(authConfig)
 	if err != nil {
 		return err
 	}
-	pullResponseBody, err := e.apiClient.ImagePull(context.Background(), pullOpts, nil)
+	pullOpts := types.ImagePullOptions{
+		All:           false,
+		RegistryAuth:  encodedAuth,
+		PrivilegeFunc: nil,
+	}
+	// image is a ref here
+	pullResponseBody, err := e.apiClient.ImagePull(context.Background(), image, pullOpts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -1052,13 +1046,25 @@ func (e *Engine) Load(reader io.Reader) error {
 
 // Import image
 func (e *Engine) Import(source string, repository string, tag string, imageReader io.Reader) error {
-	opts := types.ImageImportOptions{
-		SourceName:     source,
-		RepositoryName: repository,
-		Tag:            tag,
-		Source:         imageReader,
+	importSrc := types.ImageImportSource{
+		Source:     imageReader,
+		SourceName: source,
 	}
-	_, err := e.apiClient.ImageImport(context.Background(), opts)
+	opts := types.ImageImportOptions{
+		Tag: tag,
+	}
+	// TODO(nishanttotla): There might be a better way to pass a ref string than construct it here
+
+	// generate ref string
+	ref := repository
+	if tag != "" {
+		if strings.Contains(tag, ":") {
+			ref += "@" + tag
+		} else {
+			ref += ":" + tag
+		}
+	}
+	_, err := e.apiClient.ImageImport(context.Background(), importSrc, ref, opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -1237,7 +1243,8 @@ func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) 
 	if hostConfig != nil {
 		err = e.client.StartContainer(id, hostConfig)
 	} else {
-		err = e.apiClient.ContainerStart(context.Background(), id)
+		// TODO(nishanttotla): Figure out what the checkpoint id (second string argument) should be
+		err = e.apiClient.ContainerStart(context.Background(), id, "")
 	}
 	e.CheckConnectionErr(err)
 	if err != nil {
@@ -1264,8 +1271,8 @@ func (e *Engine) RenameContainer(container *Container, newName string) error {
 }
 
 // BuildImage builds an image
-func (e *Engine) BuildImage(buildImage *types.ImageBuildOptions) (io.ReadCloser, error) {
-	resp, err := e.apiClient.ImageBuild(context.Background(), *buildImage)
+func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions) (io.ReadCloser, error) {
+	resp, err := e.apiClient.ImageBuild(context.Background(), buildContext, *buildImage)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return nil, err
@@ -1277,12 +1284,20 @@ func (e *Engine) BuildImage(buildImage *types.ImageBuildOptions) (io.ReadCloser,
 func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	// send tag request to docker engine
 	opts := types.ImageTagOptions{
-		ImageID:        IDOrName,
-		RepositoryName: repo,
-		Tag:            tag,
-		Force:          force,
+		Force: force,
 	}
-	err := e.apiClient.ImageTag(context.Background(), opts)
+	// TODO(nishanttotla): There might be a better way to pass a ref string than construct it here
+
+	// generate ref string
+	ref := repo
+	if tag != "" {
+		if strings.Contains(tag, ":") {
+			ref += "@" + tag
+		} else {
+			ref += ":" + tag
+		}
+	}
+	err := e.apiClient.ImageTag(context.Background(), IDOrName, ref, opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err

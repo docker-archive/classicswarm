@@ -620,7 +620,7 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /networks/create
 func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
-	var request apitypes.NetworkCreate
+	var request apitypes.NetworkCreateRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		httpError(w, err.Error(), http.StatusBadRequest)
@@ -631,7 +631,7 @@ func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		request.Driver = "overlay"
 	}
 
-	response, err := c.cluster.CreateNetwork(&request)
+	response, err := c.cluster.CreateNetwork(request.Name, &request.NetworkCreate)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1277,7 +1277,6 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		CPUSetMems:     r.Form.Get("cpusetmems"),
 		CgroupParent:   r.Form.Get("cgroupparent"),
 		ShmSize:        int64ValueOrZero(r, "shmsize"),
-		Context:        r.Body,
 	}
 
 	buildArgsJSON := r.Form.Get("buildargs")
@@ -1306,7 +1305,7 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	wf := NewWriteFlusher(w)
 
-	err := c.cluster.BuildImage(buildImage, wf)
+	err := c.cluster.BuildImage(r.Body, buildImage, wf)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
