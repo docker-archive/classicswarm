@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.3 (2016-05-25)
+
+#### API
+
+- Update `engine-api` vendoring (supports new functions and signatures)
+- Fix registry auth bug for image pulls
+
+
 ## 1.2.2 (2016-05-05)
 
 #### Cluster management
