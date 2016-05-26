@@ -155,7 +155,7 @@ func TestImportImage(t *testing.T) {
 
 	// import success
 	readCloser := nopCloser{bytes.NewBufferString("ok")}
-	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, nil).Once()
+	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportSource"), mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, nil).Once()
 
 	callback := func(what, status string, err error) {
 		// import success
@@ -166,7 +166,7 @@ func TestImportImage(t *testing.T) {
 	// import error
 	readCloser = nopCloser{bytes.NewBufferString("error")}
 	err := fmt.Errorf("Import error")
-	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, err).Once()
+	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportSource"), mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, err).Once()
 
 	callback = func(what, status string, err error) {
 		// import error
@@ -264,7 +264,7 @@ func TestTagImage(t *testing.T) {
 	c.engines[engine.ID] = engine
 
 	// tag image
-	apiClient.On("ImageTag", mock.Anything, mock.AnythingOfType("types.ImageTagOptions")).Return(nil).Once()
+	apiClient.On("ImageTag", mock.Anything, mock.Anything, mock.Anything, mock.AnythingOfType("types.ImageTagOptions")).Return(nil).Once()
 	assert.Nil(t, c.TagImage("busybox", "test_busybox", "latest", false))
 	assert.NotNil(t, c.TagImage("busybox_not_exists", "test_busybox", "latest", false))
 }
