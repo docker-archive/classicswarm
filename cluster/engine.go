@@ -862,7 +862,7 @@ func (e *Engine) TotalCpus() int64 {
 }
 
 // Create a new container
-func (e *Engine) Create(config *ContainerConfig, name string, pullImage bool, authConfig *types.AuthConfig) (*Container, error) {
+func (e *Engine) CreateContainer(config *ContainerConfig, name string, pullImage bool, authConfig *types.AuthConfig) (*Container, error) {
 	var (
 		err        error
 		createResp types.ContainerCreateResponse
