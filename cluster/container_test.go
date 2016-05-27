@@ -2,12 +2,85 @@ package cluster
 
 import (
 	"testing"
+	"time"
 
 	"github.com/docker/engine-api/types"
 	containertypes "github.com/docker/engine-api/types/container"
 	networktypes "github.com/docker/engine-api/types/network"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestStateString(t *testing.T) {
+	states := map[string]*types.ContainerState{
+		"paused": {
+			Running: true,
+			Paused:  true,
+		},
+		"restarting": {
+			Running:    true,
+			Restarting: true,
+		},
+		"running": {
+			Running: true,
+		},
+		"dead": {
+			Dead: true,
+		},
+		"created": {
+			StartedAt: "",
+		},
+		"exited": {
+			StartedAt: "2016-11-23T15:44:05.999999991Z",
+		},
+	}
+
+	for k, s := range states {
+		r := StateString(s)
+
+		assert.Equal(t, k, r)
+	}
+}
+
+func TestFullStateString(t *testing.T) {
+	states := map[string]*types.ContainerState{
+		"Up Less than a second (Paused)": {
+			Running:   true,
+			Paused:    true,
+			StartedAt: time.Now().Format(time.RFC3339Nano),
+		},
+		"Restarting (10) Less than a second ago": {
+			Running:    true,
+			Restarting: true,
+			ExitCode:   10,
+			FinishedAt: time.Now().Format(time.RFC3339Nano),
+		},
+		"Up Less than a second": {
+			Running:   true,
+			StartedAt: time.Now().Format(time.RFC3339Nano),
+		},
+		"Dead": {
+			Dead: true,
+		},
+		"Created": {
+			StartedAt: "",
+		},
+		"": {
+			StartedAt:  "2016-11-23T15:44:05.999999991Z",
+			FinishedAt: "",
+		},
+		"Exited (10) Less than a second ago": {
+			ExitCode:   10,
+			StartedAt:  "2016-11-23T15:44:05.999999991Z",
+			FinishedAt: time.Now().Format(time.RFC3339Nano),
+		},
+	}
+
+	for k, s := range states {
+		r := FullStateString(s)
+
+		assert.Equal(t, k, r)
+	}
+}
 
 func TestContainersGet(t *testing.T) {
 	containers := Containers([]*Container{{
@@ -57,4 +130,5 @@ func TestContainersGet(t *testing.T) {
 	cc := containers.Get("con")
 	assert.NotNil(t, cc)
 	assert.Equal(t, cc.ID, "container2-id")
+
 }

@@ -21,7 +21,6 @@ type Container struct {
 
 // StateString returns a single string to describe state
 func StateString(state *types.ContainerState) string {
-	startedAt, _ := time.Parse(time.RFC3339Nano, state.StartedAt)
 	if state.Running {
 		if state.Paused {
 			return "paused"
@@ -35,6 +34,8 @@ func StateString(state *types.ContainerState) string {
 	if state.Dead {
 		return "dead"
 	}
+
+	startedAt, _ := time.Parse(time.RFC3339Nano, state.StartedAt)
 
 	if startedAt.IsZero() {
 		return "created"
