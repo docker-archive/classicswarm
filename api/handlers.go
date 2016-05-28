@@ -310,18 +310,18 @@ func getVolume(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /volumes
 func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
-	volumes := struct{ Volumes []*apitypes.Volume }{}
+	volumesListResponse := apitypes.VolumesListResponse{}
 
 	for _, volume := range c.cluster.Volumes() {
 		tmp := (*volume).Volume
 		if tmp.Driver == "local" {
 			tmp.Name = volume.Engine.Name + "/" + volume.Name
 		}
-		volumes.Volumes = append(volumes.Volumes, &tmp)
+		volumesListResponse.Volumes = append(volumesListResponse.Volumes, &tmp)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(volumes)
+	json.NewEncoder(w).Encode(volumesListResponse)
 }
 
 // GET /containers/ps
