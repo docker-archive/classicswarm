@@ -31,6 +31,14 @@ import (
 // APIVERSION is the API version supported by swarm manager
 const APIVERSION = "1.22"
 
+var (
+	serverHeader string
+)
+
+func init() {
+	serverHeader = fmt.Sprintf("Swarm/%s (%s)", version.VERSION, runtime.GOOS)
+}
+
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := apitypes.Info{
@@ -102,6 +110,7 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info.Name = hostname
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	json.NewEncoder(w).Encode(info)
 }
 
@@ -127,6 +136,7 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 	version.KernelVersion = kernelVersion
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	json.NewEncoder(w).Encode(version)
 }
 
@@ -252,6 +262,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	sort.Sort(sort.Reverse(ImageSorter(images)))
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	json.NewEncoder(w).Encode(images)
 }
 
@@ -286,6 +297,7 @@ func getNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 		out = append(out, &tmp)
 	}
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	json.NewEncoder(w).Encode(out)
 }
 
@@ -297,7 +309,9 @@ func getNetwork(c *context, w http.ResponseWriter, r *http.Request) {
 		// see https://github.com/docker/swarm/issues/1969
 		cleanNetwork := network.RemoveDuplicateEndpoints()
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Server", serverHeader)
 		json.NewEncoder(w).Encode(cleanNetwork.NetworkResource)
+
 		return
 	}
 	httpError(w, fmt.Sprintf("No such network: %s", id), http.StatusNotFound)
@@ -308,7 +322,9 @@ func getVolume(c *context, w http.ResponseWriter, r *http.Request) {
 	var name = mux.Vars(r)["volumename"]
 	if volume := c.cluster.Volumes().Get(name); volume != nil {
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Server", serverHeader)
 		json.NewEncoder(w).Encode(volume.Volume)
+
 		return
 	}
 	httpError(w, fmt.Sprintf("No such volume: %s", name), http.StatusNotFound)
@@ -327,6 +343,7 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	json.NewEncoder(w).Encode(volumesListResponse)
 }
 
@@ -484,8 +501,8 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		out = append(out, &tmp)
 	}
 
-	// Finally, send them back to the CLI.
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	json.NewEncoder(w).Encode(out)
 }
 
@@ -542,6 +559,7 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Engine.IP)), -1)
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	w.Write(data)
 }
 
@@ -604,6 +622,7 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "{%q:%q}", "Id", container.ID)
 	return
@@ -628,6 +647,7 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -651,6 +671,7 @@ func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
@@ -671,6 +692,7 @@ func postVolumesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(volume)
 }
@@ -684,6 +706,7 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 	wf := NewWriteFlusher(w)
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 
 	if image := r.Form.Get("fromImage"); image != "" { //pull
 		authConfig := apitypes.AuthConfig{}
@@ -736,13 +759,13 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		if errorFound {
 			sendErrorJSONMessage(wf, 1, errorMessage)
 		}
-
 	}
 }
 
 // POST /images/load
 func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusOK)
 
 	// call cluster to load image on every node
@@ -767,7 +790,6 @@ func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 	if errorFound {
 		sendErrorJSONMessage(wf, 1, errorMessage)
 	}
-
 }
 
 // GET /events
@@ -790,6 +812,7 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 	c.eventsHandler.Add(r.RemoteAddr, w)
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 
 	if f, ok := w.(http.Flusher); ok {
 		f.Flush()
@@ -831,6 +854,7 @@ func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -839,6 +863,7 @@ func postExecStart(c *context, w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Connection") == "" {
 		proxyContainer(c, w, r)
 	}
+	w.Header().Set("Server", serverHeader)
 	proxyHijack(c, w, r)
 }
 
@@ -895,6 +920,7 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	container.Info.ExecIDs = append(container.Info.ExecIDs, id.ID)
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(resp.StatusCode)
 	w.Write(data)
 }
@@ -919,6 +945,7 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	json.NewEncoder(NewWriteFlusher(w)).Encode(out)
 }
 
@@ -940,6 +967,7 @@ func deleteNetworks(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, fmt.Sprintf("No such network %s", id), http.StatusNotFound)
 		return
 	}
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -961,11 +989,13 @@ func deleteVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, fmt.Sprintf("No such volume %s", name), http.StatusNotFound)
 		return
 	}
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // GET /_ping
 func ping(c *context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Server", serverHeader)
 	w.Write([]byte{'O', 'K'})
 }
 
@@ -1196,6 +1226,7 @@ func postTagImage(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -1217,7 +1248,6 @@ func proxyRandom(c *context, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
-
 }
 
 // POST  /commit
@@ -1311,6 +1341,7 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Server", serverHeader)
 	wf := NewWriteFlusher(w)
 
 	err := c.cluster.BuildImage(r.Body, buildImage, wf)
@@ -1344,8 +1375,8 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusNoContent)
-
 }
 
 // Proxy a hijack request to the right node
@@ -1373,9 +1404,11 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 
 // Default handler for methods not supported by clustering.
 func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Server", serverHeader)
 	httpError(w, "Not supported in clustering mode.", http.StatusNotImplemented)
 }
 
 func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(http.StatusOK)
 }

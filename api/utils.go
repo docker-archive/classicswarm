@@ -19,6 +19,7 @@ import (
 // Emit an HTTP error and log it.
 func httpError(w http.ResponseWriter, err string, status int) {
 	log.WithField("status", status).Errorf("HTTP error: %v", err)
+	w.Header().Set("Server", serverHeader)
 	http.Error(w, err, status)
 }
 
@@ -109,6 +110,7 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 	}
 
 	copyHeader(w.Header(), resp.Header)
+	w.Header().Set("Server", serverHeader)
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(NewWriteFlusher(w), resp.Body)
 
