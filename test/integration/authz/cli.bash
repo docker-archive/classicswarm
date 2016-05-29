@@ -1,22 +1,41 @@
 #!/bin/bash
 
 display_usage() { 
-	echo "This script is used to launch cli.bats to test multi-tenant swarm." 
+	echo "This script is used to launch bats files to test multi-tenant swarm." 
 	echo "Environment variables found in cli.properties must be set to reflect your configuration." 
-	echo -e "\nUsage:\n$0 [-h] [-a <None | Keystone> ]\n"
+	echo -e "\nUsage:\n$0 [options] \n"
+	echo -e "\nexamples:\n"
+	echo -e "\n$0 -H tcp://0.0.0.0:2376 -i  -f \"./cli\""
+	echo -e "\n$0 -H tcp://0.0.0.0:2376 -i  -f \"./cli/run_inspect.bats ./cli/volumes_from.bats \""
+	echo -e "\noptions:\n"
 	echo -e "-h help\n"
-	echo -e "-a authentication method. None is default. Keystone Authentication.\n"
+	echo -e "-a authentication method. Valid options are None or Keystone. None is default. \n"
+	echo -e "-H swarm host url. Defaults to environment variable DOCKER_HOST\n"
+	echo -e "-f bats files and/or directories to run. Defaults to ./ \n"
+	echo -e "-i enable invariant check.\n"
         exit 0 
 	}
 AUTH="None"
-while getopts ":ha:" opt; do
+INVARIANT=false
+SWARM_HOST=$DOCKER_HOST
+BAT_FILES="./"
+while getopts ":hia:H:f:" opt; do
   case $opt in
     h)
       display_usage
       ;;
 	a)
-	  AUTH=${OPTARG}
+	  AUTH=${OPTARG}	
 	  ;; 
+	H)
+      SWARM_HOST=${OPTARG}
+	  ;;	
+	f)
+      BAT_FILES=${OPTARG}
+	  ;;
+	i)
+	  INVARIANT=true
+	  ;;	
     \?)
       echo "Invalid option: -$OPTARG" >&2
       display_usage
@@ -24,7 +43,6 @@ while getopts ":ha:" opt; do
   esac
 done
 
-#export SWARM_HOST=tcp://0.0.0.0:2376
 export DOCKER_CONFIG1=~/swarm_cli_test/docker-user-0
 export DOCKER_CONFIG2=~/swarm_cli_test/docker-user-2
 export DOCKER_CONFIG3=~/swarm_cli_test/docker-user-1
@@ -68,7 +86,7 @@ then
   port=$(netstat  -apn  2>/dev/null | egrep 'LISTEN.*swarm' | awk '{print $4}' | sed s/://g)
   if [ -z $port ]
   then
-    echo "Error: swarm is not running on local host."
+    echo "Error: swarm host can not be found."
 	exit 1 
   fi 
   export SWARM_HOST=tcp://0.0.0.0:$port
@@ -107,24 +125,12 @@ then
   fi
 else
   AUTH="None"
-  if [ -f ${DOCKER_CONFIG1}/config.json ]
-  then
-    echo "Info: rm ${DOCKER_CONFIG1}/config.json"
-    rm ${DOCKER_CONFIG1}/config.json
-  fi
-  if [ -f ${DOCKER_CONFIG2}/config.json ]
-  then
-    echo "Info: rm ${DOCKER_CONFIG2}/config.json"
-    rm ${DOCKER_CONFIG2}/config.json
-  fi
-  if [ -f ${DOCKER_CONFIG3}/config.json ]
-  then
-    echo "Info: rm ${DOCKER_CONFIG3}/config.json"
-    rm ${DOCKER_CONFIG3}/config.json
-  fi
-  echo -e "{\n\t\"HttpHeaders\": {\n\t\t\"X-Auth-TenantId\": \"$TENANT_NAME_1\",\n\t\t\"X-Auth-Token\": \"NA\"\n\t}\n}" > "${DOCKER_CONFIG1}/config.json"
-  echo -e "{\n\t\"HttpHeaders\": {\n\t\t\"X-Auth-TenantId\": \"$TENANT_NAME_2\",\n\t\t\"X-Auth-Token\": \"NA\"\n\t}\n}" > "${DOCKER_CONFIG2}/config.json"
-  echo -e "{\n\t\"HttpHeaders\": {\n\t\t\"X-Auth-TenantId\": \"$TENANT_NAME_1\",\n\t\t\"X-Auth-Token\": \"NA\"\n\t}\n}" > "${DOCKER_CONFIG3}/config.json"
+  rm -f ${DOCKER_CONFIG1}/config.json
+  rm -f ${DOCKER_CONFIG2}/config.json
+  rm -f ${DOCKER_CONFIG3}/config.json
+  echo -e "{\n\t\"HttpHeaders\": {\n\t\t\"X-Auth-TenantId\": \"$TENANT_NAME_1\",\n\t\t\"X-Auth-Token\": \"user1_token\"\n\t}\n}" > "${DOCKER_CONFIG1}/config.json"
+  echo -e "{\n\t\"HttpHeaders\": {\n\t\t\"X-Auth-TenantId\": \"$TENANT_NAME_2\",\n\t\t\"X-Auth-Token\": \"user2_token\"\n\t}\n}" > "${DOCKER_CONFIG2}/config.json"
+  echo -e "{\n\t\"HttpHeaders\": {\n\t\t\"X-Auth-TenantId\": \"$TENANT_NAME_1\",\n\t\t\"X-Auth-Token\": \"user3_token\"\n\t}\n}" > "${DOCKER_CONFIG3}/config.json"
 fi
 
 export SWARM_HOST=$SWARM_HOST
@@ -142,5 +148,9 @@ cat "${DOCKER_CONFIG3}/config.json"
 
 echo "Info: SWARM_HOST is $SWARM_HOST"
 echo "Info: Authentication Method is $AUTH"
-echo "Info: run cli.bats"
-bats cli.bats 
+echo "Info: invariant check enabled: ${INVARIANT}"
+echo "Info: bat files to run: $BAT_FILES"
+
+start=$(date +'%s')
+bats $BAT_FILES 
+echo "Test elapse time: $(($(date +'%s') - $start)) seconds"
