@@ -6,6 +6,9 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
 	//	"os"
 	//	"errors"
 	//"container/list"
@@ -63,7 +66,37 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 			log.Debug("Returned from Swarm")
 		}
 	case "listContainers":
-		//record to clean up host names and labeling etc..
+		//TODO - clean up code
+		var v = url.Values{}
+		mapS := map[string][]string{"label": {headers.TenancyLabel + "=" + r.Header.Get(headers.AuthZTenantIdHeaderName)}}
+		filterJSON, _ := json.Marshal(mapS)
+		v.Set("filters", string(filterJSON))
+		var newQuery string
+		if strings.Contains(r.URL.RequestURI(), "?") {
+			newQuery = r.URL.RequestURI() + "&" + v.Encode()
+		} else {
+			newQuery = r.URL.RequestURI() + "?" + v.Encode()
+		}
+		log.Debug("New Query: ", newQuery)
+
+		newReq, e1 := utils.ModifyRequest(r, nil, newQuery, "")
+		if e1 != nil {
+			log.Error(e1)
+		}
+		rec := httptest.NewRecorder()
+
+		//TODO - May decide to overrideSwarms handlers.getContainersJSON - this is Where to do it.
+		swarmHandler.ServeHTTP(rec, newReq)
+
+		/*POST Swarm*/
+		w.WriteHeader(rec.Code)
+		for k, v := range rec.Header() {
+			w.Header()[k] = v
+		}
+
+		newBody := utils.CleanUpLabeling(r, rec)
+
+		w.Write(newBody)
 
 	//Always allow or not?
 	default:

@@ -99,12 +99,17 @@ var containersWithIdentifier = regexp.MustCompile(`/containers/(.*)/(.*)`)
 
 //TODO - Do the same for networks, images, and so on. What is not supported will fail because of the generic message will go to default
 
+//TODO - Handle delete better
 func commandParser(r *http.Request) string {
 
 	paramsArr1 := containers.FindStringSubmatch(r.URL.Path)
 	paramsArr2 := containersWithIdentifier.FindStringSubmatch(r.URL.Path)
 	//assert the it is not possible for two of them to co-Exist
 
+	switch r.Method {
+	case "DELETE":
+		return "containerdelete"
+	}
 	//Order IS important
 	if len(paramsArr2) == 3 {
 		//inspect / delete / start ...

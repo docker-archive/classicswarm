@@ -77,6 +77,7 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command string, cluster cluste
 		}
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 	case "listContainers":
+		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 		//record to clean up host names and labeling etc..
 	default:
 
