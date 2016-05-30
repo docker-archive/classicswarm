@@ -59,12 +59,29 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 		log.Debug("Returned from Swarm")
 
 		//In case of container json - should record and clean - consider seperating..
-	case "containerjson", "containerstart", "containerstop", "containerdelete":
-
-		if utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
-			swarmHandler.ServeHTTP(w, r)
-			log.Debug("Returned from Swarm")
+	case "containerstart", "containerstop", "containerdelete":
+		if !utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
+			return errors.New("Not Authorized!")
 		}
+		swarmHandler.ServeHTTP(w, r)
+
+	case "containerjson":
+		if !utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
+			return errors.New("Not Authorized!")
+		}
+		rec := httptest.NewRecorder()
+		swarmHandler.ServeHTTP(rec, r)
+		/*POST Swarm*/
+		w.WriteHeader(rec.Code)
+		for k, v := range rec.Header() {
+			w.Header()[k] = v
+		}
+
+		newBody := utils.CleanUpLabeling(r, rec)
+
+		w.Write(newBody)
+
+	
 	case "listContainers":
 		//TODO - clean up code
 		var v = url.Values{}
