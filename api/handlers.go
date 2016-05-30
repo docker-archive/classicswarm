@@ -25,6 +25,7 @@ import (
 	"github.com/docker/swarm/version"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
+	"net/url"
 )
 
 // APIVERSION is the API version supported by swarm manager
@@ -702,7 +703,10 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s... : %s", image, status))
 			}
 		}
-		c.cluster.Pull(image, &authConfig, callback)
+
+		constraints := parseConstraints(image, r.Form)
+
+		c.cluster.Pull(image, constraints, &authConfig, callback)
 
 		if errorFound {
 			sendErrorJSONMessage(wf, 1, errorMessage)
@@ -900,7 +904,9 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	var name = mux.Vars(r)["name"]
 	force := boolValue(r, "force")
 
-	out, err := c.cluster.RemoveImages(name, force)
+	constraints := parseConstraints(name, r.Form)
+
+	out, err := c.cluster.RemoveImages(name, constraints, force)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1371,4 +1377,17 @@ func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
 
 func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+// format any constraints that were passed in
+func parseConstraints(name string, form url.Values) []string {
+	if constraints := form.Get("constraints"); constraints != "" {
+		constraintList := form["constraints"]
+		log.Debug(fmt.Sprintf("Received constraints for image %s: '%v'", name, constraintList))
+		for _, constraint := range constraintList {
+			constraint = "constraint:" + constraint
+		}
+		return constraintList
+	}
+	return nil
 }

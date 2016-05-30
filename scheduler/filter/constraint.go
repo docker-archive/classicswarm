@@ -19,7 +19,11 @@ func (f *ConstraintFilter) Name() string {
 
 // Filter is exported
 func (f *ConstraintFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node, soft bool) ([]*node.Node, error) {
-	constraints, err := parseExprs(config.Constraints())
+	return FilterWithConstraints(config.Constraints(), nodes, soft)
+}
+
+func FilterWithConstraints(constraintList []string, nodes []*node.Node, soft bool) ([]*node.Node, error) {
+	constraints, err := parseExprs(constraintList)
 	if err != nil {
 		return nil, err
 	}

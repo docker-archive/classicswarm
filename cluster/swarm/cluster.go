@@ -21,6 +21,7 @@ import (
 	"github.com/docker/go-units"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/node"
 	"github.com/samalba/dockerclient"
 )
@@ -432,14 +433,21 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 }
 
 // RemoveImages removes all the images that match `name` from the cluster
-func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, error) {
+func (c *Cluster) RemoveImages(name string, constraints []string, force bool) ([]types.ImageDelete, error) {
+	nodes, err := filter.FilterWithConstraints(constraints, c.listNodes(), false)
+
+	if err != nil {
+		return nil, err
+	}
+
 	c.Lock()
 	defer c.Unlock()
 
 	out := []types.ImageDelete{}
 	errs := []string{}
-	var err error
-	for _, e := range c.engines {
+
+	for _, node := range nodes {
+		e := c.engines[node.ID]
 		for _, image := range e.Images() {
 			if image.Match(name, true) {
 				content, err := image.Engine.RemoveImage(name, force)
@@ -574,12 +582,20 @@ func (c *Cluster) RemoveVolumes(name string) (bool, error) {
 }
 
 // Pull is exported
-func (c *Cluster) Pull(name string, authConfig *types.AuthConfig, callback func(where, status string, err error)) {
+func (c *Cluster) Pull(name string, constraints []string, authConfig *types.AuthConfig, callback func(where, status string, err error)) {
 	var wg sync.WaitGroup
 
+	nodes, err := filter.FilterWithConstraints(constraints, c.listNodes(), false)
+
+	if err != nil {
+		callback("swarm", "invalid constraint(s)", err)
+	}
+
 	c.RLock()
-	for _, e := range c.engines {
+
+	for _, node := range nodes {
 		wg.Add(1)
+		e := c.engines[node.ID]
 
 		go func(engine *cluster.Engine) {
 			defer wg.Done()

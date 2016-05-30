@@ -251,7 +251,7 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 }
 
 // RemoveImages removes images from the cluster
-func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, error) {
+func (c *Cluster) RemoveImages(name string, constraints []string, force bool) ([]types.ImageDelete, error) {
 	return nil, errNotSupported
 }
 
@@ -365,7 +365,7 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]types.ImageDelete, error)
 }
 
 // Pull pulls images on the cluster nodes
-func (c *Cluster) Pull(name string, authConfig *types.AuthConfig, callback func(where, status string, err error)) {
+func (c *Cluster) Pull(name string, constraints []string, authConfig *types.AuthConfig, callback func(where, status string, err error)) {
 
 }
 
