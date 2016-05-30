@@ -30,7 +30,12 @@ func (networks Networks) Uniq() Networks {
 				tmp[network.ID].Containers[id] = endpoint
 			}
 		} else {
-			tmp[network.ID] = network
+			netCopy := *network
+			netCopy.Containers = make(map[string]types.EndpointResource)
+			for key, value := range network.Containers {
+				netCopy.Containers[key] = value
+			}
+			tmp[network.ID] = &netCopy
 		}
 	}
 	uniq := Networks{}
