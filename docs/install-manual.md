@@ -26,7 +26,7 @@ you can deploy an equivalent Docker Swarm cluster on many other platforms. In th
 - [Test the high-availability Swarm managers](#step-7-test-swarm-failover)
 - [Additional Resources](#additional-resources)
 
-For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](install-w-machine) page.
+For a gentler introduction to Swarm, try the [Evaluate Swarm in a sandbox](install-w-machine.md) page.
 
 ## Prerequisites
 
