@@ -19,7 +19,7 @@ func (f *ConstraintFilter) Name() string {
 
 // Filter is exported
 func (f *ConstraintFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node, soft bool) ([]*node.Node, error) {
-	constraints, err := parseExprs(config.Constraints())
+	constraints, err := parseExprs(config.Constraints)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (f *ConstraintFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 // GetFilters returns a list of the constraints found in the container config.
 func (f *ConstraintFilter) GetFilters(config *cluster.ContainerConfig) ([]string, error) {
 	allConstraints := []string{}
-	constraints, err := parseExprs(config.Constraints())
+	constraints, err := parseExprs(config.Constraints)
 	if err != nil {
 		return nil, err
 	}

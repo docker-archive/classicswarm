@@ -20,7 +20,7 @@ func (f *AffinityFilter) Name() string {
 
 // Filter is exported
 func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node, soft bool) ([]*node.Node, error) {
-	affinities, err := parseExprs(config.Affinities())
+	affinities, err := parseExprs(config.Affinities)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 // GetFilters returns a list of the affinities found in the container config.
 func (f *AffinityFilter) GetFilters(config *cluster.ContainerConfig) ([]string, error) {
 	allAffinities := []string{}
-	affinities, err := parseExprs(config.Affinities())
+	affinities, err := parseExprs(config.Affinities)
 	if err != nil {
 		return nil, err
 	}
