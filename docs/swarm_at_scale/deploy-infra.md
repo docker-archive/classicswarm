@@ -173,7 +173,7 @@ support the container network you'll create later.
 
 The application uses <a
 href="https://github.com/ehazlett/interlock">Interlock</a> and Nginx as a
-loadblancer. Before you build the load balancer host, you'll create the
+loadbalancer. Before you build the load balancer host, you'll create the
 configuration you'll use for Nginx.
 
 1. On your local host, create a `config` directory.
