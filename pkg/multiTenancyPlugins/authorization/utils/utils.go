@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-
+	"strings"
 	"math/rand"
 	"net/http/httptest"
+	"encoding/json"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
@@ -122,6 +123,35 @@ func commandParser(r *http.Request) string {
 		}
 		return "container" + paramsArr1[1]
 	}
+	
+	if strings.HasSuffix(r.URL.Path, "/networks") {
+		return "listNetworks"
+	}
 
 	return "This is not supported yet and will end up in the default of the Switch"
+}
+
+//FilterNetworks - filter out all networks not created by tenant.
+func FilterNetworks(r *http.Request, rec *httptest.ResponseRecorder) []byte {	
+	var networks cluster.Networks
+	if err := json.NewDecoder(bytes.NewReader(rec.Body.Bytes())).Decode(&networks); err != nil {
+        	log.Error(err)
+        	return nil
+	}
+	var candidates cluster.Networks
+	tenantName := r.Header.Get(headers.AuthZTenantIdHeaderName)
+	for _, network := range networks {
+		fullName := strings.SplitN(network.Name, "/", 2)
+		name := fullName[len(fullName)-1]	
+		if strings.HasPrefix(name, tenantName){
+			network.Name = strings.TrimLeft(name, tenantName)
+			candidates = append(candidates, network)
+		}
+	}
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(candidates); err != nil {
+		log.Error(err)
+		return nil
+	}
+	return buf.Bytes()
 }

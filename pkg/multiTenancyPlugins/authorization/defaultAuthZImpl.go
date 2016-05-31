@@ -114,6 +114,17 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 		newBody := utils.CleanUpLabeling(r, rec)
 
 		w.Write(newBody)
+		
+	case "listNetworks":
+		rec := httptest.NewRecorder()	
+		swarmHandler.ServeHTTP(rec, r)
+		
+		w.WriteHeader(rec.Code)
+		for k, v := range rec.Header() {
+			w.Header()[k] = v
+		}
+		newBody := utils.FilterNetworks(r, rec)
+		w.Write(newBody)	
 
 	//Always allow or not?
 	default:
