@@ -276,9 +276,9 @@ the containers at once. This extra credit
 
 2. Try to create Compose file on your own by reviewing the tasks in this tutorial.
 
-    <a href="http://192.168.99.100:8000/compose/compose-file/#entrypoint" target="_blank">The
-    version 2 Compose file format</a> is the best to use. Translate each `docker
-    run` command into a service in the `docker-compose.yml` file. For example,
+    [The version 2 Compose file format](/compose/compose-file.md)
+    is the best to use. Translate each `docker run` command into a service
+    in the `docker-compose.yml` file. For example,
     this command:
 
     ```bash
