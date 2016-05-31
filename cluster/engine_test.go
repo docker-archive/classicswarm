@@ -107,6 +107,7 @@ func TestCheckConnectionErr(t *testing.T) {
 
 func TestEngineFailureCount(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
+	engine.eventsMonitor = NewEventsMonitor(engine)
 	engine.setState(stateHealthy)
 	for i := 0; i < engine.opts.FailureRetry; i++ {
 		assert.True(t, engine.IsHealthy())
