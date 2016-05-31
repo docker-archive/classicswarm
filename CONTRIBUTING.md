@@ -33,7 +33,7 @@ sudo mv go /usr/local
 > to include older versions of Go.  Instead, install the latest Go manually using the
 > instructions provided on the Go site.
 
-Create a go project directory in your home directory:
+Create a Go project directory in your home directory:
 ```sh
 mkdir ~/gocode    # any name is fine
 ```
