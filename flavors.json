@@ -1,32 +1,13 @@
 
 {
   "default":{
-   "Memory": 0,
-   "MemoryReservation": 0,
-   "MemorySwap":         0,
-   "KernelMemory":       0,
-   "CpuShares":          0,
-   "CpuPeriod":          0,
-   "CpuQuota":          0,
-   "BlkioWeight":       0,
-   "OomKillDisable":    false,
-   "MemorySwappiness":  -1,
-   "Privileged":        false,
-   "ReadonlyRootfs":    false
+   "Memory": 64
   },
-  "small":{
-   "Memory": 0,
-   "MemoryReservation": 0,
-   "MemorySwap":         0,
-   "KernelMemory":       0,
-   "CpuShares":          1,
-   "CpuPeriod":          1,
-   "CpuQuota":          0,
-   "BlkioWeight":       0,
-   "OomKillDisable":    false,
-   "MemorySwappiness":  -1,
-   "Privileged":        false,
-   "ReadonlyRootfs":     false
+  "medium":{
+   "Memory": 128
+  },
+  "large":{
+   "Memory": 246
   }
 
 }
