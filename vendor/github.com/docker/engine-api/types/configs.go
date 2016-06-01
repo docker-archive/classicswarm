@@ -39,11 +39,17 @@ type ContainerCommitConfig struct {
 }
 
 // CriuConfig holds configuration options passed down to libcontainer and CRIU
- type CriuConfig struct {
- 	ImagesDirectory string
- 	WorkDirectory   string
- 	LeaveRunning    bool
- }
+type CriuConfig struct {
+	ImagesDirectory string
+	WorkDirectory   string
+	LeaveRunning    bool
+}
+
+// MigrateFiltersConfig holds configuration options passed down to swarm filters
+type MigrateFiltersConfig struct {
+	EnvVariables []string
+	Labels       map[string]string
+}
 
 // ExecConfig is a small subset of the Config struct that hold the configuration
 // for the exec feature of docker.

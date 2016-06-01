@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -1319,7 +1320,6 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.WriteHeader(http.StatusNoContent)
-
 }
 
 // Proxy a hijack request to the right node
@@ -1351,4 +1351,61 @@ func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
 
 func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+func postContainersMigrate(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	filters := &apitypes.MigrateFiltersConfig{}
+	if err := json.NewDecoder(r.Body).Decode(&filters); err != nil {
+		return
+	}
+	containerName := mux.Vars(r)["name"]
+	container := c.cluster.Container(containerName)
+
+	checkpointOpts := apitypes.CriuConfig{
+		ImagesDirectory: filepath.Join(container.Engine.DockerRootDir, "checkpoint", container.ID, "migrate", "criu.image"),
+		WorkDirectory:   filepath.Join(container.Engine.DockerRootDir, "checkpoint", container.ID, "migrate", "criu.work"),
+		LeaveRunning:    true,
+	}
+	err := c.cluster.CheckpointContainer(container, checkpointOpts)
+	if err != nil {
+		log.Errorf("Error to checkpoint %s, %s", container.ID, err)
+		return
+	}
+
+	config := container.Config
+	for _, e := range filters.EnvVariables {
+		config.Config.Env = append(config.Config.Env, e)
+	}
+	for k, v := range filters.Labels {
+		config.Config.Labels[k] = v
+	}
+
+	engineName := container.Engine.Name
+	config.AddConstraint("node!=" + engineName)
+
+	err = c.cluster.RemoveContainer(container, true, true)
+	if err != nil {
+		log.Errorf("Error to delete %s, %s", container.ID, err)
+		return
+	}
+
+	newContainer, err := c.cluster.CreateContainer(config, containerName, nil)
+	if err != nil {
+		log.Errorf("Error to create %s, %s", newContainer.ID, err)
+		return
+	}
+
+	restoreOpts := apitypes.CriuConfig{
+		ImagesDirectory: filepath.Join(newContainer.Engine.DockerRootDir, "checkpoint", container.ID, "migrate", "criu.image"),
+		WorkDirectory:   filepath.Join(newContainer.Engine.DockerRootDir, "checkpoint", container.ID, "migrate", "criu.work"),
+	}
+	err = c.cluster.RestoreContainer(newContainer, restoreOpts, true)
+	if err != nil {
+		log.Errorf("Error to checkpoint %s, %s", newContainer.ID, err)
+		return
+	}
 }

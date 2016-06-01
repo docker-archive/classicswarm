@@ -129,14 +129,10 @@ func (c *Container) CheckpointContainerTicker(checkpointTime time.Duration) {
 				} else {
 					log.Infof("checkpoint container %s,  version %d", c.ID, c.CheckpointTicker.Version)
 				}
-				//c.checkpointContainers["container.ID"] = version
 				c.CheckpointTicker.Checkpointed[c.CheckpointTicker.Version] = true
 				c.CheckpointTicker.Version++
 			case <-stopCh:
 				ticker.Stop()
-				/*if _, exist := c.checkpointContainers[container.ID]; exist != false {
-					delete(c.checkpointContainers, container.ID)
-				}*/
 				c.CheckpointTicker.Ticker = false
 				log.Infof("%s stop checkpoint", c.ID)
 				return
