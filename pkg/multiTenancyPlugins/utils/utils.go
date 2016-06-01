@@ -130,6 +130,10 @@ func commandParser(r *http.Request) string {
 	if strings.HasSuffix(r.URL.Path, "/networks") {
 		return "listNetworks"
 	}
+	
+	if strings.HasSuffix(r.URL.Path, "/info") {
+		return "clusterInfo"
+	}
 
 	return "This is not supported yet and will end up in the default of the Switch"
 }
