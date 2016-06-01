@@ -31,6 +31,7 @@ func (authentication *AuthenticationImpl) Handle(command string, cluster cluster
 		return errors.New("Not Authorized!")
 	}
 	if tenantIdToValidate == os.Getenv("SWARM_ADMIN_TENANT_ID") {
+		swarmHandler.ServeHTTP(w, r)
 		return nil
 	}
 	return authentication.nextHandler(command, cluster, w, r, swarmHandler)

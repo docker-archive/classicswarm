@@ -8,9 +8,9 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authentication"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization"
-	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/naming"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 )
 
 //Executor - Entry point to multi-tenancy plugins
@@ -21,10 +21,6 @@ var startHandler pluginAPI.Handler
 //Handle - Hook point from primary to plugins
 func (*Executor) Handle(cluster cluster.Cluster, swarmHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if os.Getenv("SWARM_MULTI_TENANT") == "false" {
-			swarmHandler.ServeHTTP(w, r)
-			return
-		}
 		err := startHandler(utils.ParseCommand(r), cluster, w, r, swarmHandler)
 		if err != nil {
 			log.Error(err)

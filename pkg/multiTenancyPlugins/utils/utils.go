@@ -35,8 +35,6 @@ type ValidationOutPutDTO struct {
 //Use something else...
 func ParseCommand(r *http.Request) string {
 	return commandParser(r)
-	//	return "containerCreate"
-	//	return "containerInspect"
 }
 
 func ModifyRequest(r *http.Request, body io.Reader, urlStr string, containerID string) (*http.Request, error) {
@@ -77,7 +75,8 @@ func CleanUpLabeling(r *http.Request, rec *httptest.ResponseRecorder) []byte {
 	//TODO - Here we just use the token for the tenant name for now so we remove it from the data before returning to user.
 	newBody = bytes.Replace(newBody, []byte(r.Header.Get(headers.AuthZTenantIdHeaderName)), []byte(""), -1)
 	newBody = bytes.Replace(newBody, []byte(",\" \":\" \""), []byte(""), -1)
-	log.Debug("Got this new body...", string(newBody))
+	log.Debugf("Clean up labeling done.")
+	//	log.Debug("Got this new body...", string(newBody))
 	return newBody
 }
 
@@ -106,9 +105,14 @@ func commandParser(r *http.Request) string {
 	paramsArr2 := containersWithIdentifier.FindStringSubmatch(r.URL.Path)
 	//assert the it is not possible for two of them to co-Exist
 
+	log.Debug(paramsArr1)
+	log.Debug(paramsArr2)
+
 	switch r.Method {
 	case "DELETE":
-		return "containerdelete"
+		if strings.HasPrefix(paramsArr1[0], "/containers") {
+			return "containerdelete"
+		}
 	}
 	//Order IS important
 	if len(paramsArr2) == 3 {
