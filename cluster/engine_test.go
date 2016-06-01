@@ -289,7 +289,11 @@ func TestCreateContainer(t *testing.T) {
 			Resources: containertypes.Resources{
 				CPUShares: 1,
 			},
-		}, networktypes.NetworkingConfig{}}
+		}, networktypes.NetworkingConfig{},
+			nil,
+			nil,
+		}
+
 		engine     = NewEngine("test", 0, engOpts)
 		client     = mockclient.NewMockClient()
 		apiClient  = engineapimock.NewMockClient()
