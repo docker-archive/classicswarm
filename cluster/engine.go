@@ -33,6 +33,9 @@ const (
 	// Timeout for requests sent out to the engine.
 	requestTimeout = 10 * time.Second
 
+	// Threshold of delta duaration between swarm manager and engine's systime
+	thresholdTime = 2 * time.Second
+
 	// Minimum docker engine version supported by swarm.
 	minSupportedVersion = version.Version("1.6.0")
 )
@@ -129,6 +132,7 @@ type Engine struct {
 	overcommitRatio int64
 	opts            *EngineOpts
 	eventsMonitor   *EventsMonitor
+	DeltaDuration   time.Duration // swarm's systime - engine's systime
 }
 
 // NewEngine is exported
@@ -490,6 +494,32 @@ func (e *Engine) updateSpecs() error {
 		e.lastError = message
 		return fmt.Errorf(message)
 	}
+
+	// delta is an estimation of time difference between manager and engine
+	// with adjustment of delays (Engine response delay + network delay + manager process delay).
+	var delta time.Duration
+	if info.SystemTime != "" {
+		engineTime, _ := time.Parse(time.RFC3339Nano, info.SystemTime)
+		delta = time.Now().UTC().Sub(engineTime)
+	} else {
+		// if no SystemTime in info response, we treat delta as 0.
+		delta = time.Duration(0)
+	}
+
+	// If the servers are sync up on time, this delta might be the source of error
+	// we set a threshhold that to ignore this case.
+	absDelta := delta
+	if delta.Seconds() < 0 {
+		absDelta = time.Duration(-1*delta.Seconds()) * time.Second
+	}
+
+	if absDelta < thresholdTime {
+		e.DeltaDuration = 0
+	} else {
+		log.Warnf("Engine (ID: %s, Addr: %s) has unsynchronized systime with swarm, please synchronize it.", e.ID, e.Addr)
+		e.DeltaDuration = delta
+	}
+
 	e.Name = info.Name
 	e.Cpus = int64(info.NCPU)
 	e.Memory = info.MemTotal
@@ -758,6 +788,8 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 	// container (containers[container.Id]) will get replaced.
 	e.RUnlock()
 
+	c.Created = time.Unix(c.Created, 0).Add(e.DeltaDuration).Unix()
+
 	// Update ContainerInfo.
 	if full {
 		info, err := e.apiClient.ContainerInspect(context.Background(), c.ID)
@@ -775,6 +807,13 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 		container.Config = BuildContainerConfig(*info.Config, *info.HostConfig, networkingConfig)
 		// FIXME remove "duplicate" line and move this to cluster/config.go
 		container.Config.HostConfig.CPUShares = container.Config.HostConfig.CPUShares * e.Cpus / 1024.0
+
+		// consider the delta duration between swarm and docker engine
+		startedAt, _ := time.Parse(time.RFC3339Nano, info.State.StartedAt)
+		finishedAt, _ := time.Parse(time.RFC3339Nano, info.State.FinishedAt)
+
+		info.State.StartedAt = startedAt.Add(e.DeltaDuration).Format(time.RFC3339Nano)
+		info.State.FinishedAt = finishedAt.Add(e.DeltaDuration).Format(time.RFC3339Nano)
 
 		// Save the entire inspect back into the container.
 		container.Info = info
