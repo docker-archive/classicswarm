@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.2.3 (2016-05-25)
+
+#### API
+
+- Update `engine-api` vendoring (supports new functions and signatures)
+- Fix registry auth bug for image pulls
+
+
+## 1.2.2 (2016-05-05)
+
+#### Cluster management
+
+- Fix deadlock that causes Swarm to hang
+
+## 1.2.1 (2016-05-03)
+
+#### Scheduler
+
+- Add containerslots filter to allow user to limit container number on a node
+
+#### API
+
+- Use engine-api to handle large number of API calls
+- Update ContainerConfig to embed HostConfig and NetworkingConfig
+- stop/restart/kill a non-existent container should return 500 rather than 404
+- Return an error when assertion fails in hijack
+- Return an error when Image Pull fails
+- Fix image pull bug (wait until download finishes)
+- Fix and document some api response status codes
+- Add NodeID in docker info
+- Support docker ps --filter by volume
+
+#### Build
+
+- Move dependencies to vendor/
+- Update Image Pull to use docker/distribution package
+- Convert docs Dockerfiles to use docs/base:oss
+
+#### Test
+
+- Fix api/ps tests
+- Update api/stats test to prevent timeout on master branch
+- Use --cpu-shares instead of -c in integration test
+
+#### Misc
+
+- Documentation clean up
+- Close http response body to avoid potential memory leak
+- Switch context.TODO() to context.Background() to enable context setting
+
 ## 1.2.0 (2016-04-13)
 
 #### Scheduler

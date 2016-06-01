@@ -256,15 +256,15 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, er
 }
 
 // CreateNetwork creates a network in the cluster
-func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
+func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
 	var (
-		parts  = strings.SplitN(request.Name, "/", 2)
+		parts  = strings.SplitN(name, "/", 2)
 		config = &cluster.ContainerConfig{}
 	)
 
 	if len(parts) == 2 {
 		// a node was specified, create the container only on this node
-		request.Name = parts[1]
+		name = parts[1]
 		config = cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
 	}
 
@@ -282,7 +282,7 @@ func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCre
 	if !ok {
 		return nil, fmt.Errorf("Unable to create network on agent %q", n.ID)
 	}
-	resp, err := s.engine.CreateNetwork(request)
+	resp, err := s.engine.CreateNetwork(name, request)
 	c.refreshNetworks()
 	return resp, err
 }
@@ -449,12 +449,12 @@ func (c *Cluster) TotalMemory() int64 {
 }
 
 // TotalCpus returns the total memory of the cluster
-func (c *Cluster) TotalCpus() int {
+func (c *Cluster) TotalCpus() int64 {
 	c.RLock()
 	defer c.RUnlock()
-	var totalCpus int
+	var totalCpus int64
 	for _, s := range c.agents {
-		totalCpus += int(sumScalarResourceValue(s.offers, "cpus"))
+		totalCpus += int64(sumScalarResourceValue(s.offers, "cpus"))
 	}
 	return totalCpus
 }
@@ -596,9 +596,9 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 
 	// In mesos 0.23+ the docker inspect will be sent back in the taskStatus.Data
 	// We can use this to find the right container.
-	inspect := []dockerclient.ContainerInfo{}
+	inspect := []types.ContainerJSONBase{}
 	if data != nil && json.Unmarshal(data, &inspect) == nil && len(inspect) == 1 {
-		container := &cluster.Container{Container: types.Container{ID: inspect[0].Id}, Engine: s.engine}
+		container := &cluster.Container{Container: types.Container{ID: inspect[0].ID}, Engine: s.engine}
 		if container, err := container.Refresh(); err == nil {
 			if !t.Stopped() {
 				t.SetContainer(container)
@@ -642,7 +642,7 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 }
 
 // BuildImage builds an image
-func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer) error {
+func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, out io.Writer) error {
 	c.scheduler.Lock()
 
 	// get an engine
@@ -661,7 +661,7 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 	}
 	n := nodes[0]
 
-	reader, err := c.agents[n.ID].engine.BuildImage(buildImage)
+	reader, err := c.agents[n.ID].engine.BuildImage(buildContext, buildImage)
 	if err != nil {
 		return err
 	}

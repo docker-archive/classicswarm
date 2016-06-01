@@ -247,11 +247,12 @@ are few and far between. Whereas RHEL has an associated support and license
 cost, but comes with world class commercial support from Red Hat.
 
 When choosing the production operating system to use with your Swarm clusters,
-you should choose one that closely matches what you have used in development and
-staging environments. Although containers abstract much of the underlying OS,
-some things are mandatory. For example, Docker container networks require Linux
-kernel 3.16 or higher. Operating a 4.x kernel in development and staging and
-then 3.14 in production will certainly cause issues.
+choose one that closely matches what you have used in development and staging
+environments. Although containers abstract much of the underlying OS,  some
+features have configuration requirements. For example, to use Docker container
+networking with Docker Engine 1.10 or higher, your host must have a Linux kernel
+that is version 3.10 or higher. Refer to the change logs to understand the
+requirements for a particular version of Docker Engine or Swarm.
 
 You should also consider procedures and channels for deploying and potentially
 patching your production operating systems.
@@ -272,13 +273,13 @@ However, for best performance and fault isolation, you should deploy individual
 KV store instances for container networks and Swarm discovery. This is
 especially so in demanding business critical production environments.
 
-Engine container networks also require version 3.16 or higher of the Linux
-kernel. Higher kernel versions are usually preferred, but carry an increased
-risk of instability because of the newness of the kernel. Where possible, you
-should use a kernel version that is already approved for use in your production
-environment. If you do not have a 3.16 or higher Linux kernel version approved
-for production, you should begin the process of getting one as early as
-possible.
+Beginning with Docker Engine 1.9, Docker container networks require specific
+Linux kernel versions. Higher kernel versions are usually preferred, but carry
+an increased risk of instability because of the newness of the kernel. Where
+possible, use a kernel version that is already approved for use in your
+production environment. If you can not use a 3.10 or higher Linux kernel version
+for production, you should begin the process of approving a newer kernel as
+early as possible.
 
 ### Scheduling strategies
 

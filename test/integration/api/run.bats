@@ -11,7 +11,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# make sure no container exist
+	# make sure no container exists
 	run docker_swarm ps -qa
 	[ "${#lines[@]}" -eq 0 ]
 
@@ -32,7 +32,7 @@ function teardown() {
 
 	docker_swarm pull jimmyxian/busybox@sha256:649374debd26307573564fcf9748d39db33ef61fbf88ee84c3af10fd7e08765d
 
-	# make sure no container exist
+	# make sure no container exists
 	run docker_swarm ps -qa
 	[ "${#lines[@]}" -eq 0 ]
 
@@ -237,7 +237,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# make sure no container exist
+	# make sure no container exists
 	run docker_swarm ps -qa
 	[ "${#lines[@]}" -eq 0 ]
 

@@ -19,7 +19,7 @@ are not limited to, the following:
 
 - Dokku
 - Docker Compose
-- Krane
+- Docker Machine
 - Jenkins
 
 And of course, the Docker client itself is also supported.
