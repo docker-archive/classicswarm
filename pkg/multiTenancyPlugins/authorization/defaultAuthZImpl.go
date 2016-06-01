@@ -9,17 +9,14 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
-	//	"os"
-	//	"errors"
-	//"container/list"
 
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 	"github.com/samalba/dockerclient"
-	//	"github.com/docker/swarm/pkg/authZ/keystone"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization/headers"
-	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization/utils"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/headers"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 )
 
 type DefaultAuthZImpl struct {
@@ -81,7 +78,6 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 
 		w.Write(newBody)
 
-	
 	case "listContainers":
 		//TODO - clean up code
 		var v = url.Values{}
@@ -114,17 +110,17 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 		newBody := utils.CleanUpLabeling(r, rec)
 
 		w.Write(newBody)
-		
+
 	case "listNetworks":
-		rec := httptest.NewRecorder()	
+		rec := httptest.NewRecorder()
 		swarmHandler.ServeHTTP(rec, r)
-		
+
 		w.WriteHeader(rec.Code)
 		for k, v := range rec.Header() {
 			w.Header()[k] = v
 		}
 		newBody := utils.FilterNetworks(r, rec)
-		w.Write(newBody)	
+		w.Write(newBody)
 
 	//Always allow or not?
 	default:

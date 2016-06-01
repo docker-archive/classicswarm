@@ -6,7 +6,7 @@ import (
 	"os"
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/pkg/authZ/utils"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 	"strconv"
 )
 

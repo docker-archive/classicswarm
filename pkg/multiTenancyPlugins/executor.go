@@ -8,7 +8,7 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authentication"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization"
-	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization/utils"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/naming"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 )

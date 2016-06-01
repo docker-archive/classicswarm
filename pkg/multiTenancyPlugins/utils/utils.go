@@ -2,22 +2,21 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"regexp"
 	"strings"
-	"math/rand"
-	"net/http/httptest"
-	"encoding/json"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 
-	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization/headers"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/headers"
 	"github.com/gorilla/mux"
-	//	"encoding/json"
 )
 
 type ValidationOutPutDTO struct {
@@ -123,7 +122,7 @@ func commandParser(r *http.Request) string {
 		}
 		return "container" + paramsArr1[1]
 	}
-	
+
 	if strings.HasSuffix(r.URL.Path, "/networks") {
 		return "listNetworks"
 	}
@@ -132,18 +131,18 @@ func commandParser(r *http.Request) string {
 }
 
 //FilterNetworks - filter out all networks not created by tenant.
-func FilterNetworks(r *http.Request, rec *httptest.ResponseRecorder) []byte {	
+func FilterNetworks(r *http.Request, rec *httptest.ResponseRecorder) []byte {
 	var networks cluster.Networks
 	if err := json.NewDecoder(bytes.NewReader(rec.Body.Bytes())).Decode(&networks); err != nil {
-        	log.Error(err)
-        	return nil
+		log.Error(err)
+		return nil
 	}
 	var candidates cluster.Networks
 	tenantName := r.Header.Get(headers.AuthZTenantIdHeaderName)
 	for _, network := range networks {
 		fullName := strings.SplitN(network.Name, "/", 2)
-		name := fullName[len(fullName)-1]	
-		if strings.HasPrefix(name, tenantName){
+		name := fullName[len(fullName)-1]
+		if strings.HasPrefix(name, tenantName) {
 			network.Name = strings.TrimLeft(name, tenantName)
 			candidates = append(candidates, network)
 		}

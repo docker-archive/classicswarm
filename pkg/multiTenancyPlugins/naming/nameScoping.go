@@ -9,8 +9,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
-	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization/headers"
-	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization/utils"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/headers"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"

@@ -14,7 +14,7 @@ import (
 	//	"github.com/docker/swarm/pkg/authZ"
 
 	"github.com/docker/swarm/pkg/authZ/headers"
-	"github.com/docker/swarm/pkg/authZ/utils"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 	"github.com/docker/swarm/pkg/authZ/flavors"
 	"github.com/samalba/dockerclient"
 )
