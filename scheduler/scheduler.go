@@ -3,7 +3,6 @@ package scheduler
 import (
 	"errors"
 	"strings"
-	"sync"
 
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/filter"
@@ -17,8 +16,6 @@ var (
 
 // Scheduler is exported
 type Scheduler struct {
-	sync.Mutex
-
 	strategy strategy.PlacementStrategy
 	filters  []filter.Filter
 }
