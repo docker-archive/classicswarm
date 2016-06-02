@@ -107,7 +107,7 @@ store.
 
 You can use a static file or list of nodes for your discovery backend. The file must be stored on a host that is accessible from the Swarm manager. You can also pass a node list as an option when you start Swarm.
 
-Both the static file and the `nodes` option support a IP address ranges. To specify a range supply a pattern, for example, `10.0.0.[10:200]` refers to nodes starting from `10.0.0.10` to `10.0.0.200`.  For example for the `file` discovery method.
+Both the static file and the `nodes` option support an IP address ranges. To specify a range supply a pattern, for example, `10.0.0.[10:200]` refers to nodes starting from `10.0.0.10` to `10.0.0.200`.  For example for the `file` discovery method.
 
         $ echo "10.0.0.[11:100]:2375"   >> /tmp/my_cluster
         $ echo "10.0.1.[15:20]:2375"    >> /tmp/my_cluster

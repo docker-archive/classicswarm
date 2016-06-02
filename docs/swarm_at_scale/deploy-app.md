@@ -39,7 +39,7 @@ on the Swarm `manager` instance.
     $ eval $(docker-machine env manager)
     ```
 
-    You can create the network on an cluster node at the network is visible on
+    You can create the network on a cluster node at the network is visible on
     them all.
 
 2. Create the `voteapp` container network.

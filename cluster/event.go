@@ -26,7 +26,7 @@ type EventHandlers struct {
 	eventHandlers map[EventHandler]struct{}
 }
 
-// NewEventHandlers returns a EventHandlers
+// NewEventHandlers returns an EventHandlers
 func NewEventHandlers() *EventHandlers {
 	return &EventHandlers{
 		eventHandlers: make(map[EventHandler]struct{}),
