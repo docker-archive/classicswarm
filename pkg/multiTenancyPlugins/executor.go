@@ -44,11 +44,8 @@ func (*Executor) Init() {
 		log.Debug("Keystone not supported")
 	} else {
 		authorizationPlugin := new(authorization.DefaultAuthZImpl)
-		//flavorsPlugin := flavors.NewPlugin(authorizationPlugin.Handle)
-		//nameScoping := namescoping.NewNameScoping(flavorsPlugin.Handle)
 		nameScoping := namescoping.NewNameScoping(authorizationPlugin.Handle)
 		flavorsPlugin := flavors.NewPlugin(nameScoping.Handle)
-		//authenticationPlugin := authentication.NewAuthentication(nameScoping.Handle)
 		authenticationPlugin := authentication.NewAuthentication(flavorsPlugin.Handle)
 		startHandler = authenticationPlugin.Handle
 	}
