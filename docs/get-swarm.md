@@ -29,7 +29,7 @@ The first time you use any image, Docker Engine checks to see if you already hav
 
 1. Open a terminal on a host running Engine.
 
-    If you are using Mac or Windows, then you must make sure you have started an Docker Engine host running and pointed your terminal environment to it with the Docker Machine commands. If you aren't sure, you can verify:
+    If you are using Mac or Windows, then you must make sure you have started a Docker Engine host running and pointed your terminal environment to it with the Docker Machine commands. If you aren't sure, you can verify:
 
         $ docker-machine ls
         NAME      ACTIVE   URL          STATE     URL                         SWARM   DOCKER    ERRORS
