@@ -110,17 +110,17 @@ func commandParser(r *http.Request) string {
 
 	switch r.Method {
 	case "DELETE":
-		if strings.HasPrefix(paramsArr1[0], "/containers") {
+		if len(paramsArr1) > 0 && strings.HasPrefix(paramsArr1[0], "/containers") {
 			return "containerdelete"
 		}
 	}
 	//Order IS important
 	if len(paramsArr2) == 3 {
-		//inspect / delete / start ...
+
 		return "container" + paramsArr2[2]
 	}
 	if len(paramsArr1) == 2 {
-		//ps / json / Create...
+
 		if paramsArr1[1] == "json" {
 			return "listContainers"
 		}

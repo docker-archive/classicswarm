@@ -21,6 +21,7 @@ var startHandler pluginAPI.Handler
 //Handle - Hook point from primary to plugins
 func (*Executor) Handle(cluster cluster.Cluster, swarmHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Debug(r)
 		err := startHandler(utils.ParseCommand(r), cluster, w, r, swarmHandler)
 		if err != nil {
 			log.Error(err)
