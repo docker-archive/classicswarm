@@ -60,27 +60,26 @@ checkInvariant() {
  return 0
 }
 notAuthorized() {
-	return 0 # disable until fix provided
 	NOTAUTHORIZED="Error response from daemon: Not Authorized!"
-	return 0  #temporary fix to all tests to run until we support all the container commands
-	run docker -H $SWARM_HOST --config $1 attach $2	
-    if !( [ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]] ); then
-        return 200
-    fi
-	if !([ "$status" -ne 0 ] ); then
-        return 1
-    fi
-    if !([[ "$output" == *"$NOTAUTHORIZED"* ]]); then
-        return 100
-    fi
-	run docker -H $SWARM_HOST --config $1 exec $2 ls
-    if !( [ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]] ); then
-        return 2
-    fi
-	run docker -H $SWARM_HOST --config $1 export $2
-    if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
-        return 3
-    fi
+#	return 0  #temporary fix to all tests to run until we support all the container commands
+#	run docker -H $SWARM_HOST --config $1 attach $2	
+#   if !( [ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]] ); then
+#       return 200
+#   fi
+#   if !([ "$status" -ne 0 ] ); then
+#        return 1
+#    fi
+#    if !([[ "$output" == *"$NOTAUTHORIZED"* ]]); then
+#        return 100
+#    fi
+#	run docker -H $SWARM_HOST --config $1 exec $2 ls
+#    if !( [ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]] ); then
+#        return 2
+#    fi
+#	run docker -H $SWARM_HOST --config $1 export $2
+#    if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
+#        return 3
+#    fi
 	run docker -H $SWARM_HOST --config $1 inspect $2
     if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
         return 4
@@ -97,14 +96,14 @@ notAuthorized() {
     if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
         return 9
     fi
-	run docker -H $SWARM_HOST --config $1 rename $2 "foo"
-    if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
-        return 10
-    fi
-	run docker -H $SWARM_HOST --config $1 restart $2
-    if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
-        return 11
-    fi
+#	run docker -H $SWARM_HOST --config $1 rename $2 "foo"
+#    if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
+#        return 10
+#    fi
+#	run docker -H $SWARM_HOST --config $1 restart $2
+#   if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
+#       return 11
+#   fi
 	run docker -H $SWARM_HOST --config $1 rm $2
     if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
         return 12
@@ -113,14 +112,14 @@ notAuthorized() {
     if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
         return 13
     fi
-	run docker -H $SWARM_HOST --config $1 stats $2
-    if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
-        return 14
-    fi
-	run docker -H $SWARM_HOST --config $1 top $2
-    if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
-        return 15
-    fi
+#	run docker -H $SWARM_HOST --config $1 stats $2
+#   if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
+#        return 14
+#   fi
+#    run docker -H $SWARM_HOST --config $1 top $2
+#    if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
+#        return 15
+#    fi
 	run docker -H $SWARM_HOST --config $1 unpause $2
     if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
         return 16
@@ -129,10 +128,10 @@ notAuthorized() {
     if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
         return 17
     fi
-	run docker -H $SWARM_HOST --config $1 wait $2
-    if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
-        return 18
-    fi
+#    run docker -H $SWARM_HOST --config $1 wait $2
+#    if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
+#       return 18
+#    fi
 	run docker -H $SWARM_HOST --config $1 stop $2
     if !([ "$status" -ne 0 ] && [[ "$output" == *"$NOTAUTHORIZED"* ]]); then
         return 19
