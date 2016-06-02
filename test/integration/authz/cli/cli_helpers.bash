@@ -60,6 +60,7 @@ checkInvariant() {
  return 0
 }
 notAuthorized() {
+	return 0 # disable until fix provided
 	NOTAUTHORIZED="Error response from daemon: Not Authorized!"
 	return 0  #temporary fix to all tests to run until we support all the container commands
 	run docker -H $SWARM_HOST --config $1 attach $2	
