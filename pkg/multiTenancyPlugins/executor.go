@@ -3,13 +3,11 @@ package multiTenancyPlugins
 import (
 	"net/http"
 	"os"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authentication"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/flavors"
-	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization/utils"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/naming"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
