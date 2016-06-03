@@ -32,7 +32,7 @@ func (t *Tasks) Add(task *Task) {
 	}
 }
 
-// Remove an Task from the tasks
+// Remove a Task from the tasks
 func (t *Tasks) Remove(tasks ...*Task) {
 	t.Lock()
 	t.remove(tasks...)
