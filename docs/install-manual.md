@@ -16,7 +16,7 @@ This page teaches you to deploy a high-availability Docker Swarm cluster.
 Although the example installation uses the Amazon Web Services (AWS) platform,
 you can deploy an equivalent Docker Swarm cluster on many other platforms. In this example, you do the following:
 
-- [Verify you have the prequisites](#prerequisites)
+- [Verify you have the prerequisites](#prerequisites)
 - [Establish basic network security](#step-1-add-network-security-rules)
 - [Create your nodes](#step-2-create-your-instances)
 - [Install Engine on each node](#step-3-install-engine-on-each-node)
