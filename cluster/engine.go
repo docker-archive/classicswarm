@@ -945,17 +945,16 @@ func (e *Engine) CreateNetwork(name string, request *types.NetworkCreate) (*type
 }
 
 // CreateVolume creates a volume in the engine
-func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*Volume, error) {
+func (e *Engine) CreateVolume(request *types.VolumeCreateRequest) (*types.Volume, error) {
 	volume, err := e.apiClient.VolumeCreate(context.Background(), *request)
-
-	e.RefreshVolumes()
 	e.CheckConnectionErr(err)
-
 	if err != nil {
 		return nil, err
 	}
-	return &Volume{Volume: volume, Engine: e}, nil
 
+	e.RefreshVolumes()
+
+	return &volume, err
 }
 
 // encodeAuthToBase64 serializes the auth configuration as JSON base64 payload
