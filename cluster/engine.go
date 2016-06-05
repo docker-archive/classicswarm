@@ -1152,6 +1152,13 @@ func (e *Engine) handler(msg events.Message) error {
 		default:
 			e.refreshContainer(msg.ID, false)
 		}
+	case "daemon":
+		// docker 1.12 started to support daemon events
+		// https://github.com/docker/docker/pull/22590
+		switch msg.Action {
+		case "reload":
+			e.updateSpecs()
+		}
 	case "":
 		// docker < 1.10
 		switch msg.Status {
