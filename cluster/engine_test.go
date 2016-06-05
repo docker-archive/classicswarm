@@ -45,7 +45,7 @@ var (
 	}
 
 	mockVersion = types.Version{
-		Version: "1.6.2",
+		Version: "1.8.2",
 	}
 
 	engOpts = &EngineOpts{

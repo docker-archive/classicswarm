@@ -37,7 +37,7 @@ const (
 	thresholdTime = 2 * time.Second
 
 	// Minimum docker engine version supported by swarm.
-	minSupportedVersion = version.Version("1.6.0")
+	minSupportedVersion = version.Version("1.8.0")
 )
 
 type engineState int
@@ -432,13 +432,9 @@ func (e *Engine) CheckConnectionErr(err error) {
 
 // Update API Version in apiClient
 func (e *Engine) updateClientVersionFromServer(serverVersion string) {
-	// v will be >= 1.6, since this is checked earlier
+	// v will be >= 1.8, since this is checked earlier
 	v := version.Version(serverVersion)
 	switch {
-	case v.LessThan(version.Version("1.7")):
-		e.apiClient.UpdateClientVersion("1.18")
-	case v.LessThan(version.Version("1.8")):
-		e.apiClient.UpdateClientVersion("1.19")
 	case v.LessThan(version.Version("1.9")):
 		e.apiClient.UpdateClientVersion("1.20")
 	case v.LessThan(version.Version("1.10")):
