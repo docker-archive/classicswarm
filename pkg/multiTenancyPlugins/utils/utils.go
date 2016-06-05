@@ -95,6 +95,7 @@ func RandStringBytesRmndr(n int) string {
 //Maybe merge to one regExp
 var containers = regexp.MustCompile(`/containers/(.*)`)
 var containersWithIdentifier = regexp.MustCompile(`/containers/(.*)/(.*)`)
+var networks = regexp.MustCompile(`/networks/(.*)`)
 
 //TODO - Do the same for networks, images, and so on. What is not supported will fail because of the generic message will go to default
 
@@ -103,6 +104,7 @@ func commandParser(r *http.Request) string {
 
 	paramsArr1 := containers.FindStringSubmatch(r.URL.Path)
 	paramsArr2 := containersWithIdentifier.FindStringSubmatch(r.URL.Path)
+	networksParams := networks.FindStringSubmatch(r.URL.Path)
 	//assert the it is not possible for two of them to co-Exist
 
 	log.Debug(paramsArr1)
@@ -125,6 +127,12 @@ func commandParser(r *http.Request) string {
 			return "listContainers"
 		}
 		return "container" + paramsArr1[1]
+	}
+	
+	if len(networksParams) == 2 {
+		if networksParams[1] == "create"{
+			return "createNetwork"
+		}
 	}
 
 	if strings.HasSuffix(r.URL.Path, "/networks") {
@@ -151,7 +159,7 @@ func FilterNetworks(r *http.Request, rec *httptest.ResponseRecorder) []byte {
 		fullName := strings.SplitN(network.Name, "/", 2)
 		name := fullName[len(fullName)-1]
 		if strings.HasPrefix(name, tenantName) {
-			network.Name = strings.TrimLeft(name, tenantName)
+			network.Name = strings.TrimPrefix(name, tenantName)
 			candidates = append(candidates, network)
 		}
 	}
