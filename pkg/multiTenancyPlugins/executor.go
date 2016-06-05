@@ -8,6 +8,7 @@ import (
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/quota"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authentication"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/authorization"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/apifilter"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/flavors"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/naming"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
@@ -44,7 +45,8 @@ func (*Executor) Init() {
 		authorizationPlugin := authorization.NewAuthorization(quotaPlugin.Handle)
 		nameScoping := namescoping.NewNameScoping(authorizationPlugin.Handle)
 		flavorsPlugin := flavors.NewPlugin(nameScoping.Handle)
-		authenticationPlugin := authentication.NewAuthentication(flavorsPlugin.Handle)
+		apiFilterPlugin := apifilter.NewPlugin(flavorsPlugin.Handle)
+		authenticationPlugin := authentication.NewAuthentication(apiFilterPlugin.Handle)
 		startHandler = authenticationPlugin.Handle
 	}
 }
