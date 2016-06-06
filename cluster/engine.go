@@ -443,6 +443,19 @@ func (e *Engine) CheckConnectionErr(err error) {
 	// other errors may be ambiguous.
 }
 
+// EngineToContainerNode constructs types.ContainerNode from engine
+func (e *Engine) EngineToContainerNode() *types.ContainerNode {
+	return &types.ContainerNode{
+		ID:        e.ID,
+		IPAddress: e.IP,
+		Addr:      e.Addr,
+		Name:      e.Name,
+		Cpus:      int(e.Cpus),
+		Memory:    int64(e.Memory),
+		Labels:    e.Labels,
+	}
+}
+
 // Update API Version in apiClient
 func (e *Engine) updateClientVersionFromServer(serverVersion string) {
 	// v will be >= 1.8, since this is checked earlier
@@ -1409,6 +1422,28 @@ func (e *Engine) StartContainer(container *Container, hostConfig *dockerclient.H
 	}
 
 	return err
+}
+
+// InspectContainer inspects a container
+func (e *Engine) InspectContainer(id string) (*types.ContainerJSON, error) {
+	container, err := e.apiClient.ContainerInspect(context.Background(), id)
+	e.CheckConnectionErr(err)
+	if err != nil {
+		return nil, err
+	}
+
+	return &container, nil
+}
+
+// CreateContainerExec creates a container exec
+func (e *Engine) CreateContainerExec(id string, config types.ExecConfig) (types.IDResponse, error) {
+	execCreateResp, err := e.apiClient.ContainerExecCreate(context.Background(), id, config)
+	e.CheckConnectionErr(err)
+	if err != nil {
+		return types.IDResponse{}, err
+	}
+
+	return execCreateResp, nil
 }
 
 // RenameContainer renames a container
