@@ -1176,10 +1176,9 @@ func postTagImage(c *context, w http.ResponseWriter, r *http.Request) {
 
 	repo := r.Form.Get("repo")
 	tag := r.Form.Get("tag")
-	force := boolValue(r, "force")
 
 	// call cluster tag image
-	if err := c.cluster.TagImage(name, repo, tag, force); err != nil {
+	if err := c.cluster.TagImage(name, repo, tag); err != nil {
 		if strings.HasPrefix(err.Error(), "No such image") {
 			httpError(w, err.Error(), http.StatusNotFound)
 			return
