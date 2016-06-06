@@ -252,6 +252,8 @@ type Info struct {
 	ClusterStore       string
 	ClusterAdvertise   string
 	SecurityOptions    []string
+	Runtimes           map[string]Runtime
+	DefaultRuntime     string
 }
 
 // PluginsInfo is a temp struct holding Plugins name
@@ -274,6 +276,28 @@ type ExecStartCheck struct {
 	Tty bool
 }
 
+// HealthcheckResult stores information about a single run of a healthcheck probe
+type HealthcheckResult struct {
+	Start    time.Time // Start is the time this check started
+	End      time.Time // End is the time this check ended
+	ExitCode int       // ExitCode meanings: 0=healthy, 1=unhealthy, 2=starting, else=error running probe
+	Output   string    // Output from last check
+}
+
+// Health states
+const (
+	Starting  = "starting"  // Starting indicates that the container is not yet ready
+	Healthy   = "healthy"   // Healthy indicates that the container is running correctly
+	Unhealthy = "unhealthy" // Unhealthy indicates that the container has a problem
+)
+
+// Health stores information about the container's healthcheck results
+type Health struct {
+	Status        string               // Status is one of Starting, Healthy or Unhealthy
+	FailingStreak int                  // FailingStreak is the number of consecutive failures
+	Log           []*HealthcheckResult // Log contains the last few results (oldest first)
+}
+
 // ContainerState stores container's running state
 // it's part of ContainerJSONBase and will return by "inspect" command
 type ContainerState struct {
@@ -288,6 +312,7 @@ type ContainerState struct {
 	Error      string
 	StartedAt  string
 	FinishedAt string
+	Health     *Health `json:",omitempty"`
 }
 
 // ContainerNode stores information about the node that a container
@@ -416,10 +441,10 @@ type VolumeCreateRequest struct {
 
 // NetworkResource is the body of the "get network" http response message
 type NetworkResource struct {
-	Name       string                      // Name is the requested name of the volume
+	Name       string                      // Name is the requested name of the network
 	ID         string                      `json:"Id"` // ID uniquely indentifies a network on a single machine
 	Scope      string                      // Scope describes the level at which the network exists (e.g. `global` for cluster-wide or `local` for machine level)
-	Driver     string                      // Driver is the Driver name used to create the volume (e.g. `bridge`, `overlay`)
+	Driver     string                      // Driver is the Driver name used to create the network (e.g. `bridge`, `overlay`)
 	EnableIPv6 bool                        // EnableIPv6 represents whether to enable IPv6
 	IPAM       network.IPAM                // IPAM is the network's IP Address Management
 	Internal   bool                        // Internal respresents if the network is used internal only
@@ -475,4 +500,14 @@ type NetworkDisconnect struct {
 // Checkpoint represents the details of a checkpoint
 type Checkpoint struct {
 	Name string // Name is the name of the checkpoint
+}
+
+// DefaultRuntimeName is the reserved name/alias used to represent the
+// OCI runtime being shipped with the docker daemon package.
+var DefaultRuntimeName = "default"
+
+// Runtime describes an OCI runtime
+type Runtime struct {
+	Path string   `json:"path"`
+	Args []string `json:"runtimeArgs,omitempty"`
 }

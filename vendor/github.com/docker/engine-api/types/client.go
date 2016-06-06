@@ -73,6 +73,11 @@ type ContainerRemoveOptions struct {
 	Force         bool
 }
 
+// ContainerStartOptions holds parameters to start containers.
+type ContainerStartOptions struct {
+	CheckpointID string
+}
+
 // CopyToContainerOptions holds information
 // about files to copy into a container
 type CopyToContainerOptions struct {
@@ -213,11 +218,7 @@ type ImageSearchOptions struct {
 	RegistryAuth  string
 	PrivilegeFunc RequestPrivilegeFunc
 	Filters       filters.Args
-}
-
-// ImageTagOptions holds parameters to tag an image
-type ImageTagOptions struct {
-	Force bool
+	Limit         int
 }
 
 // ResizeOptions holds parameters to resize a tty.
