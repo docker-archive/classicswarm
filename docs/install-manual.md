@@ -172,21 +172,20 @@ available to run containers.
 To keep things simple, you are going to run a single consul daemon on the same
 host as one of the Swarm managers.
 
-1. To start, copy the following launch command to a text file.
-
-        $ docker run -d -p 8500:8500 --name=consul progrium/consul -server -bootstrap
-
-2. Use SSH to connect to the `manager0` and `consul0` instance.
+1. Use SSH to connect to the `consul0` instance.
 
         $ ifconfig
 
-3. From the output, copy the `eth0` IP address from `inet addr`.
+2. From the output, copy the `eth0` IP address from `inet addr`.
 
-4. Using SSH, connect to the `manager0` and `consul0` instance.
-
-5. Paste the launch command you created in step 1. into the command line.
+3. Paste the launch command into the command line:
 
         $ docker run -d -p 8500:8500 --name=consul progrium/consul -server -bootstrap
+
+4. Enter `docker ps`.
+
+    From the output, verify that a consul container is running.
+    Then, disconnect from the `consul0` instance.
 
 Your Consul node is up and running, providing your cluster with a discovery
 backend. To increase its reliability, you can create a high-availability cluster
@@ -198,44 +197,48 @@ rules to allow inbound traffic on the required port numbers.)
 
 After creating the discovery backend, you can create the Swarm managers. In this step, you are going to create two Swarm managers in a high-availability configuration. The first manager you run becomes the Swarm's *primary manager*. Some documentation still refers to a primary manager as a "master", but that term has been superseded. The second manager you run serves as a *replica*. If the primary manager becomes unavailable, the cluster elects the replica as the primary manager.
 
-1. To create the primary manager in a high-availability Swarm cluster, use the following syntax:
-
-        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise <manager0_ip>:4000 consul://<consul_ip>:8500
-
-    Because this is particular manager is on the same `manager0` and `consul0`
-    instance as the consul node, replace both `<manager0_ip>` and `<consul_ip>`
-    with the same IP address. For example:
-
-        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.161:4000 consul://172.30.0.161:8500
-
-2. Enter `docker ps`.
-
-    From the output, verify that both a Swarm cluster and a consul container are running.
-    Then, disconnect from the `manager0` and `consul0` instance.
-
-3. Connect to the `manager1` node and use `ifconfig` to get its IP address.
+1. Use SSH to connect to the `manager0` instance and use `ifconfig` to get its IP address.
 
         $ ifconfig
 
-4. Start the secondary Swarm manager using following command.
+2. To create the primary manager in a high-availability Swarm cluster, use the following syntax:
+
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise <manager0_ip>:4000 consul://<consul0_ip>:8500
+
+    Replacing `<manager0_ip>` and `<consul0_ip>` with the IP address from the previous command, for example:
+
+        $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise 172.30.0.125:4000 consul://172.30.0.161:8500
+
+3. Enter `docker ps`.
+
+    From the output, verify that a Swarm cluster container is running.
+    Then, disconnect from the `manager0` instance.
+
+4. Connect to the `manager1` node and use `ifconfig` to get its IP address.
+
+        $ ifconfig
+
+5. Start the secondary Swarm manager using following command.
 
       Replacing `<manager1_ip>` with the IP address from the previous command, for example:
 
         $ docker run -d -p 4000:4000 swarm manage -H :4000 --replication --advertise <manager1_ip>:4000 consul://172.30.0.161:8500
 
-5. Enter `docker ps`to verify that a Swarm container is running.
+6. Enter `docker ps`to verify that a Swarm container is running. Then disconnect from the `manager1` instance.
 
-6. Connect to `node0` and `node1` in turn and join them to the cluster.
+7. Connect to `node0` and `node1` in turn and join them to the cluster.
 
     a. Get the node IP addresses with the `ifconfig` command.
 
     b. Start a Swarm container each using the following syntax:
 
-        docker run -d swarm join --advertise=<node_ip>:2375 consul://<consul_ip>:8500
+        docker run -d swarm join --advertise=<node_ip>:2375 consul://<consul0_ip>:8500
 
       For example:
 
         $ docker run -d swarm join --advertise=172.30.0.69:2375 consul://172.30.0.161:8500
+
+    c. Enter `docker ps` to verify that the Swarm cluster container started from the previous command is running.
 
 Your small Swarm cluster is up and running on multiple hosts, providing you with a high-availability virtual Docker Engine. To increase its reliability and capacity, you can add more Swarm managers, nodes, and a high-availability discovery backend.
 
