@@ -50,24 +50,24 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 
 			r, _ = utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), "", "")
 
-			//			defaultauthZ.nextHandler("containerCreate", cluster, w, r, swarmHandler)
-		}
-		swarmHandler.ServeHTTP(w, r)
+		}	
+		return defaultauthZ.nextHandler(command, cluster, w, r, swarmHandler)
 		log.Debug("Returned from Swarm")
-
 		//In case of container json - should record and clean - consider seperating..
 	case "containerstart", "containerstop", "containerdelete", "containerkill", "containerpause", "containerunpause", "containerupdate", "containercopy", "containerattach", "containerlogs":
 		if !utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
 			return errors.New("Not Authorized!")
 		}
-		swarmHandler.ServeHTTP(w, r)
-
+		return defaultauthZ.nextHandler(command, cluster, w, r, swarmHandler)
 	case "containerjson":
 		if !utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
 			return errors.New("Not Authorized!")
 		}
+		
 		rec := httptest.NewRecorder()
-		swarmHandler.ServeHTTP(rec, r)
+		if err := defaultauthZ.nextHandler(command, cluster, rec, r, swarmHandler); err != nil {
+				return err
+		}
 		/*POST Swarm*/
 		w.WriteHeader(rec.Code)
 		for k, v := range rec.Header() {
@@ -97,10 +97,10 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 			log.Error(e1)
 		}
 		rec := httptest.NewRecorder()
-
+		if err := defaultauthZ.nextHandler(command, cluster, rec, newReq, swarmHandler); err != nil {
+				return err
+		}
 		//TODO - May decide to overrideSwarms handlers.getContainersJSON - this is Where to do it.
-		swarmHandler.ServeHTTP(rec, newReq)
-
 		/*POST Swarm*/
 		w.WriteHeader(rec.Code)
 		for k, v := range rec.Header() {
@@ -113,8 +113,9 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 
 	case "listNetworks":
 		rec := httptest.NewRecorder()
-		swarmHandler.ServeHTTP(rec, r)
-
+		if err := defaultauthZ.nextHandler(command, cluster, rec, r, swarmHandler); err != nil {
+				return err
+		}
 		w.WriteHeader(rec.Code)
 		for k, v := range rec.Header() {
 			w.Header()[k] = v

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-display_usage() { 
+display_usage() {
 	echo "This script is used to launch bats files to test multi-tenant swarm." 
 	echo "Environment variables found in cli.properties must be set to reflect your configuration." 
 	echo -e "\nUsage:\n$0 [options] \n"
@@ -13,7 +13,7 @@ display_usage() {
 	echo -e "-H swarm host url. Defaults to environment variable DOCKER_HOST\n"
 	echo -e "-f bats files and/or directories to run. Defaults to ./ \n"
 	echo -e "-i enable invariant check.\n"
-        exit 0 
+        exit 0
 	}
 AUTH="None"
 INVARIANT=false
@@ -25,17 +25,17 @@ while getopts ":hia:H:f:" opt; do
       display_usage
       ;;
 	a)
-	  AUTH=${OPTARG}	
-	  ;; 
+	  AUTH=${OPTARG}
+	  ;;
 	H)
       SWARM_HOST=${OPTARG}
-	  ;;	
+	  ;;
 	f)
       BAT_FILES=${OPTARG}
 	  ;;
 	i)
 	  INVARIANT=true
-	  ;;	
+	  ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       display_usage
@@ -57,7 +57,7 @@ export PASSWORD_3=secret
 export KEYSTONE_IP=http://cloud.lab.fi-ware.org:4730
 
 if [ -f cli.properties ]
-then  
+then
 . cli.properties
 else
   echo "Info: cli.properties not found. Defaults will be used"
@@ -87,8 +87,8 @@ then
   if [ -z $port ]
   then
     echo "Error: swarm host can not be found."
-	exit 1 
-  fi 
+	exit 1
+  fi
   export SWARM_HOST=tcp://0.0.0.0:$port
 fi
 
@@ -100,7 +100,7 @@ fi
 
 if [ $AUTH == "Keystone" ]
 then
-  path_to_executable=$(which set_docker_conf.bash) 
+  path_to_executable=$(which set_docker_conf.bash)
   if [ ! -x "$path_to_executable" ] ; then
     echo "Error: when authorization in Keystone, set_docker_conf.bash must be excutable in PATH"
     exit 1
@@ -134,6 +134,7 @@ else
 fi
 
 export SWARM_HOST=$SWARM_HOST
+export DOCKER_ENGINE=$DOCKER_ENGINE
 export DOCKER_CONFIG1=${DOCKER_CONFIG1}
 export DOCKER_CONFIG2=${DOCKER_CONFIG2}
 export DOCKER_CONFIG3=${DOCKER_CONFIG3}
@@ -147,6 +148,7 @@ cat "${DOCKER_CONFIG3}/config.json"
 
 
 echo "Info: SWARM_HOST is $SWARM_HOST"
+echo "Info: DOCKER_ENGINE is $DOCKER_ENGINE"
 echo "Info: Authentication Method is $AUTH"
 echo "Info: invariant check enabled: ${INVARIANT}"
 echo "Info: bat files to run: $BAT_FILES"
