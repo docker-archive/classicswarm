@@ -1,4 +1,4 @@
-package kubernetes
+﻿package kubernetes
 
 import (
 	"crypto/tls"
@@ -13,14 +13,13 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/docker/pkg/units"
+	"github.com/docker/engine-api/types"
+	"github.com/docker/go-units"
 	"github.com/samalba/dockerclient"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	clientcmdapi "k8s.io/kubernetes/pkg/client/unversioned/clientcmd/api"
-	"k8s.io/kubernetes/pkg/fields"
-	"k8s.io/kubernetes/pkg/labels"
 
 	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/docker/swarm/cluster"
@@ -93,13 +92,13 @@ func newKubeClient(master string, options cluster.DriverOpts) (*unversioned.Clie
 	}
 
 	log.Infof("Using %s for kubernetes master", config.Host)
-	log.Infof("Using kubernetes API %s", config.Version)
+	log.Infof("Using kubernetes API %s", config.GroupVersion)
 
 	return unversioned.New(config)
 }
 
 // NewCluster create a new Kubernetes cluster based on the given cluster options.
-func NewCluster(TLSConfig *tls.Config, master string, kubeClient unversioned.Interface, options cluster.DriverOpts) (cluster.Cluster, error) {
+func NewCluster(TLSConfig *tls.Config, master string, kubeClient unversioned.Interface, options cluster.DriverOpts, engineOptions *cluster.EngineOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "kubernetes"}).Debug("Initializing cluster")
 	log.Infof("Kubernetes master: %s", master)
 
@@ -111,7 +110,7 @@ func NewCluster(TLSConfig *tls.Config, master string, kubeClient unversioned.Int
 		}
 	}
 
-	engines, err := dockerEngines(kubeClient)
+	engines, err := dockerEngines(kubeClient, engineOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -132,9 +131,13 @@ func NewCluster(TLSConfig *tls.Config, master string, kubeClient unversioned.Int
 	return cluster, nil
 }
 
+func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *dockerclient.HostConfig) error {
+	return container.Engine.StartContainer(container.ID, hostConfig)
+}
+
 // CreateContainer creates a pod in a Kubernetes cluster running a single container
 // based on the given container config.
-func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string) (*cluster.Container, error) {
+func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *types.AuthConfig) (*cluster.Container, error) {
 	pods := c.kubeClient.Pods(api.NamespaceDefault)
 
 	if name == "" {
@@ -276,23 +279,23 @@ func (c *Cluster) Images() cluster.Images {
 }
 
 // Info gives minimal information about containers and resources on the kubernetes cluster
-func (c *Cluster) Info() [][]string {
-	info := [][]string{
+func (c *Cluster) Info() [][2]string {
+	info := [][2]string{
 		{"\bKubernetes Version", ""},
 		{"\bNodes", fmt.Sprintf("%d", len(c.engines))},
 	}
 
 	for _, engine := range c.engines {
-		info = append(info, []string{engine.Name, engine.Addr})
-		info = append(info, []string{" └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
-		info = append(info, []string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
-		info = append(info, []string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
+		info = append(info, [2]string{engine.Name, engine.Addr})
+		info = append(info, [2]string{" └ Containers", fmt.Sprintf("%d", len(engine.Containers()))})
+		info = append(info, [2]string{" └ Reserved CPUs", fmt.Sprintf("%d / %d", engine.UsedCpus(), engine.TotalCpus())})
+		info = append(info, [2]string{" └ Reserved Memory", fmt.Sprintf("%s / %s", units.BytesSize(float64(engine.UsedMemory())), units.BytesSize(float64(engine.TotalMemory())))})
 		labels := make([]string, 0, len(engine.Labels))
 		for k, v := range engine.Labels {
 			labels = append(labels, k+"="+v)
 		}
 		sort.Strings(labels)
-		info = append(info, []string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
+		info = append(info, [2]string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
 	}
 	return info
 }
@@ -301,7 +304,7 @@ func (c *Cluster) Info() [][]string {
 func (c *Cluster) TotalCpus() int64 {
 	c.RLock()
 	defer c.RUnlock()
-	nodes, err := c.kubeClient.Nodes().List(labels.Everything(), fields.Everything())
+	nodes, err := c.kubeClient.Nodes().List(api.ListOptions{})
 	if err != nil {
 		log.Error(err)
 		return 0
@@ -318,7 +321,7 @@ func (c *Cluster) TotalCpus() int64 {
 func (c *Cluster) TotalMemory() int64 {
 	c.RLock()
 	defer c.RUnlock()
-	nodes, err := c.kubeClient.Nodes().List(labels.Everything(), fields.Everything())
+	nodes, err := c.kubeClient.Nodes().List(api.ListOptions{})
 	if err != nil {
 		log.Error(err)
 		return 0
@@ -332,7 +335,7 @@ func (c *Cluster) TotalMemory() int64 {
 }
 
 // BuildImage build an image.
-func (c *Cluster) BuildImage(buildImage *dockerclient.BuildImage, out io.Writer) error {
+func (c *Cluster) BuildImage(io.Reader, *types.ImageBuildOptions, io.Writer) error {
 	return errNotImplemented
 }
 
@@ -342,7 +345,7 @@ func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool)
 }
 
 // CreateVolume creates a volume in the cluster.
-func (c *Cluster) CreateVolume(request *dockerclient.VolumeCreateRequest) (*cluster.Volume, error) {
+func (c *Cluster) CreateVolume(request *types.VolumeCreateRequest) (*types.Volume, error) {
 	return nil, errNotSupported
 }
 
@@ -357,12 +360,12 @@ func (c *Cluster) Volume(name string) *cluster.Volume {
 }
 
 // Volumes returns all the volumes in the cluster.
-func (c *Cluster) Volumes() []*cluster.Volume {
+func (c *Cluster) Volumes() cluster.Volumes {
 	return nil
 }
 
 // Pull will pull images on the cluster nodes.
-func (c *Cluster) Pull(name string, authConfig *dockerclient.AuthConfig, callback func(where, status string, err error)) {
+func (c *Cluster) Pull(name string, authConfig *types.AuthConfig, callback func(where, status string, err error)) {
 }
 
 // Load images loads an images on the cluster nodes.
@@ -383,8 +386,12 @@ func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 	return nil
 }
 
+// Unregister an event handler.
+func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
+}
+
 // RemoveImages removes images from the cluster.
-func (c *Cluster) RemoveImages(name string, force bool) ([]*dockerclient.ImageDelete, error) {
+func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, error) {
 	return nil, errNotSupported
 }
 
@@ -394,7 +401,7 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 }
 
 // CreateNetwork creates a network in the cluster.
-func (c *Cluster) CreateNetwork(request *dockerclient.NetworkCreate) (*dockerclient.NetworkCreateResponse, error) {
+func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
 	return nil, errNotSupported
 }
 
@@ -429,10 +436,10 @@ func formatContainerID(id string) string {
 }
 
 // dockerEngines returns the docker engines in the Kubernetes cluster.
-func dockerEngines(client unversioned.Interface) (map[string]*cluster.Engine, error) {
+func dockerEngines(client unversioned.Interface, engineOpts *cluster.EngineOpts) (map[string]*cluster.Engine, error) {
 	engines := make(map[string]*cluster.Engine)
 
-	nodes, err := client.Nodes().List(labels.Everything(), fields.Everything())
+	nodes, err := client.Nodes().List(api.ListOptions{})
 	if err != nil {
 		return engines, err
 	}
@@ -444,7 +451,7 @@ func dockerEngines(client unversioned.Interface) (map[string]*cluster.Engine, er
 				host = address.Address
 			}
 		}
-		engine := cluster.NewEngine(net.JoinHostPort(host, defaultDockerEnginePort), 0)
+		engine := cluster.NewEngine(net.JoinHostPort(host, defaultDockerEnginePort), 0, engineOpts)
 		engines[node.ObjectMeta.Name] = engine
 	}
 	return engines, nil
