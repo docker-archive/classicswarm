@@ -157,7 +157,7 @@ func (client *NopClient) ContainerStats(ctx context.Context, container string, s
 }
 
 // ContainerStart sends a request to the docker daemon to start a container
-func (client *NopClient) ContainerStart(ctx context.Context, container string, checkpointID string) error {
+func (client *NopClient) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
 	return errNoEngine
 }
 
@@ -262,7 +262,7 @@ func (client *NopClient) ImageSave(ctx context.Context, images []string) (io.Rea
 }
 
 // ImageTag tags an image in the docker host
-func (client *NopClient) ImageTag(ctx context.Context, image, ref string, options types.ImageTagOptions) error {
+func (client *NopClient) ImageTag(ctx context.Context, image, ref string) error {
 	return errNoEngine
 }
 

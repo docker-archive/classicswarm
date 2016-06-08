@@ -98,5 +98,5 @@ type Cluster interface {
 	BuildImage(io.Reader, *types.ImageBuildOptions, io.Writer) error
 
 	// Tag an image
-	TagImage(IDOrName string, repo string, tag string, force bool) error
+	TagImage(IDOrName string, repo string, tag string) error
 }

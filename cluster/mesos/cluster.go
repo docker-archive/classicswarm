@@ -675,6 +675,6 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 }
 
 // TagImage tags an image
-func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
+func (c *Cluster) TagImage(IDOrName string, repo string, tag string) error {
 	return errNotSupported
 }

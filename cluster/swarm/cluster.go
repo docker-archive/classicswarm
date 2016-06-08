@@ -938,7 +938,7 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 }
 
 // TagImage tags an image
-func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
+func (c *Cluster) TagImage(IDOrName string, repo string, tag string) error {
 	c.RLock()
 	defer c.RUnlock()
 
@@ -949,7 +949,7 @@ func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool)
 		for _, image := range e.Images() {
 			if image.Match(IDOrName, true) {
 				found = true
-				err := image.Engine.TagImage(IDOrName, repo, tag, force)
+				err := image.Engine.TagImage(IDOrName, repo, tag)
 				if err != nil {
 					errs = append(errs, fmt.Sprintf("%s: %s", image.Engine.Name, err.Error()))
 					continue

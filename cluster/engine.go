@@ -1242,8 +1242,12 @@ func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) 
 	if hostConfig != nil {
 		err = e.client.StartContainer(id, hostConfig)
 	} else {
-		// TODO(nishanttotla): Figure out what the checkpoint id (second string argument) should be
-		err = e.apiClient.ContainerStart(context.Background(), id, "")
+		// TODO(nishanttotla): Figure out what the checkpoint id should be
+		opts := types.ContainerStartOptions{
+			CheckpointID: "",
+		}
+
+		err = e.apiClient.ContainerStart(context.Background(), id, opts)
 	}
 	e.CheckConnectionErr(err)
 	if err != nil {
@@ -1280,11 +1284,7 @@ func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuild
 }
 
 // TagImage tags an image
-func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) error {
-	// send tag request to docker engine
-	opts := types.ImageTagOptions{
-		Force: force,
-	}
+func (e *Engine) TagImage(IDOrName string, repo string, tag string) error {
 	// TODO(nishanttotla): There might be a better way to pass a ref string than construct it here
 
 	// generate ref string
@@ -1296,7 +1296,7 @@ func (e *Engine) TagImage(IDOrName string, repo string, tag string, force bool) 
 			ref += ":" + tag
 		}
 	}
-	err := e.apiClient.ImageTag(context.Background(), IDOrName, ref, opts)
+	err := e.apiClient.ImageTag(context.Background(), IDOrName, ref)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err

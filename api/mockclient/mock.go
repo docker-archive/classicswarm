@@ -179,8 +179,8 @@ func (client *MockClient) ContainerStats(ctx context.Context, container string, 
 }
 
 // ContainerStart sends a request to the docker daemon to start a container
-func (client *MockClient) ContainerStart(ctx context.Context, container string, checkpointID string) error {
-	args := client.Mock.Called(ctx, container, checkpointID)
+func (client *MockClient) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
+	args := client.Mock.Called(ctx, container, options)
 	return args.Error(0)
 }
 
@@ -305,8 +305,8 @@ func (client *MockClient) ImageSave(ctx context.Context, images []string) (io.Re
 }
 
 // ImageTag tags an image in the docker host
-func (client *MockClient) ImageTag(ctx context.Context, image, ref string, options types.ImageTagOptions) error {
-	args := client.Mock.Called(ctx, image, ref, options)
+func (client *MockClient) ImageTag(ctx context.Context, image, ref string) error {
+	args := client.Mock.Called(ctx, image, ref)
 	return args.Error(0)
 }
 
