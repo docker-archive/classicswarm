@@ -233,10 +233,9 @@ func (quota *QuotaMgmt) refreshLoop(cluster cluster.Cluster) {
 //remove quotas containers with NONE status which are in quotas but not in cluster containers or tenant
 func (quota *QuotaMgmt) HandleMissingQuotaCont(clusterQuotas map[string]QuotaMgmt, tenantsDeltaMem map[string]int64) {
 	var qp ResourceList
+	var tenantClusterMemory int64
 	//remove quotas containers with NONE status which are in quotas but not in cluster containers or tenant
 	for key, value := range quotas {	//for all quota tenants
-		//_, used_ret , _,_ := quotaService.GetRQ(key,"","")
-		//log.Debug("Quota::refreshLoop tenant ",key," used quota = ",used_ret)
 		for keycont, valuecont := range value.containers{	//for all quota tenant containers
 			if valuecont.Status == NONE { //with status NONE - not PENDING_DELETED
 				if tenantclusterQuota, ok := clusterQuotas[key]; ok {
@@ -253,15 +252,35 @@ func (quota *QuotaMgmt) HandleMissingQuotaCont(clusterQuotas map[string]QuotaMgm
 				quotaMgmt.DeleteContainer(key, valuecont.Memory, keycont) //delete container id with PENDING_DELETED status
 			}
 		}
-		if tenantsDeltaMem[key] != 0 { //quota changed - need to update service
+	}
+	//updating quota service tenant memory according to clusters containers
+	if len(clusterQuotas) == 0 {
+		for key, _ := range quotas {
 			_, used_ret , _,_ := quotaService.GetRQ(key,"","")
-			if tenantsDeltaMem[key] != used_ret.memory {
-				qp.memory = tenantsDeltaMem[key] //increase or decrease memory
+			if used_ret.memory != 0 {
+				qp.memory = used_ret.memory*-1
 				err := quotaService.UpdateRQUsed(key,"","",qp)
 				if err != nil {
 					log.Error(err)
 				}	
-			}	
+			}
+		}
+	}
+	
+	for key, _ := range clusterQuotas {
+		if tenantclusterQuota, ok := clusterQuotas[key]; ok {
+			for _, valcont := range tenantclusterQuota.containers {
+				tenantClusterMemory = tenantClusterMemory + valcont.Memory
+			}
+			_, used_ret , _,_ := quotaService.GetRQ(key,"","")
+			if tenantClusterMemory != used_ret.memory { 
+				qp.memory = tenantClusterMemory - used_ret.memory //increase or decrease delta memory
+				err := quotaService.UpdateRQUsed(key,"","",qp)
+				if err != nil {
+					log.Error(err)
+				}	
+			}
+			tenantClusterMemory = 0	
 		}
 	}
 }
