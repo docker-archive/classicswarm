@@ -90,6 +90,7 @@ func newKubeClient(master string, options cluster.DriverOpts) (*unversioned.Clie
 	if err != nil {
 		return nil, err
 	}
+	config.Host = master
 
 	log.Infof("Using %s for kubernetes master", config.Host)
 	log.Infof("Using kubernetes API %s", config.GroupVersion)
