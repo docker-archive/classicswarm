@@ -40,7 +40,7 @@ When you create the Swarm node, use the `<discovery>` argument to specify one of
 
 * `token://<token>`
 * `consul://<ip1>/<path>`
-* `etcd://<ip1>,<ip2>,<ip2>/<path>`
+* `etcd://<ip1>,<ip2>,<ip3>/<path>`
 * `file://<path/to/file>`
 * `zk://<ip1>,<ip2>/<path>`
 * `[nodes://]<iprange>,<iprange>`
