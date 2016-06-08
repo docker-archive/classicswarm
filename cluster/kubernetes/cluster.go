@@ -1,4 +1,4 @@
-﻿package kubernetes
+package kubernetes
 
 import (
 	"crypto/tls"
