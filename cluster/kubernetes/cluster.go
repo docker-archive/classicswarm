@@ -132,6 +132,7 @@ func NewCluster(TLSConfig *tls.Config, master string, kubeClient unversioned.Int
 	return cluster, nil
 }
 
+// StartContainer starts a container in the cluster
 func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *dockerclient.HostConfig) error {
 	return container.Engine.StartContainer(container.ID, hostConfig)
 }
@@ -187,7 +188,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		time.Sleep(1 * time.Second)
 	}
 
-	return c.Container(formatContainerID(containerStatus.ContainerID)), nil
+	return c.Container(pod.ObjectMeta.Name), nil
 }
 
 // RemoveContainer removes a pod from a Kubernetes cluster based on value of the
@@ -281,6 +282,7 @@ func (c *Cluster) Images() cluster.Images {
 
 // Info gives minimal information about containers and resources on the kubernetes cluster
 func (c *Cluster) Info() [][2]string {
+	log.Debug("Getting info from Kubernetes cluster")
 	info := [][2]string{
 		{"\bKubernetes Version", ""},
 		{"\bNodes", fmt.Sprintf("%d", len(c.engines))},
@@ -298,6 +300,7 @@ func (c *Cluster) Info() [][2]string {
 		sort.Strings(labels)
 		info = append(info, [2]string{" └ Labels", fmt.Sprintf("%s", strings.Join(labels, ", "))})
 	}
+	log.Debugf("Info: %+v", info)
 	return info
 }
 
@@ -387,7 +390,7 @@ func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 	return nil
 }
 
-// Unregister an event handler.
+// UnregisterEventHandler an event handler.
 func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 }
 
@@ -422,7 +425,7 @@ func (c *Cluster) containerIDFromPod(name string) (string, error) {
 	pods := c.kubeClient.Pods(api.NamespaceDefault)
 	pod, err := pods.Get(name)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Error extracting container ID from pod: %v", err)
 	}
 	if pod != nil {
 		return formatContainerID(pod.Status.ContainerStatuses[0].ContainerID), nil
@@ -453,6 +456,7 @@ func dockerEngines(client unversioned.Interface, engineOpts *cluster.EngineOpts)
 			}
 		}
 		engine := cluster.NewEngine(net.JoinHostPort(host, defaultDockerEnginePort), 0, engineOpts)
+		engine.Name = node.ObjectMeta.Name
 		engines[node.ObjectMeta.Name] = engine
 	}
 	return engines, nil
