@@ -1,0 +1,54 @@
+package apifilter
+
+var apiImplementedMap map[string]bool
+func init() {
+	apiImplementedMap = make(map[string]bool)
+	apiImplementedMap["containercreate"] = true
+	apiImplementedMap["containerstart"] = true
+	apiImplementedMap["containerattach"] = true
+	apiImplementedMap["containerbuild"] = true
+	apiImplementedMap["imagecommit"] = false
+	apiImplementedMap["containercreate"] = true
+	apiImplementedMap["containercopy"] = true
+	apiImplementedMap["containerdiff"] = false
+	apiImplementedMap["containerevents"] = false
+	apiImplementedMap["containerexec"] = false
+	apiImplementedMap["containerexport"] = false
+	apiImplementedMap["imagehistory"] = false
+	apiImplementedMap["imageimport"] = false
+	apiImplementedMap["clusterInfo"] = true
+	apiImplementedMap["containerjson"] = true
+	apiImplementedMap["containerkill"] = true
+	apiImplementedMap["imageload"] = false	
+	apiImplementedMap["serverlogin"] = false
+	apiImplementedMap["serverlogout"] = false
+	apiImplementedMap["containerlogs"] = true
+	apiImplementedMap["networkconnect"] = false
+	apiImplementedMap["networkcreate"] = false
+	apiImplementedMap["networkdisconnect"] = false
+	apiImplementedMap["listNetworks"] = true
+	apiImplementedMap["networkremove"] = false
+	apiImplementedMap["containerpause"] = true	
+	apiImplementedMap["containertport"] = true
+	apiImplementedMap["listContainers"] = true
+	apiImplementedMap["imagepull"] = false
+	apiImplementedMap["imagepush"] = false
+	apiImplementedMap["containerrename"] = false
+	apiImplementedMap["imageremove"] = false
+	apiImplementedMap["containerdelete"] = true
+	apiImplementedMap["imagesave"] = false
+	apiImplementedMap["imagesearch"] = false
+	apiImplementedMap["containerstart"] = true
+	apiImplementedMap["containerstop"] = true
+	apiImplementedMap["imagetag"] = false
+	apiImplementedMap["containertop"] = false
+	apiImplementedMap["containerunpause"] = true
+	apiImplementedMap["containerupdate"] = true
+	apiImplementedMap["version"] = false	
+	apiImplementedMap["volumecreate"] = false
+	apiImplementedMap["volumeinspect"] = false
+	apiImplementedMap["volumelist"] = false
+	apiImplementedMap["volumeremove"] = false
+	apiImplementedMap["containerwait"] = false
+
+}

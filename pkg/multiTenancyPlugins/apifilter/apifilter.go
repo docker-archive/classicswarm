@@ -5,7 +5,9 @@ import (
 	"errors"
 	"encoding/json"
 	"net/http"
+	"io/ioutil"
 	"os"
+	"gopkg.in/yaml.v2"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 	"github.com/docker/swarm/cluster"
 
@@ -25,7 +27,7 @@ func NewPlugin(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 type Apifilter struct{}
 
 
-type apiSupportedType struct {
+type apiDisabledType struct {
 	Attach bool
 	Build bool
 	Commit bool
@@ -75,15 +77,45 @@ type apiSupportedType struct {
 	Wait bool
 }
 
-var apiSupported apiSupportedType
+var apiDisabled apiDisabledType
 
-var apiSupportedMap map[string]bool
+var apiDisabledMap map[string]bool
+
+
 
 
 
 func init() {
 	log.Info("apifliter.init()")
-	readApiSupportedFile()
+	//readApiSupportedFile()
+	readApiFilter()
+}
+
+func readApiFilter() {
+	log.Info("apifilter.readApiFilterFile() ..........")
+	type Apifilteryaml struct {
+		DisableAPI []string	
+    }
+	var config Apifilteryaml
+	var f = os.Getenv("SWARM_API_FILTER_FILE")
+	if f == "" {
+		log.Warn("Missing SWARM_API_FILTER_FILE environment variable, using locate default ./apifiler.json")
+		f = "apifilter.yaml"
+	}
+	log.Info("SWARM_API_FILTER_FILE: ",f)
+
+	//file, err := os.Open(f)
+	source, err := ioutil.ReadFile(f)
+	if err != nil {
+		log.Info("NO SWARM_API_FILTER_FILE")
+		return
+	}
+	err = yaml.Unmarshal(source, &config)
+    if err != nil {
+        panic(err)
+    }
+	//log.Infof("DisableAPI %+v",config.DisableAPI)
+	apiDisabledMap = make(map[string]bool)
 }
 
 func readApiSupportedFile() {
@@ -102,65 +134,67 @@ func readApiSupportedFile() {
 	}
 
 	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&apiSupported)
+	err = decoder.Decode(&apiDisabled)
 	if err != nil {
 		log.Fatal("Error in apiSupported decode:", err)
 		panic("Error: could not decode apiSupported ")
 	}
-	log.Infof("apiSupported %+v",apiSupported)
-	apiSupportedMap = make(map[string]bool)
-	apiSupportedMap["containerattach"] = apiSupported.Attach
-	apiSupportedMap["containerbuild"] = apiSupported.Build
-	apiSupportedMap["imagecommit"] = apiSupported.Commit
-	apiSupportedMap["containercreate"] = apiSupported.Create
-	apiSupportedMap["containercopy"] = apiSupported.Cp
-	apiSupportedMap["containerdiff"] = apiSupported.Diff
-	apiSupportedMap["containerevents"] = apiSupported.Events
-	apiSupportedMap["containerexec"] = apiSupported.Exec
-	apiSupportedMap["containerexport"] = apiSupported.Export
-	apiSupportedMap["imagehistory"] = apiSupported.History
-	apiSupportedMap["imageimport"] = apiSupported.Import
-	apiSupportedMap["clusterInfo"] = apiSupported.Info
-	apiSupportedMap["containerjson"] = apiSupported.Inspect
-	apiSupportedMap["containerkill"] = apiSupported.Kill
-	apiSupportedMap["imageload"] = apiSupported.Load	
-	apiSupportedMap["serverlogin"] = apiSupported.Login
-	apiSupportedMap["serverlogout"] = apiSupported.Logout
-	apiSupportedMap["containerlogs"] = apiSupported.Logs
-	apiSupportedMap["networkconnect"] = apiSupported.Network_connect
-	apiSupportedMap["networkcreate"] = apiSupported.Network_create
-	apiSupportedMap["networkdisconnect"] = apiSupported.Network_disconnect
-	apiSupportedMap["listNetworks"] = apiSupported.Network_ls
-	apiSupportedMap["networkremove"] = apiSupported.Network_rm
-	apiSupportedMap["containerpause"] = apiSupported.Pause	
-	apiSupportedMap["containertport"] = apiSupported.Port
-	apiSupportedMap["listContainers"] = apiSupported.Ps
-	apiSupportedMap["imagepull"] = apiSupported.Pull
-	apiSupportedMap["imagepush"] = apiSupported.Push
-	apiSupportedMap["containerrename"] = apiSupported.Rename
-	apiSupportedMap["imageremove"] = apiSupported.Rmi
-	apiSupportedMap["containerdelete"] = apiSupported.Rm
-	apiSupportedMap["containerrun"] = apiSupported.Run
-	apiSupportedMap["imagesave"] = apiSupported.Save
-	apiSupportedMap["imagesearch"] = apiSupported.Search
-	apiSupportedMap["containerstart"] = apiSupported.Start
-	apiSupportedMap["containerstop"] = apiSupported.Stop
-	apiSupportedMap["imagetag"] = apiSupported.Tag
-	apiSupportedMap["containertop"] = apiSupported.Top
-	apiSupportedMap["containerunpause"] = apiSupported.Unpause
-	apiSupportedMap["containerupdate"] = apiSupported.Update
-	apiSupportedMap["version"] = apiSupported.Version	
-	apiSupportedMap["volumecreate"] = apiSupported.Volume_create
-	apiSupportedMap["volumeinspect"] = apiSupported.Volume_inspect
-	apiSupportedMap["volumelist"] = apiSupported.Volume_ls
-	apiSupportedMap["volumeremove"] = apiSupported.Volume_rm
-	apiSupportedMap["containerwait"] = apiSupported.Wait
-	log.Infof("apiSupportedMap %+v",apiSupportedMap)
+	log.Infof("apiDisabled %+v",apiDisabled)
+	apiDisabledMap = make(map[string]bool)
+	/*
+	apiDisabledMap["containerattach"] = apiDisabled.Attach
+	apiDisabledMap["containerbuild"] = apiDisabled.Build
+	apiDisabledMap["imagecommit"] = apiDisabled.Commit
+	apiDisabledMap["containercreate"] = apiDisabled.Create
+	apiDisabledMap["containercopy"] = apiDisabled.Cp
+	apiDisabledMap["containerdiff"] = apiDisabled.Diff
+	apiDisabledMap["containerevents"] = apiDisabled.Events
+	apiDisabledMap["containerexec"] = apiDisabled.Exec
+	apiDisabledMap["containerexport"] = apiDisabled.Export
+	apiDisabledMap["imagehistory"] = apiDisabled.History
+	apiDisabledMap["imageimport"] = apiDisabled.Import
+	apiDisabledMap["clusterInfo"] = apiDisabled.Info
+	apiDisabledMap["containerjson"] = apiDisabled.Inspect
+	apiDisabledMap["containerkill"] = apiDisabled.Kill
+	apiDisabledMap["imageload"] = apiDisabled.Load	
+	apiDisabledMap["serverlogin"] = apiDisabled.Login
+	apiDisabledMap["serverlogout"] = apiDisabled.Logout
+	apiDisabledMap["containerlogs"] = apiDisabled.Logs
+	apiDisabledMap["networkconnect"] = apiDisabled.Network_connect
+	apiDisabledMap["networkcreate"] = apiDisabled.Network_create
+	apiDisabledMap["networkdisconnect"] = apiDisabled.Network_disconnect
+	apiDisabledMap["listNetworks"] = apiDisabled.Network_ls
+	apiDisabledMap["networkremove"] = apiDisabled.Network_rm
+	apiDisabledMap["containerpause"] = apiDisabled.Pause	
+	apiDisabledMap["containertport"] = apiDisabled.Port
+	apiDisabledMap["listContainers"] = apiDisabled.Ps
+	apiDisabledMap["imagepull"] = apiDisabled.Pull
+	apiDisabledMap["imagepush"] = apiDisabled.Push
+	apiDisabledMap["containerrename"] = apiDisabled.Rename
+	apiDisabledMap["imageremove"] = apiDisabled.Rmi
+	apiDisabledMap["containerdelete"] = apiDisabled.Rm
+	apiDisabledMap["containerrun"] = apiDisabled.Run
+	apiDisabledMap["imagesave"] = apiDisabled.Save
+	apiDisabledMap["imagesearch"] = apiDisabled.Search
+	apiDisabledMap["containerstart"] = apiDisabled.Start
+	apiDisabledMap["containerstop"] = apiDisabled.Stop
+	apiDisabledMap["imagetag"] = apiDisabled.Tag
+	apiDisabledMap["containertop"] = apiDisabled.Top
+	apiDisabledMap["containerunpause"] = apiDisabled.Unpause
+	apiDisabledMap["containerupdate"] = apiDisabled.Update
+	apiDisabledMap["version"] = apiDisabled.Version	
+	apiDisabledMap["volumecreate"] = apiDisabled.Volume_create
+	apiDisabledMap["volumeinspect"] = apiDisabled.Volume_inspect
+	apiDisabledMap["volumelist"] = apiDisabled.Volume_ls
+	apiDisabledMap["volumeremove"] = apiDisabled.Volume_rm
+	apiDisabledMap["containerwait"] = apiDisabled.Wait
+	*/
+	log.Infof("apiDisabledMap %+v",apiDisabledMap)
 }
 
 func (apiFilterImpl *DefaultApiFilterImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin apiFilter Got command: " + command)
-	if apiSupportedMap[command] {
+	if apiImplementedMap[command] && !apiDisabledMap[command] {
 		return apiFilterImpl.nextHandler(command, cluster, w, r, swarmHandler)		
 	} else {
 		return errors.New("Command Not Supported!")		
