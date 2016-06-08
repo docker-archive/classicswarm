@@ -14,7 +14,7 @@ type RandomPlacementStrategy struct {
 }
 
 // Initialize a RandomPlacementStrategy.
-func (p *RandomPlacementStrategy) Initialize() error {
+func (p *RandomPlacementStrategy) Initialize(opts map[string]string) error {
 	p.r = rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
 	return nil
 }

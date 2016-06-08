@@ -15,7 +15,7 @@ type PlacementStrategy interface {
 	// Initialize performs any initial configuration required by the strategy and returns
 	// an error if one is encountered.
 	// If no initial configuration is needed, this may be a no-op and return a nil error.
-	Initialize() error
+	Initialize(opts map[string]string) error
 	// RankAndSort applies the strategy to a list of nodes and ranks them based
 	// on the best fit given the container configuration.  It returns a sorted
 	// list of nodes (based on their ranks) or an error if there is no
@@ -39,11 +39,12 @@ func init() {
 		&SpreadPlacementStrategy{},
 		&BinpackPlacementStrategy{},
 		&RandomPlacementStrategy{},
+		&ExternalPlacementStrategy{},
 	}
 }
 
 // New creates a new PlacementStrategy for the given strategy name.
-func New(name string) (PlacementStrategy, error) {
+func New(name string, opts map[string]string) (PlacementStrategy, error) {
 	if name == "binpacking" { //TODO: remove this compat
 		name = "binpack"
 	}
@@ -51,7 +52,7 @@ func New(name string) (PlacementStrategy, error) {
 	for _, strategy := range strategies {
 		if strategy.Name() == name {
 			log.WithField("name", name).Debugf("Initializing strategy")
-			err := strategy.Initialize()
+			err := strategy.Initialize(opts)
 			return strategy, err
 		}
 	}

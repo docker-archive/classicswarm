@@ -142,6 +142,11 @@ var (
 		Usage: "discovery options",
 		Value: &cli.StringSlice{},
 	}
+	flSchedulerOpt = cli.StringSliceFlag{
+		Name:  "scheduler-opt",
+		Usage: "scheduler options",
+		Value: &cli.StringSlice{},
+	}
 	flLeaderElection = cli.BoolFlag{
 		Name:  "replication",
 		Usage: "Enable Swarm manager replication",

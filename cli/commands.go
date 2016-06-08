@@ -29,7 +29,7 @@ var (
 				flRefreshIntervalMin, flRefreshIntervalMax, flFailureRetry, flRefreshRetry,
 				flHeartBeat,
 				flEnableCors,
-				flCluster, flDiscoveryOpt, flClusterOpt, flRefreshOnNodeFilter, flContainerNameRefreshFilter},
+				flCluster, flDiscoveryOpt, flSchedulerOpt, flClusterOpt, flRefreshOnNodeFilter, flContainerNameRefreshFilter},
 			Action: manage,
 		},
 		{

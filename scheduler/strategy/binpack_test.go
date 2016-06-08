@@ -162,7 +162,8 @@ func TestPlaceContainerHuge(t *testing.T) {
 }
 
 func TestPlaceContainerOvercommit(t *testing.T) {
-	s, err := New("binpacking")
+	opts := make(map[string]string)
+	s, err := New("binpacking", opts)
 	assert.NoError(t, err)
 
 	nodes := []*node.Node{createNode("node-1", 100, 1)}

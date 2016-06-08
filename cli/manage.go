@@ -116,16 +116,21 @@ func createDiscovery(uri string, c *cli.Context) discovery.Backend {
 	return discovery
 }
 
-func getDiscoveryOpt(c *cli.Context) map[string]string {
+func getKeyValOpts(c *cli.Context, from string) map[string]string {
 	// Process the store options
 	options := map[string]string{}
-	for _, option := range c.StringSlice("discovery-opt") {
+	for _, option := range c.StringSlice(from) {
 		if !strings.Contains(option, "=") {
-			log.Fatal("--discovery-opt must contain key=value strings")
+			log.Fatalf("--%s must contain key=value strings", from)
 		}
 		kvpair := strings.SplitN(option, "=", 2)
 		options[kvpair[0]] = kvpair[1]
 	}
+	return options
+}
+
+func getDiscoveryOpt(c *cli.Context) map[string]string {
+	options := getKeyValOpts(c, "discovery-opt")
 	if _, ok := options["kv.path"]; !ok {
 		options["kv.path"] = "docker/swarm/nodes"
 	}
@@ -269,7 +274,7 @@ func manage(c *cli.Context) {
 		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
 	}
 	discovery := createDiscovery(uri, c)
-	s, err := strategy.New(c.String("strategy"))
+	s, err := strategy.New(c.String("strategy"), getKeyValOpts(c, "scheduler-opt"))
 	if err != nil {
 		log.Fatal(err)
 	}

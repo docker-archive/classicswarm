@@ -12,7 +12,7 @@ type SpreadPlacementStrategy struct {
 }
 
 // Initialize a SpreadPlacementStrategy.
-func (p *SpreadPlacementStrategy) Initialize() error {
+func (p *SpreadPlacementStrategy) Initialize(opts map[string]string) error {
 	return nil
 }
 

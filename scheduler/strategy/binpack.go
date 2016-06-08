@@ -12,7 +12,7 @@ type BinpackPlacementStrategy struct {
 }
 
 // Initialize a BinpackPlacementStrategy.
-func (p *BinpackPlacementStrategy) Initialize() error {
+func (p *BinpackPlacementStrategy) Initialize(opts map[string]string) error {
 	return nil
 }
 
