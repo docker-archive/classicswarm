@@ -17,6 +17,7 @@ import (
 
 var enforceQuota = os.Getenv("SWARM_ENFORCE_QUOTA")
 var quotaMgmt QuotaMgmt
+var initQuota = false //initialize quota once
 
 type DefaultQuotaImpl struct {
 	nextHandler pluginAPI.Handler
@@ -39,7 +40,6 @@ func (quotaImpl *DefaultQuotaImpl) Handle(command string, cluster cluster.Cluste
 	}
 	
 	//initialize quota once
-	initQuota := false
 	if initQuota == false{
 		quotaMgmt.Init(cluster)
 		initQuota = true

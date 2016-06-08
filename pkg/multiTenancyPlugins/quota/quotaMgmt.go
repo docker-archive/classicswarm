@@ -187,7 +187,8 @@ func (quota *QuotaMgmt) HandleDeleteResponse(returnCode int, id string, tenant s
 
 //quota periodic refresh from cluster
 func (quota *QuotaMgmt) refreshLoop(cluster cluster.Cluster) {
-	for range time.Tick(time.Second *30){
+	for {
+		time.Sleep(time.Second *30)
 		quotaMgmt.Lock()
 		var clusterContInfo ContainerInfo
 		//containers represents a list a containers
