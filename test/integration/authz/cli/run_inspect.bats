@@ -42,11 +42,10 @@ load cli_helpers
 	[[ "$output" == "$inspectConfig1" ]]
    
     # same name different tenant
-	#run notAuthorized $DOCKER_CONFIG2 busy1
-	#echo $status
-	#[ "$status" -eq 0 ]
-	#run notAuthorized $DOCKER_CONFIG2 $config1Busy1Id
-	#[ "$status" -eq 0 ]
+	run notAuthorized $DOCKER_CONFIG2 busy1
+	[ "$status" -eq 0 ]
+	run notAuthorized $DOCKER_CONFIG2 $config1Busy1Id
+	[ "$status" -eq 0 ]
     run docker -H $SWARM_HOST --config $DOCKER_CONFIG2  run -d --name  busy1 busybox
     [ "$status" -eq 0 ]
     [[ "$output" != *"Error"* ]]
@@ -77,13 +76,11 @@ load cli_helpers
 	[[ "$output" == "$loop1Config1Id /loop1 running" ]]
  
     # same name different tenant
-	#run notAuthorized $DOCKER_CONFIG2 loop1
-	#[ "$status" -eq 0 ]
-	#run notAuthorized $DOCKER_CONFIG2 $loop1Config1Id
-	#[ "$status" -eq 0 ]
+	run notAuthorized $DOCKER_CONFIG2 loop1
+	[ "$status" -eq 0 ]
+	run notAuthorized $DOCKER_CONFIG2 $loop1Config1Id
+	[ "$status" -eq 0 ]
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2  rm -f loop1
-	echo $status
-	echo $output 
     [ "$status" -ne 0 ]
     [[ "$output" == *"Error"* ]]	
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2  rm -f $loop1Config1Id 

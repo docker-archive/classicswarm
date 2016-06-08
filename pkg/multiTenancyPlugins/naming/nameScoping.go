@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	apitypes "github.com/docker/engine-api/types"
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/headers"
@@ -93,7 +94,25 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command string, cluster cluste
 
 		uniqlyIdentfyResource(cluster, r, w)
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
-	case "listContainers", "listNetworks":
+	case "createNetwork":		
+		defer r.Body.Close()
+		if reqBody, _ := ioutil.ReadAll(r.Body); len(reqBody) > 0 {
+			
+			var request apitypes.NetworkCreate
+			if err := json.NewDecoder(bytes.NewReader(reqBody)).Decode(&request); err != nil {
+         		log.Error(err)
+         		return nil
+			}
+			request.Name = r.Header.Get(headers.AuthZTenantIdHeaderName) + request.Name
+			var buf bytes.Buffer
+			if err := json.NewEncoder(&buf).Encode(request); err != nil {
+				log.Error(err)
+				return nil
+			}
+			r, _ = utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), "", "")
+		}	
+		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)	
+	case "listContainers", "listNetworks", "clusterInfo":
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 	default:
 

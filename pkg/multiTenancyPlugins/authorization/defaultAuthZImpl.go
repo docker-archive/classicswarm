@@ -122,6 +122,9 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 		}
 		newBody := utils.FilterNetworks(r, rec)
 		w.Write(newBody)
+		
+	case "clusterInfo", "createNetwork":
+		swarmHandler.ServeHTTP(w, r)	
 
 	//Always allow or not?
 	default:
