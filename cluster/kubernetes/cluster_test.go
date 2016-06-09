@@ -87,7 +87,7 @@ func TestTotalCpus(t *testing.T) {
 					api.ResourcePods:   *resource.NewQuantity(0, resource.DecimalSI),
 				},
 				Addresses: []api.NodeAddress{
-					api.NodeAddress{
+					{
 						Type:    api.NodeInternalIP,
 						Address: fakeDocker.host,
 					},
@@ -121,7 +121,7 @@ func TestTotalMemory(t *testing.T) {
 					api.ResourcePods:   *resource.NewQuantity(0, resource.DecimalSI),
 				},
 				Addresses: []api.NodeAddress{
-					api.NodeAddress{
+					{
 						Type:    api.NodeInternalIP,
 						Address: fakeDocker.host,
 					},
@@ -167,7 +167,7 @@ func TestDockerEngines(t *testing.T) {
 			ObjectMeta: api.ObjectMeta{Name: "node1"},
 			Status: api.NodeStatus{
 				Addresses: []api.NodeAddress{
-					api.NodeAddress{
+					{
 						Type:    api.NodeInternalIP,
 						Address: fakeEngine.host,
 					},
