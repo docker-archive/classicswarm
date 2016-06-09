@@ -80,24 +80,6 @@ POST "/images/create" : "docker import" flow not implement
             Containers started from the <code>swarm</code> official image are hidden by default, use <code>all=1</code> to display them.
         </td>
     </tr>
-    </tr>
-        <tr>
-        <td>
-            <code>GET "/images/create"</code>
-        </td>
-        <td>
-            Optional extra field: <code>constraints</code>, used to limit where the image is pulled. Can be specified multiple times for multiple constraints.
-        </td>
-    </tr>
-    </tr>
-        <tr>
-        <td>
-            <code>DELETE "/images/{name:.*}"</code>
-        </td>
-        <td>
-            Optional extra field: <code>constraints</code>, used to limit where the image is pulled. Can be specified multiple times for multiple constraints.
-        </td>
-    </tr>
     <tr>
         <td>
             <code>GET "/images/json"</code>

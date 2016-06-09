@@ -318,5 +318,9 @@ func int64ValueOrZero(r *http.Request, k string) int64 {
 }
 
 func tagHasDigest(tag string) bool {
-	return strings.Contains(tag, ":")
+	return !strings.Contains(tag, "constraint:") && strings.Contains(tag, ":")
+}
+
+func tagHasConstraints(tag string) bool {
+	return strings.Contains(tag, "constraint:")
 }

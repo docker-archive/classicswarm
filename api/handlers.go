@@ -25,7 +25,6 @@ import (
 	"github.com/docker/swarm/version"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
-	"net/url"
 )
 
 // APIVERSION is the API version supported by swarm manager
@@ -680,13 +679,40 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 			json.Unmarshal(buf, &authConfig)
 		}
 
+		imageParts := strings.Split(image, "@")
+		if imageParts == nil {
+			httpError(w, "Empty image name", http.StatusInternalServerError)
+			return
+		}
+
+		var constraints []string
+
+		// Parse the image tag for potential digest or constraints
 		if tag := r.Form.Get("tag"); tag != "" {
-			if tagHasDigest(tag) {
+
+			// Tag is either constraints or (tag|digest)@constraints
+			if tagHasConstraints(tag) {
+				tagParts := strings.SplitN(tag, "@", 2)
+
+				if len(tagParts) == 2 {
+					// Either digest@constraints or tag@constraints
+					if tagHasDigest(tagParts[0]) {
+						image += "@" + tagParts[0]
+					} else {
+						image += ":" + tagParts[0]
+					}
+					constraints = parseConstraints(tagParts[1])
+				} else {
+					constraints = parseConstraints(tagParts[0])
+				}
+			} else if tagHasDigest(tag) {
 				image += "@" + tag
 			} else {
 				image += ":" + tag
 			}
 		}
+
+		log.Info("Constraints: %v", constraints)
 
 		var errorMessage string
 		errorFound := false
@@ -703,8 +729,6 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s... : %s", image, status))
 			}
 		}
-
-		constraints := parseConstraints(image, r.Form)
 
 		c.cluster.Pull(image, constraints, &authConfig, callback)
 
@@ -904,7 +928,35 @@ func deleteImages(c *context, w http.ResponseWriter, r *http.Request) {
 	var name = mux.Vars(r)["name"]
 	force := boolValue(r, "force")
 
-	constraints := parseConstraints(name, r.Form)
+	imageParts := strings.Split(name, "@")
+	if imageParts == nil {
+		httpError(w, "Empty image name", http.StatusInternalServerError)
+		return
+	}
+
+	var constraints []string
+
+	// Parse out the constraints from the image name if there are any
+	switch len(imageParts) {
+	// It's in image@digest@constraints format
+	case 3:
+		// Parse the constraints into a list
+		constraints = parseConstraints(imageParts[2])
+		// Remove constraints from the image name
+		name = imageParts[0] + "@" + imageParts[1]
+
+	// It's either image@digest or image@constraints
+	case 2:
+		// If if has constraints, remove them from the image name
+		if strings.Contains(imageParts[1], "constraint:") {
+			constraints = parseConstraints(imageParts[1])
+			name = imageParts[0]
+		}
+
+	// Plain image name format
+	default:
+		name = imageParts[0]
+	}
 
 	out, err := c.cluster.RemoveImages(name, constraints, force)
 	if err != nil {
@@ -1379,15 +1431,8 @@ func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// format any constraints that were passed in
-func parseConstraints(name string, form url.Values) []string {
-	if constraints := form.Get("constraints"); constraints != "" {
-		constraintList := form["constraints"]
-		log.Debug(fmt.Sprintf("Received constraints for image %s: '%v'", name, constraintList))
-		for _, constraint := range constraintList {
-			constraint = "constraint:" + constraint
-		}
-		return constraintList
-	}
-	return nil
+// Parse a comma separated list of constraints into an array of expressions
+func parseConstraints(constraints string) []string {
+	expressions := strings.Replace(constraints, "constraint:", "", -1)
+	return strings.Split(expressions, ",")
 }

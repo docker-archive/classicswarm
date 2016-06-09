@@ -434,7 +434,7 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 
 // RemoveImages removes all the images that match `name` from the cluster
 func (c *Cluster) RemoveImages(name string, constraints []string, force bool) ([]types.ImageDelete, error) {
-	nodes, err := filter.FilterWithConstraints(constraints, c.listNodes(), false)
+	nodes, err := filter.WithConstraints(constraints, c.listNodes(), false)
 
 	if err != nil {
 		return nil, err
@@ -585,7 +585,7 @@ func (c *Cluster) RemoveVolumes(name string) (bool, error) {
 func (c *Cluster) Pull(name string, constraints []string, authConfig *types.AuthConfig, callback func(where, status string, err error)) {
 	var wg sync.WaitGroup
 
-	nodes, err := filter.FilterWithConstraints(constraints, c.listNodes(), false)
+	nodes, err := filter.WithConstraints(constraints, c.listNodes(), false)
 
 	if err != nil {
 		callback("swarm", "invalid constraint(s)", err)
