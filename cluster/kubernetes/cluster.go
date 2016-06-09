@@ -111,21 +111,25 @@ func NewCluster(TLSConfig *tls.Config, master string, kubeClient unversioned.Int
 		}
 	}
 
-	engines, err := dockerEngines(kubeClient, engineOptions)
+	enginePort := defaultDockerEnginePort
+	if TLSConfig != nil {
+		enginePort = defaultDockerEngineTLSPort
+	}
+	if p, ok := options.String("docker.engineport", "DOCKER_ENGINE_PORT"); ok {
+		enginePort = p
+	}
+
+	engines, err := dockerEngines(kubeClient, engineOptions, enginePort)
 	if err != nil {
 		return nil, err
 	}
 
 	cluster := &Cluster{
-		dockerEnginePort: defaultDockerEnginePort,
+		dockerEnginePort: enginePort,
 		kubeClient:       kubeClient,
 		TLSConfig:        TLSConfig,
 		options:          &options,
 		engines:          engines,
-	}
-
-	if cluster.TLSConfig != nil {
-		cluster.dockerEnginePort = defaultDockerEngineTLSPort
 	}
 
 	log.Debugf("Kubernetes driver started")
@@ -420,7 +424,7 @@ func formatContainerID(id string) string {
 }
 
 // dockerEngines returns the docker engines in the Kubernetes cluster.
-func dockerEngines(client unversioned.Interface, engineOpts *cluster.EngineOpts) (map[string]*cluster.Engine, error) {
+func dockerEngines(client unversioned.Interface, engineOpts *cluster.EngineOpts, dockerPort string) (map[string]*cluster.Engine, error) {
 	engines := make(map[string]*cluster.Engine)
 
 	nodes, err := client.Nodes().List(api.ListOptions{})
@@ -435,7 +439,7 @@ func dockerEngines(client unversioned.Interface, engineOpts *cluster.EngineOpts)
 				host = address.Address
 			}
 		}
-		engine := cluster.NewEngine(net.JoinHostPort(host, defaultDockerEnginePort), 0, engineOpts)
+		engine := cluster.NewEngine(net.JoinHostPort(host, dockerPort), 0, engineOpts)
 
 		// Validate connection to engine
 		if err = engine.Connect(nil); err != nil {
