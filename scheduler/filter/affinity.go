@@ -45,18 +45,18 @@ func (f *AffinityFilter) Filter(config *cluster.ContainerConfig, nodes []*node.N
 					candidates = append(candidates, node)
 				}
 			case "image":
-				images := []string{}
+				images := make(map[string]int)
 				for _, image := range node.Images {
-					images = append(images, image.ID)
-					images = append(images, image.RepoTags...)
+					images_map[image.ID] = 1
 					for _, tag := range image.RepoTags {
 						repo, _ := cluster.ParseRepositoryTag(tag)
-						images = append(images, repo)
+						images[repo] = 1
 					}
 				}
-				if affinity.Match(images...) {
+				if _, ok := images[affinity.value]; ok {
 					candidates = append(candidates, node)
 				}
+
 			default:
 				labels := []string{}
 				for _, container := range node.Containers {
