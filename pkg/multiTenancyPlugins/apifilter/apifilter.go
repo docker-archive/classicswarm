@@ -5,9 +5,7 @@ import (
 	"errors"
 	"encoding/json"
 	"net/http"
-	"io/ioutil"
 	"os"
-	"gopkg.in/yaml.v2"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 	"github.com/docker/swarm/cluster"
 
@@ -87,36 +85,9 @@ var apiDisabledMap map[string]bool
 
 func init() {
 	log.Info("apifliter.init()")
-	//readApiSupportedFile()
-	readApiFilter()
+	readApiSupportedFile()
 }
 
-func readApiFilter() {
-	log.Info("apifilter.readApiFilterFile() ..........")
-	type Apifilteryaml struct {
-		DisableAPI []string	
-    }
-	var config Apifilteryaml
-	var f = os.Getenv("SWARM_API_FILTER_FILE")
-	if f == "" {
-		log.Warn("Missing SWARM_API_FILTER_FILE environment variable, using locate default ./apifiler.json")
-		f = "apifilter.yaml"
-	}
-	log.Info("SWARM_API_FILTER_FILE: ",f)
-
-	//file, err := os.Open(f)
-	source, err := ioutil.ReadFile(f)
-	if err != nil {
-		log.Info("NO SWARM_API_FILTER_FILE")
-		return
-	}
-	err = yaml.Unmarshal(source, &config)
-    if err != nil {
-        panic(err)
-    }
-	//log.Infof("DisableAPI %+v",config.DisableAPI)
-	apiDisabledMap = make(map[string]bool)
-}
 
 func readApiSupportedFile() {
 	log.Info("apifilter.readApiSupportedFile() ..........")
