@@ -180,23 +180,23 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 	}
 
 	containerStatus := pod.Status.ContainerStatuses[0]
+	containerID := formatContainerID(containerStatus.ContainerID)
 	for {
 		if containerStatus.Ready {
-			log.Infof("Container %s is now ready", formatContainerID(containerStatus.ContainerID))
+			log.Infof("Container %s is now ready", containerID)
 			break
 		}
 		time.Sleep(1 * time.Second)
 	}
 
-	return c.Container(pod.ObjectMeta.Name), nil
+	return c.Container(containerID), nil
 }
 
 // RemoveContainer removes a pod from a Kubernetes cluster based on value of the
 // container's io.kubernetes.pod.name label.
 func (c *Cluster) RemoveContainer(container *cluster.Container, force, volumes bool) error {
-	podLabel := strings.Split(container.Config.Labels["io.kubernetes.pod.name"], "/")
-	namespace := podLabel[0]
-	podName := podLabel[1]
+	podName := container.Config.Labels["io.kubernetes.pod.name"]
+	namespace := container.Config.Labels["io.kubernetes.pod.namespace"]
 	return c.kubeClient.Pods(namespace).Delete(podName, api.NewDeleteOptions(0))
 }
 
@@ -241,16 +241,10 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 		return nil
 	}
 
-	containerID, err := c.containerIDFromPod(IDOrName)
-	if err != nil {
-		log.Error(err)
-	}
-	if containerID != "" {
-		IDOrName = containerID
-	}
-
 	c.RLock()
 	defer c.RUnlock()
+
+	// Find the container with IDOrName across all containers running on the cluster
 	return cluster.Containers(c.Containers()).Get(IDOrName)
 }
 
@@ -419,20 +413,6 @@ func (c *Cluster) Networks() cluster.Networks {
 	return cluster.Networks{}
 }
 
-// containerIDFromPod extracts the Docker container ID from the Kubernetes pod
-// identified by name.
-func (c *Cluster) containerIDFromPod(name string) (string, error) {
-	pods := c.kubeClient.Pods(api.NamespaceDefault)
-	pod, err := pods.Get(name)
-	if err != nil {
-		return "", fmt.Errorf("Error extracting container ID from pod: %v", err)
-	}
-	if pod != nil {
-		return formatContainerID(pod.Status.ContainerStatuses[0].ContainerID), nil
-	}
-	return "", nil
-}
-
 // formatContainerID converts a Kubernetes container ID to an ID compatible with
 // the Docker API.
 func formatContainerID(id string) string {
@@ -456,8 +436,14 @@ func dockerEngines(client unversioned.Interface, engineOpts *cluster.EngineOpts)
 			}
 		}
 		engine := cluster.NewEngine(net.JoinHostPort(host, defaultDockerEnginePort), 0, engineOpts)
-		engine.Name = node.ObjectMeta.Name
+
+		// Validate connection to engine
+		if err = engine.Connect(nil); err != nil {
+			return engines, err
+		}
+		engine.ValidationComplete()
 		engines[node.ObjectMeta.Name] = engine
+
 	}
 	return engines, nil
 }
