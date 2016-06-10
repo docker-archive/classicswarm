@@ -1113,6 +1113,106 @@ func proxyContainerAndForceRefresh(c *context, w http.ResponseWriter, r *http.Re
 	}
 }
 
+// Set maintenance mode on an engine
+func getEngineMaintenance(c *context, w http.ResponseWriter, r *http.Request) {
+	errString, errCode := engineSanityChecks(c, w, r)
+	if errString != "" {
+		httpError(w, errString, errCode)
+		return
+	}
+
+	name, _ := mux.Vars(r)["name"]
+	status, err := c.cluster.GetMaintenance(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "Engine maintenance status: %v", status)
+}
+
+// Start maintenance on an engine
+func postEngineMaintenanceStart(c *context, w http.ResponseWriter, r *http.Request) {
+	postEngineSetMaintenance(c, w, r, true)
+}
+
+// Stop maintenance on an engine
+func postEngineMaintenanceStop(c *context, w http.ResponseWriter, r *http.Request) {
+	postEngineSetMaintenance(c, w, r, false)
+}
+
+// Set maintenance mode on an engine
+func postEngineSetMaintenance(c *context, w http.ResponseWriter, r *http.Request, toggle bool) {
+	errString, errCode := engineSanityChecks(c, w, r)
+	if errString != "" {
+		httpError(w, errString, errCode)
+		return
+	}
+
+	name, _ := mux.Vars(r)["name"]
+	if err := c.cluster.SetMaintenance(name, toggle); err != nil {
+		if strings.Contains(err.Error(), "Container not found") {
+			httpError(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	status, err := c.cluster.GetMaintenance(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "Engine maintenance status: %v", status)
+}
+
+// Get state for an engine
+func getEngineState(c *context, w http.ResponseWriter, r *http.Request) {
+	errString, errCode := engineSanityChecks(c, w, r)
+	if errString != "" {
+		httpError(w, errString, errCode)
+		return
+	}
+
+	name, _ := mux.Vars(r)["name"]
+	status, err := c.cluster.GetState(name)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "Engine maintenance status: %v", status)
+}
+
+// sanity checks for engines
+func engineSanityChecks(c *context, w http.ResponseWriter, r *http.Request) (errorString string, errorCode int) {
+	name, ok := mux.Vars(r)["name"]
+	if !ok {
+		return "Need engine name to operate on", http.StatusInternalServerError
+	}
+
+	exists, err := c.cluster.EngineExists(name)
+	if err != nil {
+		return err.Error(), http.StatusInternalServerError
+	}
+
+	if !exists {
+		return fmt.Sprintf("No such container: %s", name), http.StatusNotFound
+	}
+
+	res, err := c.cluster.EngineHealthy(name)
+	if err != nil {
+		return err.Error(), http.StatusInternalServerError
+	}
+	if !res {
+		return "Engine unhealthy", http.StatusInternalServerError
+	}
+
+	return "", 0
+}
+
 // Proxy a request to the right node
 func proxyImage(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]

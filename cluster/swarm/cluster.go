@@ -797,6 +797,43 @@ func (c *Cluster) listNodes() []*node.Node {
 	return out
 }
 
+// GetMaintenance gets maintenance mode of an engine
+func (c *Cluster) GetMaintenance(container string) (bool, error) {
+	for _, e := range c.engines {
+		if e.Name == container {
+			return e.GetMaintenance(), nil
+		}
+	}
+
+	return false, errors.New("Container not found")
+}
+
+// SetMaintenance sets maintenance mode for an engine
+func (c *Cluster) SetMaintenance(containerName string, toggle bool) error {
+	c.RLock()
+	defer c.RUnlock()
+
+	for _, e := range c.engines {
+		if e.Name == containerName {
+			e.SetMaintenance(toggle)
+			return nil
+		}
+	}
+
+	return errors.New("Container not found")
+}
+
+// GetState gets state mode of an engine
+func (c *Cluster) GetState(container string) (string, error) {
+	for _, e := range c.engines {
+		if e.Name == container {
+			return e.GetState(), nil
+		}
+	}
+
+	return "", errors.New("Container not found")
+}
+
 // listEngines returns all the engines in the cluster.
 // This is for reporting, not scheduling, hence pendingEngines are included.
 func (c *Cluster) listEngines() []*cluster.Engine {
@@ -813,7 +850,29 @@ func (c *Cluster) listEngines() []*cluster.Engine {
 	return out
 }
 
-// TotalMemory returns the total memory of the cluster
+// EngineExists verifies an engine exists
+func (c *Cluster) EngineExists(engineName string) (bool, error) {
+	for _, n := range c.engines {
+		if n.Name == engineName {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// EngineHealthy verifies an engine is healthy
+func (c *Cluster) EngineHealthy(engineName string) (bool, error) {
+	for _, n := range c.engines {
+		if n.Name == engineName {
+			return n.IsHealthy(), nil
+		}
+	}
+
+	return false, nil
+}
+
+// TotalMemory return the total memory of the cluster
 func (c *Cluster) TotalMemory() int64 {
 	var totalMemory int64
 	for _, engine := range c.engines {

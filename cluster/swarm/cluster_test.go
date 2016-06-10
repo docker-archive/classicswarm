@@ -64,6 +64,61 @@ func createEngine(t *testing.T, ID string, containers ...*cluster.Container) *cl
 	return engine
 }
 
+func TestSetMaintenance(t *testing.T) {
+	c := &Cluster{
+		engines: make(map[string]*cluster.Engine),
+	}
+	container1 := &cluster.Container{
+		Container: types.Container{
+			ID:    "container1-id",
+			Names: []string{"/container1-name1", "/container1-name2"},
+		},
+		Config: cluster.BuildContainerConfig(containertypes.Config{
+			Labels: map[string]string{
+				"com.docker.swarm.id": "swarm1-id",
+			},
+		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
+	}
+
+	container2 := &cluster.Container{
+		Container: types.Container{
+			ID:    "container2-id",
+			Names: []string{"/con"},
+		},
+		Config: cluster.BuildContainerConfig(containertypes.Config{
+			Labels: map[string]string{
+				"com.docker.swarm.id": "swarm2-id",
+			},
+		}, containertypes.HostConfig{}, networktypes.NetworkingConfig{}),
+	}
+
+	n := createEngine(t, "test-engine", container1, container2)
+	c.engines[n.ID] = n
+
+	assert.Equal(t, len(c.Containers()), 2)
+
+	// Test setting of maintenance
+	v, err := c.GetMaintenance(c.engines[n.ID].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, v, false)
+
+	err = c.SetMaintenance(c.engines[n.ID].ID, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	v, err = c.GetMaintenance(c.engines[n.ID].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, v, true)
+
+}
+
 func TestContainerLookup(t *testing.T) {
 	c := &Cluster{
 		engines: make(map[string]*cluster.Engine),
@@ -128,7 +183,7 @@ func TestImportImage(t *testing.T) {
 		engines: make(map[string]*cluster.Engine),
 	}
 
-	// create engione
+	// create engine
 	id := "test-engine"
 	engine := cluster.NewEngine(id, 0, engOpts)
 	engine.Name = id

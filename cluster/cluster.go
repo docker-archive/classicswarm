@@ -99,4 +99,19 @@ type Cluster interface {
 
 	// Tag an image
 	TagImage(IDOrName string, repo string, tag string, force bool) error
+
+	// Verify an engine exists
+	EngineExists(engineName string) (bool, error)
+
+	// Verify an engine is healthy
+	EngineHealthy(engineName string) (bool, error)
+
+	// Set maintenance mode on an engine
+	SetMaintenance(engineName string, toggle bool) error
+
+	// Get maintenance mode of an engine
+	GetMaintenance(engineName string) (bool, error)
+
+	// Get state of an engine
+	GetState(engineName string) (string, error)
 }

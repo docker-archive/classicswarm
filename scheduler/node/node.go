@@ -22,6 +22,7 @@ type Node struct {
 	TotalCpus   int64
 
 	HealthIndicator int64
+	Maintenance     bool
 }
 
 // NewNode creates a node from an engine.
@@ -39,12 +40,18 @@ func NewNode(e *cluster.Engine) *Node {
 		TotalMemory:     e.TotalMemory(),
 		TotalCpus:       e.TotalCpus(),
 		HealthIndicator: e.HealthIndicator(),
+		Maintenance:     e.IsMaintenance(),
 	}
 }
 
 // IsHealthy responses if node is in healthy state
 func (n *Node) IsHealthy() bool {
 	return n.HealthIndicator > 0
+}
+
+// IsMaintenance replies if a node is in maintenance
+func (n *Node) IsMaintenance() bool {
+	return n.Maintenance
 }
 
 // Container returns the container with IDOrName in the engine.

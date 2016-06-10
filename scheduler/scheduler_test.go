@@ -56,5 +56,49 @@ func TestSelectNodesForContainer(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(candidates))
 	assert.Equal(t, "node-1-id", candidates[0].ID)
+}
 
+func TestSelectNodesForContainerMaintenance(t *testing.T) {
+	var (
+		s = Scheduler{
+			strategy: &strategy.SpreadPlacementStrategy{},
+			filters:  []filter.Filter{&filter.ConstraintFilter{}},
+		}
+
+		nodes = []*node.Node{
+			{
+				ID:          "node-0-id",
+				Name:        "node-0-name",
+				Addr:        "node-0",
+				TotalMemory: 1 * 1024 * 1024 * 1024,
+				TotalCpus:   2,
+				Labels: map[string]string{
+					"group": "1",
+				},
+			},
+
+			{
+				ID:          "node-1-id",
+				Name:        "node-1-name",
+				Addr:        "node-1",
+				Maintenance: true,
+				TotalMemory: 1 * 1024 * 1024 * 1024,
+				TotalCpus:   2,
+				Labels: map[string]string{
+					"group": "2",
+				},
+			},
+		}
+
+		config = cluster.BuildContainerConfig(containertypes.Config{}, containertypes.HostConfig{
+			Resources: containertypes.Resources{
+				Memory:    1024 * 1024 * 1024,
+				CPUShares: 2,
+			},
+		}, networktypes.NetworkingConfig{})
+	)
+	candidates, err := s.SelectNodesForContainer(nodes, config)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(candidates))
+	assert.Equal(t, "node-0-id", candidates[0].ID)
 }

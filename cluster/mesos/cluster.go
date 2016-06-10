@@ -678,3 +678,28 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
 	return errNotSupported
 }
+
+// EngineExists verifies an engine exists
+func (c *Cluster) EngineExists(engineName string) (bool, error) {
+	return false, errNotSupported
+}
+
+// EngineHealthy verifies an engine is healthy
+func (c *Cluster) EngineHealthy(engineName string) (bool, error) {
+	return false, errNotSupported
+}
+
+// GetMaintenance gets maintenance mode of an engine
+func (c *Cluster) GetMaintenance(engineName string) (bool, error) {
+	return false, errNotSupported
+}
+
+// SetMaintenance sets maintenance mode for an engine
+func (c *Cluster) SetMaintenance(engineName string, toggle bool) error {
+	return errNotSupported
+}
+
+// GetState gets state of an engine
+func (c *Cluster) GetState(engineName string) (string, error) {
+	return "", errNotSupported
+}
