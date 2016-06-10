@@ -29,7 +29,7 @@ func NewNameScoping(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 	return nameScoping
 }
 
-func uniqlyIdentfyResource(cluster cluster.Cluster, r *http.Request, w http.ResponseWriter) {
+func uniquelyIdentifyContainer(cluster cluster.Cluster, r *http.Request, w http.ResponseWriter) {
 	resourceName := mux.Vars(r)["name"]
 	tenantId := r.Header.Get(headers.AuthZTenantIdHeaderName)
 Loop:
@@ -87,12 +87,11 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command string, cluster cluste
 	//Find the container and replace the name with ID
 	case "containerjson":
 		if resourceName := mux.Vars(r)["name"]; resourceName != "" {
-			uniqlyIdentfyResource(cluster, r, w)
+			uniquelyIdentifyContainer(cluster, r, w)
 			return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 		}
 	case "containerstart", "containerstop", "containerdelete", "containerkill", "containerpause", "containerunpause", "containerupdate", "containercopy", "containerattach", "containerlogs":
-
-		uniqlyIdentfyResource(cluster, r, w)
+		uniquelyIdentifyContainer(cluster, r, w)
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 	case "createNetwork":		
 		defer r.Body.Close()
