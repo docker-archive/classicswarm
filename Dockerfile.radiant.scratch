@@ -1,0 +1,28 @@
+FROM scratch
+
+ARG git_commit_id=unknown
+ARG build_id=unknown
+ARG build_number=unknown
+ARG build_date=unknown
+ARG git_tag=unknown
+ARG git_remote_url=unknown
+
+LABEL git-commit-id=${git_commit_id}
+LABEL build-id=${build_id}
+LABEL build-number=${build_number}
+LABEL build-date=${build_date}
+LABEL git-tag=${git_tag}
+LABEL git-remote-url=${git_remote_url}
+
+ENV SWARM_HOST :2375
+EXPOSE 2375
+
+#COPY . /go/src/github.com/docker/swarm
+#WORKDIR /go/src/github.com/docker/swarm
+
+COPY ./swarm /swarm
+
+VOLUME /.swarm
+
+ENTRYPOINT ["/swarm"]
+CMD ["--help"]
