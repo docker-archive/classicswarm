@@ -1,0 +1,3 @@
+{
+  "disableapi": [ "add comma separated  disabled apis here, e.g.containerupdate,containerpause" ]
+}

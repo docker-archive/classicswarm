@@ -26,7 +26,6 @@ load cli_helpers
 	topConfig1Id=$output
 	
 	run notAuthorized $DOCKER_CONFIG2 top
-	echo $status
 	[ "$status" -eq 0 ]
 	run notAuthorized $DOCKER_CONFIG2 $topConfig1Id
 	[ "$status" -eq 0 ]

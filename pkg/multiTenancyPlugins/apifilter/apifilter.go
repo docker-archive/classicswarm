@@ -21,145 +21,48 @@ func NewPlugin(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 	return apiFilterPlugin
 }
 
-
 type Apifilter struct{}
-
-
-type apiDisabledType struct {
-	Attach bool
-	Build bool
-	Commit bool
-	Cp bool
-	Create bool
-	Diff bool
-	Events bool
-	Exec bool
-	Export bool
-	History bool
-	Import bool
-	Info bool
-	Inspect bool
-	Kill bool
-	Load bool
-	Login bool
-	Logout bool
-	Logs bool
-	Network_connect bool
-	Network_create bool
-	Network_disconnect bool
-	Network_ls bool
-	Network_rm bool
-	Pause bool
-	Port bool
-	Ps bool
-	Pull bool
-	Push bool
-	Rename bool
-	Rmi bool
-	Rm bool
-	Run bool
-	Save bool
-	Search bool
-	Start bool
-	Stat bool
-	Stop bool
-	Tag bool
-	Top bool
-	Unpause bool
-	Update bool
-	Version bool
-	Volume_create bool
-	Volume_inspect bool
-	Volume_ls bool
-	Volume_rm bool
-	Wait bool
-}
-
-var apiDisabled apiDisabledType
 
 var apiDisabledMap map[string]bool
 
-
-
-
-
 func init() {
 	log.Info("apifliter.init()")
-	readApiSupportedFile()
+	readApiFilter()
 }
 
-
-func readApiSupportedFile() {
-	log.Info("apifilter.readApiSupportedFile() ..........")
-	var f = os.Getenv("SWARM_API_SUPPORTED_FILE")
-	if f == "" {
-		log.Warn("Missing SWARM_API_SUPPORTED_FILE environment variable, using locate default ./apisupported.json")
-		f = "apisupported.json"
+func readApiFilter() {
+	log.Info("apifilter.readApiFilter() ..........")
+	type Filter struct {
+		Disableapi []string		
 	}
-	log.Info("SWARM_API_SUPPORTED_FILE: ",f)
+	var filter Filter
+	var f = os.Getenv("SWARM_APIFILTER_FILE")
+	if f == "" {
+		log.Info("Missing SWARM_API_SUPPORTED_FILE environment variable, using locate default ./apifilter.json")
+		f = "apifilter.json"
+	}
+	log.Info("SWARM_APIFILTER_FILE: ",f)
 
 	file, err := os.Open(f)
 	if err != nil {
-		log.Fatal(err)
-		panic("Error: could not open api supported file ")
+		log.Info("no API FILTER")
+		return
 	}
 
 	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&apiDisabled)
+	err = decoder.Decode(&filter)
 	if err != nil {
-		log.Fatal("Error in apiSupported decode:", err)
-		panic("Error: could not decode apiSupported ")
+		log.Fatal("Error in apifilter decode:", err)
+		panic("Error: could not decode apifilter.json")
 	}
-	log.Infof("apiDisabled %+v",apiDisabled)
+	log.Infof("filter %+v",filter)
 	apiDisabledMap = make(map[string]bool)
-	/*
-	apiDisabledMap["containerattach"] = apiDisabled.Attach
-	apiDisabledMap["containerbuild"] = apiDisabled.Build
-	apiDisabledMap["imagecommit"] = apiDisabled.Commit
-	apiDisabledMap["containercreate"] = apiDisabled.Create
-	apiDisabledMap["containercopy"] = apiDisabled.Cp
-	apiDisabledMap["containerdiff"] = apiDisabled.Diff
-	apiDisabledMap["containerevents"] = apiDisabled.Events
-	apiDisabledMap["containerexec"] = apiDisabled.Exec
-	apiDisabledMap["containerexport"] = apiDisabled.Export
-	apiDisabledMap["imagehistory"] = apiDisabled.History
-	apiDisabledMap["imageimport"] = apiDisabled.Import
-	apiDisabledMap["clusterInfo"] = apiDisabled.Info
-	apiDisabledMap["containerjson"] = apiDisabled.Inspect
-	apiDisabledMap["containerkill"] = apiDisabled.Kill
-	apiDisabledMap["imageload"] = apiDisabled.Load	
-	apiDisabledMap["serverlogin"] = apiDisabled.Login
-	apiDisabledMap["serverlogout"] = apiDisabled.Logout
-	apiDisabledMap["containerlogs"] = apiDisabled.Logs
-	apiDisabledMap["networkconnect"] = apiDisabled.Network_connect
-	apiDisabledMap["networkcreate"] = apiDisabled.Network_create
-	apiDisabledMap["networkdisconnect"] = apiDisabled.Network_disconnect
-	apiDisabledMap["listNetworks"] = apiDisabled.Network_ls
-	apiDisabledMap["networkremove"] = apiDisabled.Network_rm
-	apiDisabledMap["containerpause"] = apiDisabled.Pause	
-	apiDisabledMap["containertport"] = apiDisabled.Port
-	apiDisabledMap["listContainers"] = apiDisabled.Ps
-	apiDisabledMap["imagepull"] = apiDisabled.Pull
-	apiDisabledMap["imagepush"] = apiDisabled.Push
-	apiDisabledMap["containerrename"] = apiDisabled.Rename
-	apiDisabledMap["imageremove"] = apiDisabled.Rmi
-	apiDisabledMap["containerdelete"] = apiDisabled.Rm
-	apiDisabledMap["containerrun"] = apiDisabled.Run
-	apiDisabledMap["imagesave"] = apiDisabled.Save
-	apiDisabledMap["imagesearch"] = apiDisabled.Search
-	apiDisabledMap["containerstart"] = apiDisabled.Start
-	apiDisabledMap["containerstop"] = apiDisabled.Stop
-	apiDisabledMap["imagetag"] = apiDisabled.Tag
-	apiDisabledMap["containertop"] = apiDisabled.Top
-	apiDisabledMap["containerunpause"] = apiDisabled.Unpause
-	apiDisabledMap["containerupdate"] = apiDisabled.Update
-	apiDisabledMap["version"] = apiDisabled.Version	
-	apiDisabledMap["volumecreate"] = apiDisabled.Volume_create
-	apiDisabledMap["volumeinspect"] = apiDisabled.Volume_inspect
-	apiDisabledMap["volumelist"] = apiDisabled.Volume_ls
-	apiDisabledMap["volumeremove"] = apiDisabled.Volume_rm
-	apiDisabledMap["containerwait"] = apiDisabled.Wait
-	*/
+	for _,e := range filter.Disableapi {
+		if apiImplementedMap[e] {
+			apiDisabledMap[e] = true
+		}
+		
+	}
 	log.Infof("apiDisabledMap %+v",apiDisabledMap)
 }
 

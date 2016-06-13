@@ -23,9 +23,9 @@ func init() {
 	apiImplementedMap["serverlogin"] = false
 	apiImplementedMap["serverlogout"] = false
 	apiImplementedMap["containerlogs"] = true
-	apiImplementedMap["networkconnect"] = false
-	apiImplementedMap["networkcreate"] = false
-	apiImplementedMap["networkdisconnect"] = false
+	apiImplementedMap["connectNetwork"] = false
+	apiImplementedMap["createNetwork"] = true
+	apiImplementedMap["disconnectNetwork"] = false
 	apiImplementedMap["listNetworks"] = true
 	apiImplementedMap["networkremove"] = false
 	apiImplementedMap["containerpause"] = true	
@@ -45,10 +45,10 @@ func init() {
 	apiImplementedMap["containerunpause"] = true
 	apiImplementedMap["containerupdate"] = true
 	apiImplementedMap["version"] = false	
-	apiImplementedMap["volumecreate"] = false
-	apiImplementedMap["volumeinspect"] = false
-	apiImplementedMap["volumelist"] = false
-	apiImplementedMap["volumeremove"] = false
+	apiImplementedMap["createVolume"] = false
+	apiImplementedMap["inspectVolume"] = false
+	apiImplementedMap["listVolume"] = false
+	apiImplementedMap["removeVolume"] = false
 	apiImplementedMap["containerwait"] = false
 
 }
