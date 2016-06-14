@@ -47,7 +47,7 @@ Options:
                                     {{printf "\t * swarm.createretry=0\tcontainer create retry count after initial failure"}}
                                     {{printf "\t * mesos.address=\taddress to bind on [$SWARM_MESOS_ADDRESS]"}}
                                     {{printf "\t * mesos.frameworkid=\tspecify a framework id, if not set mesos assigns a random id [$SWARM_MESOS_FRAMEWORKID]"}}
-                                    {{printf "\t * mesos.failovertimeout=0\tkeep tasks launched by this framework running for this number of seconds in case this Swarm manager crashes (mesos will reattach the tasks to a new Swarm manager started with the same framework id) [$SWARM_MESOS_FAILOVER_TIMEOUT]"}}
+                                    {{printf "\t * mesos.failovertimeout=0\tkeep tasks launched by this framework running for this number of seconds in case this Swarm manager crashes [$SWARM_MESOS_FAILOVER_TIMEOUT]"}}
                                     {{printf "\t * mesos.checkpointfailover=false\tcheckpointing allows a restarted slave to reconnect with old executors and recover status updates, at the cost of disk I/O [$SWARM_MESOS_CHECKPOINT_FAILOVER]"}}
                                     {{printf "\t * mesos.port=\tport to bind on [$SWARM_MESOS_PORT]"}}
                                     {{printf "\t * mesos.offertimeout=30s\ttimeout for offers [$SWARM_MESOS_OFFER_TIMEOUT]"}}
