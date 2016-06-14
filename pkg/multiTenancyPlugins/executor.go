@@ -11,6 +11,7 @@ import (
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/apifilter"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/flavors"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/naming"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/keystone"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 )
@@ -38,15 +39,12 @@ func (*Executor) Init() {
 		log.Debug("SWARM_MULTI_TENANT is false")
 		return
 	}
-	if os.Getenv("SWARM_AUTH_BACKEND") == "Keystone" {
-		log.Debug("Keystone not supported")
-	} else {
-		quotaPlugin := quota.NewQuota(nil)
-		authorizationPlugin := authorization.NewAuthorization(quotaPlugin.Handle)
-		nameScoping := namescoping.NewNameScoping(authorizationPlugin.Handle)
-		flavorsPlugin := flavors.NewPlugin(nameScoping.Handle)
-		apiFilterPlugin := apifilter.NewPlugin(flavorsPlugin.Handle)
-		authenticationPlugin := authentication.NewAuthentication(apiFilterPlugin.Handle)
-		startHandler = authenticationPlugin.Handle
-	}
+	quotaPlugin := quota.NewQuota(nil)
+	authorizationPlugin := authorization.NewAuthorization(quotaPlugin.Handle)
+	nameScoping := namescoping.NewNameScoping(authorizationPlugin.Handle)
+	flavorsPlugin := flavors.NewPlugin(nameScoping.Handle)
+	apiFilterPlugin := apifilter.NewPlugin(flavorsPlugin.Handle)
+	authenticationPlugin := authentication.NewAuthentication(apiFilterPlugin.Handle)
+	keystonePlugin := keystone.NewPlugin(authenticationPlugin.Handle)
+	startHandler = keystonePlugin.Handle
 }
