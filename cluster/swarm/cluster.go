@@ -652,7 +652,7 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string
 }
 
 // Import image
-func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string, err error)) {
+func (c *Cluster) Import(source string, ref string, tag string, imageReader io.Reader, callback func(what, status string, err error)) {
 	var wg sync.WaitGroup
 	c.RLock()
 	pipeWriters := []*io.PipeWriter{}
@@ -668,7 +668,7 @@ func (c *Cluster) Import(source string, repository string, tag string, imageRead
 			defer reader.Close()
 
 			// call engine import
-			err := engine.Import(source, repository, tag, reader)
+			err := engine.Import(source, ref, tag, reader)
 			if callback != nil {
 				if err != nil {
 					callback(engine.Name, "", err)
@@ -938,7 +938,7 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 }
 
 // TagImage tags an image
-func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
+func (c *Cluster) TagImage(IDOrName string, ref string, force bool) error {
 	c.RLock()
 	defer c.RUnlock()
 
@@ -949,7 +949,7 @@ func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool)
 		for _, image := range e.Images() {
 			if image.Match(IDOrName, true) {
 				found = true
-				err := image.Engine.TagImage(IDOrName, repo, tag, force)
+				err := image.Engine.TagImage(IDOrName, ref, force)
 				if err != nil {
 					errs = append(errs, fmt.Sprintf("%s: %s", image.Engine.Name, err.Error()))
 					continue
