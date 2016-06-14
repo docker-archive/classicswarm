@@ -92,57 +92,43 @@ func RandStringBytesRmndr(n int) string {
 	return string(b)
 }
 
-//Maybe merge to one regExp
-var containers = regexp.MustCompile(`/containers/(.*)`)
-var containersWithIdentifier = regexp.MustCompile(`/containers/(.*)/(.*)`)
-var networks = regexp.MustCompile(`/networks/(.*)`)
+var containersRegexp = regexp.MustCompile("/containers/(.*)/(.*)|/containers/(\\w+)")
+var networksRegexp = regexp.MustCompile("/networks/(.*)/(.*)|/networks/(\\w+)")
+var clusterRegExp = regexp.MustCompile("/(.*)/(.*)")
 
-//TODO - Do the same for networks, images, and so on. What is not supported will fail because of the generic message will go to default
-
-//TODO - Handle delete better
 func commandParser(r *http.Request) string {
+	containersParams := containersRegexp.FindStringSubmatch(r.URL.Path)
+	networksParams := networksRegexp.FindStringSubmatch(r.URL.Path)
+	clusterParams := clusterRegExp.FindStringSubmatch(r.URL.Path)
 
-	paramsArr1 := containers.FindStringSubmatch(r.URL.Path)
-	paramsArr2 := containersWithIdentifier.FindStringSubmatch(r.URL.Path)
-	networksParams := networks.FindStringSubmatch(r.URL.Path)
-	//assert the it is not possible for two of them to co-Exist
-
-	log.Debug(paramsArr1)
-	log.Debug(paramsArr2)
-
+	log.Debug(containersParams)
+	log.Debug(networksParams)
+	log.Debug(clusterParams)
+	
 	switch r.Method {
 	case "DELETE":
-		if len(paramsArr1) > 0 && strings.HasPrefix(paramsArr1[0], "/containers") {
+		if len(containersParams) > 0 {
 			return "containerdelete"
 		}
-	}
-	//Order IS important
-	if len(paramsArr2) == 3 {
-
-		return "container" + paramsArr2[2]
-	}
-	if len(paramsArr1) == 2 {
-
-		if paramsArr1[1] == "json" {
-			return "listContainers"
+		if len(networksParams) > 0 {
+			return "networkdelete"
 		}
-		return "container" + paramsArr1[1]
-	}
-	
-	if len(networksParams) == 2 {
-		if networksParams[1] == "create"{
-			return "createNetwork"
+
+	case "GET", "POST":
+		if len(containersParams) == 4 && containersParams[2] != "" {
+			return "container" + containersParams[2]
+		} else if len(containersParams) == 4 && containersParams[3] != "" {
+			return "containers" + containersParams[3] //S
+		}
+		if len(clusterParams) == 3 {
+			return clusterParams[2]
+		}
+		if len(networksParams) == 4 && networksParams[3] != "" {
+			return "networkInspect"
+		} else if len(networksParams) == 4 && networksParams[1] == "" && networksParams[2] == "" && networksParams[3] == "" {
+			return "networksList" //S
 		}
 	}
-
-	if strings.HasSuffix(r.URL.Path, "/networks") {
-		return "listNetworks"
-	}
-	
-	if strings.HasSuffix(r.URL.Path, "/info") {
-		return "clusterInfo"
-	}
-
 	return "This is not supported yet and will end up in the default of the Switch"
 }
 
