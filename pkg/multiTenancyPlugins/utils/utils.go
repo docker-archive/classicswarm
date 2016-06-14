@@ -92,6 +92,48 @@ func RandStringBytesRmndr(n int) string {
 	return string(b)
 }
 
+type commandEnum string
+
+const (
+	//For reference look at primary.go
+	PING    commandEnum = "ping"
+	EVENTS  commandEnum = "events"
+	INFO    commandEnum = "info"
+	VERSION commandEnum = "version"
+	//SKIP ...
+	CONTAINERS_PS     commandEnum = "ps"
+	CONTAINERS_JSON   commandEnum = "json"
+	CONTAINER_ARCHIVE commandEnum = "containerArchive"
+	CONTAINER_EXPORT  commandEnum = "containerExport"
+	CONTAINER_CHANGES commandEnum = "containerChanges"
+	CONTAINER_JSON    commandEnum = "containerJson"
+	CONTAINER_TOP     commandEnum = "containerTop"
+	CONTAINER_LOGS    commandEnum = "containerLogs"
+	CONTAINER_STATS   commandEnum = "containerStats"
+	//SKIP ...
+	NETWORKS_LIST   commandEnum = "NetworksList"
+	NETWORK_INSPECT commandEnum = "NetworkInspect"
+	//SKIP ...
+	//POST
+	CONTAINER_CREATE  commandEnum = "containerCreate"
+	CONTAINER_KILL    commandEnum = "containerKill"
+	CONTAINER_PAUSE   commandEnum = "containerPause"
+	CONTAINER_UNPAUSE commandEnum = "containerUnpause"
+	CONTAINER_RENAME  commandEnum = "containerRename"
+	CONTAINER_RESTART commandEnum = "containerRestart"
+	CONTAINER_START   commandEnum = "containerStart"
+	CONTAINER_STOP    commandEnum = "containerStop"
+	CONTAINER_UPDATE  commandEnum = "containerUpdate"
+	CONTAINER_WAIT    commandEnum = "containerWait"
+	CONTAINER_RESIZE  commandEnum = "containerResize"
+	CONTAINER_ATTACH  commandEnum = "containerAttach"
+	CONTAINER_COPY    commandEnum = "containerCopy"
+	CONTAINER_EXEC    commandEnum = "containerExec"
+	//SKIP ...
+
+	CONTAINER_DELETE commandEnum = "containerDelete"
+)
+
 var containersRegexp = regexp.MustCompile("/containers/(.*)/(.*)|/containers/(\\w+)")
 var networksRegexp = regexp.MustCompile("/networks/(.*)/(.*)|/networks/(\\w+)")
 var clusterRegExp = regexp.MustCompile("/(.*)/(.*)")
@@ -104,7 +146,7 @@ func commandParser(r *http.Request) string {
 	log.Debug(containersParams)
 	log.Debug(networksParams)
 	log.Debug(clusterParams)
-	
+
 	switch r.Method {
 	case "DELETE":
 		if len(containersParams) > 0 {
