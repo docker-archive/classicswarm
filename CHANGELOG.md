@@ -1,12 +1,21 @@
 # Changelog
 
+## 1.2.4 (2016-06-14)
+
+#### API
+
+- Code refactoring
+
+#### Test
+
+- Fix leader election tests
+
 ## 1.2.3 (2016-05-25)
 
 #### API
 
 - Update `engine-api` vendoring (supports new functions and signatures)
 - Fix registry auth bug for image pulls
-
 
 ## 1.2.2 (2016-05-05)
 
