@@ -334,7 +334,7 @@ func TestCreateContainer(t *testing.T) {
 	filterArgs.Add("id", id)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false, Filter: filterArgs}).Return([]types.Container{{ID: id}}, nil).Once()
 	apiClient.On("ContainerInspect", mock.Anything, id).Return(types.ContainerJSON{Config: &config.Config, ContainerJSONBase: &types.ContainerJSONBase{HostConfig: &config.HostConfig}, NetworkSettings: &types.NetworkSettings{Networks: nil}}, nil).Once()
-	container, err := engine.Create(config, name, false, auth)
+	container, err := engine.CreateContainer(config, name, false, auth)
 	assert.Nil(t, err)
 	assert.Equal(t, container.ID, id)
 	assert.Len(t, engine.Containers(), 1)
@@ -344,7 +344,7 @@ func TestCreateContainer(t *testing.T) {
 	mockConfig.HostConfig.CPUShares = int64(math.Ceil(float64(config.HostConfig.CPUShares*1024) / float64(mockInfo.NCPU)))
 	// FIXMEENGINEAPI : below should return an engine-api error, or something custom
 	apiClient.On("ContainerCreate", mock.Anything, &mockConfig.Config, &mockConfig.HostConfig, &mockConfig.NetworkingConfig, name).Return(types.ContainerCreateResponse{}, dockerclient.ErrImageNotFound).Once()
-	container, err = engine.Create(config, name, false, auth)
+	container, err = engine.CreateContainer(config, name, false, auth)
 	assert.Equal(t, err, dockerclient.ErrImageNotFound)
 	assert.Nil(t, container)
 
@@ -362,7 +362,7 @@ func TestCreateContainer(t *testing.T) {
 	filterArgs.Add("id", id)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false, Filter: filterArgs}).Return([]types.Container{{ID: id}}, nil).Once()
 	apiClient.On("ContainerInspect", mock.Anything, id).Return(types.ContainerJSON{Config: &config.Config, ContainerJSONBase: &types.ContainerJSONBase{HostConfig: &config.HostConfig}, NetworkSettings: &types.NetworkSettings{Networks: nil}}, nil).Once()
-	container, err = engine.Create(config, name, true, auth)
+	container, err = engine.CreateContainer(config, name, true, auth)
 	assert.Nil(t, err)
 	assert.Equal(t, container.ID, id)
 	assert.Len(t, engine.Containers(), 2)

@@ -221,7 +221,7 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	c.scheduler.Unlock()
 
 	log.WithFields(log.Fields{"NodeName": n.Name, "NodeID": n.ID}).Debugf("Scheduling container %s to ", name)
-	container, err := engine.Create(config, name, true, authConfig)
+	container, err := engine.CreateContainer(config, name, true, authConfig)
 
 	c.scheduler.Lock()
 	delete(c.pendingContainers, swarmID)
