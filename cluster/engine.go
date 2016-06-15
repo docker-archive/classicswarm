@@ -861,7 +861,7 @@ func (e *Engine) TotalCpus() int64 {
 	return e.Cpus + (e.Cpus * e.overcommitRatio / 100)
 }
 
-// Create a new container
+// CreateContainer creates a new container
 func (e *Engine) CreateContainer(config *ContainerConfig, name string, pullImage bool, authConfig *types.AuthConfig) (*Container, error) {
 	var (
 		err        error
