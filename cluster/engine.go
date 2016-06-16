@@ -602,6 +602,16 @@ func (e *Engine) AddNetwork(network *Network) {
 	e.Unlock()
 }
 
+// AddVolume adds a volume to the internal engine state
+func (e *Engine) AddVolume(volume *Volume) {
+	e.Lock()
+	e.volumes[volume.Name] = &Volume{
+		Volume: volume.Volume,
+		Engine: e,
+	}
+	e.Unlock()
+}
+
 // RemoveVolume deletes a volume from the engine.
 func (e *Engine) RemoveVolume(name string) error {
 	err := e.apiClient.VolumeRemove(context.Background(), name)

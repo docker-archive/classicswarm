@@ -478,6 +478,7 @@ func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (resp
 		return nil, err
 	}
 	if nodes != nil {
+		c.RLock()
 		resp, err := c.engines[nodes[0].ID].CreateNetwork(name, request)
 		if err == nil {
 			if network := c.engines[nodes[0].ID].Networks().Get(resp.ID); network != nil && network.Scope == "global" {
@@ -488,6 +489,7 @@ func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (resp
 				}
 			}
 		}
+		c.RUnlock()
 		return resp, err
 	}
 	return nil, nil
@@ -496,59 +498,60 @@ func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (resp
 // CreateVolume creates a volume in the cluster
 func (c *Cluster) CreateVolume(request *types.VolumeCreateRequest) (*types.Volume, error) {
 	var (
-		wg     sync.WaitGroup
-		volume *types.Volume
-		err    error
 		parts  = strings.SplitN(request.Name, "/", 2)
-		node   = ""
+		config = &cluster.ContainerConfig{}
 	)
-
 	if request.Name == "" {
 		request.Name = stringid.GenerateRandomID()
 	} else if len(parts) == 2 {
-		node = parts[0]
+		config = cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
 		request.Name = parts[1]
 	}
-	if node == "" {
-		c.RLock()
-		for _, e := range c.engines {
-			wg.Add(1)
 
-			go func(engine *cluster.Engine) {
-				defer wg.Done()
+	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+	if err != nil {
+		return nil, err
+	}
+	c.RLock()
+	defer c.RUnlock()
 
-				v, er := engine.CreateVolume(request)
-				if v != nil {
-					volume = v
-					err = nil
-				}
-				if er != nil && volume == nil {
-					err = er
-				}
-			}(e)
-		}
-		c.RUnlock()
-
-		wg.Wait()
-	} else {
-		config := cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
-		nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+	if nodes != nil {
+		resp, err := c.engines[nodes[0].ID].CreateVolume(request)
 		if err != nil {
 			return nil, err
 		}
-		if nodes != nil {
-			v, er := c.engines[nodes[0].ID].CreateVolume(request)
-			if v != nil {
-				volume = v
-				err = nil
+		if volume := c.engines[nodes[0].ID].Volumes().Get(resp.Name); volume != nil && volume.Scope == "global" {
+			for id, engine := range c.engines {
+				if id != nodes[0].ID {
+					engine.AddVolume(volume)
+				}
 			}
-			if er != nil && volume == nil {
-				err = er
+		} else {
+			chErr := make(chan error, len(c.engines))
+			var wg sync.WaitGroup
+			for id, engine := range c.engines {
+				if id != nodes[0].ID {
+					wg.Add(1)
+					go func(engine *cluster.Engine) {
+						_, err := engine.CreateVolume(request)
+						chErr <- err
+						wg.Done()
+					}(engine)
+				}
+			}
+			wg.Wait()
+			close(chErr)
+			for er := range chErr {
+				if er != nil {
+					err = er
+					break
+				}
 			}
 		}
+		return resp, err
 	}
 
-	return volume, err
+	return nil, nil
 }
 
 // RemoveVolumes removes all the volumes that match `name` from the cluster
