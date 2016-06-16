@@ -98,7 +98,7 @@ swarm join \
 ```
 
 This works the same way for the Swarm `manage` and `list` commands, but
-remember, If you are running the swarm image rather than the binary the paths
+remember, if you are running the swarm image rather than the binary the paths
 must be available inside the container (e.g. within a data volume).
 
 ## A static file or list of nodes
