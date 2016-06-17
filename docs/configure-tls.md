@@ -109,10 +109,10 @@ You have now configured a CA server with a public and private keypair. You can i
 # openssl rsa -in ca-priv-key.pem -noout -text
 ```
 
-To inspect the public key (cert): `
+To inspect the public key (cert):
 
 ```
-# openssl x509 -in ca.pem -noout -text`
+# openssl x509 -in ca.pem -noout -text
 ```
 
 The following command shows the partial contents of the CA's public key.
