@@ -822,7 +822,7 @@ func (c *Cluster) TotalMemory() int64 {
 	return totalMemory
 }
 
-// TotalCpus returns the total memory of the cluster
+// TotalCpus returns the total CPUs of the cluster
 func (c *Cluster) TotalCpus() int64 {
 	var totalCpus int64
 	for _, engine := range c.engines {
