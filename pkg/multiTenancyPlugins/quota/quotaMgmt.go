@@ -216,30 +216,33 @@ func (quota *QuotaMgmt) refreshLoop(cluster cluster.Cluster) {
 			
 			tenant := container.Config.Labels[headers.TenancyLabel]		
 			if tenant !="" {
-				//populating clusterQuotas with cluster containers for later use
-				if tenantClusterQuota, ok := clusterQuotas[tenant]; ok {
-					clusterContInfo.Memory = container.Config.HostConfig.Memory
-					tenantClusterQuota.containers[container.Info.ID] = clusterContInfo
-					clusterQuotas[tenant] = tenantClusterQuota
-				}else{//create new tenant for cluster containers map
-					tenantClusterQuota.containers = make(map[string]ContainerInfo)
-					clusterContInfo.Memory = container.Config.HostConfig.Memory
-					tenantClusterQuota.containers[container.Info.ID] = clusterContInfo
-					clusterQuotas[tenant] = tenantClusterQuota
-				}
-				
-				if tenantQuota, ok := quotas[tenant]; ok {
-					//if cluster container id with no status doesn't exist on quota containers add container id to quota and add container memory to quotaContMemory
-					_, okId := tenantQuota.containers[container.Info.ID]
-					//if container id not exist in quota
-					if !okId { //not in PENDING_DELETED state
+				swarm := container.Config.Labels[headers.SwarmLabel]
+				if swarm !="" {
+					//populating clusterQuotas with cluster containers for later use
+					if tenantClusterQuota, ok := clusterQuotas[tenant]; ok {
+						clusterContInfo.Memory = container.Config.HostConfig.Memory
+						tenantClusterQuota.containers[container.Info.ID] = clusterContInfo
+						clusterQuotas[tenant] = tenantClusterQuota
+					}else{//create new tenant for cluster containers map
+						tenantClusterQuota.containers = make(map[string]ContainerInfo)
+						clusterContInfo.Memory = container.Config.HostConfig.Memory
+						tenantClusterQuota.containers[container.Info.ID] = clusterContInfo
+						clusterQuotas[tenant] = tenantClusterQuota
+					}
+					
+					if tenantQuota, ok := quotas[tenant]; ok {
+						//if cluster container id with no status doesn't exist on quota containers add container id to quota and add container memory to quotaContMemory
+						_, okId := tenantQuota.containers[container.Info.ID]
+						//if container id not exist in quota
+						if !okId { //not in PENDING_DELETED state
+							quotaMgmt.AddContainer(tenant , container.Config.HostConfig.Memory, container.Info.ID, NONE)
+							tenantsDeltaMem[tenant] = tenantsDeltaMem[tenant] + container.Config.HostConfig.Memory
+						}
+					}else{ //New tenant
 						quotaMgmt.AddContainer(tenant , container.Config.HostConfig.Memory, container.Info.ID, NONE)
 						tenantsDeltaMem[tenant] = tenantsDeltaMem[tenant] + container.Config.HostConfig.Memory
-					}
-				}else{ //New tenant
-					quotaMgmt.AddContainer(tenant , container.Config.HostConfig.Memory, container.Info.ID, NONE)
-					tenantsDeltaMem[tenant] = tenantsDeltaMem[tenant] + container.Config.HostConfig.Memory
-				}	
+					}	
+				}
 			}
 		}	
 		//delete quota containers which are missing on cluster containers
