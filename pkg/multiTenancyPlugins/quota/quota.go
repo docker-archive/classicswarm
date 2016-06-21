@@ -32,13 +32,12 @@ func NewQuota(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 }
 
 func (quotaImpl *DefaultQuotaImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
-	log.Debug("Plugin Quota got command: " + command)
 	if(enforceQuota != "true") {
 		log.Debug("Quota NOT enforced!")
 		swarmHandler.ServeHTTP(w, r)
 		return nil
 	}
-	
+	log.Debug("Plugin Quota got command: " + command)
 	//initialize quota once
 	if initQuota == false{
 		quotaMgmt.Init(cluster)
@@ -81,12 +80,18 @@ func (quotaImpl *DefaultQuotaImpl) Handle(command string, cluster cluster.Cluste
 	case "containerdelete":
 		resourceLongID := mux.Vars(r)["name"]
 		tenant := r.Header.Get(headers.AuthZTenantIdHeaderName)
+		err := quotaMgmt.IsSwarmContainer(cluster,resourceLongID, tenant)
+		if err != nil {
+				log.Error(err)
+				return err
+		}
 		//on delete request - decrease resource usage for the tenant in quotaService and set quota container status to PENDING_DELETED
 		quotaMgmt.DecreaseQuota(resourceLongID, tenant)			
 		rec := httptest.NewRecorder()
 		swarmHandler.ServeHTTP(rec, r)	
 		//if delete response is OK delete the container
 		quotaMgmt.HandleDeleteResponse(rec.Code, resourceLongID, tenant)	
+		
 	default:	
 		swarmHandler.ServeHTTP(w, r)	
 	}

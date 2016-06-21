@@ -41,14 +41,14 @@ func (quota *QuotaMgmt) CheckAndIncreaseQuota(tenant string, memory int64) error
 	}
 	var qp = ResourceList{memory:memory}
 	_, used_ret , _,_ := quotaService.GetRQ(tenant,"","")
-	log.Debug("Quota::CheckAndIncreaseQuota tenant ",tenant," used quota was= ",used_ret)
+	log.Debug("Quota::CheckAndIncreaseQuota tenant ",tenant," used quota was= ",used_ret.memory)
 	//check limit and increase quota
 	err := quotaService.UpdateRQUsed(tenant,"","",qp)
 	if err != nil {
 			return err
 	}
 	_, used_ret , _,_ = quotaService.GetRQ(tenant,"","")
-	log.Debug("Quota::CheckAndIncreaseQuota tenant ",tenant," used quota now= ",used_ret)
+	log.Debug("Quota::CheckAndIncreaseQuota tenant ",tenant," used quota now= ",used_ret.memory)
 	return nil
 }
 
@@ -62,7 +62,7 @@ func (quota *QuotaMgmt) HandleCreateResponse(returnCode int, body []byte, tenant
 	if returnCode!=201 {
 		err := quotaService.UpdateRQUsed(tenant,"","",qp)	//Decrease quota
 		_, used_ret , _,_ := quotaService.GetRQ(tenant,"","")
-		log.Debug("Quota::HandleCreateResponse failed tenant ",tenant,"decreased used quota = ",used_ret)
+		log.Debug("Quota::HandleCreateResponse failed tenant ",tenant,"decreased used quota = ",used_ret.memory)
 		if err != nil {
 			return err
 		}
@@ -74,7 +74,7 @@ func (quota *QuotaMgmt) HandleCreateResponse(returnCode int, body []byte, tenant
 		//create response failed - container was NOT created on engine	-> decrease quota
 	    err2 := quotaService.UpdateRQUsed(tenant,"","",qp)	//Decrease quota
 	    _, used_ret , _,_ := quotaService.GetRQ(tenant,"","")
-		log.Debug("Quota::HandleCreateResponse failed tenant ",tenant,"decreased used quota = ",used_ret)
+		log.Debug("Quota::HandleCreateResponse failed tenant ",tenant,"decreased used quota = ",used_ret.memory)
 	    if err2 != nil {
 				return err2
 		}
@@ -91,7 +91,7 @@ func (quota *QuotaMgmt) HandleCreateResponse(returnCode int, body []byte, tenant
 					return err
 				}
 				_, used_ret , _,_ := quotaService.GetRQ(tenant,"","")
-				log.Debug("Quota::HandleCreateResponse (container with PENDING_DELETED)  tenant ",tenant," decreased used quota = ",used_ret)
+				log.Debug("Quota::HandleCreateResponse (container with PENDING_DELETED)  tenant ",tenant," decreased used quota = ",used_ret.memory)
 				quotaMgmt.DeleteContainer(tenant, memory, id)		//delete container
 				quotaMgmt.Unlock()
 				return nil
@@ -138,6 +138,21 @@ func (quota *QuotaMgmt) DeleteContainer(tenant string, memory int64, container s
 	}	
 }
 
+func (quota *QuotaMgmt) IsSwarmContainer(cluster cluster.Cluster,id string, tenant string) error{
+	containers := (cluster).Containers()
+	for _, container := range containers{	
+		if container.Info.ID == id{
+			swarm := container.Config.Labels[headers.SwarmLabel]
+			if swarm !="" {	
+				return nil
+			}
+		}
+		return errors.New("Not Swarm container!")
+	}
+	return errors.New("container Not exists in cluster!")
+}
+
+
 //on delete request - decrease resource usage for the tenant in quotaService and set quota container status to PENDING_DELETED
 func (quota *QuotaMgmt) DecreaseQuota(id string, tenant string) bool{
 	if enforceQuota != "true" {
@@ -149,10 +164,10 @@ func (quota *QuotaMgmt) DecreaseQuota(id string, tenant string) bool{
 			qp.memory = tenantQuota.containers[id].Memory*dec //decrease memory
 			quotaMgmt.Lock()
 			_, used_ret , _,_ := quotaService.GetRQ(tenant,"","")
-				log.Debug("Quota::DecreaseQuota tenant ",tenant,"used quota was = ",used_ret)
+				log.Debug("Quota::DecreaseQuota tenant ",tenant,"used quota was = ",used_ret.memory)
 			quotaService.UpdateRQUsed(tenant,"","",qp)
 			_, used_ret , _,_ = quotaService.GetRQ(tenant,"","")
-				log.Debug("Quota::DecreaseQuota tenant ",tenant,"used quota is = ",used_ret)
+				log.Debug("Quota::DecreaseQuota tenant ",tenant,"used quota is = ",used_ret.memory)
 			contInfo.Status = PENDING_DELETED
 			tenantQuota.containers[id] = contInfo
 			quotas[tenant] = tenantQuota	
@@ -193,10 +208,12 @@ func (quota *QuotaMgmt) refreshLoop(cluster cluster.Cluster) {
 		var clusterContInfo ContainerInfo
 		//containers represents a list a containers
 		containers := (cluster).Containers()
+		
 		var clusterQuotas = make(map[string]QuotaMgmt) // map of cluster containers
 		var tenantsDeltaMem = make(map[string]int64) // map of tenants and delta memory to add/subtruct
 		//add missing cluster containers to quoata
 		for _, container := range containers{	
+			
 			tenant := container.Config.Labels[headers.TenancyLabel]		
 			if tenant !="" {
 				//populating clusterQuotas with cluster containers for later use

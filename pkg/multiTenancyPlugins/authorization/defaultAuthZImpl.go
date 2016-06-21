@@ -124,7 +124,7 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 		w.Write(newBody)
 		
 	case "clusterInfo", "createNetwork":
-		swarmHandler.ServeHTTP(w, r)	
+		return defaultauthZ.nextHandler(command, cluster, w, r, swarmHandler)
 
 	//Always allow or not?
 	default:
