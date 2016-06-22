@@ -359,9 +359,13 @@ func (c *Cluster) removeEngine(addr string) bool {
 func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan error) {
 	// Watch changes on the discovery channel.
 	currentEntries := discovery.Entries{}
-	for {
+	for ch != nil || errCh != nil {
 		select {
-		case entries := <-ch:
+		case entries, ok := <-ch:
+			if !ok {
+				ch = nil
+				break
+			}
 			added, removed := currentEntries.Diff(entries)
 			currentEntries = entries
 
@@ -375,7 +379,11 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 			for _, entry := range added {
 				c.addEngine(entry.String())
 			}
-		case err := <-errCh:
+		case err, ok := <-errCh:
+			if !ok {
+				errCh = nil
+				break
+			}
 			log.Errorf("Discovery error: %v", err)
 		}
 	}
