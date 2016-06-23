@@ -537,7 +537,10 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /containers/create
 func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	var (
 		defaultMemorySwappiness = int64(-1)
 		name                    = r.Form.Get("name")
