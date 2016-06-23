@@ -11,8 +11,6 @@ weight=-99
 
 # Docker Swarm overview
 
->**Note**:These documents refer to Docker Swarm cluster mangement features. For information on Docker Engine 1.12 swarm mode, see [Swarm mode overview](/engine/swarm/index.md).
-
 Docker Swarm is native clustering for Docker. It turns a pool of Docker hosts
 into a single, virtual Docker host. Because Docker Swarm serves the standard
 Docker API, any tool that already communicates with a Docker daemon can use
