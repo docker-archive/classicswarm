@@ -68,7 +68,7 @@ func readFlavorFile() {
 	}
 	log.Infof("Flavors %+v",flavors)
 }
-func (flavorsImpl *DefaultFlavorsImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
+func (flavorsImpl *DefaultFlavorsImpl) Handle(command utils.CommandEnum, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin flavors Got command: " + command)
 	log.Debug("Flavors enforced: ",flavorsEnforced)
 	if(flavorsEnforced != "true") {

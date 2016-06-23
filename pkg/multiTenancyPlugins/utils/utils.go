@@ -32,11 +32,6 @@ type ValidationOutPutDTO struct {
 
 //UTILS
 
-//Use something else...
-func ParseCommand(r *http.Request) string {
-	return commandParser(r)
-}
-
 func ModifyRequest(r *http.Request, body io.Reader, urlStr string, containerID string) (*http.Request, error) {
 	rc, ok := body.(io.ReadCloser)
 	if !ok && body != nil {
@@ -92,47 +87,91 @@ func RandStringBytesRmndr(n int) string {
 	return string(b)
 }
 
-type commandEnum string
+type CommandEnum string
 
 const (
 	//For reference look at primary.go
-	PING    commandEnum = "ping"
-	EVENTS  commandEnum = "events"
-	INFO    commandEnum = "info"
-	VERSION commandEnum = "version"
+	PING    CommandEnum = "ping"
+	EVENTS  CommandEnum = "events"
+	INFO    CommandEnum = "info"
+	VERSION CommandEnum = "version"
 	//SKIP ...
-	CONTAINERS_PS     commandEnum = "ps"
-	CONTAINERS_JSON   commandEnum = "json"
-	CONTAINER_ARCHIVE commandEnum = "containerArchive"
-	CONTAINER_EXPORT  commandEnum = "containerExport"
-	CONTAINER_CHANGES commandEnum = "containerChanges"
-	CONTAINER_JSON    commandEnum = "containerJson"
-	CONTAINER_TOP     commandEnum = "containerTop"
-	CONTAINER_LOGS    commandEnum = "containerLogs"
-	CONTAINER_STATS   commandEnum = "containerStats"
+	CONTAINERS_PS     CommandEnum = "ps"
+	CONTAINERS_JSON   CommandEnum = "json"
+	CONTAINER_ARCHIVE CommandEnum = "containerArchive"
+	CONTAINER_EXPORT  CommandEnum = "containerExport"
+	CONTAINER_CHANGES CommandEnum = "containerChanges"
+	CONTAINER_JSON    CommandEnum = "containerJson"
+	CONTAINER_TOP     CommandEnum = "containerTop"
+	CONTAINER_LOGS    CommandEnum = "containerLogs"
+	CONTAINER_STATS   CommandEnum = "containerStats"
 	//SKIP ...
-	NETWORKS_LIST   commandEnum = "NetworksList"
-	NETWORK_INSPECT commandEnum = "NetworkInspect"
+	NETWORKS_LIST   CommandEnum = "NetworksList"
+	NETWORK_INSPECT CommandEnum = "NetworkInspect"
 	//SKIP ...
 	//POST
-	CONTAINER_CREATE  commandEnum = "containerCreate"
-	CONTAINER_KILL    commandEnum = "containerKill"
-	CONTAINER_PAUSE   commandEnum = "containerPause"
-	CONTAINER_UNPAUSE commandEnum = "containerUnpause"
-	CONTAINER_RENAME  commandEnum = "containerRename"
-	CONTAINER_RESTART commandEnum = "containerRestart"
-	CONTAINER_START   commandEnum = "containerStart"
-	CONTAINER_STOP    commandEnum = "containerStop"
-	CONTAINER_UPDATE  commandEnum = "containerUpdate"
-	CONTAINER_WAIT    commandEnum = "containerWait"
-	CONTAINER_RESIZE  commandEnum = "containerResize"
-	CONTAINER_ATTACH  commandEnum = "containerAttach"
-	CONTAINER_COPY    commandEnum = "containerCopy"
-	CONTAINER_EXEC    commandEnum = "containerExec"
+	CONTAINER_CREATE  CommandEnum = "containerCreate"
+	CONTAINER_KILL    CommandEnum = "containerKill"
+	CONTAINER_PAUSE   CommandEnum = "containerPause"
+	CONTAINER_UNPAUSE CommandEnum = "containerUnpause"
+	CONTAINER_RENAME  CommandEnum = "containerRename"
+	CONTAINER_RESTART CommandEnum = "containerRestart"
+	CONTAINER_START   CommandEnum = "containerStart"
+	CONTAINER_STOP    CommandEnum = "containerStop"
+	CONTAINER_UPDATE  CommandEnum = "containerUpdate"
+	CONTAINER_WAIT    CommandEnum = "containerWait"
+	CONTAINER_RESIZE  CommandEnum = "containerResize"
+	CONTAINER_ATTACH  CommandEnum = "containerAttach"
+	CONTAINER_COPY    CommandEnum = "containerCopy"
+	CONTAINER_EXEC    CommandEnum = "containerExec"
 	//SKIP ...
 
-	CONTAINER_DELETE commandEnum = "containerDelete"
+	CONTAINER_DELETE CommandEnum = "containerDelete"
 )
+
+var invMapmap map[string]CommandEnum
+
+func ParseCommand(r *http.Request) CommandEnum {
+	//TODO	put this map elsewhere
+	invMapmap = make(map[string]CommandEnum)
+	invMapmap["ping"] = PING
+	invMapmap["events"] = EVENTS
+	invMapmap["info"] = INFO
+	invMapmap["version"] = VERSION
+	//SKIP ...
+	invMapmap["ps"] = CONTAINERS_PS
+	invMapmap["json"] = CONTAINERS_JSON
+	invMapmap["containerArchive"] = CONTAINER_ARCHIVE
+	invMapmap["containerExport"] = CONTAINER_EXPORT
+	invMapmap["containerChanges"] = CONTAINER_CHANGES
+	invMapmap["containerJson"] = CONTAINER_JSON
+	invMapmap["containerTop"] = CONTAINER_TOP
+	invMapmap["containerLogs"] = CONTAINER_LOGS
+	invMapmap["containerStats"] = CONTAINER_STATS
+	//SKIP ...
+	invMapmap["NetworksList"] = NETWORKS_LIST
+	invMapmap["NetworkInspect"] = NETWORK_INSPECT
+	//SKIP ...
+	//POST
+	invMapmap["containerCreate"] = CONTAINER_CREATE
+	invMapmap["containerKill"] = CONTAINER_KILL
+	invMapmap["containerPause"] = CONTAINER_PAUSE
+	invMapmap["containerUnpause"] = CONTAINER_UNPAUSE
+	invMapmap["containerRename"] = CONTAINER_RENAME
+	invMapmap["containerRestart"] = CONTAINER_RESTART
+	invMapmap["containerStart"] = CONTAINER_START
+	invMapmap["containerStop"] = CONTAINER_STOP
+	invMapmap["containerUpdate"] = CONTAINER_UPDATE
+	invMapmap["containerWait"] = CONTAINER_WAIT
+	invMapmap["containerResize"] = CONTAINER_RESIZE
+	invMapmap["containerAttach"] = CONTAINER_ATTACH
+	invMapmap["containerCopy"] = CONTAINER_COPY
+	invMapmap["containerExec"] = CONTAINER_EXEC
+	//SKIP ...
+	invMapmap["containerDelete"] = CONTAINER_DELETE
+
+	return invMapmap[commandParser(r)]
+}
 
 var containersRegexp = regexp.MustCompile("/containers/(.*)/(.*)|/containers/(\\w+)")
 var networksRegexp = regexp.MustCompile("/networks/(.*)/(.*)|/networks/(\\w+)")

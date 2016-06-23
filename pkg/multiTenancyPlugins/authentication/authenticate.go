@@ -9,6 +9,7 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/headers"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 )
 
 //AuthenticationImpl - implementation of plugin API
@@ -24,7 +25,7 @@ func NewAuthentication(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 }
 
 //Handle authentication on request and call next plugin handler.
-func (authentication *AuthenticationImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
+func (authentication *AuthenticationImpl) Handle(command utils.CommandEnum, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin authN got command: " + command)
 	tenantIdToValidate := r.Header.Get(headers.AuthZTenantIdHeaderName)
 	if tenantIdToValidate == "" {
