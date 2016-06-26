@@ -41,6 +41,10 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 			if err := json.NewDecoder(bytes.NewReader(reqBody)).Decode(&containerConfig); err != nil {
 				return err
 			}
+			//Disallow a user to create the special labels Swarm or K8 use
+			if r.Header.Get(headers.AuthZTenantIdHeaderName) != "" {
+				return errors.New("Not allowed to use special labels !")
+			}
 			containerConfig.Labels[headers.TenancyLabel] = r.Header.Get(headers.AuthZTenantIdHeaderName)
 
 			var buf bytes.Buffer
