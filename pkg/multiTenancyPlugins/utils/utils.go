@@ -98,35 +98,35 @@ const (
 	//SKIP ...
 	CONTAINERS_PS     CommandEnum = "ps"
 	CONTAINERS_JSON   CommandEnum = "json"
-	CONTAINER_ARCHIVE CommandEnum = "containerArchive"
-	CONTAINER_EXPORT  CommandEnum = "containerExport"
-	CONTAINER_CHANGES CommandEnum = "containerChanges"
-	CONTAINER_JSON    CommandEnum = "containerJson"
-	CONTAINER_TOP     CommandEnum = "containerTop"
-	CONTAINER_LOGS    CommandEnum = "containerLogs"
-	CONTAINER_STATS   CommandEnum = "containerStats"
+	CONTAINER_ARCHIVE CommandEnum = "containerarchive"
+	CONTAINER_EXPORT  CommandEnum = "containerexport"
+	CONTAINER_CHANGES CommandEnum = "containerchanges"
+	CONTAINER_JSON    CommandEnum = "containerjson"
+	CONTAINER_TOP     CommandEnum = "containertop"
+	CONTAINER_LOGS    CommandEnum = "containerlogs"
+	CONTAINER_STATS   CommandEnum = "containerstats"
 	//SKIP ...
-	NETWORKS_LIST   CommandEnum = "NetworksList"
-	NETWORK_INSPECT CommandEnum = "NetworkInspect"
+	NETWORKS_LIST   CommandEnum = "networkslist"
+	NETWORK_INSPECT CommandEnum = "networkinspect"
 	//SKIP ...
 	//POST
-	CONTAINER_CREATE  CommandEnum = "containerCreate"
-	CONTAINER_KILL    CommandEnum = "containerKill"
-	CONTAINER_PAUSE   CommandEnum = "containerPause"
-	CONTAINER_UNPAUSE CommandEnum = "containerUnpause"
-	CONTAINER_RENAME  CommandEnum = "containerRename"
-	CONTAINER_RESTART CommandEnum = "containerRestart"
-	CONTAINER_START   CommandEnum = "containerStart"
-	CONTAINER_STOP    CommandEnum = "containerStop"
-	CONTAINER_UPDATE  CommandEnum = "containerUpdate"
-	CONTAINER_WAIT    CommandEnum = "containerWait"
-	CONTAINER_RESIZE  CommandEnum = "containerResize"
-	CONTAINER_ATTACH  CommandEnum = "containerAttach"
-	CONTAINER_COPY    CommandEnum = "containerCopy"
-	CONTAINER_EXEC    CommandEnum = "containerExec"
+	CONTAINER_CREATE  CommandEnum = "containercreate"
+	CONTAINER_KILL    CommandEnum = "containerkill"
+	CONTAINER_PAUSE   CommandEnum = "containerpause"
+	CONTAINER_UNPAUSE CommandEnum = "containerunpause"
+	CONTAINER_RENAME  CommandEnum = "containerrename"
+	CONTAINER_RESTART CommandEnum = "containerrestart"
+	CONTAINER_START   CommandEnum = "containerstart"
+	CONTAINER_STOP    CommandEnum = "containerstop"
+	CONTAINER_UPDATE  CommandEnum = "containerupdate"
+	CONTAINER_WAIT    CommandEnum = "containerwait"
+	CONTAINER_RESIZE  CommandEnum = "containerresize"
+	CONTAINER_ATTACH  CommandEnum = "containerattach"
+	CONTAINER_COPY    CommandEnum = "containercopy"
+	CONTAINER_EXEC    CommandEnum = "containerexec"
 	//SKIP ...
 
-	CONTAINER_DELETE CommandEnum = "containerDelete"
+	CONTAINER_DELETE CommandEnum = "containerdelete"
 )
 
 var invMapmap map[string]CommandEnum
@@ -141,35 +141,36 @@ func ParseCommand(r *http.Request) CommandEnum {
 	//SKIP ...
 	invMapmap["ps"] = CONTAINERS_PS
 	invMapmap["json"] = CONTAINERS_JSON
-	invMapmap["containerArchive"] = CONTAINER_ARCHIVE
-	invMapmap["containerExport"] = CONTAINER_EXPORT
-	invMapmap["containerChanges"] = CONTAINER_CHANGES
-	invMapmap["containerJson"] = CONTAINER_JSON
-	invMapmap["containerTop"] = CONTAINER_TOP
-	invMapmap["containerLogs"] = CONTAINER_LOGS
-	invMapmap["containerStats"] = CONTAINER_STATS
+	invMapmap["containerarchive"] = CONTAINER_ARCHIVE
+	invMapmap["containerexport"] = CONTAINER_EXPORT
+	invMapmap["containerchanges"] = CONTAINER_CHANGES
+	invMapmap["containerjson"] = CONTAINER_JSON
+	invMapmap["containertop"] = CONTAINER_TOP
+	invMapmap["containerlogs"] = CONTAINER_LOGS
+	invMapmap["containerstats"] = CONTAINER_STATS
 	//SKIP ...
-	invMapmap["NetworksList"] = NETWORKS_LIST
-	invMapmap["NetworkInspect"] = NETWORK_INSPECT
+	invMapmap["networkslist"] = NETWORKS_LIST
+	invMapmap["networkinspect"] = NETWORK_INSPECT
 	//SKIP ...
 	//POST
-	invMapmap["containerCreate"] = CONTAINER_CREATE
-	invMapmap["containerKill"] = CONTAINER_KILL
-	invMapmap["containerPause"] = CONTAINER_PAUSE
-	invMapmap["containerUnpause"] = CONTAINER_UNPAUSE
-	invMapmap["containerRename"] = CONTAINER_RENAME
-	invMapmap["containerRestart"] = CONTAINER_RESTART
-	invMapmap["containerStart"] = CONTAINER_START
-	invMapmap["containerStop"] = CONTAINER_STOP
-	invMapmap["containerUpdate"] = CONTAINER_UPDATE
-	invMapmap["containerWait"] = CONTAINER_WAIT
-	invMapmap["containerResize"] = CONTAINER_RESIZE
-	invMapmap["containerAttach"] = CONTAINER_ATTACH
-	invMapmap["containerCopy"] = CONTAINER_COPY
-	invMapmap["containerExec"] = CONTAINER_EXEC
+	invMapmap["containercreate"] = CONTAINER_CREATE
+	invMapmap["containerkill"] = CONTAINER_KILL
+	invMapmap["containerpause"] = CONTAINER_PAUSE
+	invMapmap["containerunpause"] = CONTAINER_UNPAUSE
+	invMapmap["containerrename"] = CONTAINER_RENAME
+	invMapmap["containerrestart"] = CONTAINER_RESTART
+	invMapmap["containerstart"] = CONTAINER_START
+	invMapmap["containerstop"] = CONTAINER_STOP
+	invMapmap["containerupdate"] = CONTAINER_UPDATE
+	invMapmap["containerwait"] = CONTAINER_WAIT
+	invMapmap["containerresize"] = CONTAINER_RESIZE
+	invMapmap["containerattach"] = CONTAINER_ATTACH
+	invMapmap["containercopy"] = CONTAINER_COPY
+	invMapmap["containerexec"] = CONTAINER_EXEC
 	//SKIP ...
-	invMapmap["containerDelete"] = CONTAINER_DELETE
-
+	invMapmap["containerdelete"] = CONTAINER_DELETE
+	command := commandParser(r)
+	log.Debug("++++++" + command + "++++++")
 	return invMapmap[commandParser(r)]
 }
 
@@ -199,7 +200,7 @@ func commandParser(r *http.Request) string {
 		if len(containersParams) == 4 && containersParams[2] != "" {
 			return "container" + containersParams[2]
 		} else if len(containersParams) == 4 && containersParams[3] != "" {
-			return "containers" + containersParams[3] //S
+			return "container" + containersParams[3] //S
 		}
 		if len(clusterParams) == 3 {
 			return clusterParams[2]

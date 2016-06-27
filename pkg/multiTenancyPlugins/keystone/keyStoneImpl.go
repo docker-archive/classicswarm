@@ -2,21 +2,20 @@ package keystone
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
-	"errors"
-	"encoding/json"
-
 
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/headers"
 
-	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 	"github.com/docker/swarm/cluster"
-
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 )
 
 type KeyStoneAPI struct{}
@@ -24,14 +23,17 @@ type KeyStoneAPI struct{}
 type DefaultApiFilterImpl struct {
 	nextHandler pluginAPI.Handler
 }
+
 func NewPlugin(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 	apiKeystonePlugin := &DefaultApiFilterImpl{
 		nextHandler: handler,
 	}
 	return apiKeystonePlugin
 }
+
 var keystoneUrl string
-func (apiKeystoneImpl *DefaultApiFilterImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
+
+func (apiKeystoneImpl *DefaultApiFilterImpl) Handle(command utils.CommandEnum, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin keystone got command: " + command)
 	if os.Getenv("SWARM_AUTH_BACKEND") != "Keystone" {
 		return apiKeystoneImpl.nextHandler(command, cluster, w, r, swarmHandler)
@@ -51,15 +53,14 @@ func (apiKeystoneImpl *DefaultApiFilterImpl) Handle(command string, cluster clus
 	if !valid {
 		return errors.New("Not Authorized!")
 	}
-	
+
 	if isAdminTenant(tenantIdToValidate) {
 		swarmHandler.ServeHTTP(w, r)
 		return nil
 	}
 	return apiKeystoneImpl.nextHandler(command, cluster, w, r, swarmHandler)
-	
-}
 
+}
 
 func isAdminTenant(tenantIdToValidate string) bool {
 	log.Info("isAdminTenant(" + tenantIdToValidate + ")")
@@ -91,19 +92,18 @@ func doHTTPreq(reqType, url, jsonBody string, headers map[string]string) *http.R
 		}
 		log.Debug("jsonBody: " + jsonBody)
 		log.Debug("url: " + url)
-		
+
 		panic(err)
 	}
 	return resp
 }
-
 
 func queryKeystone(tenantIdToValidate string, tokenToValidate string) bool {
 	log.Debug("in queryKeystone")
 	var headers = map[string]string{
 		headers.AuthZTokenHeaderName: tokenToValidate,
 	}
-	 
+
 	var listTenantsResponse map[string]interface{}
 	resp := doHTTPreq("GET", keystoneUrl+"tenants", "", headers)
 	defer resp.Body.Close()
@@ -122,14 +122,14 @@ func queryKeystone(tenantIdToValidate string, tokenToValidate string) bool {
 	}
 	var isTenantFound bool = false
 	if tenantIdToValidate != swarmMembersTenantId {
-		err := json.Unmarshal(body,&listTenantsResponse)
+		err := json.Unmarshal(body, &listTenantsResponse)
 		if err != nil {
 			log.Fatal("Error in Keystone List Tenant decode:", err)
 			panic("Error: could not decode Keystone List Tenant ")
 		}
-		for _,v := range listTenantsResponse["tenants"].([]interface{}) {
+		for _, v := range listTenantsResponse["tenants"].([]interface{}) {
 			id := v.(map[string]interface{})["id"]
-			log.Infof("tenants id",id)
+			log.Infof("tenants id", id)
 			if id == tenantIdToValidate {
 				isTenantFound = true
 			} else if id == swarmMembersTenantId {
@@ -139,7 +139,7 @@ func queryKeystone(tenantIdToValidate string, tokenToValidate string) bool {
 				log.Info("isTenantFound and isSwarmMember are true")
 				break
 			}
-			
+
 		}
 	} else {
 		log.Debug("error: Tenant trying to use SWARM_MEMBERS_TENANT_ID")
