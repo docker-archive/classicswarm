@@ -60,7 +60,7 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command utils.CommandEnum, cluster 
 		return defaultauthZ.nextHandler(command, cluster, w, r, swarmHandler)
 		log.Debug("Returned from Swarm")
 		//In case of container json - should record and clean - consider seperating..
-	case "containerstart", "containerstop", "containerdelete", "containerkill", "containerpause", "containerunpause", "containerupdate", "containercopy", "containerattach", "containerlogs":
+	case "containerstart", "containerstop", "containerrestart", "containerdelete", "containerkill", "containerpause", "containerunpause", "containerupdate", "containercopy", "containerattach", "containerlogs":
 		if !utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
 			return errors.New("Not Authorized!")
 		}

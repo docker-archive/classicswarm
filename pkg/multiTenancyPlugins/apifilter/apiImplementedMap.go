@@ -20,6 +20,7 @@ func init() {
 	supportedAPIsMap["imageimport"] = false
 	supportedAPIsMap["info"] = true
 	supportedAPIsMap["containerjson"] = true
+	supportedAPIsMap["containerrestart"] = true
 	supportedAPIsMap["containerkill"] = true
 	supportedAPIsMap["imageload"] = false
 	supportedAPIsMap["serverlogin"] = false
