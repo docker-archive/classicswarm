@@ -6,7 +6,7 @@ var supportedAPIsMap map[utils.CommandEnum]bool
 
 func init() {
 	supportedAPIsMap = make(map[utils.CommandEnum]bool)
-	supportedAPIsMap["containercreate"] = true
+	supportedAPIsMap["containerscreate"] = true
 	supportedAPIsMap["containerstart"] = true
 	supportedAPIsMap["containerattach"] = true
 	supportedAPIsMap["containerbuild"] = true
@@ -52,7 +52,7 @@ func init() {
 	supportedAPIsMap["listVolume"] = false
 	supportedAPIsMap["removeVolume"] = false
 	supportedAPIsMap["containerwait"] = false
-	supportedAPIsMap["json"] = true
-	supportedAPIsMap["ps"] = true
+	supportedAPIsMap["containersjson"] = true
+	supportedAPIsMap["containersps"] = true
 
 }
