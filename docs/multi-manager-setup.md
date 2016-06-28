@@ -154,8 +154,8 @@ To switch the `DOCKER_HOST` to use `manager-2` as the primary, you do the follow
     Containers: 0
     Images: 25
     Storage Driver:
-    Role: Replica  <--------- manager-2 is a Replica
-    Primary: 192.168.42.200
+    Role: Primary  <--------- manager-2 is the Primary manager
+    Primary: 192.168.42.201
     Strategy: spread
     Filters: affinity, health, constraint, port, dependency
     Nodes: 3
