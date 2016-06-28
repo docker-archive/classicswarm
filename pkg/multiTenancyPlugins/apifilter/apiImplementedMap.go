@@ -21,7 +21,7 @@ func init() {
 	supportedAPIsMap["clusterInfo"] = true
 	supportedAPIsMap["containerjson"] = true
 	supportedAPIsMap["containerkill"] = true
-	supportedAPIsMap["imageload"] = false	
+	supportedAPIsMap["imageload"] = false
 	supportedAPIsMap["serverlogin"] = false
 	supportedAPIsMap["serverlogout"] = false
 	supportedAPIsMap["containerlogs"] = true
@@ -30,7 +30,7 @@ func init() {
 	supportedAPIsMap["disconnectNetwork"] = false
 	supportedAPIsMap["listNetworks"] = true
 	supportedAPIsMap["networkremove"] = false
-	supportedAPIsMap["containerpause"] = true	
+	supportedAPIsMap["containerpause"] = true
 	supportedAPIsMap["containertport"] = true
 	supportedAPIsMap["listContainers"] = true
 	supportedAPIsMap["imagepull"] = false
@@ -46,11 +46,13 @@ func init() {
 	supportedAPIsMap["containertop"] = false
 	supportedAPIsMap["containerunpause"] = true
 	supportedAPIsMap["containerupdate"] = true
-	supportedAPIsMap["version"] = false	
+	supportedAPIsMap["version"] = false
 	supportedAPIsMap["createVolume"] = false
 	supportedAPIsMap["inspectVolume"] = false
 	supportedAPIsMap["listVolume"] = false
 	supportedAPIsMap["removeVolume"] = false
 	supportedAPIsMap["containerwait"] = false
+	supportedAPIsMap["json"] = true
+	supportedAPIsMap["ps"] = true
 
 }
