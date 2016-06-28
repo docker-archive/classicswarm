@@ -96,8 +96,10 @@ const (
 	INFO    CommandEnum = "info"
 	VERSION CommandEnum = "version"
 	//SKIP ...
-	CONTAINERS_PS     CommandEnum = "ps"
-	CONTAINERS_JSON   CommandEnum = "json"
+
+	PS   CommandEnum = "ps"
+	JSON CommandEnum = "json"
+
 	CONTAINER_ARCHIVE CommandEnum = "containerarchive"
 	CONTAINER_EXPORT  CommandEnum = "containerexport"
 	CONTAINER_CHANGES CommandEnum = "containerchanges"
@@ -108,6 +110,9 @@ const (
 	//SKIP ...
 	NETWORKS_LIST   CommandEnum = "networkslist"
 	NETWORK_INSPECT CommandEnum = "networkinspect"
+
+	NETWORK_CREATE CommandEnum = "createnetwork"
+
 	//SKIP ...
 	//POST
 	CONTAINER_CREATE  CommandEnum = "containercreate"
@@ -130,47 +135,52 @@ const (
 )
 
 var invMapmap map[string]CommandEnum
+var initialized bool
 
 func ParseCommand(r *http.Request) CommandEnum {
-	//TODO	put this map elsewhere
-	invMapmap = make(map[string]CommandEnum)
-	invMapmap["ping"] = PING
-	invMapmap["events"] = EVENTS
-	invMapmap["info"] = INFO
-	invMapmap["version"] = VERSION
-	//SKIP ...
-	invMapmap["ps"] = CONTAINERS_PS
-	invMapmap["json"] = CONTAINERS_JSON
-	invMapmap["containerarchive"] = CONTAINER_ARCHIVE
-	invMapmap["containerexport"] = CONTAINER_EXPORT
-	invMapmap["containerchanges"] = CONTAINER_CHANGES
-	invMapmap["containerjson"] = CONTAINER_JSON
-	invMapmap["containertop"] = CONTAINER_TOP
-	invMapmap["containerlogs"] = CONTAINER_LOGS
-	invMapmap["containerstats"] = CONTAINER_STATS
-	//SKIP ...
-	invMapmap["networkslist"] = NETWORKS_LIST
-	invMapmap["networkinspect"] = NETWORK_INSPECT
-	//SKIP ...
-	//POST
-	invMapmap["containercreate"] = CONTAINER_CREATE
-	invMapmap["containerkill"] = CONTAINER_KILL
-	invMapmap["containerpause"] = CONTAINER_PAUSE
-	invMapmap["containerunpause"] = CONTAINER_UNPAUSE
-	invMapmap["containerrename"] = CONTAINER_RENAME
-	invMapmap["containerrestart"] = CONTAINER_RESTART
-	invMapmap["containerstart"] = CONTAINER_START
-	invMapmap["containerstop"] = CONTAINER_STOP
-	invMapmap["containerupdate"] = CONTAINER_UPDATE
-	invMapmap["containerwait"] = CONTAINER_WAIT
-	invMapmap["containerresize"] = CONTAINER_RESIZE
-	invMapmap["containerattach"] = CONTAINER_ATTACH
-	invMapmap["containercopy"] = CONTAINER_COPY
-	invMapmap["containerexec"] = CONTAINER_EXEC
-	//SKIP ...
-	invMapmap["containerdelete"] = CONTAINER_DELETE
-	command := commandParser(r)
-	log.Debug("++++++" + command + "++++++")
+
+	if !initialized {
+		invMapmap = make(map[string]CommandEnum)
+		invMapmap["ping"] = PING
+		invMapmap["events"] = EVENTS
+		invMapmap["info"] = INFO
+		invMapmap["version"] = VERSION
+		//SKIP ...
+		invMapmap["ps"] = PS
+		invMapmap["json"] = JSON
+		invMapmap["containerarchive"] = CONTAINER_ARCHIVE
+		invMapmap["containerexport"] = CONTAINER_EXPORT
+		invMapmap["containerchanges"] = CONTAINER_CHANGES
+		invMapmap["containerjson"] = CONTAINER_JSON
+		invMapmap["containertop"] = CONTAINER_TOP
+		invMapmap["containerlogs"] = CONTAINER_LOGS
+		invMapmap["containerstats"] = CONTAINER_STATS
+		//SKIP ...
+		invMapmap["networkslist"] = NETWORKS_LIST
+		invMapmap["networkinspect"] = NETWORK_INSPECT
+		//SKIP ...
+		//POST
+		invMapmap["containercreate"] = CONTAINER_CREATE
+		invMapmap["containerkill"] = CONTAINER_KILL
+		invMapmap["containerpause"] = CONTAINER_PAUSE
+		invMapmap["containerunpause"] = CONTAINER_UNPAUSE
+		invMapmap["containerrename"] = CONTAINER_RENAME
+		invMapmap["containerrestart"] = CONTAINER_RESTART
+		invMapmap["containerstart"] = CONTAINER_START
+		invMapmap["containerstop"] = CONTAINER_STOP
+		invMapmap["containerupdate"] = CONTAINER_UPDATE
+		invMapmap["containerwait"] = CONTAINER_WAIT
+		invMapmap["containerresize"] = CONTAINER_RESIZE
+		invMapmap["containerattach"] = CONTAINER_ATTACH
+		invMapmap["containercopy"] = CONTAINER_COPY
+		invMapmap["containerexec"] = CONTAINER_EXEC
+		//SKIP ...
+		invMapmap["containerdelete"] = CONTAINER_DELETE
+		initialized = true
+	}
+	//	command := commandParser(r)
+	//	log.Debug("++++++" + command + "++++++")
+
 	return invMapmap[commandParser(r)]
 }
 
@@ -200,15 +210,15 @@ func commandParser(r *http.Request) string {
 		if len(containersParams) == 4 && containersParams[2] != "" {
 			return "container" + containersParams[2]
 		} else if len(containersParams) == 4 && containersParams[3] != "" {
-			return "container" + containersParams[3] //S
+			return containersParams[3] //S
 		}
 		if len(clusterParams) == 3 {
 			return clusterParams[2]
 		}
 		if len(networksParams) == 4 && networksParams[3] != "" {
-			return "networkInspect"
+			return "networkinspect"
 		} else if len(networksParams) == 4 && networksParams[1] == "" && networksParams[2] == "" && networksParams[3] == "" {
-			return "networksList" //S
+			return "networkslist" //S
 		}
 	}
 	return "This is not supported yet and will end up in the default of the Switch"
