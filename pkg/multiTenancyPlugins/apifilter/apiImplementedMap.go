@@ -1,54 +1,56 @@
 package apifilter
 
-var apiImplementedMap map[string]bool
+import "github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
+
+var supportedAPIsMap map[utils.CommandEnum]bool
+
 func init() {
-	apiImplementedMap = make(map[string]bool)
-	apiImplementedMap["containercreate"] = true
-	apiImplementedMap["containerstart"] = true
-	apiImplementedMap["containerattach"] = true
-	apiImplementedMap["containerbuild"] = true
-	apiImplementedMap["imagecommit"] = false
-	apiImplementedMap["containercreate"] = true
-	apiImplementedMap["containercopy"] = true
-	apiImplementedMap["containerdiff"] = false
-	apiImplementedMap["containerevents"] = false
-	apiImplementedMap["containerexec"] = false
-	apiImplementedMap["containerexport"] = false
-	apiImplementedMap["imagehistory"] = false
-	apiImplementedMap["imageimport"] = false
-	apiImplementedMap["clusterInfo"] = true
-	apiImplementedMap["containerjson"] = true
-	apiImplementedMap["containerkill"] = true
-	apiImplementedMap["imageload"] = false	
-	apiImplementedMap["serverlogin"] = false
-	apiImplementedMap["serverlogout"] = false
-	apiImplementedMap["containerlogs"] = true
-	apiImplementedMap["connectNetwork"] = false
-	apiImplementedMap["createNetwork"] = true
-	apiImplementedMap["disconnectNetwork"] = false
-	apiImplementedMap["listNetworks"] = true
-	apiImplementedMap["networkremove"] = false
-	apiImplementedMap["containerpause"] = true	
-	apiImplementedMap["containertport"] = true
-	apiImplementedMap["listContainers"] = true
-	apiImplementedMap["imagepull"] = false
-	apiImplementedMap["imagepush"] = false
-	apiImplementedMap["containerrename"] = false
-	apiImplementedMap["imageremove"] = false
-	apiImplementedMap["containerdelete"] = true
-	apiImplementedMap["imagesave"] = false
-	apiImplementedMap["imagesearch"] = false
-	apiImplementedMap["containerstart"] = true
-	apiImplementedMap["containerstop"] = true
-	apiImplementedMap["imagetag"] = false
-	apiImplementedMap["containertop"] = false
-	apiImplementedMap["containerunpause"] = true
-	apiImplementedMap["containerupdate"] = true
-	apiImplementedMap["version"] = false	
-	apiImplementedMap["createVolume"] = false
-	apiImplementedMap["inspectVolume"] = false
-	apiImplementedMap["listVolume"] = false
-	apiImplementedMap["removeVolume"] = false
-	apiImplementedMap["containerwait"] = false
+	supportedAPIsMap = make(map[utils.CommandEnum]bool)
+	supportedAPIsMap["containercreate"] = true
+	supportedAPIsMap["containerstart"] = true
+	supportedAPIsMap["containerattach"] = true
+	supportedAPIsMap["containerbuild"] = true
+	supportedAPIsMap["imagecommit"] = false
+	supportedAPIsMap["containercopy"] = true
+	supportedAPIsMap["containerdiff"] = false
+	supportedAPIsMap["containerevents"] = false
+	supportedAPIsMap["containerexec"] = false
+	supportedAPIsMap["containerexport"] = false
+	supportedAPIsMap["imagehistory"] = false
+	supportedAPIsMap["imageimport"] = false
+	supportedAPIsMap["clusterInfo"] = true
+	supportedAPIsMap["containerjson"] = true
+	supportedAPIsMap["containerkill"] = true
+	supportedAPIsMap["imageload"] = false	
+	supportedAPIsMap["serverlogin"] = false
+	supportedAPIsMap["serverlogout"] = false
+	supportedAPIsMap["containerlogs"] = true
+	supportedAPIsMap["connectNetwork"] = false
+	supportedAPIsMap["createNetwork"] = true
+	supportedAPIsMap["disconnectNetwork"] = false
+	supportedAPIsMap["listNetworks"] = true
+	supportedAPIsMap["networkremove"] = false
+	supportedAPIsMap["containerpause"] = true	
+	supportedAPIsMap["containertport"] = true
+	supportedAPIsMap["listContainers"] = true
+	supportedAPIsMap["imagepull"] = false
+	supportedAPIsMap["imagepush"] = false
+	supportedAPIsMap["containerrename"] = false
+	supportedAPIsMap["imageremove"] = false
+	supportedAPIsMap["containerdelete"] = true
+	supportedAPIsMap["imagesave"] = false
+	supportedAPIsMap["imagesearch"] = false
+	supportedAPIsMap["containerstart"] = true
+	supportedAPIsMap["containerstop"] = true
+	supportedAPIsMap["imagetag"] = false
+	supportedAPIsMap["containertop"] = false
+	supportedAPIsMap["containerunpause"] = true
+	supportedAPIsMap["containerupdate"] = true
+	supportedAPIsMap["version"] = false	
+	supportedAPIsMap["createVolume"] = false
+	supportedAPIsMap["inspectVolume"] = false
+	supportedAPIsMap["listVolume"] = false
+	supportedAPIsMap["removeVolume"] = false
+	supportedAPIsMap["containerwait"] = false
 
 }

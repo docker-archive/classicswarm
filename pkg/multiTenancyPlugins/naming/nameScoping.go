@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	apitypes "github.com/docker/engine-api/types"
 	log "github.com/Sirupsen/logrus"
+	apitypes "github.com/docker/engine-api/types"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/headers"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
@@ -56,7 +56,7 @@ Loop:
 }
 
 //Handle authentication on request and call next plugin handler.
-func (nameScoping *DefaultNameScopingImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
+func (nameScoping *DefaultNameScopingImpl) Handle(command utils.CommandEnum, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin nameScoping Got command: " + command)
 	switch command {
 	case "containercreate":
@@ -93,14 +93,14 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command string, cluster cluste
 	case "containerstart", "containerstop", "containerdelete", "containerkill", "containerpause", "containerunpause", "containerupdate", "containercopy", "containerattach", "containerlogs":
 		uniquelyIdentifyContainer(cluster, r, w)
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
-	case "createNetwork":		
+	case "createNetwork":
 		defer r.Body.Close()
 		if reqBody, _ := ioutil.ReadAll(r.Body); len(reqBody) > 0 {
-			
+
 			var request apitypes.NetworkCreate
 			if err := json.NewDecoder(bytes.NewReader(reqBody)).Decode(&request); err != nil {
-         		log.Error(err)
-         		return nil
+				log.Error(err)
+				return nil
 			}
 			request.Name = r.Header.Get(headers.AuthZTenantIdHeaderName) + request.Name
 			var buf bytes.Buffer
@@ -109,8 +109,8 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command string, cluster cluste
 				return nil
 			}
 			r, _ = utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), "", "")
-		}	
-		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)	
+		}
+		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 	case "listContainers", "listNetworks", "clusterInfo":
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 	default:

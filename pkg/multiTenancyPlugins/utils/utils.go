@@ -32,11 +32,6 @@ type ValidationOutPutDTO struct {
 
 //UTILS
 
-//Use something else...
-func ParseCommand(r *http.Request) string {
-	return commandParser(r)
-}
-
 func ModifyRequest(r *http.Request, body io.Reader, urlStr string, containerID string) (*http.Request, error) {
 	rc, ok := body.(io.ReadCloser)
 	if !ok && body != nil {
@@ -92,57 +87,130 @@ func RandStringBytesRmndr(n int) string {
 	return string(b)
 }
 
-//Maybe merge to one regExp
-var containers = regexp.MustCompile(`/containers/(.*)`)
-var containersWithIdentifier = regexp.MustCompile(`/containers/(.*)/(.*)`)
-var networks = regexp.MustCompile(`/networks/(.*)`)
+type CommandEnum string
 
-//TODO - Do the same for networks, images, and so on. What is not supported will fail because of the generic message will go to default
+const (
+	//For reference look at primary.go
+	PING    CommandEnum = "ping"
+	EVENTS  CommandEnum = "events"
+	INFO    CommandEnum = "info"
+	VERSION CommandEnum = "version"
+	//SKIP ...
+	CONTAINERS_PS     CommandEnum = "ps"
+	CONTAINERS_JSON   CommandEnum = "json"
+	CONTAINER_ARCHIVE CommandEnum = "containerarchive"
+	CONTAINER_EXPORT  CommandEnum = "containerexport"
+	CONTAINER_CHANGES CommandEnum = "containerchanges"
+	CONTAINER_JSON    CommandEnum = "containerjson"
+	CONTAINER_TOP     CommandEnum = "containertop"
+	CONTAINER_LOGS    CommandEnum = "containerlogs"
+	CONTAINER_STATS   CommandEnum = "containerstats"
+	//SKIP ...
+	NETWORKS_LIST   CommandEnum = "networkslist"
+	NETWORK_INSPECT CommandEnum = "networkinspect"
+	//SKIP ...
+	//POST
+	CONTAINER_CREATE  CommandEnum = "containercreate"
+	CONTAINER_KILL    CommandEnum = "containerkill"
+	CONTAINER_PAUSE   CommandEnum = "containerpause"
+	CONTAINER_UNPAUSE CommandEnum = "containerunpause"
+	CONTAINER_RENAME  CommandEnum = "containerrename"
+	CONTAINER_RESTART CommandEnum = "containerrestart"
+	CONTAINER_START   CommandEnum = "containerstart"
+	CONTAINER_STOP    CommandEnum = "containerstop"
+	CONTAINER_UPDATE  CommandEnum = "containerupdate"
+	CONTAINER_WAIT    CommandEnum = "containerwait"
+	CONTAINER_RESIZE  CommandEnum = "containerresize"
+	CONTAINER_ATTACH  CommandEnum = "containerattach"
+	CONTAINER_COPY    CommandEnum = "containercopy"
+	CONTAINER_EXEC    CommandEnum = "containerexec"
+	//SKIP ...
 
-//TODO - Handle delete better
+	CONTAINER_DELETE CommandEnum = "containerdelete"
+)
+
+var invMapmap map[string]CommandEnum
+
+func ParseCommand(r *http.Request) CommandEnum {
+	//TODO	put this map elsewhere
+	invMapmap = make(map[string]CommandEnum)
+	invMapmap["ping"] = PING
+	invMapmap["events"] = EVENTS
+	invMapmap["info"] = INFO
+	invMapmap["version"] = VERSION
+	//SKIP ...
+	invMapmap["ps"] = CONTAINERS_PS
+	invMapmap["json"] = CONTAINERS_JSON
+	invMapmap["containerarchive"] = CONTAINER_ARCHIVE
+	invMapmap["containerexport"] = CONTAINER_EXPORT
+	invMapmap["containerchanges"] = CONTAINER_CHANGES
+	invMapmap["containerjson"] = CONTAINER_JSON
+	invMapmap["containertop"] = CONTAINER_TOP
+	invMapmap["containerlogs"] = CONTAINER_LOGS
+	invMapmap["containerstats"] = CONTAINER_STATS
+	//SKIP ...
+	invMapmap["networkslist"] = NETWORKS_LIST
+	invMapmap["networkinspect"] = NETWORK_INSPECT
+	//SKIP ...
+	//POST
+	invMapmap["containercreate"] = CONTAINER_CREATE
+	invMapmap["containerkill"] = CONTAINER_KILL
+	invMapmap["containerpause"] = CONTAINER_PAUSE
+	invMapmap["containerunpause"] = CONTAINER_UNPAUSE
+	invMapmap["containerrename"] = CONTAINER_RENAME
+	invMapmap["containerrestart"] = CONTAINER_RESTART
+	invMapmap["containerstart"] = CONTAINER_START
+	invMapmap["containerstop"] = CONTAINER_STOP
+	invMapmap["containerupdate"] = CONTAINER_UPDATE
+	invMapmap["containerwait"] = CONTAINER_WAIT
+	invMapmap["containerresize"] = CONTAINER_RESIZE
+	invMapmap["containerattach"] = CONTAINER_ATTACH
+	invMapmap["containercopy"] = CONTAINER_COPY
+	invMapmap["containerexec"] = CONTAINER_EXEC
+	//SKIP ...
+	invMapmap["containerdelete"] = CONTAINER_DELETE
+	command := commandParser(r)
+	log.Debug("++++++" + command + "++++++")
+	return invMapmap[commandParser(r)]
+}
+
+var containersRegexp = regexp.MustCompile("/containers/(.*)/(.*)|/containers/(\\w+)")
+var networksRegexp = regexp.MustCompile("/networks/(.*)/(.*)|/networks/(\\w+)")
+var clusterRegExp = regexp.MustCompile("/(.*)/(.*)")
+
 func commandParser(r *http.Request) string {
+	containersParams := containersRegexp.FindStringSubmatch(r.URL.Path)
+	networksParams := networksRegexp.FindStringSubmatch(r.URL.Path)
+	clusterParams := clusterRegExp.FindStringSubmatch(r.URL.Path)
 
-	paramsArr1 := containers.FindStringSubmatch(r.URL.Path)
-	paramsArr2 := containersWithIdentifier.FindStringSubmatch(r.URL.Path)
-	networksParams := networks.FindStringSubmatch(r.URL.Path)
-	//assert the it is not possible for two of them to co-Exist
-
-	log.Debug(paramsArr1)
-	log.Debug(paramsArr2)
+	log.Debug(containersParams)
+	log.Debug(networksParams)
+	log.Debug(clusterParams)
 
 	switch r.Method {
 	case "DELETE":
-		if len(paramsArr1) > 0 && strings.HasPrefix(paramsArr1[0], "/containers") {
+		if len(containersParams) > 0 {
 			return "containerdelete"
 		}
-	}
-	//Order IS important
-	if len(paramsArr2) == 3 {
-
-		return "container" + paramsArr2[2]
-	}
-	if len(paramsArr1) == 2 {
-
-		if paramsArr1[1] == "json" {
-			return "listContainers"
+		if len(networksParams) > 0 {
+			return "networkdelete"
 		}
-		return "container" + paramsArr1[1]
-	}
-	
-	if len(networksParams) == 2 {
-		if networksParams[1] == "create"{
-			return "createNetwork"
+
+	case "GET", "POST":
+		if len(containersParams) == 4 && containersParams[2] != "" {
+			return "container" + containersParams[2]
+		} else if len(containersParams) == 4 && containersParams[3] != "" {
+			return "container" + containersParams[3] //S
+		}
+		if len(clusterParams) == 3 {
+			return clusterParams[2]
+		}
+		if len(networksParams) == 4 && networksParams[3] != "" {
+			return "networkInspect"
+		} else if len(networksParams) == 4 && networksParams[1] == "" && networksParams[2] == "" && networksParams[3] == "" {
+			return "networksList" //S
 		}
 	}
-
-	if strings.HasSuffix(r.URL.Path, "/networks") {
-		return "listNetworks"
-	}
-	
-	if strings.HasSuffix(r.URL.Path, "/info") {
-		return "clusterInfo"
-	}
-
 	return "This is not supported yet and will end up in the default of the Switch"
 }
 

@@ -30,7 +30,7 @@ func NewAuthorization(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 	return authZ
 }
 
-func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
+func (defaultauthZ *DefaultAuthZImpl) Handle(command utils.CommandEnum, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin AuthZ got command: " + command)
 	switch command {
 	case "containercreate":
@@ -50,7 +50,7 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 
 			r, _ = utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), "", "")
 
-		}	
+		}
 		return defaultauthZ.nextHandler(command, cluster, w, r, swarmHandler)
 		log.Debug("Returned from Swarm")
 		//In case of container json - should record and clean - consider seperating..
@@ -63,10 +63,10 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 		if !utils.IsOwner(cluster, r.Header.Get(headers.AuthZTenantIdHeaderName), r) {
 			return errors.New("Not Authorized!")
 		}
-		
+
 		rec := httptest.NewRecorder()
 		if err := defaultauthZ.nextHandler(command, cluster, rec, r, swarmHandler); err != nil {
-				return err
+			return err
 		}
 		/*POST Swarm*/
 		w.WriteHeader(rec.Code)
@@ -98,7 +98,7 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 		}
 		rec := httptest.NewRecorder()
 		if err := defaultauthZ.nextHandler(command, cluster, rec, newReq, swarmHandler); err != nil {
-				return err
+			return err
 		}
 		//TODO - May decide to overrideSwarms handlers.getContainersJSON - this is Where to do it.
 		/*POST Swarm*/
@@ -114,7 +114,7 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 	case "listNetworks":
 		rec := httptest.NewRecorder()
 		if err := defaultauthZ.nextHandler(command, cluster, rec, r, swarmHandler); err != nil {
-				return err
+			return err
 		}
 		w.WriteHeader(rec.Code)
 		for k, v := range rec.Header() {
@@ -122,8 +122,9 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command string, cluster cluster.Clu
 		}
 		newBody := utils.FilterNetworks(r, rec)
 		w.Write(newBody)
-		
+
 	case "clusterInfo", "createNetwork":
+
 		return defaultauthZ.nextHandler(command, cluster, w, r, swarmHandler)
 
 	//Always allow or not?
