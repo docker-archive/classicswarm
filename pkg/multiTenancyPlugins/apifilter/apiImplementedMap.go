@@ -18,7 +18,7 @@ func init() {
 	supportedAPIsMap["containerexport"] = false
 	supportedAPIsMap["imagehistory"] = false
 	supportedAPIsMap["imageimport"] = false
-	supportedAPIsMap["clusterInfo"] = true
+	supportedAPIsMap["info"] = true
 	supportedAPIsMap["containerjson"] = true
 	supportedAPIsMap["containerkill"] = true
 	supportedAPIsMap["imageload"] = false
