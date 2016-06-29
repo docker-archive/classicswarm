@@ -350,13 +350,19 @@ func (c *Cluster) Containers() cluster.Containers {
 	defer c.RUnlock()
 
 	out := cluster.Containers{}
+	discoverAll := os.Getenv("SWARM_DISCOVER_ALL_CONTAINERS")
 	for _, s := range c.agents {
 		for _, container := range s.engine.Containers() {
-			if container.Config.Labels != nil {
-				if _, ok := container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"]; ok {
-					out = append(out, formatContainer(container))
-				}
-			}
+			if discoverAll == "true" {
+				out = append(out, formatContainer(container))
+			} else {
+ 				if container.Config.Labels != nil {
+ 					if _, ok := container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"]; ok {
+ 						out = append(out, formatContainer(container))
+ 					}
+ 				}				
+  			}
+			
 		}
 	}
 
