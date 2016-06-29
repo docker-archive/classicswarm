@@ -33,7 +33,7 @@ func NewAuthorization(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 func (defaultauthZ *DefaultAuthZImpl) Handle(command utils.CommandEnum, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin AuthZ got command: " + command)
 	switch command {
-	case "containercreate":
+	case "containerscreate":
 
 		defer r.Body.Close()
 		if reqBody, _ := ioutil.ReadAll(r.Body); len(reqBody) > 0 {
@@ -78,7 +78,7 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command utils.CommandEnum, cluster 
 
 		w.Write(newBody)
 
-	case "json", "ps":
+	case "containersjson", "containersps":
 		//TODO - clean up code
 		var v = url.Values{}
 		mapS := map[string][]string{"label": {headers.TenancyLabel + "=" + r.Header.Get(headers.AuthZTenantIdHeaderName)}}

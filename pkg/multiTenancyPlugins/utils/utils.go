@@ -97,8 +97,8 @@ const (
 	VERSION CommandEnum = "version"
 	//SKIP ...
 
-	PS   CommandEnum = "ps"
-	JSON CommandEnum = "json"
+	PS   CommandEnum = "containersps"
+	JSON CommandEnum = "containersjson"
 
 	CONTAINER_ARCHIVE CommandEnum = "containerarchive"
 	CONTAINER_EXPORT  CommandEnum = "containerexport"
@@ -115,7 +115,7 @@ const (
 
 	//SKIP ...
 	//POST
-	CONTAINER_CREATE  CommandEnum = "containercreate"
+	CONTAINER_CREATE  CommandEnum = "containerscreate"
 	CONTAINER_KILL    CommandEnum = "containerkill"
 	CONTAINER_PAUSE   CommandEnum = "containerpause"
 	CONTAINER_UNPAUSE CommandEnum = "containerunpause"
@@ -146,8 +146,8 @@ func ParseCommand(r *http.Request) CommandEnum {
 		invMapmap["info"] = INFO
 		invMapmap["version"] = VERSION
 		//SKIP ...
-		invMapmap["ps"] = PS
-		invMapmap["json"] = JSON
+		invMapmap["containersps"] = PS
+		invMapmap["containersjson"] = JSON
 		invMapmap["containerarchive"] = CONTAINER_ARCHIVE
 		invMapmap["containerexport"] = CONTAINER_EXPORT
 		invMapmap["containerchanges"] = CONTAINER_CHANGES
@@ -160,7 +160,7 @@ func ParseCommand(r *http.Request) CommandEnum {
 		invMapmap["networkinspect"] = NETWORK_INSPECT
 		//SKIP ...
 		//POST
-		invMapmap["containercreate"] = CONTAINER_CREATE
+		invMapmap["containerscreate"] = CONTAINER_CREATE
 		invMapmap["containerkill"] = CONTAINER_KILL
 		invMapmap["containerpause"] = CONTAINER_PAUSE
 		invMapmap["containerunpause"] = CONTAINER_UNPAUSE
@@ -208,11 +208,14 @@ func commandParser(r *http.Request) string {
 
 	case "GET", "POST":
 		if len(containersParams) == 4 && containersParams[2] != "" {
+			log.Debug("A1")
 			return "container" + containersParams[2]
 		} else if len(containersParams) == 4 && containersParams[3] != "" {
-			return containersParams[3] //S
+			log.Debug("A2")
+			return "containers" + containersParams[3] //S
 		}
 		if len(clusterParams) == 3 {
+			log.Debug("A3")
 			return clusterParams[2]
 		}
 		if len(networksParams) == 4 && networksParams[3] != "" {
