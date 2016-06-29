@@ -129,7 +129,7 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command utils.CommandEnum, cluster 
 		newBody := utils.FilterNetworks(r, rec)
 		w.Write(newBody)
 
-	case "clusterInfo", "createNetwork":
+	case "info", "createNetwork":
 
 		return defaultauthZ.nextHandler(command, cluster, w, r, swarmHandler)
 
