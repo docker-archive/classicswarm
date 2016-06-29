@@ -44,7 +44,7 @@ func (defaultauthZ *DefaultAuthZImpl) Handle(command utils.CommandEnum, cluster 
 			//Disallow a user to create the special labels we inject : headers.TenancyLabel
 			res := strings.Contains(string(reqBody), headers.TenancyLabel)
 			if res == true {
-				errorMessage := "Error, special label " + headers.TenancyLabel +" disallowed!"
+				errorMessage := "Error, special label " + headers.TenancyLabel + " disallowed!"
 				return errors.New(errorMessage)
 			}
 			containerConfig.Labels[headers.TenancyLabel] = r.Header.Get(headers.AuthZTenantIdHeaderName)

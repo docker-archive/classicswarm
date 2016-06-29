@@ -3,10 +3,10 @@ package namescoping
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"errors"
 
 	log "github.com/Sirupsen/logrus"
 	apitypes "github.com/docker/engine-api/types"
@@ -78,7 +78,7 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command utils.CommandEnum, clu
 				//Disallow a user to create the special labels we inject : headers.OriginalNameLabel
 				res := strings.Contains(string(reqBody), headers.OriginalNameLabel)
 				if res == true {
-					errorMessage := "Error, special label " + headers.OriginalNameLabel +" disallowed!"
+					errorMessage := "Error, special label " + headers.OriginalNameLabel + " disallowed!"
 					return errors.New(errorMessage)
 				}
 				containerConfig.Labels[headers.OriginalNameLabel] = r.URL.Query().Get("name")

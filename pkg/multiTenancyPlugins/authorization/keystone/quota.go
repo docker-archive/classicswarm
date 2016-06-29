@@ -2,11 +2,11 @@ package keystone
 
 import (
 	"errors"
-	"io/ioutil"
-	"os"
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
+	"io/ioutil"
+	"os"
 	"strconv"
 )
 
@@ -17,7 +17,7 @@ type QuotaImpl struct {
 var tenancyLabel = "com.swarm.tenant.0"
 var CONFIG_FILE_PATH = os.Getenv("SWARM_CONFIG")
 var DEFAULT_MEMORY_QUOTA int64 = 1024 * 1024 * 100 //100MB (Currently hardcoded for all tenant)
-var DEFAULT_MEMORY float64 = 1024 * 1024 * 10        //10MB (Currently hardcoded for all tenant)
+var DEFAULT_MEMORY float64 = 1024 * 1024 * 10      //10MB (Currently hardcoded for all tenant)
 
 /*
 ValidateQuota - checks if tenant quota satisfies container create request
@@ -31,21 +31,21 @@ func (this *QuotaImpl) ValidateQuota(myCluster cluster.Cluster, reqBody []byte, 
 	if err != nil {
 		log.Debugf("Failed to parse mandatory memory limit in container config, using default memory limit of %vB", DEFAULT_MEMORY)
 		memory = DEFAULT_MEMORY
-		
-//		log.Debug("Failed to parse mandatory memory limit in container config")
-//		return errors.New("Failed to parse mandatory memory limit from container config")
-	}else{
+
+		//		log.Debug("Failed to parse mandatory memory limit in container config")
+		//		return errors.New("Failed to parse mandatory memory limit from container config")
+	} else {
 		memory = res.(float64)
-		
-		if memory == 0{
+
+		if memory == 0 {
 			log.Debugf("Parsed memory limit is 0, using default memory limit of %vB", DEFAULT_MEMORY)
 			memory = DEFAULT_MEMORY
-			
-	//		log.Debug("Failed to parse mandatory memory limit in container config")
-	//		return errors.New("Failed to parse mandatory memory limit from container config")
+
+			//		log.Debug("Failed to parse mandatory memory limit in container config")
+			//		return errors.New("Failed to parse mandatory memory limit from container config")
 		}
 	}
-	
+
 	log.Debug("Memory field: ", strconv.FormatFloat(memory, 'f', -1, 64))
 
 	containers := myCluster.Containers()

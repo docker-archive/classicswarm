@@ -13,9 +13,9 @@ import (
 	"github.com/jeffail/gabs"
 	//	"github.com/docker/swarm/pkg/authZ"
 
+	"github.com/docker/swarm/pkg/authZ/flavors"
 	"github.com/docker/swarm/pkg/authZ/headers"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
-	"github.com/docker/swarm/pkg/authZ/flavors"
 	"github.com/samalba/dockerclient"
 )
 
@@ -47,7 +47,7 @@ func doHTTPreq(reqType, url, jsonBody string, headers map[string]string) *http.R
 		}
 		log.Debug("jsonBody: " + jsonBody)
 		log.Debug("url: " + url)
-		
+
 		panic(err)
 	}
 	return resp
@@ -79,7 +79,7 @@ func (this *KeyStoneAPI) Init() error {
 // 3- Set up cache to save Keystone call
 func (this *KeyStoneAPI) ValidateRequest(cluster cluster.Cluster, eventType states.EventEnum, w http.ResponseWriter, r *http.Request, reqBody []byte, containerConfig dockerclient.ContainerConfig) (states.ApprovalEnum, *utils.ValidationOutPutDTO) {
 	log.Debug("ValidateRequest Keystone")
-	log.Debugf("%+v\n",containerConfig)
+	log.Debugf("%+v\n", containerConfig)
 	tokenToValidate := r.Header.Get(headers.AuthZTokenHeaderName)
 	tokenToValidate = strings.TrimSpace(tokenToValidate)
 	tenantIdToValidate := strings.TrimSpace(r.Header.Get(headers.AuthZTenantIdHeaderName))
@@ -90,7 +90,7 @@ func (this *KeyStoneAPI) ValidateRequest(cluster cluster.Cluster, eventType stat
 	if !valid {
 		return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: "Not Authorized!"}
 	}
-	
+
 	if isAdminTenant(tenantIdToValidate) {
 		return states.Admin, nil
 	}
@@ -101,27 +101,27 @@ func (this *KeyStoneAPI) ValidateRequest(cluster cluster.Cluster, eventType stat
 		if err != nil {
 			return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: err.Error()}
 		}
-		if (!flavors.IsFlavorValid(containerConfig)) {
-			return states.NotApproved,&utils.ValidationOutPutDTO{ErrorMessage: "No flavor matches resource request!"}
+		if !flavors.IsFlavorValid(containerConfig) {
+			return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: "No flavor matches resource request!"}
 		}
 		valid, dto := utils.CheckContainerReferences(cluster, tenantIdToValidate, containerConfig)
-        if valid {
-		  if dto.Binds,err = utils.CheckVolumeBinds(tenantIdToValidate, containerConfig); err != nil {
-			valid = false
-			dto.ErrorMessage = err.Error()
-		  }
+		if valid {
+			if dto.Binds, err = utils.CheckVolumeBinds(tenantIdToValidate, containerConfig); err != nil {
+				valid = false
+				dto.ErrorMessage = err.Error()
+			}
 		}
 		log.Debug(valid)
 		log.Debug(dto)
 		if !valid {
-			return states.NotApproved, dto			
-		} 
+			return states.NotApproved, dto
+		}
 		return states.Approved, dto
 	case states.ContainersList:
 		return states.ConditionFilter, nil
 	case states.Unauthorized:
 		return states.NotApproved, &utils.ValidationOutPutDTO{ErrorMessage: "Not Authorized!"}
-		case states.VolumeCreate:
+	case states.VolumeCreate:
 		return states.Approved, nil
 	case states.VolumesList:
 		return states.Approved, nil
