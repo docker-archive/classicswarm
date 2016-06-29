@@ -34,8 +34,6 @@ func NewQuota(handler pluginAPI.Handler) pluginAPI.PluginAPI {
 }
 
 func (quotaImpl *DefaultQuotaImpl) Handle(command utils.CommandEnum, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
-	log.Debug("Plugin Quota got command: " + command)
-
 	if enforceQuota != "true" {
 		log.Debug("Quota NOT enforced!")
 		swarmHandler.ServeHTTP(w, r)
