@@ -41,6 +41,7 @@ Loop:
 			break
 		} else {
 			for _, name := range container.Names {
+				name := strings.TrimPrefix(name, "/")
 				if (resourceName == name || resourceName == container.Labels[headers.OriginalNameLabel]) && container.Labels[headers.TenancyLabel] == tenantId {
 					//Match by Name - Replace to full ID
 					mux.Vars(r)["name"] = container.Info.ID
