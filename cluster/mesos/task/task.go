@@ -3,10 +3,10 @@ package task
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
-	"os"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
@@ -132,7 +132,7 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 		}
 		// TODO handle -P here
 		t.Container.Docker.Network = mesosproto.ContainerInfo_DockerInfo_BRIDGE.Enum()
-		if (networkMode != "bridge" && networkMode != "" && networkMode != "default"){
+		if networkMode != "bridge" && networkMode != "" && networkMode != "default" {
 			t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("net"), Value: proto.String(networkMode)})
 		}
 	}
@@ -157,8 +157,8 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 		for i := range t.Resources {
 			t.Resources[i].Role = proto.String(role)
 		}
- 	}
-	
+	}
+
 	for key, value := range t.config.Labels {
 		t.Container.Docker.Parameters = append(t.Container.Docker.Parameters, &mesosproto.Parameter{Key: proto.String("label"), Value: proto.String(fmt.Sprintf("%s=%s", key, value))})
 	}
