@@ -52,7 +52,7 @@ func init() {
 	supportedAPIsMap["inspectVolume"] = false
 	supportedAPIsMap["listVolume"] = false
 	supportedAPIsMap["removeVolume"] = false
-	supportedAPIsMap["containerwait"] = false
+	supportedAPIsMap["containerwait"] = true
 	supportedAPIsMap["containersjson"] = true
 	supportedAPIsMap["containersps"] = true
 
