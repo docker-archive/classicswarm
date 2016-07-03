@@ -356,13 +356,13 @@ func (c *Cluster) Containers() cluster.Containers {
 			if discoverAll == "true" {
 				out = append(out, formatContainer(container))
 			} else {
- 				if container.Config.Labels != nil {
- 					if _, ok := container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"]; ok {
- 						out = append(out, formatContainer(container))
- 					}
- 				}				
-  			}
-			
+				if container.Config.Labels != nil {
+					if _, ok := container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.task"]; ok {
+						out = append(out, formatContainer(container))
+					}
+				}
+			}
+
 		}
 	}
 
