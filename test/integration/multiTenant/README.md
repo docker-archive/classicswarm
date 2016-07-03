@@ -14,8 +14,8 @@ Integration tests are written in *bash* using the
 ```
 {
        "HttpHeaders": {
-                       "X-Auth-Token": "user3",
-                       "X-Auth-TenantId": "user3"
+                       "X-Auth-Token": "<user_name>",
+                       "X-Auth-TenantId": "<user_name>"
        }
 }
 ```
