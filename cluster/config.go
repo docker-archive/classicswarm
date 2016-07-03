@@ -14,11 +14,13 @@ import (
 const SwarmLabelNamespace = "com.docker.swarm"
 
 // ContainerConfig is exported
-// TODO store affinities and constraints in their own fields
 type ContainerConfig struct {
 	container.Config
 	HostConfig       container.HostConfig
 	NetworkingConfig network.NetworkingConfig
+	Constraints      []string
+	Affinities       []string
+	//TODO(harryz) no `reschedulePolicies` field?
 }
 
 // OldContainerConfig contains additional fields for backward compatibility
@@ -111,18 +113,22 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 	// remove affinities/constraints/reschedule policies from env
 	c.Env = env
 
+	containerConfig := &ContainerConfig{
+		c,
+		h,
+		n,
+		[]string{},
+		[]string{},
+	}
+
 	// store affinities in labels
 	if len(affinities) > 0 {
-		if labels, err := json.Marshal(affinities); err == nil {
-			c.Labels[SwarmLabelNamespace+".affinities"] = string(labels)
-		}
+		containerConfig.Affinities = affinities
 	}
 
 	// store constraints in labels
 	if len(constraints) > 0 {
-		if labels, err := json.Marshal(constraints); err == nil {
-			c.Labels[SwarmLabelNamespace+".constraints"] = string(labels)
-		}
+		containerConfig.Constraints = constraints
 	}
 
 	// store reschedule policies in labels
@@ -132,7 +138,7 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 		}
 	}
 
-	return &ContainerConfig{c, h, n}
+	return containerConfig
 }
 
 func (c *ContainerConfig) extractExprs(key string) []string {
@@ -156,59 +162,37 @@ func (c *ContainerConfig) SetSwarmID(id string) {
 	c.Labels[SwarmLabelNamespace+".id"] = id
 }
 
-// Affinities returns all the affinities from the ContainerConfig
-func (c *ContainerConfig) Affinities() []string {
-	return c.extractExprs("affinities")
-}
-
-// Constraints returns all the constraints from the ContainerConfig
-func (c *ContainerConfig) Constraints() []string {
-	return c.extractExprs("constraints")
-}
-
 // AddAffinity to config
 func (c *ContainerConfig) AddAffinity(affinity string) error {
-	affinities := c.extractExprs("affinities")
+	affinities := c.Affinities
 	affinities = append(affinities, affinity)
-	labels, err := json.Marshal(affinities)
-	if err != nil {
-		return err
-	}
-	c.Labels[SwarmLabelNamespace+".affinities"] = string(labels)
+	c.Affinities = affinities
 	return nil
 }
 
 // RemoveAffinity from config
 func (c *ContainerConfig) RemoveAffinity(affinity string) error {
 	affinities := []string{}
-	for _, a := range c.extractExprs("affinities") {
+	for _, a := range c.Affinities {
 		if a != affinity {
 			affinities = append(affinities, a)
 		}
 	}
-	labels, err := json.Marshal(affinities)
-	if err != nil {
-		return err
-	}
-	c.Labels[SwarmLabelNamespace+".affinities"] = string(labels)
+	c.Affinities = affinities
 	return nil
 }
 
 // AddConstraint to config
 func (c *ContainerConfig) AddConstraint(constraint string) error {
-	constraints := c.extractExprs("constraints")
+	constraints := c.Constraints
 	constraints = append(constraints, constraint)
-	labels, err := json.Marshal(constraints)
-	if err != nil {
-		return err
-	}
-	c.Labels[SwarmLabelNamespace+".constraints"] = string(labels)
+	c.Constraints = constraints
 	return nil
 }
 
 // HaveNodeConstraint in config
 func (c *ContainerConfig) HaveNodeConstraint() bool {
-	constraints := c.extractExprs("constraints")
+	constraints := c.Constraints
 
 	for _, constraint := range constraints {
 		if strings.HasPrefix(constraint, "node==") && !strings.HasPrefix(constraint, "node==~") {
