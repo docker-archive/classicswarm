@@ -12,7 +12,7 @@ func init() {
 	supportedAPIsMap["containerbuild"] = true
 	supportedAPIsMap["imagecommit"] = false
 	supportedAPIsMap["containercopy"] = true
-	supportedAPIsMap["containerdiff"] = false
+	supportedAPIsMap["containerchanges"] = true
 	supportedAPIsMap["containerevents"] = false
 	supportedAPIsMap["containerexec"] = false
 	supportedAPIsMap["containerexport"] = false
