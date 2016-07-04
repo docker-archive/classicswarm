@@ -8,6 +8,7 @@ func init() {
 	supportedAPIsMap = make(map[utils.CommandEnum]bool)
 	supportedAPIsMap["containerscreate"] = true
 	supportedAPIsMap["containerstart"] = true
+	supportedAPIsMap["containerarchive"] = true
 	supportedAPIsMap["containerattach"] = true
 	supportedAPIsMap["containerbuild"] = true
 	supportedAPIsMap["imagecommit"] = false
