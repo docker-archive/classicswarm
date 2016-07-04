@@ -44,7 +44,7 @@ func init() {
 	supportedAPIsMap["containerstart"] = true
 	supportedAPIsMap["containerstop"] = true
 	supportedAPIsMap["imagetag"] = false
-	supportedAPIsMap["containertop"] = false
+	supportedAPIsMap["containertop"] = true
 	supportedAPIsMap["containerunpause"] = true
 	supportedAPIsMap["containerupdate"] = true
 	supportedAPIsMap["version"] = false
