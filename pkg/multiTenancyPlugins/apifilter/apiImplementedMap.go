@@ -6,11 +6,11 @@ var supportedAPIsMap map[utils.CommandEnum]bool
 
 func init() {
 	supportedAPIsMap = make(map[utils.CommandEnum]bool)
-//containers
+	//containers
 	supportedAPIsMap["containerscreate"] = true
 	supportedAPIsMap["containersjson"] = true
 	supportedAPIsMap["containersps"] = true
-//container
+	//container
 	supportedAPIsMap["containerstart"] = true
 	supportedAPIsMap["containerarchive"] = true
 	supportedAPIsMap["containerattach"] = true
@@ -32,9 +32,9 @@ func init() {
 	supportedAPIsMap["containertop"] = true
 	supportedAPIsMap["containerunpause"] = true
 	supportedAPIsMap["containerupdate"] = true
-	supportedAPIsMap["containerwait"] = true	
+	supportedAPIsMap["containerwait"] = true
 	supportedAPIsMap["listContainers"] = true
-//image	
+	//image
 	supportedAPIsMap["imagecommit"] = false
 	supportedAPIsMap["imagehistory"] = false
 	supportedAPIsMap["imageimport"] = false
@@ -45,39 +45,39 @@ func init() {
 	supportedAPIsMap["imagesave"] = false
 	supportedAPIsMap["imagesearch"] = false
 	supportedAPIsMap["imagetag"] = false
-//server	
+	//server
 	supportedAPIsMap["serverlogin"] = false
 	supportedAPIsMap["serverlogout"] = false
-//Network	
+	//Network
 	supportedAPIsMap["connectNetwork"] = false
 	supportedAPIsMap["createNetwork"] = true
 	supportedAPIsMap["disconnectNetwork"] = false
 	supportedAPIsMap["listNetworks"] = true
 	supportedAPIsMap["networkremove"] = false
-//Volume	
+	//Volume
 	supportedAPIsMap["createVolume"] = false
 	supportedAPIsMap["inspectVolume"] = false
 	supportedAPIsMap["listVolume"] = false
 	supportedAPIsMap["removeVolume"] = false
-//general	
+	//general
 	supportedAPIsMap["info"] = true
 	supportedAPIsMap["version"] = false
-	
-//new
-	supportedAPIsMap["ping"] = false					//_ping
-	supportedAPIsMap["listImages"] = false				//images/json	
-	supportedAPIsMap["imagesviz"] = false				//notImplementedHandler
-	supportedAPIsMap["getRepositoriesImages"] = false	//images/get	(Get a tarball containing all images)
-	supportedAPIsMap["getRepositoryImages"] = false		//images/{name:.*}/get	(Get a tarball containing all images in a repository)
-	supportedAPIsMap["inspectImage"] = false			//images/{name:.*}/json
-	supportedAPIsMap["containerstats"] = false			//containers/{name:.*}/stats
-	supportedAPIsMap["execjson"] = false				//exec/{execid:.*}/json
-	supportedAPIsMap["networkinspect"] = false			//networks/{networkid:.*}"
-	supportedAPIsMap["auth"] = false					//auth
-	supportedAPIsMap["commit"] = false					//commit
-	supportedAPIsMap["build"] = false					//build
-	supportedAPIsMap["containerresize"] = false			//containers/{name:.*}/resize
-	supportedAPIsMap["execstart"] = false				//exec/{execid:.*}/start
-	supportedAPIsMap["execresize"] = false				//exec/{execid:.*}/resize
-	//images/create:                     (Create an image) is it equal to imagepull??		
+
+	//new
+	supportedAPIsMap["ping"] = false                  //_ping
+	supportedAPIsMap["listImages"] = false            //images/json
+	supportedAPIsMap["imagesviz"] = false             //notImplementedHandler
+	supportedAPIsMap["getRepositoriesImages"] = false //images/get	(Get a tarball containing all images)
+	supportedAPIsMap["getRepositoryImages"] = false   //images/{name:.*}/get	(Get a tarball containing all images in a repository)
+	supportedAPIsMap["inspectImage"] = false          //images/{name:.*}/json
+	supportedAPIsMap["containerstats"] = false        //containers/{name:.*}/stats
+	supportedAPIsMap["execjson"] = false              //exec/{execid:.*}/json
+	supportedAPIsMap["networkinspect"] = false        //networks/{networkid:.*}"
+	supportedAPIsMap["auth"] = false                  //auth
+	supportedAPIsMap["commit"] = false                //commit
+	supportedAPIsMap["build"] = false                 //build
+	supportedAPIsMap["containerresize"] = false       //containers/{name:.*}/resize
+	supportedAPIsMap["execstart"] = false             //exec/{execid:.*}/start
+	supportedAPIsMap["execresize"] = false            //exec/{execid:.*}/resize
+	//images/create:                     (Create an image) is it equal to imagepull??
 }
