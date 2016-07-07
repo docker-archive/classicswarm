@@ -493,11 +493,19 @@ func (e *Engine) updateSpecs() error {
 	e.Name = info.Name
 	e.Cpus = int64(info.NCPU)
 	e.Memory = info.MemTotal
-	e.Labels = map[string]string{
-		"storagedriver":   info.Driver,
-		"executiondriver": info.ExecutionDriver,
-		"kernelversion":   info.KernelVersion,
-		"operatingsystem": info.OperatingSystem,
+
+	e.Labels = map[string]string{}
+	if info.Driver != "" {
+		e.Labels["storagedriver"] = info.Driver
+	}
+	if info.ExecutionDriver != "" {
+		e.Labels["executiondriver"] = info.ExecutionDriver
+	}
+	if info.KernelVersion != "" {
+		e.Labels["kernelversion"] = info.KernelVersion
+	}
+	if info.OperatingSystem != "" {
+		e.Labels["operatingsystem"] = info.OperatingSystem
 	}
 	for _, label := range info.Labels {
 		kv := strings.SplitN(label, "=", 2)
@@ -512,10 +520,15 @@ func (e *Engine) updateSpecs() error {
 		// since "node" in constraint will match node.Name instead of label.
 		// Log warn message in this case.
 		if kv[0] == "node" {
-			log.Warnf("Engine (ID: %s, Addr: %s) containers a label (%s) with key of \"node\" which cannot be used in Swarm.", e.ID, e.Addr, label)
+			log.Warnf("Engine (ID: %s, Addr: %s) contains a label (%s) with key of \"node\" which cannot be used in Swarm.", e.ID, e.Addr, label)
+			continue
 		}
 
-		e.Labels[kv[0]] = kv[1]
+		if value, exist := e.Labels[kv[0]]; exist {
+			log.Warnf("Node (ID: %s, Addr: %s) already contains a label (%s) with key (%s), and Engine's label (%s) cannot override it.", e.ID, e.Addr, value, kv[0], kv[1])
+		} else {
+			e.Labels[kv[0]] = kv[1]
+		}
 	}
 	return nil
 }
