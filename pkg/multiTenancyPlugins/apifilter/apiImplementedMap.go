@@ -17,7 +17,7 @@ func init() {
 	supportedAPIsMap["containerbuild"] = true
 	supportedAPIsMap["containercopy"] = true
 	supportedAPIsMap["containerchanges"] = true
-	supportedAPIsMap["containerevents"] = false
+	supportedAPIsMap["events"] = true
 	supportedAPIsMap["containerexec"] = false
 	supportedAPIsMap["containerexport"] = false
 	supportedAPIsMap["containerjson"] = true
@@ -34,6 +34,7 @@ func init() {
 	supportedAPIsMap["containerupdate"] = true
 	supportedAPIsMap["containerwait"] = true
 	supportedAPIsMap["listContainers"] = true
+	supportedAPIsMap["containerstats"] = true
 	//image
 	supportedAPIsMap["imagecommit"] = false
 	supportedAPIsMap["imagehistory"] = false
@@ -59,6 +60,7 @@ func init() {
 	supportedAPIsMap["inspectVolume"] = false
 	supportedAPIsMap["listVolume"] = false
 	supportedAPIsMap["removeVolume"] = false
+
 	//general
 	supportedAPIsMap["info"] = true
 	supportedAPIsMap["version"] = false
@@ -70,7 +72,6 @@ func init() {
 	supportedAPIsMap["getRepositoriesImages"] = false //images/get	(Get a tarball containing all images)
 	supportedAPIsMap["getRepositoryImages"] = false   //images/{name:.*}/get	(Get a tarball containing all images in a repository)
 	supportedAPIsMap["inspectImage"] = false          //images/{name:.*}/json
-	supportedAPIsMap["containerstats"] = false        //containers/{name:.*}/stats
 	supportedAPIsMap["execjson"] = false              //exec/{execid:.*}/json
 	supportedAPIsMap["networkinspect"] = false        //networks/{networkid:.*}"
 	supportedAPIsMap["auth"] = false                  //auth
