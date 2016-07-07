@@ -470,7 +470,6 @@ func (e *Engine) updateSpecs() error {
 	// by Swarm.  Catch the error ASAP and refuse to connect.
 	if engineVersion.LessThan(minSupportedVersion) {
 		err = fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade to at least %s", e.Addr, minSupportedVersion)
-		e.CheckConnectionErr(err)
 		return err
 	}
 	// update server version
@@ -526,6 +525,9 @@ func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDelete, erro
 	rmOpts := types.ImageRemoveOptions{force, true}
 	dels, err := e.apiClient.ImageRemove(context.Background(), name, rmOpts)
 	e.CheckConnectionErr(err)
+
+	// ImageRemove is not atomic. Engine may have deleted some layers and still failed.
+	// Swarm should still refresh images before returning an error
 	e.RefreshImages()
 	return dels, err
 }
@@ -959,7 +961,6 @@ func (e *Engine) RemoveContainer(container *Container, force, volumes bool) erro
 func (e *Engine) CreateNetwork(name string, request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
 	response, err := e.apiClient.NetworkCreate(context.Background(), name, *request)
 	e.CheckConnectionErr(err)
-
 	if err != nil {
 		return nil, err
 	}
