@@ -132,6 +132,8 @@ const (
 	//SKIP ...
 
 	CONTAINER_DELETE CommandEnum = "containerdelete"
+	
+	IMAGES_JSON CommandEnum = "imagesjson"
 )
 
 var invMapmap map[string]CommandEnum
@@ -176,6 +178,8 @@ func ParseCommand(r *http.Request) CommandEnum {
 		invMapmap["containerexec"] = CONTAINER_EXEC
 		//SKIP ...
 		invMapmap["containerdelete"] = CONTAINER_DELETE
+		
+		invMapmap["imagesjson"] = IMAGES_JSON
 		initialized = true
 	}
 	//	command := commandParser(r)
@@ -187,12 +191,14 @@ func ParseCommand(r *http.Request) CommandEnum {
 var containersRegexp = regexp.MustCompile("/containers/(.*)/(.*)|/containers/(\\w+)")
 var networksRegexp = regexp.MustCompile("/networks/(.*)/(.*)|/networks/(\\w+)")
 var clusterRegExp = regexp.MustCompile("/(.*)/(.*)")
+var imagesRegexp = regexp.MustCompile("/images/(.*)/(.*)|/images/(\\w+)")
 
 func commandParser(r *http.Request) string {
 	containersParams := containersRegexp.FindStringSubmatch(r.URL.Path)
 	networksParams := networksRegexp.FindStringSubmatch(r.URL.Path)
 	clusterParams := clusterRegExp.FindStringSubmatch(r.URL.Path)
-
+	imagesParams := imagesRegexp.FindStringSubmatch(r.URL.Path)
+	
 	log.Debug(containersParams)
 	log.Debug(networksParams)
 	log.Debug(clusterParams)
@@ -213,11 +219,21 @@ func commandParser(r *http.Request) string {
 		} else if len(containersParams) == 4 && containersParams[3] != "" {
 			log.Debug("A2")
 			return "containers" + containersParams[3] //S
+		}	
+		if len(imagesParams) == 4 && imagesParams[2] != "" {
+			log.Debug("A1")
+			return "image" + imagesParams[2]
+		} else if len(imagesParams) == 4 && imagesParams[3] != "" {
+			log.Debug(" imagesParams[0] = ",imagesParams[0], " imagesParams[1] = ", imagesParams[1], " imagesParams[2] = ",imagesParams[2], " imagesParams[3] = ",imagesParams[3])
+			log.Debug("A2")
+			log.Debug("images" + imagesParams[3])
+			return "images" + imagesParams[3] //S
 		}
 		if len(clusterParams) == 3 {
 			log.Debug("A3")
+			log.Debug(" clusterParams[0] = ",clusterParams[0], " clusterParams[1] = ", clusterParams[1], " clusterParams[2] = ",clusterParams[2]," len(imagesParams) = ",len(imagesParams))
 			return clusterParams[2]
-		}
+		}	
 		if len(networksParams) == 4 && networksParams[3] != "" {
 			return "networkinspect"
 		} else if len(networksParams) == 4 && networksParams[1] == "" && networksParams[2] == "" && networksParams[3] == "" {
