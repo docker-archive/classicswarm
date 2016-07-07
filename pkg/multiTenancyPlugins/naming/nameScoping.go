@@ -101,7 +101,7 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command utils.CommandEnum, clu
 		} else {
 			log.Debug("What now?")
 		}
-	case c.CONTAINER_START, c.CONTAINER_STOP, c.CONTAINER_RESTART, c.CONTAINER_DELETE, c.CONTAINER_WAIT, c.CONTAINER_ARCHIVE, c.CONTAINER_KILL, c.CONTAINER_PAUSE, c.CONTAINER_UNPAUSE, c.CONTAINER_UPDATE, c.CONTAINER_COPY, c.CONTAINER_CHANGES, c.CONTAINER_ATTACH, c.CONTAINER_LOGS, c.CONTAINER_TOP:
+	case c.CONTAINER_START, c.CONTAINER_STOP, c.CONTAINER_RESTART, c.CONTAINER_DELETE, c.CONTAINER_WAIT, c.CONTAINER_ARCHIVE, c.CONTAINER_KILL, c.CONTAINER_PAUSE, c.CONTAINER_UNPAUSE, c.CONTAINER_UPDATE, c.CONTAINER_COPY, c.CONTAINER_CHANGES, c.CONTAINER_ATTACH, c.CONTAINER_LOGS, c.CONTAINER_TOP, c.CONTAINER_STATS:
 		uniquelyIdentifyContainer(cluster, r, w)
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 	case c.NETWORK_CREATE:
@@ -122,7 +122,7 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command utils.CommandEnum, clu
 			r, _ = utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), "", "")
 		}
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
-	case c.PS, c.JSON, c.NETWORKS_LIST, c.INFO:
+	case c.PS, c.JSON, c.NETWORKS_LIST, c.INFO, c.EVENTS:
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 	default:
 
