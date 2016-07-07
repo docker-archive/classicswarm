@@ -3,14 +3,15 @@ package flavors
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"os"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 	"github.com/samalba/dockerclient"
-	"io/ioutil"
-	"net/http"
-	"os"
 )
 
 type DefaultFlavorsImpl struct {
@@ -34,19 +35,18 @@ var flavors map[string]Flavor
 var flavorsEnforced = os.Getenv("SWARM_FLAVORS_ENFORCED")
 
 func init() {
-	log.Info("flavors.init()")
 	readFlavorFile()
 
 }
 func readFlavorFile() {
-	log.Info("Flavors.ReadFlavorFile() ..........")
+	log.Debug("Flavors.ReadFlavorFile() ..........")
 	if flavorsEnforced != "true" {
-		log.Info("Flavors not enforced")
+		log.Debug("Flavors not enforced")
 		return
 	}
 	var flavorsFile = os.Getenv("SWARM_FLAVORS_FILE")
 	if flavorsFile == "" {
-		log.Warn("Missing SWARM_FLAVORS_FILE environment variable, using locate default ./flavors.json")
+		log.Debug("Missing SWARM_FLAVORS_FILE environment variable, using locate default ./flavors.json")
 		flavorsFile = "flavors.json"
 	}
 
@@ -70,7 +70,7 @@ func readFlavorFile() {
 	for key, value := range flavors {
 		flavors[key] = Flavor{value.Memory * MEGABYTE}
 	}
-	log.Infof("Flavors %+v", flavors)
+	log.Debugf("Flavors %+v", flavors)
 }
 func (flavorsImpl *DefaultFlavorsImpl) Handle(command utils.CommandEnum, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin flavors Got command: " + command)
