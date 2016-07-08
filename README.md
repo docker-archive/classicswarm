@@ -15,13 +15,25 @@ into a single, virtual host.
 **Docker Swarm standalone**: This project. A native clustering system for
 Docker. It turns a pool of Docker hosts into a single, virtual host using an
 API proxy system. See [Docker Swarm overview](https://docs.docker.com/swarm/overview/).
+It is Docker's first container orchestration project that began in 2014.
+Combined with Docker Compose, it's a very convenient tool to schedule containers.
+Its flexibility and simplicity make it easy to integrate with existing IT infrastructure.
+Many companies and users have deployed Docker Swarm standalone for production and experimental
+projects. Docker does not currently have a plan to deprecate Docker Swarm.
+The Docker API is backward compatible so Docker Swarm will continue to work with
+future Docker Engine versions.
 
-**[Swarmkit](https://github.com/docker/swarmkit)**: Swarm mode cluster
-management and orchestration features in Docker Engine 1.12 or later. See the
+**[Swarmkit](https://github.com/docker/swarmkit)**: Cluster
+management and orchestration features in Docker Engine 1.12 or later. When Swarmkit
+is enabled we call Docker Engine running in swarm mode. See the
 feature list: [Swarm mode overview](https://docs.docker.com/engine/swarm/).
+This project focuses on micro-service architecture. It supports service
+reconciliation, load balancing, service discovery, built-in certificate rotation, etc.
+Swarm mode is Docker's response to the community's request to simplify service orchestration.
 
-**[Docker Engine swarm mode](https://github.com/docker/docker/tree/master/api/client/swarm)**: CLI interface
-for [swarm mode](https://docs.docker.com/engine/swarm/#what-s-next).
+While the 2 projects may accomplish similar tasks, they work on different levels
+in terms of service architecture. Users can choose which one is more suitable for their workload.
+If you're in doubt, Docker recommends that you try Docker 1.12 and later with built-in swarm mode.
 
 ## Docker Swarm standalone
 
