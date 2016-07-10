@@ -339,7 +339,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		before *cluster.Container
 	)
 	if value := r.FormValue("before"); value != "" {
-		before = c.cluster.Container(value)
+		before = c.cluster.Containers().Get(value)
 		if before == nil {
 			httpError(w, fmt.Sprintf("No such container %s", value), http.StatusNotFound)
 			return
@@ -486,7 +486,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 // GET /containers/{name:.*}/json
 func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
-	container := c.cluster.Container(name)
+	container := c.cluster.Containers().Get(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
 		return
@@ -609,7 +609,7 @@ func deleteContainers(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	force := boolValue(r, "force")
 	volumes := boolValue(r, "v")
-	container := c.cluster.Container(name)
+	container := c.cluster.Containers().Get(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("Container %s not found", name), http.StatusNotFound)
 		return
@@ -791,7 +791,7 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 // POST /containers/{name:.*}/start
 func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
-	container := c.cluster.Container(name)
+	container := c.cluster.Containers().Get(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
 		return
@@ -835,7 +835,7 @@ func postExecStart(c *context, w http.ResponseWriter, r *http.Request) {
 // POST /containers/{name:.*}/exec
 func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
-	container := c.cluster.Container(name)
+	container := c.cluster.Containers().Get(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
 		return
@@ -994,7 +994,7 @@ func proxyNetworkDisconnect(c *context, w http.ResponseWriter, r *http.Request) 
 		}
 		engine = randomEngine
 	} else {
-		container := c.cluster.Container(disconnect.Container)
+		container := c.cluster.Containers().Get(disconnect.Container)
 		if container == nil {
 			httpError(w, fmt.Sprintf("No such container: %s", disconnect.Container), http.StatusNotFound)
 			return
@@ -1039,7 +1039,7 @@ func proxyNetworkConnect(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, fmt.Sprintf("Container is not specified"), http.StatusNotFound)
 		return
 	}
-	container := c.cluster.Container(connect.Container)
+	container := c.cluster.Containers().Get(connect.Container)
 	if container == nil {
 		httpError(w, fmt.Sprintf("No such container: %s", connect.Container), http.StatusNotFound)
 		return

@@ -57,7 +57,7 @@ func sendErrorJSONMessage(w io.Writer, errorCode int, errorMessage string) {
 
 func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.Container, error) {
 	if name, ok := vars["name"]; ok {
-		if container := c.cluster.Container(name); container != nil {
+		if container := c.cluster.Containers().Get(name); container != nil {
 			if !container.Engine.IsHealthy() {
 				return name, container, fmt.Errorf("Container %s running on unhealthy node %s", name, container.Engine.Name)
 			}

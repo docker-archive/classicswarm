@@ -346,19 +346,6 @@ func (c *Cluster) Containers() cluster.Containers {
 	return out
 }
 
-// Container returns the container with IdOrName in the cluster
-func (c *Cluster) Container(IDOrName string) *cluster.Container {
-	// Abort immediately if the name is empty.
-	if len(IDOrName) == 0 {
-		return nil
-	}
-
-	c.RLock()
-	defer c.RUnlock()
-
-	return formatContainer(cluster.Containers(c.Containers()).Get(IDOrName))
-}
-
 // RemoveImage removes an image from the cluster
 func (c *Cluster) RemoveImage(image *cluster.Image) ([]types.ImageDelete, error) {
 	return nil, errNotSupported
