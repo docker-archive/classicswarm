@@ -122,7 +122,7 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command utils.CommandEnum, clu
 			r, _ = utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), "", "")
 		}
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
-	case c.PS, c.JSON, c.NETWORKS_LIST, c.INFO, c.EVENTS:
+	case c.PS, c.JSON, c.NETWORKS_LIST, c.INFO, c.EVENTS, c.IMAGES_JSON:
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 	default:
 

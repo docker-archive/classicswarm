@@ -46,6 +46,7 @@ func init() {
 	supportedAPIsMap["imagesave"] = false
 	supportedAPIsMap["imagesearch"] = false
 	supportedAPIsMap["imagetag"] = false
+	supportedAPIsMap["imagesjson"] = true	//listImages
 	//server
 	supportedAPIsMap["serverlogin"] = false
 	supportedAPIsMap["serverlogout"] = false
@@ -67,7 +68,6 @@ func init() {
 
 	//new
 	supportedAPIsMap["ping"] = false                  //_ping
-	supportedAPIsMap["listImages"] = false            //images/json
 	supportedAPIsMap["imagesviz"] = false             //notImplementedHandler
 	supportedAPIsMap["getRepositoriesImages"] = false //images/get	(Get a tarball containing all images)
 	supportedAPIsMap["getRepositoryImages"] = false   //images/{name:.*}/get	(Get a tarball containing all images in a repository)
