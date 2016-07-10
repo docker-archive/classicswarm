@@ -3,6 +3,7 @@ package flavors
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -39,7 +40,6 @@ func init() {
 
 }
 func readFlavorFile() {
-	log.Debug("Flavors.ReadFlavorFile() ..........")
 	if flavorsEnforced != "true" {
 		log.Debug("Flavors not enforced")
 		return
@@ -73,14 +73,11 @@ func readFlavorFile() {
 	log.Debugf("Flavors %+v", flavors)
 }
 func (flavorsImpl *DefaultFlavorsImpl) Handle(command utils.CommandEnum, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
-	log.Debug("Plugin flavors Got command: " + command)
-	log.Debug("Flavors enforced: ", flavorsEnforced)
 	if flavorsEnforced != "true" {
-		log.Debug("Flavors not enforced")
 		return flavorsImpl.nextHandler(command, cluster, w, r, swarmHandler)
 	}
-	if command != "containercreate" {
-		log.Debug("Flavors not containercreate")
+	log.Debug("Plugin flavors Got command: " + command)
+	if command != utils.CONTAINER_CREATE {
 		return flavorsImpl.nextHandler(command, cluster, w, r, swarmHandler)
 	}
 	defer r.Body.Close()
@@ -99,7 +96,7 @@ func (flavorsImpl *DefaultFlavorsImpl) Handle(command utils.CommandEnum, cluster
 				break
 			}
 		}
-		log.Debug("apply flavor: ", _key)
+		log.Debug("Plugin flavors apply flavor: ", _key)
 		containerConfig.HostConfig.Memory = flavors[_key].Memory
 		if err := json.NewEncoder(&buf).Encode(containerConfig); err != nil {
 			return err
@@ -107,6 +104,5 @@ func (flavorsImpl *DefaultFlavorsImpl) Handle(command utils.CommandEnum, cluster
 		r, _ = utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), "", "")
 		return flavorsImpl.nextHandler(command, cluster, w, r, swarmHandler)
 	}
-	log.Debug("Flavors returning nil in create")
-	return nil
+	return errors.New("Plugin flavors enforced but returning nil!")
 }
