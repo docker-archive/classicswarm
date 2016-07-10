@@ -18,9 +18,10 @@ load cli_helpers
 
 @test "Check flavors" {
     #skip
-	defaultFlavor=67108864  # 64 megabytes 
-	mediumFlavor=134217728  # 128 megabytes
-	largeFlavor=67108864    # 256 megabytes
+	MEGABYTE=1048576
+	DEFAULTFLAVOR=$((64 * $MEGABYTE)) # 64 megabytes
+	MEDIUMFLAVOR=$((128 * $MEGABYTE)) # 128 megabytes
+	LARGEFLAVOR=$((256 * $MEGABYTE)) # 256 megabytes
     # create daemons
 	
     run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 create --name useDefault busybox top  
@@ -28,35 +29,35 @@ load cli_helpers
     [[ "$output" != *"Error"* ]]
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 inspect -f '{{ .HostConfig.Memory }}' useDefault 
     [ "$status" -eq 0 ]
-	[[ "$output" == "$defaultFlavor" ]]
+	[[ "$output" == "$DEFAULTFLAVOR" ]]
 	
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 create --name use64m -m 64m busybox top  
     [ "$status" -eq 0 ]
     [[ "$output" != *"Error"* ]]
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 inspect -f '{{ .HostConfig.Memory }}' use64m 
     [ "$status" -eq 0 ]
-	[[ "$output" == "$defaultFlavor" ]]
+	[[ "$output" == "$DEFAULTFLAVOR" ]]
 	
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 create --name use128m -m 128m busybox top  
     [ "$status" -eq 0 ]
     [[ "$output" != *"Error"* ]]
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 inspect -f '{{ .HostConfig.Memory }}' use128m 
     [ "$status" -eq 0 ]
-	[[ "$output" == "$mediumFlavor" ]]
+	[[ "$output" == "$MEDIUMFLAVOR" ]]
 	
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 create --name use256m -m 256m busybox top  
     [ "$status" -eq 0 ]
     [[ "$output" != *"Error"* ]]
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 inspect -f '{{ .HostConfig.Memory }}' use256m 
     [ "$status" -eq 0 ]
-	[[ "$output" == "$largeFlavor" ]]
+	[[ "$output" == "$LARGEFLAVOR" ]]
 	
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 create --name use100m -m 100m busybox top  
     [ "$status" -eq 0 ]
     [[ "$output" != *"Error"* ]]
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 inspect -f '{{ .HostConfig.Memory }}' use100m 
     [ "$status" -eq 0 ]
-	[[ "$output" == "$defaultFlavor" ]]
+	[[ "$output" == "$DEFAULTFLAVOR" ]]
 
 
 
