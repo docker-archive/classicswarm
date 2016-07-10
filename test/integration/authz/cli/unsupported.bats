@@ -30,14 +30,6 @@ CMD_UNSUPPORTED="Error response from daemon: Command Not Supported!"
 	
 }
 
-@test "events unsupported" {
-    #skip
-	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 events
-	[ "$status" -ne 0 ]
-	[[ "$output" == *"$CMD_UNSUPPORTED"* ]]
-	
-}
-
 @test "login unsupported" {
     #skip
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 login -e user@gmail.com -u user -p secret server
@@ -45,4 +37,22 @@ CMD_UNSUPPORTED="Error response from daemon: Command Not Supported!"
 	[[ "$output" == *"$CMD_UNSUPPORTED"* ]]
 	
 }
+
+@test "info unsupported disable by user" {
+    skip Requires export SWARM_APIFILTER_FILE=./test/integration/authz/data/apitfilter.json
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 info
+	[ "$status" -ne 0 ]
+	[[ "$output" == *"$CMD_UNSUPPORTED"* ]]
+	
+}
+
+@test "top unsupported disable by user" {
+    skip Requires export SWARM_APIFILTER_FILE=./test/integration/authz/data/apitfilter.json
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 top acontainer_name
+	[ "$status" -ne 0 ]
+	[[ "$output" == *"$CMD_UNSUPPORTED"* ]]
+	
+}
+
+
 

@@ -1,10 +1,15 @@
 package apifilter
 
-import "github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
+import (
+	"encoding/json"
+	log "github.com/Sirupsen/logrus"
+	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
+	"os"
+)
 
 var supportedAPIsMap map[utils.CommandEnum]bool
 
-func init() {
+func initSupportedAPIsMap() {
 	supportedAPIsMap = make(map[utils.CommandEnum]bool)
 	//containers
 	supportedAPIsMap["containerscreate"] = true
@@ -81,4 +86,38 @@ func init() {
 	supportedAPIsMap["execstart"] = false             //exec/{execid:.*}/start
 	supportedAPIsMap["execresize"] = false            //exec/{execid:.*}/resize
 	//images/create:                     (Create an image) is it equal to imagepull??
+}
+
+func modifySupportedWithDisabledApi() {
+	type Filter struct {
+		Disableapi []utils.CommandEnum
+	}
+	var filter Filter
+	var f = os.Getenv("SWARM_APIFILTER_FILE")
+	if f == "" {
+		f = "apifilter.json"
+	}
+
+	file, err := os.Open(f)
+	if err != nil {
+		log.Info("no API FILTER file")
+		return
+	}
+
+	log.Info("SWARM_APIFILTER_FILE: ", f)
+
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&filter)
+	if err != nil {
+		log.Fatal("Error in apifilter decode:", err)
+		panic("Error: could not decode apifilter.json")
+	}
+	log.Infof("filter %+v", filter)
+	for _, e := range filter.Disableapi {
+		if supportedAPIsMap[e] {
+			log.Infof("disable %+v", e)
+			supportedAPIsMap[e] = false
+		}
+
+	}
 }

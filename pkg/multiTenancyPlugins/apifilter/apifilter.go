@@ -2,12 +2,11 @@ package apifilter
 
 import (
 	"errors"
-	"net/http"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
+	"net/http"
 )
 
 type DefaultApiFilterImpl struct {
@@ -30,5 +29,11 @@ func (apiFilterImpl *DefaultApiFilterImpl) Handle(command utils.CommandEnum, clu
 	} else {
 		return errors.New("Command Not Supported!")
 	}
+
+}
+
+func init() {
+	initSupportedAPIsMap()
+	modifySupportedWithDisabledApi()
 
 }
