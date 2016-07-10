@@ -160,6 +160,7 @@ func ParseCommand(r *http.Request) CommandEnum {
 		//SKIP ...
 		invMapmap["networkslist"] = NETWORKS_LIST
 		invMapmap["networkinspect"] = NETWORK_INSPECT
+		invMapmap["createnetwork"] = NETWORK_CREATE
 		//SKIP ...
 		//POST
 		invMapmap["containerscreate"] = CONTAINER_CREATE

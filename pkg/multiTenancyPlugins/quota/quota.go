@@ -47,7 +47,7 @@ func (quotaImpl *DefaultQuotaImpl) Handle(command utils.CommandEnum, cluster clu
 	}
 
 	switch command {
-	case "containercreate":
+	case utils.CONTAINER_CREATE:
 		defer r.Body.Close()
 		if reqBody, _ := ioutil.ReadAll(r.Body); len(reqBody) > 0 {
 			var containerConfig dockerclient.ContainerConfig
@@ -79,7 +79,7 @@ func (quotaImpl *DefaultQuotaImpl) Handle(command utils.CommandEnum, cluster clu
 				return err
 			}
 		}
-	case "containerdelete":
+	case utils.CONTAINER_DELETE:
 		resourceLongID := mux.Vars(r)["name"]
 		tenant := r.Header.Get(headers.AuthZTenantIdHeaderName)
 		err := quotaMgmt.IsSwarmContainer(cluster, resourceLongID, tenant)

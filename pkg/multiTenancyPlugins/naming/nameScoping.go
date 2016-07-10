@@ -14,7 +14,6 @@ import (
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/headers"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/pluginAPI"
 	"github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
-	c "github.com/docker/swarm/pkg/multiTenancyPlugins/utils"
 	"github.com/gorilla/mux"
 	"github.com/samalba/dockerclient"
 )
@@ -62,7 +61,7 @@ Loop:
 func (nameScoping *DefaultNameScopingImpl) Handle(command utils.CommandEnum, cluster cluster.Cluster, w http.ResponseWriter, r *http.Request, swarmHandler http.Handler) error {
 	log.Debug("Plugin nameScoping Got command: " + command)
 	switch command {
-	case c.CONTAINER_CREATE:
+	case utils.CONTAINER_CREATE:
 		if "" != r.URL.Query().Get("name") {
 			defer r.Body.Close()
 			if reqBody, _ := ioutil.ReadAll(r.Body); len(reqBody) > 0 {
@@ -94,17 +93,17 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command utils.CommandEnum, clu
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 
 	//Find the container and replace the name with ID
-	case c.CONTAINER_JSON:
+	case utils.CONTAINER_JSON:
 		if resourceName := mux.Vars(r)["name"]; resourceName != "" {
 			uniquelyIdentifyContainer(cluster, r, w)
 			return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 		} else {
 			log.Debug("What now?")
 		}
-	case c.CONTAINER_START, c.CONTAINER_STOP, c.CONTAINER_RESTART, c.CONTAINER_DELETE, c.CONTAINER_WAIT, c.CONTAINER_ARCHIVE, c.CONTAINER_KILL, c.CONTAINER_PAUSE, c.CONTAINER_UNPAUSE, c.CONTAINER_UPDATE, c.CONTAINER_COPY, c.CONTAINER_CHANGES, c.CONTAINER_ATTACH, c.CONTAINER_LOGS, c.CONTAINER_TOP, c.CONTAINER_STATS:
+	case utils.CONTAINER_START, utils.CONTAINER_STOP, utils.CONTAINER_RESTART, utils.CONTAINER_DELETE, utils.CONTAINER_WAIT, utils.CONTAINER_ARCHIVE, utils.CONTAINER_KILL, utils.CONTAINER_PAUSE, utils.CONTAINER_UNPAUSE, utils.CONTAINER_UPDATE, utils.CONTAINER_COPY, utils.CONTAINER_CHANGES, utils.CONTAINER_ATTACH, utils.CONTAINER_LOGS, utils.CONTAINER_TOP, utils.CONTAINER_STATS:
 		uniquelyIdentifyContainer(cluster, r, w)
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
-	case c.NETWORK_CREATE:
+	case utils.NETWORK_CREATE:
 		defer r.Body.Close()
 		if reqBody, _ := ioutil.ReadAll(r.Body); len(reqBody) > 0 {
 
@@ -122,7 +121,7 @@ func (nameScoping *DefaultNameScopingImpl) Handle(command utils.CommandEnum, clu
 			r, _ = utils.ModifyRequest(r, bytes.NewReader(buf.Bytes()), "", "")
 		}
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
-	case c.PS, c.JSON, c.NETWORKS_LIST, c.INFO, c.EVENTS, c.IMAGES_JSON:
+	case utils.PS, utils.JSON, utils.NETWORKS_LIST, utils.INFO, utils.EVENTS, utils.IMAGES_JSON:
 		return nameScoping.nextHandler(command, cluster, w, r, swarmHandler)
 	default:
 

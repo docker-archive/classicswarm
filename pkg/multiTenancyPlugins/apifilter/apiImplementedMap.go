@@ -54,7 +54,7 @@ func init() {
 	supportedAPIsMap["connectNetwork"] = false
 	supportedAPIsMap["createNetwork"] = true
 	supportedAPIsMap["disconnectNetwork"] = false
-	supportedAPIsMap["listNetworks"] = true
+	supportedAPIsMap["networkslist"] = true
 	supportedAPIsMap["networkremove"] = false
 	//Volume
 	supportedAPIsMap["createVolume"] = false
