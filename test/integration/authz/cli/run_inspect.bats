@@ -17,7 +17,7 @@
 
 load cli_helpers
 
-@test "Check run and inspect" {
+@test "Check run and inspect non daemons" {
     #skip
 	# run non daemons
     run docker -H $SWARM_HOST --config $DOCKER_CONFIG1  run -d --name  busy1 busybox
@@ -55,8 +55,18 @@ load cli_helpers
     [ "$status" -eq 0 ]
 	config2Busy1Id=$output
 	[[ config1Busy1Id != config2Busy1Id ]]
+	
+	run checkInvariant
+    [ $status = 0 ]	
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 rm -fv busy1
+	[ "$status" -eq 0 ]
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 rm -fv busy1
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+}
 
-
+@test "Check run and inspect with daemons" {
+    #skip
     # run daemons
     run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 run -d --name loop1 ubuntu /bin/sh -c "while true; do echo Hello world; sleep 1; done"  
     [ "$status" -eq 0 ]
@@ -110,8 +120,6 @@ load cli_helpers
     run checkInvariant
     [ $status = 0 ]
 	
-	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 rm -fv busy1
-	[ "$status" -eq 0 ]
     [[ "$output" != *"Error"* ]]
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 rm -fv loop1
 	[ "$status" -eq 0 ]
@@ -122,11 +130,82 @@ load cli_helpers
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 rm -fv loop1
 	[ "$status" -eq 0 ]
     [[ "$output" != *"Error"* ]]
-	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 rm -fv busy1
+
+}
+
+@test "Check run and inspect with daemons no name" {
+    #skip
+    # run daemons
+    run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 run -d ubuntu /bin/sh -c "while true; do echo Hello world; sleep 1; done"  
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	loop1Config1Id=$output
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 inspect $loop1Config1Id
+    [ "$status" -eq 0 ]
+    inspectConfig1="$output"
+
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 inspect $loop1Config1Id
+    [ "$status" -eq 0 ]
+    [ "$inspectConfig1" = "$output" ]
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 inspect -f '{{.Id}} {{.State.Status}}' $loop1Config1Id 
+    [ "$status" -eq 0 ]
+	[[ "$output" == "$loop1Config1Id running" ]]
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 inspect -f '{{.Name}}' $loop1Config1Id 
+    [ "$status" -eq 0 ]
+	loop1Config1Name=$output
+	loop1Config1Name=${loop1Config1Name#"/"}
+	#run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 inspect $loop1Config1Name
+    #[ "$status" -eq 0 ]
+    #[ "$inspectConfig1" = "$output" ]
+
+
+ 
+    # same name different tenant
+	run notAuthorized $DOCKER_CONFIG2 $loop1Config1Name
+	[ "$status" -eq 0 ]
+	run notAuthorized $DOCKER_CONFIG2 $loop1Config1Id
+	[ "$status" -eq 0 ]
+ 
+    run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 run -d --name $loop1Config1Name ubuntu /bin/sh -c "while true; do echo Hello world; sleep 1; done"  
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	loop1Config2Id=$output
+	[[ "$loop1Config1Id" != "$loop1Config2Id" ]]
+	
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 inspect -f '{{.Id}} {{.Name}} {{.State.Status}}' $loop1Config1Name 
+    [ "$status" -eq 0 ]
+	[[ "$output" == "$loop1Config2Id "/$loop1Config1Name" running" ]]
+   
+
+    # different user of tenant
+    run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 run -d ubuntu /bin/sh -c "while true; do echo Hello world; sleep 1; done"  
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	loop1Config3Id=$output
+    run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 inspect $loop1Config3Id
+    [ "$status" -eq 0 ]
+	loop1Config3Inspect=$output
+    run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 inspect $loop1Config3Id
+    [ "$status" -eq 0 ]
+	[[ "$loop1Config3Inspect" == "$output" ]]
+	
+    run checkInvariant
+    [ $status = 0 ]
+	
+    [[ "$output" != *"Error"* ]]
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG3 rm -fv $loop1Config3Id
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 rm -fv $loop1Config1Id
+	[ "$status" -eq 0 ]
+    [[ "$output" != *"Error"* ]]	
+	run docker -H $SWARM_HOST --config $DOCKER_CONFIG2 rm -fv $loop1Config2Id
 	[ "$status" -eq 0 ]
     [[ "$output" != *"Error"* ]]
 
 }
+
+
 
 
 
