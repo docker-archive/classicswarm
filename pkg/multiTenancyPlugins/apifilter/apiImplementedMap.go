@@ -46,7 +46,7 @@ func init() {
 	supportedAPIsMap["imagesave"] = false
 	supportedAPIsMap["imagesearch"] = false
 	supportedAPIsMap["imagetag"] = false
-	supportedAPIsMap["imagesjson"] = true	//listImages
+	supportedAPIsMap["imagesjson"] = true //listImages
 	//server
 	supportedAPIsMap["serverlogin"] = false
 	supportedAPIsMap["serverlogout"] = false
