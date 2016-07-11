@@ -39,7 +39,7 @@ CMD_UNSUPPORTED="Error response from daemon: Command Not Supported!"
 }
 
 @test "info unsupported disable by user" {
-    skip Requires export SWARM_APIFILTER_FILE=./test/integration/authz/data/apitfilter.json
+    #skip Requires export SWARM_APIFILTER_FILE=./test/integration/authz/data/apitfilter.json
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 info
 	[ "$status" -ne 0 ]
 	[[ "$output" == *"$CMD_UNSUPPORTED"* ]]
@@ -47,7 +47,7 @@ CMD_UNSUPPORTED="Error response from daemon: Command Not Supported!"
 }
 
 @test "top unsupported disable by user" {
-    skip Requires export SWARM_APIFILTER_FILE=./test/integration/authz/data/apitfilter.json
+    #skip Requires export SWARM_APIFILTER_FILE=./test/integration/authz/data/apitfilter.json
 	run docker -H $SWARM_HOST --config $DOCKER_CONFIG1 top acontainer_name
 	[ "$status" -ne 0 ]
 	[[ "$output" == *"$CMD_UNSUPPORTED"* ]]
