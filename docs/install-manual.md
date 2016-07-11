@@ -97,7 +97,7 @@ group. When complete, the example deployment contains three types of nodes:
 
 To create the instances do the following:
 
-1. Open the EC2 Dashboard and launch four EC2 instances, one at a time.
+1. Open the EC2 Dashboard and launch five EC2 instances, one at a time.
 
     - During **Step 1: Choose an Amazon Machine Image (AMI)**, pick the *Amazon Linux AMI*.
 
