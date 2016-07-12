@@ -353,9 +353,6 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 		return nil
 	}
 
-	c.RLock()
-	defer c.RUnlock()
-
 	return formatContainer(cluster.Containers(c.Containers()).Get(IDOrName))
 }
 
