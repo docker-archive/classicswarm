@@ -21,9 +21,6 @@ Remote API.
 
 Some endpoints have not yet been implemented and will return a 404 error.
 
-```
-POST "/images/create" : "docker import" flow not implement
-```
 
 ## Endpoints which behave differently
 
