@@ -67,8 +67,7 @@ host. Currently, the default tags include:
 Custom node labels you apply when you start the `docker daemon`, for example:
 
 ```bash
-$ docker daemon --label com.example.environment="production" --label
-com.example.storage="ssd"
+$ docker daemon --label com.example.environment="production" --label com.example.storage="ssd"
 ```
 
 Then, when you start a container on the cluster, you can set constraints using
