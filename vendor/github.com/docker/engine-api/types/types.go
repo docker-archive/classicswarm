@@ -7,6 +7,7 @@ import (
 	"github.com/docker/engine-api/types/container"
 	"github.com/docker/engine-api/types/network"
 	"github.com/docker/engine-api/types/registry"
+	"github.com/docker/engine-api/types/swarm"
 	"github.com/docker/go-connections/nat"
 )
 
@@ -252,6 +253,9 @@ type Info struct {
 	ClusterStore       string
 	ClusterAdvertise   string
 	SecurityOptions    []string
+	Runtimes           map[string]Runtime
+	DefaultRuntime     string
+	Swarm              swarm.Info
 }
 
 // PluginsInfo is a temp struct holding Plugins name
@@ -274,6 +278,28 @@ type ExecStartCheck struct {
 	Tty bool
 }
 
+// HealthcheckResult stores information about a single run of a healthcheck probe
+type HealthcheckResult struct {
+	Start    time.Time // Start is the time this check started
+	End      time.Time // End is the time this check ended
+	ExitCode int       // ExitCode meanings: 0=healthy, 1=unhealthy, 2=starting, else=error running probe
+	Output   string    // Output from last check
+}
+
+// Health states
+const (
+	Starting  = "starting"  // Starting indicates that the container is not yet ready
+	Healthy   = "healthy"   // Healthy indicates that the container is running correctly
+	Unhealthy = "unhealthy" // Unhealthy indicates that the container has a problem
+)
+
+// Health stores information about the container's healthcheck results
+type Health struct {
+	Status        string               // Status is one of Starting, Healthy or Unhealthy
+	FailingStreak int                  // FailingStreak is the number of consecutive failures
+	Log           []*HealthcheckResult // Log contains the last few results (oldest first)
+}
+
 // ContainerState stores container's running state
 // it's part of ContainerJSONBase and will return by "inspect" command
 type ContainerState struct {
@@ -288,6 +314,7 @@ type ContainerState struct {
 	Error      string
 	StartedAt  string
 	FinishedAt string
+	Health     *Health `json:",omitempty"`
 }
 
 // ContainerNode stores information about the node that a container
@@ -298,7 +325,7 @@ type ContainerNode struct {
 	Addr      string
 	Name      string
 	Cpus      int
-	Memory    int
+	Memory    int64
 	Labels    map[string]string
 }
 
@@ -416,13 +443,13 @@ type VolumeCreateRequest struct {
 
 // NetworkResource is the body of the "get network" http response message
 type NetworkResource struct {
-	Name       string                      // Name is the requested name of the volume
-	ID         string                      `json:"Id"` // ID uniquely indentifies a network on a single machine
+	Name       string                      // Name is the requested name of the network
+	ID         string                      `json:"Id"` // ID uniquely identifies a network on a single machine
 	Scope      string                      // Scope describes the level at which the network exists (e.g. `global` for cluster-wide or `local` for machine level)
-	Driver     string                      // Driver is the Driver name used to create the volume (e.g. `bridge`, `overlay`)
+	Driver     string                      // Driver is the Driver name used to create the network (e.g. `bridge`, `overlay`)
 	EnableIPv6 bool                        // EnableIPv6 represents whether to enable IPv6
 	IPAM       network.IPAM                // IPAM is the network's IP Address Management
-	Internal   bool                        // Internal respresents if the network is used internal only
+	Internal   bool                        // Internal represents if the network is used internal only
 	Containers map[string]EndpointResource // Containers contains endpoints belonging to the network
 	Options    map[string]string           // Options holds the network specific options to use for when creating the network
 	Labels     map[string]string           // Labels holds metadata specific to the network being created
@@ -475,4 +502,10 @@ type NetworkDisconnect struct {
 // Checkpoint represents the details of a checkpoint
 type Checkpoint struct {
 	Name string // Name is the name of the checkpoint
+}
+
+// Runtime describes an OCI runtime
+type Runtime struct {
+	Path string   `json:"path"`
+	Args []string `json:"runtimeArgs,omitempty"`
 }
