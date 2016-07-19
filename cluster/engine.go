@@ -993,8 +993,6 @@ func (e *Engine) CreateContainer(config *ContainerConfig, name string, pullImage
 	// Register the container immediately while waiting for a state refresh.
 	// Force a state refresh to pick up the newly created container.
 	e.refreshContainer(createResp.ID, true)
-	e.RefreshVolumes()
-	e.RefreshNetworks()
 
 	e.Lock()
 	container := e.containers[createResp.ID]
