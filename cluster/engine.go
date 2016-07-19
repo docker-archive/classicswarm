@@ -25,6 +25,7 @@ import (
 	"github.com/docker/engine-api/types/filters"
 	networktypes "github.com/docker/engine-api/types/network"
 	engineapinop "github.com/docker/swarm/api/nopclient"
+	"github.com/docker/swarm/swarmclient"
 	"github.com/samalba/dockerclient"
 	"github.com/samalba/dockerclient/nopclient"
 )
@@ -123,7 +124,7 @@ type Engine struct {
 	networks        map[string]*Network
 	volumes         map[string]*Volume
 	client          dockerclient.Client
-	apiClient       engineapi.APIClient
+	apiClient       swarmclient.SwarmAPIClient
 	eventHandler    EventHandler
 	state           engineState
 	lastError       string
@@ -209,7 +210,7 @@ func (e *Engine) StartMonitorEvents() {
 }
 
 // ConnectWithClient is exported
-func (e *Engine) ConnectWithClient(client dockerclient.Client, apiClient engineapi.APIClient) error {
+func (e *Engine) ConnectWithClient(client dockerclient.Client, apiClient swarmclient.SwarmAPIClient) error {
 	e.client = client
 	e.apiClient = apiClient
 	e.eventsMonitor = NewEventsMonitor(e.apiClient, e.handler)
@@ -1335,8 +1336,8 @@ func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) 
 	if hostConfig != nil {
 		err = e.client.StartContainer(id, hostConfig)
 	} else {
-		// TODO(nishanttotla): Figure out what the checkpoint id (second string argument) should be
-		err = e.apiClient.ContainerStart(context.Background(), id, "")
+		// TODO(nishanttotla): Should ContainerStartOptions be provided?
+		err = e.apiClient.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
 	}
 	e.CheckConnectionErr(err)
 	if err != nil {
@@ -1375,11 +1376,7 @@ func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuild
 // TagImage tags an image
 func (e *Engine) TagImage(IDOrName string, ref string, force bool) error {
 	// send tag request to docker engine
-	opts := types.ImageTagOptions{
-		Force: force,
-	}
-
-	err := e.apiClient.ImageTag(context.Background(), IDOrName, ref, opts)
+	err := e.apiClient.ImageTag(context.Background(), IDOrName, ref)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err

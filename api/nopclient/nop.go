@@ -3,6 +3,7 @@ package nopclient
 import (
 	"errors"
 	"io"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -142,7 +143,7 @@ func (client *NopClient) ContainerResize(ctx context.Context, container string, 
 }
 
 // ContainerRestart stops and starts a container again
-func (client *NopClient) ContainerRestart(ctx context.Context, container string, timeout int) error {
+func (client *NopClient) ContainerRestart(ctx context.Context, container string, timeout *time.Duration) error {
 	return errNoEngine
 }
 
@@ -157,12 +158,12 @@ func (client *NopClient) ContainerStats(ctx context.Context, container string, s
 }
 
 // ContainerStart sends a request to the docker daemon to start a container
-func (client *NopClient) ContainerStart(ctx context.Context, container string, checkpointID string) error {
+func (client *NopClient) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
 	return errNoEngine
 }
 
 // ContainerStop stops a container without terminating the process
-func (client *NopClient) ContainerStop(ctx context.Context, container string, timeout int) error {
+func (client *NopClient) ContainerStop(ctx context.Context, container string, timeout *time.Duration) error {
 	return errNoEngine
 }
 
@@ -262,7 +263,7 @@ func (client *NopClient) ImageSave(ctx context.Context, images []string) (io.Rea
 }
 
 // ImageTag tags an image in the docker host
-func (client *NopClient) ImageTag(ctx context.Context, image, ref string, options types.ImageTagOptions) error {
+func (client *NopClient) ImageTag(ctx context.Context, image, ref string) error {
 	return errNoEngine
 }
 

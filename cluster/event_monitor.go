@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/types/events"
+	"github.com/docker/swarm/swarmclient"
 	"golang.org/x/net/context"
 )
 
 //EventsMonitor monitors events
 type EventsMonitor struct {
 	stopChan chan struct{}
-	cli      client.APIClient
+	cli      swarmclient.SwarmAPIClient
 	handler  func(msg events.Message) error
 }
 
@@ -23,7 +23,7 @@ type decodingResult struct {
 }
 
 // NewEventsMonitor returns an EventsMonitor
-func NewEventsMonitor(cli client.APIClient, handler func(msg events.Message) error) *EventsMonitor {
+func NewEventsMonitor(cli swarmclient.SwarmAPIClient, handler func(msg events.Message) error) *EventsMonitor {
 	return &EventsMonitor{
 		cli:     cli,
 		handler: handler,
