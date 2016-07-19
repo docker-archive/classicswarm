@@ -4,9 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/docker/swarm/swarmclient"
 	"golang.org/x/net/context"
-
-	"github.com/docker/engine-api/client"
 )
 
 func TestNop(t *testing.T) {
@@ -18,10 +17,10 @@ func TestNop(t *testing.T) {
 }
 
 func TestNopInterface(t *testing.T) {
-	iface := reflect.TypeOf((*client.APIClient)(nil)).Elem()
+	iface := reflect.TypeOf((*swarmclient.SwarmAPIClient)(nil)).Elem()
 	nop := NewNopClient()
 
 	if !reflect.TypeOf(nop).Implements(iface) {
-		t.Fatalf("Nop does not implement the APIClient interface")
+		t.Fatalf("Nop does not implement the SwarmAPIClient interface")
 	}
 }
