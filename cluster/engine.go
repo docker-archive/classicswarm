@@ -1335,8 +1335,8 @@ func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) 
 	if hostConfig != nil {
 		err = e.client.StartContainer(id, hostConfig)
 	} else {
-		// TODO(nishanttotla): Figure out what the checkpoint id (second string argument) should be
-		err = e.apiClient.ContainerStart(context.Background(), id, "")
+		// TODO(nishanttotla): Should ContainerStartOptions be provided?
+		err = e.apiClient.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
 	}
 	e.CheckConnectionErr(err)
 	if err != nil {
@@ -1375,11 +1375,7 @@ func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuild
 // TagImage tags an image
 func (e *Engine) TagImage(IDOrName string, ref string, force bool) error {
 	// send tag request to docker engine
-	opts := types.ImageTagOptions{
-		Force: force,
-	}
-
-	err := e.apiClient.ImageTag(context.Background(), IDOrName, ref, opts)
+	err := e.apiClient.ImageTag(context.Background(), IDOrName, ref)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err

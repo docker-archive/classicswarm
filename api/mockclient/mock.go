@@ -1,15 +1,22 @@
 package mockclient
 
 import (
+	"errors"
 	"io"
+	"time"
 
 	"github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/types/container"
 	"github.com/docker/engine-api/types/filters"
 	"github.com/docker/engine-api/types/network"
 	"github.com/docker/engine-api/types/registry"
+	"github.com/docker/engine-api/types/swarm"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/net/context"
+)
+
+var (
+	errNotImplemented = errors.New("Not implemented in Docker Swarm")
 )
 
 // MockClient is a mock API Client based on engine-api
@@ -161,7 +168,7 @@ func (client *MockClient) ContainerResize(ctx context.Context, container string,
 }
 
 // ContainerRestart stops and starts a container again
-func (client *MockClient) ContainerRestart(ctx context.Context, container string, timeout int) error {
+func (client *MockClient) ContainerRestart(ctx context.Context, container string, timeout *time.Duration) error {
 	args := client.Mock.Called(ctx, container, timeout)
 	return args.Error(0)
 }
@@ -179,13 +186,13 @@ func (client *MockClient) ContainerStats(ctx context.Context, container string, 
 }
 
 // ContainerStart sends a request to the docker daemon to start a container
-func (client *MockClient) ContainerStart(ctx context.Context, container string, checkpointID string) error {
-	args := client.Mock.Called(ctx, container, checkpointID)
+func (client *MockClient) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
+	args := client.Mock.Called(ctx, container, options)
 	return args.Error(0)
 }
 
 // ContainerStop stops a container without terminating the process
-func (client *MockClient) ContainerStop(ctx context.Context, container string, timeout int) error {
+func (client *MockClient) ContainerStop(ctx context.Context, container string, timeout *time.Duration) error {
 	args := client.Mock.Called(ctx, container, timeout)
 	return args.Error(0)
 }
@@ -305,8 +312,8 @@ func (client *MockClient) ImageSave(ctx context.Context, images []string) (io.Re
 }
 
 // ImageTag tags an image in the docker host
-func (client *MockClient) ImageTag(ctx context.Context, image, ref string, options types.ImageTagOptions) error {
-	args := client.Mock.Called(ctx, image, ref, options)
+func (client *MockClient) ImageTag(ctx context.Context, image, ref string) error {
+	args := client.Mock.Called(ctx, image, ref)
 	return args.Error(0)
 }
 
@@ -402,4 +409,90 @@ func (client *MockClient) VolumeList(ctx context.Context, filter filters.Args) (
 func (client *MockClient) VolumeRemove(ctx context.Context, volumeID string) error {
 	args := client.Mock.Called(ctx, volumeID)
 	return args.Error(0)
+}
+
+// The following functions are for Docker swarm mode. They are
+// not relevant to Docker Swarm, but present here for a full
+// implementation of the engine-api client.
+// TODO(nishanttotla): Swarm should define a reduced interface
+// that can be used to get rid of the following functions.
+
+// NodeInspectWithRaw is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) NodeInspectWithRaw(ctx context.Context, nodeID string) (swarm.Node, []byte, error) {
+	return swarm.Node{}, nil, errNotImplemented
+}
+
+// NodeList is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) NodeList(ctx context.Context, options types.NodeListOptions) ([]swarm.Node, error) {
+	return nil, errNotImplemented
+}
+
+// NodeRemove is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) NodeRemove(ctx context.Context, nodeID string) error {
+	return errNotImplemented
+}
+
+// NodeUpdate is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) NodeUpdate(ctx context.Context, nodeID string, version swarm.Version, node swarm.NodeSpec) error {
+	return errNotImplemented
+}
+
+// ServiceCreate is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) ServiceCreate(ctx context.Context, service swarm.ServiceSpec, options types.ServiceCreateOptions) (types.ServiceCreateResponse, error) {
+	return types.ServiceCreateResponse{}, errNotImplemented
+}
+
+// ServiceInspectWithRaw is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) ServiceInspectWithRaw(ctx context.Context, serviceID string) (swarm.Service, []byte, error) {
+	return swarm.Service{}, nil, errNotImplemented
+}
+
+// ServiceList is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) ServiceList(ctx context.Context, options types.ServiceListOptions) ([]swarm.Service, error) {
+	return nil, errNotImplemented
+}
+
+// ServiceRemove is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) ServiceRemove(ctx context.Context, serviceID string) error {
+	return errNotImplemented
+}
+
+// ServiceUpdate is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) ServiceUpdate(ctx context.Context, serviceID string, version swarm.Version, service swarm.ServiceSpec, options types.ServiceUpdateOptions) error {
+	return errNotImplemented
+}
+
+// TaskInspectWithRaw is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) TaskInspectWithRaw(ctx context.Context, taskID string) (swarm.Task, []byte, error) {
+	return swarm.Task{}, nil, errNotImplemented
+}
+
+// TaskList is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) TaskList(ctx context.Context, options types.TaskListOptions) ([]swarm.Task, error) {
+	return nil, errNotImplemented
+}
+
+// SwarmInit is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) SwarmInit(ctx context.Context, req swarm.InitRequest) (string, error) {
+	return "", errNotImplemented
+}
+
+// SwarmJoin is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) SwarmJoin(ctx context.Context, req swarm.JoinRequest) error {
+	return errNotImplemented
+}
+
+// SwarmLeave is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) SwarmLeave(ctx context.Context, force bool) error {
+	return errNotImplemented
+}
+
+// SwarmInspect is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) SwarmInspect(ctx context.Context) (swarm.Swarm, error) {
+	return swarm.Swarm{}, errNotImplemented
+}
+
+// SwarmUpdate is a Swarm mode function that is not relevant to Docker Swarm
+func (client *MockClient) SwarmUpdate(ctx context.Context, version swarm.Version, swarm swarm.Spec) error {
+	return errNotImplemented
 }
