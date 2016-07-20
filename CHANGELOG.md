@@ -1,14 +1,43 @@
 # Changelog
 
-## 1.2.4 (2016-06-14)
+## 1.2.4 (2016-07-20)
 
 #### API
 
+- New client interface in Swarm, to differentiate from Swarm mode in Docker 1.12
+- Update minimum Docker Engine version supported by Swarm to 1.8
+- Additional error handling
 - Code refactoring
+
+#### Networking
+
+- Fix concurrent map writes race condition
+- Refresh single network when network event is emitted (performance improvement)
+- Avoid network refresh when creating container (performance improvement)
+
+#### Volumes
+
+- Refresh single volume when volume event is emitted (performance improvement)
+- Avoid volume refresh when creating container (performance improvement)
+
+#### Events
+
+- Support daemon events for Swarm
 
 #### Test
 
 - Fix leader election tests
+- Fix rescheduling test
+
+#### Mesos
+
+- Fix double locking issue
+
+#### Misc
+
+- Handle systime difference between Swarm and Engines
+- Add healthcheck information to CLI
+- Fix `engine_reconnect` issue that led to reconnected engine being treated as new
 
 ## 1.2.3 (2016-05-25)
 
