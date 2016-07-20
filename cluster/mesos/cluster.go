@@ -269,18 +269,17 @@ func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (*typ
 	}
 
 	c.scheduler.Lock()
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+	node, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
 	c.scheduler.Unlock()
 	if err != nil {
 		return nil, err
 	}
-	if nodes == nil {
+	if node == nil {
 		return nil, errors.New("cannot find node to create network")
 	}
-	n := nodes[0]
-	s, ok := c.agents[n.ID]
+	s, ok := c.agents[node.ID]
 	if !ok {
-		return nil, fmt.Errorf("Unable to create network on agent %q", n.ID)
+		return nil, fmt.Errorf("Unable to create network on agent %q", node.ID)
 	}
 	resp, err := s.engine.CreateNetwork(name, request)
 	c.refreshNetworks()
@@ -516,12 +515,11 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 	c.scheduler.Lock()
 	//change to explicit lock defer c.scheduler.Unlock()
 
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), t.GetConfig())
+	n, err := c.scheduler.SelectNodeForContainer(c.listNodes(), t.GetConfig())
 	if err != nil {
 		c.scheduler.Unlock()
 		return false
 	}
-	n := nodes[0]
 	s, ok := c.agents[n.ID]
 	if !ok {
 		t.Error <- fmt.Errorf("Unable to create on agent %q", n.ID)
@@ -630,12 +628,11 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 	c.RLock()
 	defer c.RUnlock()
 
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), &cluster.ContainerConfig{})
+	node, err := c.scheduler.SelectNodeForContainer(c.listNodes(), &cluster.ContainerConfig{})
 	if err != nil {
 		return nil, err
 	}
-	n := nodes[0]
-	return c.agents[n.ID].engine, nil
+	return c.agents[node.ID].engine, nil
 }
 
 // BuildImage builds an image
@@ -651,14 +648,13 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 			},
 		},
 	}
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+	node, err := c.scheduler.SelectNodeForContainer(c.listNodes(), config)
 	c.scheduler.Unlock()
 	if err != nil {
 		return err
 	}
-	n := nodes[0]
 
-	reader, err := c.agents[n.ID].engine.BuildImage(buildContext, buildImage)
+	reader, err := c.agents[node.ID].engine.BuildImage(buildContext, buildImage)
 	if err != nil {
 		return err
 	}
@@ -667,7 +663,7 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 		return err
 	}
 
-	c.agents[n.ID].engine.RefreshImages()
+	c.agents[node.ID].engine.RefreshImages()
 	return nil
 }
 
