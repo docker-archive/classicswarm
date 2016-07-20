@@ -264,7 +264,7 @@ func TestTagImage(t *testing.T) {
 	c.engines[engine.ID] = engine
 
 	// tag image
-	apiClient.On("ImageTag", mock.Anything, mock.Anything, mock.Anything, mock.AnythingOfType("types.ImageTagOptions")).Return(nil).Once()
+	apiClient.On("ImageTag", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 	assert.Nil(t, c.TagImage("busybox", "test_busybox:latest", false))
 	assert.NotNil(t, c.TagImage("busybox_not_exists", "test_busybox:latest", false))
 }
