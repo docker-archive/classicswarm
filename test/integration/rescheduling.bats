@@ -169,7 +169,7 @@ function containerRunning() {
 	docker_host start ${DOCKER_CONTAINERS[0]}
 	# Wait for node-0 to be healthy
 	# Failing node refresh interval increases over time. Provide enough retry here.
-	retry 30 1 eval "test \"$(docker_swarm info | grep \"Status: Unhealthy\" | wc -l)\" = '0'"
+	retry 30 1 eval "docker_swarm info | grep node-0 -A 5 | grep -q \"Status: Healthy\""
 
 	# c1 should still be on node-1
 	containerRunning "c3" "node-1"
