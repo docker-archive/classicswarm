@@ -442,8 +442,10 @@ func (e *Engine) updateClientVersionFromServer(serverVersion string) {
 		e.apiClient.UpdateClientVersion("1.21")
 	case v.LessThan(version.Version("1.11")):
 		e.apiClient.UpdateClientVersion("1.22")
-	default:
+	case v.LessThan(version.Version("1.12")):
 		e.apiClient.UpdateClientVersion("1.23")
+	default:
+		e.apiClient.UpdateClientVersion("1.24")
 	}
 }
 
