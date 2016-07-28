@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -123,6 +124,8 @@ type Engine struct {
 	images          []*Image
 	networks        map[string]*Network
 	volumes         map[string]*Volume
+	httpClient      *http.Client
+	url             *url.URL
 	client          dockerclient.Client
 	apiClient       swarmclient.SwarmAPIClient
 	eventHandler    EventHandler
@@ -158,8 +161,9 @@ func NewEngine(addr string, overcommitRatio float64, opts *EngineOpts) *Engine {
 
 // HTTPClientAndScheme returns the underlying HTTPClient and the scheme used by the engine
 func (e *Engine) HTTPClientAndScheme() (*http.Client, string, error) {
-	if dc, ok := e.client.(*dockerclient.DockerClient); ok {
-		return dc.HTTPClient, dc.URL.Scheme, nil
+	// TODO(nishanttotla): return the proper client after checking connection
+	if _, ok := e.apiClient.(*engineapi.Client); ok {
+		return e.httpClient, e.url.Scheme, nil
 	}
 	return nil, "", fmt.Errorf("Possibly lost connection to Engine (name: %s, ID: %s) ", e.Name, e.ID)
 }
@@ -178,10 +182,17 @@ func (e *Engine) Connect(config *tls.Config) error {
 	}
 	e.IP = addr.IP.String()
 
-	c, err := dockerclient.NewDockerClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), setTCPUserTimeout)
+	// create the HTTP Client and URL
+	httpClient, url, err := NewHTTPClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), setTCPUserTimeout)
 	if err != nil {
 		return err
 	}
+	e.httpClient = httpClient
+	e.url = url
+
+	// Use HTTP Client created above to create a dockerclient client
+	c := dockerclient.NewDockerClientFromHTTP(url, httpClient, config)
+
 	// Use HTTP Client used by dockerclient to create engine-api client
 	apiClient, err := engineapi.NewClient("tcp://"+e.Addr, "", c.HTTPClient, nil)
 	if err != nil {
