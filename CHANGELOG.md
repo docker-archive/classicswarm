@@ -1,10 +1,11 @@
 # Changelog
 
-## 1.2.4 (2016-07-20)
+## 1.2.4 (2016-07-28)
 
 #### API
 
 - New client interface in Swarm, to differentiate from Swarm mode in Docker 1.12
+- Underlying HTTP client for API is created inside Swarm
 - Update minimum Docker Engine version supported by Swarm to 1.8
 - Additional error handling
 - Code refactoring

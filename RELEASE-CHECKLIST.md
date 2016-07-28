@@ -11,7 +11,7 @@ git commit -s -m "Bump version to <version>"
 git push $GITHUBUSER bump-<version>
 ```
 
-Open PR on docker/swarm. Merge the PR before moving to next step.
+Open PR on docker/swarm. Merge the PR before moving to next step. If the release is an RC, then `CHANGELOG.md` should list the latest RC.
 
 ### 2. Rebase release branch on top of updated master branch and tag
 
