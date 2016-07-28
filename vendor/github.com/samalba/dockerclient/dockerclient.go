@@ -59,6 +59,12 @@ func NewDockerClient(daemonUrl string, tlsConfig *tls.Config) (*DockerClient, er
 	return NewDockerClientTimeout(daemonUrl, tlsConfig, time.Duration(defaultTimeout), nil)
 }
 
+// NewDockerClientFromHTTP assumes that the URL, HTTP Client, and TLS Config have been
+// appropriately set when passed. It chooses default values for other fields
+func NewDockerClientFromHTTP(u *url.URL, httpClient *http.Client, tlsConfig *tls.Config) *DockerClient {
+	return &DockerClient{u, httpClient, tlsConfig, 0, nil}
+}
+
 func NewDockerClientTimeout(daemonUrl string, tlsConfig *tls.Config, timeout time.Duration, setUserTimeout tcpFunc) (*DockerClient, error) {
 	u, err := url.Parse(daemonUrl)
 	if err != nil {
