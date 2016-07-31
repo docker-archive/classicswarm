@@ -17,7 +17,6 @@ Docker API, any tool that already communicates with a Docker daemon can use
 Swarm to transparently scale to multiple hosts. Supported tools include, but
 are not limited to, the following:
 
-- Dokku
 - Docker Compose
 - Docker Machine
 - Jenkins
