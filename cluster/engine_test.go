@@ -545,6 +545,9 @@ func TestCreateContainer(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, container.ID, id)
 	assert.Len(t, engine.Containers(), 2)
+
+	client.Mock.AssertExpectations(t)
+	apiClient.Mock.AssertExpectations(t)
 }
 
 func TestImages(t *testing.T) {
@@ -647,6 +650,9 @@ func TestUsedCpus(t *testing.T) {
 			}
 		}
 	}
+
+	client.Mock.AssertExpectations(t)
+	apiClient.Mock.AssertExpectations(t)
 }
 
 func TestContainerRemovedDuringRefresh(t *testing.T) {
@@ -810,6 +816,9 @@ func TestDisconnect(t *testing.T) {
 
 	assert.NoError(t, engine.ConnectWithClient(client, apiClient))
 	assert.True(t, engine.isConnected())
+
+	client.Mock.AssertExpectations(t)
+	apiClient.Mock.AssertExpectations(t)
 
 	defer func() {
 		if r := recover(); r != nil {
