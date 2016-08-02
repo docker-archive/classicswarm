@@ -196,6 +196,10 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		return nil, errResourcesNeeded
 	}
 
+	if !c.checkNameUniqueness(name) {
+		return nil, fmt.Errorf("Conflict: The name %s is already assigned or in pending tasks. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
+	}
+
 	task, err := task.NewTask(config, name, c.taskCreationTimeout)
 	if err != nil {
 		return nil, err
@@ -379,6 +383,11 @@ func (c *Cluster) Import(source string, ref string, tag string, imageReader io.R
 // RenameContainer renames a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
 	//FIXME this doesn't work as the next refreshcontainer will erase this change (this change is in-memory only)
+
+	if !c.checkNameUniqueness(newName) {
+		return fmt.Errorf("Conflict: The name %s is already assigned, or in pending tasks. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, newName)
+	}
+
 	container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.name"] = newName
 
 	return nil
@@ -674,4 +683,37 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 // TagImage tags an image
 func (c *Cluster) TagImage(IDOrName string, ref string, force bool) error {
 	return errNotSupported
+}
+
+func (c *Cluster) checkNameUniqueness(name string) bool {
+	// Abort immediately if the name is empty.
+	if len(name) == 0 {
+		return true
+	}
+
+	c.RLock()
+	defer c.RUnlock()
+
+	for _, s := range c.agents {
+		for _, container := range s.engine.Containers() {
+			for _, cname := range container.Names {
+				if cname == name || cname == "/"+name {
+					return false
+				}
+			}
+		}
+	}
+
+	for _, task := range c.pendingTasks.Tasks {
+		config := task.GetConfig()
+		if config.Labels != nil {
+			if tname, ok := config.Labels[cluster.SwarmLabelNamespace+".mesos.name"]; ok {
+				if tname == name || tname == "/"+name {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
 }
