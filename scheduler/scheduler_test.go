@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSelectNodesForContainer(t *testing.T) {
+func TestSelectNodeForContainer(t *testing.T) {
 	var (
 		s = Scheduler{
 			strategy: &strategy.SpreadPlacementStrategy{},
@@ -52,9 +52,8 @@ func TestSelectNodesForContainer(t *testing.T) {
 			},
 		}, networktypes.NetworkingConfig{})
 	)
-	candidates, err := s.SelectNodesForContainer(nodes, config)
+	candidate, err := s.SelectNodeForContainer(nodes, config)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(candidates))
-	assert.Equal(t, "node-1-id", candidates[0].ID)
+	assert.Equal(t, "node-1-id", candidate.ID)
 
 }
