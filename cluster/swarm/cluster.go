@@ -221,8 +221,17 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 
 	c.scheduler.Unlock()
 
-	log.WithFields(log.Fields{"NodeName": n.Name, "NodeID": n.ID}).Debugf("Scheduling container %s to ", name)
 	container, err := engine.CreateContainer(config, name, true, authConfig)
+
+	if err != nil {
+		log.WithFields(log.Fields{"NodeName": n.Name, "NodeID": n.ID}).WithError(err).Error("Failed to create container")
+	} else {
+		containerFlag := name
+		if containerFlag == "" {
+			containerFlag = stringid.TruncateID(container.ID)
+		}
+		log.WithFields(log.Fields{"NodeName": n.Name, "NodeID": n.ID}).Debugf("Scheduling container %s to ", containerFlag)
+	}
 
 	c.scheduler.Lock()
 	delete(c.pendingContainers, swarmID)
