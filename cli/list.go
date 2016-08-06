@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/docker/pkg/discovery"
+	"github.com/urfave/cli"
 )
 
 func list(c *cli.Context) {

@@ -7,9 +7,9 @@ import (
 	"runtime/debug"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/experimental"
 	"github.com/docker/swarm/version"
+	"github.com/urfave/cli"
 )
 
 // Run the Swarm CLI.

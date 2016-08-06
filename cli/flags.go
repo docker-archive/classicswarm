@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
+	"github.com/urfave/cli"
 )
 
 func homepath(p string) string {
