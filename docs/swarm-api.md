@@ -1,6 +1,6 @@
 <!--[metadata]>
 +++
-aliases = ["api/swarm-api/", "/swarm/api/"]
+aliases = ["/api/swarm-api/", "/swarm/api/"]
 title = "Docker Swarm API"
 description = "Swarm API"
 keywords = ["docker, swarm, clustering,  api"]
