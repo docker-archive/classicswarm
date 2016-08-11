@@ -29,7 +29,13 @@ var (
 	ErrHTTPRequest    = "Error making HTTP request to external scheduler : %s"
 	ErrHTTPResponse   = "Error reading response from external scheduler: %s"
 	ErrJSONParseError = "Error parsing JSON from external scheduler: %s"
+	ErrExternalError  = "External scheduler returned an error: %s"
 )
+
+type externalSchedulerResult struct {
+	NodeIds []string `json:"nodes"`
+	Error   string   `json:"error"`
+}
 
 // ExternalPlacementStrategy uses an external service to make the placement decision
 type ExternalPlacementStrategy struct {
@@ -101,6 +107,7 @@ func (p *ExternalPlacementStrategy) RankAndSort(config *cluster.ContainerConfig,
 		nodeMap[n.ID] = n
 	}
 
+	//fmt.Printf("CONFIG: %#v, NODES: %#v", config, nodes)
 	var placement *schema.Placement
 	if p.marshalState {
 		placement = schema.SimplifyPlacement(config, nodes)
@@ -177,15 +184,19 @@ func (p *ExternalPlacementStrategy) withTimeout(f func(data *[]byte) (io.Reader,
 
 // processResponse decodes an external scheduler JSON response and turns it back in to a node list
 func (p *ExternalPlacementStrategy) processResponse(response io.Reader, nodeMap map[string]*node.Node) ([]*node.Node, error) {
-	var nodeIds []string
+	var result externalSchedulerResult
 
-	err := json.NewDecoder(response).Decode(&nodeIds)
+	err := json.NewDecoder(response).Decode(&result)
 	if err != nil {
 		return nil, fmt.Errorf(ErrJSONParseError, err)
 	}
 
-	output := make([]*node.Node, len(nodeIds))
-	for i, n := range nodeIds {
+	if len(result.Error) > 0 {
+		return nil, fmt.Errorf(ErrExternalError, result.Error)
+	}
+
+	output := make([]*node.Node, len(result.NodeIds))
+	for i, n := range result.NodeIds {
 		if _, ok := nodeMap[n]; !ok {
 			return nil, fmt.Errorf(ErrInvalidNodeID, n)
 		}

@@ -25,7 +25,7 @@ func mockExternalServer(scheduler func(req *schema.Placement) string) *httptest.
 }
 
 func mockSchedulerFirstNode(req *schema.Placement) string {
-	return fmt.Sprintf("[\"%s\"]", req.Nodes[0].ID)
+	return fmt.Sprintf("{ \"nodes\": [\"%s\"] }", req.Nodes[0].ID)
 }
 
 func mockSchedulerTimeout(req *schema.Placement) string {
@@ -93,7 +93,6 @@ func TestExternalPlaceRetries(t *testing.T) {
 
 func TestExternalErrorTimeout(t *testing.T) {
 	server := mockExternalServer(mockSchedulerTimeout)
-	defer server.Close()
 
 	s, nodes := setupExternalPlacementStrategy(server.URL, 10, 0) // url, timeout(ms), retries
 
@@ -101,6 +100,10 @@ func TestExternalErrorTimeout(t *testing.T) {
 	_, err := s.RankAndSort(config, nodes)
 
 	assert.EqualError(t, err, "External scheduler timed out while waiting for a response")
+
+	// Avoiding data race on server (as it's a testing artifact)
+	time.Sleep(20 * time.Millisecond)
+	server.Close()
 }
 
 func TestExternalErrorBadJson(t *testing.T) {
@@ -116,7 +119,7 @@ func TestExternalErrorBadJson(t *testing.T) {
 }
 
 func TestExternalErrorBadNodeID(t *testing.T) {
-	server := mockExternalServer(func(req *schema.Placement) string { return "[\"bad-node\"]" })
+	server := mockExternalServer(func(req *schema.Placement) string { return "{ \"nodes\": [\"bad-node\"] }" })
 	defer server.Close()
 
 	s, nodes := setupExternalPlacementStrategy(server.URL, 3000, 0) // url, timeout(ms), retries
@@ -125,6 +128,18 @@ func TestExternalErrorBadNodeID(t *testing.T) {
 	_, err := s.RankAndSort(config, nodes)
 
 	assert.EqualError(t, err, "External scheduler returned invalid node ID: bad-node")
+}
+
+func TestExternalErrorCustom(t *testing.T) {
+	server := mockExternalServer(func(req *schema.Placement) string { return "{ \"nodes\": [], \"error\": \"An error\" }" })
+	defer server.Close()
+
+	s, nodes := setupExternalPlacementStrategy(server.URL, 3000, 0) // url, timeout(ms), retries
+
+	config := createConfig(0, 0)
+	_, err := s.RankAndSort(config, nodes)
+
+	assert.EqualError(t, err, "External scheduler returned an error: An error")
 }
 
 func TestExternalInitializeErrors(t *testing.T) {
