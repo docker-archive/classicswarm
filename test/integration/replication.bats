@@ -185,6 +185,7 @@ function containerRunning() {
 	# Bring up one manager, make sure it becomes primary.
 	swarm_manage --replication --replication-ttl "4s" --advertise 127.0.0.1:$SWARM_BASE_PORT "$NODE_1_URL"
 	run docker -H ${SWARM_HOSTS[0]} info
+	echo "$output"
 	[[ "${output}" == *"Role: primary"* ]]
 
 	# Fire up a second manager. Ensure it's a replica forwarding to the right primary.
