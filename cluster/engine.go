@@ -714,9 +714,8 @@ func (e *Engine) refreshVolume(IDOrName string) error {
 			delete(e.volumes, IDOrName)
 			e.Unlock()
 			return nil
-		} else {
-			return err
 		}
+		return err
 	}
 
 	e.Lock()
@@ -1254,8 +1253,13 @@ func (e *Engine) handler(msg events.Message) error {
 	case "image":
 		e.RefreshImages()
 	case "container":
-		switch msg.Action {
-		case "die", "kill", "oom", "pause", "start", "restart", "stop", "unpause", "rename", "update":
+		action := msg.Action
+		// healthcheck events are like 'health_status: unhealthy'
+		if strings.HasPrefix(action, "health_status") {
+			action = "health_status"
+		}
+		switch action {
+		case "die", "kill", "oom", "pause", "start", "restart", "stop", "unpause", "rename", "update", "health_status":
 			e.refreshContainer(msg.ID, true)
 		default:
 			e.refreshContainer(msg.ID, false)
