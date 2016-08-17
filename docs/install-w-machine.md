@@ -84,7 +84,7 @@ Daemon running on each node. Other discovery service backends such as
 
 	**Note**: This command relies on Docker Swarm's hosted discovery service. If
 	this service is having issues, this command may fail. In this case, see
-	information on using other types of [discovery backends](./discovery). Check
+	information on using other types of [discovery backends](discovery.md). Check
 	the [status page](http://status.docker.com/) for service availability.
 
 5. Save the token in a safe place.
