@@ -163,12 +163,12 @@ to create key pairs is identical for all servers.  You'll create the following k
     <td>A certificate signing request (CSR). A CSR is effectively an application to the CA to create a new key pair for a particular node. The CA takes the information provided in the CSR and generates the public and private key pair for that node.</td>
   </tr>
   <tr>
-    <td><code><i>node</i>-priv.key</code></td>
+    <td><code><i>node</i>-priv-key.pem</code></td>
     <td>A private key signed by the CA. The node uses this key to authenticate itself with remote Docker Engines. Together with the <code><i>node</i>-cert.pem</code> file, this makes up a node's key pair.</td>
   </tr>
   <tr>
     <td><code><i>node</i>-cert.pem</code></td>
-    <td>A certificate signed by the CA. This is not used in this example. Together with the <code><i>node</i>-priv.key</code> file, this makes up a node's key pair</td>
+    <td>A certificate signed by the CA. This is not used in this example. Together with the <code><i>node</i>-priv-key.pem</code> file, this makes up a node's key pair</td>
   </tr>
 </table>
 
