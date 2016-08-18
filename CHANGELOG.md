@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.5 (2016-08-18)
+
+#### Scheduler
+
+- Fix container rescheduling with overlay network
+- Fix scheduler detail log improper effect when container name is empty
+- Check unique container name on create and rename for Mesos cluster
+
+#### Health check
+
+- Refresh container status on health_status events
+
+#### Doc
+
+- Fix install-w-machine.md using docker-machine --swarm feature
+
 ## 1.2.4 (2016-07-28)
 
 #### API
