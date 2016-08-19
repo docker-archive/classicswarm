@@ -271,7 +271,7 @@ func (e *Engine) Disconnect() {
 	}
 	e.client = nopclient.NewNopClient()
 	e.apiClient = engineapinop.NewNopClient()
-	e.state = stateDisconnected
+	e.setState(stateDisconnected, false)
 	e.emitEvent("engine_disconnect")
 }
 
@@ -310,9 +310,11 @@ func (e *Engine) HealthIndicator() int64 {
 }
 
 // setState sets engine state
-func (e *Engine) setState(state engineState) {
-	e.Lock()
-	defer e.Unlock()
+func (e *Engine) setState(state engineState, lock bool) {
+	if lock {
+		e.Lock()
+		defer e.Unlock()
+	}
 	e.state = state
 }
 
@@ -343,7 +345,7 @@ func (e *Engine) ValidationComplete() {
 	if e.state != statePending {
 		return
 	}
-	e.state = stateHealthy
+	e.setState(stateHealthy, false)
 	e.failureCount = 0
 	go e.refreshLoop()
 }
@@ -381,7 +383,7 @@ func (e *Engine) incFailureCount() {
 	defer e.Unlock()
 	e.failureCount++
 	if e.state == stateHealthy && e.failureCount >= e.opts.FailureRetry {
-		e.state = stateUnhealthy
+		e.setState(stateUnhealthy, false)
 		log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as unhealthy. Connect failed %d times", e.failureCount)
 		e.emitEvent("engine_disconnect")
 	}
@@ -415,7 +417,7 @@ func (e *Engine) CheckConnectionErr(err error) {
 		if e.state == stateUnhealthy {
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.getFailureCount())
 			e.emitEvent("engine_reconnect")
-			e.setState(stateHealthy)
+			e.setState(stateHealthy, true)
 		}
 		e.resetFailureCount()
 		return
