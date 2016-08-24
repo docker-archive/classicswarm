@@ -187,7 +187,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	// but still keeps their Engine infos as an array.
 	groupImages := make(map[string]apitypes.Image)
 	opts := cluster.ImageFilterOptions{
-		apitypes.ImageListOptions{
+		ImageListOptions: apitypes.ImageListOptions{
 			All:       boolValue(r, "all"),
 			MatchName: r.FormValue("filter"),
 			Filters:   filters,
