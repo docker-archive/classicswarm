@@ -101,7 +101,7 @@ the Docker Engine daemon accepts commands from this trusted Docker Engine CLI.
 
 The Docker Engine CLI is simply a client that uses the Docker Engine Remote API to
 communicate with the Docker Engine daemon. Any client that uses this Docker Engine Remote API can use
-TLS. For example, Dcoker Engine clients such as 'Docker Universal Control Plane'
+TLS. For example, Docker Engine clients such as 'Docker Universal Control Plane'
 (UCP) have TLS support built-in. Other, third party products, that use Docker Engine
 Remote API, can also be configured this way.
 
