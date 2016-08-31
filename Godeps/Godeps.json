@@ -101,63 +101,63 @@
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client/transport",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client/transport/cancellable",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/blkiodev",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/container",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/events",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/filters",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/network",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/registry",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/strslice",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/time",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/nat",
@@ -369,18 +369,23 @@
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/reference",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/versions",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/types/swarm",
-			"Comment": "v0.3.1-236-gd505506",
-			"Rev": "d505506c67611e8364526339452c20d6d0babcf6"
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/mount",
+			"Comment": "v0.4.0-62-gf9cef59",
+			"Rev": "f9cef590446e4e6073b49b652f47a337b897c1a3"
 		}
 	]
 }

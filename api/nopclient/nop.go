@@ -178,8 +178,8 @@ func (client *NopClient) ContainerUnpause(ctx context.Context, container string)
 }
 
 // ContainerUpdate updates resources of a container
-func (client *NopClient) ContainerUpdate(ctx context.Context, container string, updateConfig container.UpdateConfig) error {
-	return errNoEngine
+func (client *NopClient) ContainerUpdate(ctx context.Context, container string, updateConfig container.UpdateConfig) (types.ContainerUpdateResponse, error) {
+	return types.ContainerUpdateResponse{}, errNoEngine
 }
 
 // ContainerWait pauses execution until a container exits
@@ -223,7 +223,7 @@ func (client *NopClient) ImageImport(ctx context.Context, source types.ImageImpo
 }
 
 // ImageInspectWithRaw returns the image information and it's raw representation
-func (client *NopClient) ImageInspectWithRaw(ctx context.Context, image string, getSize bool) (types.ImageInspect, []byte, error) {
+func (client *NopClient) ImageInspectWithRaw(ctx context.Context, image string) (types.ImageInspect, []byte, error) {
 	return types.ImageInspect{}, nil, errNoEngine
 }
 
@@ -342,6 +342,6 @@ func (client *NopClient) VolumeList(ctx context.Context, filter filters.Args) (t
 }
 
 // VolumeRemove removes a volume from the docker host
-func (client *NopClient) VolumeRemove(ctx context.Context, volumeID string) error {
+func (client *NopClient) VolumeRemove(ctx context.Context, volumeID string, force bool) error {
 	return errNoEngine
 }

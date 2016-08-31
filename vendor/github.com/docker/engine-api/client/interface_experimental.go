@@ -24,13 +24,13 @@ type CheckpointAPIClient interface {
 // PluginAPIClient defines API client methods for the plugins
 type PluginAPIClient interface {
 	PluginList(ctx context.Context) (types.PluginsListResponse, error)
-	PluginRemove(ctx context.Context, name string) error
+	PluginRemove(ctx context.Context, name string, options types.PluginRemoveOptions) error
 	PluginEnable(ctx context.Context, name string) error
 	PluginDisable(ctx context.Context, name string) error
 	PluginInstall(ctx context.Context, name string, options types.PluginInstallOptions) error
 	PluginPush(ctx context.Context, name string, registryAuth string) error
 	PluginSet(ctx context.Context, name string, args []string) error
-	PluginInspect(ctx context.Context, name string) (*types.Plugin, error)
+	PluginInspectWithRaw(ctx context.Context, name string) (*types.Plugin, []byte, error)
 }
 
 // Ensure that Client always implements APIClient.

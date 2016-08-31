@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/docker/engine-api/types/container"
+	"github.com/docker/engine-api/types/mount"
 	"github.com/docker/engine-api/types/network"
 	"github.com/docker/engine-api/types/registry"
 	"github.com/docker/engine-api/types/swarm"
@@ -230,7 +231,6 @@ type Info struct {
 	OomKillDisable     bool
 	NGoroutines        int
 	SystemTime         string
-	ExecutionDriver    string
 	LoggingDriver      string
 	CgroupDriver       string
 	NEventsListener    int
@@ -256,6 +256,10 @@ type Info struct {
 	Runtimes           map[string]Runtime
 	DefaultRuntime     string
 	Swarm              swarm.Info
+	// LiveRestoreEnabled determines whether containers should be kept
+	// running when the daemon is shutdown or upon daemon start if
+	// running containers are detected
+	LiveRestoreEnabled bool
 }
 
 // PluginsInfo is a temp struct holding Plugins name
@@ -282,7 +286,7 @@ type ExecStartCheck struct {
 type HealthcheckResult struct {
 	Start    time.Time // Start is the time this check started
 	End      time.Time // End is the time this check ended
-	ExitCode int       // ExitCode meanings: 0=healthy, 1=unhealthy, 2=starting, else=error running probe
+	ExitCode int       // ExitCode meanings: 0=healthy, 1=unhealthy, 2=reserved (considered unhealthy), else=error running probe
 	Output   string    // Output from last check
 }
 
@@ -405,14 +409,16 @@ type DefaultNetworkSettings struct {
 }
 
 // MountPoint represents a mount point configuration inside the container.
+// This is used for reporting the mountpoints in use by a container.
 type MountPoint struct {
-	Name        string `json:",omitempty"`
+	Type        mount.Type `json:",omitempty"`
+	Name        string     `json:",omitempty"`
 	Source      string
 	Destination string
 	Driver      string `json:",omitempty"`
 	Mode        string
 	RW          bool
-	Propagation string
+	Propagation mount.Propagation
 }
 
 // Volume represents the configuration of a volume for the remote API
@@ -450,6 +456,7 @@ type NetworkResource struct {
 	EnableIPv6 bool                        // EnableIPv6 represents whether to enable IPv6
 	IPAM       network.IPAM                // IPAM is the network's IP Address Management
 	Internal   bool                        // Internal represents if the network is used internal only
+	Attachable bool                        // Attachable represents if the global scope is manually attachable by regular containers from workers in swarm mode.
 	Containers map[string]EndpointResource // Containers contains endpoints belonging to the network
 	Options    map[string]string           // Options holds the network specific options to use for when creating the network
 	Labels     map[string]string           // Labels holds metadata specific to the network being created
@@ -469,8 +476,9 @@ type NetworkCreate struct {
 	CheckDuplicate bool
 	Driver         string
 	EnableIPv6     bool
-	IPAM           network.IPAM
+	IPAM           *network.IPAM
 	Internal       bool
+	Attachable     bool
 	Options        map[string]string
 	Labels         map[string]string
 }

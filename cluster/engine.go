@@ -538,9 +538,6 @@ func (e *Engine) updateSpecs() error {
 	if info.Driver != "" {
 		e.Labels["storagedriver"] = info.Driver
 	}
-	if info.ExecutionDriver != "" {
-		e.Labels["executiondriver"] = info.ExecutionDriver
-	}
 	if info.KernelVersion != "" {
 		e.Labels["kernelversion"] = info.KernelVersion
 	}
@@ -618,7 +615,7 @@ func (e *Engine) AddNetwork(network *Network) {
 
 // RemoveVolume deletes a volume from the engine.
 func (e *Engine) RemoveVolume(name string) error {
-	err := e.apiClient.VolumeRemove(context.Background(), name)
+	err := e.apiClient.VolumeRemove(context.Background(), name, false)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
