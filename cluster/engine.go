@@ -1253,7 +1253,7 @@ func (e *Engine) handler(msg events.Message) error {
 		case "commit":
 			// commit a container will generate a new image
 			e.RefreshImages()
-		case "die", "kill", "oom", "pause", "start", "restart", "stop", "unpause", "rename", "update", "health_status":
+		case "die", "kill", "oom", "pause", "start", "restart", "stop", "unpause", "rename", "create", "update", "health_status":
 			e.refreshContainer(msg.ID, true)
 		case "top", "resize", "export", "exec_create", "exec_start", "exec_detach", "attach", "detach", "extract-to-dir", "copy", "archive-path":
 			// no action needed
@@ -1274,7 +1274,7 @@ func (e *Engine) handler(msg events.Message) error {
 			// These events refer to images so there's no need to update
 			// containers.
 			e.RefreshImages()
-		case "die", "kill", "oom", "pause", "start", "stop", "unpause", "rename":
+		case "die", "kill", "oom", "pause", "start", "stop", "unpause", "rename", "create":
 			// If the container state changes, we have to do an inspect in
 			// order to update container.Info and get the new NetworkSettings.
 			e.refreshContainer(msg.ID, true)
