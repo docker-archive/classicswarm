@@ -547,9 +547,9 @@ func (c *Cluster) CreateVolume(request *types.VolumeCreateRequest) (*types.Volum
 				v, er := engine.CreateVolume(request)
 				if v != nil {
 					volume = v
-					err = nil
 				}
-				if er != nil && volume == nil {
+				if er != nil {
+					log.WithField("engineName", engine.Name).Errorf("Create volume error: %v", er)
 					err = er
 				}
 			}(e)
@@ -564,14 +564,7 @@ func (c *Cluster) CreateVolume(request *types.VolumeCreateRequest) (*types.Volum
 			return nil, err
 		}
 		if nodes != nil {
-			v, er := c.engines[nodes[0].ID].CreateVolume(request)
-			if v != nil {
-				volume = v
-				err = nil
-			}
-			if er != nil && volume == nil {
-				err = er
-			}
+			return c.engines[nodes[0].ID].CreateVolume(request)
 		}
 	}
 
