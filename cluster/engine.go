@@ -426,15 +426,7 @@ func (e *Engine) CheckConnectionErr(err error) {
 		return
 	}
 
-	// dockerclient defines ErrConnectionRefused error. but if http client is from swarm, it's not using
-	// dockerclient. We need string matching for these cases. Remove the first character to deal with
-	// case sensitive issue.
-	// docker/api returns ErrConnectionFailed error, so we check for that as long as dockerclient exists
-	if err == dockerclient.ErrConnectionRefused ||
-		engineapi.IsErrConnectionFailed(err) ||
-		strings.Contains(err.Error(), "onnection refused") ||
-		strings.Contains(err.Error(), "annot connect to the docker engine endpoint") ||
-		strings.Contains(err.Error(), "annot connect to the Docker daemon") {
+	if IsConnectionError(err) {
 		// each connection refused instance may increase failure count so
 		// engine can fail fast. Short engine freeze or network failure may result
 		// in engine marked as unhealthy. If this causes unnecessary failure, engine
@@ -1401,4 +1393,27 @@ func (e *Engine) TagImage(IDOrName string, ref string, force bool) error {
 
 	// refresh image
 	return e.RefreshImages()
+}
+
+// NetworkDisconnect disconnects a container from a network
+func (e *Engine) NetworkDisconnect(container *Container, network *Network, force bool) error {
+	err := e.apiClient.NetworkDisconnect(context.Background(), network.ID, container.ID, force)
+	e.CheckConnectionErr(err)
+	if err != nil {
+		return err
+	}
+
+	return e.RefreshNetworks()
+}
+
+func IsConnectionError(err error) bool {
+	// dockerclient defines ErrConnectionRefused error. but if http client is from swarm, it's not using
+	// dockerclient. We need string matching for these cases. Remove the first character to deal with
+	// case sensitive issue.
+	// docker/api returns ErrConnectionFailed error, so we check for that as long as dockerclient exists
+	return err == dockerclient.ErrConnectionRefused ||
+		engineapi.IsErrConnectionFailed(err) ||
+		strings.Contains(err.Error(), "onnection refused") ||
+		strings.Contains(err.Error(), "annot connect to the docker engine endpoint") ||
+		strings.Contains(err.Error(), "annot connect to the Docker daemon")
 }
