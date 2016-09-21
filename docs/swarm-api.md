@@ -40,8 +40,8 @@ POST "/images/create" : "docker import" flow not implement
             New field <code>Node</code> added:<br />
 <pre>
 "Node": {
-    "Id": "ODAI:IC6Q:MSBL:TPB5:HIEE:6IKC:VCAM:QRNH:PRGX:ERZT:OK46:PMFX",
-    "Ip": "0.0.0.0",
+    "ID": "ODAI:IC6Q:MSBL:TPB5:HIEE:6IKC:VCAM:QRNH:PRGX:ERZT:OK46:PMFX",
+    "IP": "0.0.0.0",
     "Addr": "http://0.0.0.0:4243",
     "Name": "vagrant-ubuntu-saucy-64"
 }
