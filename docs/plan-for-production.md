@@ -16,9 +16,9 @@ Swarm clusters in business critical production environments. The following high
  level topics are covered:
 
 - [Security](#security)
-- [High Availability](#high-availability)
+- [High Availability (HA)](#high-availability-ha)
 - [Performance](#performance)
-- [Cluster ownership](#cluster-ownership)
+- [Ownership of Swarm clusters](#ownership-of-swarm-clusters)
 
 ## Security
 
