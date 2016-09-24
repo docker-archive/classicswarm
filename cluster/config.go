@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/engine-api/types/container"
-	"github.com/docker/engine-api/types/network"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 )
 
 // SwarmLabelNamespace defines the key prefix in all custom labels

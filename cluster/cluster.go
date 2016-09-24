@@ -3,7 +3,8 @@ package cluster
 import (
 	"io"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/samalba/dockerclient"
 )
 
@@ -45,7 +46,7 @@ type Cluster interface {
 	RemoveNetwork(network *Network) error
 
 	// Create a volume
-	CreateVolume(request *types.VolumeCreateRequest) (*types.Volume, error)
+	CreateVolume(request *volume.VolumesCreateBody) (*types.Volume, error)
 
 	// Return all volumes
 	Volumes() Volumes

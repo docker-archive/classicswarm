@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	containertypes "github.com/docker/engine-api/types/container"
-	networktypes "github.com/docker/engine-api/types/network"
+	containertypes "github.com/docker/docker/api/types/container"
+	networktypes "github.com/docker/docker/api/types/network"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/mesos/mesos-go/mesosutil"

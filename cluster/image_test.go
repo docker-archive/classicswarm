@@ -3,8 +3,8 @@ package cluster
 import (
 	"testing"
 
-	"github.com/docker/engine-api/types"
-	dockerfilters "github.com/docker/engine-api/types/filters"
+	"github.com/docker/docker/api/types"
+	dockerfilters "github.com/docker/docker/api/types/filters"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,12 +58,12 @@ func TestMatchPrivateRepo(t *testing.T) {
 func TestImagesFilterWithLabelFilter(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	images := Images{
-		{types.Image{ID: "a"}, engine},
-		{types.Image{
+		{types.ImageSummary{ID: "a"}, engine},
+		{types.ImageSummary{
 			ID:     "b",
 			Labels: map[string]string{"com.example.project": "bar"},
 		}, engine},
-		{types.Image{ID: "c"}, engine},
+		{types.ImageSummary{ID: "c"}, engine},
 	}
 
 	filters := dockerfilters.NewArgs()
@@ -77,19 +77,21 @@ func TestImagesFilterWithMatchName(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	images := Images{
 		{
-			types.Image{
+			types.ImageSummary{
 				ID:       "a",
 				RepoTags: []string{"example:latest", "example:2"},
 			},
 			engine,
 		},
 		{
-			types.Image{ID: "b", RepoTags: []string{"example:1"}},
+			types.ImageSummary{ID: "b", RepoTags: []string{"example:1"}},
 			engine,
 		},
 	}
 
-	result := images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, MatchName: "example:2"}})
+	imageFilters := dockerfilters.NewArgs()
+	imageFilters.Add("reference", "example:2")
+	result := images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, Filters: imageFilters}})
 	assert.Equal(t, len(result), 1)
 	assert.Equal(t, result[0].ID, "a")
 }
@@ -98,23 +100,25 @@ func TestImagesFilterWithMatchNameWithTag(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	images := Images{
 		{
-			types.Image{
+			types.ImageSummary{
 				ID:       "a",
 				RepoTags: []string{"example:latest", "example:2"},
 			},
 			engine,
 		},
 		{
-			types.Image{ID: "b", RepoTags: []string{"example:1"}},
+			types.ImageSummary{ID: "b", RepoTags: []string{"example:1"}},
 			engine,
 		},
 		{
-			types.Image{ID: "c", RepoTags: []string{"foo:latest"}},
+			types.ImageSummary{ID: "c", RepoTags: []string{"foo:latest"}},
 			engine,
 		},
 	}
 
-	result := images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, MatchName: "example"}})
+	imageFilters := dockerfilters.NewArgs()
+	imageFilters.Add("reference", "example")
+	result := images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, Filters: imageFilters}})
 	assert.Equal(t, len(result), 2)
 }
 

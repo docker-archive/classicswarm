@@ -17,15 +17,15 @@ function teardown() {
 	out=$(docker -H "${HOSTS[0]}" version)	
 
 	# Check client version
-	run bash -c "echo '$out' | grep -i version | grep -v Go | grep -v API"
+	run bash -c "echo '$out' | grep -i version | grep -v Go | grep -v API | grep -v Minimum"
 	[ "$status" -eq 0 ]
 
-	[[ $(echo "${lines[0]}" | cut -d':' -f2) == $(echo "${lines[1]}" | cut -d':' -f2) ]]
+	[[ $(echo "${lines[0]}" | cut -d':' -f2 | tr -d '[:space:]') == $(echo "${lines[1]}" | cut -d':' -f2 | tr -d '[:space:]') ]]
 
 	# Check API version
-	run bash -c "echo '$out' | grep -i version | grep API"
+	run bash -c "echo '$out' | grep -i version | grep -v Minimum | grep API"
 	[ "$status" -eq 0 ]
 
-	[[ $(echo "${lines[0]}" | cut -d':' -f2) == $(echo "${lines[1]}" | cut -d':' -f2) ]]
+	[[ $(echo "${lines[0]}" | cut -d':' -f2 | tr -d '[:space:]') == $(echo "${lines[1]}" | cut -d':' -f2 | tr -d '[:space:]') ]]
 
 }

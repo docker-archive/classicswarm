@@ -57,6 +57,7 @@ type TextFormatter struct {
 }
 
 func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
+	var b *bytes.Buffer
 	var keys []string = make([]string, 0, len(entry.Data))
 	for k := range entry.Data {
 		keys = append(keys, k)
@@ -65,8 +66,11 @@ func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
 	if !f.DisableSorting {
 		sort.Strings(keys)
 	}
-
-	b := &bytes.Buffer{}
+	if entry.Buffer != nil {
+		b = entry.Buffer
+	} else {
+		b = &bytes.Buffer{}
+	}
 
 	prefixFieldClashes(entry.Data)
 
@@ -128,10 +132,10 @@ func needsQuoting(text string) bool {
 			(ch >= 'A' && ch <= 'Z') ||
 			(ch >= '0' && ch <= '9') ||
 			ch == '-' || ch == '.') {
-			return false
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func (f *TextFormatter) appendKeyValue(b *bytes.Buffer, key string, value interface{}) {
@@ -141,14 +145,14 @@ func (f *TextFormatter) appendKeyValue(b *bytes.Buffer, key string, value interf
 
 	switch value := value.(type) {
 	case string:
-		if needsQuoting(value) {
+		if !needsQuoting(value) {
 			b.WriteString(value)
 		} else {
 			fmt.Fprintf(b, "%q", value)
 		}
 	case error:
 		errmsg := value.Error()
-		if needsQuoting(errmsg) {
+		if !needsQuoting(errmsg) {
 			b.WriteString(errmsg)
 		} else {
 			fmt.Fprintf(b, "%q", value)

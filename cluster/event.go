@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/engine-api/types/events"
+	"github.com/docker/docker/api/types/events"
 )
 
 // Event is exported
