@@ -24,6 +24,7 @@ weight=-75
 * [Docker Swarm Discovery](discovery.md)
 * [High availability in Docker Swarm](multi-manager-setup.md)
 * [Swarm and container networks](networking.md)
+* [Multi-host networking deployment tutorial](multihost-networking-tutorial.md)
 * [Advanced Scheduling](scheduler/index.md)
 * [Provision a Swarm cluster with Docker Machine](provision-with-machine.md)
 * [Docker Swarm API](swarm-api.md)
