@@ -26,4 +26,4 @@ weight=-75
 * [Swarm and container networks](networking.md)
 * [Advanced Scheduling](scheduler/index.md)
 * [Provision a Swarm cluster with Docker Machine](provision-with-machine.md)
-* [Docker Swarm API](swarm-api.md)
+* [Docker Swarm API](api/swarm-api.md)

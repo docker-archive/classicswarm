@@ -525,4 +525,4 @@ without a container that satisfies `redis*`
 - [Docker Swarm overview](../index.md)
 - [Discovery options](../discovery.md)
 - [Scheduler strategies](strategy.md)
-- [Swarm API](../swarm-api.md)
+- [Swarm API](../api/swarm-api.md)

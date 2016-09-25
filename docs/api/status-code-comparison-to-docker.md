@@ -2,7 +2,7 @@
 +++
 title = "API response codes"
 description = "Swarm API response codes"
-keywords = ["docker, swarm, response, code,  api"]
+keywords = ["docker, swarm, response, code, api"]
 [menu.main]
 parent="workw_swarm"
 weight=99
