@@ -97,7 +97,9 @@ swarm join \
     consul://<consul_addr>/<optional path prefix>
 ```
 
-This works the same way for the Swarm `manage` and `list` commands.
+This works the same way for the Swarm `manage` and `list` commands, but
+remember, if you are running the swarm image rather than the binary the paths
+must be available inside the container (e.g. within a data volume).
 
 ## A static file or list of nodes
 
