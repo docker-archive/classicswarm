@@ -247,7 +247,7 @@ func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.R
 
 	hj, ok := w.(http.Hijacker)
 	if !ok {
-		return errors.New("Docker server does not support hijacking")
+		return errors.New("docker server does not support hijacking")
 	}
 
 	nc, _, err := hj.Hijack()
