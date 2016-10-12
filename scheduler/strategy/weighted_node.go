@@ -36,7 +36,7 @@ func (n weightedNodeList) Less(i, j int) bool {
 	return ip.Weight < jp.Weight
 }
 
-func weighNodes(config *cluster.ContainerConfig, nodes []*node.Node, healthinessFactor int64) (weightedNodeList, error) {
+func weightedNodes(config *cluster.ContainerConfig, nodes []*node.Node, healthinessFactor int64) (weightedNodeList, error) {
 	weightedNodes := weightedNodeList{}
 
 	for _, node := range nodes {
