@@ -77,7 +77,6 @@ func (e *expr) Match(whats ...string) bool {
 	var (
 		pattern string
 		match   bool
-		err     error
 	)
 
 	if e.value[0] == '/' && e.value[len(e.value)-1] == '/' {
@@ -88,12 +87,16 @@ func (e *expr) Match(whats ...string) bool {
 		pattern = "^" + strings.Replace(e.value, "*", ".*", -1) + "$"
 	}
 
-	for _, what := range whats {
-		if match, err = regexp.MatchString(pattern, what); match {
-			break
-		} else if err != nil {
-			log.Error(err)
+	re, err := regexp.Compile(pattern)
+	if err == nil {
+		for _, what := range whats {
+			if match = re.MatchString(what); match {
+				break
+			}
 		}
+	} else {
+		match = false
+		log.Error(err)
 	}
 
 	switch e.operator {
