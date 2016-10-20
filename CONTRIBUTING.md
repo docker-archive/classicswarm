@@ -23,9 +23,9 @@ If you don't already have `git` installed, you should install it.  For example, 
 sudo apt-get install git
 ```
 
-You also need Go 1.5 or higher.  Download Go from [https://golang.org/dl/](https://golang.org/dl/).  To install on Linux:
+You also need Go 1.7 or higher.  Download Go from [https://golang.org/dl/](https://golang.org/dl/).  To install on Linux:
 ```sh
-tar xzvf go1.5.4.linux-amd64.tar.gz
+tar xzvf go1.7.1.linux-amd64.tar.gz
 sudo mv go /usr/local
 ```
 
@@ -40,7 +40,6 @@ mkdir ~/gocode    # any name is fine
 
 Add these to your `.bashrc`:
 ```sh
-export GO15VENDOREXPERIMENT=1 # only required for go 1.5.x
 export GOROOT=/usr/local/go
 export GOPATH=~/gocode
 export PATH=$PATH:$GOPATH/bin:$GOROOT/bin
