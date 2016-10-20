@@ -1360,7 +1360,8 @@ func proxyHijack(c *context, w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = strings.Replace(r.URL.Path, name, container.ID, 1)
 	}
 
-	err = hijack(c.tlsConfig, container.Engine.Addr, w, r)
+	stopCh := make(chan struct{})
+	err = hijack(c.tlsConfig, container.Engine.Addr, w, r, stopCh)
 	container.Engine.CheckConnectionErr(err)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)

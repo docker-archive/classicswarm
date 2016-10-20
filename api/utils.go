@@ -248,7 +248,7 @@ func dialHijack(tlsConfig *tls.Config, addr string) (net.Conn, error) {
 	return tlsDialWithDialer(new(net.Dialer), "tcp", addr, tlsConfig)
 }
 
-func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request) error {
+func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.Request, stopCh chan struct{}) error {
 	if parts := strings.SplitN(addr, "://", 2); len(parts) == 2 {
 		addr = parts[1]
 	}
@@ -297,6 +297,20 @@ func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.R
 	go cp(d, nc, inDone)
 	go cp(nc, d, outDone)
 
+	closeWatch := func(dst io.Writer, cancel chan struct{}) {
+		select {
+		case <-cancel:
+			if conn, ok := dst.(interface {
+				CloseWrite() error
+			}); ok {
+				conn.CloseWrite()
+			}
+			close(inDone)
+			close(outDone)
+		}
+	}
+	go closeWatch(d, stopCh)
+
 	// 1. When stdin is done, wait for stdout always
 	// 2. When stdout is done, close the stream and wait for stdin to finish
 	//
@@ -313,6 +327,7 @@ func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.R
 		nc.Close()
 		<-inDone
 	}
+	<-stopCh
 	return nil
 }
 

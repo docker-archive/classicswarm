@@ -11,23 +11,25 @@ var localRoutes = []string{"/info", "/_ping", "/debug"}
 
 // Replica is an API replica that reserves proxy to the primary.
 type Replica struct {
-	handler   http.Handler
-	tlsConfig *tls.Config
-	primary   string
+	handler        http.Handler
+	tlsConfig      *tls.Config
+	primary        string
+	primaryChanged chan struct{}
 }
 
 // NewReplica creates a new API replica.
 func NewReplica(handler http.Handler, tlsConfig *tls.Config) *Replica {
 	return &Replica{
-		handler:   handler,
-		tlsConfig: tlsConfig,
+		handler:        handler,
+		tlsConfig:      tlsConfig,
+		primaryChanged: make(chan struct{}),
 	}
 }
 
 // SetPrimary sets the address of the primary Swarm manager
 func (p *Replica) SetPrimary(primary string) {
-	// FIXME: We have to kill current connections before doing this.
 	p.primary = primary
+	p.primaryChanged <- struct{}{}
 }
 
 // ServeHTTP is the http.Handler.
@@ -46,7 +48,7 @@ func (p *Replica) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := hijack(p.tlsConfig, p.primary, w, r); err != nil {
+	if err := hijack(p.tlsConfig, p.primary, w, r, p.primaryChanged); err != nil {
 		httpError(w, fmt.Sprintf("Unable to reach primary cluster manager (%s): %v", err, p.primary), http.StatusInternalServerError)
 	}
 }
