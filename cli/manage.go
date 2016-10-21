@@ -46,15 +46,22 @@ type statusHandler struct {
 	cluster   cluster.Cluster
 	candidate *leadership.Candidate
 	follower  *leadership.Follower
+	addr      string
 }
 
 func (h *statusHandler) Status() [][2]string {
 	var status [][2]string
 
 	if h.candidate != nil && !h.candidate.IsLeader() {
-		status = [][2]string{
-			{"Role", "replica"},
-			{"Primary", h.follower.Leader()},
+		if h.follower.Leader() == h.addr {
+			status = [][2]string{
+				{"Role", "primary"},
+			}
+		} else {
+			status = [][2]string{
+				{"Role", "replica"},
+				{"Primary", h.follower.Leader()},
+			}
 		}
 	} else {
 		status = [][2]string{
@@ -146,19 +153,12 @@ func getCandidateAndFollower(discovery discovery.Backend, addr string, leaderTTL
 }
 
 func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, candidate *leadership.Candidate, follower *leadership.Follower, addr string, tlsConfig *tls.Config) {
-	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.GlobalBool("debug"), c.Bool("cors"))
+	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower, addr}, c.GlobalBool("debug"), c.Bool("cors"))
 	replica := api.NewReplica(primary, tlsConfig)
 
 	go func() {
 		for {
-			run(cluster, candidate, server, primary, replica)
-			time.Sleep(defaultRecoverTime)
-		}
-	}()
-
-	go func() {
-		for {
-			follow(follower, replica, addr)
+			run(cluster, candidate, follower, server, primary, replica, addr)
 			time.Sleep(defaultRecoverTime)
 		}
 	}()
@@ -166,8 +166,9 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 	server.SetHandler(primary)
 }
 
-func run(cl cluster.Cluster, candidate *leadership.Candidate, server *api.Server, primary *mux.Router, replica *api.Replica) {
-	electedCh, errCh := candidate.RunForElection()
+func run(cl cluster.Cluster, candidate *leadership.Candidate, follower *leadership.Follower, server *api.Server, primary *mux.Router, replica *api.Replica, addr string) {
+	electedCh, candidateErrCh := candidate.RunForElection()
+	leaderCh, followerErrCh := follower.FollowElection()
 	var watchdog *cluster.Watchdog
 	for {
 		select {
@@ -182,30 +183,25 @@ func run(cl cluster.Cluster, candidate *leadership.Candidate, server *api.Server
 				server.SetHandler(replica)
 			}
 
-		case err := <-errCh:
-			log.Error(err)
-			return
-		}
-	}
-}
-
-func follow(follower *leadership.Follower, replica *api.Replica, addr string) {
-	leaderCh, errCh := follower.FollowElection()
-	for {
-		select {
 		case leader := <-leaderCh:
 			if leader == "" {
 				continue
 			}
 			if leader == addr {
 				replica.SetPrimary("")
+				server.SetHandler(primary)
 			} else {
 				log.Infof("New leader elected: %s", leader)
 				replica.SetPrimary(leader)
+				server.SetHandler(replica)
 			}
 
-		case err := <-errCh:
-			log.Error(err)
+		case err := <-candidateErrCh:
+			log.Errorf("Error from leadership election candidate: %s", err)
+			return
+
+		case err := <-followerErrCh:
+			log.Errorf("Error from leadership election follower: %s", err)
 			return
 		}
 	}
@@ -332,7 +328,7 @@ func manage(c *cli.Context) {
 
 		setupReplication(c, cl, server, candidate, follower, addr, tlsConfig)
 	} else {
-		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.GlobalBool("debug"), c.Bool("cors")))
+		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil, ""}, c.GlobalBool("debug"), c.Bool("cors")))
 		cluster.NewWatchdog(cl)
 	}
 
