@@ -267,6 +267,11 @@ func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
 			}
 		}
 	}
+	if err == nil && network.Scope == "swarm" {
+		for _, engine := range c.engines {
+			engine.DeleteNetwork(network)
+		}
+	}
 	if err != nil && network.Scope == "global" {
 		log.Debugf("Failed to remove global scope network %s from any engine...", network.ID)
 	}
