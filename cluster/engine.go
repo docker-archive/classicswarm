@@ -183,7 +183,7 @@ func (e *Engine) Connect(config *tls.Config) error {
 	e.IP = addr.IP.String()
 
 	// create the HTTP Client and URL
-	httpClient, url, err := NewHTTPClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), setTCPUserTimeout)
+	httpClient, url, err := NewHTTPClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), nil)
 	if err != nil {
 		return err
 	}
