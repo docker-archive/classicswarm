@@ -1,4 +1,4 @@
-# The non-reference docs have been moved!
+# The docs have been moved!
 
 The documentation for Swarm has been merged into
 [the general documentation repo](https://github.com/docker/docker.github.io).
