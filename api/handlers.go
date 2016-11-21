@@ -1185,11 +1185,10 @@ func postTagImage(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := c.cluster.TagImage(name, ref, force); err != nil {
 		if strings.HasPrefix(err.Error(), "No such image") {
 			httpError(w, err.Error(), http.StatusNotFound)
-			return
 		} else {
 			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
 		}
+		return
 	}
 	w.WriteHeader(http.StatusCreated)
 }
@@ -1334,11 +1333,10 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	if err = c.cluster.RenameContainer(container, r.Form.Get("name")); err != nil {
 		if strings.HasPrefix(err.Error(), "Conflict") {
 			httpError(w, err.Error(), http.StatusConflict)
-			return
 		} else {
 			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
 		}
+		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 
