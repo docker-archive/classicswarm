@@ -132,7 +132,7 @@ func getDiscoveryOpt(c *cli.Context) map[string]string {
 	return options
 }
 
-func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, discovery discovery.Backend, addr string, leaderTTL time.Duration, tlsConfig *tls.Config) {
+func getCandidateAndFollower(discovery discovery.Backend, addr string, leaderTTL time.Duration) (*leadership.Candidate, *leadership.Follower) {
 	kvDiscovery, ok := discovery.(*kvdiscovery.Discovery)
 	if !ok {
 		log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
@@ -142,7 +142,10 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 
 	candidate := leadership.NewCandidate(client, p, addr, leaderTTL)
 	follower := leadership.NewFollower(client, p)
+	return candidate, follower
+}
 
+func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, candidate *leadership.Candidate, follower *leadership.Follower, addr string, tlsConfig *tls.Config) {
 	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.GlobalBool("debug"), c.Bool("cors"))
 	replica := api.NewReplica(primary, tlsConfig)
 
@@ -319,7 +322,12 @@ func manage(c *cli.Context) {
 			log.Fatalf("--replication-ttl should be a positive number")
 		}
 
-		setupReplication(c, cl, server, discovery, addr, leaderTTL, tlsConfig)
+		candidate, follower := getCandidateAndFollower(discovery, addr, leaderTTL)
+		// Make sure we resign the leadership position when we exit
+		// if necessary.
+		defer candidate.Resign()
+
+		setupReplication(c, cl, server, candidate, follower, addr, tlsConfig)
 	} else {
 		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.GlobalBool("debug"), c.Bool("cors")))
 		cluster.NewWatchdog(cl)
