@@ -9,7 +9,8 @@ function discovery_check_swarm_info_empty() {
 
 # Returns true if all nodes have joined the discovery.
 function discovery_check_swarm_list() {
-	local joined=`swarm list "$1" | wc -l`
+	# IPv4 address is used in this test. use relative matching
+	local joined=`swarm list "$1" | egrep '(([0-9]{1,3})\.){3}([0-9]{1,3}):[0-9]+' | wc -l`
 	local total="$2"
 	[ -z "$total" ] && total="${#HOSTS[@]}"
 
