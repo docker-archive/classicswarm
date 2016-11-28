@@ -12,6 +12,7 @@ import (
 	"github.com/docker/engine-api/types/filters"
 	"github.com/docker/engine-api/types/network"
 	"github.com/docker/engine-api/types/registry"
+	"github.com/docker/engine-api/types/swarm"
 )
 
 var (
@@ -343,5 +344,91 @@ func (client *NopClient) VolumeList(ctx context.Context, filter filters.Args) (t
 
 // VolumeRemove removes a volume from the docker host
 func (client *NopClient) VolumeRemove(ctx context.Context, volumeID string) error {
+	return errNoEngine
+}
+
+// The following functions are for Docker swarm mode. They are
+// not relevant to Docker Swarm, but present here for a full
+// implementation of the engine-api client.
+// TODO(nishanttotla): Swarm should define a reduced interface
+// that can be used to get rid of the following functions.
+
+// NodeInspectWithRaw is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) NodeInspectWithRaw(ctx context.Context, nodeID string) (swarm.Node, []byte, error) {
+	return swarm.Node{}, nil, errNoEngine
+}
+
+// NodeList is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) NodeList(ctx context.Context, options types.NodeListOptions) ([]swarm.Node, error) {
+	return nil, errNoEngine
+}
+
+// NodeRemove is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) NodeRemove(ctx context.Context, nodeID string) error {
+	return errNoEngine
+}
+
+// NodeUpdate is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) NodeUpdate(ctx context.Context, nodeID string, version swarm.Version, node swarm.NodeSpec) error {
+	return errNoEngine
+}
+
+// ServiceCreate is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) ServiceCreate(ctx context.Context, service swarm.ServiceSpec, options types.ServiceCreateOptions) (types.ServiceCreateResponse, error) {
+	return types.ServiceCreateResponse{}, errNoEngine
+}
+
+// ServiceInspectWithRaw is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) ServiceInspectWithRaw(ctx context.Context, serviceID string) (swarm.Service, []byte, error) {
+	return swarm.Service{}, nil, errNoEngine
+}
+
+// ServiceList is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) ServiceList(ctx context.Context, options types.ServiceListOptions) ([]swarm.Service, error) {
+	return nil, errNoEngine
+}
+
+// ServiceRemove is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) ServiceRemove(ctx context.Context, serviceID string) error {
+	return errNoEngine
+}
+
+// ServiceUpdate is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) ServiceUpdate(ctx context.Context, serviceID string, version swarm.Version, service swarm.ServiceSpec, options types.ServiceUpdateOptions) error {
+	return errNoEngine
+}
+
+// TaskInspectWithRaw is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) TaskInspectWithRaw(ctx context.Context, taskID string) (swarm.Task, []byte, error) {
+	return swarm.Task{}, nil, errNoEngine
+}
+
+// TaskList is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) TaskList(ctx context.Context, options types.TaskListOptions) ([]swarm.Task, error) {
+	return nil, errNoEngine
+}
+
+// SwarmInit is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) SwarmInit(ctx context.Context, req swarm.InitRequest) (string, error) {
+	return "", errNoEngine
+}
+
+// SwarmJoin is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) SwarmJoin(ctx context.Context, req swarm.JoinRequest) error {
+	return errNoEngine
+}
+
+// SwarmLeave is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) SwarmLeave(ctx context.Context, force bool) error {
+	return errNoEngine
+}
+
+// SwarmInspect is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) SwarmInspect(ctx context.Context) (swarm.Swarm, error) {
+	return swarm.Swarm{}, errNoEngine
+}
+
+// SwarmUpdate is a Swarm mode function that is not relevant to Docker Swarm
+func (client *NopClient) SwarmUpdate(ctx context.Context, version swarm.Version, swarm swarm.Spec) error {
 	return errNoEngine
 }
