@@ -2,47 +2,51 @@ package swarm
 
 import "time"
 
-// Swarm represents a swarm.
-type Swarm struct {
+// ClusterInfo represents info about the cluster for outputing in "info"
+// it contains the same information as "Swarm", but without the JoinTokens
+type ClusterInfo struct {
 	ID string
 	Meta
 	Spec Spec
+}
+
+// Swarm represents a swarm.
+type Swarm struct {
+	ClusterInfo
+	JoinTokens JoinTokens
+}
+
+// JoinTokens contains the tokens workers and managers need to join the swarm.
+type JoinTokens struct {
+	Worker  string
+	Manager string
 }
 
 // Spec represents the spec of a swarm.
 type Spec struct {
 	Annotations
 
-	AcceptancePolicy AcceptancePolicy    `json:",omitempty"`
-	Orchestration    OrchestrationConfig `json:",omitempty"`
-	Raft             RaftConfig          `json:",omitempty"`
-	Dispatcher       DispatcherConfig    `json:",omitempty"`
-	CAConfig         CAConfig            `json:",omitempty"`
-}
-
-// AcceptancePolicy represents the list of policies.
-type AcceptancePolicy struct {
-	Policies []Policy `json:",omitempty"`
-}
-
-// Policy represents a role, autoaccept and secret.
-type Policy struct {
-	Role       NodeRole
-	Autoaccept bool
-	Secret     *string `json:",omitempty"`
+	Orchestration OrchestrationConfig `json:",omitempty"`
+	Raft          RaftConfig          `json:",omitempty"`
+	Dispatcher    DispatcherConfig    `json:",omitempty"`
+	CAConfig      CAConfig            `json:",omitempty"`
+	TaskDefaults  TaskDefaults        `json:",omitempty"`
 }
 
 // OrchestrationConfig represents orchestration configuration.
 type OrchestrationConfig struct {
 	TaskHistoryRetentionLimit int64 `json:",omitempty"`
+}
 
-	// DefaultLogDriver selects the log driver to use for tasks created in the
+// TaskDefaults parameterizes cluster-level task creation with default values.
+type TaskDefaults struct {
+	// LogDriver selects the log driver to use for tasks created in the
 	// orchestrator if unspecified by a service.
 	//
 	// Updating this value will only have an affect on new tasks. Old tasks
 	// will continue use their previously configured log driver until
 	// recreated.
-	DefaultLogDriver *Driver `json:",omitempty"`
+	LogDriver *Driver `json:",omitempty"`
 }
 
 // RaftConfig represents raft configuration.
@@ -50,13 +54,27 @@ type RaftConfig struct {
 	SnapshotInterval           uint64 `json:",omitempty"`
 	KeepOldSnapshots           uint64 `json:",omitempty"`
 	LogEntriesForSlowFollowers uint64 `json:",omitempty"`
-	HeartbeatTick              uint32 `json:",omitempty"`
-	ElectionTick               uint32 `json:",omitempty"`
+
+	// ElectionTick is the number of ticks that a follower will wait for a message
+	// from the leader before becoming a candidate and starting an election.
+	// ElectionTick must be greater than HeartbeatTick.
+	//
+	// A tick currently defaults to one second, so these translate directly to
+	// seconds currently, but this is NOT guaranteed.
+	ElectionTick int
+
+	// HeartbeatTick is the number of ticks between heartbeats. Every
+	// HeartbeatTick ticks, the leader will send a heartbeat to the
+	// followers.
+	//
+	// A tick currently defaults to one second, so these translate directly to
+	// seconds currently, but this is NOT guaranteed.
+	HeartbeatTick int
 }
 
 // DispatcherConfig represents dispatcher configuration.
 type DispatcherConfig struct {
-	HeartbeatPeriod uint64 `json:",omitempty"`
+	HeartbeatPeriod time.Duration `json:",omitempty"`
 }
 
 // CAConfig represents CA configuration.
@@ -81,17 +99,17 @@ type ExternalCA struct {
 // InitRequest is the request used to init a swarm.
 type InitRequest struct {
 	ListenAddr      string
+	AdvertiseAddr   string
 	ForceNewCluster bool
 	Spec            Spec
 }
 
 // JoinRequest is the request used to join a swarm.
 type JoinRequest struct {
-	ListenAddr  string
-	RemoteAddrs []string
-	Secret      string // accept by secret
-	CACertHash  string
-	Manager     bool
+	ListenAddr    string
+	AdvertiseAddr string
+	RemoteAddrs   []string
+	JoinToken     string // accept by secret
 }
 
 // LocalNodeState represents the state of the local node.
@@ -110,7 +128,8 @@ const (
 
 // Info represents generic information about swarm.
 type Info struct {
-	NodeID string
+	NodeID   string
+	NodeAddr string
 
 	LocalNodeState   LocalNodeState
 	ControlAvailable bool
@@ -119,11 +138,18 @@ type Info struct {
 	RemoteManagers []Peer
 	Nodes          int
 	Managers       int
-	CACertHash     string
+
+	Cluster ClusterInfo
 }
 
 // Peer represents a peer.
 type Peer struct {
 	NodeID string
 	Addr   string
+}
+
+// UpdateFlags contains flags for SwarmUpdate.
+type UpdateFlags struct {
+	RotateWorkerToken  bool
+	RotateManagerToken bool
 }

@@ -33,7 +33,6 @@ var (
 		NCPU:            10,
 		MemTotal:        20,
 		Driver:          "driver-test",
-		ExecutionDriver: "execution-driver-test",
 		KernelVersion:   "1.2.3",
 		OperatingSystem: "golang",
 		Labels:          []string{"foo=bar"},

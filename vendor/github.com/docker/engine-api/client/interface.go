@@ -56,7 +56,7 @@ type ContainerAPIClient interface {
 	ContainerStop(ctx context.Context, container string, timeout *time.Duration) error
 	ContainerTop(ctx context.Context, container string, arguments []string) (types.ContainerProcessList, error)
 	ContainerUnpause(ctx context.Context, container string) error
-	ContainerUpdate(ctx context.Context, container string, updateConfig container.UpdateConfig) error
+	ContainerUpdate(ctx context.Context, container string, updateConfig container.UpdateConfig) (types.ContainerUpdateResponse, error)
 	ContainerWait(ctx context.Context, container string) (int, error)
 	CopyFromContainer(ctx context.Context, container, srcPath string) (io.ReadCloser, types.ContainerPathStat, error)
 	CopyToContainer(ctx context.Context, container, path string, content io.Reader, options types.CopyToContainerOptions) error
@@ -68,7 +68,7 @@ type ImageAPIClient interface {
 	ImageCreate(ctx context.Context, parentReference string, options types.ImageCreateOptions) (io.ReadCloser, error)
 	ImageHistory(ctx context.Context, image string) ([]types.ImageHistory, error)
 	ImageImport(ctx context.Context, source types.ImageImportSource, ref string, options types.ImageImportOptions) (io.ReadCloser, error)
-	ImageInspectWithRaw(ctx context.Context, image string, getSize bool) (types.ImageInspect, []byte, error)
+	ImageInspectWithRaw(ctx context.Context, image string) (types.ImageInspect, []byte, error)
 	ImageList(ctx context.Context, options types.ImageListOptions) ([]types.Image, error)
 	ImageLoad(ctx context.Context, input io.Reader, quiet bool) (types.ImageLoadResponse, error)
 	ImagePull(ctx context.Context, ref string, options types.ImagePullOptions) (io.ReadCloser, error)
@@ -94,7 +94,7 @@ type NetworkAPIClient interface {
 type NodeAPIClient interface {
 	NodeInspectWithRaw(ctx context.Context, nodeID string) (swarm.Node, []byte, error)
 	NodeList(ctx context.Context, options types.NodeListOptions) ([]swarm.Node, error)
-	NodeRemove(ctx context.Context, nodeID string) error
+	NodeRemove(ctx context.Context, nodeID string, options types.NodeRemoveOptions) error
 	NodeUpdate(ctx context.Context, nodeID string, version swarm.Version, node swarm.NodeSpec) error
 }
 
@@ -115,7 +115,7 @@ type SwarmAPIClient interface {
 	SwarmJoin(ctx context.Context, req swarm.JoinRequest) error
 	SwarmLeave(ctx context.Context, force bool) error
 	SwarmInspect(ctx context.Context) (swarm.Swarm, error)
-	SwarmUpdate(ctx context.Context, version swarm.Version, swarm swarm.Spec) error
+	SwarmUpdate(ctx context.Context, version swarm.Version, swarm swarm.Spec, flags swarm.UpdateFlags) error
 }
 
 // SystemAPIClient defines API client methods for the system
@@ -131,5 +131,5 @@ type VolumeAPIClient interface {
 	VolumeInspect(ctx context.Context, volumeID string) (types.Volume, error)
 	VolumeInspectWithRaw(ctx context.Context, volumeID string) (types.Volume, []byte, error)
 	VolumeList(ctx context.Context, filter filters.Args) (types.VolumesListResponse, error)
-	VolumeRemove(ctx context.Context, volumeID string) error
+	VolumeRemove(ctx context.Context, volumeID string, force bool) error
 }

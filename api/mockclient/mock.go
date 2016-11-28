@@ -204,9 +204,9 @@ func (client *MockClient) ContainerUnpause(ctx context.Context, container string
 }
 
 // ContainerUpdate updates resources of a container
-func (client *MockClient) ContainerUpdate(ctx context.Context, container string, updateConfig container.UpdateConfig) error {
+func (client *MockClient) ContainerUpdate(ctx context.Context, container string, updateConfig container.UpdateConfig) (types.ContainerUpdateResponse, error) {
 	args := client.Mock.Called(ctx, container, updateConfig)
-	return args.Error(0)
+	return args.Get(0).(types.ContainerUpdateResponse), args.Error(1)
 }
 
 // ContainerWait pauses execution until a container exits
@@ -258,8 +258,8 @@ func (client *MockClient) ImageImport(ctx context.Context, source types.ImageImp
 }
 
 // ImageInspectWithRaw returns the image information and it's raw representation
-func (client *MockClient) ImageInspectWithRaw(ctx context.Context, image string, getSize bool) (types.ImageInspect, []byte, error) {
-	args := client.Mock.Called(ctx, image, getSize)
+func (client *MockClient) ImageInspectWithRaw(ctx context.Context, image string) (types.ImageInspect, []byte, error) {
+	args := client.Mock.Called(ctx, image)
 	return args.Get(0).(types.ImageInspect), args.Get(1).([]byte), args.Error(2)
 }
 
@@ -400,7 +400,7 @@ func (client *MockClient) VolumeList(ctx context.Context, filter filters.Args) (
 }
 
 // VolumeRemove removes a volume from the docker host
-func (client *MockClient) VolumeRemove(ctx context.Context, volumeID string) error {
+func (client *MockClient) VolumeRemove(ctx context.Context, volumeID string, force bool) error {
 	args := client.Mock.Called(ctx, volumeID)
 	return args.Error(0)
 }

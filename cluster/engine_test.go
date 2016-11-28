@@ -38,7 +38,6 @@ var (
 		NCPU:            10,
 		MemTotal:        20,
 		Driver:          "driver-test",
-		ExecutionDriver: "execution-driver-test",
 		KernelVersion:   "1.2.3",
 		OperatingSystem: "golang",
 		Labels:          []string{"foo=bar"},
@@ -228,8 +227,6 @@ func TestEngineSpecs(t *testing.T) {
 	assert.Equal(t, engine.Cpus, int64(mockInfo2.NCPU))
 	assert.Equal(t, engine.Memory, mockInfo2.MemTotal)
 	assert.Equal(t, engine.Labels["storagedriver"], mockInfo2.Driver)
-
-	assert.Equal(t, engine.Labels["executiondriver"], mockInfo2.ExecutionDriver)
 
 	assert.Equal(t, engine.Labels["kernelversion"], mockInfo2.KernelVersion)
 	assert.Equal(t, engine.Labels["operatingsystem"], mockInfo2.OperatingSystem)

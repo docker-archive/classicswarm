@@ -37,6 +37,7 @@ function teardown() {
 
 	run docker_swarm update \
 				-m=100M \
+				--memory-swap=200M \
 				--cpu-period=50000 \
 				--cpu-quota=5000 \
 				--blkio-weight=600 \
