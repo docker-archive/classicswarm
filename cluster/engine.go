@@ -205,26 +205,18 @@ func (e *Engine) Connect(config *tls.Config) error {
 // StartMonitorEvents monitors events from the engine
 func (e *Engine) StartMonitorEvents() {
 	log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Debug("Start monitoring events")
-	ec := make(chan error)
-	e.eventsMonitor.Start(ec)
-
-	go func() {
-		if err := <-ec; err != nil {
-			if !strings.Contains(err.Error(), "EOF") {
-				// failing node reconnect should use back-off strategy
-				<-e.refreshDelayer.Wait(e.getFailureCount())
-			}
-			e.StartMonitorEvents()
-		}
-		close(ec)
-	}()
+	// start eventsMonitor as the first time.
+	e.eventsMonitor.Start()
 }
 
 // ConnectWithClient is exported
 func (e *Engine) ConnectWithClient(client dockerclient.Client, apiClient swarmclient.SwarmAPIClient) error {
+	e.Lock()
 	e.client = client
 	e.apiClient = apiClient
-	e.eventsMonitor = NewEventsMonitor(e.apiClient, e.handler)
+	//e.eventsMonitor = NewEventsMonitor(e.apiClient, e.handler)
+	e.eventsMonitor = NewEventsMonitor(e)
+	e.Unlock()
 
 	// Fetch the engine labels.
 	if err := e.updateSpecs(); err != nil {
@@ -384,6 +376,7 @@ func (e *Engine) incFailureCount() {
 		e.state = stateUnhealthy
 		log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Flagging engine as unhealthy. Connect failed %d times", e.failureCount)
 		e.emitEvent("engine_disconnect")
+		e.eventsMonitor.Stop()
 	}
 }
 
@@ -413,9 +406,10 @@ func (e *Engine) CheckConnectionErr(err error) {
 		e.setErrMsg("")
 		// If current state is unhealthy, change it to healthy
 		if e.state == stateUnhealthy {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.getFailureCount())
-			e.emitEvent("engine_reconnect")
 			e.setState(stateHealthy)
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.getFailureCount())
+			e.StartMonitorEvents()
+			e.emitEvent("engine_reconnect")
 		}
 		e.resetFailureCount()
 		return
@@ -893,11 +887,6 @@ func (e *Engine) refreshLoop() {
 				continue
 			}
 			lastSpecUpdatedAt = time.Now()
-		}
-
-		if !healthy {
-			e.eventsMonitor.Stop()
-			e.StartMonitorEvents()
 		}
 
 		err = e.RefreshContainers(false)
