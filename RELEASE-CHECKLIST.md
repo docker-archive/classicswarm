@@ -75,7 +75,7 @@ Open PR on docker-library/official-images.
 
 ### 5. Create release on github
 
-Go to https://github.com/docker/swarm/releases/new use <tag> and edit changelog.
+Go to https://github.com/docker/swarm/releases/new use &lt;tag&gt; and edit changelog.
 
 Upload Linux binary to the release. Copy the image built at docker/swarm-library-image.
 
