@@ -183,15 +183,17 @@ func (e *Engine) Connect(config *tls.Config) error {
 	e.IP = addr.IP.String()
 
 	// create the HTTP Client and URL
-	httpClient, url, err := NewHTTPClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), nil)
-	if err != nil {
-		return err
+	if e.httpClient == nil {
+		httpClient, url, err := NewHTTPClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), nil)
+		if err != nil {
+			return err
+		}
+		e.httpClient = httpClient
+		e.url = url
 	}
-	e.httpClient = httpClient
-	e.url = url
 
 	// Use HTTP Client created above to create a dockerclient client
-	c := dockerclient.NewDockerClientFromHTTP(url, httpClient, config)
+	c := dockerclient.NewDockerClientFromHTTP(e.url, e.httpClient, config)
 
 	// Use HTTP Client used by dockerclient to create engine-api client
 	apiClient, err := engineapi.NewClient("tcp://"+e.Addr, "", c.HTTPClient, nil)
