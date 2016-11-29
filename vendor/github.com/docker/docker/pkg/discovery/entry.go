@@ -30,6 +30,8 @@ func (e *Entry) String() string {
 // Entries is a list of *Entry with some helpers.
 type Entries []*Entry
 
+type EntryMap map[string]struct{}
+
 // Equals returns true if cmp contains the same data.
 func (e Entries) Equals(cmp Entries) bool {
 	// Check if the file has really changed.
@@ -55,22 +57,34 @@ func (e Entries) Contains(entry *Entry) bool {
 }
 
 // Diff compares two entries and returns the added and removed entries.
-func (e Entries) Diff(cmp Entries) (Entries, Entries) {
-	added := Entries{}
-	for _, entry := range cmp {
-		if !e.Contains(entry) {
-			added = append(added, entry)
-		}
+func (e Entries) Diff(last EntryMap) (add, del, curr EntryMap) {
+	del = last
+
+	if l1, l2 := len(e), len(last); l1 < l2 {
+		add = make(map[string]struct{}, 2*(l2-l1))
+	} else {
+		add = make(map[string]struct{}, 2*(l1-l2+1))
 	}
 
-	removed := Entries{}
+	if len(e) != 0 {
+		curr = make(map[string]struct{}, len(e))
+	}
+
 	for _, entry := range e {
-		if !cmp.Contains(entry) {
-			removed = append(removed, entry)
+		key := entry.String()
+		curr[key] = struct{}{}
+
+		if last != nil {
+			if _, ok := last[key]; ok {
+				delete(last, key)
+				continue
+			}
 		}
+
+		add[key] = struct{}{}
 	}
 
-	return added, removed
+	return
 }
 
 // CreateEntries returns an array of entries based on the given addresses.

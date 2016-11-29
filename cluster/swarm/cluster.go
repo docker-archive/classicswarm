@@ -385,21 +385,22 @@ func (c *Cluster) removeEngine(addr string) bool {
 // Entries are Docker Engines
 func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan error) {
 	// Watch changes on the discovery channel.
-	currentEntries := discovery.Entries{}
+	currentEntryMap := discovery.EntryMap{}
+
 	for {
 		select {
 		case entries := <-ch:
-			added, removed := currentEntries.Diff(entries)
-			currentEntries = entries
+			added, removed, current := entries.Diff(lastEntryMap)
+			currentEntryMap = current
 
 			// Remove engines first. `addEngine` will refuse to add an engine
 			// if there's already an engine with the same ID.  If an engine
 			// changes address, we have to first remove it then add it back.
-			for _, entry := range removed {
+			for entry, _ := range removed {
 				c.removeEngine(entry.String())
 			}
 
-			for _, entry := range added {
+			for entry, _ := range added {
 				c.addEngine(entry.String())
 			}
 		case err := <-errCh:
