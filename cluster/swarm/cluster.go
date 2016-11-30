@@ -390,7 +390,7 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 	for {
 		select {
 		case entries := <-ch:
-			added, removed, current := entries.Diff(lastEntryMap)
+			added, removed, current := entries.Diff(currentEntryMap)
 			currentEntryMap = current
 
 			// Remove engines first. `addEngine` will refuse to add an engine
