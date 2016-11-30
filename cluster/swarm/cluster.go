@@ -12,13 +12,14 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
+	networktypes "github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
+	"github.com/docker/docker/client"
+	engineapi "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/discovery"
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/engine-api/client"
-	engineapi "github.com/docker/engine-api/client"
-	"github.com/docker/engine-api/types"
-	containertypes "github.com/docker/engine-api/types/container"
-	networktypes "github.com/docker/engine-api/types/network"
 	"github.com/docker/go-units"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
@@ -152,7 +153,10 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		//  fails with image not found, then try to reschedule with image affinity
 		// ENGINEAPIFIXME: The first error can be removed once dockerclient is removed
 		bImageNotFoundError, _ := regexp.MatchString(`image \S* not found`, err.Error())
-		if (bImageNotFoundError || client.IsErrImageNotFound(err)) && !config.HaveNodeConstraint() {
+
+		// Since docker engine 1.13 the error message has been changed. We have to check both for backwards compatibility.
+		bImageNotFoundError113, _ := regexp.MatchString(`repository \S* not found`, err.Error())
+		if (bImageNotFoundError || bImageNotFoundError113 || client.IsErrImageNotFound(err)) && !config.HaveNodeConstraint() {
 			// Check if the image exists in the cluster
 			// If exists, retry with an image affinity
 			if c.Image(config.Image) != nil {
@@ -254,7 +258,7 @@ func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
 				engine.DeleteNetwork(network)
 			}
 		}
-	} else if engineapi.ErrConnectionFailed == err && network.Scope == "global" {
+	} else if engineapi.IsErrConnectionFailed(err) && network.Scope == "global" {
 		log.Debug("The original engine is unreachable - Attempting to remove global network from the reachable engines...")
 		for _, engine := range c.engines {
 			e1 := engine.RemoveNetwork(network)
@@ -521,7 +525,7 @@ func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (resp
 }
 
 // CreateVolume creates a volume in the cluster
-func (c *Cluster) CreateVolume(request *types.VolumeCreateRequest) (*types.Volume, error) {
+func (c *Cluster) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume, error) {
 	var (
 		wg     sync.WaitGroup
 		volume *types.Volume

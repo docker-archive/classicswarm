@@ -1,6 +1,6 @@
 package cluster
 
-import "github.com/docker/engine-api/types"
+import "github.com/docker/docker/api/types"
 
 // Volume is exported
 type Volume struct {

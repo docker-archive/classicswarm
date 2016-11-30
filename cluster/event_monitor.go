@@ -1,11 +1,10 @@
 package cluster
 
 import (
-	"encoding/json"
 	"io"
 
-	"github.com/docker/engine-api/types"
-	"github.com/docker/engine-api/types/events"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/events"
 	"github.com/docker/swarm/swarmclient"
 	"golang.org/x/net/context"
 )
@@ -15,11 +14,6 @@ type EventsMonitor struct {
 	stopChan chan struct{}
 	cli      swarmclient.SwarmAPIClient
 	handler  func(msg events.Message) error
-}
-
-type decodingResult struct {
-	msg events.Message
-	err error
 }
 
 // NewEventsMonitor returns an EventsMonitor
@@ -33,44 +27,26 @@ func NewEventsMonitor(cli swarmclient.SwarmAPIClient, handler func(msg events.Me
 // Start starts the EventsMonitor
 func (em *EventsMonitor) Start(ec chan error) {
 	em.stopChan = make(chan struct{})
-
-	responseBody, err := em.cli.Events(context.Background(), types.EventsOptions{})
-	if err != nil {
-		ec <- err
-		return
-	}
-
-	resultChan := make(chan decodingResult)
+	responseStream, errStream := em.cli.Events(context.Background(), types.EventsOptions{})
 
 	go func() {
-		dec := json.NewDecoder(responseBody)
-		for {
-			var result decodingResult
-			result.err = dec.Decode(&result.msg)
-			resultChan <- result
-			if result.err == io.EOF {
-				break
-			}
-		}
-		close(resultChan)
-	}()
-
-	go func() {
-		defer responseBody.Close()
 		for {
 			select {
-			case <-em.stopChan:
-				ec <- nil
-				return
-			case result := <-resultChan:
-				if result.err != nil {
-					ec <- result.err
-					return
-				}
-				if err := em.handler(result.msg); err != nil {
+			case event := <-responseStream:
+				if err := em.handler(event); err != nil {
 					ec <- err
 					return
 				}
+			case err := <-errStream:
+				if err == io.EOF {
+					ec <- nil
+					return
+				}
+				ec <- err
+				return
+			case <-em.stopChan:
+				ec <- nil
+				return
 			}
 		}
 	}()

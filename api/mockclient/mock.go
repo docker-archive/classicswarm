@@ -4,16 +4,18 @@ import (
 	"io"
 	"time"
 
-	"github.com/docker/engine-api/types"
-	"github.com/docker/engine-api/types/container"
-	"github.com/docker/engine-api/types/filters"
-	"github.com/docker/engine-api/types/network"
-	"github.com/docker/engine-api/types/registry"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/net/context"
 )
 
-// MockClient is a mock API Client based on engine-api
+// MockClient is a mock API Client based on docker/api
 type MockClient struct {
 	mock.Mock
 }
@@ -54,15 +56,15 @@ func (client *MockClient) ContainerAttach(ctx context.Context, container string,
 }
 
 // ContainerCommit applies changes into a container and creates a new tagged image
-func (client *MockClient) ContainerCommit(ctx context.Context, container string, options types.ContainerCommitOptions) (types.ContainerCommitResponse, error) {
+func (client *MockClient) ContainerCommit(ctx context.Context, container string, options types.ContainerCommitOptions) (types.IDResponse, error) {
 	args := client.Mock.Called(ctx, container, options)
-	return args.Get(0).(types.ContainerCommitResponse), args.Error(1)
+	return args.Get(0).(types.IDResponse), args.Error(1)
 }
 
 // ContainerCreate creates a new container based in the given configuration
-func (client *MockClient) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) (types.ContainerCreateResponse, error) {
+func (client *MockClient) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) (container.ContainerCreateCreatedBody, error) {
 	args := client.Mock.Called(ctx, config, hostConfig, networkingConfig, containerName)
-	return args.Get(0).(types.ContainerCreateResponse), args.Error(1)
+	return args.Get(0).(container.ContainerCreateCreatedBody), args.Error(1)
 }
 
 // ContainerDiff shows differences in a container filesystem since it was started
@@ -78,9 +80,9 @@ func (client *MockClient) ContainerExecAttach(ctx context.Context, execID string
 }
 
 // ContainerExecCreate creates a new exec configuration to run an exec process
-func (client *MockClient) ContainerExecCreate(ctx context.Context, container string, config types.ExecConfig) (types.ContainerExecCreateResponse, error) {
+func (client *MockClient) ContainerExecCreate(ctx context.Context, container string, config types.ExecConfig) (types.IDResponse, error) {
 	args := client.Mock.Called(ctx, container, config)
-	return args.Get(0).(types.ContainerExecCreateResponse), args.Error(1)
+	return args.Get(0).(types.IDResponse), args.Error(1)
 }
 
 // ContainerExecInspect returns information about a specific exec process on the docker host
@@ -174,9 +176,9 @@ func (client *MockClient) ContainerStatPath(ctx context.Context, container, path
 }
 
 // ContainerStats returns near realtime stats for a given container
-func (client *MockClient) ContainerStats(ctx context.Context, container string, stream bool) (io.ReadCloser, error) {
+func (client *MockClient) ContainerStats(ctx context.Context, container string, stream bool) (types.ContainerStats, error) {
 	args := client.Mock.Called(ctx, container, stream)
-	return args.Get(0).(io.ReadCloser), args.Error(1)
+	return args.Get(0).(types.ContainerStats), args.Error(1)
 }
 
 // ContainerStart sends a request to the docker daemon to start a container
@@ -204,15 +206,15 @@ func (client *MockClient) ContainerUnpause(ctx context.Context, container string
 }
 
 // ContainerUpdate updates resources of a container
-func (client *MockClient) ContainerUpdate(ctx context.Context, container string, updateConfig container.UpdateConfig) error {
-	args := client.Mock.Called(ctx, container, updateConfig)
-	return args.Error(0)
+func (client *MockClient) ContainerUpdate(ctx context.Context, containerID string, updateConfig container.UpdateConfig) (container.ContainerUpdateOKBody, error) {
+	args := client.Mock.Called(ctx, containerID, updateConfig)
+	return args.Get(0).(container.ContainerUpdateOKBody), args.Error(0)
 }
 
 // ContainerWait pauses execution until a container exits
-func (client *MockClient) ContainerWait(ctx context.Context, container string) (int, error) {
+func (client *MockClient) ContainerWait(ctx context.Context, container string) (int64, error) {
 	args := client.Mock.Called(ctx, container)
-	return args.Int(0), args.Error(1)
+	return args.Get(0).(int64), args.Error(1)
 }
 
 // CopyFromContainer gets the content from the container and returns it as a Reader to manipulate it in the host
@@ -227,10 +229,16 @@ func (client *MockClient) CopyToContainer(ctx context.Context, container, path s
 	return args.Error(0)
 }
 
-// Events returns a stream of events in the daemon in a ReadCloser
-func (client *MockClient) Events(ctx context.Context, options types.EventsOptions) (io.ReadCloser, error) {
+// ContainersPrune requests the daemon to delete unused data
+func (client *MockClient) ContainersPrune(ctx context.Context, cfg types.ContainersPruneConfig) (types.ContainersPruneReport, error) {
+	args := client.Mock.Called(ctx, cfg)
+	return args.Get(0).(types.ContainersPruneReport), args.Error(1)
+}
+
+// Events returns a stream of events in the daemon in a events.Message
+func (client *MockClient) Events(ctx context.Context, options types.EventsOptions) (<-chan events.Message, <-chan error) {
 	args := client.Mock.Called(ctx, options)
-	return args.Get(0).(io.ReadCloser), args.Error(1)
+	return args.Get(0).(chan events.Message), args.Get(1).(chan error)
 }
 
 // ImageBuild sends request to the daemon to build images
@@ -258,15 +266,15 @@ func (client *MockClient) ImageImport(ctx context.Context, source types.ImageImp
 }
 
 // ImageInspectWithRaw returns the image information and it's raw representation
-func (client *MockClient) ImageInspectWithRaw(ctx context.Context, image string, getSize bool) (types.ImageInspect, []byte, error) {
-	args := client.Mock.Called(ctx, image, getSize)
+func (client *MockClient) ImageInspectWithRaw(ctx context.Context, image string) (types.ImageInspect, []byte, error) {
+	args := client.Mock.Called(ctx, image)
 	return args.Get(0).(types.ImageInspect), args.Get(1).([]byte), args.Error(2)
 }
 
 // ImageList returns a list of images in the docker host
-func (client *MockClient) ImageList(ctx context.Context, options types.ImageListOptions) ([]types.Image, error) {
+func (client *MockClient) ImageList(ctx context.Context, options types.ImageListOptions) ([]types.ImageSummary, error) {
 	args := client.Mock.Called(ctx, options)
-	return args.Get(0).([]types.Image), args.Error(1)
+	return args.Get(0).([]types.ImageSummary), args.Error(1)
 }
 
 // ImageLoad loads an image in the docker host from the client host
@@ -309,6 +317,12 @@ func (client *MockClient) ImageSave(ctx context.Context, images []string) (io.Re
 func (client *MockClient) ImageTag(ctx context.Context, image, ref string) error {
 	args := client.Mock.Called(ctx, image, ref)
 	return args.Error(0)
+}
+
+// ImagesPrune requests the daemon to delete unused data
+func (client *MockClient) ImagesPrune(ctx context.Context, cfg types.ImagesPruneConfig) (types.ImagesPruneReport, error) {
+	args := client.Mock.Called(ctx, cfg)
+	return args.Get(0).(types.ImagesPruneReport), args.Error(1)
 }
 
 // Info returns information about the docker server
@@ -359,10 +373,28 @@ func (client *MockClient) NetworkRemove(ctx context.Context, networkID string) e
 	return args.Error(0)
 }
 
+// NetworksPrune requests the daemon to delete unused networks
+func (client *MockClient) NetworksPrune(ctx context.Context, cfg types.NetworksPruneConfig) (types.NetworksPruneReport, error) {
+	args := client.Mock.Called(ctx, cfg)
+	return args.Get(0).(types.NetworksPruneReport), args.Error(1)
+}
+
 // RegistryLogin authenticates the docker server with a given docker registry
-func (client *MockClient) RegistryLogin(ctx context.Context, auth types.AuthConfig) (types.AuthResponse, error) {
+func (client *MockClient) RegistryLogin(ctx context.Context, auth types.AuthConfig) (registry.AuthenticateOKBody, error) {
 	args := client.Mock.Called(ctx, auth)
-	return args.Get(0).(types.AuthResponse), args.Error(1)
+	return args.Get(0).(registry.AuthenticateOKBody), args.Error(1)
+}
+
+// DiskUsage requests the current data usage from the daemon
+func (client *MockClient) DiskUsage(ctx context.Context) (types.DiskUsage, error) {
+	args := client.Mock.Called(ctx)
+	return args.Get(0).(types.DiskUsage), args.Error(1)
+}
+
+// Ping pings the server and return the value of the "Docker-Experimental" header
+func (client *MockClient) Ping(ctx context.Context) (types.Ping, error) {
+	args := client.Mock.Called(ctx)
+	return args.Get(0).(types.Ping), args.Error(1)
 }
 
 // ServerVersion returns information of the docker client and server host
@@ -376,7 +408,7 @@ func (client *MockClient) UpdateClientVersion(v string) {
 }
 
 // VolumeCreate creates a volume in the docker host
-func (client *MockClient) VolumeCreate(ctx context.Context, options types.VolumeCreateRequest) (types.Volume, error) {
+func (client *MockClient) VolumeCreate(ctx context.Context, options volume.VolumesCreateBody) (types.Volume, error) {
 	args := client.Mock.Called(ctx, options)
 	return args.Get(0).(types.Volume), args.Error(1)
 }
@@ -394,13 +426,19 @@ func (client *MockClient) VolumeInspectWithRaw(ctx context.Context, volumeID str
 }
 
 // VolumeList returns the volumes configured in the docker host
-func (client *MockClient) VolumeList(ctx context.Context, filter filters.Args) (types.VolumesListResponse, error) {
+func (client *MockClient) VolumeList(ctx context.Context, filter filters.Args) (volume.VolumesListOKBody, error) {
 	args := client.Mock.Called(ctx, filter)
-	return args.Get(0).(types.VolumesListResponse), args.Error(1)
+	return args.Get(0).(volume.VolumesListOKBody), args.Error(1)
 }
 
 // VolumeRemove removes a volume from the docker host
-func (client *MockClient) VolumeRemove(ctx context.Context, volumeID string) error {
-	args := client.Mock.Called(ctx, volumeID)
+func (client *MockClient) VolumeRemove(ctx context.Context, volumeID string, force bool) error {
+	args := client.Mock.Called(ctx, volumeID, force)
 	return args.Error(0)
+}
+
+// VolumesPrune requests the daemon to delete unused data
+func (client *MockClient) VolumesPrune(ctx context.Context, cfg types.VolumesPruneConfig) (types.VolumesPruneReport, error) {
+	args := client.Mock.Called(ctx, cfg)
+	return args.Get(0).(types.VolumesPruneReport), args.Error(1)
 }

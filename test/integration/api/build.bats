@@ -31,5 +31,5 @@ function teardown() {
 
 	run docker_swarm run --rm test_args
 	[ "$status" -eq 0 ]
-	[[ "$output" == "Hello Args" ]]
+	[[ "$output" == "Hello Args"* ]]
 }
