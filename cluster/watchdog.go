@@ -94,7 +94,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			name = name[1:]
 		}
 
-		if c.NetworkSettings != nil && len(c.NetworkSettings.Networks) > 0 {
+		if c.Info.NetworkSettings != nil && len(c.Info.NetworkSettings.Networks) > 0 {
 			// find an engine to do disconnect work
 			randomEngine, err := w.cluster.RANDOMENGINE()
 			if err != nil {
@@ -105,7 +105,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			}
 
 			clusterNetworks := w.cluster.Networks().Uniq()
-			for networkName, endpoint := range c.NetworkSettings.Networks {
+			for networkName, endpoint := range c.Info.NetworkSettings.Networks {
 				net := clusterNetworks.Get(endpoint.NetworkID)
 				if net != nil && net.Scope == "global" {
 					// record the nework, they should be reconstructed on the new container
