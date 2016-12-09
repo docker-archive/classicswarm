@@ -171,19 +171,19 @@ func (e *Engine) HTTPClientAndScheme() (*http.Client, string, error) {
 // Connect will initialize a connection to the Docker daemon running on the
 // host, gather machine specs (memory, cpu, ...) and monitor state changes.
 func (e *Engine) Connect(config *tls.Config) error {
-	host, _, err := net.SplitHostPort(e.Addr)
-	if err != nil {
-		return err
-	}
-
-	addr, err := net.ResolveIPAddr("ip4", host)
-	if err != nil {
-		return err
-	}
-	e.IP = addr.IP.String()
-
-	// create the HTTP Client and URL
 	if e.httpClient == nil {
+		host, _, err := net.SplitHostPort(e.Addr)
+		if err != nil {
+			return err
+		}
+
+		addr, err := net.ResolveIPAddr("ip4", host)
+		if err != nil {
+			return err
+		}
+		e.IP = addr.IP.String()
+
+		// create the HTTP Client and URL
 		httpClient, url, err := NewHTTPClientTimeout("tcp://"+e.Addr, config, time.Duration(requestTimeout), nil)
 		if err != nil {
 			return err
