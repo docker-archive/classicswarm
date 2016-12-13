@@ -1,12 +1,12 @@
 package swarmclient
 
 import (
-	"github.com/docker/engine-api/client"
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 	"golang.org/x/net/context"
 )
 
-// SwarmAPIClient contains the subset of the engine-api interface relevant to Docker Swarm
+// SwarmAPIClient contains the subset of the docker/api interface relevant to Docker Swarm
 type SwarmAPIClient interface {
 	client.ContainerAPIClient
 	client.ImageAPIClient

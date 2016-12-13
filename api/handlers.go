@@ -15,11 +15,12 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	apitypes "github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
+	dockerfilters "github.com/docker/docker/api/types/filters"
+	typesversions "github.com/docker/docker/api/types/versions"
+	volumetypes "github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/pkg/parsers/kernel"
-	versionpkg "github.com/docker/docker/pkg/version"
-	apitypes "github.com/docker/engine-api/types"
-	containertypes "github.com/docker/engine-api/types/container"
-	dockerfilters "github.com/docker/engine-api/types/filters"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/experimental"
 	"github.com/docker/swarm/version"
@@ -60,7 +61,7 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 
 	// API versions older than 1.22 use DriverStatus and return \b characters in the output
 	status := c.statusHandler.Status()
-	if c.apiVersion != "" && versionpkg.Version(c.apiVersion).LessThan("1.22") {
+	if c.apiVersion != "" && typesversions.LessThan(c.apiVersion, "1.22") {
 		for i := range status {
 			if status[i][0][:1] == " " {
 				status[i][0] = status[i][0][1:]
@@ -181,16 +182,21 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Deprecated "filter" Filter. This is required for backward compability.
+	filterParam := r.Form.Get("filter")
+	if typesversions.LessThan(c.apiVersion, "1.28") && filterParam != "" {
+		filters.Add("reference", filterParam)
+	}
+
 	// TODO: apply node filter in engine?
 	accepteds := filters.Get("node")
 	// this struct helps grouping images
 	// but still keeps their Engine infos as an array.
-	groupImages := make(map[string]apitypes.Image)
+	groupImages := make(map[string]apitypes.ImageSummary)
 	opts := cluster.ImageFilterOptions{
 		ImageListOptions: apitypes.ImageListOptions{
-			All:       boolValue(r, "all"),
-			MatchName: r.FormValue("filter"),
-			Filters:   filters,
+			All:     boolValue(r, "all"),
+			Filters: filters,
 		},
 	}
 	for _, image := range c.cluster.Images().Filter(opts) {
@@ -213,11 +219,11 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			entry.RepoDigests = append(entry.RepoDigests, image.RepoDigests...)
 			groupImages[image.ID] = entry
 		} else {
-			groupImages[image.ID] = image.Image
+			groupImages[image.ID] = image.ImageSummary
 		}
 	}
 
-	images := []apitypes.Image{}
+	images := []apitypes.ImageSummary{}
 
 	for _, image := range groupImages {
 		// de-duplicate RepoTags
@@ -310,7 +316,7 @@ func getVolume(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /volumes
 func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
-	volumesListResponse := apitypes.VolumesListResponse{}
+	volumesListResponse := volumetypes.VolumesListOKBody{}
 
 	for _, volume := range c.cluster.Volumes() {
 		tmp := (*volume).Volume
@@ -651,7 +657,7 @@ func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /volumes/create
 func postVolumesCreate(c *context, w http.ResponseWriter, r *http.Request) {
-	var request apitypes.VolumeCreateRequest
+	var request volumetypes.VolumesCreateBody
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		httpError(w, err.Error(), http.StatusBadRequest)

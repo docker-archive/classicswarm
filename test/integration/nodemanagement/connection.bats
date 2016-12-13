@@ -23,13 +23,13 @@ function teardown() {
 	# run most common container operations
 	for((i=0; i<30; i++)); do
 		# test postContainerCreate
-		docker_swarm run --name="hello$i" hello-world
+		run docker_swarm run --name="hello$i" hello-world
 		# test getContainerJSON
-		docker_swarm inspect "hello$i"
+		run docker_swarm inspect "hello$i"
 		# test proxyContainer
-		docker_swarm logs "hello$i"
+		run docker_swarm logs "hello$i"
 		# test proxyContainerAndForceRefresh
-		docker_swarm stop "hello$i"
+		run docker_swarm rm -f "hello$i"
 	done
 
 	# get connection count

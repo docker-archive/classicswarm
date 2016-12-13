@@ -89,9 +89,8 @@ function teardown() {
 
 	# Fire up a second manager. Ensure it's a replica forwarding to the right primary.
 	swarm_manage --replication --replication-ttl "4s" --advertise 127.0.0.1:$(($SWARM_BASE_PORT + 1)) "$NODE_1_URL"
-	run docker -H ${SWARM_HOSTS[1]} info
-	[[ "${output}" == *"Role: replica"* ]]
-	[[ "${output}" == *"Primary: ${SWARM_HOSTS[0]}"* ]]
+	retry 20 1 eval "docker -H ${SWARM_HOSTS[1]} info | grep -q 'Role: replica'"
+	retry 20 1 eval "docker -H ${SWARM_HOSTS[1]} info | grep -q 'Primary: ${SWARM_HOSTS[0]}'"
 
 	# Kill the leader and ensure the replica takes over.
 	kill "${SWARM_MANAGE_PID[0]}"
