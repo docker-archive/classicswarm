@@ -92,6 +92,7 @@ function teardown() {
 	docker_swarm run -d --name test_container -e constraint:node==node-0 busybox sleep 100
 
 	run docker_swarm network inspect node-0/bridge
+	echo "$output"
 	[[ "${output}" != *"\"Containers\": {}"* ]]
 
 	docker_swarm network disconnect node-0/bridge test_container
