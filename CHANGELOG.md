@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.6-rc1 (2016-12-19)
+
+#### API
+
+- Switch from engine-api to docker/api/type and docker/clients
+- Pass size parameter through on container inspect
+
+#### Scheduler
+
+- Precompile filter regular expression to reduce PU usage
+- Remove setTCPUserTimeout to avoid TCP connection leak
+- Fix network endpoints for rescheduling
+- Give up leadership when manager shuts down
+
+#### MISC
+
+- Migrate documentation to https://github.com/docker/docker.github.io/tree/master/swarm
+- Update Swarm CI to use go 1.7.1
+- support GOARCH to be able to build for other architectures
+- Send Swarm logs to stdout
+
 ## 1.2.5 (2016-08-18)
 
 #### Scheduler
