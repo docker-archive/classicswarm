@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/pkg/discovery"
 	kvdiscovery "github.com/docker/docker/pkg/discovery/kv"
 	"github.com/docker/leadership"
+	"github.com/docker/libkv/store"
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos"
@@ -52,7 +53,7 @@ type statusHandler struct {
 func (h *statusHandler) Status() [][2]string {
 	var status [][2]string
 
-	if h.candidate != nil && !h.candidate.IsLeader() {
+	if h.candidate != nil && !h.candidate.IsLeader() && h.follower != nil {
 		if h.follower.Leader() == h.addr {
 			status = [][2]string{
 				{"Role", "primary"},
@@ -139,48 +140,50 @@ func getDiscoveryOpt(c *cli.Context) map[string]string {
 	return options
 }
 
-func getCandidateAndFollower(discovery discovery.Backend, addr string, leaderTTL time.Duration) (*leadership.Candidate, *leadership.Follower) {
-	kvDiscovery, ok := discovery.(*kvdiscovery.Discovery)
-	if !ok {
-		log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
-	}
-	client := kvDiscovery.Store()
-	p := path.Join(kvDiscovery.Prefix(), leaderElectionPath)
-
-	candidate := leadership.NewCandidate(client, p, addr, leaderTTL)
-	follower := leadership.NewFollower(client, p)
-	return candidate, follower
-}
-
-func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, candidate *leadership.Candidate, follower *leadership.Follower, addr string, tlsConfig *tls.Config) {
-	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower, addr}, c.GlobalBool("debug"), c.Bool("cors"))
+func setupReplication(c *cli.Context, cluster cluster.Cluster, client store.Store, keyPath string, server *api.Server, candidate *leadership.Candidate, addr string, tlsConfig *tls.Config) {
+	handler := &statusHandler{cluster, candidate, nil, addr}
+	primary := api.NewPrimary(cluster, tlsConfig, handler, c.GlobalBool("debug"), c.Bool("cors"))
 	replica := api.NewReplica(primary, tlsConfig)
 
 	go func() {
 		for {
-			run(cluster, candidate, follower, server, primary, replica, addr)
-			time.Sleep(defaultRecoverTime)
+			err := run(cluster, client, keyPath, handler, server, primary, replica, addr)
+			if err != nil {
+				time.Sleep(defaultRecoverTime)
+			}
 		}
 	}()
 
 	server.SetHandler(primary)
 }
 
-func run(cl cluster.Cluster, candidate *leadership.Candidate, follower *leadership.Follower, server *api.Server, primary *mux.Router, replica *api.Replica, addr string) {
+func run(cl cluster.Cluster, client store.Store, keyPath string, handler *statusHandler, server *api.Server, primary *mux.Router, replica *api.Replica, addr string) error {
+	candidate := handler.candidate
 	electedCh, candidateErrCh := candidate.RunForElection()
+
+	follower := leadership.NewFollower(client, keyPath)
+	defer follower.Stop()
+	handler.follower = follower
 	leaderCh, followerErrCh := follower.FollowElection()
+
 	var watchdog *cluster.Watchdog
+	wasLeader := false
 	for {
 		select {
 		case isElected := <-electedCh:
 			if isElected {
 				log.Info("Leader Election: Cluster leadership acquired")
+				wasLeader = true
 				watchdog = cluster.NewWatchdog(cl)
 				server.SetHandler(primary)
 			} else {
-				log.Info("Leader Election: Cluster leadership lost")
 				cl.UnregisterEventHandler(watchdog)
 				server.SetHandler(replica)
+				if wasLeader {
+					log.Info("Leader Election: Cluster leadership lost")
+					candidate.Stop()
+					return nil
+				}
 			}
 
 		case leader := <-leaderCh:
@@ -198,11 +201,11 @@ func run(cl cluster.Cluster, candidate *leadership.Candidate, follower *leadersh
 
 		case err := <-candidateErrCh:
 			log.Errorf("Error from leadership election candidate: %s", err)
-			return
+			return err
 
 		case err := <-followerErrCh:
 			log.Errorf("Error from leadership election follower: %s", err)
-			return
+			return err
 		}
 	}
 }
@@ -321,12 +324,19 @@ func manage(c *cli.Context) {
 			log.Fatalf("--replication-ttl should be a positive number")
 		}
 
-		candidate, follower := getCandidateAndFollower(discovery, addr, leaderTTL)
+		kvDiscovery, ok := discovery.(*kvdiscovery.Discovery)
+		if !ok {
+			log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
+		}
+		client := kvDiscovery.Store()
+		keyPath := path.Join(kvDiscovery.Prefix(), leaderElectionPath)
+
+		candidate := leadership.NewCandidate(client, keyPath, addr, leaderTTL)
 		// Make sure we resign the leadership position when we exit
 		// if necessary.
 		defer candidate.Resign()
 
-		setupReplication(c, cl, server, candidate, follower, addr, tlsConfig)
+		setupReplication(c, cl, client, keyPath, server, candidate, addr, tlsConfig)
 	} else {
 		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil, ""}, c.GlobalBool("debug"), c.Bool("cors")))
 		cluster.NewWatchdog(cl)
