@@ -968,6 +968,31 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 	return nil
 }
 
+// RefreshEngines refreshes all containers in the cluster
+func (c *Cluster) RefreshEngines() error {
+	for _, e := range c.engines {
+		err := e.RefreshContainers(true)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RefreshEngine refreshes all containers in a specific engine
+func (c *Cluster) RefreshEngine(hostname string) error {
+	for _, e := range c.engines {
+		if e.Name == hostname {
+			err := e.RefreshContainers(true)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("no engine found with hostname %s", hostname)
+}
+
 // TagImage tags an image
 func (c *Cluster) TagImage(IDOrName string, ref string, force bool) error {
 	c.RLock()

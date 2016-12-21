@@ -31,6 +31,11 @@ import (
 // APIVERSION is the API version supported by swarm manager
 const APIVERSION = "1.22"
 
+var (
+	ShouldRefreshOnNodeFilter  = false
+	ContainerNameRefreshFilter = ""
+)
+
 // GET /info
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := apitypes.Info{
@@ -392,6 +397,28 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	for _, value := range filters.Get("status") {
 		if value == "exited" {
 			all = true
+		}
+	}
+
+	if ShouldRefreshOnNodeFilter {
+		nodes := filters.Get("node")
+		for _, node := range nodes {
+			err := c.cluster.RefreshEngine(node)
+			if err != nil {
+				log.Debugf("could not match node filter for %s: %s", node, err)
+			}
+		}
+	}
+	if ContainerNameRefreshFilter != "" {
+		names := filters.Get("name")
+		for _, name := range names {
+			if name == ContainerNameRefreshFilter {
+				err := c.cluster.RefreshEngines()
+				if err != nil {
+					log.Debugf("names filter detected but unable to refresh all engines: %s", err)
+				}
+				break
+			}
 		}
 	}
 
