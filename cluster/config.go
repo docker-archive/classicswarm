@@ -71,6 +71,7 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 	var (
 		affinities         []string
 		constraints        []string
+		whitelists         []string
 		reschedulePolicies []string
 		env                []string
 	)
@@ -90,12 +91,17 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 		json.Unmarshal([]byte(labels), &constraints)
 	}
 
+	// parse whitelists from labels (ex. docker run --label 'com.docker.swarm.whitelists=["node==node1,node2,node3"]')
+	if labels, ok := c.Labels[SwarmLabelNamespace+".whitelists"]; ok {
+		json.Unmarshal([]byte(labels), &whitelists)
+	}
+
 	// parse reschedule policy from labels (ex. docker run --label 'com.docker.swarm.reschedule-policies=["on-node-failure"]')
 	if labels, ok := c.Labels[SwarmLabelNamespace+".reschedule-policies"]; ok {
 		json.Unmarshal([]byte(labels), &reschedulePolicies)
 	}
 
-	// parse affinities/constraints/reschedule policies from env (ex. docker run -e affinity:container==redis -e affinity:image==nginx -e constraint:region==us-east -e constraint:storage==ssd -e reschedule:off)
+	// parse affinities/constraints/whitelists/reschedule policies from env (ex. docker run -e affinity:container==redis -e affinity:image==nginx -e constraint:region==us-east -e constraint:storage==ssd -e reschedule:off)
 	for _, e := range c.Env {
 		if ok, key, value := parseEnv(e); ok && key == "affinity" {
 			affinities = append(affinities, value)
@@ -103,12 +109,14 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 			constraints = append(constraints, value)
 		} else if ok && key == "reschedule" {
 			reschedulePolicies = append(reschedulePolicies, value)
+		} else if ok && key == "whitelist" {
+			whitelists = append(whitelists, value)
 		} else {
 			env = append(env, e)
 		}
 	}
 
-	// remove affinities/constraints/reschedule policies from env
+	// remove affinities/constraints/whitelists/reschedule policies from env
 	c.Env = env
 
 	// store affinities in labels
@@ -129,6 +137,13 @@ func BuildContainerConfig(c container.Config, h container.HostConfig, n network.
 	if len(reschedulePolicies) > 0 {
 		if labels, err := json.Marshal(reschedulePolicies); err == nil {
 			c.Labels[SwarmLabelNamespace+".reschedule-policies"] = string(labels)
+		}
+	}
+
+	// store whitelists in labels
+	if len(whitelists) > 0 {
+		if labels, err := json.Marshal(whitelists); err == nil {
+			c.Labels[SwarmLabelNamespace+".whitelists"] = string(labels)
 		}
 	}
 
@@ -164,6 +179,39 @@ func (c *ContainerConfig) Affinities() []string {
 // Constraints returns all the constraints from the ContainerConfig
 func (c *ContainerConfig) Constraints() []string {
 	return c.extractExprs("constraints")
+}
+
+// Whitelists returns all the whitelists from the ContainerConfig
+func (c *ContainerConfig) Whitelists() []string {
+	return c.extractExprs("whitelists")
+}
+
+// AddWhitelist to config
+func (c *ContainerConfig) AddWhitelist(whitelist string) error {
+	whitelists := c.extractExprs("whitelists")
+	whitelists = append(whitelists, whitelist)
+	labels, err := json.Marshal(whitelists)
+	if err != nil {
+		return err
+	}
+	c.Labels[SwarmLabelNamespace+".whitelists"] = string(labels)
+	return nil
+}
+
+// RemoveWhitelist from config
+func (c *ContainerConfig) RemoveWhitelist(whitelist string) error {
+	whitelists := []string{}
+	for _, a := range c.extractExprs("whitelists") {
+		if a != whitelist {
+			whitelists = append(whitelists, a)
+		}
+	}
+	labels, err := json.Marshal(whitelists)
+	if err != nil {
+		return err
+	}
+	c.Labels[SwarmLabelNamespace+".whitelists"] = string(labels)
+	return nil
 }
 
 // AddAffinity to config
