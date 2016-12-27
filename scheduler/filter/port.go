@@ -64,7 +64,7 @@ func (p *PortFilter) filterBridge(config *cluster.ContainerConfig, nodes []*node
 
 func (p *PortFilter) portAlreadyExposed(node *node.Node, requestedPort string) bool {
 	for _, c := range node.Containers {
-		if c.Info.HostConfig != nil && c.Info.HostConfig.NetworkMode == "host" {
+		if c.Info.HostConfig != nil && c.Info.HostConfig.NetworkMode == "host" && (c.Info.State.Running || c.Info.State.Restarting) {
 			for port := range c.Info.Config.ExposedPorts {
 				if string(port) == requestedPort {
 					return true
@@ -80,16 +80,12 @@ func (p *PortFilter) portAlreadyInUse(node *node.Node, requested nat.PortBinding
 		// HostConfig.PortBindings contains the requested ports.
 		// NetworkSettings.Ports contains the actual ports.
 		//
-		// We have to check both because:
-		// 1/ If the port was not specifically bound (e.g. -p 80), then
-		//    HostConfig.PortBindings.HostPort will be empty and we have to check
-		//    NetworkSettings.Port.HostPort to find out which port got dynamically
-		//    allocated.
-		// 2/ If the port was bound (e.g. -p 80:80) but the container is stopped,
-		//    NetworkSettings.Port will be null and we have to check
-		//    HostConfig.PortBindings to find out the mapping.
+		// If the port was not specifically bound (e.g. -p 80), then
+		// HostConfig.PortBindings.HostPort will be empty and we have to check
+		// NetworkSettings.Port.HostPort to find out which port got dynamically
+		// allocated.
 
-		if (c.Info.HostConfig != nil && p.compare(requested, c.Info.HostConfig.PortBindings)) || (c.Info.NetworkSettings != nil && p.compare(requested, c.Info.NetworkSettings.Ports)) {
+		if c.Info.HostConfig != nil && c.Info.NetworkSettings != nil && p.compare(requested, c.Info.NetworkSettings.Ports) {
 			return true
 		}
 	}
