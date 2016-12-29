@@ -1,8 +1,6 @@
 package cluster
 
 import (
-	"io"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/swarm/swarmclient"
@@ -38,10 +36,6 @@ func (em *EventsMonitor) Start(ec chan error) {
 					return
 				}
 			case err := <-errStream:
-				if err == io.EOF {
-					ec <- nil
-					return
-				}
 				ec <- err
 				return
 			case <-em.stopChan:
