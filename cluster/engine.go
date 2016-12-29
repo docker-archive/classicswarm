@@ -211,7 +211,6 @@ func (e *Engine) Connect(config *tls.Config) error {
 func (e *Engine) StartMonitorEvents() {
 	log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Debug("Start monitoring events")
 	ec := make(chan error)
-	e.eventsMonitor.Start(ec)
 
 	go func() {
 		if err := <-ec; err != nil {
@@ -223,6 +222,8 @@ func (e *Engine) StartMonitorEvents() {
 		}
 		close(ec)
 	}()
+
+	e.eventsMonitor.Start(ec)
 }
 
 // ConnectWithClient is exported
