@@ -178,7 +178,7 @@ func (e *Engine) Connect(config *tls.Config) error {
 		return err
 	}
 
-	addr, err := net.ResolveIPAddr("ip4", host)
+	addr, err := net.ResolveIPAddr("ip", host)
 	if err != nil {
 		return err
 	}

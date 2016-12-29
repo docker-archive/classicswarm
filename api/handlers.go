@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
@@ -499,7 +500,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		tmp.Ports = make([]apitypes.Port, len(container.Ports))
 		for i, port := range container.Ports {
 			tmp.Ports[i] = port
-			if port.IP == "0.0.0.0" {
+			if ip := net.ParseIP(port.IP); ip != nil && ip.IsUnspecified() {
 				tmp.Ports[i].IP = container.Engine.IP
 			}
 		}
@@ -558,10 +559,19 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// insert Node field
-	data = bytes.Replace(data, []byte("\"Name\":\"/"), []byte(fmt.Sprintf("\"Node\":%s,\"Name\":\"/", n)), -1)
+	data = bytes.Replace(data, []byte(`"Name":"/`), []byte(fmt.Sprintf(`"Node":%s,"Name":"/`, n)), -1)
 
 	// insert node IP
-	data = bytes.Replace(data, []byte("\"HostIp\":\"0.0.0.0\""), []byte(fmt.Sprintf("\"HostIp\":%q", container.Engine.IP)), -1)
+	if engineIP := net.ParseIP(container.Engine.IP); engineIP != nil {
+		var orig string
+		if engineIP.To4() != nil {
+			orig = fmt.Sprintf(`"HostIp":"%s"`, net.IPv4zero.String())
+		} else {
+			orig = fmt.Sprintf(`"HostIp":"%s"`, net.IPv6zero.String())
+		}
+		replace := fmt.Sprintf(`"HostIp":"%s"`, container.Engine.IP)
+		data = bytes.Replace(data, []byte(orig), []byte(replace), -1)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
