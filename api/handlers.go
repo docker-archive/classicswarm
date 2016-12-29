@@ -970,15 +970,13 @@ func ping(c *context, w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /networks/{networkid:.*}/disconnect
-func proxyNetworkDisconnect(c *context, w http.ResponseWriter, r *http.Request) {
+func networkDisconnect(c *context, w http.ResponseWriter, r *http.Request) {
 	var networkid = mux.Vars(r)["networkid"]
 	network := c.cluster.Networks().Uniq().Get(networkid)
 	if network == nil {
 		httpError(w, fmt.Sprintf("No such network: %s", networkid), http.StatusNotFound)
 		return
 	}
-	// Set the network ID in the proxied URL path.
-	r.URL.Path = strings.Replace(r.URL.Path, networkid, network.ID, 1)
 
 	// make a copy of r.Body
 	buf, _ := ioutil.ReadAll(r.Body)
@@ -994,35 +992,37 @@ func proxyNetworkDisconnect(c *context, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var engine *cluster.Engine
-
-	if disconnect.Force && network.Scope == "global" {
-		randomEngine, err := c.cluster.RANDOMENGINE()
-		if err != nil {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		engine = randomEngine
-	} else {
-		container := c.cluster.Container(disconnect.Container)
-		if container == nil {
-			httpError(w, fmt.Sprintf("No such container: %s", disconnect.Container), http.StatusNotFound)
-			return
-		}
-		engine = container.Engine
+	container := c.cluster.Container(disconnect.Container)
+	if container == nil {
+		httpError(w, fmt.Sprintf("No such container: %s", disconnect.Container), http.StatusNotFound)
+		return
 	}
+	engine := container.Engine
 
-	cb := func(resp *http.Response) {
-		// force fresh networks on this engine
-		engine.RefreshNetworks()
-	}
-
-	// request is forwarded to the container's address
-	err := proxyAsync(engine, w, r, cb)
-	engine.CheckConnectionErr(err)
+	// First try to disconnect the container on its associated engine, and
+	// then try a random engine if we can't connect to that engine. We
+	// try the associated engine first because on 1.12+ clusters, the
+	// network may not be known on all nodes.
+	err := engine.NetworkDisconnect(container, network, disconnect.Force)
 	if err != nil {
+		if cluster.IsConnectionError(err) && disconnect.Force && network.Scope == "global" {
+			log.Warnf("Could not connect to engine %s: %s, trying to disconnect %s from %s on a random engine", engine.Name, err, disconnect.Container, network.Name)
+			randomEngine, randomEngineErr := c.cluster.RANDOMENGINE()
+			if randomEngineErr != nil {
+				log.Warnf("Could not get a random engine: %s", randomEngineErr)
+				httpError(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			err = randomEngine.NetworkDisconnect(container, network, disconnect.Force)
+			if err != nil {
+				httpError(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
 		httpError(w, err.Error(), http.StatusNotFound)
+		return
 	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // POST /networks/{networkid:.*}/connect
