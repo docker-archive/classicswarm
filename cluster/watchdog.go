@@ -134,6 +134,13 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			endpointsConfig[k] = v
 		}
 		c.Config.NetworkingConfig.EndpointsConfig = endpointsConfig
+		
+		//For volume-from case, ignore it
+		if c.Config.HostConfig.VolumesFrom != nil {
+			log.Warnf("Set container %s volume-from attribute to nil for rescheduling", c.Info.Name)
+			c.Config.HostConfig.VolumesFrom = nil
+		}
+
 		newContainer, err := w.cluster.CreateContainer(c.Config, c.Info.Name, nil)
 		if err != nil {
 			log.Errorf("Failed to reschedule container %s: %v", c.ID, err)
