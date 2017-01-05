@@ -25,9 +25,11 @@ func NewEventsMonitor(cli swarmclient.SwarmAPIClient, handler func(msg events.Me
 // Start starts the EventsMonitor
 func (em *EventsMonitor) Start(ec chan error) {
 	em.stopChan = make(chan struct{})
-	responseStream, errStream := em.cli.Events(context.Background(), types.EventsOptions{})
+	ctx, cancel := context.WithCancel(context.Background())
+	responseStream, errStream := em.cli.Events(ctx, types.EventsOptions{})
 
 	go func() {
+		defer cancel()
 		for {
 			select {
 			case event := <-responseStream:
