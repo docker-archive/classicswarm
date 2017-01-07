@@ -38,6 +38,7 @@ function teardown() {
 	[ "$status" -ne 0 ]
 
 	run docker_swarm network inspect node-0/bridge
+	echo "$output"
 	[[ "${output}" != *"\"Containers\": {}"* ]]
 
 	diff <(docker_swarm network inspect node-0/bridge) <(docker -H ${HOSTS[0]} network inspect bridge)
