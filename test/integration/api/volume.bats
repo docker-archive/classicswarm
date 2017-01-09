@@ -24,6 +24,7 @@ function teardown() {
 	docker_swarm run -d -v=/tmp busybox true
 
 	run docker_swarm volume ls
+	echo "$output"
 	[ "${#lines[@]}" -eq 3 ]
 
 	# create a named volume on all nodes to test --filter
@@ -95,6 +96,7 @@ function teardown() {
 
 	run docker_swarm volume ls -q
 	volume=${output}
+	echo "$output"
 	[ "${#lines[@]}" -eq 1 ]
 
 	# check that removing an attached volume is an error

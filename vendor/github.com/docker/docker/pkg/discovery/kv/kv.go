@@ -120,11 +120,13 @@ func (s *Discovery) watchOnce(stopCh <-chan struct{}, watchCh <-chan []*store.KV
 				addrs = append(addrs, string(pair.Value))
 			}
 
+			logrus.WithField("discovery", s.backend).Debugf("addresses include %s", strings.Join(addrs, ","))
 			entries, err := discovery.CreateEntries(addrs)
 			if err != nil {
 				errCh <- err
 			} else {
 				discoveryCh <- entries
+				logrus.WithField("discovery", s.backend).Debugf("pushing %d nodes to discovery channel", len(entries))
 			}
 		case <-stopCh:
 			// We were requested to stop watching.
