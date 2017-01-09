@@ -25,6 +25,17 @@ function teardown() {
 
 	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 3 ]
+
+	# create a named volume on all nodes to test --filter
+	docker_swarm volume create --name=testsubstrvol
+
+	# filter for a named volume using a name substring
+	run docker_swarm volume ls --filter name=substr
+	[ "$status" -eq 0 ]
+	# expect 3 lines: the header and one volume per node
+	[ "${#lines[@]}" -eq 3 ] 
+	[[ "${lines[1]}" == *"testsubstrvol"* ]]
+	[[ "${lines[2]}" == *"testsubstrvol"* ]]
 }
 
 @test "docker volume inspect" {

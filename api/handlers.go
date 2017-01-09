@@ -318,7 +318,29 @@ func getVolume(c *context, w http.ResponseWriter, r *http.Request) {
 func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	volumesListResponse := volumetypes.VolumesListOKBody{}
 
+	// Parse filters
+	filters, err := dockerfilters.FromParam(r.URL.Query().Get("filters"))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	names := filters.Get("name")
 	for _, volume := range c.cluster.Volumes() {
+		// Check if the volume matches any name filters
+		found := false
+		for _, name := range names {
+			if strings.Contains(volume.Name, name) {
+				found = true
+				break
+			}
+		}
+		if len(names) > 0 && !found {
+			// Do not include this volume in the response if it doesn't match
+			// a name filter, if any exist.
+			continue
+		}
+
 		tmp := (*volume).Volume
 		if tmp.Driver == "local" {
 			tmp.Name = volume.Engine.Name + "/" + volume.Name
