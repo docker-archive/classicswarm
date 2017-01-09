@@ -406,6 +406,10 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 	for {
 		select {
 		case entries := <-ch:
+			log.Debugf("Discovery update")
+			for _, entry := range entries {
+				log.Debugf("Discovery entry: %s", entry.String())
+			}
 			added, removed := c.discoveryEntries.Diff(entries)
 			c.discoveryEntries = entries
 
