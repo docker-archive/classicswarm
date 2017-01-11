@@ -1,9 +1,11 @@
 package cluster
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,28 +13,64 @@ func TestNetworksFilter(t *testing.T) {
 	engine := &Engine{ID: "id"}
 	networks := Networks{
 		{types.NetworkResource{
-			ID:   "ababababab",
-			Name: "something",
+			ID:     "ababababab",
+			Name:   "something",
+			Driver: "overlay",
+			Labels: map[string]string{"testlabel": "testvalue1"},
 		}, engine},
 		{types.NetworkResource{
-			ID:   "aaaaaaaaaa1",
-			Name: "network_name",
+			ID:     "aaaaaaaaaa1",
+			Name:   "network_name",
+			Driver: "bridge",
+			Labels: map[string]string{"testlabel": "testvalue2"},
 		}, engine},
 		{types.NetworkResource{
-			ID:   "bbbbbbbbbb",
-			Name: "somethingelse",
+			ID:     "bbbbbbbbbb",
+			Name:   "somethingelse",
+			Driver: "overlay",
+			Labels: map[string]string{"testlabel": "testvalue3"},
 		}, engine},
 		{types.NetworkResource{
-			ID:   "aaaaaaaaa2",
-			Name: "foo",
+			ID:     "aaaaaaaaaa2",
+			Name:   "host",
+			Driver: "bridge",
 		}, engine},
 	}
 
-	filtered := networks.Filter([]string{"network_name"}, []string{"abababab"}, nil)
-	assert.Equal(t, len(filtered), 2)
-	for _, network := range filtered {
-		assert.True(t, network.ID == "aaaaaaaaaa1" || network.ID == "ababababab")
+	checkNetworks := func(t *testing.T, filtered Networks, expectedIDs ...string) {
+		sort.Strings(expectedIDs)
+		foundIDs := []string{}
+		for _, network := range filtered {
+			foundIDs = append(foundIDs, network.ID)
+		}
+		sort.Strings(foundIDs)
+		assert.Equal(t, expectedIDs, foundIDs)
 	}
+
+	filter := filters.NewArgs()
+	filter.Add("name", "network_name")
+	filter.Add("id", "abababab")
+	checkNetworks(t, networks.Filter(filter), "aaaaaaaaaa1", "ababababab")
+
+	filter = filters.NewArgs()
+	filter.Add("type", "builtin")
+	checkNetworks(t, networks.Filter(filter), "aaaaaaaaaa2")
+
+	filter = filters.NewArgs()
+	filter.Add("type", "custom")
+	checkNetworks(t, networks.Filter(filter), "aaaaaaaaaa1", "ababababab", "bbbbbbbbbb")
+
+	filter = filters.NewArgs()
+	filter.Add("driver", "overlay")
+	checkNetworks(t, networks.Filter(filter), "ababababab", "bbbbbbbbbb")
+
+	filter = filters.NewArgs()
+	filter.Add("label", "testlabel")
+	checkNetworks(t, networks.Filter(filter), "aaaaaaaaaa1", "ababababab", "bbbbbbbbbb")
+
+	filter = filters.NewArgs()
+	filter.Add("label", "testlabel=testvalue1")
+	checkNetworks(t, networks.Filter(filter), "ababababab")
 }
 
 func TestNetworkUniq(t *testing.T) {
