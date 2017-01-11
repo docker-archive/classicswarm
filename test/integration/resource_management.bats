@@ -116,7 +116,10 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage --strategy binpack ${HOSTS[0]},${HOSTS[1]}
 
-	docker_swarm run --name container_test1 --cpu-shares 1 busybox sh
+	run docker_swarm run --name container_test1 --cpu-shares 1 busybox sh
+	echo "$output"
+	[ "$status" -eq 0 ]
+
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved CPUs: 1"* ]]
