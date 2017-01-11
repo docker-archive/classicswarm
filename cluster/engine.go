@@ -1250,8 +1250,13 @@ func (e *Engine) handler(msg events.Message) error {
 			action = "health_status"
 		}
 		switch action {
+		case "commit":
+			// commit a container will generate a new image
+			e.RefreshImages()
 		case "die", "kill", "oom", "pause", "start", "restart", "stop", "unpause", "rename", "update", "health_status":
 			e.refreshContainer(msg.ID, true)
+		case "top", "resize", "export", "exec_create", "exec_start", "exec_detach", "attach", "detach", "extract-to-dir", "copy", "archive-path":
+			// no action needed
 		default:
 			e.refreshContainer(msg.ID, false)
 		}
@@ -1275,6 +1280,8 @@ func (e *Engine) handler(msg events.Message) error {
 			e.refreshContainer(msg.ID, true)
 			e.RefreshVolumes()
 			e.RefreshNetworks()
+		case "top", "resize", "export", "exec_create", "exec_start", "attach", "extract-to-dir", "copy", "archive-path":
+			// no action needed
 		default:
 			// Otherwise, do a "soft" refresh of the container.
 			e.refreshContainer(msg.ID, false)
