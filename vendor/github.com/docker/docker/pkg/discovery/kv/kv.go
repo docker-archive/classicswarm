@@ -109,18 +109,22 @@ func (s *Discovery) watchOnce(stopCh <-chan struct{}, watchCh <-chan []*store.KV
 		select {
 		case pairs := <-watchCh:
 			if pairs == nil {
+				logrus.WithField("discovery", s.backend).Debugf("watchOnce exiting")
 				return true
 			}
 
-			logrus.WithField("discovery", s.backend).Debugf("Watch triggered with %d nodes", len(pairs))
-
 			// Convert `KVPair` into `discovery.Entry`.
-			addrs := make([]string, len(pairs))
+			addrs := []string{}
 			for _, pair := range pairs {
-				addrs = append(addrs, string(pair.Value))
+				// ignore empty address
+				if addr := strings.TrimSpace(string(pair.Value)); len(addr) > 0 {
+					addrs = append(addrs, addr)
+				}
 			}
 
-			logrus.WithField("discovery", s.backend).Debugf("addresses include %s", strings.Join(addrs, ","))
+			logrus.WithField("discovery", s.backend).Debugf("Watch triggered with %d nodes", len(addrs))
+			logrus.WithField("discovery", s.backend).Debugf("nodes: %s", strings.Join(addrs, ","))
+
 			entries, err := discovery.CreateEntries(addrs)
 			if err != nil {
 				errCh <- err
@@ -150,10 +154,12 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 			// Create the path to watch if it does not exist yet
 			exists, err := s.store.Exists(s.path)
 			if err != nil {
+				logrus.WithField("discovery", s.backend).Errorf("watch error: %v", err)
 				errCh <- err
 			}
 			if !exists {
 				if err := s.store.Put(s.path, []byte(""), &store.WriteOptions{IsDir: true}); err != nil {
+					logrus.WithField("discovery", s.backend).Errorf("watch error: %v", err)
 					errCh <- err
 				}
 			}
@@ -171,6 +177,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 			// If we get here it means the store watch channel was closed. This
 			// is unexpected so let's retry later.
 			errCh <- fmt.Errorf("Unexpected watch error")
+			logrus.WithField("discovery", s.backend).Errorf("watch error: %v, will retry after %s", err, s.heartbeat)
 			time.Sleep(s.heartbeat)
 		}
 	}()
