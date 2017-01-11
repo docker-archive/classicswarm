@@ -44,7 +44,9 @@ function teardown() {
 	swarm_manage
 
 	# run
-	docker_swarm run -d -v=/tmp -e constraint:node==node-0 busybox true
+	run docker_swarm run -d -v=/tmp -e constraint:node==node-0 busybox true
+	echo "$output"
+	[ "$status" -eq 0 ]
 
 	run docker_swarm volume ls -q
 	echo "$output"

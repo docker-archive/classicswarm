@@ -191,7 +191,7 @@ function teardown() {
 	docker_swarm network create -d bridge node-1/testn
 
 	run docker_swarm run -d --net node-1/testn --name test_container busybox sleep 100
-	[ "$status" -ne 0 ]
+	[ "$status" -eq 0 ]
 
 	run docker_swarm network inspect testn
 	echo "$output"
