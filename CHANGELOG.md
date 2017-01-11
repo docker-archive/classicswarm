@@ -1,21 +1,33 @@
 # Changelog
 
-## 1.2.6-rc1 (2016-12-19)
+## 1.2.6-rc2 (2016-01-11)
 
 #### API
 
+- Support name filter in volume list
+- Support more filters in network list operations
+- Support node whitelist filter
 - Switch from engine-api to docker/api/type and docker/clients
 - Pass size parameter through on container inspect
 
 #### Scheduler
 
+- For container network disconnect requests, tryworker engine with the container first
 - Precompile filter regular expression to reduce PU usage
 - Remove setTCPUserTimeout to avoid TCP connection leak
 - Fix network endpoints for rescheduling
 - Give up leadership when manager shuts down
 
+#### Cluster Management
+
+- Support event top, resize, commit and so on to avoid unnecessary refreshing
+- Sequentialize event monitor to an engine to avoid data race
+- When an active engine sends EOF on event stream, restart event monitor so we don't lose events 
+- When proxying a request, cancel request if user connection is broken
+
 #### MISC
 
+- Update go-zookeeper to fix a lock spin problem
 - Migrate documentation to https://github.com/docker/docker.github.io/tree/master/swarm
 - Update Swarm CI to use go 1.7.1
 - support GOARCH to be able to build for other architectures
