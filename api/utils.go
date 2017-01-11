@@ -103,23 +103,48 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 	r.URL.Host = engine.Addr
 
 	log.WithFields(log.Fields{"method": r.Method, "url": r.URL}).Debug("Proxy request")
-	resp, err := client.Do(r)
-	if err != nil {
+
+	requestDone := make(chan struct{})
+	go func() {
+		defer close(requestDone)
+		var resp *http.Response
+		resp, err = client.Do(r)
+		if err != nil {
+			return
+		}
+		// cleanup
+		defer resp.Body.Close()
+
+		copyHeader(w.Header(), resp.Header)
+		w.WriteHeader(resp.StatusCode)
+		io.Copy(NewWriteFlusher(w), resp.Body)
+
+		if callback != nil {
+			callback(resp)
+		}
+	}()
+
+	type requestCanceler interface {
+		CancelRequest(*http.Request)
+	}
+
+	var closeNotify <-chan bool
+	if closeNotifier, ok := w.(http.CloseNotifier); ok {
+		closeNotify = closeNotifier.CloseNotify()
+	}
+	select {
+	case <-closeNotify:
+		log.WithFields(log.Fields{"method": r.Method, "url": r.URL}).Debug("user connection closed")
+		if rc, ok := client.Transport.(requestCanceler); ok {
+			rc.CancelRequest(r)
+			log.WithFields(log.Fields{"method": r.Method, "url": r.URL}).Debug("request cancelled")
+		}
+		// wait for request finish
+		<-requestDone
+		return err
+	case <-requestDone:
 		return err
 	}
-
-	copyHeader(w.Header(), resp.Header)
-	w.WriteHeader(resp.StatusCode)
-	io.Copy(NewWriteFlusher(w), resp.Body)
-
-	if callback != nil {
-		callback(resp)
-	}
-
-	// cleanup
-	resp.Body.Close()
-
-	return nil
 }
 
 func proxy(engine *cluster.Engine, w http.ResponseWriter, r *http.Request) error {
