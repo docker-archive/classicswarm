@@ -1,8 +1,6 @@
 package cluster
 
 import (
-	"io"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/swarm/swarmclient"
@@ -27,9 +25,11 @@ func NewEventsMonitor(cli swarmclient.SwarmAPIClient, handler func(msg events.Me
 // Start starts the EventsMonitor
 func (em *EventsMonitor) Start(ec chan error) {
 	em.stopChan = make(chan struct{})
-	responseStream, errStream := em.cli.Events(context.Background(), types.EventsOptions{})
+	ctx, cancel := context.WithCancel(context.Background())
+	responseStream, errStream := em.cli.Events(ctx, types.EventsOptions{})
 
 	go func() {
+		defer cancel()
 		for {
 			select {
 			case event := <-responseStream:
@@ -38,10 +38,6 @@ func (em *EventsMonitor) Start(ec chan error) {
 					return
 				}
 			case err := <-errStream:
-				if err == io.EOF {
-					ec <- nil
-					return
-				}
 				ec <- err
 				return
 			case <-em.stopChan:

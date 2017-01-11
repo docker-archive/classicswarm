@@ -214,6 +214,7 @@ func (e *Engine) StartMonitorEvents() {
 
 	go func() {
 		if err := <-ec; err != nil {
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).WithError(err).Error("error monitoring events, will restart")
 			if !strings.Contains(err.Error(), "EOF") {
 				// failing node reconnect should use back-off strategy
 				<-e.refreshDelayer.Wait(e.getFailureCount())
@@ -890,11 +891,6 @@ func (e *Engine) refreshLoop() {
 			lastSpecUpdatedAt = time.Now()
 		}
 
-		if !healthy {
-			e.eventsMonitor.Stop()
-			e.StartMonitorEvents()
-		}
-
 		err = e.RefreshContainers(false)
 		if err == nil {
 			// Do not check error as older daemon doesn't support this call
@@ -1407,6 +1403,7 @@ func (e *Engine) NetworkDisconnect(container *Container, network *Network, force
 	return e.RefreshNetworks()
 }
 
+//IsConnectionError returns true when err is connection problem
 func IsConnectionError(err error) bool {
 	// dockerclient defines ErrConnectionRefused error. but if http client is from swarm, it's not using
 	// dockerclient. We need string matching for these cases. Remove the first character to deal with
