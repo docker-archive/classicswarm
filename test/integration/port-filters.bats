@@ -34,6 +34,7 @@ function teardown() {
 	swarm_manage
 
 	run docker_swarm run --expose=80 -p 80:80 busybox echo 1
+	echo "$output"
 	[ "$status" -eq 0 ]
 	run docker_swarm run --expose=80 -p 80:80 busybox echo 2
 	[ "$status" -eq 0 ]
