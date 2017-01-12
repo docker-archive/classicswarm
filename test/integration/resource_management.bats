@@ -23,7 +23,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Nodes: 2"* ]]
 
-	run docker_swarm run --name container_test -e constraint:node==node-0 -m 20m busybox sh
+	run docker_swarm run -d --name container_test -e constraint:node==node-0 -m 20m busybox sh
 	echo "$output"
 	[ "$status" -eq 0 ]
 	run docker_swarm info

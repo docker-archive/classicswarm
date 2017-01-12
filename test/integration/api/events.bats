@@ -52,7 +52,8 @@ function teardown() {
 	docker_swarm events --until ${ONE_SECOND_IN_THE_PAST} > "$log_file"
 
 	# This should emit 3 events: create, start, die.
-	docker_swarm run --name test_container -e constraint:node==node-0 busybox true
+	run docker_swarm run --name test_container -e constraint:node==node-0 busybox true
+	[ "$status" -eq 0 ]
 
 	# do not need to kill events, it's already dead
 
