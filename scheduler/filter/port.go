@@ -2,6 +2,7 @@ package filter
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/swarm/cluster"
@@ -151,5 +152,6 @@ func (p *PortFilter) GetFilters(config *cluster.ContainerConfig) ([]string, erro
 }
 
 func bindsAllInterfaces(binding nat.PortBinding) bool {
-	return binding.HostIP == "0.0.0.0" || binding.HostIP == ""
+	ip := net.ParseIP(binding.HostIP)
+	return binding.HostIP == "" || (ip != nil && ip.IsUnspecified())
 }
