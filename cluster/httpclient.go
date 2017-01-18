@@ -40,8 +40,9 @@ func newHTTPClient(u *url.URL, tlsConfig *tls.Config, timeout time.Duration, set
 	return &http.Client{Transport: httpTransport}
 }
 
-func NewHTTPClientTimeout(daemonUrl string, tlsConfig *tls.Config, timeout time.Duration, setUserTimeout tcpFunc) (*http.Client, *url.URL, error) {
-	u, err := url.Parse(daemonUrl)
+// NewHTTPClientTimeout is used to create the HTTP Client and URL
+func NewHTTPClientTimeout(daemonURL string, tlsConfig *tls.Config, timeout time.Duration, setUserTimeout tcpFunc) (*http.Client, *url.URL, error) {
+	u, err := url.Parse(daemonURL)
 	if err != nil {
 		return nil, nil, err
 	}
