@@ -100,4 +100,10 @@ type Cluster interface {
 
 	// Tag an image
 	TagImage(IDOrName string, ref string, force bool) error
+
+	// Refresh a single cluster engine
+	RefreshEngine(hostname string) error
+
+	// Refresh all engines in the cluster
+	RefreshEngines() error
 }

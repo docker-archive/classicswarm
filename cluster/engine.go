@@ -1422,3 +1422,10 @@ func IsConnectionError(err error) bool {
 		strings.Contains(err.Error(), "annot connect to the docker engine endpoint") ||
 		strings.Contains(err.Error(), "annot connect to the Docker daemon")
 }
+
+func (e *Engine) RefreshEngine(hostname string) error {
+	if hostname != e.Name {
+		return fmt.Errorf("invalid engine name during refresh: %s vs %s", hostname, e.Name)
+	}
+	return e.RefreshContainers(true)
+}

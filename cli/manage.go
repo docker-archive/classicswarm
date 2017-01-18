@@ -305,6 +305,9 @@ func manage(c *cli.Context) {
 		hosts = hosts[1:]
 	}
 
+	api.ShouldRefreshOnNodeFilter = c.Bool("refresh-on-node-filter")
+	api.ContainerNameRefreshFilter = c.String("container-name-refresh-filter")
+
 	server := api.NewServer(hosts, tlsConfig)
 	if c.Bool("replication") {
 		addr := c.String("advertise")

@@ -718,3 +718,11 @@ func (c *Cluster) checkNameUniqueness(name string) bool {
 
 	return true
 }
+
+func (c *Cluster) RefreshEngine(hostname string) error {
+	return nil
+}
+
+func (c *Cluster) RefreshEngines() error {
+	return nil
+}
