@@ -846,14 +846,12 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 		until = u
 	}
 
-	c.eventsHandler.Add(r.RemoteAddr, w)
-
 	w.Header().Set("Content-Type", "application/json")
-
 	if f, ok := w.(http.Flusher); ok {
 		f.Flush()
 	}
 
+	c.eventsHandler.Add(r.RemoteAddr, w)
 	c.eventsHandler.Wait(r.RemoteAddr, until)
 }
 
