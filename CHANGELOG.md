@@ -1,9 +1,10 @@
 # Changelog
 
-## 1.2.6-rc2 (2016-01-11)
+## 1.2.6 (2017-01-17)
 
 #### API
 
+- Add options to refresh engine container cache on filters
 - Support name filter in volume list
 - Support more filters in network list operations
 - Support node whitelist filter
@@ -20,6 +21,7 @@
 
 #### Cluster Management
 
+- Remove dependancy on IPv4 addresses
 - Support event top, resize, commit and so on to avoid unnecessary refreshing
 - Sequentialize event monitor to an engine to avoid data race
 - When an active engine sends EOF on event stream, restart event monitor so we don't lose events 
