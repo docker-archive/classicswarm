@@ -17,7 +17,7 @@ function start_containers {
 	# Run `docker run` in parallel...
 	for ((i=0; i < $n; i++)); do
 		# Each container will sleep between 0 and 15 seconds.
-		# This is to simuate a bunch of events back to Swarm (containers
+		# This is to simulate a bunch of events back to Swarm (containers
 		# exiting).
 		local wait_time=$(( RANDOM % 15 ))
 		docker_swarm run -d busybox:latest sleep $wait_time &

@@ -21,7 +21,7 @@
 
 #### Cluster Management
 
-- Remove dependancy on IPv4 addresses
+- Remove dependency on IPv4 addresses
 - Support event top, resize, commit and so on to avoid unnecessary refreshing
 - Sequentialize event monitor to an engine to avoid data race
 - When an active engine sends EOF on event stream, restart event monitor so we don't lose events 
