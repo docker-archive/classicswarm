@@ -217,7 +217,7 @@ func TestDependencyFilterMulti(t *testing.T) {
 			VolumesFrom: []string{"c0", "c2"},
 		},
 		NetworkingConfig: networktypes.NetworkingConfig{}}
-	result, err = f.Filter(config, nodes, true)
+	_, err = f.Filter(config, nodes, true)
 	assert.Error(t, err)
 }
 
@@ -290,6 +290,6 @@ func TestDependencyFilterChaining(t *testing.T) {
 			NetworkMode: containertypes.NetworkMode("container:c1"),
 		},
 		NetworkingConfig: networktypes.NetworkingConfig{}}
-	result, err = f.Filter(config, nodes, true)
+	_, err = f.Filter(config, nodes, true)
 	assert.Error(t, err)
 }
