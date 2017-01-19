@@ -53,7 +53,7 @@ func testFixtures() []*node.Node {
 	}
 }
 
-func TestConstrainteFilter(t *testing.T) {
+func TestConstraintFilter(t *testing.T) {
 	var (
 		f      = ConstraintFilter{}
 		nodes  = testFixtures()
