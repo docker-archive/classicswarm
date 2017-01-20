@@ -81,7 +81,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 
 		// keep track of all global networks this container is connected to
 		globalNetworks := make(map[string]*network.EndpointSettings)
-		// if the existing containter has global network endpoints,
+		// if the existing container has global network endpoints,
 		// they need to be removed with force option
 		// "docker network disconnect -f network containername" only takes containername
 		name := c.Info.Name
@@ -108,7 +108,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			for networkName, endpoint := range c.Info.NetworkSettings.Networks {
 				net := clusterNetworks.Get(endpoint.NetworkID)
 				if net != nil && net.Scope == "global" {
-					// record the nework, they should be reconstructed on the new container
+					// record the network, they should be reconstructed on the new container
 					globalNetworks[networkName] = endpoint
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 					defer cancel()
