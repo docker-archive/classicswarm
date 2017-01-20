@@ -37,7 +37,7 @@ const (
 	// Timeout for requests sent out to the engine.
 	requestTimeout = 10 * time.Second
 
-	// Threshold of delta duaration between swarm manager and engine's systime
+	// Threshold of delta duration between swarm manager and engine's systime
 	thresholdTime = 2 * time.Second
 
 	// Minimum docker engine version supported by swarm.
@@ -249,7 +249,7 @@ func (e *Engine) ConnectWithClient(client dockerclient.Client, apiClient swarmcl
 		return err
 	}
 
-	// Do not check error as older daemon does't support this call.
+	// Do not check error as older daemon doesn't support this call.
 	e.RefreshVolumes()
 	e.RefreshNetworks()
 
