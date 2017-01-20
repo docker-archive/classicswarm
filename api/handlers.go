@@ -1034,6 +1034,13 @@ func networkDisconnect(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, fmt.Sprintf("No such network: %s", networkid), http.StatusNotFound)
 		return
 	}
+	// If the incoming request used the network's name instead of the ID,
+	// make the request to the daemon with the network's name as well.
+	if strings.Contains(networkid, network.Name) {
+		networkid = network.Name
+	} else {
+		networkid = network.ID
+	}
 
 	// make a copy of r.Body
 	buf, _ := ioutil.ReadAll(r.Body)
@@ -1060,7 +1067,7 @@ func networkDisconnect(c *context, w http.ResponseWriter, r *http.Request) {
 	// then try a random engine if we can't connect to that engine. We
 	// try the associated engine first because on 1.12+ clusters, the
 	// network may not be known on all nodes.
-	err := engine.NetworkDisconnect(container, network, disconnect.Force)
+	err := engine.NetworkDisconnect(container, networkid, disconnect.Force)
 	if err != nil {
 		if cluster.IsConnectionError(err) && disconnect.Force && network.Scope == "global" {
 			log.Warnf("Could not connect to engine %s: %s, trying to disconnect %s from %s on a random engine", engine.Name, err, disconnect.Container, network.Name)
@@ -1070,7 +1077,7 @@ func networkDisconnect(c *context, w http.ResponseWriter, r *http.Request) {
 				httpError(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			err = randomEngine.NetworkDisconnect(container, network, disconnect.Force)
+			err = randomEngine.NetworkDisconnect(container, networkid, disconnect.Force)
 			if err != nil {
 				httpError(w, err.Error(), http.StatusInternalServerError)
 			}

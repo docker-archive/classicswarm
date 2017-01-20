@@ -1400,8 +1400,8 @@ func (e *Engine) TagImage(IDOrName string, ref string, force bool) error {
 }
 
 // NetworkDisconnect disconnects a container from a network
-func (e *Engine) NetworkDisconnect(container *Container, network *Network, force bool) error {
-	err := e.apiClient.NetworkDisconnect(context.Background(), network.ID, container.ID, force)
+func (e *Engine) NetworkDisconnect(container *Container, network string, force bool) error {
+	err := e.apiClient.NetworkDisconnect(context.Background(), network, container.ID, force)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
