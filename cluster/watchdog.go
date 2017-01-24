@@ -9,10 +9,22 @@ import (
 	"golang.org/x/net/context"
 )
 
+const (
+	// Only make one attempt to reschedule containers by default
+	DefaultRescheduleRetry = 1
+)
+
+type WatchdogOpts struct {
+	RescheduleRetryInterval time.Duration
+	RescheduleRetry         int
+}
+
 // Watchdog listens to cluster events and handles container rescheduling
 type Watchdog struct {
 	sync.Mutex
 	cluster Cluster
+	running bool
+	opts    *WatchdogOpts
 }
 
 // Handle handles cluster callbacks
@@ -60,11 +72,36 @@ func (w *Watchdog) removeDuplicateContainers(e *Engine) {
 
 // rescheduleContainers reschedules containers as soon as a node fails
 func (w *Watchdog) rescheduleContainers(e *Engine) {
+	limit := w.opts.RescheduleRetry
+	retryInterval := w.opts.RescheduleRetryInterval
+
+	log.Debugf("Node %s failed - making %d attempt(s) to reschedule containers", e.ID, limit)
+
+	attempt := 1
+	for !w.rescheduleContainersHelper(e) {
+		if attempt < limit {
+			log.Debugf("Node %s - could not reschedule containers, attempt %d of %d, retrying in %s", e.ID, attempt, limit, retryInterval)
+			attempt++
+			time.Sleep(retryInterval)
+		} else {
+			log.Errorf("Node %s - could not reschedule containers after %d attempt(s)", e.ID, limit)
+			break
+		}
+	}
+
+	log.Debugf("Node %s - container rescheduling complete", e.ID)
+}
+
+func (w *Watchdog) rescheduleContainersHelper(e *Engine) bool {
 	w.Lock()
 	defer w.Unlock()
 
-	log.Debugf("Node %s failed - rescheduling containers", e.ID)
+	if !w.running {
+		log.Debugf("Watchdog is shutting down, abandon rescheduling")
+		return true
+	}
 
+	done := true
 	for _, c := range e.Containers() {
 
 		// Skip containers which don't have an "on-node-failure" reschedule policy.
@@ -101,6 +138,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 				log.Errorf("Failed to find an engine to do network cleanup for container %s: %v", c.ID, err)
 				// add the container back, so we can retry later
 				c.Engine.AddContainer(c)
+				done = false
 				continue
 			}
 
@@ -121,6 +159,12 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			}
 		}
 
+		// Ensure that all global networks have been wiped from the container config.
+		// This is necessary because NetworkDisconnect is allowed to fail in loop above.
+		for networkName, _ := range globalNetworks {
+			delete(c.Info.NetworkSettings.Networks, networkName)
+		}
+
 		// Clear out the network configs that we're going to reattach
 		// later.
 		endpointsConfig := map[string]*network.EndpointSettings{}
@@ -134,11 +178,20 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			endpointsConfig[k] = v
 		}
 		c.Config.NetworkingConfig.EndpointsConfig = endpointsConfig
+
 		newContainer, err := w.cluster.CreateContainer(c.Config, c.Info.Name, nil)
 		if err != nil {
 			log.Errorf("Failed to reschedule container %s: %v", c.ID, err)
+			// resurrect removed global network endpoints before adding
+			// the container back to the engine until the next retry.
+			for networkName, endpoint := range globalNetworks {
+				c.Info.NetworkSettings.Networks[networkName] = endpoint
+				c.Config.NetworkingConfig.EndpointsConfig[networkName] = endpoint
+			}
+
 			// add the container back, so we can retry later
 			c.Engine.AddContainer(c)
+			done = false
 			continue
 		}
 
@@ -173,20 +226,64 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 
 		log.Infof("Rescheduled container %s from %s to %s as %s", c.ID, c.Engine.Name, newContainer.Engine.Name, newContainer.ID)
 		if c.Info.State.Running {
-			log.Infof("Container %s was running, starting container %s", c.ID, newContainer.ID)
-			if err := w.cluster.StartContainer(newContainer, nil); err != nil {
-				log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
-			}
+			log.Infof("Container %s was running, scheduling start of container %s", c.ID, newContainer.ID)
+			go w.restartContainer(newContainer)
 		}
 	}
+	return done
+}
+
+// Attempt to restart a container.  If this watchdog has reschedule retry
+// behaviour enabled, we attempt to start the container indefinately until
+// this manager instance is no longer primary.  Otherwise, just attempt to start
+// the container once.
+func (w *Watchdog) restartContainer(c *Container) {
+	w.Lock()
+	defer w.Unlock()
+
+	retryLimit := w.opts.RescheduleRetry
+	retryInterval := w.opts.RescheduleRetryInterval
+
+	done := false
+	for !done && w.running {
+		log.Infof("Attempting to start container %s (%s)", c.ID, c.Info.Name)
+		if err := w.cluster.StartContainer(c, nil); err != nil {
+			log.Errorf("Failed to start rescheduled container %s, retrying in %s: %v", c.ID, retryInterval, err)
+			if retryLimit == DefaultRescheduleRetry {
+				done = true
+			} else {
+				w.Unlock()
+				time.Sleep(retryInterval)
+				w.Lock()
+			}
+		} else {
+			done = true
+		}
+	}
+	if done {
+		log.Debugf("Container %s (%s) started", c.ID, c.Info.Name)
+	} else if !w.running {
+		log.Debugf("Watchdog is shutting down, abandoning restart of container %s", c.ID)
+	}
+
 }
 
 // NewWatchdog creates a new watchdog
-func NewWatchdog(cluster Cluster) *Watchdog {
+func NewWatchdog(cluster Cluster, opts *WatchdogOpts) *Watchdog {
 	log.Debugf("Watchdog enabled")
 	w := &Watchdog{
 		cluster: cluster,
+		running: true,
+		opts:    opts,
 	}
 	cluster.RegisterEventHandler(w)
 	return w
+}
+
+// Instruct the watchdog to stop
+func (w *Watchdog) Stop() {
+	w.Lock()
+	defer w.Unlock()
+	log.Debugf("Stopping Watchdog")
+	w.running = false
 }

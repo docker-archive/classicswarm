@@ -152,6 +152,17 @@ var (
 		Usage: "Leader lock release time on failure",
 	}
 
+	flRescheduleRetry = cli.IntFlag{
+		Name:  "reschedule-retry",
+		Value: 1,
+		Usage: "The limit on the number of attempts to reschedule a container",
+	}
+	flRescheduleRetryInterval = cli.StringFlag{
+		Name:  "reschedule-retry-interval",
+		Value: "0s",
+		Usage: "The delay between container rescheduling attempts.",
+	}
+
 	flRefreshOnNodeFilter = cli.BoolFlag{
 		Name:  "refresh-on-node-filter",
 		Usage: "If true, refresh the cache when a ContainerList call comes in with a node filter",

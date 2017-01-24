@@ -145,13 +145,13 @@ func getCandidateAndFollower(discovery discovery.Backend, addr string, leaderTTL
 	return candidate, follower
 }
 
-func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, candidate *leadership.Candidate, follower *leadership.Follower, addr string, tlsConfig *tls.Config) {
+func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, candidate *leadership.Candidate, follower *leadership.Follower, addr string, tlsConfig *tls.Config, watchdogOpts *cluster.WatchdogOpts) {
 	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.GlobalBool("debug"), c.Bool("cors"))
 	replica := api.NewReplica(primary, tlsConfig)
 
 	go func() {
 		for {
-			run(cluster, candidate, server, primary, replica)
+			run(cluster, candidate, server, primary, replica, watchdogOpts)
 			time.Sleep(defaultRecoverTime)
 		}
 	}()
@@ -166,7 +166,7 @@ func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Serve
 	server.SetHandler(primary)
 }
 
-func run(cl cluster.Cluster, candidate *leadership.Candidate, server *api.Server, primary *mux.Router, replica *api.Replica) {
+func run(cl cluster.Cluster, candidate *leadership.Candidate, server *api.Server, primary *mux.Router, replica *api.Replica, watchdogOpts *cluster.WatchdogOpts) {
 	electedCh, errCh := candidate.RunForElection()
 	var watchdog *cluster.Watchdog
 	for {
@@ -174,10 +174,14 @@ func run(cl cluster.Cluster, candidate *leadership.Candidate, server *api.Server
 		case isElected := <-electedCh:
 			if isElected {
 				log.Info("Leader Election: Cluster leadership acquired")
-				watchdog = cluster.NewWatchdog(cl)
+				watchdog = cluster.NewWatchdog(cl, watchdogOpts)
 				server.SetHandler(primary)
 			} else {
 				log.Info("Leader Election: Cluster leadership lost")
+				if watchdog != nil {
+					watchdog.Stop()
+					watchdog = nil
+				}
 				cl.UnregisterEventHandler(watchdog)
 				server.SetHandler(replica)
 			}
@@ -264,6 +268,21 @@ func manage(c *cli.Context) {
 		FailureRetry:       failureRetry,
 	}
 
+	rescheduleRetry := c.Int("reschedule-retry")
+	if rescheduleRetry <= 0 {
+		log.Fatalf("invalid --reschedule-retry. Must be a postive number.")
+		rescheduleRetry = cluster.DefaultRescheduleRetry
+	}
+	rescheduleRetryInterval := c.Duration("reschedule-retry-interval")
+	if rescheduleRetryInterval < 0 {
+		log.Fatalf("invalid --reschedule-retry-interval. Must be a positive duration.")
+		rescheduleRetryInterval = time.Duration(0)
+	}
+	watchdogOpts := &cluster.WatchdogOpts{
+		RescheduleRetryInterval: rescheduleRetryInterval,
+		RescheduleRetry:         rescheduleRetry,
+	}
+
 	uri := getDiscovery(c)
 	if uri == "" {
 		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
@@ -330,10 +349,10 @@ func manage(c *cli.Context) {
 		// if necessary.
 		defer candidate.Resign()
 
-		setupReplication(c, cl, server, candidate, follower, addr, tlsConfig)
+		setupReplication(c, cl, server, candidate, follower, addr, tlsConfig, watchdogOpts)
 	} else {
 		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.GlobalBool("debug"), c.Bool("cors")))
-		cluster.NewWatchdog(cl)
+		cluster.NewWatchdog(cl, watchdogOpts)
 	}
 
 	log.Fatal(server.ListenAndServe())
