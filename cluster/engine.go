@@ -1357,8 +1357,21 @@ func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) 
 		return err
 	}
 
-	// refresh container
+	// refresh the container in the cache
 	_, err = e.refreshContainer(id, true)
+
+	// If we could not inspect the container that was just started,
+	// this indicates that it's been already removed by the daemon.
+	// This is expected to occur in API versions 1.25 or higher if
+	// the HostConfig.AutoRemove field is set to true. This could also occur
+	// during race conditions where a third-party client removes the container
+	// immmediately after it's started.
+	if engineapi.IsErrContainerNotFound(err) {
+		delete(e.containers, id)
+		log.Debugf("container %s was not detected shortly after ContainerStart, indicating a daemon-side removal", id)
+		return nil
+	}
+
 	return err
 }
 
