@@ -3,7 +3,8 @@
 load discovery_helpers
 
 # Address on which the store will listen (random port between 8000 and 9000).
-STORE_HOST=127.0.0.1:$(( ( RANDOM % 1000 )  + 7000 ))
+ZK_PORT=$(( ( RANDOM % 1000 )  + 7000 ))
+STORE_HOST=127.0.0.1:$ZK_PORT
 
 # Discovery parameter for Swarm
 DISCOVERY="zk://${STORE_HOST}/test"
@@ -13,6 +14,8 @@ CONTAINER_NAME=swarm_integration_zk
 
 function start_store() {
 	docker_host run --name $CONTAINER_NAME -p $STORE_HOST:2181 -d dnephin/docker-zookeeper:3.4.6
+	# wait for zk to be ready
+	retry 10 1 eval "echo ruok | nc 127.0.0.1 $ZK_PORT | grep imok"
 }
 
 function stop_store() {
