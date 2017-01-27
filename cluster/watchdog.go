@@ -107,7 +107,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			clusterNetworks := w.cluster.Networks().Uniq()
 			for networkName, endpoint := range c.Info.NetworkSettings.Networks {
 				net := clusterNetworks.Get(endpoint.NetworkID)
-				if net != nil && net.Scope == "global" {
+				if net != nil && (net.Scope == "global" || net.Scope == "swarm") {
 					// record the network, they should be reconstructed on the new container
 					globalNetworks[networkName] = endpoint
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -121,6 +121,19 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			}
 		}
 
+		// Clear out the network configs that we're going to reattach
+		// later.
+		endpointsConfig := map[string]*network.EndpointSettings{}
+		for k, v := range c.Config.NetworkingConfig.EndpointsConfig {
+			net := w.cluster.Networks().Uniq().Get(v.NetworkID)
+			if net != nil && (net.Scope == "global" || net.Scope == "swarm") {
+				// These networks are already in globalNetworks
+				// and thus will be reattached later.
+				continue
+			}
+			endpointsConfig[k] = v
+		}
+		c.Config.NetworkingConfig.EndpointsConfig = endpointsConfig
 		newContainer, err := w.cluster.CreateContainer(c.Config, c.Info.Name, nil)
 		if err != nil {
 			log.Errorf("Failed to reschedule container %s: %v", c.ID, err)
@@ -133,6 +146,23 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 		// see https://github.com/docker/docker/issues/17750
 		// Add the global networks one by one
 		for networkName, endpoint := range globalNetworks {
+			hasSubnet := false
+			network := w.cluster.Networks().Uniq().Get(networkName)
+			if network != nil {
+				for _, config := range network.IPAM.Config {
+					if config.Subnet != "" {
+						hasSubnet = true
+						break
+					}
+				}
+			}
+			// If this network did not have a defined subnet, we
+			// cannot connect to it with an explicit IP address.
+			if !hasSubnet && endpoint.IPAMConfig != nil {
+				endpoint.IPAMConfig.IPv4Address = ""
+				endpoint.IPAMConfig.IPv6Address = ""
+			}
+
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			err = newContainer.Engine.apiClient.NetworkConnect(ctx, networkName, name, endpoint)
