@@ -141,7 +141,7 @@ func (c *Cluster) generateUniqueID() string {
 
 // StartContainer starts a container
 func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *dockerclient.HostConfig) error {
-	return container.Engine.StartContainer(container.ID, hostConfig)
+	return container.Engine.StartContainer(container, hostConfig)
 }
 
 // CreateContainer aka schedule a brand new container into the cluster.
