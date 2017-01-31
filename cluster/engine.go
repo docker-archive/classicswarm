@@ -1344,21 +1344,34 @@ func (e *Engine) cleanupContainers() {
 }
 
 // StartContainer starts a container
-func (e *Engine) StartContainer(id string, hostConfig *dockerclient.HostConfig) error {
+func (e *Engine) StartContainer(container *Container, hostConfig *dockerclient.HostConfig) error {
 	var err error
 	if hostConfig != nil {
-		err = e.client.StartContainer(id, hostConfig)
+		err = e.client.StartContainer(container.ID, hostConfig)
 	} else {
 		// TODO(nishanttotla): Should ContainerStartOptions be provided?
-		err = e.apiClient.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
+		err = e.apiClient.ContainerStart(context.Background(), container.ID, types.ContainerStartOptions{})
 	}
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
 	}
 
-	// refresh container
-	_, err = e.refreshContainer(id, true)
+	// refresh the container in the cache
+	_, err = e.refreshContainer(container.ID, true)
+
+	// If we could not inspect the container that was just started,
+	// this indicates that it's been already removed by the daemon.
+	// This is expected to occur in API versions 1.25 or higher if
+	// the HostConfig.AutoRemove field is set to true. This could also occur
+	// during race conditions where a third-party client removes the container
+	// immmediately after it's started.
+	if container.Info.HostConfig.AutoRemove && engineapi.IsErrContainerNotFound(err) {
+		delete(e.containers, container.ID)
+		log.Debugf("container %s was not detected shortly after ContainerStart, indicating a daemon-side removal", container.ID)
+		return nil
+	}
+
 	return err
 }
 

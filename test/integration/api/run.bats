@@ -26,6 +26,15 @@ function teardown() {
 	[[ "${output}" == *"cannot specify 64-byte hexadecimal strings"* ]]
 }
 
+@test "docker run with autoremove" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	# run with --rm
+	docker_swarm run --rm busybox echo hello
+	[ "$status" -eq 0 ]
+}
+
 @test "docker run with image digest" {
 	start_docker 2
 	swarm_manage
