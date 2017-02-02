@@ -516,7 +516,7 @@ func (e *Engine) updateSpecs() error {
 	}
 
 	// If the servers are sync up on time, this delta might be the source of error
-	// we set a threshhold that to ignore this case.
+	// we set a threshold that to ignore this case.
 	absDelta := delta
 	if delta.Seconds() < 0 {
 		absDelta = time.Duration(-1*delta.Seconds()) * time.Second
