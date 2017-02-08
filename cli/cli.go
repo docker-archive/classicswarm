@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"runtime/debug"
@@ -34,7 +33,7 @@ func Run() {
 		cli.StringFlag{
 			Name:  "log-level, l",
 			Value: "info",
-			Usage: fmt.Sprintf("Log level (options: debug, info, warn, error, fatal, panic)"),
+			Usage: "Log level (options: debug, info, warn, error, fatal, panic)",
 		},
 
 		cli.BoolFlag{

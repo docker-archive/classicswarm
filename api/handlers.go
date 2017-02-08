@@ -188,7 +188,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Deprecated "filter" Filter. This is required for backward compability.
+	// Deprecated "filter" Filter. This is required for backward compatibility.
 	filterParam := r.Form.Get("filter")
 	if typesversions.LessThan(c.apiVersion, "1.28") && filterParam != "" {
 		filters.Add("reference", filterParam)
@@ -219,7 +219,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// grouping images by Id, and concat their RepoTags
+		// grouping images by Id, and concatenate their RepoTags
 		if entry, existed := groupImages[image.ID]; existed {
 			entry.RepoTags = append(entry.RepoTags, image.RepoTags...)
 			entry.RepoDigests = append(entry.RepoDigests, image.RepoDigests...)
@@ -1052,7 +1052,7 @@ func networkDisconnect(c *context, w http.ResponseWriter, r *http.Request) {
 	// Extract container info from r.Body copy
 	var disconnect apitypes.NetworkDisconnect
 	if err := json.NewDecoder(bodyCopy).Decode(&disconnect); err != nil {
-		httpError(w, fmt.Sprintf("Container is not specified"), http.StatusNotFound)
+		httpError(w, "Container is not specified", http.StatusNotFound)
 		return
 	}
 
@@ -1110,7 +1110,7 @@ func proxyNetworkConnect(c *context, w http.ResponseWriter, r *http.Request) {
 	// Extract container info from r.Body copy
 	var connect apitypes.NetworkConnect
 	if err := json.NewDecoder(bodyCopy).Decode(&connect); err != nil {
-		httpError(w, fmt.Sprintf("Container is not specified"), http.StatusNotFound)
+		httpError(w, "Container is not specified", http.StatusNotFound)
 		return
 	}
 	container := c.cluster.Container(connect.Container)
