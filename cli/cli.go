@@ -48,7 +48,7 @@ func Run() {
 		log.SetOutput(os.Stderr)
 		level, err := log.ParseLevel(c.String("log-level"))
 		if err != nil {
-			log.Fatalf(err.Error())
+			log.Fatal(err.Error())
 		}
 		log.SetLevel(level)
 
