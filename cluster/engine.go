@@ -501,7 +501,7 @@ func (e *Engine) updateSpecs() error {
 		e.state = statePending
 		message := fmt.Sprintf("Engine (ID: %s, Addr: %s) shows up with another ID:%s. Please remove it from cluster, it can be added back.", e.ID, e.Addr, info.ID)
 		e.lastError = message
-		return fmt.Errorf(message)
+		return errors.New(message)
 	}
 
 	// delta is an estimation of time difference between manager and engine
@@ -547,7 +547,7 @@ func (e *Engine) updateSpecs() error {
 		kv := strings.SplitN(label, "=", 2)
 		if len(kv) != 2 {
 			message := fmt.Sprintf("Engine (ID: %s, Addr: %s) contains an invalid label (%s) not formatted as \"key=value\".", e.ID, e.Addr, label)
-			return fmt.Errorf(message)
+			return errors.New(message)
 		}
 
 		// If an engine managed by Swarm contains a label with key "node",
@@ -571,7 +571,10 @@ func (e *Engine) updateSpecs() error {
 
 // RemoveImage deletes an image from the engine.
 func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDelete, error) {
-	rmOpts := types.ImageRemoveOptions{force, true}
+	rmOpts := types.ImageRemoveOptions{
+		Force:         force,
+		PruneChildren: true,
+	}
 	dels, err := e.apiClient.ImageRemove(context.Background(), name, rmOpts)
 	e.CheckConnectionErr(err)
 
@@ -669,7 +672,7 @@ func (e *Engine) refreshNetwork(ID string) error {
 
 // RefreshNetworks refreshes the list of networks on the engine.
 func (e *Engine) RefreshNetworks() error {
-	netLsOpts := types.NetworkListOptions{filters.NewArgs()}
+	netLsOpts := types.NetworkListOptions{Filters: filters.NewArgs()}
 	networks, err := e.apiClient.NetworkList(context.Background(), netLsOpts)
 	e.CheckConnectionErr(err)
 	if err != nil {

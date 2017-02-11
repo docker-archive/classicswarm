@@ -117,7 +117,7 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	eh.RLock()
 
 	for key, w := range eh.ws {
-		if _, err := fmt.Fprintf(w, string(data)); err != nil {
+		if _, err := fmt.Fprint(w, string(data)); err != nil {
 			// collect them to handle later under Lock
 			failed = append(failed, key)
 			continue
