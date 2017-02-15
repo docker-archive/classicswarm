@@ -4,7 +4,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 func init() {
@@ -27,7 +27,7 @@ Commands:
 Run '{{.Name}} COMMAND --help' for more information on a command.
 `
 
-	// See https://github.com/codegangsta/cli/pull/171/files
+	// See https://github.com/urfave/cli/pull/171/files
 	cli.CommandHelpTemplate = `{{$DISCOVERY := or (eq .Name "manage") (eq .Name "join") (eq .Name "list")}}Usage: ` + path.Base(os.Args[0]) + ` {{.Name}}{{if .Flags}} [OPTIONS]{{end}} {{if $DISCOVERY}}<discovery>{{end}}
 
 {{.Usage}}{{if $DISCOVERY}}

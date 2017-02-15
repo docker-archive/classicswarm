@@ -7,8 +7,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/codegangsta/cli"
 	"github.com/docker/docker/pkg/discovery"
+	"github.com/urfave/cli"
 )
 
 func checkAddrFormat(addr string) bool {
