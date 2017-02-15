@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/docker/swarm",
 	"GoVersion": "go1.7",
-	"GodepVersion": "v75",
+	"GodepVersion": "v79",
 	"Packages": [
 		"./..."
 	],
@@ -16,7 +16,7 @@
 			"Rev": "3ec0642a7fb6488f65b06f9040adc67e3990296a"
 		},
 		{
-			"ImportPath": "github.com/codegangsta/cli",
+			"ImportPath": "github.com/urfave/cli",
 			"Comment": "v1.11.1",
 			"Rev": "c31a7975863e7810c92e2e288a9ab074f9a88f29"
 		},

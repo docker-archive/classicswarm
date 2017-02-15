@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/codegangsta/cli"
 	"github.com/docker/swarm/discovery/token"
+	"github.com/urfave/cli"
 )
 
 func create(c *cli.Context) {
