@@ -172,12 +172,32 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 		}
 
 		log.Infof("Rescheduled container %s from %s to %s as %s", c.ID, c.Engine.Name, newContainer.Engine.Name, newContainer.ID)
-		if c.Info.State.Running {
-			log.Infof("Container %s was running, starting container %s", c.ID, newContainer.ID)
+		if shouldRestart(c) {
+			log.Infof("Starting container %s", newContainer.ID)
 			if err := w.cluster.StartContainer(newContainer, nil); err != nil {
 				log.Errorf("Failed to start rescheduled container %s: %v", newContainer.ID, err)
 			}
 		}
+	}
+}
+
+// Determines whether a container should be started after rescheduling by
+// taking its state and restart policy into account.
+func shouldRestart(c *Container) bool {
+	if c.Info.State.Running {
+		return true
+	}
+
+	// Containers with a restart policy of 'unless-stopped' will not be
+	// restarted because the swarm manager has no insight into whether the
+	// container has been stopped manually by the user.
+	var rp = c.Config.HostConfig.RestartPolicy
+	if rp.IsAlways() {
+		return true
+	} else if rp.IsOnFailure() && c.Info.State.ExitCode != 0 && c.Info.RestartCount < rp.MaximumRetryCount {
+		return true
+	} else {
+		return false
 	}
 }
 
