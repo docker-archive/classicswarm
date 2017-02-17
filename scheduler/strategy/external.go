@@ -107,7 +107,6 @@ func (p *ExternalPlacementStrategy) RankAndSort(config *cluster.ContainerConfig,
 		nodeMap[n.ID] = n
 	}
 
-	//fmt.Printf("CONFIG: %#v, NODES: %#v", config, nodes)
 	var placement *schema.Placement
 	if p.marshalState {
 		placement = schema.SimplifyPlacement(config, nodes)
