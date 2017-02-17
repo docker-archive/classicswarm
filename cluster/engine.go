@@ -516,7 +516,7 @@ func (e *Engine) updateSpecs() error {
 	}
 
 	// If the servers are sync up on time, this delta might be the source of error
-	// we set a threshhold that to ignore this case.
+	// we set a threshold that to ignore this case.
 	absDelta := delta
 	if delta.Seconds() < 0 {
 		absDelta = time.Duration(-1*delta.Seconds()) * time.Second
@@ -1368,7 +1368,7 @@ func (e *Engine) StartContainer(container *Container, hostConfig *dockerclient.H
 	// This is expected to occur in API versions 1.25 or higher if
 	// the HostConfig.AutoRemove field is set to true. This could also occur
 	// during race conditions where a third-party client removes the container
-	// immmediately after it's started.
+	// immediately after it's started.
 	if container.Info.HostConfig.AutoRemove && engineapi.IsErrContainerNotFound(err) {
 		delete(e.containers, container.ID)
 		log.Debugf("container %s was not detected shortly after ContainerStart, indicating a daemon-side removal", container.ID)
