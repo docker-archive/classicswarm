@@ -41,28 +41,20 @@ func parseEnv(e string) (bool, string, string) {
 
 // ConsolidateResourceFields is a temporary fix to handle forward/backward compatibility between Docker <1.6 and >=1.7
 func ConsolidateResourceFields(c *OldContainerConfig) {
-	if c.Memory != c.HostConfig.Memory {
-		if c.Memory != 0 {
-			c.HostConfig.Memory = c.Memory
-		}
+	if c.Memory != c.HostConfig.Memory && c.Memory != 0 {
+		c.HostConfig.Memory = c.Memory
 	}
 
-	if c.MemorySwap != c.HostConfig.MemorySwap {
-		if c.MemorySwap != 0 {
-			c.HostConfig.MemorySwap = c.MemorySwap
-		}
+	if c.MemorySwap != c.HostConfig.MemorySwap && c.MemorySwap != 0 {
+		c.HostConfig.MemorySwap = c.MemorySwap
 	}
 
-	if c.CPUShares != c.HostConfig.CPUShares {
-		if c.CPUShares != 0 {
-			c.HostConfig.CPUShares = c.CPUShares
-		}
+	if c.CPUShares != c.HostConfig.CPUShares && c.CPUShares != 0 {
+		c.HostConfig.CPUShares = c.CPUShares
 	}
 
-	if c.CPUSet != c.HostConfig.CpusetCpus {
-		if c.CPUSet != "" {
-			c.HostConfig.CpusetCpus = c.CPUSet
-		}
+	if c.CPUSet != c.HostConfig.CpusetCpus && c.CPUSet != "" {
+		c.HostConfig.CpusetCpus = c.CPUSet
 	}
 }
 
