@@ -129,7 +129,7 @@ func TestImportImage(t *testing.T) {
 		engines: make(map[string]*cluster.Engine),
 	}
 
-	// create engione
+	// create engine
 	id := "test-engine"
 	engine := cluster.NewEngine(id, 0, engOpts)
 	engine.Name = id
@@ -182,7 +182,7 @@ func TestLoadImage(t *testing.T) {
 		engines: make(map[string]*cluster.Engine),
 	}
 
-	// create engione
+	// create engine
 	id := "test-engine"
 	engine := cluster.NewEngine(id, 0, engOpts)
 	engine.Name = id
