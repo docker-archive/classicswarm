@@ -719,7 +719,7 @@ func (c *Cluster) Import(source string, ref string, tag string, imageReader io.R
 	}
 	multiWriter := io.MultiWriter(listWriter...)
 
-	// copy image-reader to muti-writer
+	// copy image-reader to multi-writer
 	_, err := io.Copy(multiWriter, imageReader)
 	if err != nil {
 		log.Error(err)
