@@ -23,19 +23,25 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Nodes: 2"* ]]
 
-	docker_swarm run --name container_test -e constraint:node==node-0 -m 20m busybox sh
+	run docker_swarm run -d --name container_test -e constraint:node==node-0 -m 20m busybox sh
+	echo "$output"
+	[ "$status" -eq 0 ]
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved Memory: 20 MiB"* ]]
 	[[ "${output}" == *"Reserved Memory: 0 B"* ]]
 
-	docker_swarm run --name container_test2 -e constraint:node==node-0 -m 22m busybox sh
+	run docker_swarm run --name container_test2 -e constraint:node==node-0 -m 22m busybox sh
+	echo "$output"
+	[ "$status" -eq 0 ]
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved Memory: 42 MiB"* ]]
 	[[ "${output}" == *"Reserved Memory: 0 B"* ]]
 
-	docker_swarm run --name container_test3 -e constraint:node==node-1 -m 18m busybox sh
+	run docker_swarm run --name container_test3 -e constraint:node==node-1 -m 18m busybox sh
+	echo "$output"
+	[ "$status" -eq 0 ]
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved Memory: 42 MiB"* ]]
@@ -90,7 +96,10 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage --strategy spread ${HOSTS[0]},${HOSTS[1]}
 
-	docker_swarm run --name container_test1 --cpu-shares 1 busybox sh
+	run docker_swarm run --name container_test1 --cpu-shares 1 busybox sh
+	echo "$output"
+	[ "$status" -eq 0 ]
+
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved CPUs: 1"* ]]
@@ -107,7 +116,10 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage --strategy binpack ${HOSTS[0]},${HOSTS[1]}
 
-	docker_swarm run --name container_test1 --cpu-shares 1 busybox sh
+	run docker_swarm run --name container_test1 --cpu-shares 1 busybox sh
+	echo "$output"
+	[ "$status" -eq 0 ]
+
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved CPUs: 1"* ]]

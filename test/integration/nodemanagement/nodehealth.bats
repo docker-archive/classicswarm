@@ -56,7 +56,8 @@ function teardown() {
 	eval "docker_swarm info | grep -q -i 'Nodes: 2'"
 
 	# Use memory on node-0
-	docker_swarm run -e constraint:node==node-0 -m 50m busybox sh
+	run docker_swarm run -e constraint:node==node-0 -m 50m busybox sh
+	[ "$status" -eq 0 ]
 
 	# Stop the node-1
 	docker_host stop ${DOCKER_CONTAINERS[1]}
@@ -66,6 +67,7 @@ function teardown() {
 
 	# Try to schedule a container. It'd select node-0 and succeed
 	run docker_swarm run -m 10m busybox sh
+	echo "$output"
 	[ "$status" -eq 0 ]
 }
 
@@ -86,7 +88,9 @@ function teardown() {
 	eval "docker_swarm info | grep -q -i 'Nodes: 2'"
 
 	# Use memory on node-0
-	docker_swarm run -e constraint:node==node-0 -m 50m busybox sh
+	run docker_swarm run -e constraint:node==node-0 -m 50m busybox sh
+	echo "$output"
+	[ "$status" -eq 0 ]
 
 	# Stop the node-1
 	docker_host stop ${DOCKER_CONTAINERS[1]}

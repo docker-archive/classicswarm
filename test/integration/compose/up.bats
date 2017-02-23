@@ -85,6 +85,7 @@ function containerRunning() {
 	docker-compose_swarm -f $FILE up -d
 	
 	run docker_swarm ps -q
+	echo "$output"
 	[ "${#lines[@]}" -eq  3 ]
 
 	# Make sure containers are running where they should.

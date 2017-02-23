@@ -201,7 +201,7 @@ function start_docker() {
 
 		# We have to manually call `hostname` since --hostname and --net cannot
 		# be used together.
-		DOCKER_CONTAINERS[$i]=$(
+		local id=$(
 			# -v /usr/local/bin -v /var/run are specific to mesos, so the slave can do a --volumes-from and use the docker cli
 			docker_host run -d --name node-$i --privileged -v /usr/local/bin -v /var/run -it --net=host \
 			${DOCKER_IMAGE}:${DOCKER_VERSION} \
@@ -215,10 +215,16 @@ function start_docker() {
 					--storage-driver=$STORAGE_DRIVER \
 					`join ' ' $@` \
 		")
+		echo "Starting container $id for ${HOSTS[$i]}"
+		DOCKER_CONTAINERS[$i]=$id
 	done
 
 	# Wait for the engines to be reachable.
 	for ((i=current; i < (current + instances); i++)); do
+		run docker_host inspect "${DOCKER_CONTAINERS[$i]}"
+		echo "$output"
+		run docker_host logs "${DOCKER_CONTAINERS[$i]}"
+		echo "$output"
 		wait_until_reachable "${HOSTS[$i]}"
 	done
 }

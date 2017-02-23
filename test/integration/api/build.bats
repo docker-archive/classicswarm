@@ -30,6 +30,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 
 	run docker_swarm run --rm test_args
+	echo "$output"
 	[ "$status" -eq 0 ]
 	[[ "$output" == "Hello Args"* ]]
 }

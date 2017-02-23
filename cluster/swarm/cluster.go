@@ -62,7 +62,8 @@ type Cluster struct {
 	engines           map[string]*cluster.Engine
 	pendingEngines    map[string]*cluster.Engine
 	scheduler         *scheduler.Scheduler
-	discovery         discovery.Backend
+	discoveryBackend  discovery.Backend
+	discoveryEntries  discovery.Entries
 	pendingContainers map[string]*pendingContainer
 
 	overcommitRatio float64
@@ -72,7 +73,7 @@ type Cluster struct {
 }
 
 // NewCluster is exported
-func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery discovery.Backend, options cluster.DriverOpts, engineOptions *cluster.EngineOpts) (cluster.Cluster, error) {
+func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discoveryBackend discovery.Backend, options cluster.DriverOpts, engineOptions *cluster.EngineOpts) (cluster.Cluster, error) {
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
@@ -81,7 +82,8 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 		pendingEngines:    make(map[string]*cluster.Engine),
 		scheduler:         scheduler,
 		TLSConfig:         TLSConfig,
-		discovery:         discovery,
+		discoveryBackend:  discoveryBackend,
+		discoveryEntries:  discovery.Entries{},
 		pendingContainers: make(map[string]*pendingContainer),
 		overcommitRatio:   0.05,
 		engineOpts:        engineOptions,
@@ -106,8 +108,20 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 		cluster.createRetry = val
 	}
 
-	discoveryCh, errCh := cluster.discovery.Watch(nil)
-	go cluster.monitorDiscovery(discoveryCh, errCh)
+	// monitor discovery
+	go func() {
+		for {
+			stopCh := make(chan struct{})
+			discoveryCh, errCh := cluster.discoveryBackend.Watch(stopCh)
+			err := cluster.monitorDiscovery(discoveryCh, errCh)
+			if err == nil {
+				close(stopCh)
+				return
+			}
+			close(stopCh)
+			log.WithError(err).Errorf("discovery got error, reconnecting")
+		}
+	}()
 	go cluster.monitorPendingEngines()
 
 	return cluster, nil
@@ -387,27 +401,34 @@ func (c *Cluster) removeEngine(addr string) bool {
 }
 
 // Entries are Docker Engines
-func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan error) {
+func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan error) error {
 	// Watch changes on the discovery channel.
-	currentEntries := discovery.Entries{}
 	for {
 		select {
 		case entries := <-ch:
-			added, removed := currentEntries.Diff(entries)
-			currentEntries = entries
+			log.Debugf("Discovery update")
+			for _, entry := range entries {
+				log.Debugf("Discovery entry: %s", entry.String())
+			}
+			added, removed := c.discoveryEntries.Diff(entries)
+			c.discoveryEntries = entries
 
 			// Remove engines first. `addEngine` will refuse to add an engine
 			// if there's already an engine with the same ID.  If an engine
 			// changes address, we have to first remove it then add it back.
 			for _, entry := range removed {
+				log.Debugf("Discovery: removing %s", entry.String())
 				c.removeEngine(entry.String())
 			}
 
 			for _, entry := range added {
+				log.Debugf("Discovery: adding %s", entry.String())
 				c.addEngine(entry.String())
 			}
 		case err := <-errCh:
+			// return on error
 			log.Errorf("Discovery error: %v", err)
+			return err
 		}
 	}
 }

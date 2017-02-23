@@ -54,7 +54,8 @@ function teardown() {
 	swarm_manage
 
 	# run
-	docker_swarm run -d -e constraint:node==node-0 busybox sleep 100
+	run docker_swarm run -d -e constraint:node==node-0 busybox sleep 100
+	[ "$status" -eq 0 ]
 
 	run docker_swarm network inspect bridge
 	[ "$status" -ne 0 ]
@@ -189,8 +190,10 @@ function teardown() {
 
 	docker_swarm network create -d bridge node-1/testn
 
-	docker_swarm run -d --net node-1/testn --name test_container busybox sleep 100
+	run docker_swarm run -d --net node-1/testn --name test_container busybox sleep 100
+	[ "$status" -eq 0 ]
 
 	run docker_swarm network inspect testn
+	echo "$output"
 	[[ "${output}" != *"\"Containers\": {}"* ]]
 }
