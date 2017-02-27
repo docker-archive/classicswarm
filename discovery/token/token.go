@@ -14,7 +14,7 @@ import (
 
 const discoveryURL = "https://discovery.hub.docker.com/v1"
 
-// Discovery is exported
+// Discovery is exported.
 type Discovery struct {
 	heartbeat time.Duration
 	ttl       time.Duration
@@ -26,12 +26,12 @@ func init() {
 	Init()
 }
 
-// Init is exported
+// Init is exported.
 func Init() {
 	discovery.Register("token", &Discovery{})
 }
 
-// Initialize is exported
+// Initialize is exported.
 func (s *Discovery) Initialize(urltoken string, heartbeat time.Duration, ttl time.Duration, _ map[string]string) error {
 	if i := strings.LastIndex(urltoken, "/"); i != -1 {
 		s.url = "https://" + urltoken[:i]
@@ -50,7 +50,7 @@ func (s *Discovery) Initialize(urltoken string, heartbeat time.Duration, ttl tim
 	return nil
 }
 
-// Fetch returns the list of entries for the discovery service at the specified endpoint
+// fetch returns the list of entries for the discovery service at the specified endpoint.
 func (s *Discovery) fetch() (discovery.Entries, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/%s/%s", s.url, "clusters", s.token))
 	if err != nil {
@@ -71,7 +71,7 @@ func (s *Discovery) fetch() (discovery.Entries, error) {
 	return discovery.CreateEntries(addrs)
 }
 
-// Watch is exported
+// Watch is exported.
 func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
 	ch := make(chan discovery.Entries)
 	ticker := time.NewTicker(s.heartbeat)
@@ -114,7 +114,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 	return ch, errCh
 }
 
-// Register adds a new entry identified by the into the discovery service
+// Register adds a new entry identified by the into the discovery service.
 func (s *Discovery) Register(addr string) error {
 	buf := strings.NewReader(addr)
 
@@ -129,7 +129,7 @@ func (s *Discovery) Register(addr string) error {
 	return nil
 }
 
-// CreateCluster returns a unique cluster token
+// CreateCluster returns a unique cluster token.
 func (s *Discovery) CreateCluster() (string, error) {
 	resp, err := http.Post(fmt.Sprintf("%s/%s", s.url, "clusters"), "", nil)
 	if err != nil {

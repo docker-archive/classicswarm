@@ -12,12 +12,12 @@ import (
 type DependencyFilter struct {
 }
 
-// Name returns the name of the filter
+// Name returns the name of the filter.
 func (f *DependencyFilter) Name() string {
 	return "dependency"
 }
 
-// Filter is exported
+// Filter is exported.
 func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node, _ bool) ([]*node.Node, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
@@ -71,13 +71,13 @@ func (f *DependencyFilter) GetFilters(config *cluster.ContainerConfig) ([]string
 	return dependencies, nil
 }
 
-// Get a string representation of the dependencies found in the container config.
+// String gets a string representation of the dependencies found in the container config.
 func (f *DependencyFilter) String(config *cluster.ContainerConfig) string {
 	dependencies, _ := f.GetFilters(config)
 	return strings.Join(dependencies, " ")
 }
 
-// Ensure that the node contains all dependent containers.
+// check ensures that the node contains all dependent containers.
 func (f *DependencyFilter) check(dependencies []string, node *node.Node) bool {
 	for _, dependency := range dependencies {
 		if node.Container(dependency) == nil {
