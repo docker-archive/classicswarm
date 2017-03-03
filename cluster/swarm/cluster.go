@@ -41,8 +41,9 @@ func (p *pendingContainer) ToContainer() *cluster.Container {
 		Config: p.Config,
 		Info: types.ContainerJSON{
 			ContainerJSONBase: &types.ContainerJSONBase{
-				HostConfig: &containertypes.HostConfig{},
+				HostConfig: &p.Config.HostConfig,
 			},
+			Config: &p.Config.Config,
 		},
 		Engine: p.Engine,
 	}
