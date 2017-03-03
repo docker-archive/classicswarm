@@ -480,15 +480,39 @@ func (client *DockerClient) MonitorEvents(options *MonitorEventsOptions, stopCha
 		}
 		if options.Filters != nil {
 			filterMap := make(map[string][]string)
-			if len(options.Filters.Event) > 0 {
-				filterMap["event"] = []string{options.Filters.Event}
+			events := []string{}
+			if options.Filters.Event != "" {
+				events = append(events, options.Filters.Event)
 			}
-			if len(options.Filters.Image) > 0 {
-				filterMap["image"] = []string{options.Filters.Image}
+			if len(options.Filters.Events) > 0 {
+				events = append(events, options.Filters.Events...)
 			}
-			if len(options.Filters.Container) > 0 {
-				filterMap["container"] = []string{options.Filters.Container}
+			if len(events) > 0 {
+				filterMap["event"] = events
 			}
+
+			images := []string{}
+			if options.Filters.Image != "" {
+				images = append(images, options.Filters.Image)
+			}
+			if len(options.Filters.Images) > 0 {
+				images = append(images, options.Filters.Images...)
+			}
+			if len(images) > 0 {
+				filterMap["image"] = images
+			}
+
+			containers := []string{}
+			if options.Filters.Container != "" {
+				containers = append(containers, options.Filters.Container)
+			}
+			if len(options.Filters.Containers) > 0 {
+				containers = append(containers, options.Filters.Containers...)
+			}
+			if len(containers) > 0 {
+				filterMap["container"] = containers
+			}
+
 			if len(filterMap) > 0 {
 				filterJSONBytes, err := json.Marshal(filterMap)
 				if err != nil {

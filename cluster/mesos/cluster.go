@@ -14,9 +14,10 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/engine-api/types"
-	containertypes "github.com/docker/engine-api/types/container"
-	networktypes "github.com/docker/engine-api/types/network"
+	"github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
+	networktypes "github.com/docker/docker/api/types/network"
+	volumetypes "github.com/docker/docker/api/types/volume"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/docker/swarm/scheduler"
@@ -185,7 +186,7 @@ func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *dockerclient.HostConfig) error {
 	// if the container was started less than a second ago in detach mode, do not start it
 	if time.Now().Unix()-container.Created > 1 || container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.detach"] != "true" {
-		return container.Engine.StartContainer(container.ID, hostConfig)
+		return container.Engine.StartContainer(container, hostConfig)
 	}
 	return nil
 }
@@ -194,6 +195,10 @@ func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *docke
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *types.AuthConfig) (*cluster.Container, error) {
 	if config.HostConfig.Memory == 0 && config.HostConfig.CPUShares == 0 {
 		return nil, errResourcesNeeded
+	}
+
+	if !c.checkNameUniqueness(name) {
+		return nil, fmt.Errorf("Conflict: The name %s is already assigned or in pending tasks. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
 	}
 
 	task, err := task.NewTask(config, name, c.taskCreationTimeout)
@@ -256,15 +261,15 @@ func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, er
 }
 
 // CreateNetwork creates a network in the cluster
-func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
+func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (*types.NetworkCreateResponse, error) {
 	var (
-		parts  = strings.SplitN(request.Name, "/", 2)
+		parts  = strings.SplitN(name, "/", 2)
 		config = &cluster.ContainerConfig{}
 	)
 
 	if len(parts) == 2 {
 		// a node was specified, create the container only on this node
-		request.Name = parts[1]
+		name = parts[1]
 		config = cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
 	}
 
@@ -282,7 +287,7 @@ func (c *Cluster) CreateNetwork(request *types.NetworkCreate) (*types.NetworkCre
 	if !ok {
 		return nil, fmt.Errorf("Unable to create network on agent %q", n.ID)
 	}
-	resp, err := s.engine.CreateNetwork(request)
+	resp, err := s.engine.CreateNetwork(name, request)
 	c.refreshNetworks()
 	return resp, err
 }
@@ -301,7 +306,7 @@ func (c *Cluster) refreshNetworks() {
 }
 
 // CreateVolume creates a volume in the cluster
-func (c *Cluster) CreateVolume(request *types.VolumeCreateRequest) (*cluster.Volume, error) {
+func (c *Cluster) CreateVolume(request *volumetypes.VolumesCreateBody) (*types.Volume, error) {
 	return nil, errNotSupported
 }
 
@@ -353,9 +358,6 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 		return nil
 	}
 
-	c.RLock()
-	defer c.RUnlock()
-
 	return formatContainer(cluster.Containers(c.Containers()).Get(IDOrName))
 }
 
@@ -375,13 +377,18 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string
 }
 
 // Import image
-func (c *Cluster) Import(source string, repository string, tag string, imageReader io.Reader, callback func(what, status string, err error)) {
+func (c *Cluster) Import(source string, ref string, tag string, imageReader io.Reader, callback func(what, status string, err error)) {
 
 }
 
 // RenameContainer renames a container
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
 	//FIXME this doesn't work as the next refreshcontainer will erase this change (this change is in-memory only)
+
+	if !c.checkNameUniqueness(newName) {
+		return fmt.Errorf("Conflict: The name %s is already assigned, or in pending tasks. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, newName)
+	}
+
 	container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.name"] = newName
 
 	return nil
@@ -596,9 +603,9 @@ func (c *Cluster) LaunchTask(t *task.Task) bool {
 
 	// In mesos 0.23+ the docker inspect will be sent back in the taskStatus.Data
 	// We can use this to find the right container.
-	inspect := []dockerclient.ContainerInfo{}
+	inspect := []types.ContainerJSONBase{}
 	if data != nil && json.Unmarshal(data, &inspect) == nil && len(inspect) == 1 {
-		container := &cluster.Container{Container: types.Container{ID: inspect[0].Id}, Engine: s.engine}
+		container := &cluster.Container{Container: types.Container{ID: inspect[0].ID}, Engine: s.engine}
 		if container, err := container.Refresh(); err == nil {
 			if !t.Stopped() {
 				t.SetContainer(container)
@@ -642,7 +649,7 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 }
 
 // BuildImage builds an image
-func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer) error {
+func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, out io.Writer) error {
 	c.scheduler.Lock()
 
 	// get an engine
@@ -661,7 +668,7 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 	}
 	n := nodes[0]
 
-	reader, err := c.agents[n.ID].engine.BuildImage(buildImage)
+	reader, err := c.agents[n.ID].engine.BuildImage(buildContext, buildImage)
 	if err != nil {
 		return err
 	}
@@ -675,6 +682,47 @@ func (c *Cluster) BuildImage(buildImage *types.ImageBuildOptions, out io.Writer)
 }
 
 // TagImage tags an image
-func (c *Cluster) TagImage(IDOrName string, repo string, tag string, force bool) error {
+func (c *Cluster) TagImage(IDOrName string, ref string, force bool) error {
 	return errNotSupported
+}
+
+func (c *Cluster) checkNameUniqueness(name string) bool {
+	// Abort immediately if the name is empty.
+	if len(name) == 0 {
+		return true
+	}
+
+	c.RLock()
+	defer c.RUnlock()
+
+	for _, s := range c.agents {
+		for _, container := range s.engine.Containers() {
+			for _, cname := range container.Names {
+				if cname == name || cname == "/"+name {
+					return false
+				}
+			}
+		}
+	}
+
+	for _, task := range c.pendingTasks.Tasks {
+		config := task.GetConfig()
+		if config.Labels != nil {
+			if tname, ok := config.Labels[cluster.SwarmLabelNamespace+".mesos.name"]; ok {
+				if tname == name || tname == "/"+name {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
+}
+
+func (c *Cluster) RefreshEngine(hostname string) error {
+	return nil
+}
+
+func (c *Cluster) RefreshEngines() error {
+	return nil
 }

@@ -3,8 +3,9 @@ package cluster
 import (
 	"strings"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/engine-api/types"
 )
 
 // Network is exported
@@ -30,7 +31,12 @@ func (networks Networks) Uniq() Networks {
 				tmp[network.ID].Containers[id] = endpoint
 			}
 		} else {
-			tmp[network.ID] = network
+			netCopy := *network
+			netCopy.Containers = make(map[string]types.EndpointResource)
+			for key, value := range network.Containers {
+				netCopy.Containers[key] = value
+			}
+			tmp[network.ID] = &netCopy
 		}
 	}
 	uniq := Networks{}
@@ -40,35 +46,43 @@ func (networks Networks) Uniq() Networks {
 	return uniq
 }
 
-// Filter returns networks filtered by names or ids
-func (networks Networks) Filter(names []string, ids []string, types []string) Networks {
-	typeFilter := func(network *Network) bool {
-		if len(types) > 0 {
-			for _, typ := range types {
-				if typ == "custom" && !network.isPreDefined() {
-					return true
-				}
-				if typ == "builtin" && network.isPreDefined() {
-					return true
-				}
+// Filter returns networks filtered by names, IDs, labels, etc.
+func (networks Networks) Filter(filter filters.Args) Networks {
+	includeFilter := func(network *Network) bool {
+		for _, typ := range filter.Get("type") {
+			if typ == "custom" && network.isPreDefined() {
+				return false
 			}
-		} else {
-			return true
+			if typ == "builtin" && !network.isPreDefined() {
+				return false
+			}
 		}
-		return false
+		if filter.Include("label") {
+			if !filter.MatchKVList("label", network.Labels) {
+				return false
+			}
+		}
+		if filter.Include("driver") {
+			if !filter.ExactMatch("driver", network.Driver) {
+				return false
+			}
+		}
+		return true
 	}
 
+	names := filter.Get("name")
+	ids := filter.Get("id")
 	out := Networks{}
 	if len(names) == 0 && len(ids) == 0 {
 		for _, network := range networks.Uniq() {
-			if typeFilter(network) {
+			if includeFilter(network) {
 				out = append(out, network)
 			}
 		}
 	} else {
 		for _, idOrName := range append(names, ids...) {
 			if network := networks.Get(idOrName); network != nil {
-				if typeFilter(network) {
+				if includeFilter(network) {
 					out = append(out, network)
 				}
 			}

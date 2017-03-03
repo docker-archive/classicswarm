@@ -3,12 +3,12 @@ package cluster
 import (
 	"strings"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 )
 
 // Image is exported
 type Image struct {
-	types.Image
+	types.ImageSummary
 
 	Engine *Engine
 }
@@ -103,14 +103,24 @@ func (images Images) Filter(opts ImageFilterOptions) Images {
 		return opts.Filters.MatchKVList("label", image.Labels)
 	}
 
-	includeRepoFilter := func(image *Image) bool {
-		if opts.MatchName == "" {
+	referenceFilter := func(image *Image, filter string) bool {
+		if !opts.Filters.Include(filter) {
 			return true
 		}
 		for _, repoTag := range image.RepoTags {
-			repoName, _ := ParseRepositoryTag(repoTag)
-			if repoTag == opts.MatchName || repoName == opts.MatchName {
-				return true
+			imageName, _ := ParseRepositoryTag(repoTag)
+			for _, pattern := range opts.Filters.Get(filter) {
+				if repoTag == pattern || pattern == imageName {
+					return true
+				}
+			}
+		}
+		for _, repoDigests := range image.RepoDigests {
+			imageName, _ := ParseRepositoryTag(repoDigests)
+			for _, pattern := range opts.Filters.Get(filter) {
+				if repoDigests == pattern || pattern == imageName {
+					return true
+				}
 			}
 		}
 		return false
@@ -118,7 +128,7 @@ func (images Images) Filter(opts ImageFilterOptions) Images {
 
 	filtered := make([]*Image, 0, len(images))
 	for _, image := range images {
-		if includeAll(image) && includeFilter(image) && includeRepoFilter(image) {
+		if includeAll(image) && includeFilter(image) && referenceFilter(image, "reference") {
 			filtered = append(filtered, image)
 		}
 	}

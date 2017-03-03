@@ -11,7 +11,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# make sure no volume exist
+	# make sure no volume exists
 	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 1 ]
 
@@ -25,6 +25,17 @@ function teardown() {
 
 	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 3 ]
+
+	# create a named volume on all nodes to test --filter
+	docker_swarm volume create --name=testsubstrvol
+
+	# filter for a named volume using a name substring
+	run docker_swarm volume ls --filter name=substr
+	[ "$status" -eq 0 ]
+	# expect 3 lines: the header and one volume per node
+	[ "${#lines[@]}" -eq 3 ] 
+	[[ "${lines[1]}" == *"testsubstrvol"* ]]
+	[[ "${lines[2]}" == *"testsubstrvol"* ]]
 }
 
 @test "docker volume inspect" {
@@ -73,11 +84,11 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# check for failure when removing a nonexistant volume
+	# check for failure when removing a non-existent volume
 	run docker_swarm volume rm test_volume
 	[ "$status" -ne 0 ]
 
-	# run a container that exits imediately but stays around and
+	# run a container that exits immediately but stays around and
 	# connected to the volume. Wait for it to finish.
 	docker_swarm run -d --name=test_container -v=/tmp busybox true
 	docker_swarm wait test_container

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/engine-api/types"
 	"github.com/docker/go-units"
 )
 
@@ -53,6 +53,19 @@ func FullStateString(state *types.ContainerState) string {
 		}
 		if state.Restarting {
 			return fmt.Sprintf("Restarting (%d) %s ago", state.ExitCode, units.HumanDuration(time.Now().UTC().Sub(finishedAt)))
+		}
+		// Container is Up. Add Health check info when healthcheck is defined.
+		healthText := ""
+		if h := state.Health; h != nil {
+			switch h.Status {
+			case types.Starting:
+				healthText = "health: starting"
+			default: // Healthy and Unhealthy are clear on their own
+				healthText = h.Status
+			}
+		}
+		if len(healthText) > 0 {
+			return fmt.Sprintf("Up %s (%s)", units.HumanDuration(time.Now().UTC().Sub(startedAt)), healthText)
 		}
 		return fmt.Sprintf("Up %s", units.HumanDuration(time.Now().UTC().Sub(startedAt)))
 	}

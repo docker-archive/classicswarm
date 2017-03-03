@@ -2,6 +2,7 @@ package filter
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/swarm/cluster"
@@ -80,7 +81,7 @@ func (p *PortFilter) portAlreadyInUse(node *node.Node, requested nat.PortBinding
 		// HostConfig.PortBindings contains the requested ports.
 		// NetworkSettings.Ports contains the actual ports.
 		//
-		// We have to check both because:
+		// We have to check 3 cases because:
 		// 1/ If the port was not specifically bound (e.g. -p 80), then
 		//    HostConfig.PortBindings.HostPort will be empty and we have to check
 		//    NetworkSettings.Port.HostPort to find out which port got dynamically
@@ -88,9 +89,22 @@ func (p *PortFilter) portAlreadyInUse(node *node.Node, requested nat.PortBinding
 		// 2/ If the port was bound (e.g. -p 80:80) but the container is stopped,
 		//    NetworkSettings.Port will be null and we have to check
 		//    HostConfig.PortBindings to find out the mapping.
+		// 3/ If the container is a pending container where ID is empty, it's under
+		//    construction on the selected node, another container requesting
+		//    the same ports should not be scheduled on the node, otherwise the
+		//    second container would fail to start.
+		//    This corner case is amplified by Docker compose 'scale' command.
+		//    See https://github.com/docker/swarm/issues/2499.
 
-		if (c.Info.HostConfig != nil && p.compare(requested, c.Info.HostConfig.PortBindings)) || (c.Info.NetworkSettings != nil && p.compare(requested, c.Info.NetworkSettings.Ports)) {
-			return true
+		if c.ID != "" {
+			if (c.Info.HostConfig != nil && p.compare(requested, c.Info.HostConfig.PortBindings)) || (c.Info.NetworkSettings != nil && p.compare(requested, c.Info.NetworkSettings.Ports)) {
+				return true
+			}
+		} else {
+			// container is a pending container, check its configuration
+			if c.Config != nil && p.compare(requested, c.Config.HostConfig.PortBindings) {
+				return true
+			}
 		}
 	}
 	return false
@@ -138,5 +152,6 @@ func (p *PortFilter) GetFilters(config *cluster.ContainerConfig) ([]string, erro
 }
 
 func bindsAllInterfaces(binding nat.PortBinding) bool {
-	return binding.HostIP == "0.0.0.0" || binding.HostIP == ""
+	ip := net.ParseIP(binding.HostIP)
+	return binding.HostIP == "" || (ip != nil && ip.IsUnspecified())
 }

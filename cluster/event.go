@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/engine-api/types/events"
+	"github.com/docker/docker/api/types/events"
 )
 
 // Event is exported
@@ -26,7 +26,7 @@ type EventHandlers struct {
 	eventHandlers map[EventHandler]struct{}
 }
 
-// NewEventHandlers returns a EventHandlers
+// NewEventHandlers returns an EventHandlers
 func NewEventHandlers() *EventHandlers {
 	return &EventHandlers{
 		eventHandlers: make(map[EventHandler]struct{}),

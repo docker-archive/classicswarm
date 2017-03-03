@@ -61,7 +61,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	run docker_swarm run -c 10240 busybox sh
+	run docker_swarm run --cpu-shares 10240 busybox sh
 	[ "$status" -ne 0 ]
 	[[ "${output}" == *"no resources available to schedule container"* ]]
 
@@ -73,7 +73,7 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Nodes: 2"* ]]
 
-	docker_swarm run --name container_test -c 1 busybox sh
+	docker_swarm run --name container_test --cpu-shares 1 busybox sh
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved CPUs: 1"* ]]
@@ -90,13 +90,13 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage --strategy spread ${HOSTS[0]},${HOSTS[1]}
 
-	docker_swarm run --name container_test1 -c 1 busybox sh
+	docker_swarm run --name container_test1 --cpu-shares 1 busybox sh
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved CPUs: 1"* ]]
 	[[ "${output}" == *"Reserved CPUs: 0"* ]]
 
-	docker_swarm run --name container_test2 -c 1 busybox sh
+	docker_swarm run --name container_test2 --cpu-shares 1 busybox sh
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved CPUs: 1"* ]]
@@ -107,13 +107,13 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage --strategy binpack ${HOSTS[0]},${HOSTS[1]}
 
-	docker_swarm run --name container_test1 -c 1 busybox sh
+	docker_swarm run --name container_test1 --cpu-shares 1 busybox sh
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved CPUs: 1"* ]]
 	[[ "${output}" == *"Reserved CPUs: 0"* ]]
 
-	docker_swarm run --name container_test2 -c 1 busybox sh
+	docker_swarm run --name container_test2 --cpu-shares 1 busybox sh
 	run docker_swarm info
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"Reserved CPUs: 2"* ]]

@@ -39,7 +39,14 @@ func (eh *eventsHandler) Add(remoteAddr string, w io.Writer) {
 func (eh *eventsHandler) Wait(remoteAddr string, until int64) {
 
 	timer := time.NewTimer(0)
-	timer.Stop()
+
+	// Based on issue https://github.com/golang/go/issues/14383.
+	// If timer has already expired, `time.Stop` will return false.
+	// And we have to drain the channel manually.
+	if !timer.Stop() {
+		<-timer.C
+	}
+
 	if until > 0 {
 		dur := time.Unix(until, 0).Sub(time.Now())
 		timer = time.NewTimer(dur)
@@ -110,7 +117,7 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	eh.RLock()
 
 	for key, w := range eh.ws {
-		if _, err := fmt.Fprintf(w, string(data)); err != nil {
+		if _, err := fmt.Fprint(w, string(data)); err != nil {
 			// collect them to handle later under Lock
 			failed = append(failed, key)
 			continue

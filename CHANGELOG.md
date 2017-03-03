@@ -1,6 +1,114 @@
 # Changelog
 
-## 1.2.1 (2016-04-22)
+## 1.2.6 (2017-01-17)
+
+#### API
+
+- Add options to refresh engine container cache on filters
+- Support name filter in volume list
+- Support more filters in network list operations
+- Support node whitelist filter
+- Switch from engine-api to docker/api/type and docker/clients
+- Pass size parameter through on container inspect
+
+#### Scheduler
+
+- For container network disconnect requests, tryworker engine with the container first
+- Precompile filter regular expression to reduce PU usage
+- Remove setTCPUserTimeout to avoid TCP connection leak
+- Fix network endpoints for rescheduling
+- Give up leadership when manager shuts down
+
+#### Cluster Management
+
+- Remove dependency on IPv4 addresses
+- Support event top, resize, commit and so on to avoid unnecessary refreshing
+- Sequentialize event monitor to an engine to avoid data race
+- When an active engine sends EOF on event stream, restart event monitor so we don't lose events 
+- When proxying a request, cancel request if user connection is broken
+
+#### MISC
+
+- Update go-zookeeper to fix a lock spin problem
+- Migrate documentation to https://github.com/docker/docker.github.io/tree/master/swarm
+- Update Swarm CI to use go 1.7.1
+- support GOARCH to be able to build for other architectures
+- Send Swarm logs to stdout
+
+## 1.2.5 (2016-08-18)
+
+#### Scheduler
+
+- Fix container rescheduling with overlay network
+- Fix scheduler detail log improper effect when container name is empty
+- Check unique container name on create and rename for Mesos cluster
+
+#### Health check
+
+- Refresh container status on health_status events
+
+#### Doc
+
+- Fix install-w-machine.md using docker-machine --swarm feature
+
+## 1.2.4 (2016-07-28)
+
+#### API
+
+- New client interface in Swarm, to differentiate from Swarm mode in Docker 1.12
+- Underlying HTTP client for API is created inside Swarm
+- Update minimum Docker Engine version supported by Swarm to 1.8
+- Additional error handling
+- Code refactoring
+
+#### Networking
+
+- Fix concurrent map writes race condition
+- Refresh single network when network event is emitted (performance improvement)
+- Avoid network refresh when creating container (performance improvement)
+
+#### Volumes
+
+- Refresh single volume when volume event is emitted (performance improvement)
+- Avoid volume refresh when creating container (performance improvement)
+
+#### Events
+
+- Support daemon events for Swarm
+
+#### Test
+
+- Fix leader election tests
+- Fix rescheduling test
+
+#### Mesos
+
+- Fix double locking issue
+
+#### Misc
+
+- Handle systime difference between Swarm and Engines
+- Add healthcheck information to CLI
+- Fix `engine_reconnect` issue that led to reconnected engine being treated as new
+
+## 1.2.3 (2016-05-25)
+
+#### API
+
+- Update `engine-api` vendoring (supports new functions and signatures)
+- Fix registry auth bug for image pulls
+
+## 1.2.2 (2016-05-05)
+
+#### Cluster management
+
+- Fix deadlock that causes Swarm to hang
+
+## 1.2.1 (2016-05-03)
+
+#### Scheduler
+
+- Add containerslots filter to allow user to limit container number on a node
 
 #### API
 
@@ -10,16 +118,27 @@
 - Return an error when assertion fails in hijack
 - Return an error when Image Pull fails
 - Fix image pull bug (wait until download finishes)
+- Fix and document some api response status codes
+- Add NodeID in docker info
+- Support docker ps --filter by volume
 
 #### Build
 
-- Switch to go 1.6.2
 - Move dependencies to vendor/
 - Update Image Pull to use docker/distribution package
+- Convert docs Dockerfiles to use docs/base:oss
+
+#### Test
+
+- Fix api/ps tests
+- Update api/stats test to prevent timeout on master branch
+- Use --cpu-shares instead of -c in integration test
 
 #### Misc
 
 - Documentation clean up
+- Close http response body to avoid potential memory leak
+- Switch context.TODO() to context.Background() to enable context setting
 
 ## 1.2.0 (2016-04-13)
 

@@ -11,17 +11,22 @@ git commit -s -m "Bump version to <version>"
 git push $GITHUBUSER bump-<version>
 ```
 
-Open PR on docker/swarm. Merge the PR before moving to next step.
+Open PR on docker/swarm. Merge the PR before moving to next step. If the release is an RC, then `CHANGELOG.md` should list the latest RC.
 
-### 2. Rebase release branch on top of master branch and tag
+If Go version is updated, please manually trigger `dockerswarm/swarm-test-env` build update at https://hub.docker.com/r/dockerswarm/swarm-test-env/~/dockerfile/. After successful build, Go version will be updated. This should be done whenever Go version is updated.
+
+### 2. Rebase release branch on top of updated master branch and tag
 
 ```
+git checkout master
+git pull origin
 git checkout release
 git rebase master
 git push origin
 git tag <tag>
 git push origin <tag>
 ```
+The tag must be of the form `v1.2.1-rc1`.
 
 ### 3. Update library image
 
@@ -37,7 +42,7 @@ Build and update Swarm image.
 cd swarm-library-image
 git pull
 ./update.sh <tag> (example: ./update.sh v0.2.0-rc2)
-check build is successful (swarm binary should show in git diff)
+check build is successful (swarm binaries should show in git diff)
 git add .
 git commit -s -m “<tag>"
 git push origin
@@ -70,4 +75,12 @@ Open PR on docker-library/official-images.
 
 ### 5. Create release on github
 
-Go to https://github.com/docker/swarm/releases/new use <tag> and changelog
+Go to https://github.com/docker/swarm/releases/new use &lt;tag&gt; and edit changelog.
+
+Upload Linux binary to the release. Copy the image built at docker/swarm-library-image.
+
+```
+tar czvf swarm-#tag#-linux-x86_64.tgz swarm
+```
+
+In the release page, upload swarm-#tag#-linux-x86_64.tgz.

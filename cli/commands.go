@@ -1,6 +1,6 @@
 package cli
 
-import "github.com/codegangsta/cli"
+import "github.com/urfave/cli"
 
 var (
 	commands = []cli.Command{
@@ -29,7 +29,7 @@ var (
 				flRefreshIntervalMin, flRefreshIntervalMax, flFailureRetry, flRefreshRetry,
 				flHeartBeat,
 				flEnableCors,
-				flCluster, flDiscoveryOpt, flClusterOpt},
+				flCluster, flDiscoveryOpt, flClusterOpt, flRefreshOnNodeFilter, flContainerNameRefreshFilter},
 			Action: manage,
 		},
 		{

@@ -1,16 +1,15 @@
-FROM golang:1.5.4-alpine
+FROM golang:1.7.1-alpine
 
 ARG GOOS
+ARG GOARCH
 
 COPY . /go/src/github.com/docker/swarm
 WORKDIR /go/src/github.com/docker/swarm
 
-ENV GO15VENDOREXPERIMENT=1
-
 RUN set -ex \
 	&& apk add --no-cache --virtual .build-deps \
 	git \
-	&& GOOS=$GOOS CGO_ENABLED=0 go install -v -a -tags netgo -installsuffix netgo -ldflags "-w -X github.com/docker/swarm/version.GITCOMMIT `git rev-parse --short HEAD` -X github.com/docker/swarm/version.BUILDTIME \"`date -u`\""  \
+	&& GOARCH=$GOARCH GOOS=$GOOS CGO_ENABLED=0 go install -v -a -tags netgo -installsuffix netgo -ldflags "-w -X github.com/docker/swarm/version.GITCOMMIT=$(git rev-parse --short HEAD) -X github.com/docker/swarm/version.BUILDTIME=$(date -u +%FT%T%z)"  \
 	&& apk del .build-deps
 
 ENV SWARM_HOST :2375

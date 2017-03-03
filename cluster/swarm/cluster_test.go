@@ -7,9 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/engine-api/types"
-	containertypes "github.com/docker/engine-api/types/container"
-	networktypes "github.com/docker/engine-api/types/network"
+	"github.com/docker/docker/api/types"
+	containertypes "github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/events"
+	networktypes "github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
 	engineapimock "github.com/docker/swarm/api/mockclient"
 	"github.com/docker/swarm/cluster"
 	"github.com/samalba/dockerclient/mockclient"
@@ -33,14 +35,13 @@ var (
 		NCPU:            10,
 		MemTotal:        20,
 		Driver:          "driver-test",
-		ExecutionDriver: "execution-driver-test",
 		KernelVersion:   "1.2.3",
 		OperatingSystem: "golang",
 		Labels:          []string{"foo=bar"},
 	}
 
 	mockVersion = types.Version{
-		Version: "1.6.2",
+		Version: "1.8.2",
 	}
 
 	engOpts = &cluster.EngineOpts{
@@ -50,7 +51,7 @@ var (
 	}
 )
 
-// FIXMEENGINEAPI : Need to write more unit tests for creating/inspecting containers with engine-api
+// FIXMEENGINEAPI : Need to write more unit tests for creating/inspecting containers with docker/api
 func createEngine(t *testing.T, ID string, containers ...*cluster.Container) *cluster.Engine {
 	engine := cluster.NewEngine(ID, 0, engOpts)
 	engine.Name = ID
@@ -128,7 +129,7 @@ func TestImportImage(t *testing.T) {
 		engines: make(map[string]*cluster.Engine),
 	}
 
-	// create engione
+	// create engine
 	id := "test-engine"
 	engine := cluster.NewEngine(id, 0, engOpts)
 	engine.Name = id
@@ -142,9 +143,9 @@ func TestImportImage(t *testing.T) {
 	apiClient.On("NetworkList", mock.Anything,
 		mock.AnythingOfType("NetworkListOptions"),
 	).Return([]types.NetworkResource{}, nil)
-	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
-	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{bytes.NewBufferString("")}, nil)
-	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
+	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(volume.VolumesListOKBody{}, nil)
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
 
 	// connect client
@@ -155,7 +156,7 @@ func TestImportImage(t *testing.T) {
 
 	// import success
 	readCloser := nopCloser{bytes.NewBufferString("ok")}
-	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, nil).Once()
+	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportSource"), mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, nil).Once()
 
 	callback := func(what, status string, err error) {
 		// import success
@@ -166,7 +167,7 @@ func TestImportImage(t *testing.T) {
 	// import error
 	readCloser = nopCloser{bytes.NewBufferString("error")}
 	err := fmt.Errorf("Import error")
-	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, err).Once()
+	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportSource"), mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, err).Once()
 
 	callback = func(what, status string, err error) {
 		// import error
@@ -181,7 +182,7 @@ func TestLoadImage(t *testing.T) {
 		engines: make(map[string]*cluster.Engine),
 	}
 
-	// create engione
+	// create engine
 	id := "test-engine"
 	engine := cluster.NewEngine(id, 0, engOpts)
 	engine.Name = id
@@ -195,9 +196,9 @@ func TestLoadImage(t *testing.T) {
 	apiClient.On("NetworkList", mock.Anything,
 		mock.AnythingOfType("NetworkListOptions"),
 	).Return([]types.NetworkResource{}, nil)
-	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
-	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{bytes.NewBufferString("")}, nil)
-	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.Image{}, nil)
+	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(volume.VolumesListOKBody{}, nil)
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
 
 	// connect client
@@ -230,9 +231,9 @@ func TestTagImage(t *testing.T) {
 	c := &Cluster{
 		engines: make(map[string]*cluster.Engine),
 	}
-	images := []types.Image{}
+	images := []types.ImageSummary{}
 
-	image1 := types.Image{
+	image1 := types.ImageSummary{
 		ID:       "1234567890",
 		RepoTags: []string{"busybox:latest"},
 	}
@@ -252,8 +253,8 @@ func TestTagImage(t *testing.T) {
 	apiClient.On("NetworkList", mock.Anything,
 		mock.AnythingOfType("NetworkListOptions"),
 	).Return([]types.NetworkResource{}, nil)
-	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(types.VolumesListResponse{}, nil)
-	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(&nopCloser{bytes.NewBufferString("")}, nil)
+	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(volume.VolumesListOKBody{}, nil)
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return(images, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
 
@@ -264,7 +265,7 @@ func TestTagImage(t *testing.T) {
 	c.engines[engine.ID] = engine
 
 	// tag image
-	apiClient.On("ImageTag", mock.Anything, mock.AnythingOfType("types.ImageTagOptions")).Return(nil).Once()
-	assert.Nil(t, c.TagImage("busybox", "test_busybox", "latest", false))
-	assert.NotNil(t, c.TagImage("busybox_not_exists", "test_busybox", "latest", false))
+	apiClient.On("ImageTag", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
+	assert.Nil(t, c.TagImage("busybox", "test_busybox:latest", false))
+	assert.NotNil(t, c.TagImage("busybox_not_exists", "test_busybox:latest", false))
 }

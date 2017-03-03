@@ -43,6 +43,13 @@ function teardown() {
 }
 
 @test "docker network inspect" {
+	# Docker 1.12 client shows "Attachable" and "Created" fields while docker daemon 1.12
+	# doesn't return them. Network inspect from Swarm is different from daemon.
+	run docker --version
+	if [[ "${output}" == "Docker version 1.12"* ]]; then
+		skip
+	fi
+
 	start_docker_with_busybox 2
 	swarm_manage
 

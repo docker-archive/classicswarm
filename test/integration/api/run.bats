@@ -11,7 +11,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# make sure no container exist
+	# make sure no container exists
 	run docker_swarm ps -qa
 	[ "${#lines[@]}" -eq 0 ]
 
@@ -26,13 +26,22 @@ function teardown() {
 	[[ "${output}" == *"cannot specify 64-byte hexadecimal strings"* ]]
 }
 
+@test "docker run with autoremove" {
+	start_docker_with_busybox 2
+	swarm_manage
+
+	# run with --rm
+	docker_swarm run --rm busybox echo hello
+	[ "$status" -eq 0 ]
+}
+
 @test "docker run with image digest" {
 	start_docker 2
 	swarm_manage
 
 	docker_swarm pull jimmyxian/busybox@sha256:649374debd26307573564fcf9748d39db33ef61fbf88ee84c3af10fd7e08765d
 
-	# make sure no container exist
+	# make sure no container exists
 	run docker_swarm ps -qa
 	[ "${#lines[@]}" -eq 0 ]
 
@@ -237,7 +246,7 @@ function teardown() {
 	start_docker_with_busybox 2
 	swarm_manage
 
-	# make sure no container exist
+	# make sure no container exists
 	run docker_swarm ps -qa
 	[ "${#lines[@]}" -eq 0 ]
 

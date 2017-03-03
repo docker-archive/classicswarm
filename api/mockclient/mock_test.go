@@ -6,8 +6,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/docker/engine-api/client"
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/swarm/swarmclient"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -27,10 +27,10 @@ func TestMock(t *testing.T) {
 }
 
 func TestMockInterface(t *testing.T) {
-	iface := reflect.TypeOf((*client.APIClient)(nil)).Elem()
+	iface := reflect.TypeOf((*swarmclient.SwarmAPIClient)(nil)).Elem()
 	mockClient := NewMockClient()
 
 	if !reflect.TypeOf(mockClient).Implements(iface) {
-		t.Fatalf("Mock does not implement the APIClient interface")
+		t.Fatalf("Mock does not implement the SwarmAPIClient interface")
 	}
 }

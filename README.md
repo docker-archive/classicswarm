@@ -10,17 +10,44 @@
 Docker Swarm is native clustering for Docker. It turns a pool of Docker hosts
 into a single, virtual host.
 
+## Swarm Disambiguation
+
+**Docker Swarm standalone**: This project. A native clustering system for
+Docker. It turns a pool of Docker hosts into a single, virtual host using an
+API proxy system. See [Docker Swarm overview](https://docs.docker.com/swarm/overview/).
+It is Docker's first container orchestration project that began in 2014.
+Combined with Docker Compose, it's a very convenient tool to schedule containers.
+Its flexibility and simplicity make it easy to integrate with existing IT infrastructure.
+Many companies and users have deployed Docker Swarm standalone for production and experimental
+projects. Docker does not currently have a plan to deprecate Docker Swarm.
+The Docker API is backward compatible so Docker Swarm will continue to work with
+future Docker Engine versions.
+
+**[Swarmkit](https://github.com/docker/swarmkit)**: Cluster
+management and orchestration features in Docker Engine 1.12 or later. When Swarmkit
+is enabled we call Docker Engine running in swarm mode. See the
+feature list: [Swarm mode overview](https://docs.docker.com/engine/swarm/).
+This project focuses on micro-service architecture. It supports service
+reconciliation, load balancing, service discovery, built-in certificate rotation, etc.
+Swarm mode is Docker's response to the community's request to simplify service orchestration.
+
+While the 2 projects may accomplish similar tasks, they work on different levels
+in terms of service architecture. Users can choose which one is more suitable for their workload.
+If you're in doubt, Docker recommends that you try Docker 1.12 and later with built-in swarm mode.
+
+## Docker Swarm standalone
+
 Swarm serves the standard Docker API, so any tool which already communicates
 with a Docker daemon can use Swarm to transparently scale to multiple hosts:
 Dokku, Compose, Krane, Flynn, Deis, DockerUI, Shipyard, Drone, Jenkins... and,
 of course, the Docker client itself.
 
 Like other Docker projects, Swarm follows the "batteries included but removable"
-principle. It ships with a set of simple scheduling backends out of the box, and as
-initial development settles, an API will be developed to enable pluggable backends.
-The goal is to provide a smooth out-of-the-box experience for simple use cases, and
-allow swapping in more powerful backends, like Mesos, for large scale production
-deployments.
+principle. It ships with a set of simple scheduling backends out of the box, and
+as initial development settles, an API will be developed to enable pluggable
+backends. The goal is to provide a smooth out-of-the-box experience for simple
+use cases, and allow swapping in more powerful backends, like Mesos, for large
+scale production deployments.
 
 ## Installation for Swarm Users
 
@@ -44,4 +71,9 @@ Finally, if you want to see what we have for the future and learn more about our
 
 ## Copyright and license
 
-Copyright © 2014-2016 Docker, Inc. All rights reserved, except as follows. Code is released under the Apache 2.0 license. The README.md file, and files in the "docs" folder are licensed under the Creative Commons Attribution 4.0 International License under the terms and conditions set forth in the file "LICENSE.docs". You may obtain a duplicate copy of the same license, titled CC-BY-SA-4.0, at http://creativecommons.org/licenses/by/4.0/.
+Copyright © 2014-2016 Docker, Inc. All rights reserved, except as follows. Code
+is released under the Apache 2.0 license. The README.md file, and files in the
+"docs" folder are licensed under the Creative Commons Attribution 4.0
+International License under the terms and conditions set forth in the file
+"LICENSE.docs". You may obtain a duplicate copy of the same license, titled
+CC-BY-SA-4.0, at http://creativecommons.org/licenses/by/4.0/.
