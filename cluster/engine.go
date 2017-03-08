@@ -495,11 +495,20 @@ func (e *Engine) updateSpecs() error {
 	// Swarm/docker identifies engine by ID. Updating ID but not updating cluster
 	// index will put the cluster into inconsistent state. If this happens, the
 	// engine should be put to pending state for re-validation.
+	var infoID string
+	if info.Swarm.NodeID != "" {
+		// Use the swarm-mode node ID if it's available, since it's
+		// guaranteed to be unique, even if the daemon has a copied
+		// /etc/docker/key.json file from another machine.
+		infoID = info.Swarm.NodeID
+	} else {
+		infoID = info.ID
+	}
 	if e.ID == "" {
-		e.ID = info.ID
-	} else if e.ID != info.ID {
+		e.ID = infoID
+	} else if e.ID != infoID {
 		e.state = statePending
-		message := fmt.Sprintf("Engine (ID: %s, Addr: %s) shows up with another ID:%s. Please remove it from cluster, it can be added back.", e.ID, e.Addr, info.ID)
+		message := fmt.Sprintf("Engine (ID: %s, Addr: %s) shows up with another ID:%s. Please remove it from cluster, it can be added back.", e.ID, e.Addr, infoID)
 		e.lastError = message
 		return errors.New(message)
 	}
