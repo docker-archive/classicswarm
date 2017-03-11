@@ -209,6 +209,7 @@ function start_docker() {
 				rm /var/run/docker.pid ; \
 				rm /var/run/docker/libcontainerd/docker-containerd.pid ; \ 
 				rm /var/run/docker/libcontainerd/docker-containerd.sock ; \
+				addgroup docker ; \
 				hostname node-$i && \
 				docker daemon -H 127.0.0.1:$port \
 					-H=unix:///var/run/docker.sock \
