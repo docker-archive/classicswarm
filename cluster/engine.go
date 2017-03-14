@@ -1096,7 +1096,8 @@ func (e *Engine) Pull(image string, authConfig *types.AuthConfig, callback func(
 		line := scanner.Text()
 		var msg JSONMessage
 		if err := json.Unmarshal([]byte(line), &msg); err != nil {
-			return fmt.Errorf("Malformed progress line during pull of %s: %s - %s", image, line, err)
+			log.Warnf("Malformed progress line during pull of %s: %s - %s", image, line, err)
+			continue
 		}
 
 		if msg.Error != nil {
@@ -1128,7 +1129,8 @@ func (e *Engine) Load(reader io.Reader, callback func(msg JSONMessage)) error {
 		line := scanner.Text()
 		var msg JSONMessage
 		if err := json.Unmarshal([]byte(line), &msg); err != nil {
-			return fmt.Errorf("Malformed progress line during image load: %s - %s", line, err)
+			log.Warnf("Malformed progress line during image load: %s - %s", line, err)
+			continue
 		}
 
 		if msg.Error != nil {
@@ -1169,7 +1171,8 @@ func (e *Engine) Import(source string, ref string, tag string, imageReader io.Re
 		line := scanner.Text()
 		var msg JSONMessage
 		if err := json.Unmarshal([]byte(line), &msg); err != nil {
-			return fmt.Errorf("Malformed progress line during import of %s: %s - %s", ref, line, err)
+			log.Warnf("Malformed progress line during import of %s: %s - %s", ref, line, err)
+			continue
 		}
 
 		if msg.Error != nil {
