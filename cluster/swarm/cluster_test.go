@@ -155,7 +155,7 @@ func TestImportImage(t *testing.T) {
 	c.engines[engine.ID] = engine
 
 	// import success
-	readCloser := nopCloser{bytes.NewBufferString("ok")}
+	readCloser := nopCloser{bytes.NewBufferString("")}
 	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportSource"), mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, nil).Once()
 
 	callback := func(what, status string, err error) {
@@ -165,7 +165,7 @@ func TestImportImage(t *testing.T) {
 	c.Import("-", "testImageOK", "latest", bytes.NewReader(nil), callback)
 
 	// import error
-	readCloser = nopCloser{bytes.NewBufferString("error")}
+	readCloser = nopCloser{bytes.NewBufferString("")}
 	err := fmt.Errorf("Import error")
 	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportSource"), mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, err).Once()
 

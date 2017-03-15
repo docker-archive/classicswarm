@@ -619,7 +619,14 @@ func (c *Cluster) Pull(name string, authConfig *types.AuthConfig, callback func(
 			if callback != nil {
 				callback(engine.Name, "", nil)
 			}
-			err := engine.Pull(name, authConfig)
+
+			var engineCallback func(msg cluster.JSONMessage)
+			if callback != nil {
+				engineCallback = func(msg cluster.JSONMessage) {
+					callback(engine.Name, msg.Status, nil)
+				}
+			}
+			err := engine.Pull(name, authConfig, engineCallback)
 			if callback != nil {
 				if err != nil {
 					callback(engine.Name, "", err)
@@ -651,7 +658,13 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string
 			defer reader.Close()
 
 			// call engine load image
-			err := engine.Load(reader)
+			var engineCallback func(msg cluster.JSONMessage)
+			if callback != nil {
+				engineCallback = func(msg cluster.JSONMessage) {
+					callback(engine.Name, msg.Status, nil)
+				}
+			}
+			err := engine.Load(reader, engineCallback)
 			if callback != nil {
 				if err != nil {
 					callback(engine.Name, "", err)
@@ -699,7 +712,13 @@ func (c *Cluster) Import(source string, ref string, tag string, imageReader io.R
 			defer reader.Close()
 
 			// call engine import
-			err := engine.Import(source, ref, tag, reader)
+			var engineCallback func(msg cluster.JSONMessage)
+			if callback != nil {
+				engineCallback = func(msg cluster.JSONMessage) {
+					callback(engine.Name, msg.Status, nil)
+				}
+			}
+			err := engine.Import(source, ref, tag, reader, engineCallback)
 			if callback != nil {
 				if err != nil {
 					callback(engine.Name, "", err)
