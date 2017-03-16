@@ -53,17 +53,20 @@ func (eh *eventsHandler) Wait(remoteAddr string, until int64) {
 	}
 
 	// subscribe to http client close event
+	eh.RLock()
 	w := eh.ws[remoteAddr]
+	ch := eh.cs[remoteAddr]
+	eh.RUnlock()
 	var closeNotify <-chan bool
 	if closeNotifier, ok := w.(http.CloseNotifier); ok {
 		closeNotify = closeNotifier.CloseNotify()
 	}
 
 	select {
-	case <-eh.cs[remoteAddr]:
+	case <-ch:
 	case <-closeNotify:
 	case <-timer.C: // `--until` timeout
-		close(eh.cs[remoteAddr])
+		close(ch)
 	}
 	eh.cleanupHandler(remoteAddr)
 }
