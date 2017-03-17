@@ -117,7 +117,7 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 
 	var failed []string
 
-	eh.RLock()
+	eh.Lock()
 
 	for key, w := range eh.ws {
 		if _, err := fmt.Fprint(w, string(data)); err != nil {
@@ -130,8 +130,6 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 			f.Flush()
 		}
 	}
-	eh.RUnlock()
-	eh.Lock()
 	if len(failed) > 0 {
 		for _, key := range failed {
 			if ch, ok := eh.cs[key]; ok {
