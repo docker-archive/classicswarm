@@ -89,7 +89,7 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 			log.Errorf("container %s has no name", c.ID)
 			continue
 		}
-		// cut preceeding '/'
+		// cut preceding '/'
 		if name[0] == '/' {
 			name = name[1:]
 		}
