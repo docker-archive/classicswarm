@@ -15,13 +15,13 @@ function teardown() {
 	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 1 ]
 
-	# run
-	docker_swarm run -d -v=/tmp busybox true
+	# run on node-0
+	docker_swarm run -e constraint:node==node-0 -d -v=/tmp busybox true
 
 	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 2 ]
 
-	docker_swarm run -d -v=/tmp busybox true
+	docker_swarm run -e constraint:node==node-0 -d -v=/tmp busybox true
 
 	run docker_swarm volume ls
 	[ "${#lines[@]}" -eq 3 ]
@@ -36,6 +36,17 @@ function teardown() {
 	[ "${#lines[@]}" -eq 3 ] 
 	[[ "${lines[1]}" == *"testsubstrvol"* ]]
 	[[ "${lines[2]}" == *"testsubstrvol"* ]]
+
+	# filter for node-specific volumes
+	# node-0 should have three volumes
+	run docker_swarm volume ls --filter node=node-0
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 4 ] 
+
+	# node-1 should have one volume
+	run docker_swarm volume ls --filter node=node-1
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 2 ] 
 }
 
 @test "docker volume inspect" {

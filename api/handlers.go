@@ -332,6 +332,7 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	names := filters.Get("name")
+	nodes := filters.Get("node")
 	for _, volume := range c.cluster.Volumes() {
 		// Check if the volume matches any name filters
 		found := false
@@ -341,6 +342,7 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
+
 		if len(names) > 0 && !found {
 			// Do not include this volume in the response if it doesn't match
 			// a name filter, if any exist.
@@ -349,6 +351,17 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 
 		tmp := (*volume).Volume
 		if tmp.Driver == "local" {
+			// Check if the volume matches any node filters
+			found = false
+			for _, node := range nodes {
+				if volume.Engine.Name == node {
+					found = true
+					break
+				}
+			}
+			if len(nodes) > 0 && !found {
+				continue
+			}
 			tmp.Name = volume.Engine.Name + "/" + volume.Name
 		}
 		volumesListResponse.Volumes = append(volumesListResponse.Volumes, &tmp)
