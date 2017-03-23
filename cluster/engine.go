@@ -585,7 +585,10 @@ func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDelete, erro
 		Force:         force,
 		PruneChildren: true,
 	}
-	dels, err := e.apiClient.ImageRemove(context.Background(), name, rmOpts)
+
+	ctx, cancelFunc := context.WithDeadline(context.Background(), time.Now().Add(time.Minute))
+	defer cancelFunc()
+	dels, err := e.apiClient.ImageRemove(ctx, name, rmOpts)
 	e.CheckConnectionErr(err)
 
 	// ImageRemove is not atomic. Engine may have deleted some layers and still failed.
@@ -627,7 +630,10 @@ func (e *Engine) AddNetwork(network *Network) {
 
 // RemoveVolume deletes a volume from the engine.
 func (e *Engine) RemoveVolume(name string) error {
-	err := e.apiClient.VolumeRemove(context.Background(), name, false)
+	ctx, cancelFunc := context.WithDeadline(context.Background(), time.Now().Add(time.Minute))
+	defer cancelFunc()
+
+	err := e.apiClient.VolumeRemove(ctx, name, false)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -644,8 +650,11 @@ func (e *Engine) RemoveVolume(name string) error {
 
 // RefreshImages refreshes the list of images on the engine.
 func (e *Engine) RefreshImages() error {
+	ctx, cancelFunc := context.WithDeadline(context.Background(), time.Now().Add(time.Minute))
+	defer cancelFunc()
+
 	imgLstOpts := types.ImageListOptions{All: true}
-	images, err := e.apiClient.ImageList(context.Background(), imgLstOpts)
+	images, err := e.apiClient.ImageList(ctx, imgLstOpts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
