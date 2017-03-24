@@ -42,6 +42,25 @@ function teardown() {
 	[ "${#lines[@]}" -eq 2 ]
 }
 
+# docker network ls --filter node returns networks that are present on a specific node
+@test "docker network ls --filter node" {
+	# docker network ls --filter type is introduced in docker 1.10, skip older version without --filter type
+	run docker --version
+	if [[ "${output}" != "Docker version 1.1"* ]]; then
+		skip
+	fi
+
+	start_docker 2
+	swarm_manage
+
+	run docker_swarm network ls --filter node=node-0
+	[ "${#lines[@]}" -eq 4 ]
+
+	run docker_swarm network ls --filter node=node-1
+	[ "${#lines[@]}" -eq 4 ]
+}
+
+
 @test "docker network inspect" {
 	# Docker 1.12 client shows "Attachable" and "Created" fields while docker daemon 1.12
 	# doesn't return them. Network inspect from Swarm is different from daemon.

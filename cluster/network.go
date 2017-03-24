@@ -46,7 +46,7 @@ func (networks Networks) Uniq() Networks {
 	return uniq
 }
 
-// Filter returns networks filtered by names, IDs, labels, etc.
+// Filter returns networks filtered by names, IDs, nodes, labels, etc.
 func (networks Networks) Filter(filter filters.Args) Networks {
 	includeFilter := func(network *Network) bool {
 		for _, typ := range filter.Get("type") {
@@ -64,6 +64,11 @@ func (networks Networks) Filter(filter filters.Args) Networks {
 		}
 		if filter.Include("driver") {
 			if !filter.ExactMatch("driver", network.Driver) {
+				return false
+			}
+		}
+		for _, node := range filter.Get("node") {
+			if network.Engine.Name != node {
 				return false
 			}
 		}
