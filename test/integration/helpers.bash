@@ -219,7 +219,15 @@ function start_docker() {
 
 	# Wait for the engines to be reachable.
 	for ((i=current; i < (current + instances); i++)); do
-		wait_until_reachable "${HOSTS[$i]}"
+		run wait_until_reachable "${HOSTS[$i]}"
+		if [[ "$status" -eq 0 ]] ; then
+			continue
+		fi
+		run docker_host inspect "${DOCKER_CONTAINERS[$i]}"
+		echo "$output"
+		run docker_host logs "${DOCKER_CONTAINERS[$i]}"
+		echo "$output"
+		false
 	done
 }
 
