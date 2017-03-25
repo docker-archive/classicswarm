@@ -260,10 +260,10 @@ func (c *Cluster) RemoveNetwork(network *cluster.Network) error {
 		}
 	} else if engineapi.IsErrConnectionFailed(err) && network.Scope == "global" {
 		log.Debug("The original engine is unreachable - Attempting to remove global network from the reachable engines...")
-		for _, engine := range c.engines {
+		for _, engine := range c.listActiveEngines() {
 			e1 := engine.RemoveNetwork(network)
 			if e1 == nil {
-				for _, engine := range c.engines {
+				for _, engine := range c.listActiveEngines() {
 					engine.DeleteNetwork(network)
 				}
 				err = nil
@@ -452,9 +452,7 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 		return nil
 	}
 
-	c.RLock()
-	defer c.RUnlock()
-	for _, e := range c.engines {
+	for _, e := range c.listActiveEngines() {
 		if image := e.Image(IDOrName); image != nil {
 			return image
 		}
@@ -467,20 +465,31 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, error) {
 	out := []types.ImageDelete{}
 	errs := []string{}
-	var err error
+	var mu sync.Mutex
+	var wg sync.WaitGroup
 	for _, e := range c.listActiveEngines() {
 		for _, image := range e.Images() {
 			if image.Match(name, true) {
-				content, err := image.Engine.RemoveImage(name, force)
-				if err != nil {
-					errs = append(errs, fmt.Sprintf("%s: %s", image.Engine.Name, err.Error()))
-					continue
-				}
-				out = append(out, content...)
+				wg.Add(1)
+				go func(image *cluster.Image) {
+					defer wg.Done()
+					content, err := image.Engine.RemoveImage(name, force)
+					if err != nil {
+						mu.Lock()
+						errs = append(errs, fmt.Sprintf("%s: %s", image.Engine.Name, err.Error()))
+						mu.Unlock()
+						return
+					}
+					mu.Lock()
+					out = append(out, content...)
+					mu.Unlock()
+				}(image)
 			}
 		}
 	}
+	wg.Wait()
 
+	var err error
 	if len(errs) > 0 {
 		err = errors.New(strings.Join(errs, "\n"))
 	}
@@ -580,16 +589,29 @@ func (c *Cluster) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume
 func (c *Cluster) RemoveVolumes(name string) (bool, error) {
 	found := false
 	errs := []string{}
-	var err error
+	var mu sync.Mutex
+	var wg sync.WaitGroup
 	for _, e := range c.listActiveEngines() {
 		if volume := e.Volumes().Get(name); volume != nil {
-			if err := volume.Engine.RemoveVolume(volume.Name); err != nil {
-				errs = append(errs, fmt.Sprintf("%s: %s", volume.Engine.Name, err.Error()))
-				continue
-			}
-			found = true
+			wg.Add(1)
+			go func(volume *cluster.Volume) {
+				defer wg.Done()
+				err := volume.Engine.RemoveVolume(volume.Name)
+				if err != nil {
+					mu.Lock()
+					errs = append(errs, fmt.Sprintf("%s: %s", volume.Engine.Name, err.Error()))
+					mu.Unlock()
+					return
+				}
+				mu.Lock()
+				found = true
+				mu.Unlock()
+			}(volume)
 		}
 	}
+	wg.Wait()
+
+	var err error
 	if len(errs) > 0 {
 		err = errors.New(strings.Join(errs, "\n"))
 	}
