@@ -496,15 +496,11 @@ func (e *Engine) updateSpecs() error {
 	// Swarm/docker identifies engine by ID. Updating ID but not updating cluster
 	// index will put the cluster into inconsistent state. If this happens, the
 	// engine should be put to pending state for re-validation.
-	var infoID string
-	if info.Swarm.NodeID != "" {
-		// Use the swarm-mode node ID if it's available, since it's
-		// guaranteed to be unique, even if the daemon has a copied
-		// /etc/docker/key.json file from another machine.
-		infoID = info.Swarm.NodeID
-	} else {
-		infoID = info.ID
-	}
+	// We concatenate the engine ID and the address because sometimes engine
+	// IDs can be duplicated on different nodes (e.g. if a user has
+	// accidentally copied their /etc/docker/daemon.json file onto another
+	// node).
+	infoID := info.ID + "|" + e.Addr
 	if e.ID == "" {
 		e.ID = infoID
 	} else if e.ID != infoID {

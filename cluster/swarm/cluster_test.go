@@ -55,7 +55,7 @@ var (
 func createEngine(t *testing.T, ID string, containers ...*cluster.Container) *cluster.Engine {
 	engine := cluster.NewEngine(ID, 0, engOpts)
 	engine.Name = ID
-	engine.ID = ID
+	engine.ID = ID + "|" + engine.Addr
 
 	for _, container := range containers {
 		container.Engine = engine
@@ -133,7 +133,7 @@ func TestImportImage(t *testing.T) {
 	id := "test-engine"
 	engine := cluster.NewEngine(id, 0, engOpts)
 	engine.Name = id
-	engine.ID = id
+	engine.ID = id + "|" + engine.Addr
 
 	// create mock client
 	client := mockclient.NewMockClient()
@@ -243,7 +243,7 @@ func TestTagImage(t *testing.T) {
 	id := "test-engine"
 	engine := cluster.NewEngine(id, 0, engOpts)
 	engine.Name = id
-	engine.ID = id
+	engine.ID = id + "|" + engine.Addr
 
 	// create mock client
 	client := mockclient.NewMockClient()
