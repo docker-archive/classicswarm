@@ -129,6 +129,9 @@ func TestImageFilterWithDangling(t *testing.T) {
 	nonDanglingFilters := dockerfilters.NewArgs()
 	nonDanglingFilters.Add("dangling", "false")
 
+	illegalDanglingFilters := dockerfilters.NewArgs()
+	illegalDanglingFilters.Add("dangling", "nonexisting")
+
 	engine := NewEngine("test", 0, engOpts)
 	images := Images{
 		{
@@ -171,6 +174,20 @@ func TestImageFilterWithDangling(t *testing.T) {
 	assert.Equal(t, 2, len(result))
 	assert.Equal(t, "a", result[0].ID)
 	assert.Equal(t, "c", result[1].ID)
+
+	result = images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, Filters: illegalDanglingFilters}})
+	assert.Equal(t, 4, len(result))
+	assert.Equal(t, "a", result[0].ID)
+	assert.Equal(t, "b", result[1].ID)
+	assert.Equal(t, "c", result[2].ID)
+	assert.Equal(t, "d", result[3].ID)
+
+	result = images.Filter(ImageFilterOptions{types.ImageListOptions{All: false, Filters: illegalDanglingFilters}})
+	assert.Equal(t, 4, len(result))
+	assert.Equal(t, "a", result[0].ID)
+	assert.Equal(t, "b", result[1].ID)
+	assert.Equal(t, "c", result[2].ID)
+	assert.Equal(t, "d", result[3].ID)
 }
 
 func TestParseRepositoryTag(t *testing.T) {

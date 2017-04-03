@@ -127,13 +127,10 @@ func (images Images) Filter(opts ImageFilterOptions) Images {
 		return false
 	}
 
-	danglingFilter := func(image *Image) bool {
+	danglingFilter := func(image Image) bool {
 		if opts.Filters.Include("dangling") {
 			if len(image.RepoTags) == 0 {
 				image.RepoTags = []string{"<none>:<none>"}
-			}
-			if len(image.RepoDigests) == 0 {
-				image.RepoDigests = []string{"<none>@<none>"}
 			}
 
 			if opts.Filters.ExactMatch("dangling", "true") {
@@ -153,7 +150,7 @@ func (images Images) Filter(opts ImageFilterOptions) Images {
 
 	filtered := make([]*Image, 0, len(images))
 	for _, image := range images {
-		if includeAll(image) && includeFilter(image) && referenceFilter(image, "reference") && danglingFilter(image) {
+		if includeAll(image) && includeFilter(image) && referenceFilter(image, "reference") && danglingFilter(*image) {
 			filtered = append(filtered, image)
 		}
 	}
