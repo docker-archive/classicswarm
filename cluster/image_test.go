@@ -122,6 +122,57 @@ func TestImagesFilterWithMatchNameWithTag(t *testing.T) {
 	assert.Equal(t, len(result), 2)
 }
 
+func TestImageFilterWithDangling(t *testing.T) {
+	danglingFilters := dockerfilters.NewArgs()
+	danglingFilters.Add("dangling", "true")
+
+	nonDanglingFilters := dockerfilters.NewArgs()
+	nonDanglingFilters.Add("dangling", "false")
+
+	engine := NewEngine("test", 0, engOpts)
+	images := Images{
+		{
+			types.ImageSummary{
+				ID:       "a",
+				RepoTags: []string{"example:latest", "example:2"},
+			},
+			engine,
+		},
+		{
+			types.ImageSummary{ID: "b"},
+			engine,
+		},
+		{
+			types.ImageSummary{ID: "c", RepoTags: []string{"foo:latest"}},
+			engine,
+		},
+		{
+			types.ImageSummary{ID: "d", RepoTags: []string{"<none>:<none>"}},
+			engine,
+		},
+	}
+
+	result := images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, Filters: danglingFilters}})
+	assert.Equal(t, 2, len(result))
+	assert.Equal(t, "b", result[0].ID)
+	assert.Equal(t, "d", result[1].ID)
+
+	result = images.Filter(ImageFilterOptions{types.ImageListOptions{All: false, Filters: danglingFilters}})
+	assert.Equal(t, 2, len(result))
+	assert.Equal(t, "b", result[0].ID)
+	assert.Equal(t, "d", result[1].ID)
+
+	result = images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, Filters: nonDanglingFilters}})
+	assert.Equal(t, 2, len(result))
+	assert.Equal(t, "a", result[0].ID)
+	assert.Equal(t, "c", result[1].ID)
+
+	result = images.Filter(ImageFilterOptions{types.ImageListOptions{All: false, Filters: nonDanglingFilters}})
+	assert.Equal(t, 2, len(result))
+	assert.Equal(t, "a", result[0].ID)
+	assert.Equal(t, "c", result[1].ID)
+}
+
 func TestParseRepositoryTag(t *testing.T) {
 
 	repo, tag := ParseRepositoryTag("localhost.localdomain:5000/samalba/hipache:latest")
