@@ -371,7 +371,6 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(volumesListResponse)
 }
 
-// GET /containers/ps
 // GET /containers/json
 func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
