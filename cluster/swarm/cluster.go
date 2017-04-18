@@ -200,7 +200,12 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 		config.AddAffinity("image==" + config.Image)
 	}
 
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+	listedNodes := c.listNodes()
+	nodes, err := c.scheduler.SelectNodesForContainer(listedNodes, config)
+
+	if err != nil {
+		log.WithFields(log.Fields{"nodes": nodes, "config": config, "listedNodes": listedNodes }).Debugf("XXXX: createContainer")
+	}
 
 	if withImageAffinity {
 		config.RemoveAffinity("image==" + config.Image)

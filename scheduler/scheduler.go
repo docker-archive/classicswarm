@@ -37,7 +37,12 @@ func (s *Scheduler) SelectNodesForContainer(nodes []*node.Node, config *cluster.
 	candidates, err := s.selectNodesForContainer(nodes, config, true)
 
 	if err != nil {
+		log.WithFields(log.Fields{"nodes": nodes, "config": config }).Debugf("XXXX: SelectNodesForContainer")
 		candidates, err = s.selectNodesForContainer(nodes, config, false)
+	}
+
+	if err != nil {
+		log.WithFields(log.Fields{"nodes": nodes, "config": config }).Debugf("XXXX: SelectNodesForContainer part 2")
 	}
 	return candidates, err
 }
