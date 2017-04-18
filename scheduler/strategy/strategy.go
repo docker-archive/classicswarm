@@ -44,10 +44,6 @@ func init() {
 
 // New creates a new PlacementStrategy for the given strategy name.
 func New(name string) (PlacementStrategy, error) {
-	if name == "binpacking" { //TODO: remove this compat
-		name = "binpack"
-	}
-
 	for _, strategy := range strategies {
 		if strategy.Name() == name {
 			log.WithField("name", name).Debugf("Initializing strategy")
