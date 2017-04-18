@@ -3,9 +3,11 @@ package api
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRequest(t *testing.T) {
@@ -16,10 +18,8 @@ func TestRequest(t *testing.T) {
 	setupPrimaryRouter(r, context, false)
 	w := httptest.NewRecorder()
 
-	req, e := http.NewRequest("GET", "/version", nil)
-	if nil != e {
-		t.Fatalf("couldn't set up test request")
-	}
+	req, err := http.NewRequest("GET", "/version", nil)
+	assert.NoError(t, err)
 
 	r.ServeHTTP(w, req)
 
@@ -29,8 +29,8 @@ func TestRequest(t *testing.T) {
 		t.Log(k, " : ", v)
 	}
 
-	if w.Code == 404 {
-		t.Fatalf("failed not found")
+	if w.Code != 200 {
+		t.Fatalf("HTTP response status code is %d, not 200", w.Code)
 	}
 }
 
@@ -43,10 +43,8 @@ func TestCorsRequest(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// test an OPTIONS request when cors enabled
-	r, e := http.NewRequest("OPTIONS", "/version", nil)
-	if nil != e {
-		t.Fatalf("couldn't set up test request")
-	}
+	r, err := http.NewRequest("OPTIONS", "/version", nil)
+	assert.NoError(t, err)
 
 	primary.ServeHTTP(w, r)
 
@@ -56,26 +54,47 @@ func TestCorsRequest(t *testing.T) {
 		t.Log(k, " : ", v)
 	}
 
-	if w.Code == 404 {
-		t.Fatalf("failed not found")
+	// test response status code
+	if w.Code != 200 {
+		t.Fatalf("HTTP response status code is %d, not 200", w.Code)
+	}
+
+	// test Access-Control-Allow-Headers in response headers
+	allowHeaders := w.Header().Get("Access-Control-Allow-Headers")
+
+	for _, value := range []string{"Origin", "X-Requested-With", "Content-Type", "Accept", "X-Registry-Auth"} {
+		if !strings.Contains(allowHeaders, value) {
+			t.Fatalf("Header %s is not in Access-Control-Allow-Headers", value)
+		}
+	}
+
+	// test Access-Control-Allow-Methods in response headers
+	allowMethods := w.Header().Get("Access-Control-Allow-Methods")
+
+	for _, value := range []string{"GET", "POST", "DELETE", "PUT", "OPTIONS", "HEAD"} {
+		if !strings.Contains(allowMethods, value) {
+			t.Fatalf("Method %s is not in Access-Control-Allow-Methods", value)
+		}
 	}
 
 	// test a normal request ( GET /_ping ) when cors enabled
 	w2 := httptest.NewRecorder()
 
-	r2, e2 := http.NewRequest("GET", "/_ping", nil)
-	if nil != e2 {
-		t.Fatalf("couldn't set up test request")
-	}
+	r2, err2 := http.NewRequest("GET", "/_ping", nil)
+	assert.NoError(t, err2)
 
 	primary.ServeHTTP(w2, r2)
 
+<<<<<<< HEAD
 	if w2.Body.String() != "OK" {
 		t.Fatalf("couldn't get body content when cors enabled")
 	}
 
-	if w2.Code == 404 {
-		t.Fatalf("failed not found")
+	if w2.Code != 200 {
+		t.Fatalf("HTTP response status code is %d, not 200", w2.Code)
 	}
-
+=======
+	assert.Equal(t, w2.Body.String(), "OK")
+	assert.Equal(t, w.Code, 200)
+>>>>>>> make all unit tests use assert for consistency
 }
