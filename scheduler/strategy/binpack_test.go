@@ -162,8 +162,7 @@ func TestPlaceContainerHuge(t *testing.T) {
 }
 
 func TestPlaceContainerOvercommit(t *testing.T) {
-	s, err := New("binpacking")
-	assert.NoError(t, err)
+	s := &BinpackPlacementStrategy{}
 
 	nodes := []*node.Node{createNode("node-1", 100, 1)}
 
