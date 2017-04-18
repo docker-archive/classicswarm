@@ -99,6 +99,10 @@ func proxyAsync(engine *cluster.Engine, w http.ResponseWriter, r *http.Request, 
 		return err
 	}
 
+	if client == nil {
+		return fmt.Errorf("Failed to connect to engine (name: %s, ID: %s) ", engine.Name, engine.ID)
+	}
+
 	r.URL.Scheme = scheme
 	r.URL.Host = engine.Addr
 
