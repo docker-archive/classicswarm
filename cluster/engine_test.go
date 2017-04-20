@@ -34,6 +34,7 @@ var (
 		Driver:          "driver-test",
 		KernelVersion:   "1.2.3",
 		OperatingSystem: "golang",
+		OSType:          "linux",
 		Labels:          []string{"foo=bar"},
 	}
 
@@ -224,6 +225,7 @@ func TestEngineSpecs(t *testing.T) {
 
 	assert.Equal(t, engine.Labels["kernelversion"], mockInfo2.KernelVersion)
 	assert.Equal(t, engine.Labels["operatingsystem"], mockInfo2.OperatingSystem)
+	assert.Equal(t, engine.Labels["ostype"], mockInfo2.OSType)
 	assert.Equal(t, engine.Labels["foo"], "bar")
 
 	assert.NotEqual(t, engine.Labels["node"], "node1")

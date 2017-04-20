@@ -562,6 +562,9 @@ func (e *Engine) updateSpecs() error {
 	if info.OperatingSystem != "" {
 		e.Labels["operatingsystem"] = info.OperatingSystem
 	}
+	if info.OSType != "" {
+		e.Labels["ostype"] = info.OSType
+	}
 	for _, label := range info.Labels {
 		kv := strings.SplitN(label, "=", 2)
 		if len(kv) != 2 {
