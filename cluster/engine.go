@@ -1460,13 +1460,32 @@ func (e *Engine) RenameContainer(container *Container, newName string) error {
 }
 
 // BuildImage builds an image
-func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions) (io.ReadCloser, error) {
+func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, callback func(msg JSONMessage)) error {
 	resp, err := e.apiClient.ImageBuild(context.Background(), buildContext, *buildImage)
 	e.CheckConnectionErr(err)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return resp.Body, nil
+	defer resp.Body.Close()
+
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+		var msg JSONMessage
+		if err := json.Unmarshal([]byte(line), &msg); err != nil {
+			log.Warnf("Malformed progress line during image build: %s - %s", line, err)
+			continue
+		}
+
+		if msg.Error != nil {
+			return fmt.Errorf("Failed to build image: %s", msg.Error.Message)
+		}
+
+		if callback != nil {
+			callback(msg)
+		}
+	}
+	return nil
 }
 
 // TagImage tags an image

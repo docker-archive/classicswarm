@@ -1347,9 +1347,28 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	wf := NewWriteFlusher(w)
 
-	err := c.cluster.BuildImage(r.Body, buildImage, wf)
+	var errorMessage string
+	errorFound := false
+	callback := func(what, status string, err error) {
+		if err != nil {
+			errorFound = true
+			errorMessage = err.Error()
+			osType := matchImageOSError(errorMessage)
+			if osType != "" {
+				errorMessage = fmt.Sprintf("Could not build image: %s. Consider using --build-arg 'constraint:ostype==%s'", err, osType)
+			}
+			sendJSONMessage(wf, what, errorMessage)
+			return
+		}
+		sendJSONMessage(wf, what, status)
+	}
+	err := c.cluster.BuildImage(r.Body, buildImage, callback)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if errorFound {
+		sendErrorJSONMessage(wf, 1, errorMessage)
 	}
 }
 

@@ -20,7 +20,7 @@ import (
 	engineapi "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/discovery"
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/go-units"
+	units "github.com/docker/go-units"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
@@ -977,7 +977,7 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 }
 
 // BuildImage builds an image
-func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, out io.Writer) error {
+func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, callback func(what, status string, err error)) error {
 	c.scheduler.Lock()
 
 	// get an engine
@@ -991,17 +991,24 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 		return err
 	}
 	n := nodes[0]
+	engine := c.engines[n.ID]
 
-	reader, err := c.engines[n.ID].BuildImage(buildContext, buildImage)
-	if err != nil {
-		return err
+	var engineCallback func(msg cluster.JSONMessage)
+	if callback != nil {
+		engineCallback = func(msg cluster.JSONMessage) {
+			callback(engine.Name, msg.Status, nil)
+		}
+	}
+	err = engine.BuildImage(buildContext, buildImage, engineCallback)
+	if callback != nil {
+		if err != nil {
+			callback(engine.Name, "", err)
+		} else {
+			callback(engine.Name, "built", nil)
+		}
 	}
 
-	if _, err := io.Copy(out, reader); err != nil {
-		return err
-	}
-
-	c.engines[n.ID].RefreshImages()
+	engine.RefreshImages()
 	return nil
 }
 
