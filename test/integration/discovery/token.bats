@@ -5,26 +5,30 @@ load discovery_helpers
 TOKEN=""
 DISCOVERY=""
 
-function token_cleanup() {
-	[ -z "$TOKEN" ] && return
-	echo "Removing $TOKEN"
-	curl -X DELETE "https://discovery.hub.docker.com/v1/clusters/$TOKEN"
-}
+#function token_cleanup() {
+#	[ -z "$TOKEN" ] && return
+#	echo "Removing $TOKEN"
+#	curl -X DELETE "https://discovery.hub.docker.com/v1/clusters/$TOKEN"
+#}
 
-function setup() {
-	TOKEN=$(swarm create)
-	[[ "$TOKEN" =~ ^[0-9a-f]{32}$ ]]
-	DISCOVERY="token://$TOKEN"
-}
+#function setup() {
+#	TOKEN=$(swarm create)
+#	[[ "$TOKEN" =~ ^[0-9a-f]{32}$ ]]
+#	DISCOVERY="token://$TOKEN"
+#}
 
-function teardown() {
-	swarm_manage_cleanup
-	swarm_join_cleanup
-	stop_docker
-	token_cleanup
-}
+#function teardown() {
+#	swarm_manage_cleanup
+#	swarm_join_cleanup
+#	stop_docker
+#	token_cleanup
+#}
 
+# docker hub token service is down. This is not the recommended way of
+# discovery. It's not prioritized on Docker hub. Disable the test for now.
 @test "token discovery: recover engines" {
+skip
+
 	# The goal of this test is to ensure swarm can see engines that joined
 	# while the manager was stopped.
 
@@ -38,7 +42,11 @@ function teardown() {
 	retry 5 1 discovery_check_swarm_info
 }
 
+# docker hub token service is down. Since this is not the recommended way of
+# discovery. It's not prioritized on Docker hub. Disable the test for now.
 @test "token discovery: watch for changes" {
+skip
+
 	# The goal of this test is to ensure swarm can see new nodes as they join
 	# the cluster.
 

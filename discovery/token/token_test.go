@@ -25,6 +25,9 @@ func TestInitialize(t *testing.T) {
 }
 
 func TestRegister(t *testing.T) {
+	// Docker hub token service is down. Skip this test.
+	t.Skip("docker hub token service is down")
+
 	d := &Discovery{token: "TEST_TOKEN", url: discoveryURL, heartbeat: 1}
 	expected := "127.0.0.1:2675"
 	expectedEntries, err := discovery.CreateEntries([]string{expected})
