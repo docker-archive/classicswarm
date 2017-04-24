@@ -555,10 +555,6 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 // GET /containers/{name:.*}/json
 func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
-	sizeQuery := ""
-	if boolValue(r, "size") {
-		sizeQuery = "?size=1"
-	}
 	container := c.cluster.Container(name)
 	if container == nil {
 		httpError(w, fmt.Sprintf("No such container %s", name), http.StatusNotFound)
@@ -570,51 +566,28 @@ func getContainerJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, scheme, err := container.Engine.HTTPClientAndScheme()
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp, err := client.Get(scheme + "://" + container.Engine.Addr + "/containers/" + container.ID + "/json" + sizeQuery)
-	container.Engine.CheckConnectionErr(err)
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// cleanup
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	n, err := json.Marshal(container.Engine)
+	con, err := container.Engine.InspectContainer(container.ID)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// insert Node field
-	data = bytes.Replace(data, []byte(`"Name":"/`), []byte(fmt.Sprintf(`"Node":%s,"Name":"/`, n)), -1)
+	con.Node = container.Engine.EngineToContainerNode()
 
-	// insert node IP
-	if engineIP := net.ParseIP(container.Engine.IP); engineIP != nil {
-		var orig string
-		if engineIP.To4() != nil {
-			orig = fmt.Sprintf(`"HostIp":"%s"`, net.IPv4zero.String())
-		} else {
-			orig = fmt.Sprintf(`"HostIp":"%s"`, net.IPv6zero.String())
+	// update zero ip to engine ip, including IPv4 and IPv6
+	if con.NetworkSettings != nil {
+		for _, portBindings := range con.NetworkSettings.Ports {
+			for key, portBinding := range portBindings {
+				if ip := net.ParseIP(portBinding.HostIP); ip == nil || ip.IsUnspecified() {
+					portBindings[key].HostIP = container.Engine.IP
+				}
+			}
 		}
-		replace := fmt.Sprintf(`"HostIp":"%s"`, container.Engine.IP)
-		data = bytes.Replace(data, []byte(orig), []byte(replace), -1)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(data)
+	json.NewEncoder(w).Encode(con)
 }
 
 // POST /containers/create
@@ -921,52 +894,29 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, scheme, err := container.Engine.HTTPClientAndScheme()
+	execConfig := apitypes.ExecConfig{}
+	if err := json.NewDecoder(r.Body).Decode(&execConfig); err != nil {
+		httpError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if len(execConfig.Cmd) == 0 {
+		httpError(w, fmt.Sprintf("No exec command specified"), http.StatusBadRequest)
+		return
+	}
+
+	execCreateResp, err := container.Engine.CreateContainerExec(container.ID, execConfig)
 	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp, err := client.Post(scheme+"://"+container.Engine.Addr+"/containers/"+container.ID+"/exec", "application/json", r.Body)
-	container.Engine.CheckConnectionErr(err)
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// cleanup
-	defer resp.Body.Close()
-
-	// check status code
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			httpError(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		httpError(w, string(body), http.StatusInternalServerError)
-		return
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		httpError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	id := struct{ ID string }{}
-
-	if err := json.Unmarshal(data, &id); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// add execID to the container, so the later exec/start will work
-	container.Info.ExecIDs = append(container.Info.ExecIDs, id.ID)
+	container.Info.ExecIDs = append(container.Info.ExecIDs, execCreateResp.ID)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(resp.StatusCode)
-	w.Write(data)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(execCreateResp)
 }
 
 // DELETE /images/{name:.*}
