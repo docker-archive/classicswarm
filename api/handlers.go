@@ -1305,6 +1305,7 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		Isolation:      containertypes.Isolation(r.Form.Get("isolation")),
 		Memory:         int64ValueOrZero(r, "memory"),
 		MemorySwap:     int64ValueOrZero(r, "memswap"),
+		NetworkMode:    r.Form.Get("networkmode"),
 		CPUShares:      int64ValueOrZero(r, "cpushares"),
 		CPUPeriod:      int64ValueOrZero(r, "cpuperiod"),
 		CPUQuota:       int64ValueOrZero(r, "cpuquota"),
@@ -1312,6 +1313,7 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		CPUSetMems:     r.Form.Get("cpusetmems"),
 		CgroupParent:   r.Form.Get("cgroupparent"),
 		ShmSize:        int64ValueOrZero(r, "shmsize"),
+		Squash:         boolValue(r, "squash"),
 	}
 
 	buildArgsJSON := r.Form.Get("buildargs")
@@ -1327,6 +1329,11 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 	labelsJSON := r.Form.Get("labels")
 	if labelsJSON != "" {
 		json.Unmarshal([]byte(labelsJSON), &buildImage.Labels)
+	}
+
+	cacheFromJSON := r.Form.Get("cachefrom")
+	if cacheFromJSON != "" {
+		json.Unmarshal([]byte(cacheFromJSON), &buildImage.CacheFrom)
 	}
 
 	authEncoded := r.Header.Get("X-Registry-Config")
