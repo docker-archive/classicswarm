@@ -87,6 +87,11 @@ func listAllFilters(filters []Filter, config *cluster.ContainerConfig, lastFilte
 		if err == nil && len(list) > 0 {
 			allFilters = fmt.Sprintf("%s\n%v", allFilters, list)
 		}
+		if err != nil {
+			allFilters = fmt.Sprintf("%s\nerror from %s filter: %v", allFilters, filter.Name(), err)
+			// when the filter has error, no need to continue.
+			return allFilters
+		}
 		if filter.Name() == lastFilter {
 			return allFilters
 		}
