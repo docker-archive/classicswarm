@@ -60,7 +60,7 @@ func (t *Task) Stop() {
 }
 
 // Build method builds the task
-func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
+func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer, useRevocableResources bool) {
 	t.Command = &mesosproto.CommandInfo{Shell: proto.Bool(false)}
 
 	t.Container = &mesosproto.ContainerInfo{
@@ -141,6 +141,18 @@ func (t *Task) Build(slaveID string, offers map[string]*mesosproto.Offer) {
 
 	if mem := t.config.HostConfig.Memory; mem > 0 {
 		t.Resources = append(t.Resources, mesosutil.NewScalarResource("mem", float64(mem/1024/1024)))
+	}
+
+	// Add a label to the container to mark the actual type of resources it uses.
+	if useRevocableResources {
+		for i := range t.Resources {
+			mesosDefaultRole := "*"
+			t.Resources[i].Role = &mesosDefaultRole
+			t.Resources[i].Revocable = &mesosproto.Resource_RevocableInfo{}
+		}
+		t.config.Labels[cluster.SwarmLabelNamespace+".mesos.resourceType"] = "Revocable"
+	} else {
+		t.config.Labels[cluster.SwarmLabelNamespace+".mesos.resourceType"] = "Regular"
 	}
 
 	if len(t.config.Cmd) > 0 && t.config.Cmd[0] != "" {

@@ -18,15 +18,17 @@ const (
 // OPERATORS is exported
 var OPERATORS = []string{"==", "!="}
 
-type expr struct {
-	key      string
-	operator int
-	value    string
-	isSoft   bool
+// Expr is exported
+type Expr struct {
+	Key      string
+	Operator int
+	Value    string
+	IsSoft   bool
 }
 
-func parseExprs(env []string) ([]expr, error) {
-	exprs := []expr{}
+// ParseExprs is exported to parse the filters.
+func ParseExprs(env []string) ([]Expr, error) {
+	exprs := []Expr{}
 	for _, e := range env {
 		found := false
 		for i, op := range OPERATORS {
@@ -57,9 +59,9 @@ func parseExprs(env []string) ([]expr, error) {
 					if matched == false {
 						return nil, fmt.Errorf("Value '%s' is invalid", parts[1])
 					}
-					exprs = append(exprs, expr{key: parts[0], operator: i, value: strings.TrimLeft(parts[1], "~"), isSoft: isSoft(parts[1])})
+					exprs = append(exprs, Expr{Key: parts[0], Operator: i, Value: strings.TrimLeft(parts[1], "~"), IsSoft: isSoft(parts[1])})
 				} else {
-					exprs = append(exprs, expr{key: parts[0], operator: i})
+					exprs = append(exprs, Expr{Key: parts[0], Operator: i})
 				}
 
 				found = true
@@ -73,18 +75,19 @@ func parseExprs(env []string) ([]expr, error) {
 	return exprs, nil
 }
 
-func (e *expr) Match(whats ...string) bool {
+// Match is exported.
+func (e *Expr) Match(whats ...string) bool {
 	var (
 		pattern string
 		match   bool
 	)
 
-	if e.value[0] == '/' && e.value[len(e.value)-1] == '/' {
+	if e.Value[0] == '/' && e.Value[len(e.Value)-1] == '/' {
 		// regexp
-		pattern = e.value[1 : len(e.value)-1]
+		pattern = e.Value[1 : len(e.Value)-1]
 	} else {
 		// simple match, create the regex for globbing (ex: ub*t* -> ^ub.*t.*$) and match.
-		pattern = "^" + strings.Replace(e.value, "*", ".*", -1) + "$"
+		pattern = "^" + strings.Replace(e.Value, "*", ".*", -1) + "$"
 	}
 
 	re, err := regexp.Compile(pattern)
@@ -99,7 +102,7 @@ func (e *expr) Match(whats ...string) bool {
 		log.Error(err)
 	}
 
-	switch e.operator {
+	switch e.Operator {
 	case EQ:
 		return match
 	case NOTEQ:

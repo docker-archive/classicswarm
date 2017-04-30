@@ -22,7 +22,12 @@ func TestNewAgent(t *testing.T) {
 }
 
 func TestAddOffer(t *testing.T) {
-	s := newAgent("SID", nil)
+	engOps := &cluster.EngineOpts{
+		RefreshMinInterval: 0,
+		RefreshMaxInterval: 0,
+	}
+	engine := cluster.NewEngine("", 0, engOps)
+	s := newAgent("SID", engine)
 
 	assert.Empty(t, s.offers)
 	assert.True(t, s.empty())
@@ -61,7 +66,12 @@ func TestAddTask(t *testing.T) {
 }
 
 func TestRemoveOffer(t *testing.T) {
-	s := newAgent("SID", nil)
+	engOps := &cluster.EngineOpts{
+		RefreshMinInterval: 0,
+		RefreshMaxInterval: 0,
+	}
+	engine := cluster.NewEngine("", 0, engOps)
+	s := newAgent("SID", engine)
 
 	assert.Empty(t, s.offers)
 

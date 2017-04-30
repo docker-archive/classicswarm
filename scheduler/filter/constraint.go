@@ -19,27 +19,27 @@ func (f *ConstraintFilter) Name() string {
 
 // Filter is exported
 func (f *ConstraintFilter) Filter(config *cluster.ContainerConfig, nodes []*node.Node, soft bool) ([]*node.Node, error) {
-	constraints, err := parseExprs(config.Constraints())
+	constraints, err := ParseExprs(config.Constraints())
 	if err != nil {
 		return nil, err
 	}
 
 	for _, constraint := range constraints {
-		if !soft && constraint.isSoft {
+		if !soft && constraint.IsSoft {
 			continue
 		}
-		log.Debugf("matching constraint: %s%s%s (soft=%t)", constraint.key, OPERATORS[constraint.operator], constraint.value, constraint.isSoft)
+		log.Debugf("matching constraint: %s%s%s (soft=%t)", constraint.Key, OPERATORS[constraint.Operator], constraint.Value, constraint.IsSoft)
 
 		candidates := []*node.Node{}
 		for _, node := range nodes {
-			switch constraint.key {
+			switch constraint.Key {
 			case "node":
 				// "node" label is a special case pinning a container to a specific node.
 				if constraint.Match(node.ID, node.Name) {
 					candidates = append(candidates, node)
 				}
 			default:
-				if constraint.Match(node.Labels[constraint.key]) {
+				if constraint.Match(node.Labels[constraint.Key]) {
 					candidates = append(candidates, node)
 				}
 			}
