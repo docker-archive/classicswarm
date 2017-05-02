@@ -58,6 +58,10 @@ func TestParseExprs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, exprs[0].key, "node")
 	assert.Equal(t, exprs[0].value, "node 1")
+
+	// Doesn't allow empty value
+	_, err = parseExprs([]string{"node=="})
+	assert.Error(t, err)
 }
 
 func TestMatch(t *testing.T) {
