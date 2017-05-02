@@ -741,23 +741,39 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 		var errorMessage string
 		errorFound := false
+		nonOSErrorFound := false
+		successfulPull := false
 		callback := func(what, status string, err error) {
 			if err != nil {
 				errorFound = true
 				errorMessage = err.Error()
+				if !strings.Contains(errorMessage, "image operating system") {
+					nonOSErrorFound = true
+				}
 				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s... : %s", image, err.Error()))
 				return
 			}
 			if status == "" {
 				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s...", image))
 			} else {
+				if status == "downloaded" {
+					successfulPull = true
+				}
 				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s... : %s", image, status))
 			}
 		}
 		c.cluster.Pull(image, &authConfig, callback)
 
 		if errorFound {
-			sendErrorJSONMessage(wf, 1, errorMessage)
+			// If some nodes successfully pulled the image and the
+			// rest failed because the image was the wrong OS
+			// (e.g. we tried to pull a Linux-based image on a
+			// Windows node), we should still consider the pull
+			// successful because we loaded the image on as many
+			// nodes as we could.
+			if !successfulPull || nonOSErrorFound {
+				sendErrorJSONMessage(wf, 1, errorMessage)
+			}
 		}
 
 	} else { //import
