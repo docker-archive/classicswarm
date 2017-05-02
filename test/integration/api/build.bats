@@ -33,3 +33,21 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	[[ "$output" == "Hello Args"* ]]
 }
+
+# Older versions of Docker daemons do not return the correct error message when
+# building Windows images on Linux boxes
+# See https://github.com/docker/swarm/issues/2689
+@test "docker build with wrong OS" {
+skip
+
+	start_docker 2
+	swarm_manage
+
+	run docker_swarm images -q
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 0 ]
+
+	docker_swarm build -t testwin -f $TESTDATA/build/Dockerfile.win $TESTDATA/build
+	[ "$status" -eq 1 ]
+	[[ "$output" == *"Consider using --build-arg 'constraint:ostype==windows'"* ]]
+}

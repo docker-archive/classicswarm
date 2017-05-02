@@ -74,3 +74,18 @@ func TestInt64ValueOrZero(t *testing.T) {
 		}
 	}
 }
+
+func TestMatchImageOSError(t *testing.T) {
+	cases := map[string]string{
+		`image operating system "linux" cannot be used on this platform`: "linux",
+		`image operating system "" cannot be used on this platform`:      "",
+		`not a matched string`:                                           "",
+	}
+
+	for c, e := range cases {
+		a := matchImageOSError(c)
+		if a != e {
+			t.Fatalf("Value: %s, expected: %v, actual: %v", c, e, a)
+		}
+	}
+}
