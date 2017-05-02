@@ -30,7 +30,7 @@ import (
 	"github.com/samalba/dockerclient"
 )
 
-// APIVERSION is the API version supported by swarm manager
+// APIVERSION is the minimum API version supported by swarm manager
 const APIVERSION = "1.22"
 
 var (

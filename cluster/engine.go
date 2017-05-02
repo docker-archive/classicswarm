@@ -467,6 +467,11 @@ func (e *Engine) EngineToContainerNode() *types.ContainerNode {
 // Update API Version in apiClient
 func (e *Engine) updateClientVersionFromServer(serverVersion string) {
 	// v will be >= 1.8, since this is checked earlier
+	// for server/API version reference, check https://docs.docker.com/engine/api/
+	// new versions of Docker look like 17.06-ce etc.
+	s := strings.Split(serverVersion, "-")
+	serverVersion = s[0]
+
 	switch {
 	case versions.LessThan(serverVersion, "1.9"):
 		e.apiClient.UpdateClientVersion("1.20")
@@ -478,8 +483,18 @@ func (e *Engine) updateClientVersionFromServer(serverVersion string) {
 		e.apiClient.UpdateClientVersion("1.23")
 	case versions.LessThan(serverVersion, "1.13"):
 		e.apiClient.UpdateClientVersion("1.24")
-	default:
+	case versions.LessThan(serverVersion, "1.13.1"):
 		e.apiClient.UpdateClientVersion("1.25")
+	case versions.LessThan(serverVersion, "17.03.1") || serverVersion == "1.13.1":
+		e.apiClient.UpdateClientVersion("1.26")
+	case versions.LessThan(serverVersion, "17.04"):
+		e.apiClient.UpdateClientVersion("1.27")
+	case versions.LessThan(serverVersion, "17.05"):
+		e.apiClient.UpdateClientVersion("1.28")
+	case versions.LessThan(serverVersion, "17.06"):
+		e.apiClient.UpdateClientVersion("1.29")
+	default:
+		e.apiClient.UpdateClientVersion("1.30")
 	}
 }
 
