@@ -217,8 +217,13 @@ func (e *Engine) StartMonitorEvents() {
 		if err := <-ec; err != nil {
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).WithError(err).Error("error monitoring events, will restart")
 			if !strings.Contains(err.Error(), "EOF") {
-				// failing node reconnect should use back-off strategy
-				<-e.refreshDelayer.Wait(e.getFailureCount())
+				// failing node reconnect should use back-off strategy to avoid frequent reconnect
+				retryInterval := e.getFailureCount() + 1
+				// maximum retry interval of 10 seconds
+				if retryInterval > 10 {
+					retryInterval = 10
+				}
+				<-time.After(time.Duration(retryInterval) * time.Second)
 			}
 			e.StartMonitorEvents()
 		}
@@ -1525,6 +1530,7 @@ func IsConnectionError(err error) bool {
 		strings.Contains(err.Error(), "annot connect to the Docker daemon")
 }
 
+// RefreshEngine refreshes container records from an engine
 func (e *Engine) RefreshEngine(hostname string) error {
 	if hostname != e.Name {
 		return fmt.Errorf("invalid engine name during refresh: %s vs %s", hostname, e.Name)
