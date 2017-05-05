@@ -400,10 +400,12 @@ func (c *Cluster) monitorDiscovery(ch <-chan discovery.Entries, errCh <-chan err
 			// if there's already an engine with the same ID.  If an engine
 			// changes address, we have to first remove it then add it back.
 			for _, entry := range removed {
+				log.Debugf("Discovery: remove engine %s", entry.String())
 				c.removeEngine(entry.String())
 			}
 
 			for _, entry := range added {
+				log.Debugf("Discovery: add engine %s", entry.String())
 				c.addEngine(entry.String())
 			}
 		case err := <-errCh:
