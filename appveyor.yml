@@ -1,0 +1,30 @@
+version: '{build}'
+build_script:
+- ps: >-
+    $env:GOPATH="c:/gocode";
+
+    mkdir $env:GOPATH | Out-Null
+
+    $env:GOBIN="$env:GOPATH/bin";
+
+    $env:PATH="$env:GOBIN;$env:PATH";
+
+    go version
+
+    go env
+
+
+    #Get deps
+
+    go get golang.org/x/tools/cmd/vet
+
+    go get github.com/tools/godep
+
+    godep restore
+
+    go get .
+test_script:
+- ps: >-
+    go vet ./...
+
+    go test -v -cover -race ./...
