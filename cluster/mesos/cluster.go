@@ -367,17 +367,17 @@ func (c *Cluster) RemoveImage(image *cluster.Image) ([]types.ImageDelete, error)
 }
 
 // Pull pulls images on the cluster nodes
-func (c *Cluster) Pull(name string, authConfig *types.AuthConfig, callback func(where, status string, err error)) {
+func (c *Cluster) Pull(name string, authConfig *types.AuthConfig, callback func(msg cluster.JSONMessageWrapper)) {
 
 }
 
 // Load images
-func (c *Cluster) Load(imageReader io.Reader, callback func(where, status string, err error)) {
+func (c *Cluster) Load(imageReader io.Reader, callback func(msg cluster.JSONMessageWrapper)) {
 
 }
 
 // Import image
-func (c *Cluster) Import(source string, ref string, tag string, imageReader io.Reader, callback func(what, status string, err error)) {
+func (c *Cluster) Import(source string, ref string, tag string, imageReader io.Reader, callback func(msg cluster.JSONMessageWrapper)) {
 
 }
 
@@ -649,7 +649,7 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 }
 
 // BuildImage builds an image
-func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, callback func(what, status string, err error)) error {
+func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, callback func(msg cluster.JSONMessageWrapper)) error {
 	c.scheduler.Lock()
 
 	// get an engine
@@ -672,15 +672,24 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 	var engineCallback func(msg cluster.JSONMessage)
 	if callback != nil {
 		engineCallback = func(msg cluster.JSONMessage) {
-			callback(engine.Name, msg.Status, nil)
+			callback(cluster.JSONMessageWrapper{
+				EngineName: engine.Name,
+				Msg:        msg,
+			})
 		}
 	}
 	err = engine.BuildImage(buildContext, buildImage, engineCallback)
 	if callback != nil {
 		if err != nil {
-			callback(engine.Name, "", err)
+			callback(cluster.JSONMessageWrapper{
+				EngineName: engine.Name,
+				Err:        err,
+			})
 		} else {
-			callback(engine.Name, "built", nil)
+			callback(cluster.JSONMessageWrapper{
+				EngineName: engine.Name,
+				Success:    true,
+			})
 		}
 	}
 

@@ -743,24 +743,27 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		errorFound := false
 		nonOSErrorFound := false
 		successfulPull := false
-		callback := func(what, status string, err error) {
-			if err != nil {
+		callback := func(msg cluster.JSONMessageWrapper) {
+			msg.Msg.ID = msg.EngineName
+			if msg.Msg.Status != "" {
+				msg.Msg.Status = fmt.Sprintf("Pulling %s... : %s", image, msg.Msg.Status)
+			} else {
+				msg.Msg.Status = fmt.Sprintf("Pulling %s...", image)
+			}
+			// If we get a successful pull on any node, mark
+			// successfulPull as true.
+			if msg.Success {
+				successfulPull = true
+			}
+			if msg.Err != nil {
 				errorFound = true
-				errorMessage = err.Error()
+				errorMessage = msg.Err.Error()
 				if !strings.Contains(errorMessage, "image operating system") {
 					nonOSErrorFound = true
 				}
-				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s... : %s", image, err.Error()))
-				return
+				msg.Msg.Status = fmt.Sprintf("Pulling %s... : %s", image, errorMessage)
 			}
-			if status == "" {
-				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s...", image))
-			} else {
-				if status == "downloaded" {
-					successfulPull = true
-				}
-				sendJSONMessage(wf, what, fmt.Sprintf("Pulling %s... : %s", image, status))
-			}
+			json.NewEncoder(wf).Encode(msg.Msg)
 		}
 		c.cluster.Pull(image, &authConfig, callback)
 
@@ -783,14 +786,15 @@ func postImagesCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 		var errorMessage string
 		errorFound := false
-		callback := func(what, status string, err error) {
-			if err != nil {
+		callback := func(msg cluster.JSONMessageWrapper) {
+			msg.Msg.ID = msg.EngineName
+			if msg.Err != nil {
 				errorFound = true
-				errorMessage = err.Error()
-				sendJSONMessage(wf, what, err.Error())
-				return
+				errorMessage = msg.Err.Error()
+				msg.Msg.Status = errorMessage
 			}
-			sendJSONMessage(wf, what, status)
+			json.NewEncoder(wf).Encode(msg.Msg)
+
 		}
 		ref := getImageRef(repo, tag)
 		c.cluster.Import(source, ref, tag, r.Body, callback)
@@ -810,19 +814,20 @@ func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 	wf := NewWriteFlusher(w)
 	var errorMessage string
 	errorFound := false
-	callback := func(what, status string, err error) {
-		if err != nil {
-			errorFound = true
-			errorMessage = err.Error()
-			sendJSONMessage(wf, what, fmt.Sprintf("Loading Image... : %s", err.Error()))
-			return
+	callback := func(msg cluster.JSONMessageWrapper) {
+		msg.Msg.ID = msg.EngineName
+		if msg.Msg.Status != "" {
+			msg.Msg.Status = fmt.Sprintf("Loading Image... : %s", msg.Msg.Status)
+		} else {
+			msg.Msg.Status = "Loading Image..."
 		}
 
-		if status == "" {
-			sendJSONMessage(wf, what, "Loading Image...")
-		} else {
-			sendJSONMessage(wf, what, fmt.Sprintf("Loading Image... : %s", status))
+		if msg.Err != nil {
+			errorFound = true
+			errorMessage = msg.Err.Error()
+			msg.Msg.Status = fmt.Sprintf("Loading Image... : %s", errorMessage)
 		}
+		json.NewEncoder(wf).Encode(msg.Msg)
 	}
 	c.cluster.Load(r.Body, callback)
 	if errorFound {
@@ -1365,18 +1370,17 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 
 	var errorMessage string
 	errorFound := false
-	callback := func(what, status string, err error) {
-		if err != nil {
+	callback := func(msg cluster.JSONMessageWrapper) {
+		msg.Msg.ID = msg.EngineName
+		if msg.Err != nil {
 			errorFound = true
-			errorMessage = err.Error()
+			errorMessage = msg.Err.Error()
 			osType := matchImageOSError(errorMessage)
 			if osType != "" {
-				errorMessage = fmt.Sprintf("Could not build image: %s. Consider using --build-arg 'constraint:ostype==%s'", err, osType)
+				msg.Msg.Status = fmt.Sprintf("Could not build image: %s. Consider using --build-arg 'constraint:ostype==%s'", errorMessage, osType)
 			}
-			sendJSONMessage(wf, what, errorMessage)
-			return
 		}
-		sendJSONMessage(wf, what, status)
+		json.NewEncoder(wf).Encode(msg.Msg)
 	}
 	err := c.cluster.BuildImage(r.Body, buildImage, callback)
 	if err != nil {

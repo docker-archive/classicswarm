@@ -33,3 +33,12 @@ type JSONMessage struct {
 	// Aux contains out-of-band data, such as digests for push signing.
 	Aux *json.RawMessage `json:"aux,omitempty"`
 }
+
+// JSONMessageWrapper is used in callback functions for API calls that send back
+// JSONMessages; this allows us to pass info around within Swarm classic.
+type JSONMessageWrapper struct {
+	Msg        JSONMessage
+	EngineName string
+	Err        error
+	Success    bool
+}

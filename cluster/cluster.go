@@ -56,21 +56,15 @@ type Cluster interface {
 
 	// Pull images
 	// `callback` can be called multiple time
-	//  `where` is where it is being pulled
-	//  `status` is the current status, like "", "in progress" or "downloaded".
-	Pull(name string, authConfig *types.AuthConfig, callback func(where, status string, err error))
+	Pull(name string, authConfig *types.AuthConfig, callback func(msg JSONMessageWrapper))
 
 	// Import image
 	// `callback` can be called multiple time
-	// `where` is where it is being imported
-	// `status` is the current status, like "", "in progress" or "imported".
-	Import(source string, ref string, tag string, imageReader io.Reader, callback func(where, status string, err error))
+	Import(source string, ref string, tag string, imageReader io.Reader, callback func(msg JSONMessageWrapper))
 
 	// Load images
 	// `callback` can be called multiple time
-	// `what` is what is being loaded
-	// `status` is the current status, like "", "in progress" or "loaded".
-	Load(imageReader io.Reader, callback func(what, status string, err error))
+	Load(imageReader io.Reader, callback func(msg JSONMessageWrapper))
 
 	// Info returns some info about the cluster, like nb of containers / images.
 	// It is pretty open, so the implementation decides what to return.
@@ -96,7 +90,7 @@ type Cluster interface {
 	RenameContainer(container *Container, newName string) error
 
 	// BuildImage builds an image.
-	BuildImage(io.Reader, *types.ImageBuildOptions, func(what, status string, err error)) error
+	BuildImage(io.Reader, *types.ImageBuildOptions, func(msg JSONMessageWrapper)) error
 
 	// TagImage tags an image.
 	TagImage(IDOrName string, ref string, force bool) error

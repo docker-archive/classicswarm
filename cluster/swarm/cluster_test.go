@@ -158,9 +158,9 @@ func TestImportImage(t *testing.T) {
 	readCloser := nopCloser{bytes.NewBufferString("")}
 	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportSource"), mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, nil).Once()
 
-	callback := func(what, status string, err error) {
+	callback := func(msg cluster.JSONMessageWrapper) {
 		// import success
-		assert.Nil(t, err)
+		assert.Nil(t, msg.Err)
 	}
 	c.Import("-", "testImageOK", "latest", bytes.NewReader(nil), callback)
 
@@ -169,9 +169,9 @@ func TestImportImage(t *testing.T) {
 	err := fmt.Errorf("Import error")
 	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportSource"), mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, err).Once()
 
-	callback = func(what, status string, err error) {
+	callback = func(msg cluster.JSONMessageWrapper) {
 		// import error
-		assert.NotNil(t, err)
+		assert.NotNil(t, msg.Err)
 	}
 	c.Import("-", "testImageError", "latest", bytes.NewReader(nil), callback)
 }
@@ -210,18 +210,18 @@ func TestLoadImage(t *testing.T) {
 	// load success
 	readCloser := nopCloser{bytes.NewBufferString("")}
 	apiClient.On("ImageLoad", mock.Anything, mock.AnythingOfType("*io.PipeReader"), false).Return(types.ImageLoadResponse{Body: readCloser}, nil).Once()
-	callback := func(what, status string, err error) {
+	callback := func(msg cluster.JSONMessageWrapper) {
 		//if load OK, err will be nil
-		assert.Nil(t, err)
+		assert.Nil(t, msg.Err)
 	}
 	c.Load(bytes.NewReader(nil), callback)
 
 	// load error
 	err := fmt.Errorf("Load error")
 	apiClient.On("ImageLoad", mock.Anything, mock.AnythingOfType("*io.PipeReader"), false).Return(types.ImageLoadResponse{}, err).Once()
-	callback = func(what, status string, err error) {
+	callback = func(msg cluster.JSONMessageWrapper) {
 		// load error, err is not nil
-		assert.NotNil(t, err)
+		assert.NotNil(t, msg.Err)
 	}
 	c.Load(bytes.NewReader(nil), callback)
 }
