@@ -1,6 +1,8 @@
 package strategy
 
 import (
+	"math"
+
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
 )
@@ -24,16 +26,33 @@ func (n weightedNodeList) Swap(i, j int) {
 }
 
 func (n weightedNodeList) Less(i, j int) bool {
+
 	var (
-		ip = n[i]
-		jp = n[j]
+		ip        = n[i]
+		jp        = n[j]
+		threshold = 11.0
 	)
 
 	// If the nodes have the same weight sort them out by number of containers.
 	if ip.Weight == jp.Weight {
+		delta := math.Abs(float64(len(ip.Node.Containers) - len(jp.Node.Containers)))
+		if delta < threshold {
+			return countRunningContainers(ip.Node) < countRunningContainers(jp.Node)
+		}
 		return len(ip.Node.Containers) < len(jp.Node.Containers)
 	}
 	return ip.Weight < jp.Weight
+}
+
+func countRunningContainers(node *node.Node) int {
+	var c = 0
+	for _, container := range node.Containers {
+		if container.Status == "running" {
+			c++
+		}
+	}
+	return c
+
 }
 
 func weighNodes(config *cluster.ContainerConfig, nodes []*node.Node, healthinessFactor int64) (weightedNodeList, error) {

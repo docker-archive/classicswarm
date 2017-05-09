@@ -23,8 +23,8 @@ func TestSpreadPlaceDifferentNodeSize(t *testing.T) {
 		assert.NoError(t, node.AddContainer(createContainer(fmt.Sprintf("c%d", i), config)))
 	}
 
-	assert.Equal(t, len(nodes[0].Containers), 30)
-	assert.Equal(t, len(nodes[1].Containers), 30)
+	assert.Equal(t, len(nodes[0].Containers), 35)
+	assert.Equal(t, len(nodes[1].Containers), 25)
 }
 
 func TestSpreadPlaceDifferentNodeSizeCPUs(t *testing.T) {
