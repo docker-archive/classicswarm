@@ -59,7 +59,7 @@ function teardown() {
 	start_docker 2
 	swarm_join "$DISCOVERY"
 	retry 10 1 discovery_check_swarm_list "$DISCOVERY"
-	retry 10 1 discovery_check_swarm_info
+	retry 10 1 discovery_check_swarm_info 2
 }
 
 @test "zk discovery: node removal" {
@@ -77,7 +77,7 @@ function teardown() {
 	start_docker 2
 	swarm_join "$DISCOVERY"
 	retry 10 1 discovery_check_swarm_list "$DISCOVERY"
-	retry 10 1 discovery_check_swarm_info
+	retry 10 1 discovery_check_swarm_info 2
 
 	# Removes all the swarm agents
 	swarm_join_cleanup
@@ -113,5 +113,5 @@ function teardown() {
 	retry 20 1 discovery_check_swarm_list "$DISCOVERY"
 	run docker_swarm info
 	echo $output
-	retry 20 1 discovery_check_swarm_info
+	retry 20 1 discovery_check_swarm_info 2
 }
