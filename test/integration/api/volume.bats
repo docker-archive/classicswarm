@@ -57,6 +57,7 @@ function teardown() {
 	docker_swarm run -d -v=/tmp -e constraint:node==node-0 busybox true
 
 	run docker_swarm volume ls -q
+	echo "$output"
 	[ "${#lines[@]}" -eq 1 ]
 	[[ "${output}" == *"node-0/"* ]]
 
