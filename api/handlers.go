@@ -205,6 +205,12 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 			Filters: filters,
 		},
 	}
+	if opts.Filters.Include("dangling") &&
+		!(opts.Filters.ExactMatch("dangling", "false") || opts.Filters.ExactMatch("dangling", "true")) {
+		httpError(w, "Invalid filter: 'type'='dangling'", http.StatusBadRequest)
+		return
+	}
+
 	for _, image := range c.cluster.Images().Filter(opts) {
 		if len(accepteds) != 0 {
 			found := false
