@@ -57,13 +57,21 @@ func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.
 	}
 
 	if ID, ok := vars["execid"]; ok {
+		var containerlist []string
 		for _, container := range c.cluster.Containers() {
+			containerlist = append(containerlist, container.ID)
+			container.RLock()
 			for _, execID := range container.Info.ExecIDs {
 				if ID == execID {
+					container.RUnlock()
+					// debug info. do not merge this into master branch
+					log.Infof("execid %s found on container %s", ID, container.ID)
 					return "", container, nil
 				}
 			}
+			container.RUnlock()
 		}
+		log.Infof("all containers %s", strings.Join(containerlist, ","))
 		return "", nil, fmt.Errorf("Exec %s not found", ID)
 	}
 

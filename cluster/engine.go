@@ -868,6 +868,7 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 		info.State.FinishedAt = finishedAt.Add(e.DeltaDuration).Format(time.RFC3339Nano)
 
 		// Save the entire inspect back into the container.
+		log.WithFields(log.Fields{"id": info.ID}).Debugf("Update container info execid: %v", info.ExecIDs)
 		container.Info = info
 	}
 
