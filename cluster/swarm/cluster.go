@@ -535,20 +535,20 @@ func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (resp
 // CreateVolume creates a volume in the cluster.
 func (c *Cluster) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume, error) {
 	var (
-		wg     sync.WaitGroup
-		volume *types.Volume
-		err    error
-		parts  = strings.SplitN(request.Name, "/", 2)
-		node   = ""
+		wg         sync.WaitGroup
+		volume     *types.Volume
+		err        error
+		parts      = strings.SplitN(request.Name, "/", 2)
+		nodeString = ""
 	)
 
 	if request.Name == "" {
 		request.Name = stringid.GenerateRandomID()
 	} else if len(parts) == 2 {
-		node = parts[0]
+		nodeString = parts[0]
 		request.Name = parts[1]
 	}
-	if node == "" {
+	if nodeString == "" {
 		for _, e := range c.listActiveEngines() {
 			wg.Add(1)
 
@@ -568,7 +568,8 @@ func (c *Cluster) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume
 		wg.Wait()
 	} else {
 		config := cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
-		nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+		var nodes []*node.Node
+		nodes, err = c.scheduler.SelectNodesForContainer(c.listNodes(), config)
 		if err != nil {
 			return nil, err
 		}
