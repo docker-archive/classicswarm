@@ -1520,9 +1520,9 @@ func IsConnectionError(err error) bool {
 	// docker/api returns ErrConnectionFailed error, so we check for that as long as dockerclient exists
 	return err == dockerclient.ErrConnectionRefused ||
 		engineapi.IsErrConnectionFailed(err) ||
-		strings.Contains(err.Error(), "onnection refused") ||
-		strings.Contains(err.Error(), "annot connect to the docker engine endpoint") ||
-		strings.Contains(err.Error(), "annot connect to the Docker daemon")
+		strings.Contains(err.Error(), "connection refused") ||
+		strings.Contains(err.Error(), "cannot connect to the docker engine endpoint") ||
+		strings.Contains(err.Error(), "cannot connect to the Docker daemon")
 }
 
 func (e *Engine) RefreshEngine(hostname string) error {
