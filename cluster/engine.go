@@ -216,15 +216,13 @@ func (e *Engine) StartMonitorEvents() {
 	go func() {
 		if err := <-ec; err != nil {
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).WithError(err).Error("error monitoring events, will restart")
-			if !strings.Contains(err.Error(), "EOF") {
-				// failing node reconnect should use back-off strategy to avoid frequent reconnect
-				retryInterval := e.getFailureCount() + 1
-				// maximum retry interval of 10 seconds
-				if retryInterval > 10 {
-					retryInterval = 10
-				}
-				<-time.After(time.Duration(retryInterval) * time.Second)
+			// failing node reconnect should use back-off strategy to avoid frequent reconnect
+			retryInterval := e.getFailureCount() + 1
+			// maximum retry interval of 10 seconds
+			if retryInterval > 10 {
+				retryInterval = 10
 			}
+			<-time.After(time.Duration(retryInterval) * time.Second)
 			e.StartMonitorEvents()
 		}
 		close(ec)
