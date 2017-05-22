@@ -15,9 +15,9 @@ Otherwise, go read Docker's
 
 ### Development Environment Setup
 
-Swarm is written in [the Go programming language](http://golang.org) and manages its dependencies using [Godep](http://github.com/tools/godep).  This guide will walk you through installing Go, forking the Swarm repo, building Swarm from source and contributing pull requests (PRs) back to the Swarm project.
+Swarm is written in [the Go programming language](http://golang.org) and manages its dependencies using [vndr](http://github.com/LK4D4/vndr).  This guide will walk you through installing Go, forking the Swarm repo, building Swarm from source and contributing pull requests (PRs) back to the Swarm project.
 
-#### Install git, Go and Godep
+#### Install git, Go and vndr
 If you don't already have `git` installed, you should install it.  For example, on Ubuntu:
 ```sh
 sudo apt-get install git
@@ -47,10 +47,10 @@ export PATH=$PATH:$GOPATH/bin:$GOROOT/bin
 
 Close and reopen your terminal.
 
-Install Godep:
+Install vndr:
 
 ```sh
-go get github.com/tools/godep
+go get github.com/LK4d4/vndr
 ```
 
 Install golint:
@@ -216,14 +216,13 @@ You can also find maintainers' email addresses in `MAINTAINERS`.
 
 ### Advanced:  Adding New Dependencies
 
-To make sure other will not miss dependencies you've added to Swarm, you'll need to call `godep save` to make changes to the config file, `Godep/Godeps.json`. An important thing is that `godep` will replace the config file by the dependency information it learnt from your local machine. This step will mess the upstream config. So, changes to `Godep/Godeps.json` must be performed with care.
+Swarm uses `github.com/LK4D4/vndr` to manage dependencies. If you add a new dependency, say `github.com/new/dependency`, then to save it, you must add it to `vendor.conf` with the commit hash. For example:
 
-```sh
-$GOBIN/godep save ./...
-$GOBIN/godep update <an updated package>
-git diff # check what added or removed in Godep/Godeps.json
-         # then manually add missing dependencies
 ```
+github.com/new/dependency aabc039ad04deb721e234f99cd1b4aa28ac71a40
+```
+
+After this, run `vndr github.com/new/dependency` to add the relevant files to `vendor/`. If you need to update existing dependencies, just update the commit hash and run `vndr github.com/existing/dependency`.
 
 To make sure you newly added codes will make the build process happy, you can try building Swarm in the same way as defined in `Dockerfile`.
 
