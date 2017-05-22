@@ -1,5 +1,6 @@
 # etcd
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/coreos/etcd)](https://goreportcard.com/report/github.com/coreos/etcd)
 [![Build Status](https://travis-ci.org/coreos/etcd.svg?branch=master)](https://travis-ci.org/coreos/etcd)
 [![Build Status](https://semaphoreci.com/api/v1/projects/406f9909-2f4f-4839-b59e-95082cb088f1/575109/badge.svg)](https://semaphoreci.com/coreos/etcd)
 [![Docker Repository on Quay.io](https://quay.io/repository/coreos/etcd-git/status "Docker Repository on Quay.io")](https://quay.io/repository/coreos/etcd-git)
@@ -22,7 +23,7 @@ etcd is used [in production by many companies](./Documentation/production-users.
 See [etcdctl][etcdctl] for a simple command line client.
 Or feel free to just use `curl`, as in the examples below.
 
-[raft]: http://raftconsensus.github.io/
+[raft]: https://raft.github.io/
 [k8s]: http://kubernetes.io/
 [fleet]: https://github.com/coreos/fleet
 [locksmith]: https://github.com/coreos/locksmith
@@ -36,7 +37,7 @@ Or feel free to just use `curl`, as in the examples below.
 The easiest way to get etcd is to use one of the pre-built release binaries which are available for OSX, Linux, Windows, AppC (ACI), and Docker. Instructions for using these binaries are on the [GitHub releases page][github-release].
 
 For those wanting to try the very latest version, you can build the latest version of etcd from the `master` branch.
-You will first need [*Go*](https://golang.org/) installed on your machine (version 1.4+ is required).
+You will first need [*Go*](https://golang.org/) installed on your machine (version 1.5+ is required).
 All development occurs on `master`, including new features and bug fixes.
 Bug fixes are first targeted at `master` and subsequently ported to release branches, as described in the [branch management][branch-management] guide.
 
@@ -61,6 +62,12 @@ curl -L http://127.0.0.1:2379/v2/keys/mykey
 ```
 
 You have successfully started an etcd and written a key to the store.
+
+### etcd TCP ports
+
+The [official etcd ports][iana-ports] are 2379 for client requests, and 2380 for peer communication. To maintain compatibility, some etcd configuration and documentation continues to refer to the legacy ports 4001 and 7001, but all new etcd use and discussion should adopt the IANA-assigned ports. The legacy ports 4001 and 7001 will be fully deprecated, and support for their use removed, in future etcd releases.
+
+[iana-ports]: https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=etcd
 
 ### Running local etcd cluster
 
@@ -133,6 +140,9 @@ The `v2` API responses should not change after the 2.0.0 release but new feature
 #### 32-bit systems
 
 etcd has known issues on 32-bit systems due to a bug in the Go runtime. See #[358][358] for more information.
+
+To avoid inadvertantly producing an unstable etcd server, 32-bit builds emit an `etcd` that prints
+a warning message and immediately exits.
 
 [358]: https://github.com/coreos/etcd/issues/358
 

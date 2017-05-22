@@ -24,10 +24,11 @@ import (
 	"net/url"
 	"reflect"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
-	"github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
+	"golang.org/x/net/context"
 )
 
 var (
@@ -52,11 +53,21 @@ var DefaultTransport CancelableTransport = &http.Transport{
 type EndpointSelectionMode int
 
 const (
-	// EndpointSelectionRandom is to pick an endpoint in a random manner.
+	// EndpointSelectionRandom is the default value of the 'SelectionMode'.
+	// As the name implies, the client object will pick a node from the members
+	// of the cluster in a random fashion. If the cluster has three members, A, B,
+	// and C, the client picks any node from its three members as its request
+	// destination.
 	EndpointSelectionRandom EndpointSelectionMode = iota
 
-	// EndpointSelectionPrioritizeLeader is to prioritize leader for reducing needless
-	// forward between follower and leader.
+	// If 'SelectionMode' is set to 'EndpointSelectionPrioritizeLeader',
+	// requests are sent directly to the cluster leader. This reduces
+	// forwarding roundtrips compared to making requests to etcd followers
+	// who then forward them to the cluster leader. In the event of a leader
+	// failure, however, clients configured this way cannot prioritize among
+	// the remaining etcd followers. Therefore, when a client sets 'SelectionMode'
+	// to 'EndpointSelectionPrioritizeLeader', it must use 'client.AutoSync()' to
+	// maintain its knowledge of current cluster state.
 	//
 	// This mode should be used with Client.AutoSync().
 	EndpointSelectionPrioritizeLeader
@@ -87,7 +98,7 @@ type Config struct {
 	// CheckRedirect specifies the policy for handling HTTP redirects.
 	// If CheckRedirect is not nil, the Client calls it before
 	// following an HTTP redirect. The sole argument is the number of
-	// requests that have alrady been made. If CheckRedirect returns
+	// requests that have already been made. If CheckRedirect returns
 	// an error, Client.Do will not make any further requests and return
 	// the error back it to the caller.
 	//
@@ -113,13 +124,16 @@ type Config struct {
 	// watch start. But if server is behind some kind of proxy, the response
 	// header may be cached at proxy, and Client cannot rely on this behavior.
 	//
+	// Especially, wait request will ignore this timeout.
+	//
 	// One API call may send multiple requests to different etcd servers until it
 	// succeeds. Use context of the API to specify the overall timeout.
 	//
 	// A HeaderTimeoutPerRequest of zero means no timeout.
 	HeaderTimeoutPerRequest time.Duration
 
-	// SelectionMode specifies a way of selecting destination endpoint.
+	// SelectionMode is an EndpointSelectionMode enum that specifies the
+	// policy for choosing the etcd cluster node to which requests are sent.
 	SelectionMode EndpointSelectionMode
 }
 
@@ -431,9 +445,21 @@ func (c *simpleHTTPClient) Do(ctx context.Context, act httpAction) (*http.Respon
 		return nil, nil, err
 	}
 
+	isWait := false
+	if req != nil && req.URL != nil {
+		ws := req.URL.Query().Get("wait")
+		if len(ws) != 0 {
+			var err error
+			isWait, err = strconv.ParseBool(ws)
+			if err != nil {
+				return nil, nil, fmt.Errorf("wrong wait value %s (%v for %+v)", ws, err, req)
+			}
+		}
+	}
+
 	var hctx context.Context
 	var hcancel context.CancelFunc
-	if c.headerTimeout > 0 {
+	if !isWait && c.headerTimeout > 0 {
 		hctx, hcancel = context.WithTimeout(ctx, c.headerTimeout)
 	} else {
 		hctx, hcancel = context.WithCancel(ctx)
