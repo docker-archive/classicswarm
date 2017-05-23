@@ -7,7 +7,7 @@ function teardown() {
 	stop_docker
 }
 
-@test "container affinty" {
+@test "container affinity" {
 	start_docker_with_busybox 2
 	swarm_manage
 
