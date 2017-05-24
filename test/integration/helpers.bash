@@ -199,6 +199,14 @@ function start_docker() {
 		local port=$(($BASE_PORT + $i))
 		HOSTS[$i]=127.0.0.1:$port
 
+		DOCKER_START_COMMAND="dockerd"
+		# older versions use "docker daemon" as their start command, so update for older
+		# versions, such as 1.9 - 1.11
+		if [[ "$DOCKER_VERSION" =~ ^"1.11" || "$DOCKER_VERSION" =~ ^"1.10" || "$DOCKER_VERSION" =~ ^"1.9" ]] ; then
+			DOCKER_START_COMMAND="docker daemon"
+		fi
+
+
 		# We have to manually call `hostname` since --hostname and --net cannot
 		# be used together.
 		DOCKER_CONTAINERS[$i]=$(
@@ -207,10 +215,10 @@ function start_docker() {
 			${DOCKER_IMAGE}:${DOCKER_VERSION} \
 			sh -c "\
 				rm /var/run/docker.pid ; \
-				rm /var/run/docker/libcontainerd/docker-containerd.pid ; \ 
+				rm /var/run/docker/libcontainerd/docker-containerd.pid ; \
 				rm /var/run/docker/libcontainerd/docker-containerd.sock ; \
 				hostname node-$i && \
-				docker daemon -H 127.0.0.1:$port \
+				$DOCKER_START_COMMAND -H 127.0.0.1:$port \
 					-H=unix:///var/run/docker.sock \
 					--storage-driver=$STORAGE_DRIVER \
 					`join ' ' $@` \
