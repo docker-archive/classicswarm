@@ -355,6 +355,12 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		if filters.Include("label") {
+			if !filters.MatchKVList("label", volume.Labels) {
+				continue
+			}
+		}
+
 		tmp := (*volume).Volume
 		if tmp.Driver == "local" {
 			// Check if the volume matches any node filters
@@ -486,6 +492,26 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 				return nil
 			})
 			if err != volumeExist {
+				continue
+			}
+		}
+		if filters.Include("network") {
+			networkExist := fmt.Errorf("network attached to container")
+			err := filters.WalkValues("network", func(value string) error {
+				if _, ok := container.NetworkSettings.Networks[value]; ok {
+					return networkExist
+				}
+				for _, nw := range container.NetworkSettings.Networks {
+					if nw == nil {
+						continue
+					}
+					if strings.HasPrefix(nw.NetworkID, value) {
+						return networkExist
+					}
+				}
+				return nil
+			})
+			if err != networkExist {
 				continue
 			}
 		}
