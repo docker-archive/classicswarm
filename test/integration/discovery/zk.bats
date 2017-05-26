@@ -69,6 +69,10 @@ function teardown() {
 	# Start the store
 	start_store
 
+	# docker/libkv has several bugs on zookeeper, but they haven't been fixed.
+	# Skip this test for now
+	skip
+
 	# Start 2 engines and make them join the cluster.
 	swarm_manage "$DISCOVERY"
 	retry 10 1 discovery_check_swarm_info
