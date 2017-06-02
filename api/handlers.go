@@ -1484,3 +1484,25 @@ func notImplementedHandler(c *context, w http.ResponseWriter, r *http.Request) {
 func optionsHandler(c *context, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
+
+// headerFlusher is a convenient wrapper around http.ResponseWriter which
+// always flushes response headers to the client immediately.
+type headerFlusher struct {
+	http.ResponseWriter
+}
+
+func (h headerFlusher) WriteHeader(status int) {
+	h.ResponseWriter.WriteHeader(status)
+
+	// Try to flush the header immediately.
+	if flusher, ok := h.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
+// POST /containers/{name:.*}/wait
+// This endpoint is special because it is important to flush the response
+// header immediately.
+func postContainersWait(c *context, w http.ResponseWriter, r *http.Request) {
+	proxyContainerAndForceRefresh(c, headerFlusher{w}, r)
+}
