@@ -19,11 +19,13 @@ function teardown() {
 	docker_swarm run -e constraint:node==node-0 -d -v=/tmp busybox true
 
 	run docker_swarm volume ls
+	echo $output
 	[ "${#lines[@]}" -eq 2 ]
 
 	docker_swarm run -e constraint:node==node-0 -d -v=/tmp busybox true
 
 	run docker_swarm volume ls
+	echo $output
 	[ "${#lines[@]}" -eq 3 ]
 
 	# create a named volume on all nodes to test --filter
@@ -157,4 +159,21 @@ function teardown() {
 	[ "$status" -eq 0 ]
 	# expect 1 line: just the header
 	[ "${#lines[@]}" -eq 1 ]
+}
+
+@test "docker volume create with whitelist" {
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* || "${output}" == "Docker version 1.11"* || "${output}" == "Docker version 1.12"* ]]; then
+		skip
+	fi
+
+	start_docker 3
+	swarm_manage
+
+	docker_swarm volume create --name=test_volume --label com.docker.swarm.whitelists=[\"node==node-1\|node-2\"]
+	run docker_swarm volume ls -q
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${output}" != *"node-0/"* ]]
+	[[ "${output}" == *"node-1/"* ]]
+	[[ "${output}" == *"node-2/"* ]]
 }
