@@ -3,6 +3,7 @@ package cluster
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -12,6 +13,7 @@ import (
 
 // Container is exported
 type Container struct {
+	sync.RWMutex
 	types.Container
 
 	Config *ContainerConfig

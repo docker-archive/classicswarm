@@ -548,7 +548,7 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 		// Create a copy of the underlying apitypes.Container so we can
 		// make changes without messing with cluster.Container.
-		tmp := (*container).Container
+		tmp := container.Container
 
 		// Update the Status. The one we have is stale from the last `docker ps` the engine sent.
 		// `Status()` will generate a new one
@@ -965,7 +965,11 @@ func postContainersExec(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// add execID to the container, so the later exec/start will work
+	container.Lock()
 	container.Info.ExecIDs = append(container.Info.ExecIDs, execCreateResp.ID)
+	container.Unlock()
+	// for temporary debugging, don't merge into code, at least not at Infof level
+	log.Infof("exec id %s is added to container %s", execCreateResp.ID, container.ID)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
