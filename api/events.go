@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/docker/api/types/events"
 	"github.com/docker/swarm/cluster"
 )
 
@@ -83,21 +84,38 @@ func (eh *eventsHandler) cleanupHandler(remoteAddr string) {
 // Handle writes information about a cluster event to each remote address in the cluster that has been added to the events handler.
 // After an unsuccessful write to a remote address, the associated channel is closed and the address is removed from the events handler.
 func (eh *eventsHandler) Handle(e *cluster.Event) error {
+	ecopy := &cluster.Event{
+		Message: events.Message{
+			Status: e.Status,
+			ID:     e.ID,
+			From:   e.From,
+			Type:   e.Type,
+			Action: e.Action,
+			Actor: events.Actor{
+				ID:         e.Actor.ID,
+				Attributes: make(map[string]string),
+			},
+			Time:     e.Time,
+			TimeNano: e.TimeNano,
+		},
+	}
+
 	// remove this hack once 1.10 is broadly adopted
-	from := e.From
-	e.From = e.From + " node:" + e.Engine.Name
+	ecopy.From = e.From + " node:" + e.Engine.Name
 
 	// Attributes will be nil if the event was sent by engine < 1.10
-	if e.Actor.Attributes == nil {
-		e.Actor.Attributes = make(map[string]string)
+	if e.Actor.Attributes != nil {
+		for k, v := range e.Actor.Attributes {
+			ecopy.Actor.Attributes[k] = v
+		}
+	} else {
+		ecopy.Actor.Attributes["node.name"] = e.Engine.Name
+		ecopy.Actor.Attributes["node.id"] = e.Engine.ID
+		ecopy.Actor.Attributes["node.addr"] = e.Engine.Addr
+		ecopy.Actor.Attributes["node.ip"] = e.Engine.IP
 	}
-	e.Actor.Attributes["node.name"] = e.Engine.Name
-	e.Actor.Attributes["node.id"] = e.Engine.ID
-	e.Actor.Attributes["node.addr"] = e.Engine.Addr
-	e.Actor.Attributes["node.ip"] = e.Engine.IP
 
-	data, err := json.Marshal(e)
-	e.From = from
+	data, err := json.Marshal(ecopy)
 	if err != nil {
 		return err
 	}
