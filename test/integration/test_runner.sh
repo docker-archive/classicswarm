@@ -45,6 +45,8 @@ done
 # Pre-fetch the test image.
 execute time docker pull ${DOCKER_IMAGE}:${DOCKER_VERSION} > /dev/null
 
+echo "failingmaster Pulled dind successfully"
+
 # Run the tests using the same client provided by the test image.
 id=`execute docker create ${DOCKER_IMAGE}:${DOCKER_VERSION}`
 tmp=`mktemp -d`

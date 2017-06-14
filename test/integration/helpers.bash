@@ -173,14 +173,18 @@ function swarm_join_cleanup() {
 
 function start_docker_with_busybox() {
 	# Preload busybox if not available.
+	echo "failingmaster preloading busybox"
+
 	[ "$(docker_host images -q busybox)" ] || docker_host pull busybox:latest
 	[ -f "$BUSYBOX_IMAGE" ] || docker_host save -o "$BUSYBOX_IMAGE" busybox:latest
 
+	echo "failingmaster loaded busybox"
 	# Start the docker instances.
 	local current=${#DOCKER_CONTAINERS[@]}
 	start_docker "$@"
 	local new=${#DOCKER_CONTAINERS[@]}
 
+	echo "failingmaster started docker instances"
 	# Load busybox on the new instances.
 	for ((i=current; i < new; i++)); do
 		docker -H ${HOSTS[$i]} load -i "$BUSYBOX_IMAGE"
@@ -194,21 +198,24 @@ function start_docker() {
 	shift
 	local i
 
+	echo "failingmaster about to start engines"
 	# Start the engines.
 	for ((i=current; i < (current + instances); i++)); do
 		local port=$(($BASE_PORT + $i))
 		HOSTS[$i]=127.0.0.1:$port
 
 		DOCKER_START_COMMAND="dockerd"
+		echo "failingmaster starting engine using $DOCKER_START_COMMAND for $DOCKER_VERSION"
 		# older versions use "docker daemon" as their start command, so update for older
 		# versions, such as 1.9 - 1.11
 		if [[ "$DOCKER_VERSION" =~ ^"1.11" || "$DOCKER_VERSION" =~ ^"1.10" || "$DOCKER_VERSION" =~ ^"1.9" ]] ; then
 			DOCKER_START_COMMAND="docker daemon"
 		fi
-
+		run docker version
 
 		# We have to manually call `hostname` since --hostname and --net cannot
 		# be used together.
+		echo "failingmaster starting $DOCKER_IMAGE $DOCKER_VERSION"
 		DOCKER_CONTAINERS[$i]=$(
 			# -v /usr/local/bin -v /var/run are specific to mesos, so the slave can do a --volumes-from and use the docker cli
 			docker_host run -d --name node-$i --privileged -v /usr/local/bin -v /var/run -it --net=host \
@@ -224,6 +231,10 @@ function start_docker() {
 					`join ' ' $@` \
 		")
 	done
+	echo "failingmaster started engine successfully $DOCKER_CONTAINERS"
+
+	run docker_host ps
+	echo "$output"
 
 	# Wait for the engines to be reachable.
 	for ((i=current; i < (current + instances); i++)); do
