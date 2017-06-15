@@ -548,24 +548,23 @@ func (c *Cluster) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume
 		nodeString = parts[0]
 		request.Name = parts[1]
 	}
-	if nodeString == "" {
-		for _, e := range c.listActiveEngines() {
-			wg.Add(1)
-
-			go func(engine *cluster.Engine) {
-				defer wg.Done()
-
-				v, er := engine.CreateVolume(request)
-				if v != nil {
-					volume = v
-					err = nil
-				}
-				if er != nil && volume == nil {
-					err = er
-				}
-			}(e)
+	nodeWhitelist, hasNodeWhitelist := request.Labels[cluster.SwarmLabelNamespace+".whitelists"]
+	engines := []*cluster.Engine{}
+	if hasNodeWhitelist {
+		labels := map[string]string{
+			cluster.SwarmLabelNamespace + ".whitelists": nodeWhitelist,
 		}
-		wg.Wait()
+		config := cluster.BuildContainerConfig(containertypes.Config{Labels: labels}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
+		var nodes []*node.Node
+		nodes, err = c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			engines = append(engines, c.engines[node.ID])
+		}
+	} else if nodeString == "" {
+		engines = c.listActiveEngines()
 	} else {
 		config := cluster.BuildContainerConfig(containertypes.Config{Env: []string{"constraint:node==" + parts[0]}}, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
 		var nodes []*node.Node
@@ -574,7 +573,17 @@ func (c *Cluster) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume
 			return nil, err
 		}
 		if nodes != nil {
-			v, er := c.engines[nodes[0].ID].CreateVolume(request)
+			engines = append(engines, c.engines[nodes[0].ID])
+		}
+	}
+
+	for _, e := range engines {
+		wg.Add(1)
+
+		go func(engine *cluster.Engine) {
+			defer wg.Done()
+
+			v, er := engine.CreateVolume(request)
 			if v != nil {
 				volume = v
 				err = nil
@@ -582,8 +591,9 @@ func (c *Cluster) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume
 			if er != nil && volume == nil {
 				err = er
 			}
-		}
+		}(e)
 	}
+	wg.Wait()
 
 	return volume, err
 }
