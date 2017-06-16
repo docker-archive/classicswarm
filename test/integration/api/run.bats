@@ -219,7 +219,8 @@ function teardown() {
 
 	# check error message
 	[[ "${output}" != *"unable to find a node that satisfies the constraint"* ]]
-	[[ "${output}" == *"not found"* ]]
+	# the error message changed sometime after 1.13, so we need to check both cases
+	[[ "${output}" == *"repository does not exist"* || "${output}" == *"not found"* ]]
 }
 
 @test "docker run - constraint and soft affinities" {

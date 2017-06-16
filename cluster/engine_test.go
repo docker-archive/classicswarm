@@ -821,7 +821,7 @@ func TestRemoveImage(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 
 	imageName := "test-image"
-	dIs := []types.ImageDelete{{Deleted: imageName}}
+	dIs := []types.ImageDeleteResponseItem{{Deleted: imageName}}
 
 	apiClient := engineapimock.NewMockClient()
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)

@@ -24,7 +24,11 @@ func convertMapToKVStrings(values map[string]*string) []string {
 	result := make([]string, len(values))
 	i := 0
 	for key, value := range values {
-		result[i] = key + "=" + *value
+		valueString := ""
+		if value != nil {
+			valueString = *value
+		}
+		result[i] = key + "=" + valueString
 		i++
 	}
 	return result

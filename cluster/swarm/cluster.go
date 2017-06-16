@@ -150,13 +150,15 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 
 	if err != nil {
 		var retries int64
-		//  fails with image not found, then try to reschedule with image affinity
+		// fails with image not found, then try to reschedule with image affinity
+		// we need to check multiple cases to ensure backward compatibility, because
+		// the error message changed over time
 		// ENGINEAPIFIXME: The first error can be removed once dockerclient is removed
 		bImageNotFoundError, _ := regexp.MatchString(`image \S* not found`, err.Error())
-
-		// Since docker engine 1.13 the error message has been changed. We have to check both for backwards compatibility.
 		bImageNotFoundError113, _ := regexp.MatchString(`repository \S* not found`, err.Error())
-		if (bImageNotFoundError || bImageNotFoundError113 || client.IsErrImageNotFound(err)) && !config.HaveNodeConstraint() {
+		bRepositoryNotFoundError1706, _ := regexp.MatchString(`repository does not exist`, err.Error())
+
+		if (bImageNotFoundError || bImageNotFoundError113 || bRepositoryNotFoundError1706 || client.IsErrImageNotFound(err)) && !config.HaveNodeConstraint() {
 			// Check if the image exists in the cluster
 			// If exists, retry with an image affinity
 			if c.Image(config.Image) != nil {
