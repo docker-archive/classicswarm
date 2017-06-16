@@ -464,8 +464,8 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 }
 
 // RemoveImages removes all the images that match `name` from the cluster.
-func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, error) {
-	out := []types.ImageDelete{}
+func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDeleteResponseItem, error) {
+	out := []types.ImageDeleteResponseItem{}
 	errs := []string{}
 	var mu sync.Mutex
 	var wg sync.WaitGroup

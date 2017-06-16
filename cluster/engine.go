@@ -595,7 +595,7 @@ func (e *Engine) updateSpecs() error {
 }
 
 // RemoveImage deletes an image from the engine.
-func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDelete, error) {
+func (e *Engine) RemoveImage(name string, force bool) ([]types.ImageDeleteResponseItem, error) {
 	rmOpts := types.ImageRemoveOptions{
 		Force:         force,
 		PruneChildren: true,
@@ -676,7 +676,7 @@ func (e *Engine) RefreshImages() error {
 
 // refreshNetwork refreshes single network on the engine.
 func (e *Engine) refreshNetwork(ID string) error {
-	network, err := e.apiClient.NetworkInspect(context.Background(), ID)
+	network, err := e.apiClient.NetworkInspect(context.Background(), ID, types.NetworkInspectOptions{})
 	e.CheckConnectionErr(err)
 	if err != nil {
 		if strings.Contains(err.Error(), "No such network") {

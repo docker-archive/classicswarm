@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/volume"
@@ -65,7 +66,7 @@ func (client *NopClient) ContainerCreate(ctx context.Context, config *container.
 }
 
 // ContainerDiff shows differences in a container filesystem since it was started
-func (client *NopClient) ContainerDiff(ctx context.Context, container string) ([]types.ContainerChange, error) {
+func (client *NopClient) ContainerDiff(ctx context.Context, container string) ([]container.ContainerChangeResponseItem, error) {
 	return nil, errNoEngine
 }
 
@@ -170,8 +171,8 @@ func (client *NopClient) ContainerStop(ctx context.Context, container string, ti
 }
 
 // ContainerTop shows process information from within a container
-func (client *NopClient) ContainerTop(ctx context.Context, container string, arguments []string) (types.ContainerProcessList, error) {
-	return types.ContainerProcessList{}, errNoEngine
+func (client *NopClient) ContainerTop(ctx context.Context, ctr string, arguments []string) (container.ContainerTopOKBody, error) {
+	return container.ContainerTopOKBody{}, errNoEngine
 }
 
 // ContainerUnpause resumes the process execution within a container
@@ -185,8 +186,10 @@ func (client *NopClient) ContainerUpdate(ctx context.Context, containerID string
 }
 
 // ContainerWait pauses execution until a container exits
-func (client *NopClient) ContainerWait(ctx context.Context, container string) (int64, error) {
-	return 0, errNoEngine
+func (client *NopClient) ContainerWait(ctx context.Context, ctr string, condition container.WaitCondition) (<-chan container.ContainerWaitOKBody, <-chan error) {
+	var errChan = make(chan error)
+	errChan <- errNoEngine
+	return nil, errChan
 }
 
 // CopyFromContainer gets the content from the container and returns it as a Reader to manipulate it in the host
@@ -200,7 +203,7 @@ func (client *NopClient) CopyToContainer(ctx context.Context, container, path st
 }
 
 // ContainersPrune requests the daemon to delete unused data
-func (client *NopClient) ContainersPrune(ctx context.Context, cfg types.ContainersPruneConfig) (types.ContainersPruneReport, error) {
+func (client *NopClient) ContainersPrune(ctx context.Context, pruneFilters filters.Args) (types.ContainersPruneReport, error) {
 	return types.ContainersPruneReport{}, errNoEngine
 }
 
@@ -224,7 +227,7 @@ func (client *NopClient) ImageCreate(ctx context.Context, parentReference string
 }
 
 // ImageHistory returns the changes in an image in history format
-func (client *NopClient) ImageHistory(ctx context.Context, image string) ([]types.ImageHistory, error) {
+func (client *NopClient) ImageHistory(ctx context.Context, image string) ([]image.HistoryResponseItem, error) {
 	return nil, errNoEngine
 }
 
@@ -259,7 +262,7 @@ func (client *NopClient) ImagePush(ctx context.Context, ref string, options type
 }
 
 // ImageRemove removes an image from the docker host
-func (client *NopClient) ImageRemove(ctx context.Context, image string, options types.ImageRemoveOptions) ([]types.ImageDelete, error) {
+func (client *NopClient) ImageRemove(ctx context.Context, image string, options types.ImageRemoveOptions) ([]types.ImageDeleteResponseItem, error) {
 	return nil, errNoEngine
 }
 
@@ -279,7 +282,7 @@ func (client *NopClient) ImageTag(ctx context.Context, image, ref string) error 
 }
 
 // ImagesPrune requests the daemon to delete unused data
-func (client *NopClient) ImagesPrune(ctx context.Context, cfg types.ImagesPruneConfig) (types.ImagesPruneReport, error) {
+func (client *NopClient) ImagesPrune(ctx context.Context, pruneFilter filters.Args) (types.ImagesPruneReport, error) {
 	return types.ImagesPruneReport{}, errNoEngine
 }
 
@@ -304,12 +307,12 @@ func (client *NopClient) NetworkDisconnect(ctx context.Context, networkID, conta
 }
 
 // NetworkInspect returns the information for a specific network configured in the docker host
-func (client *NopClient) NetworkInspect(ctx context.Context, networkID string) (types.NetworkResource, error) {
+func (client *NopClient) NetworkInspect(ctx context.Context, networkID string, options types.NetworkInspectOptions) (types.NetworkResource, error) {
 	return types.NetworkResource{}, errNoEngine
 }
 
 // NetworkInspectWithRaw returns the information for a specific network configured in the docker host and it's raw representation
-func (client *NopClient) NetworkInspectWithRaw(ctx context.Context, networkID string) (types.NetworkResource, []byte, error) {
+func (client *NopClient) NetworkInspectWithRaw(ctx context.Context, networkID string, options types.NetworkInspectOptions) (types.NetworkResource, []byte, error) {
 	return types.NetworkResource{}, nil, errNoEngine
 }
 
@@ -324,7 +327,7 @@ func (client *NopClient) NetworkRemove(ctx context.Context, networkID string) er
 }
 
 // NetworksPrune requests the daemon to delete unused networks
-func (client *NopClient) NetworksPrune(ctx context.Context, cfg types.NetworksPruneConfig) (types.NetworksPruneReport, error) {
+func (client *NopClient) NetworksPrune(ctx context.Context, pruneFilter filters.Args) (types.NetworksPruneReport, error) {
 	return types.NetworksPruneReport{}, errNoEngine
 }
 
@@ -378,6 +381,6 @@ func (client *NopClient) VolumeRemove(ctx context.Context, volumeID string, forc
 }
 
 // VolumesPrune requests the daemon to delete unused data
-func (client *NopClient) VolumesPrune(ctx context.Context, cfg types.VolumesPruneConfig) (types.VolumesPruneReport, error) {
+func (client *NopClient) VolumesPrune(ctx context.Context, pruneFilter filters.Args) (types.VolumesPruneReport, error) {
 	return types.VolumesPruneReport{}, errNoEngine
 }

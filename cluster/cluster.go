@@ -23,7 +23,7 @@ type Cluster interface {
 	Image(IDOrName string) *Image
 
 	// RemoveImages removes images from the cluster.
-	RemoveImages(name string, force bool) ([]types.ImageDelete, error)
+	RemoveImages(name string, force bool) ([]types.ImageDeleteResponseItem, error)
 
 	// Containers returns all containers.
 	Containers() Containers
