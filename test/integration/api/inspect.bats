@@ -24,7 +24,7 @@ function teardown() {
 	[ "${#lines[@]}" -eq 2 ]
 	[[ "${lines[1]}" == *"test_container"* ]]
 
-	# inspect and verify 
+	# inspect and verify
 	run docker_swarm inspect test_container
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"NetworkSettings"* ]]
@@ -42,9 +42,6 @@ function teardown() {
 }
 
 @test "docker inspect --format" {
-	# FIXME: Broken in docker master. See #717
-	skip
-
 	start_docker_with_busybox 2
 	swarm_manage
 	# run container
