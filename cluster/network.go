@@ -92,9 +92,19 @@ func (networks Networks) Filter(filter filters.Args) Networks {
 				}
 			}
 		}
+		// substring match based on name filter
+		for _, idOrName := range append(names, ids...) {
+			if networkList := networks.matchByName(idOrName, filter); len(networkList) != 0 {
+				for _, network := range networkList.Uniq() {
+					if includeFilter(network) {
+						out = append(out, network)
+					}
+				}
+			}
+		}
 	}
 
-	return out
+	return out.Uniq()
 }
 
 // RemoveDuplicateEndpoints returns a copy of input network
@@ -123,6 +133,17 @@ func (network *Network) RemoveDuplicateEndpoints() *Network {
 		netCopy.Containers[index] = network.Containers[index]
 	}
 	return &netCopy
+}
+
+// matchByName checks if any networks match by substring
+func (networks Networks) matchByName(IDOrName string, filter filters.Args) Networks {
+	candidates := Networks{}
+	for _, network := range networks {
+		if filter.Match("name", network.Name) {
+			candidates = append(candidates, network)
+		}
+	}
+	return candidates
 }
 
 // Get returns a network using its ID or Name

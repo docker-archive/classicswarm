@@ -18,7 +18,7 @@ function teardown() {
 @test "docker network ls --filter type" {
 	# docker network ls --filter type is introduced in docker 1.10, skip older version without --filter type
 	run docker --version
-	if [[ "${output}" != "Docker version 1.1"* ]]; then
+	if [[ "${output}" == "Docker version 1.9"* ]]; then
 		skip
 	fi
 
@@ -46,7 +46,7 @@ function teardown() {
 @test "docker network ls --filter node" {
 	# docker network ls --filter type is introduced in docker 1.10, skip older version without --filter type
 	run docker --version
-	if [[ "${output}" != "Docker version 1.1"* ]]; then
+	if [[ "${output}" == "Docker version 1.9"* ]]; then
 		skip
 	fi
 
@@ -60,6 +60,27 @@ function teardown() {
 	[ "${#lines[@]}" -eq 4 ]
 }
 
+# docker network ls --filter name returns networks that match with a provided name
+@test "docker network ls --filter name" {
+	# don't bother running this for older versions
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* || "${output}" == "Docker version 1.11"* || "${output}" == "Docker version 1.12"* || "${output}" == "Docker version 1.13"* ]]; then
+			skip
+	fi
+
+	start_docker 2
+	swarm_manage
+
+	run docker_swarm network create networknameone
+	run docker_swarm network create networknametwo
+
+	run docker_swarm network ls
+	echo $output
+
+	run docker_swarm network ls --filter name=networkname
+	echo $output
+	[ "${#lines[@]}" -eq 3 ]
+}
 
 @test "docker network inspect" {
 	# Docker 1.12 client shows "Attachable" and "Created" fields while docker daemon 1.12
