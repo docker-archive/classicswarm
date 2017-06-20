@@ -256,7 +256,7 @@ func (c *Cluster) Image(IDOrName string) *cluster.Image {
 }
 
 // RemoveImages removes images from the cluster
-func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDelete, error) {
+func (c *Cluster) RemoveImages(name string, force bool) ([]types.ImageDeleteResponseItem, error) {
 	return nil, errNotSupported
 }
 
@@ -362,7 +362,7 @@ func (c *Cluster) Container(IDOrName string) *cluster.Container {
 }
 
 // RemoveImage removes an image from the cluster
-func (c *Cluster) RemoveImage(image *cluster.Image) ([]types.ImageDelete, error) {
+func (c *Cluster) RemoveImage(image *cluster.Image) ([]types.ImageDeleteResponseItem, error) {
 	return nil, errNotSupported
 }
 

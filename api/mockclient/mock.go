@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/volume"
@@ -68,9 +69,9 @@ func (client *MockClient) ContainerCreate(ctx context.Context, config *container
 }
 
 // ContainerDiff shows differences in a container filesystem since it was started
-func (client *MockClient) ContainerDiff(ctx context.Context, container string) ([]types.ContainerChange, error) {
-	args := client.Mock.Called(ctx, container)
-	return args.Get(0).([]types.ContainerChange), args.Error(1)
+func (client *MockClient) ContainerDiff(ctx context.Context, ctr string) ([]container.ContainerChangeResponseItem, error) {
+	args := client.Mock.Called(ctx, ctr)
+	return args.Get(0).([]container.ContainerChangeResponseItem), args.Error(1)
 }
 
 // ContainerExecAttach attaches a connection to an exec process in the server
@@ -194,9 +195,9 @@ func (client *MockClient) ContainerStop(ctx context.Context, container string, t
 }
 
 // ContainerTop shows process information from within a container
-func (client *MockClient) ContainerTop(ctx context.Context, container string, arguments []string) (types.ContainerProcessList, error) {
-	args := client.Mock.Called(ctx, container, arguments)
-	return args.Get(0).(types.ContainerProcessList), args.Error(1)
+func (client *MockClient) ContainerTop(ctx context.Context, ctr string, arguments []string) (container.ContainerTopOKBody, error) {
+	args := client.Mock.Called(ctx, ctr, arguments)
+	return args.Get(0).(container.ContainerTopOKBody), args.Error(1)
 }
 
 // ContainerUnpause resumes the process execution within a container
@@ -212,9 +213,9 @@ func (client *MockClient) ContainerUpdate(ctx context.Context, containerID strin
 }
 
 // ContainerWait pauses execution until a container exits
-func (client *MockClient) ContainerWait(ctx context.Context, container string) (int64, error) {
-	args := client.Mock.Called(ctx, container)
-	return args.Get(0).(int64), args.Error(1)
+func (client *MockClient) ContainerWait(ctx context.Context, ctr string, condition container.WaitCondition) (<-chan container.ContainerWaitOKBody, <-chan error) {
+	args := client.Mock.Called(ctx, ctr, condition)
+	return args.Get(0).(<-chan container.ContainerWaitOKBody), args.Get(1).(<-chan error)
 }
 
 // CopyFromContainer gets the content from the container and returns it as a Reader to manipulate it in the host
@@ -230,8 +231,8 @@ func (client *MockClient) CopyToContainer(ctx context.Context, container, path s
 }
 
 // ContainersPrune requests the daemon to delete unused data
-func (client *MockClient) ContainersPrune(ctx context.Context, cfg types.ContainersPruneConfig) (types.ContainersPruneReport, error) {
-	args := client.Mock.Called(ctx, cfg)
+func (client *MockClient) ContainersPrune(ctx context.Context, pruneFilters filters.Args) (types.ContainersPruneReport, error) {
+	args := client.Mock.Called(ctx, pruneFilters)
 	return args.Get(0).(types.ContainersPruneReport), args.Error(1)
 }
 
@@ -254,9 +255,9 @@ func (client *MockClient) ImageCreate(ctx context.Context, parentReference strin
 }
 
 // ImageHistory returns the changes in an image in history format
-func (client *MockClient) ImageHistory(ctx context.Context, image string) ([]types.ImageHistory, error) {
-	args := client.Mock.Called(ctx, image)
-	return args.Get(0).([]types.ImageHistory), args.Error(1)
+func (client *MockClient) ImageHistory(ctx context.Context, img string) ([]image.HistoryResponseItem, error) {
+	args := client.Mock.Called(ctx, img)
+	return args.Get(0).([]image.HistoryResponseItem), args.Error(1)
 }
 
 // ImageImport creates a new image based in the source options
@@ -296,9 +297,9 @@ func (client *MockClient) ImagePush(ctx context.Context, ref string, options typ
 }
 
 // ImageRemove removes an image from the docker host
-func (client *MockClient) ImageRemove(ctx context.Context, image string, options types.ImageRemoveOptions) ([]types.ImageDelete, error) {
+func (client *MockClient) ImageRemove(ctx context.Context, image string, options types.ImageRemoveOptions) ([]types.ImageDeleteResponseItem, error) {
 	args := client.Mock.Called(ctx, image, options)
-	return args.Get(0).([]types.ImageDelete), args.Error(1)
+	return args.Get(0).([]types.ImageDeleteResponseItem), args.Error(1)
 }
 
 // ImageSearch makes the docker host to search by a term in a remote registry
@@ -320,8 +321,8 @@ func (client *MockClient) ImageTag(ctx context.Context, image, ref string) error
 }
 
 // ImagesPrune requests the daemon to delete unused data
-func (client *MockClient) ImagesPrune(ctx context.Context, cfg types.ImagesPruneConfig) (types.ImagesPruneReport, error) {
-	args := client.Mock.Called(ctx, cfg)
+func (client *MockClient) ImagesPrune(ctx context.Context, pruneFilter filters.Args) (types.ImagesPruneReport, error) {
+	args := client.Mock.Called(ctx, pruneFilter)
 	return args.Get(0).(types.ImagesPruneReport), args.Error(1)
 }
 
@@ -350,14 +351,14 @@ func (client *MockClient) NetworkDisconnect(ctx context.Context, networkID, cont
 }
 
 // NetworkInspect returns the information for a specific network configured in the docker host
-func (client *MockClient) NetworkInspect(ctx context.Context, networkID string) (types.NetworkResource, error) {
-	args := client.Mock.Called(ctx, networkID)
+func (client *MockClient) NetworkInspect(ctx context.Context, networkID string, options types.NetworkInspectOptions) (types.NetworkResource, error) {
+	args := client.Mock.Called(ctx, networkID, options)
 	return args.Get(0).(types.NetworkResource), args.Error(1)
 }
 
 // NetworkInspectWithRaw returns the information for a specific network configured in the docker host and it's raw representation
-func (client *MockClient) NetworkInspectWithRaw(ctx context.Context, networkID string) (types.NetworkResource, []byte, error) {
-	args := client.Mock.Called(ctx, networkID)
+func (client *MockClient) NetworkInspectWithRaw(ctx context.Context, networkID string, options types.NetworkInspectOptions) (types.NetworkResource, []byte, error) {
+	args := client.Mock.Called(ctx, networkID, options)
 	return args.Get(0).(types.NetworkResource), args.Get(1).([]byte), args.Error(2)
 }
 
@@ -374,8 +375,8 @@ func (client *MockClient) NetworkRemove(ctx context.Context, networkID string) e
 }
 
 // NetworksPrune requests the daemon to delete unused networks
-func (client *MockClient) NetworksPrune(ctx context.Context, cfg types.NetworksPruneConfig) (types.NetworksPruneReport, error) {
-	args := client.Mock.Called(ctx, cfg)
+func (client *MockClient) NetworksPrune(ctx context.Context, pruneFilter filters.Args) (types.NetworksPruneReport, error) {
+	args := client.Mock.Called(ctx, pruneFilter)
 	return args.Get(0).(types.NetworksPruneReport), args.Error(1)
 }
 
@@ -438,7 +439,7 @@ func (client *MockClient) VolumeRemove(ctx context.Context, volumeID string, for
 }
 
 // VolumesPrune requests the daemon to delete unused data
-func (client *MockClient) VolumesPrune(ctx context.Context, cfg types.VolumesPruneConfig) (types.VolumesPruneReport, error) {
-	args := client.Mock.Called(ctx, cfg)
+func (client *MockClient) VolumesPrune(ctx context.Context, pruneFilter filters.Args) (types.VolumesPruneReport, error) {
+	args := client.Mock.Called(ctx, pruneFilter)
 	return args.Get(0).(types.VolumesPruneReport), args.Error(1)
 }
