@@ -69,6 +69,13 @@ function teardown() {
 		skip
 	fi
 
+	# Docker 1.13, 17.03 client shows "Ingress" and "ConfigFrom" fields while docker daemon 1.13
+	# doesn't return them. Network inspect from Swarm is different from daemon.
+	run docker --version
+	if [[ "${output}" == "Docker version 1.13"* || "${output}" == "Docker version 17.03"* ]]; then
+		skip
+	fi
+
 	start_docker_with_busybox 2
 	swarm_manage
 
@@ -80,6 +87,12 @@ function teardown() {
 
 	run docker_swarm network inspect node-0/bridge
 	[[ "${output}" != *"\"Containers\": {}"* ]]
+
+	run docker_swarm network inspect node-0/bridge
+	echo "FIRSTINSPECT $output"
+
+	run docker -H ${HOSTS[0]} network inspect bridge
+	echo "SECONDINSPECT $output"
 
 	diff <(docker_swarm network inspect node-0/bridge) <(docker -H ${HOSTS[0]} network inspect bridge)
 }
