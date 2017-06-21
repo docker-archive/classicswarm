@@ -1431,7 +1431,7 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		if msg.Err != nil {
 			errorFound = true
 			errorMessage = msg.Err.Error()
-			osType := matchImageOSError(errorMessage)
+			osType := MatchImageOSError(errorMessage)
 			if osType != "" {
 				msg.Msg.Status = fmt.Sprintf("Could not build image: %s. Consider using --build-arg 'constraint:ostype==%s'", errorMessage, osType)
 			}

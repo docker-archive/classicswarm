@@ -21,6 +21,7 @@ import (
 	"github.com/docker/docker/pkg/discovery"
 	"github.com/docker/docker/pkg/stringid"
 	units "github.com/docker/go-units"
+	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
@@ -163,7 +164,17 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 	container, err := c.createContainer(config, name, false, authConfig)
 
 	if err != nil {
+
 		var retries int64
+		osMismatch := api.MatchImageOSError(err.Error())
+		if osMismatch != "" {
+			config.AddConstraint("ostype==" + osMismatch)
+			container, err = c.createContainer(config, name, false, authConfig)
+			if err == nil {
+				return container, nil
+			}
+			retries++
+		}
 		// fails with image not found, then try to reschedule with image affinity
 		// we need to check multiple cases to ensure backward compatibility, because
 		// the error message changed over time

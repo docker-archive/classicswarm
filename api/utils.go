@@ -377,11 +377,11 @@ func getImageRef(repo, tag string) string {
 	return ref
 }
 
-// This function matches a daemon error message that states that an image
+// MatchImageOSError matches a daemon error message that states that an image
 // cannot be built on a node because the image has a base image that uses the
 // wrong operating system. This function pulls out the required OS from the
 // error message.
-func matchImageOSError(errMsg string) string {
+func MatchImageOSError(errMsg string) string {
 	results := imageOSErrorPattern.FindStringSubmatch(errMsg)
 	if results == nil || len(results) < 2 {
 		return ""
