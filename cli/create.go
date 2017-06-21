@@ -3,10 +3,13 @@ package cli
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/docker/swarm/discovery/token"
 	"github.com/urfave/cli"
 )
+
+const tokenDeprecationErr = "Token based discovery is now deprecated and might be removed in the future.\nIt will be replaced by a default discovery backed by Docker Swarm Mode.\nOther mechanisms such as consul and etcd will continue to work as expected.\n"
 
 func create(c *cli.Context) {
 	if len(c.Args()) != 0 {
@@ -18,5 +21,6 @@ func create(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Fprintf(os.Stderr, tokenDeprecationErr)
 	fmt.Println(token)
 }
