@@ -228,6 +228,11 @@ func (e *Engine) StartMonitorEvents() {
 		close(ec)
 	}()
 
+	// this call starts a goroutine that collects events from the the engine, and returns an error to
+	// ec (the error channel) in case an error occurs. The corresponding Stop() function tears this
+	// down. The eventsMonitor itself is initialized using the apiClient and handler (defined below)
+	// The handler function processes events as received from the engine and decides what to do based
+	// on each event. Moreover, it also calls the eventHandler's Handle() function.
 	e.eventsMonitor.Start(ec)
 }
 
