@@ -305,6 +305,13 @@ func (c *Cluster) addEngine(addr string) bool {
 	}
 
 	engine := cluster.NewEngine(addr, c.overcommitRatio, c.engineOpts)
+	// This passes c, which has a Handle(Event) (error) function defined, which acts as the handler
+	// for events. This is the cluster level handler that is called by individual engines when they
+	// receive/emit events. This Handler in turn calls the eventHandlers.Handle() function.
+	// eventHandlers is a map from EventHandler -> struct{}, and eventHandlers.Handle() simply calls
+	// the Handle function for each of the EventHander objects in the map. Remember that EventHandler
+	// is an interface, that is implemented by both the Cluster object, as well as the eventsHandler
+	// object in api/events.go
 	if err := engine.RegisterEventHandler(c); err != nil {
 		log.Error(err)
 	}
