@@ -41,10 +41,10 @@ func TestHandle(t *testing.T) {
 	event.Message.From = "from"
 	event.Message.Time = 0
 	event.Actor.Attributes = make(map[string]string)
-	event.Actor.Attributes["nodevent.name"] = event.Engine.Name
-	event.Actor.Attributes["nodevent.id"] = event.Engine.ID
-	event.Actor.Attributes["nodevent.addr"] = event.Engine.Addr
-	event.Actor.Attributes["nodevent.ip"] = event.Engine.IP
+	event.Actor.Attributes["node.name"] = event.Engine.Name
+	event.Actor.Attributes["node.id"] = event.Engine.ID
+	event.Actor.Attributes["node.addr"] = event.Engine.Addr
+	event.Actor.Attributes["node.ip"] = event.Engine.IP
 
 	assert.NoError(t, eh.Handle(event))
 

@@ -890,8 +890,49 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 		f.Flush()
 	}
 
-	c.eventsHandler.Add(r.RemoteAddr, w)
-	c.eventsHandler.Wait(r.RemoteAddr, until)
+	eventsChan, cancelFunc := c.watchQueue.Watch()
+	defer cancelFunc()
+
+	// create timer for --until
+	var (
+		timer   *time.Timer
+		timerCh <-chan time.Time
+	)
+	if until > 0 {
+		dur := time.Unix(until, 0).Sub(time.Now())
+		timer = time.NewTimer(dur)
+		timerCh = timer.C
+	}
+	closeNotify := r.Context().Done()
+
+	for {
+		select {
+		case eChan, ok := <-eventsChan:
+			if !ok {
+				return
+			}
+			e, ok := eChan.(*cluster.Event)
+			if !ok {
+				break
+			}
+			data, err := normalizeEvent(e)
+			if err != nil {
+				return
+			}
+			_, err = w.Write(data)
+			if err != nil {
+				log.Debugf("failed to write event to output stream %s", err.Error())
+				return
+			}
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+		case <-closeNotify:
+			return
+		case <-timerCh:
+			return
+		}
+	}
 }
 
 // POST /containers/{name:.*}/start

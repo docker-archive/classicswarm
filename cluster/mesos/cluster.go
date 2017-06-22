@@ -22,6 +22,7 @@ import (
 	"github.com/docker/swarm/cluster/mesos/task"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
+	"github.com/docker/swarmkit/watch"
 	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
 	mesosscheduler "github.com/mesos/mesos-go/scheduler"
@@ -34,6 +35,7 @@ type Cluster struct {
 
 	dockerEnginePort    string
 	eventHandlers       *cluster.EventHandlers
+	watchQueue          *watch.Queue
 	master              string
 	agents              map[string]*agent
 	scheduler           *Scheduler
@@ -168,18 +170,31 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 
 // Handle callbacks for the events
 func (c *Cluster) Handle(e *cluster.Event) error {
+	// publish event to the watchQueue for external subscribers
+	c.watchQueue.Publish(e)
+	// call Handle for other eventHandlers
 	c.eventHandlers.Handle(e)
 	return nil
 }
 
 // RegisterEventHandler registers an event handler.
-func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
+func (c *Cluster) RegisterEventHandler(h cluster.EventHandler, q *watch.Queue) error {
+	// only set if watchQueue hasn't been set already. This is to avoid issues because
+	// the watchdog code still uses the old event handler.
+	if q != nil && c.watchQueue == nil {
+		c.watchQueue = q
+	}
 	return c.eventHandlers.RegisterEventHandler(h)
 }
 
 // UnregisterEventHandler unregisters a previously registered event handler.
 func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 	c.eventHandlers.UnregisterEventHandler(h)
+}
+
+// CloseWatchQueue closes the watchQueue when the manager shuts down.
+func (c *Cluster) CloseWatchQueue() {
+	c.watchQueue.Close()
 }
 
 // StartContainer starts a container
