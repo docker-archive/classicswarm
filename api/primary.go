@@ -3,18 +3,27 @@ package api
 import (
 	"crypto/tls"
 	"net/http"
+	"time"
 
 	"net/http/pprof"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarmkit/watch"
 	"github.com/gorilla/mux"
+)
+
+const (
+	defaultEventQueueLimit   = 10000
+	defaultEventQueueTimeout = 10 * time.Second
 )
 
 // Primary router context, used by handlers.
 type context struct {
 	cluster       cluster.Cluster
 	eventsHandler *eventsHandler
+	watchQueue    *watch.Queue
+	listenerCount *uint64
 	statusHandler StatusHandler
 	debug         bool
 	tlsConfig     *tls.Config
@@ -122,16 +131,24 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 	// The new eventsHandler is initialized with no writers or channels.
 	// This is in api/events.go
 	eventsHandler := newEventsHandler()
+	// eventsQueue uses the watch package from SwarmKit, which is based on
+	// the go-events package. See https://github.com/docker/swarm/issues/2718
+	// for context
+	eventsQueue := watch.NewQueue(watch.WithTimeout(defaultEventQueueTimeout), watch.WithLimit(defaultEventQueueLimit), watch.WithCloseOutChan())
+	listenerCount := uint64(0)
+	// need to add this queue to the cluster
 	// This just calls c.eventHandlers.RegisterEventHandler(eventsHandler) internally.
 	// Eventually, eventsHandler is added to the Cluster struct's EventHandlers map, if it
 	// doesn't already exist there. The Cluster struct implements the cluster.EventHandler
 	// interface, as does eventsHandler. So calling the Handle function for a Cluster object
 	// will eventually call the Handle function for eventsHandler.
-	cluster.RegisterEventHandler(eventsHandler)
+	cluster.RegisterEventHandler(eventsHandler, eventsQueue)
 
 	context := &context{
 		cluster:       cluster,
 		eventsHandler: eventsHandler,
+		watchQueue:    eventsQueue,
+		listenerCount: &listenerCount,
 		statusHandler: status,
 		tlsConfig:     tlsConfig,
 	}

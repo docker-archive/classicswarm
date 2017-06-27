@@ -179,6 +179,8 @@ func run(cl cluster.Cluster, candidate *leadership.Candidate, server *api.Server
 			} else {
 				log.Info("Leader Election: Cluster leadership lost")
 				cl.UnregisterEventHandler(watchdog)
+				// TODO(nishanttotla): perhaps EventHandler for subscription events should
+				// also be unregistered here
 				server.SetHandler(replica)
 			}
 
@@ -335,6 +337,7 @@ func manage(c *cli.Context) {
 		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.GlobalBool("debug"), c.Bool("cors")))
 		cluster.NewWatchdog(cl)
 	}
+	defer cl.CloseWatchQueue()
 
 	log.Fatal(server.ListenAndServe())
 }

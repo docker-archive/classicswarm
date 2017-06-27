@@ -80,29 +80,31 @@ func (eh *eventsHandler) cleanupHandler(remoteAddr string) {
 
 }
 
-// Handle writes information about a cluster event to each remote address in the cluster that has been added to the events handler.
-// After an unsuccessful write to a remote address, the associated channel is closed and the address is removed from the events handler.
-func (eh *eventsHandler) Handle(e *cluster.Event) error {
+// normalizeEvent takes a cluster Event and ensures backward compatibility
+// and all the right fields filled up
+func normalizeEvent(receivedEvent *cluster.Event) ([]byte, error) {
+	// make a local copy of the event
+	e := *receivedEvent
+	// make a fresh copy of the Actor.Attributes map to prevent a race condition
+	e.Actor.Attributes = make(map[string]string)
+	for k, v := range receivedEvent.Actor.Attributes {
+		e.Actor.Attributes[k] = v
+	}
+
 	// remove this hack once 1.10 is broadly adopted
-	from := e.From
 	e.From = e.From + " node:" + e.Engine.Name
 
-	// Attributes will be nil if the event was sent by engine < 1.10
-	if e.Actor.Attributes == nil {
-		e.Actor.Attributes = make(map[string]string)
-	}
 	e.Actor.Attributes["node.name"] = e.Engine.Name
 	e.Actor.Attributes["node.id"] = e.Engine.ID
 	e.Actor.Attributes["node.addr"] = e.Engine.Addr
 	e.Actor.Attributes["node.ip"] = e.Engine.IP
 
-	data, err := json.Marshal(e)
-	e.From = from
+	data, err := json.Marshal(&e)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// remove the node field once 1.10 is broadly adopted & interlock stop relying on it
+	// remove the node field once 1.10 is broadly adopted & interlock stops relying on it
 	node := fmt.Sprintf(",%q:{%q:%q,%q:%q,%q:%q,%q:%q}}",
 		"node",
 		"Name", e.Engine.Name,
@@ -114,6 +116,17 @@ func (eh *eventsHandler) Handle(e *cluster.Event) error {
 	// insert Node field
 	data = data[:len(data)-1]
 	data = append(data, []byte(node)...)
+
+	return data, nil
+}
+
+// Handle writes information about a cluster event to each remote address in the cluster that has been added to the events handler.
+// After an unsuccessful write to a remote address, the associated channel is closed and the address is removed from the events handler.
+func (eh *eventsHandler) Handle(e *cluster.Event) error {
+	data, err := normalizeEvent(e)
+	if err != nil {
+		return err
+	}
 
 	var failed []string
 

@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -41,7 +42,7 @@ var (
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := apitypes.Info{
 		Images:            len(c.cluster.Images().Filter(cluster.ImageFilterOptions{})),
-		NEventsListener:   c.eventsHandler.Size(),
+		NEventsListener:   int(atomic.LoadUint64(c.listenerCount)),
 		Debug:             c.debug,
 		MemoryLimit:       true,
 		SwapLimit:         true,
@@ -890,8 +891,55 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 		f.Flush()
 	}
 
-	c.eventsHandler.Add(r.RemoteAddr, w)
-	c.eventsHandler.Wait(r.RemoteAddr, until)
+	eventsChan, cancelFunc := c.watchQueue.Watch()
+	defer cancelFunc()
+
+	atomic.AddUint64(c.listenerCount, 1)
+	defer atomic.AddUint64(c.listenerCount, ^uint64(0))
+
+	// create timer for --until
+	var (
+		timer   *time.Timer
+		timerCh <-chan time.Time
+	)
+	if until > 0 {
+		dur := time.Unix(until, 0).Sub(time.Now())
+		timer = time.NewTimer(dur)
+		timerCh = timer.C
+	}
+	var closeNotify <-chan bool
+	if closeNotifier, ok := w.(http.CloseNotifier); ok {
+		closeNotify = closeNotifier.CloseNotify()
+	}
+
+	for {
+		select {
+		case eChan, ok := <-eventsChan:
+			if !ok {
+				return
+			}
+			e, ok := eChan.(*cluster.Event)
+			if !ok {
+				break
+			}
+			data, err := normalizeEvent(e)
+			if err != nil {
+				return
+			}
+			_, err = w.Write(data)
+			if err != nil {
+				log.Debugf("failed to write event to output stream %s", err.Error())
+				return
+			}
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+		case <-closeNotify:
+			return
+		case <-timerCh:
+			return
+		}
+	}
 }
 
 // POST /containers/{name:.*}/start
