@@ -23,6 +23,7 @@ type ContainerConfig struct {
 
 // OldContainerConfig contains additional fields for backward compatibility
 // This should be removed after we stop supporting API versions <= 1.8
+// TODO(nishanttotla): Remove this field
 type OldContainerConfig struct {
 	ContainerConfig
 	Memory     int64

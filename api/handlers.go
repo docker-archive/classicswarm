@@ -1186,6 +1186,8 @@ func proxyNetworkConnect(c *context, w http.ResponseWriter, r *http.Request) {
 	cb := func(resp *http.Response) {
 		// force fresh networks on this engine
 		container.Engine.RefreshNetworks()
+		// force refresh this container so that it is up to date in the cache
+		container.Engine.UpdateNetworkContainers(container.ID, true)
 	}
 
 	// request is forwarded to the container's address

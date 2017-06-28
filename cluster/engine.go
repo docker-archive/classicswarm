@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -468,7 +469,7 @@ func (e *Engine) EngineToContainerNode() *types.ContainerNode {
 func (e *Engine) updateClientVersionFromServer(serverVersion string) {
 	// v will be >= 1.8, since this is checked earlier
 	// for server/API version reference, check https://docs.docker.com/engine/api/
-	// new versions of Docker look like 17.06-ce etc.
+	// new versions of Docker look like 17.06.x-ce etc.
 	s := strings.Split(serverVersion, "-")
 	serverVersion = s[0]
 
@@ -485,7 +486,7 @@ func (e *Engine) updateClientVersionFromServer(serverVersion string) {
 		e.apiClient.UpdateClientVersion("1.24")
 	case versions.LessThan(serverVersion, "1.13.1"):
 		e.apiClient.UpdateClientVersion("1.25")
-	case versions.LessThan(serverVersion, "17.03.1") || serverVersion == "1.13.1":
+	case versions.LessThan(serverVersion, "17.03.1") || versions.Equal(serverVersion, "1.13.1"):
 		e.apiClient.UpdateClientVersion("1.26")
 	case versions.LessThan(serverVersion, "17.04"):
 		e.apiClient.UpdateClientVersion("1.27")
@@ -945,11 +946,91 @@ func (e *Engine) refreshLoop() {
 			e.RefreshVolumes()
 			e.RefreshNetworks()
 			e.RefreshImages()
-			log.WithFields(log.Fields{"id": e.ID, "name": e.Name}).Debugf("Engine update succeeded")
+			err := e.UpdateNetworkContainers("", false)
+			if err != nil {
+				log.WithFields(log.Fields{"id": e.ID, "name": e.Name}).Debugf("Engine refresh succeeded, but network containers update failed: %s", err.Error())
+			} else {
+				log.WithFields(log.Fields{"id": e.ID, "name": e.Name}).Debugf("Engine update succeeded")
+			}
 		} else {
 			log.WithFields(log.Fields{"id": e.ID, "name": e.Name}).Debugf("Engine refresh failed")
 		}
 	}
+}
+
+// UpdateNetworkContainers updates the list of containers attached to each network.
+// This is required because the RefreshNetworks uses NetworkList which has stopped
+// returning this information for recent API versions. Note that the container cache
+// is used to obtain this information, which means that if the container cache isn't
+// up to date for whatever reason, then the network information might be out of date
+// as well. This needs to be considered while designing networking related functionality.
+// Ideally, this function should only be used in the refresh loop, and called AFTER
+// RefreshNetworks() because RefreshNetworks() will not populate network information
+// correctly if container refresh hasn't taken place
+
+// The containerID argument can be provided along with a full argument can be used to
+// limit the update as it concerns only one container instead of doing it for all
+// containers. The idea is that sometimes only things about one container may have
+// changed, and we don't need to run the loop over all containers.
+func (e *Engine) UpdateNetworkContainers(containerID string, full bool) error {
+	containerMap := make(map[string]*Container)
+	if containerID != "" {
+		ctr, err := e.refreshContainer(containerID, full)
+		if err != nil {
+			return err
+		}
+		containerMap[containerID] = ctr
+	}
+
+	e.Lock()
+	defer e.Unlock()
+
+	// if a specific container is not being targeted, then an update for all containers
+	// will take place
+	if containerID == "" {
+		containerMap = e.containers
+	}
+
+	for _, c := range containerMap {
+		if c.NetworkSettings == nil {
+			continue
+		}
+		for _, n := range c.NetworkSettings.Networks {
+			if engineNetwork, ok := e.networks[n.NetworkID]; ok {
+				// extract container name
+				ctrName := ""
+				if len(c.Names) != 0 {
+					if s := strings.Split(c.Names[0], "/"); len(s) > 1 {
+						ctrName = s[1]
+					} else {
+						ctrName = s[0]
+					}
+				}
+				// extract ip addresses
+				ipv4address := ""
+				ipv6address := ""
+				if n.IPAddress != "" {
+					ipv4address = n.IPAddress + "/" + strconv.Itoa(n.IPPrefixLen)
+				}
+				if n.GlobalIPv6Address != "" {
+					ipv6address = n.GlobalIPv6Address + "/" + strconv.Itoa(n.GlobalIPv6PrefixLen)
+				}
+				// udpate network information
+				engineNetwork.Containers[c.ID] = types.EndpointResource{
+					Name:        ctrName,
+					EndpointID:  n.EndpointID,
+					MacAddress:  n.MacAddress,
+					IPv4Address: ipv4address,
+					IPv6Address: ipv6address,
+				}
+			} else {
+				// it shouldn't be the case that a network which a container is connected to wasn't
+				// even listed. Return an error when that happens.
+				return fmt.Errorf("container %s connected to network %s but the network wasn't listed in the refresh loop", c.ID, n.NetworkID)
+			}
+		}
+	}
+	return nil
 }
 
 func (e *Engine) emitEvent(event string) {
@@ -1306,6 +1387,7 @@ func (e *Engine) String() string {
 
 func (e *Engine) handler(msg events.Message) error {
 	// Something changed - refresh our internal state.
+	// TODO(nishanttotla): Possibly container events should trigger a container refresh
 
 	switch msg.Type {
 	case "network":
@@ -1531,8 +1613,11 @@ func (e *Engine) NetworkDisconnect(container *Container, network string, force b
 	if err != nil {
 		return err
 	}
-
-	return e.RefreshNetworks()
+	err = e.RefreshNetworks()
+	if err != nil {
+		return err
+	}
+	return e.UpdateNetworkContainers(container.ID, true)
 }
 
 //IsConnectionError returns true when err is connection problem
