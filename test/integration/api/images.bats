@@ -42,6 +42,11 @@ function teardown() {
 	# lines are: header, busybox, <none>
 	run docker_swarm images -a
 	[ "${#lines[@]}" -ge 3 ]
+
+	run docker_swarm images --filter reference='busy*'
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"busybox"* ]]
 }
 
 @test "docker images -f label" {
