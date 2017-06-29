@@ -24,7 +24,6 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
-	"github.com/docker/swarmkit/watch"
 )
 
 type pendingContainer struct {
@@ -59,7 +58,6 @@ type Cluster struct {
 	sync.RWMutex
 
 	eventHandlers     *cluster.EventHandlers
-	watchQueue        *watch.Queue
 	engines           map[string]*cluster.Engine
 	pendingEngines    map[string]*cluster.Engine
 	scheduler         *scheduler.Scheduler
@@ -116,20 +114,13 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 
 // Handle callbacks for the events.
 func (c *Cluster) Handle(e *cluster.Event) error {
-	// publish event to the watchQueue for external subscribers
-	c.watchQueue.Publish(e)
-	// call Handle for other eventHandlers
+	// call Handle for all eventHandlers
 	c.eventHandlers.Handle(e)
 	return nil
 }
 
 // RegisterEventHandler registers an event handler.
-func (c *Cluster) RegisterEventHandler(h cluster.EventHandler, q *watch.Queue) error {
-	// only set if watchQueue hasn't been set already. This is to avoid issues because
-	// the watchdog code still uses the old event handler.
-	if q != nil && c.watchQueue == nil {
-		c.watchQueue = q
-	}
+func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
 	return c.eventHandlers.RegisterEventHandler(h)
 }
 
@@ -140,7 +131,7 @@ func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 
 // CloseWatchQueue closes the watchQueue when the manager shuts down.
 func (c *Cluster) CloseWatchQueue() {
-	c.watchQueue.Close()
+	// c.watchQueue.Close()
 }
 
 // generateUniqueID generates a globally (across the cluster) unique ID.

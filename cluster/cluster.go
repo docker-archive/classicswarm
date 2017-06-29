@@ -5,7 +5,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/volume"
-	"github.com/docker/swarmkit/watch"
 )
 
 // Cluster is exported
@@ -77,7 +76,7 @@ type Cluster interface {
 	TotalCpus() int64
 
 	// RegisterEventHandler registers an event handler for cluster-wide events.
-	RegisterEventHandler(h EventHandler, q *watch.Queue) error
+	RegisterEventHandler(h EventHandler) error
 
 	// UnregisterEventHandler unregisters an event handler.
 	UnregisterEventHandler(h EventHandler)

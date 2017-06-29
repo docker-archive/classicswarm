@@ -878,7 +878,7 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 		f.Flush()
 	}
 
-	eventsChan, cancelFunc := c.watchQueue.Watch()
+	eventsChan, cancelFunc := c.eventsHandler.Watch()
 	defer cancelFunc()
 
 	atomic.AddUint64(c.listenerCount, 1)

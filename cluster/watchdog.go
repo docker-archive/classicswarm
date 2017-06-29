@@ -187,6 +187,6 @@ func NewWatchdog(cluster Cluster) *Watchdog {
 	w := &Watchdog{
 		cluster: cluster,
 	}
-	cluster.RegisterEventHandler(w, nil)
+	cluster.RegisterEventHandler(w)
 	return w
 }
