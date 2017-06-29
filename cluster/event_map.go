@@ -5,36 +5,23 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/docker/api/types/events"
 )
 
-// Event is exported
-type Event struct {
-	events.Message
-	Engine *Engine `json:"-"`
-}
-
-// EventHandler is exported
-type EventHandler interface {
-	Handle(*Event) error
-}
-
-// EventHandlers is a map of EventHandler
-type EventHandlers struct {
+// ClusterEventHandlers is a map of EventHandler
+type ClusterEventHandlers struct {
 	sync.RWMutex
-
 	eventHandlers map[EventHandler]struct{}
 }
 
-// NewEventHandlers returns an EventHandlers
-func NewEventHandlers() *EventHandlers {
-	return &EventHandlers{
+// NewClusterEventHandlers returns an EventHandlers
+func NewClusterEventHandlers() *ClusterEventHandlers {
+	return &ClusterEventHandlers{
 		eventHandlers: make(map[EventHandler]struct{}),
 	}
 }
 
 // Handle callbacks for the events
-func (eh *EventHandlers) Handle(e *Event) {
+func (eh *ClusterEventHandlers) Handle(e *Event) {
 	eh.RLock()
 	defer eh.RUnlock()
 
@@ -46,7 +33,7 @@ func (eh *EventHandlers) Handle(e *Event) {
 }
 
 // RegisterEventHandler registers an event handler.
-func (eh *EventHandlers) RegisterEventHandler(h EventHandler) error {
+func (eh *ClusterEventHandlers) RegisterEventHandler(h EventHandler) error {
 	eh.Lock()
 	defer eh.Unlock()
 
@@ -58,7 +45,7 @@ func (eh *EventHandlers) RegisterEventHandler(h EventHandler) error {
 }
 
 // UnregisterEventHandler unregisters a previously registered event handler.
-func (eh *EventHandlers) UnregisterEventHandler(h EventHandler) {
+func (eh *ClusterEventHandlers) UnregisterEventHandler(h EventHandler) {
 	eh.Lock()
 	defer eh.Unlock()
 

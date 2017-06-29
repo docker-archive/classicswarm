@@ -31,18 +31,18 @@ import (
 type Cluster struct {
 	sync.RWMutex
 
-	dockerEnginePort    string
-	eventHandlers       *cluster.EventHandlers
-	master              string
-	agents              map[string]*agent
-	scheduler           *Scheduler
-	TLSConfig           *tls.Config
-	options             *cluster.DriverOpts
-	offerTimeout        time.Duration
-	refuseTimeout       time.Duration
-	taskCreationTimeout time.Duration
-	pendingTasks        *task.Tasks
-	engineOpts          *cluster.EngineOpts
+	dockerEnginePort     string
+	clusterEventHandlers *cluster.ClusterEventHandlers
+	master               string
+	agents               map[string]*agent
+	scheduler            *Scheduler
+	TLSConfig            *tls.Config
+	options              *cluster.DriverOpts
+	offerTimeout         time.Duration
+	refuseTimeout        time.Duration
+	taskCreationTimeout  time.Duration
+	pendingTasks         *task.Tasks
+	engineOpts           *cluster.EngineOpts
 }
 
 const (
@@ -69,16 +69,16 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		flag.Lookup("logtostderr").Value.Set("true")
 	}
 	cluster := &Cluster{
-		dockerEnginePort:    defaultDockerEnginePort,
-		eventHandlers:       cluster.NewEventHandlers(),
-		master:              master,
-		agents:              make(map[string]*agent),
-		TLSConfig:           TLSConfig,
-		options:             &options,
-		offerTimeout:        defaultOfferTimeout,
-		taskCreationTimeout: defaultTaskCreationTimeout,
-		engineOpts:          engineOptions,
-		refuseTimeout:       defaultRefuseTimeout,
+		dockerEnginePort:     defaultDockerEnginePort,
+		clusterEventHandlers: cluster.NewClusterEventHandlers(),
+		master:               master,
+		agents:               make(map[string]*agent),
+		TLSConfig:            TLSConfig,
+		options:              &options,
+		offerTimeout:         defaultOfferTimeout,
+		taskCreationTimeout:  defaultTaskCreationTimeout,
+		engineOpts:           engineOptions,
+		refuseTimeout:        defaultRefuseTimeout,
 	}
 
 	cluster.pendingTasks = task.NewTasks(cluster)
@@ -167,24 +167,24 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 
 // Handle callbacks for the events
 func (c *Cluster) Handle(e *cluster.Event) error {
-	// call Handle for all eventHandlers
-	c.eventHandlers.Handle(e)
+	// call Handle for all clusterEventHandlers
+	c.clusterEventHandlers.Handle(e)
 	return nil
 }
 
 // RegisterEventHandler registers an event handler.
 func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
-	return c.eventHandlers.RegisterEventHandler(h)
+	return c.clusterEventHandlers.RegisterEventHandler(h)
 }
 
 // UnregisterEventHandler unregisters a previously registered event handler.
 func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
-	c.eventHandlers.UnregisterEventHandler(h)
+	c.clusterEventHandlers.UnregisterEventHandler(h)
 }
 
-// NewAPIEventsHandler creates a new API events handler
-func (c *Cluster) NewAPIEventsHandler() *cluster.EventsHandler {
-	return cluster.NewEventsHandler()
+// NewAPIEventHandler creates a new API events handler
+func (c *Cluster) NewAPIEventHandler() *cluster.APIEventHandler {
+	return cluster.NewAPIEventHandler()
 }
 
 // CloseWatchQueue closes the watchQueue when the manager shuts down.

@@ -853,47 +853,6 @@ func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 	if errorFound {
 		sendErrorJSONMessage(wf, 1, errorMessage)
 	}
-
-}
-
-// normalizeEvent takes a cluster Event and ensures backward compatibility
-// and all the right fields filled up
-func normalizeEvent(receivedEvent *cluster.Event) ([]byte, error) {
-	// make a local copy of the event
-	e := *receivedEvent
-	// make a fresh copy of the Actor.Attributes map to prevent a race condition
-	e.Actor.Attributes = make(map[string]string)
-	for k, v := range receivedEvent.Actor.Attributes {
-		e.Actor.Attributes[k] = v
-	}
-
-	// remove this hack once 1.10 is broadly adopted
-	e.From = e.From + " node:" + e.Engine.Name
-
-	e.Actor.Attributes["node.name"] = e.Engine.Name
-	e.Actor.Attributes["node.id"] = e.Engine.ID
-	e.Actor.Attributes["node.addr"] = e.Engine.Addr
-	e.Actor.Attributes["node.ip"] = e.Engine.IP
-
-	data, err := json.Marshal(&e)
-	if err != nil {
-		return nil, err
-	}
-
-	// remove the node field once 1.10 is broadly adopted & interlock stops relying on it
-	node := fmt.Sprintf(",%q:{%q:%q,%q:%q,%q:%q,%q:%q}}",
-		"node",
-		"Name", e.Engine.Name,
-		"Id", e.Engine.ID,
-		"Addr", e.Engine.Addr,
-		"Ip", e.Engine.IP,
-	)
-
-	// insert Node field
-	data = data[:len(data)-1]
-	data = append(data, []byte(node)...)
-
-	return data, nil
 }
 
 // GET /events
