@@ -1,4 +1,4 @@
-package api
+package cluster
 
 import (
 	"encoding/json"

@@ -182,6 +182,11 @@ func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 	c.eventHandlers.UnregisterEventHandler(h)
 }
 
+// NewAPIEventsHandler creates a new API events handler
+func (c *Cluster) NewAPIEventsHandler() *cluster.EventsHandler {
+	return cluster.NewEventsHandler()
+}
+
 // CloseWatchQueue closes the watchQueue when the manager shuts down.
 func (c *Cluster) CloseWatchQueue() {
 	// c.watchQueue.Close()

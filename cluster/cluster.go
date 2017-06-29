@@ -81,6 +81,9 @@ type Cluster interface {
 	// UnregisterEventHandler unregisters an event handler.
 	UnregisterEventHandler(h EventHandler)
 
+	// NewAPIEventsHandler creates a new API events handler
+	NewAPIEventsHandler() *EventsHandler
+
 	// CloseWatchQueue closes the watchQueue when the manager shuts down.
 	CloseWatchQueue()
 

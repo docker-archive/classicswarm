@@ -129,6 +129,11 @@ func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
 	c.eventHandlers.UnregisterEventHandler(h)
 }
 
+// NewAPIEventsHandler creates a new API events handler
+func (c *Cluster) NewAPIEventsHandler() *cluster.EventsHandler {
+	return cluster.NewEventsHandler()
+}
+
 // CloseWatchQueue closes the watchQueue when the manager shuts down.
 func (c *Cluster) CloseWatchQueue() {
 	// c.watchQueue.Close()
@@ -315,7 +320,7 @@ func (c *Cluster) addEngine(addr string) bool {
 	// receive/emit events. This Handler in turn calls the eventHandlers.Handle() function.
 	// eventHandlers is a map from EventHandler -> struct{}, and eventHandlers.Handle() simply calls
 	// the Handle function for each of the EventHander objects in the map. Remember that EventHandler
-	// is an interface, that is implemented by both the Cluster object, as well as the eventsHandler
+	// is an interface, that is implemented by both the Cluster object, as well as the EventsHandler
 	// object in api/events.go
 	if err := engine.RegisterEventHandler(c); err != nil {
 		log.Error(err)
