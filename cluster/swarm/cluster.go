@@ -115,7 +115,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 // Handle callbacks for the events.
 func (c *Cluster) Handle(e *cluster.Event) error {
 	// call Handle for all clusterEventHandlers
-	c.clusterEventHandlers.Handle(e)
+	c.clusterEventHandlers.HandleAll(e)
 	return nil
 }
 
@@ -134,8 +134,10 @@ func (c *Cluster) NewAPIEventHandler() *cluster.APIEventHandler {
 	return cluster.NewAPIEventHandler()
 }
 
-// CloseWatchQueue closes the watchQueue when the manager shuts down.
-func (c *Cluster) CloseWatchQueue() {
+// CloseWatchQueues unregisters all API event handlers (the ones with
+// watch queues) and closes the respective queues. This should be
+// called when the manager shuts down
+func (c *Cluster) CloseWatchQueues() {
 	// c.watchQueue.Close()
 }
 
@@ -317,8 +319,8 @@ func (c *Cluster) addEngine(addr string) bool {
 	engine := cluster.NewEngine(addr, c.overcommitRatio, c.engineOpts)
 	// This passes c, which has a Handle(Event) (error) function defined, which acts as the handler
 	// for events. This is the cluster level handler that is called by individual engines when they
-	// receive/emit events. This Handler in turn calls the clusterEventHandlers.Handle() function.
-	// clusterEventHandlers is a map from EventHandler -> struct{}, and clusterEventHandlers.Handle() simply calls
+	// receive/emit events. This Handler in turn calls the clusterEventHandlers.HandleAll() function.
+	// clusterEventHandlers is a map from EventHandler -> struct{}, and clusterEventHandlers.HandleAll() simply calls
 	// the Handle function for each of the EventHander objects in the map. Remember that EventHandler
 	// is an interface, that is implemented by both the Cluster object, as well as the EventsHandler
 	// object in api/events.go

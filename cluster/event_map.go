@@ -20,8 +20,8 @@ func NewClusterEventHandlers() *ClusterEventHandlers {
 	}
 }
 
-// Handle callbacks for the events
-func (eh *ClusterEventHandlers) Handle(e *Event) {
+// HandleAll callbacks for the events
+func (eh *ClusterEventHandlers) HandleAll(e *Event) {
 	eh.RLock()
 	defer eh.RUnlock()
 
@@ -50,4 +50,22 @@ func (eh *ClusterEventHandlers) UnregisterEventHandler(h EventHandler) {
 	defer eh.Unlock()
 
 	delete(eh.eventHandlers, h)
+}
+
+// CloseWatchQueues unregisters all API event handlers (the ones with
+// watch queues) and closes the respective queues. This should be
+// called when the manager shuts down
+func (eh *ClusterEventHandlers) CloseWatchQueues() {
+	eh.Lock()
+	defer eh.Unlock()
+
+	for h, _ := range eh.eventHandlers {
+		// only do this for API event handlers
+		apiHandler, ok := h.(*APIEventHandler)
+		if !ok {
+			continue
+		}
+		apiHandler.cleanupHandler()
+		delete(eh.eventHandlers, h)
+	}
 }

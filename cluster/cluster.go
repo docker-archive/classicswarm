@@ -84,8 +84,10 @@ type Cluster interface {
 	// NewAPIEventHandler creates a new API events handler
 	NewAPIEventHandler() *APIEventHandler
 
-	// CloseWatchQueue closes the watchQueue when the manager shuts down.
-	CloseWatchQueue()
+	// CloseWatchQueues unregisters all API event handlers (the ones with
+	// watch queues) and closes the respective queues. This should be
+	// called when the manager shuts down
+	CloseWatchQueues()
 
 	// FIXME: remove this method
 	// RANDOMENGINE returns a random engine.

@@ -168,7 +168,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 // Handle callbacks for the events
 func (c *Cluster) Handle(e *cluster.Event) error {
 	// call Handle for all clusterEventHandlers
-	c.clusterEventHandlers.Handle(e)
+	c.clusterEventHandlers.HandleAll(e)
 	return nil
 }
 
@@ -187,8 +187,10 @@ func (c *Cluster) NewAPIEventHandler() *cluster.APIEventHandler {
 	return cluster.NewAPIEventHandler()
 }
 
-// CloseWatchQueue closes the watchQueue when the manager shuts down.
-func (c *Cluster) CloseWatchQueue() {
+// CloseWatchQueues unregisters all API event handlers (the ones with
+// watch queues) and closes the respective queues. This should be
+// called when the manager shuts down
+func (c *Cluster) CloseWatchQueues() {
 	// c.watchQueue.Close()
 }
 

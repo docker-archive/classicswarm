@@ -31,7 +31,7 @@ func (eh *APIEventHandler) Watch() (eventq chan events.Event, cancel func()) {
 	return eventq, cancel
 }
 
-func (eh *APIEventHandler) cleanupHandler(remoteAddr string) {
+func (eh *APIEventHandler) cleanupHandler() {
 	eh.watchQueue.Close()
 }
 
