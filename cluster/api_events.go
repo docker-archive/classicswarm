@@ -41,8 +41,3 @@ func (eh *APIEventHandler) Handle(e *Event) error {
 	eh.watchQueue.Publish(e)
 	return nil
 }
-
-// Size returns the number of remote addresses that the events handler currently contains.
-func (eh *APIEventHandler) Size() int {
-	return 0
-}

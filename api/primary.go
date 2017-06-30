@@ -119,18 +119,10 @@ func profilerSetup(mainRouter *mux.Router, path string) {
 func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHandler, debug, enableCors bool) *mux.Router {
 	// Register the API events handler in the cluster.
 
-	// NewAPIEventHandler creates a new eventsHandler object. The new eventsHandler
-	// is initialized with no writers or channels. This is in api/events.go and
-	// uses the watch package from SwarmKit, which is based on the go-events
-	// package. See https://github.com/docker/swarm/issues/2718 for context
+	// eventsHandler is the handler for API events
 	eventsHandler := cluster.NewAPIEventHandler()
+	// listenerCount keeps track of the number of API events connections
 	listenerCount := uint64(0)
-	// need to add this queue to the cluster
-	// This just calls c.eventHandlers.RegisterEventHandler(eventsHandler) internally.
-	// Eventually, eventsHandler is added to the Cluster struct's EventHandlers map, if it
-	// doesn't already exist there. The Cluster struct implements the cluster.EventHandler
-	// interface, as does eventsHandler. So calling the Handle function for a Cluster object
-	// will eventually call the Handle function for eventsHandler.
 	cluster.RegisterEventHandler(eventsHandler)
 
 	context := &context{
