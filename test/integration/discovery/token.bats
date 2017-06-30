@@ -24,8 +24,8 @@ DISCOVERY=""
 #	token_cleanup
 #}
 
-# docker hub token service is down. This is not the recommended way of
-# discovery. It's not prioritized on Docker hub. Disable the test for now.
+# This is not the recommended way of discovery. It's not
+# prioritized on Docker hub. Disable the test for now.
 @test "token discovery: recover engines" {
 skip
 
@@ -42,8 +42,8 @@ skip
 	retry 5 1 discovery_check_swarm_info
 }
 
-# docker hub token service is down. Since this is not the recommended way of
-# discovery. It's not prioritized on Docker hub. Disable the test for now.
+# This is not the recommended way of discovery. It's not
+# prioritized on Docker hub. Disable the test for now.
 @test "token discovery: watch for changes" {
 skip
 

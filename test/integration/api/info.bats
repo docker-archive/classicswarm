@@ -19,8 +19,8 @@ function teardown() {
 
 @test "docker info - details" {
 	# details in docker info were introduced in docker 1.10, skip older version without
-	run docker info
-	if [[ "${output}" != *"Paused:"* ]]; then
+	run docker --version
+	if [[ "${output}" == "Docker version 1.9"* ]]; then
 		skip
 	fi
 
