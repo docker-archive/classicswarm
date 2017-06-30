@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.2.7 (2017-06-30)
+
+#### API
+
+- Add name filter for `network ls`
+- Allow control over where volumes get created with a whitelist label
+- Immediately flush response headers for ContainerWait requests
+- Add support for network filters on containers and label filters on volumes
+- Don't throw away most of the JSONMessage content when pulling images
+- Add progress reporting during image pulls
+- Add filter to list dangling images
+- Add OSType as a label for node constraints
+- Don't fail docker pull operations when running both Linux and Windows nodes
+- Add support for some new image build options
+- Node filters for networks and volumes
+
+#### Events
+
+- Move events handling to use watch queues from `github.com/docker/swarmkit`
+- Event stream retry interval capped to 10 seconds
+
+#### Networking
+
+- Fix refresh loop after `network ls` stopped returning containers attached to networks (for newer API versions)
+
+#### Discovery
+
+- Deprecate Docker Hub discovery (token based); to be removed in an upcoming release
+
+#### Misc
+
+- Move vendoring to use `github.com/LK4D4/vndr` instead of Godeps
+- Fix several test failures
+- Parallelize engine operations
+
 ## 1.2.6 (2017-01-17)
 
 #### API
@@ -24,7 +59,7 @@
 - Remove dependency on IPv4 addresses
 - Support event top, resize, commit and so on to avoid unnecessary refreshing
 - Sequentialize event monitor to an engine to avoid data race
-- When an active engine sends EOF on event stream, restart event monitor so we don't lose events 
+- When an active engine sends EOF on event stream, restart event monitor so we don't lose events
 - When proxying a request, cancel request if user connection is broken
 
 #### MISC
