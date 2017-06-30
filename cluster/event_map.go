@@ -59,7 +59,7 @@ func (eh *ClusterEventHandlers) CloseWatchQueues() {
 	eh.Lock()
 	defer eh.Unlock()
 
-	for h, _ := range eh.eventHandlers {
+	for h := range eh.eventHandlers {
 		// only do this for API event handlers
 		apiHandler, ok := h.(*APIEventHandler)
 		if !ok {

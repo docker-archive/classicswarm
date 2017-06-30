@@ -15,7 +15,6 @@ import (
 type context struct {
 	cluster       cluster.Cluster
 	eventsHandler *cluster.APIEventHandler
-	listenerCount *uint64
 	statusHandler StatusHandler
 	debug         bool
 	tlsConfig     *tls.Config
@@ -121,14 +120,11 @@ func NewPrimary(cluster cluster.Cluster, tlsConfig *tls.Config, status StatusHan
 
 	// eventsHandler is the handler for API events
 	eventsHandler := cluster.NewAPIEventHandler()
-	// listenerCount keeps track of the number of API events connections
-	listenerCount := uint64(0)
 	cluster.RegisterEventHandler(eventsHandler)
 
 	context := &context{
 		cluster:       cluster,
 		eventsHandler: eventsHandler,
-		listenerCount: &listenerCount,
 		statusHandler: status,
 		tlsConfig:     tlsConfig,
 	}

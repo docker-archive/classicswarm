@@ -138,7 +138,7 @@ func (c *Cluster) NewAPIEventHandler() *cluster.APIEventHandler {
 // watch queues) and closes the respective queues. This should be
 // called when the manager shuts down
 func (c *Cluster) CloseWatchQueues() {
-	// c.watchQueue.Close()
+	c.clusterEventHandlers.CloseWatchQueues()
 }
 
 // generateUniqueID generates a globally (across the cluster) unique ID.
@@ -321,9 +321,7 @@ func (c *Cluster) addEngine(addr string) bool {
 	// for events. This is the cluster level handler that is called by individual engines when they
 	// receive/emit events. This Handler in turn calls the clusterEventHandlers.HandleAll() function.
 	// clusterEventHandlers is a map from EventHandler -> struct{}, and clusterEventHandlers.HandleAll() simply calls
-	// the Handle function for each of the EventHander objects in the map. Remember that EventHandler
-	// is an interface, that is implemented by both the Cluster object, as well as the EventsHandler
-	// object in api/events.go
+	// the Handle function for each of the EventHander objects in the map.
 	if err := engine.RegisterEventHandler(c); err != nil {
 		log.Error(err)
 	}

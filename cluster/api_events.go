@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/docker/go-events"
@@ -12,22 +13,34 @@ const (
 	defaultEventQueueTimeout = 10 * time.Second
 )
 
-// APIEventsHandler broadcasts events to multiple client listeners.
+// APIEventHandler broadcasts events to multiple client listeners.
 type APIEventHandler struct {
-	watchQueue *watch.Queue
+	listenerCount *uint64
+	watchQueue    *watch.Queue
 }
 
 // NewAPIEventHandler creates a new APIEventsHandler for a cluster.
 // The new eventsHandler is initialized with no writers or channels.
 func NewAPIEventHandler() *APIEventHandler {
+	count := uint64(0)
 	return &APIEventHandler{
-		watchQueue: watch.NewQueue(watch.WithTimeout(defaultEventQueueTimeout), watch.WithLimit(defaultEventQueueLimit), watch.WithCloseOutChan()),
+		listenerCount: &count,
+		watchQueue:    watch.NewQueue(watch.WithTimeout(defaultEventQueueTimeout), watch.WithLimit(defaultEventQueueLimit), watch.WithCloseOutChan()),
 	}
 }
 
-// Add adds the writer and a new channel for the remote address.
-func (eh *APIEventHandler) Watch() (eventq chan events.Event, cancel func()) {
-	eventq, cancel = eh.watchQueue.Watch()
+// Watch adds the writer and a new channel for the remote address.
+func (eh *APIEventHandler) Watch() (chan events.Event, func()) {
+	// create a new queue and subscribe to it
+	eventq, cancelFunc := eh.watchQueue.Watch()
+	// increment counter
+	atomic.AddUint64(eh.listenerCount, 1)
+
+	cancel := func() {
+		// decrement counter
+		atomic.AddUint64(eh.listenerCount, ^uint64(0))
+		cancelFunc()
+	}
 	return eventq, cancel
 }
 
@@ -40,4 +53,9 @@ func (eh *APIEventHandler) cleanupHandler() {
 func (eh *APIEventHandler) Handle(e *Event) error {
 	eh.watchQueue.Publish(e)
 	return nil
+}
+
+// Size returns the number of event queues currently listening for events
+func (eh *APIEventHandler) Size() int {
+	return int(atomic.LoadUint64(eh.listenerCount))
 }

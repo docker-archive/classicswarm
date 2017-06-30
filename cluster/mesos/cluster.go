@@ -191,7 +191,7 @@ func (c *Cluster) NewAPIEventHandler() *cluster.APIEventHandler {
 // watch queues) and closes the respective queues. This should be
 // called when the manager shuts down
 func (c *Cluster) CloseWatchQueues() {
-	// c.watchQueue.Close()
+	c.clusterEventHandlers.CloseWatchQueues()
 }
 
 // StartContainer starts a container
