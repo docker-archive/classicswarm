@@ -37,7 +37,7 @@ import (
 
 const (
 	// Timeout for requests sent out to the engine.
-	requestTimeout = 10 * time.Second
+	requestTimeout = 30 * time.Second
 
 	// Threshold of delta duration between swarm manager and engine's systime
 	thresholdTime = 2 * time.Second
@@ -195,13 +195,13 @@ func (e *Engine) Connect(config *tls.Config) error {
 	e.url = url
 
 	// Use HTTP Client created above to create a dockerclient client
-	c, err := dockerclient.NewDockerClient(url.String(), config)
+	c := dockerclient.NewDockerClientFromHTTP(url, e.httpClient, config)
 	if err != nil {
 		return err
 	}
 
 	// Use HTTP Client used by dockerclient to create docker/api client
-	apiClient, err := engineapi.NewClient("tcp://"+e.Addr, "", c.HTTPClient, nil)
+	apiClient, err := engineapi.NewClient("tcp://"+e.Addr, "", e.httpClient, nil)
 	if err != nil {
 		return err
 	}
