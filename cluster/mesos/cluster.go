@@ -26,7 +26,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
 	mesosscheduler "github.com/mesos/mesos-go/scheduler"
-	"github.com/samalba/dockerclient"
 )
 
 // Cluster struct for mesos
@@ -198,10 +197,10 @@ func (c *Cluster) CloseWatchQueue() {
 }
 
 // StartContainer starts a container
-func (c *Cluster) StartContainer(container *cluster.Container, hostConfig *dockerclient.HostConfig) error {
+func (c *Cluster) StartContainer(container *cluster.Container) error {
 	// if the container was started less than a second ago in detach mode, do not start it
 	if time.Now().Unix()-container.Created > 1 || container.Config.Labels[cluster.SwarmLabelNamespace+".mesos.detach"] != "true" {
-		return container.Engine.StartContainer(container, hostConfig)
+		return container.Engine.StartContainer(container)
 	}
 	return nil
 }
