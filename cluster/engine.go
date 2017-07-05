@@ -996,37 +996,41 @@ func (e *Engine) UpdateNetworkContainers(containerID string, full bool) error {
 			continue
 		}
 		for _, n := range c.NetworkSettings.Networks {
-			if engineNetwork, ok := e.networks[n.NetworkID]; ok {
-				// extract container name
-				ctrName := ""
-				if len(c.Names) != 0 {
-					if s := strings.Split(c.Names[0], "/"); len(s) > 1 {
-						ctrName = s[1]
-					} else {
-						ctrName = s[0]
-					}
-				}
-				// extract ip addresses
-				ipv4address := ""
-				ipv6address := ""
-				if n.IPAddress != "" {
-					ipv4address = n.IPAddress + "/" + strconv.Itoa(n.IPPrefixLen)
-				}
-				if n.GlobalIPv6Address != "" {
-					ipv6address = n.GlobalIPv6Address + "/" + strconv.Itoa(n.GlobalIPv6PrefixLen)
-				}
-				// udpate network information
-				engineNetwork.Containers[c.ID] = types.EndpointResource{
-					Name:        ctrName,
-					EndpointID:  n.EndpointID,
-					MacAddress:  n.MacAddress,
-					IPv4Address: ipv4address,
-					IPv6Address: ipv6address,
-				}
-			} else {
+			engineNetwork, ok := e.networks[n.NetworkID]
+			if !ok {
 				// it shouldn't be the case that a network which a container is connected to wasn't
 				// even listed. Return an error when that happens.
 				return fmt.Errorf("container %s connected to network %s but the network wasn't listed in the refresh loop", c.ID, n.NetworkID)
+			}
+
+			// extract container name
+			ctrName := ""
+			if len(c.Names) != 0 {
+				if s := strings.Split(c.Names[0], "/"); len(s) > 1 {
+					ctrName = s[1]
+				} else {
+					ctrName = s[0]
+				}
+			}
+			// extract ip addresses
+			ipv4address := ""
+			ipv6address := ""
+			if n.IPAddress != "" {
+				ipv4address = n.IPAddress + "/" + strconv.Itoa(n.IPPrefixLen)
+			}
+			if n.GlobalIPv6Address != "" {
+				ipv6address = n.GlobalIPv6Address + "/" + strconv.Itoa(n.GlobalIPv6PrefixLen)
+			}
+			// update network information
+			if engineNetwork.Containers == nil {
+				engineNetwork.Containers = make(map[string]types.EndpointResource)
+			}
+			engineNetwork.Containers[c.ID] = types.EndpointResource{
+				Name:        ctrName,
+				EndpointID:  n.EndpointID,
+				MacAddress:  n.MacAddress,
+				IPv4Address: ipv4address,
+				IPv6Address: ipv6address,
 			}
 		}
 	}
