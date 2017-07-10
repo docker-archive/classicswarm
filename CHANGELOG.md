@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.8-rc1 (2017-07-10)
+
+#### Networking
+
+- Fix panic when network is created without connecting to any containers
+
 ## 1.2.7 (2017-06-30)
 
 #### API
