@@ -296,6 +296,11 @@ func (client *NopClient) Info(ctx context.Context) (types.Info, error) {
 	return types.Info{}, errNoEngine
 }
 
+// NegotiateAPIVersion updates the version string associated with this
+// instance of the Client to match the latest version the server supports
+func (client *NopClient) NegotiateAPIVersion(ctx context.Context) {
+}
+
 // NetworkConnect connects a container to an existent network in the docker host
 func (client *NopClient) NetworkConnect(ctx context.Context, networkID, container string, config *network.EndpointSettings) error {
 	return errNoEngine

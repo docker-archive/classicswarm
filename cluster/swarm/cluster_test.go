@@ -147,6 +147,7 @@ func TestImportImage(t *testing.T) {
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
@@ -200,6 +201,7 @@ func TestLoadImage(t *testing.T) {
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)
@@ -257,6 +259,7 @@ func TestTagImage(t *testing.T) {
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return(images, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
 	// connect client
 	engine.ConnectWithClient(client, apiClient)

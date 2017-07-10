@@ -338,6 +338,12 @@ func (client *MockClient) Info(ctx context.Context) (types.Info, error) {
 	return args.Get(0).(types.Info), args.Error(1)
 }
 
+// NegotiateAPIVersion updates the version string associated with this
+// instance of the Client to match the latest version the server supports
+func (client *MockClient) NegotiateAPIVersion(ctx context.Context) {
+	client.Mock.Called(ctx)
+}
+
 // NetworkConnect connects a container to an existent network in the docker host
 func (client *MockClient) NetworkConnect(ctx context.Context, networkID, container string, config *network.EndpointSettings) error {
 	args := client.Mock.Called(ctx, networkID, container, config)

@@ -181,6 +181,7 @@ func TestEngineCpusMemory(t *testing.T) {
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
 	assert.NoError(t, engine.ConnectWithClient(client, apiClient))
 	assert.True(t, engine.isConnected())
@@ -211,6 +212,7 @@ func TestEngineSpecs(t *testing.T) {
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
 	assert.NoError(t, engine.ConnectWithClient(client, apiClient))
 	assert.True(t, engine.isConnected())
@@ -250,6 +252,7 @@ func TestEngineState(t *testing.T) {
 		mock.AnythingOfType("Args"),
 	).Return(volume.VolumesListOKBody{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
 	// The client will return one container at first, then a second one will appear.
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil).Once()
@@ -389,6 +392,7 @@ func TestCreateContainer(t *testing.T) {
 	// filterArgs1 := filters.NewArgs()
 	// filterArgs1.Add("id", id)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
 	assert.NoError(t, engine.ConnectWithClient(client, apiClient))
 	assert.True(t, engine.isConnected())
@@ -600,6 +604,7 @@ func TestUsedCpus(t *testing.T) {
 				).Return(volume.VolumesListOKBody{}, nil)
 				apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 				apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil).Once()
+				apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
 				apiClient.On(
 					"ContainerList",
@@ -684,6 +689,7 @@ func TestContainerRemovedDuringRefresh(t *testing.T) {
 	).Return(volume.VolumesListOKBody{}, nil)
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
 	apiClient.On(
 		"ContainerList",
@@ -727,6 +733,7 @@ func TestDisconnect(t *testing.T) {
 		mock.AnythingOfType("Args"),
 	).Return(volume.VolumesListOKBody{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
 	// The client will return one container at first, then a second one will appear.
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
