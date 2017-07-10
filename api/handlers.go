@@ -29,8 +29,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// APIVERSION is the minimum API version supported by swarm manager
-const APIVERSION = "1.22"
+const (
+	// APIVERSION is the default API version supported by swarm manager
+	APIVERSION = "1.30"
+)
 
 var (
 	ShouldRefreshOnNodeFilter  = false
@@ -63,21 +65,7 @@ func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 		NoProxy:           os.Getenv("no_proxy"),
 		SystemTime:        time.Now().Format(time.RFC3339Nano),
 		ExperimentalBuild: experimental.ENABLED,
-	}
-
-	// API versions older than 1.22 use DriverStatus and return \b characters in the output
-	status := c.statusHandler.Status()
-	if c.apiVersion != "" && typesversions.LessThan(c.apiVersion, "1.22") {
-		for i := range status {
-			if status[i][0][:1] == " " {
-				status[i][0] = status[i][0][1:]
-			} else {
-				status[i][0] = "\b" + status[i][0]
-			}
-		}
-		info.DriverStatus = status
-	} else {
-		info.SystemStatus = status
+		SystemStatus:      c.statusHandler.Status(),
 	}
 
 	kernelVersion := "<unknown>"
