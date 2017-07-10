@@ -473,30 +473,30 @@ func (e *Engine) updateClientVersionFromServer(serverVersion string) {
 	s := strings.Split(serverVersion, "-")
 	serverVersion = s[0]
 
-	switch {
-	case versions.LessThan(serverVersion, "1.9"):
-		e.apiClient.UpdateClientVersion("1.20")
-	case versions.LessThan(serverVersion, "1.10"):
-		e.apiClient.UpdateClientVersion("1.21")
-	case versions.LessThan(serverVersion, "1.11"):
-		e.apiClient.UpdateClientVersion("1.22")
-	case versions.LessThan(serverVersion, "1.12"):
-		e.apiClient.UpdateClientVersion("1.23")
-	case versions.LessThan(serverVersion, "1.13"):
-		e.apiClient.UpdateClientVersion("1.24")
-	case versions.LessThan(serverVersion, "1.13.1"):
-		e.apiClient.UpdateClientVersion("1.25")
-	case versions.LessThan(serverVersion, "17.03.1") || versions.Equal(serverVersion, "1.13.1"):
-		e.apiClient.UpdateClientVersion("1.26")
-	case versions.LessThan(serverVersion, "17.04"):
-		e.apiClient.UpdateClientVersion("1.27")
-	case versions.LessThan(serverVersion, "17.05"):
-		e.apiClient.UpdateClientVersion("1.28")
-	case versions.LessThan(serverVersion, "17.06"):
-		e.apiClient.UpdateClientVersion("1.29")
-	default:
-		e.apiClient.UpdateClientVersion("1.30")
-	}
+	// switch {
+	// case versions.LessThan(serverVersion, "1.9"):
+	// 	e.apiClient.UpdateClientVersion("1.20")
+	// case versions.LessThan(serverVersion, "1.10"):
+	// 	e.apiClient.UpdateClientVersion("1.21")
+	// case versions.LessThan(serverVersion, "1.11"):
+	// 	e.apiClient.UpdateClientVersion("1.22")
+	// case versions.LessThan(serverVersion, "1.12"):
+	// 	e.apiClient.UpdateClientVersion("1.23")
+	// case versions.LessThan(serverVersion, "1.13"):
+	// 	e.apiClient.UpdateClientVersion("1.24")
+	// case versions.LessThan(serverVersion, "1.13.1"):
+	// 	e.apiClient.UpdateClientVersion("1.25")
+	// case versions.LessThan(serverVersion, "17.03.1") || versions.Equal(serverVersion, "1.13.1"):
+	// 	e.apiClient.UpdateClientVersion("1.26")
+	// case versions.LessThan(serverVersion, "17.04"):
+	// 	e.apiClient.UpdateClientVersion("1.27")
+	// case versions.LessThan(serverVersion, "17.05"):
+	// 	e.apiClient.UpdateClientVersion("1.28")
+	// case versions.LessThan(serverVersion, "17.06"):
+	// 	e.apiClient.UpdateClientVersion("1.29")
+	// default:
+	// 	e.apiClient.UpdateClientVersion("1.30")
+	// }
 }
 
 // Gather engine specs (CPU, memory, constraints, ...).
