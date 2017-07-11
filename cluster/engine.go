@@ -1501,15 +1501,11 @@ func (e *Engine) cleanupContainers() {
 }
 
 // StartContainer starts a container
-func (e *Engine) StartContainer(container *Container, hostConfig *dockerclient.HostConfig) error {
-	var err error
-	if hostConfig != nil {
-		err = e.client.StartContainer(container.ID, hostConfig)
-	} else {
-		// TODO(nishanttotla): Should ContainerStartOptions be provided?
-		err = e.apiClient.ContainerStart(context.Background(), container.ID, types.ContainerStartOptions{})
-	}
+func (e *Engine) StartContainer(container *Container) error {
+	// TODO(nishanttotla): Should ContainerStartOptions be provided?
+	err := e.apiClient.ContainerStart(context.Background(), container.ID, types.ContainerStartOptions{})
 	e.CheckConnectionErr(err)
+
 	if err != nil {
 		return err
 	}

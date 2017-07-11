@@ -27,7 +27,6 @@ import (
 	"github.com/docker/swarm/experimental"
 	"github.com/docker/swarm/version"
 	"github.com/gorilla/mux"
-	"github.com/samalba/dockerclient"
 )
 
 // APIVERSION is the minimum API version supported by swarm manager
@@ -951,27 +950,14 @@ func postContainersStart(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hostConfig := &dockerclient.HostConfig{
-		MemorySwappiness: -1,
-	}
-
-	buf, err := ioutil.ReadAll(r.Body)
+	_, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	r.Body.Close()
 
-	if len(buf) <= 2 || (len(buf) == 4 && string(buf) == "null") {
-		hostConfig = nil
-	} else {
-		if err := json.Unmarshal(buf, hostConfig); err != nil {
-			httpError(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-
-	if err := c.cluster.StartContainer(container, hostConfig); err != nil {
+	if err := c.cluster.StartContainer(container); err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

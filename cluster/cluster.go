@@ -6,7 +6,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/swarmkit/watch"
-	"github.com/samalba/dockerclient"
 )
 
 // Cluster is exported
@@ -30,7 +29,7 @@ type Cluster interface {
 	Containers() Containers
 
 	// StartContainer starts a container.
-	StartContainer(container *Container, hostConfig *dockerclient.HostConfig) error
+	StartContainer(container *Container) error
 
 	// Container returns the container matching `IDOrName`.
 	// TODO: remove this method from the interface as we can use
