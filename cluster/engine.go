@@ -465,43 +465,11 @@ func (e *Engine) EngineToContainerNode() *types.ContainerNode {
 	}
 }
 
-// Update API Version in apiClient
-func (e *Engine) updateClientVersionFromServer(serverVersion string) {
-	// v will be >= 1.8, since this is checked earlier
-	// for server/API version reference, check https://docs.docker.com/engine/api/
-	// new versions of Docker look like 17.06.x-ce etc.
-	s := strings.Split(serverVersion, "-")
-	serverVersion = s[0]
-
-	switch {
-	case versions.LessThan(serverVersion, "1.9"):
-		e.apiClient.UpdateClientVersion("1.20")
-	case versions.LessThan(serverVersion, "1.10"):
-		e.apiClient.UpdateClientVersion("1.21")
-	case versions.LessThan(serverVersion, "1.11"):
-		e.apiClient.UpdateClientVersion("1.22")
-	case versions.LessThan(serverVersion, "1.12"):
-		e.apiClient.UpdateClientVersion("1.23")
-	case versions.LessThan(serverVersion, "1.13"):
-		e.apiClient.UpdateClientVersion("1.24")
-	case versions.LessThan(serverVersion, "1.13.1"):
-		e.apiClient.UpdateClientVersion("1.25")
-	case versions.LessThan(serverVersion, "17.03.1") || versions.Equal(serverVersion, "1.13.1"):
-		e.apiClient.UpdateClientVersion("1.26")
-	case versions.LessThan(serverVersion, "17.04"):
-		e.apiClient.UpdateClientVersion("1.27")
-	case versions.LessThan(serverVersion, "17.05"):
-		e.apiClient.UpdateClientVersion("1.28")
-	case versions.LessThan(serverVersion, "17.06"):
-		e.apiClient.UpdateClientVersion("1.29")
-	default:
-		e.apiClient.UpdateClientVersion("1.30")
-	}
-}
-
 // Gather engine specs (CPU, memory, constraints, ...).
 func (e *Engine) updateSpecs() error {
-	info, err := e.apiClient.Info(context.Background())
+	ctx := context.Background()
+
+	info, err := e.apiClient.Info(ctx)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -511,7 +479,7 @@ func (e *Engine) updateSpecs() error {
 		return fmt.Errorf("cannot get resources for this engine, make sure %s is a Docker Engine, not a Swarm manager", e.Addr)
 	}
 
-	v, err := e.apiClient.ServerVersion(context.Background())
+	v, err := e.apiClient.ServerVersion(ctx)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
@@ -526,7 +494,7 @@ func (e *Engine) updateSpecs() error {
 	// update server version
 	e.Version = v.Version
 	// update client version. docker/api handles backward compatibility where needed
-	e.updateClientVersionFromServer(v.Version)
+	e.apiClient.NegotiateAPIVersion(ctx)
 
 	e.Lock()
 	defer e.Unlock()

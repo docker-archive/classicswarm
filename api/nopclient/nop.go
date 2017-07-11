@@ -30,6 +30,11 @@ func NewNopClient() *NopClient {
 	return &NopClient{}
 }
 
+// BuildCachePrune requests the daemon to delete unused cache data
+func (client *NopClient) BuildCachePrune(ctx context.Context) (*types.BuildCachePruneReport, error) {
+	return nil, errNoEngine
+}
+
 // ClientVersion returns the version string associated with this instance of the Client
 func (client *NopClient) ClientVersion() string {
 	return ""
@@ -291,6 +296,11 @@ func (client *NopClient) Info(ctx context.Context) (types.Info, error) {
 	return types.Info{}, errNoEngine
 }
 
+// NegotiateAPIVersion updates the version string associated with this
+// instance of the Client to match the latest version the server supports
+func (client *NopClient) NegotiateAPIVersion(ctx context.Context) {
+}
+
 // NetworkConnect connects a container to an existent network in the docker host
 func (client *NopClient) NetworkConnect(ctx context.Context, networkID, container string, config *network.EndpointSettings) error {
 	return errNoEngine
@@ -349,10 +359,6 @@ func (client *NopClient) Ping(ctx context.Context) (types.Ping, error) {
 // ServerVersion returns information of the docker client and server host
 func (client *NopClient) ServerVersion(ctx context.Context) (types.Version, error) {
 	return types.Version{}, errNoEngine
-}
-
-// UpdateClientVersion updates the client version
-func (client *NopClient) UpdateClientVersion(v string) {
 }
 
 // VolumeCreate creates a volume in the docker host

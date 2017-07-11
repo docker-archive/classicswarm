@@ -26,6 +26,12 @@ func NewMockClient() *MockClient {
 	return &MockClient{}
 }
 
+// BuildCachePrune requests the daemon to delete unused cache data
+func (client *MockClient) BuildCachePrune(ctx context.Context) (*types.BuildCachePruneReport, error) {
+	args := client.Mock.Called(ctx)
+	return args.Get(0).(*types.BuildCachePruneReport), args.Error(1)
+}
+
 // ClientVersion returns the version string associated with this instance of the Client
 func (client *MockClient) ClientVersion() string {
 	args := client.Mock.Called()
@@ -332,6 +338,12 @@ func (client *MockClient) Info(ctx context.Context) (types.Info, error) {
 	return args.Get(0).(types.Info), args.Error(1)
 }
 
+// NegotiateAPIVersion updates the version string associated with this
+// instance of the Client to match the latest version the server supports
+func (client *MockClient) NegotiateAPIVersion(ctx context.Context) {
+	client.Mock.Called(ctx)
+}
+
 // NetworkConnect connects a container to an existent network in the docker host
 func (client *MockClient) NetworkConnect(ctx context.Context, networkID, container string, config *network.EndpointSettings) error {
 	args := client.Mock.Called(ctx, networkID, container, config)
@@ -402,10 +414,6 @@ func (client *MockClient) Ping(ctx context.Context) (types.Ping, error) {
 func (client *MockClient) ServerVersion(ctx context.Context) (types.Version, error) {
 	args := client.Mock.Called(ctx)
 	return args.Get(0).(types.Version), args.Error(1)
-}
-
-// UpdateClientVersion updates the client version
-func (client *MockClient) UpdateClientVersion(v string) {
 }
 
 // VolumeCreate creates a volume in the docker host

@@ -14,6 +14,6 @@ type SwarmAPIClient interface {
 	client.SystemAPIClient
 	client.VolumeAPIClient
 	ClientVersion() string
+	NegotiateAPIVersion(ctx context.Context)
 	ServerVersion(ctx context.Context) (types.Version, error)
-	UpdateClientVersion(v string)
 }

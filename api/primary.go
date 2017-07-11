@@ -177,6 +177,7 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 					writeCorsHeaders(w, r)
 				}
 				context.apiVersion = mux.Vars(r)["version"]
+				w.Header().Set("API-Version", APIVERSION)
 				localFct(context, w, r)
 			}
 			localMethod := method
@@ -195,6 +196,7 @@ func setupPrimaryRouter(r *mux.Router, context *context, enableCors bool) {
 						writeCorsHeaders(w, r)
 					}
 					context.apiVersion = mux.Vars(r)["version"]
+					w.Header().Set("API-Version", APIVERSION)
 					optionsFct(context, w, r)
 				}
 
