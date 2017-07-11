@@ -1,6 +1,10 @@
 # Changelog
 
-## 1.2.8-rc1 (2017-07-10)
+## 1.2.8 (2017-07-11)
+
+#### API
+
+- Support asterisks in image reference filter
 
 #### Networking
 
