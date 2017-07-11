@@ -200,12 +200,6 @@ function start_docker() {
 		HOSTS[$i]=127.0.0.1:$port
 
 		DOCKER_START_COMMAND="dockerd"
-		# older versions use "docker daemon" as their start command, so update for older
-		# versions, such as 1.9 - 1.11
-		if [[ "$DOCKER_VERSION" =~ ^"1.11" || "$DOCKER_VERSION" =~ ^"1.10" || "$DOCKER_VERSION" =~ ^"1.9" ]] ; then
-			DOCKER_START_COMMAND="docker daemon"
-		fi
-
 
 		# We have to manually call `hostname` since --hostname and --net cannot
 		# be used together.
