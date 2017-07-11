@@ -19,6 +19,12 @@ function teardown() {
 }
 
 @test "docker-compose up - check memory swappiness" {
+	# skip test for newer versions due to https://github.com/moby/moby/pull/33898
+	run docker --version
+	if [[ "${output}" != "Docker version 1.12"* && "${output}" != "Docker version 1.13"* && "${output}" != "Docker version 17.03"* ]]; then
+		skip
+	fi
+
 	start_docker_with_busybox 2
 	swarm_manage
 	FILE=$TESTDATA/compose/simple.yml
@@ -83,7 +89,7 @@ function containerRunning() {
 	FILE=$TESTDATA/compose/reschedule.yml
 
 	docker-compose_swarm -f $FILE up -d
-	
+
 	run docker_swarm ps -q
 	[ "${#lines[@]}" -eq  3 ]
 
