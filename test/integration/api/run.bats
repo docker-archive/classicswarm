@@ -33,6 +33,14 @@ function teardown() {
 	# run with --rm
 	docker_swarm run --rm busybox echo hello
 	[ "$status" -eq 0 ]
+	docker_swarm run --rm busybox echo hello
+	[ "$status" -eq 0 ]
+	docker_swarm run --rm busybox echo hello
+	[ "$status" -eq 0 ]
+
+	# check that containers were removed
+	docker_swarm ps -aq
+	[ "${#lines[@]}" -eq  1 ]
 }
 
 @test "docker run with image digest" {
