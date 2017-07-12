@@ -280,23 +280,23 @@ func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.R
 		return err
 	}
 
+	err = r.Write(d)
+	if err != nil {
+		return err
+	}
+
 	hj, ok := w.(http.Hijacker)
 	if !ok {
 		return errors.New("Docker server does not support hijacking")
 	}
 
-	nc, _, err := hj.Hijack()
+	nc, bufrw, err := hj.Hijack()
 	if err != nil {
 		return err
 	}
 
 	defer nc.Close()
 	defer d.Close()
-
-	err = r.Write(d)
-	if err != nil {
-		return err
-	}
 
 	cp := func(dst io.Writer, src io.Reader, chDone chan struct{}) {
 		io.Copy(dst, src)
@@ -309,7 +309,14 @@ func hijack(tlsConfig *tls.Config, addr string, w http.ResponseWriter, r *http.R
 	}
 	inDone := make(chan struct{})
 	outDone := make(chan struct{})
-	go cp(d, nc, inDone)
+
+	// This multi-reader will first read however many bytes were buffered
+	// at the time of the hijack, before continuing to read directly from
+	// the connection.
+	bufferedReader := io.LimitReader(bufrw, int64(bufrw.Reader.Buffered()))
+	multiReader := io.MultiReader(bufferedReader, nc)
+	go cp(d, multiReader, inDone)
+
 	go cp(nc, d, outDone)
 
 	// 1. When stdin is done, wait for stdout always
