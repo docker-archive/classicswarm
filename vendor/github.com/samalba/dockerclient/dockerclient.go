@@ -55,6 +55,12 @@ func (e Error) Error() string {
 	return fmt.Sprintf("%s: %s", e.Status, e.msg)
 }
 
+// NewDockerClientFromHTTP assumes that the URL, HTTP Client, and TLS Config have been
+// appropriately set when passed. It chooses default values for other fields
+func NewDockerClientFromHTTP(u *url.URL, httpClient *http.Client, tlsConfig *tls.Config) *DockerClient {
+	return &DockerClient{u, httpClient, tlsConfig, 0, nil}
+}
+
 func NewDockerClient(daemonUrl string, tlsConfig *tls.Config) (*DockerClient, error) {
 	return NewDockerClientTimeout(daemonUrl, tlsConfig, time.Duration(defaultTimeout), nil)
 }
