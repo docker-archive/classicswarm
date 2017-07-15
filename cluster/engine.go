@@ -62,13 +62,18 @@ const (
 	//stateMaintenance
 )
 
-var stateText = map[engineState]string{
-	statePending:      "Pending",
-	stateUnhealthy:    "Unhealthy",
-	stateHealthy:      "Healthy",
-	stateDisconnected: "Disconnected",
-	//stateMaintenance: "Maintenance",
-}
+var (
+	stateText = map[engineState]string{
+		statePending:      "Pending",
+		stateUnhealthy:    "Unhealthy",
+		stateHealthy:      "Healthy",
+		stateDisconnected: "Disconnected",
+		//stateMaintenance: "Maintenance",
+	}
+
+	// testErrImageNotFound is only used for testing
+	testErrImageNotFound = errors.New("TEST_ERR_IMAGE_NOT_FOUND_SWARM")
+)
 
 // delayer offers a simple API to random delay within a given time range.
 type delayer struct {
@@ -272,7 +277,7 @@ func (e *Engine) Disconnect() {
 	e.eventsMonitor.Stop()
 
 	// close idle connections
-	if c, ok := e.apiClient.(*engineapi.Client); ok {
+	if _, ok := e.apiClient.(*engineapi.Client); ok {
 		closeIdleConnections(e.httpClient)
 	}
 	e.apiClient = engineapinop.NewNopClient()
@@ -1067,7 +1072,7 @@ func (e *Engine) CreateContainer(config *ContainerConfig, name string, pullImage
 	e.CheckConnectionErr(err)
 	if err != nil {
 		// If the error is other than not found, abort immediately.
-		if !engineapi.IsErrImageNotFound(err) || !pullImage {
+		if (err != testErrImageNotFound && !engineapi.IsErrImageNotFound(err)) || !pullImage {
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
