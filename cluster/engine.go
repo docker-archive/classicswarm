@@ -31,8 +31,6 @@ import (
 	engineapi "github.com/docker/docker/client"
 	engineapinop "github.com/docker/swarm/api/nopclient"
 	"github.com/docker/swarm/swarmclient"
-	"github.com/samalba/dockerclient"
-	"github.com/samalba/dockerclient/nopclient"
 )
 
 const (
@@ -130,7 +128,6 @@ type Engine struct {
 	volumes         map[string]*Volume
 	httpClient      *http.Client
 	url             *url.URL
-	client          dockerclient.Client
 	apiClient       swarmclient.SwarmAPIClient
 	eventHandler    EventHandler
 	state           engineState
@@ -147,7 +144,6 @@ type Engine struct {
 func NewEngine(addr string, overcommitRatio float64, opts *EngineOpts) *Engine {
 	e := &Engine{
 		Addr:            addr,
-		client:          nopclient.NewNopClient(),
 		apiClient:       engineapinop.NewNopClient(),
 		refreshDelayer:  newDelayer(opts.RefreshMinInterval, opts.RefreshMaxInterval),
 		Labels:          make(map[string]string),
@@ -194,19 +190,13 @@ func (e *Engine) Connect(config *tls.Config) error {
 	e.httpClient = httpClient
 	e.url = url
 
-	// Use HTTP Client created above to create a dockerclient client
-	c := dockerclient.NewDockerClientFromHTTP(url, e.httpClient, config)
-	if err != nil {
-		return err
-	}
-
-	// Use HTTP Client used by dockerclient to create docker/api client
+	// Use HTTP Client created above to create docker/api client
 	apiClient, err := engineapi.NewClient("tcp://"+e.Addr, "", e.httpClient, nil)
 	if err != nil {
 		return err
 	}
 
-	return e.ConnectWithClient(c, apiClient)
+	return e.ConnectWithClient(apiClient)
 }
 
 // StartMonitorEvents monitors events from the engine
@@ -238,8 +228,7 @@ func (e *Engine) StartMonitorEvents() {
 }
 
 // ConnectWithClient is exported
-func (e *Engine) ConnectWithClient(client dockerclient.Client, apiClient swarmclient.SwarmAPIClient) error {
-	e.client = client
+func (e *Engine) ConnectWithClient(apiClient swarmclient.SwarmAPIClient) error {
 	e.apiClient = apiClient
 	e.eventsMonitor = NewEventsMonitor(e.apiClient, e.handler)
 
@@ -283,10 +272,9 @@ func (e *Engine) Disconnect() {
 	e.eventsMonitor.Stop()
 
 	// close idle connections
-	if dc, ok := e.client.(*dockerclient.DockerClient); ok {
-		closeIdleConnections(dc.HTTPClient)
+	if c, ok := e.apiClient.(*engineapi.Client); ok {
+		closeIdleConnections(e.httpClient)
 	}
-	e.client = nopclient.NewNopClient()
 	e.apiClient = engineapinop.NewNopClient()
 	e.state = stateDisconnected
 	e.emitEvent("engine_disconnect")
@@ -302,9 +290,8 @@ func closeIdleConnections(client *http.Client) {
 // note that it's not the same as stateDisconnected. Engine isConnected is also true
 // when it is first created but not yet 'Connect' to a remote docker API.
 func (e *Engine) isConnected() bool {
-	_, ok := e.client.(*nopclient.NopClient)
 	_, okAPIClient := e.apiClient.(*engineapinop.NopClient)
-	return (!ok && !okAPIClient)
+	return !okAPIClient
 }
 
 // IsHealthy returns true if the engine is healthy
@@ -1080,7 +1067,7 @@ func (e *Engine) CreateContainer(config *ContainerConfig, name string, pullImage
 	e.CheckConnectionErr(err)
 	if err != nil {
 		// If the error is other than not found, abort immediately.
-		if (err != dockerclient.ErrImageNotFound && !engineapi.IsErrImageNotFound(err)) || !pullImage {
+		if !engineapi.IsErrImageNotFound(err) || !pullImage {
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
@@ -1594,8 +1581,7 @@ func IsConnectionError(err error) bool {
 	// dockerclient. We need string matching for these cases. Remove the first character to deal with
 	// case sensitive issue.
 	// docker/api returns ErrConnectionFailed error, so we check for that as long as dockerclient exists
-	return err == dockerclient.ErrConnectionRefused ||
-		engineapi.IsErrConnectionFailed(err) ||
+	return engineapi.IsErrConnectionFailed(err) ||
 		strings.Contains(err.Error(), "onnection refused") ||
 		strings.Contains(err.Error(), "annot connect to the docker engine endpoint") ||
 		strings.Contains(err.Error(), "annot connect to the Docker daemon")
