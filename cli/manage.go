@@ -17,6 +17,7 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos"
 	"github.com/docker/swarm/cluster/swarm"
+	"github.com/docker/swarm/discovery/swarmkit"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
@@ -97,8 +98,19 @@ func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 	return config, nil
 }
 
+func setupSwarmKitDiscovery(uri string, heartbeat time.Duration, ttl time.Duration, m map[string]string) error {
+	discovery := &swarmkit.Discovery{}
+	return discovery.Initialize(uri, heartbeat, ttl, m)
+}
+
 // Initialize the discovery service.
 func createDiscovery(uri string, c *cli.Context) discovery.Backend {
+	// this initializes and sets up a SwarmKit discovery backend in case it
+	// is used. The discovery package handles updating the parameters
+	// when discovery.New() is called, but it requires "swarmkit" to be
+	// present as a discovery backend.
+	setupSwarmKitDiscovery("", 0, 0, nil)
+
 	hb, err := time.ParseDuration(c.String("heartbeat"))
 	if err != nil {
 		log.Fatalf("invalid --heartbeat: %v", err)
@@ -134,6 +146,9 @@ func getDiscoveryOpt(c *cli.Context) map[string]string {
 
 func getCandidateAndFollower(discovery discovery.Backend, addr string, leaderTTL time.Duration) (*leadership.Candidate, *leadership.Follower) {
 	kvDiscovery, ok := discovery.(*kvdiscovery.Discovery)
+	// TODO(swarmkitdiscovery): Here we should also check if this is a
+	// swarmkit discovery object, and allow for leader election when
+	// it is supported by it
 	if !ok {
 		log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
 	}
