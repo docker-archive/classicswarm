@@ -726,13 +726,22 @@ func (c *Cluster) Load(imageReader io.Reader, callback func(msg cluster.JSONMess
 			}
 			err := engine.Load(reader, engineCallback)
 			if callback != nil {
+
 				if err != nil {
-					callback(cluster.JSONMessageWrapper{
-						EngineName: engine.Name,
-						Err:        err,
-					})
+					if mismatch, imageOS, engineOS := isErrorLoadImageOsMismatch(err.Error()); mismatch {
+						callback(cluster.JSONMessageWrapper{
+							EngineName: engine.Name,
+							Msg:        cluster.JSONMessage{Status: fmt.Sprintf("Load skipped because image is for %s and engine is running %s", imageOS, engineOS)},
+						})
+					} else {
+						callback(cluster.JSONMessageWrapper{
+							EngineName: engine.Name,
+							Err:        err,
+						})
+					}
 				}
 			}
+
 		}(pipeReader, e)
 	}
 
@@ -785,10 +794,18 @@ func (c *Cluster) Import(source string, ref string, tag string, imageReader io.R
 			err := engine.Import(source, ref, tag, reader, engineCallback)
 			if callback != nil {
 				if err != nil {
-					callback(cluster.JSONMessageWrapper{
-						EngineName: engine.Name,
-						Err:        err,
-					})
+					if mismatch, imageOS, engineOS := isErrorLoadImageOsMismatch(err.Error()); mismatch {
+						callback(cluster.JSONMessageWrapper{
+							EngineName: engine.Name,
+							Msg:        cluster.JSONMessage{Status: fmt.Sprintf("Import skipped because image is for %s and engine is running %s", imageOS, engineOS)},
+							Success:    true,
+						})
+					} else {
+						callback(cluster.JSONMessageWrapper{
+							EngineName: engine.Name,
+							Err:        err,
+						})
+					}
 				} else {
 					callback(cluster.JSONMessageWrapper{
 						EngineName: engine.Name,

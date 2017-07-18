@@ -35,3 +35,34 @@ func TestConvertMapToKVStrings(t *testing.T) {
 	expected := []string{"HELLO=WORLD", "a=b=c=d", "e=", "f="}
 	assert.Equal(t, expected, result)
 }
+
+func TestImageLoadErrorParsing(t *testing.T) {
+	cases := []struct {
+		text     string
+		match    bool
+		imageOS  string
+		engineOS string
+	}{
+		{
+			text: "no match",
+		},
+		{
+			text:     "Failed to load image: cannot load linux image on windows",
+			match:    true,
+			imageOS:  "linux",
+			engineOS: "windows",
+		},
+		{
+			text:     "Failed to load image: cannot load windows image on linux",
+			match:    true,
+			imageOS:  "windows",
+			engineOS: "linux",
+		},
+	}
+	for _, c := range cases {
+		m, i, e := isErrorLoadImageOsMismatch(c.text)
+		assert.Equal(t, c.match, m)
+		assert.Equal(t, c.imageOS, i)
+		assert.Equal(t, c.engineOS, e)
+	}
+}
