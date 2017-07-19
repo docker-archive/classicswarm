@@ -8,12 +8,6 @@ function teardown() {
 }
 
 @test "docker update" {
-	# docker update is introduced in docker 1.10, skip older version without update command
-	run docker help update
-	if [[ "${output}" != *"Usage:	docker update"* ]]; then
-		skip
-	fi
-
 	start_docker_with_busybox 1
 	swarm_manage
 	docker_swarm run -d --name test_container \

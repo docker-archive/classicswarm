@@ -142,13 +142,6 @@ function teardown() {
 }
 
 @test "docker run --ip" {
-	# docker run --ip is introduced in docker 1.10, skip older version without --ip
-	# look for --ip6 because --ip will match --ipc
-	run docker run --help
-	if [[ "${output}" != *"--ip6"* ]]; then
-		skip
-	fi
-
 	start_docker_with_busybox 1
 	swarm_manage
 
@@ -160,13 +153,6 @@ function teardown() {
 }
 
 @test "docker run --network-alias" {
-	# docker run --net-alias was introduced in docker 1.10, and later renamed to
-	# --network-alias. Only run tests for the latter.
-	run docker run --help
-	if [[ "${output}" != *"--network-alias"* ]]; then
-		skip
-	fi
-
 	start_docker_with_busybox 1
 	swarm_manage
 

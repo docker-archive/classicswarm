@@ -171,12 +171,6 @@ function teardown() {
 }
 
 @test "docker network connect --ip" {
-	# docker network connect --ip is introduced in docker 1.10, skip older version without --ip
-	run docker network connect --help
-	if [[ "${output}" != *"--ip"* ]]; then
-		skip
-	fi
-
 	start_docker_with_busybox 1
 	swarm_manage
 
@@ -198,12 +192,6 @@ function teardown() {
 }
 
 @test "docker network connect --alias" {
-	# docker network connect --alias is introduced in docker 1.10, skip older version without --alias
-	run docker network connect --help
-	if [[ "${output}" != *"--alias"* ]]; then
-		skip
-	fi
-
 	start_docker_with_busybox 1
 	swarm_manage
 
