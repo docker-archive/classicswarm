@@ -13,7 +13,7 @@ function teardown() {
 
 	local version="new"
 	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* || "${output}" == "Docker version 1.11"* || "${output}" == "Docker version 1.12"* || "${output}" == "Docker version 1.13"* || "${output}" == "Docker version 17.03"* ]]; then
+	if [[ "${output}" == "Docker version 1.12"* || "${output}" == "Docker version 1.13"* || "${output}" == "Docker version 17.03"* ]]; then
 			version="old"
 	fi
 

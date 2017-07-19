@@ -117,12 +117,6 @@ function teardown() {
 	# stop-signal
 	[[ "${output}" == *"\"StopSignal\": \"SIGKILL\""* ]]
 
-	# following options are introduced in docker 1.10, skip older version
-	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* ]]; then
-		skip
-	fi
-
 	docker_swarm run -d --name test_container2 \
 			 --oom-score-adj=350 \
 			 --tmpfs=/tempfs:rw \

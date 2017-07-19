@@ -18,12 +18,6 @@ function teardown() {
 }
 
 @test "docker info - details" {
-	# details in docker info were introduced in docker 1.10, skip older version without
-	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* ]]; then
-		skip
-	fi
-
 	start_docker_with_busybox 2
 	swarm_manage
 

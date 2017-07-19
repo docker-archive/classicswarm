@@ -8,13 +8,6 @@ function teardown() {
 }
 
 @test "scheduler avoids failing node" {
-	# Docker issue #14203 in runC causing this test to fail.
-	# Issue fixed after Docker 1.10
-	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
-		skip
-	fi
-
 	# Start 1 engine and register it in the file.
 	start_docker 2
 	# Start swarm and check it can reach the node
@@ -40,13 +33,6 @@ function teardown() {
 }
 
 @test "refresh loop detects failure" {
-	# Docker issue #14203 in runC causing this test to fail.
-	# Issue fixed after Docker 1.10
-	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
-		skip
-	fi
-
 	# Start 1 engine and register it in the file.
 	start_docker 2
 	# Start swarm and check it can reach the node
@@ -70,13 +56,6 @@ function teardown() {
 }
 
 @test "scheduler retry" {
-	# Docker issue #14203 in runC causing this test to fail.
-	# Issue fixed after Docker 1.10
-	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
-		skip
-	fi
-
 	# Start 1 engine and register it in the file.
 	start_docker 2
 	# Start swarm and check it can reach the node
