@@ -126,7 +126,7 @@ function teardown() {
 
 @test "docker volume ls --filter label" {
 	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* || "${output}" == "Docker version 1.11"* || "${output}" == "Docker version 1.12"* ]]; then
+	if [[ "${output}" == "Docker version 1.12"* ]]; then
 		skip
 	fi
 	start_docker_with_busybox 2
@@ -163,7 +163,7 @@ function teardown() {
 
 @test "docker volume create with whitelist" {
 	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* || "${output}" == "Docker version 1.11"* || "${output}" == "Docker version 1.12"* ]]; then
+	if [[ "${output}" == "Docker version 1.12"* ]]; then
 		skip
 	fi
 

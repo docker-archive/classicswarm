@@ -16,12 +16,6 @@ function teardown() {
 }
 
 @test "docker network ls --filter type" {
-	# docker network ls --filter type is introduced in docker 1.10, skip older version without --filter type
-	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* ]]; then
-		skip
-	fi
-
 	start_docker 2
 	swarm_manage
 
@@ -44,12 +38,6 @@ function teardown() {
 
 # docker network ls --filter node returns networks that are present on a specific node
 @test "docker network ls --filter node" {
-	# docker network ls --filter type is introduced in docker 1.10, skip older version without --filter type
-	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* ]]; then
-		skip
-	fi
-
 	start_docker 2
 	swarm_manage
 
@@ -64,7 +52,7 @@ function teardown() {
 @test "docker network ls --filter name" {
 	# don't bother running this for older versions
 	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* || "${output}" == "Docker version 1.11"* || "${output}" == "Docker version 1.12"* || "${output}" == "Docker version 1.13"* ]]; then
+	if [[ "${output}" == "Docker version 1.12"* || "${output}" == "Docker version 1.13"* ]]; then
 			skip
 	fi
 
@@ -183,12 +171,6 @@ function teardown() {
 }
 
 @test "docker network connect --ip" {
-	# docker network connect --ip is introduced in docker 1.10, skip older version without --ip
-	run docker network connect --help
-	if [[ "${output}" != *"--ip"* ]]; then
-		skip
-	fi
-
 	start_docker_with_busybox 1
 	swarm_manage
 
@@ -210,12 +192,6 @@ function teardown() {
 }
 
 @test "docker network connect --alias" {
-	# docker network connect --alias is introduced in docker 1.10, skip older version without --alias
-	run docker network connect --help
-	if [[ "${output}" != *"--alias"* ]]; then
-		skip
-	fi
-
 	start_docker_with_busybox 1
 	swarm_manage
 

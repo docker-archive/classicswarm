@@ -141,10 +141,6 @@ function teardown() {
 }
 
 @test "docker ps --filter volume" {
-	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
-		skip
-	fi
 	start_docker_with_busybox 2
 	swarm_manage
 
@@ -160,10 +156,6 @@ function teardown() {
 }
 
 @test "docker ps --filter network" {
-	run docker --version
-	if [[ "${output}" == "Docker version 1.9"* || "${output}" == "Docker version 1.10"* ]]; then
-		skip
-	fi
 	start_docker_with_busybox 2
 	swarm_manage
 

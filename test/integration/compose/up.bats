@@ -55,12 +55,6 @@ function teardown() {
 }
 
 @test "docker-compose up - check bridge network" {
-	# docker network connect --ip is introduced in docker 1.10, skip older version without --ip
-	run docker network connect --help
-	if [[ "${output}" != *"--ip"* ]]; then
-		skip
-	fi
-
 	start_docker_with_busybox 2
 	swarm_manage
 	FILE=$TESTDATA/compose/simple_v2.yml
