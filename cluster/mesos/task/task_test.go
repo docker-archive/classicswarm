@@ -9,6 +9,7 @@ import (
 	containertypes "github.com/docker/docker/api/types/container"
 	networktypes "github.com/docker/docker/api/types/network"
 	"github.com/docker/swarm/cluster"
+	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
 	"github.com/mesos/mesos-go/mesosutil"
 	"github.com/stretchr/testify/assert"
@@ -34,15 +35,44 @@ func TestBuild(t *testing.T) {
 	task, err := NewTask(cluster.BuildContainerConfig(containerConfig, hostConfig, networkingConfig), name, 5*time.Second)
 	assert.NoError(t, err)
 
-	task.Build("slave-id", nil)
+	var resources []*mesosproto.Resource
+	defaultRole := "*"
+	resource := &mesosproto.Resource{
+		Name:   proto.String("cpus"),
+		Type:   mesosproto.Value_SCALAR.Enum(),
+		Scalar: &mesosproto.Value_Scalar{Value: proto.Float64(42)},
+		Role:   &defaultRole,
+	}
+	resources = append(resources, resource)
+
+	resource = &mesosproto.Resource{
+		Name:   proto.String("mem"),
+		Type:   mesosproto.Value_SCALAR.Enum(),
+		Scalar: &mesosproto.Value_Scalar{Value: proto.Float64(2097152)},
+		Role:   &defaultRole,
+	}
+	resources = append(resources, resource)
+
+	offer := &mesosproto.Offer{
+		Resources: resources,
+	}
+
+	offers := make(map[string]*mesosproto.Offer)
+	offers["test"] = offer
+
+	task.Build("slave-id", offers, "*")
 
 	assert.Equal(t, task.Container.GetType(), mesosproto.ContainerInfo_DOCKER)
 	assert.Equal(t, task.Container.Docker.GetImage(), "test-image")
 	assert.Equal(t, task.Container.Docker.GetNetwork(), mesosproto.ContainerInfo_DockerInfo_BRIDGE)
 
 	assert.Equal(t, len(task.Resources), 2)
-	assert.Equal(t, task.Resources[0], mesosutil.NewScalarResource("cpus", 42.0))
-	assert.Equal(t, task.Resources[1], mesosutil.NewScalarResource("mem", 2))
+	resource = mesosutil.NewScalarResource("cpus", 42.0)
+	resource.Role = &defaultRole
+	assert.Equal(t, task.Resources[0], resource)
+	resource = mesosutil.NewScalarResource("mem", 2)
+	resource.Role = &defaultRole
+	assert.Equal(t, task.Resources[1], resource)
 
 	assert.Equal(t, task.Command.GetValue(), "ls")
 	assert.Equal(t, task.Command.GetArguments(), []string{"foo", "bar"})

@@ -8,6 +8,45 @@ export SWARM_MESOS_USER=root
 MESOS_IMAGE=dockerswarm/mesos:0.26.0
 MESOS_MASTER_PORT=$(( ( RANDOM % 1000 )  + 10000 ))
 
+# Start mesos master.
+function start_mesos_master() {
+	local extralAttributes="$@"
+	local masterttributes="--ip=127.0.0.1 --work_dir=/ --registry=in_memory --port=$MESOS_MASTER_PORT"
+
+	if [ "${extralAttributes}" != "" ]; then
+		masterttributes=`echo ${masterttributes} ${extralAttributes}`
+	fi
+
+	echo "Start Mesos master with attributes: ${masterttributes}"
+	MESOS_MASTER=$(
+	docker_host run -d --name mesos-master --net=host $MESOS_IMAGE mesos-master ${masterttributes}
+		)
+}
+
+# Start mesos slave.
+function start_mesos_slave() {
+	local current=${#DOCKER_CONTAINERS[@]}
+	retry 10 1 eval "docker_host ps | grep 'mesos-master'"
+
+	local extralAttributes="$@"
+	local slaveAttributes="--master=127.0.0.1:$MESOS_MASTER_PORT --containerizers=docker --hostname=127.0.0.1"
+
+	if [ "${extralAttributes}" != "" ]; then
+		slaveAttributes=`echo ${slaveAttributes} ${extralAttributes}`
+	fi
+
+	echo "Start Mesos slaves with the attributes: ${slaveAttributes}"
+
+	for ((i=0; i < current; i++)); do
+	    local docker_port=$(echo ${HOSTS[$i]} | cut -d: -f2)
+	    MESOS_AGENTS[$i]=$(
+		docker_host run --privileged -d --name mesos-slave-$i --volumes-from node-$i -v /sys/fs/cgroup:/sys/fs/cgroup --net=host -u root \
+		$MESOS_IMAGE mesos-slave ${slaveAttributes} --attributes="docker_port:$docker_port" --port=$(($MESOS_MASTER_PORT + (1 + $i))) --docker=/usr/local/bin/docker
+		       )
+	    retry 10 1 eval "docker_host ps | grep 'mesos-slave-$i'"
+	done
+}
+
 # Start mesos master and agent.
 function start_mesos() {
 	local current=${#DOCKER_CONTAINERS[@]}

@@ -45,6 +45,7 @@ Options:
    {{range .Flags}}{{.}}
    {{end}}{{if (eq .Name "manage")}}{{printf "\t * swarm.overcommit=0.05\tovercommit to apply on resources"}}
                                     {{printf "\t * swarm.createretry=0\tcontainer create retry count after initial failure"}}
+                                    {{printf "\t * mesos.role=\trole to group frameworks for allocation decisions, depending on the allocation policy being used [$SWARM_MESOS_ROLE]"}}
                                     {{printf "\t * mesos.address=\taddress to bind on [$SWARM_MESOS_ADDRESS]"}}
                                     {{printf "\t * mesos.checkpointfailover=false\tcheckpointing allows a restarted slave to reconnect with old executors and recover status updates, at the cost of disk I/O [$SWARM_MESOS_CHECKPOINT_FAILOVER]"}}
                                     {{printf "\t * mesos.port=\tport to bind on [$SWARM_MESOS_PORT]"}}
