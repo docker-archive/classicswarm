@@ -57,12 +57,13 @@ func (p *pendingContainer) ToContainer() *cluster.Container {
 type Cluster struct {
 	sync.RWMutex
 
-	clusterEventHandlers *cluster.ClusterEventHandlers
-	engines              map[string]*cluster.Engine
-	pendingEngines       map[string]*cluster.Engine
-	scheduler            *scheduler.Scheduler
-	discovery            discovery.Backend
-	pendingContainers    map[string]*pendingContainer
+	cluster.ClusterEventHandlers
+
+	engines           map[string]*cluster.Engine
+	pendingEngines    map[string]*cluster.Engine
+	scheduler         *scheduler.Scheduler
+	discovery         discovery.Backend
+	pendingContainers map[string]*pendingContainer
 
 	overcommitRatio float64
 	engineOpts      *cluster.EngineOpts
@@ -75,7 +76,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 	log.WithFields(log.Fields{"name": "swarm"}).Debug("Initializing cluster")
 
 	cluster := &Cluster{
-		clusterEventHandlers: cluster.NewClusterEventHandlers(),
+		ClusterEventHandlers: cluster.NewClusterEventHandlers(),
 		engines:              make(map[string]*cluster.Engine),
 		pendingEngines:       make(map[string]*cluster.Engine),
 		scheduler:            scheduler,
@@ -112,33 +113,9 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 	return cluster, nil
 }
 
-// Handle callbacks for the events.
-func (c *Cluster) Handle(e *cluster.Event) error {
-	// call Handle for all clusterEventHandlers
-	c.clusterEventHandlers.HandleAll(e)
-	return nil
-}
-
-// RegisterEventHandler registers an event handler.
-func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
-	return c.clusterEventHandlers.RegisterEventHandler(h)
-}
-
-// UnregisterEventHandler unregisters a previously registered event handler.
-func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
-	c.clusterEventHandlers.UnregisterEventHandler(h)
-}
-
 // NewAPIEventHandler creates a new API events handler
 func (c *Cluster) NewAPIEventHandler() *cluster.APIEventHandler {
 	return cluster.NewAPIEventHandler()
-}
-
-// CloseWatchQueues unregisters all API event handlers (the ones with
-// watch queues) and closes the respective queues. This should be
-// called when the manager shuts down
-func (c *Cluster) CloseWatchQueues() {
-	c.clusterEventHandlers.CloseWatchQueues()
 }
 
 // generateUniqueID generates a globally (across the cluster) unique ID.
@@ -319,8 +296,8 @@ func (c *Cluster) addEngine(addr string) bool {
 	engine := cluster.NewEngine(addr, c.overcommitRatio, c.engineOpts)
 	// This passes c, which has a Handle(Event) (error) function defined, which acts as the handler
 	// for events. This is the cluster level handler that is called by individual engines when they
-	// receive/emit events. This Handler in turn calls the clusterEventHandlers.HandleAll() function.
-	// clusterEventHandlers is a map from EventHandler -> struct{}, and clusterEventHandlers.HandleAll() simply calls
+	// receive/emit events. This Handler in turn calls the clusterEventHandlers.Handle() function.
+	// clusterEventHandlers is a map from EventHandler -> struct{}, and clusterEventHandlers.Handle() simply calls
 	// the Handle function for each of the EventHander objects in the map.
 	if err := engine.RegisterEventHandler(c); err != nil {
 		log.Error(err)

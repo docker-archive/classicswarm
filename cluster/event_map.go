@@ -13,15 +13,15 @@ type ClusterEventHandlers struct {
 	eventHandlers map[EventHandler]struct{}
 }
 
-// NewClusterEventHandlers returns an EventHandlers
-func NewClusterEventHandlers() *ClusterEventHandlers {
-	return &ClusterEventHandlers{
+// NewClusterEventHandlers initializes and returns a ClusterEventHandlers object
+func NewClusterEventHandlers() ClusterEventHandlers {
+	return ClusterEventHandlers{
 		eventHandlers: make(map[EventHandler]struct{}),
 	}
 }
 
 // HandleAll callbacks for the events
-func (eh *ClusterEventHandlers) HandleAll(e *Event) {
+func (eh *ClusterEventHandlers) Handle(e *Event) error {
 	eh.RLock()
 	defer eh.RUnlock()
 
@@ -30,6 +30,7 @@ func (eh *ClusterEventHandlers) HandleAll(e *Event) {
 			log.Error(err)
 		}
 	}
+	return nil
 }
 
 // RegisterEventHandler registers an event handler.

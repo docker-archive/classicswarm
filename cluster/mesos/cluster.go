@@ -31,18 +31,19 @@ import (
 type Cluster struct {
 	sync.RWMutex
 
-	dockerEnginePort     string
-	clusterEventHandlers *cluster.ClusterEventHandlers
-	master               string
-	agents               map[string]*agent
-	scheduler            *Scheduler
-	TLSConfig            *tls.Config
-	options              *cluster.DriverOpts
-	offerTimeout         time.Duration
-	refuseTimeout        time.Duration
-	taskCreationTimeout  time.Duration
-	pendingTasks         *task.Tasks
-	engineOpts           *cluster.EngineOpts
+	cluster.ClusterEventHandlers
+
+	dockerEnginePort    string
+	master              string
+	agents              map[string]*agent
+	scheduler           *Scheduler
+	TLSConfig           *tls.Config
+	options             *cluster.DriverOpts
+	offerTimeout        time.Duration
+	refuseTimeout       time.Duration
+	taskCreationTimeout time.Duration
+	pendingTasks        *task.Tasks
+	engineOpts          *cluster.EngineOpts
 }
 
 const (
@@ -69,8 +70,8 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 		flag.Lookup("logtostderr").Value.Set("true")
 	}
 	cluster := &Cluster{
+		ClusterEventHandlers: cluster.NewClusterEventHandlers(),
 		dockerEnginePort:     defaultDockerEnginePort,
-		clusterEventHandlers: cluster.NewClusterEventHandlers(),
 		master:               master,
 		agents:               make(map[string]*agent),
 		TLSConfig:            TLSConfig,
@@ -165,33 +166,9 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, master st
 	return cluster, nil
 }
 
-// Handle callbacks for the events
-func (c *Cluster) Handle(e *cluster.Event) error {
-	// call Handle for all clusterEventHandlers
-	c.clusterEventHandlers.HandleAll(e)
-	return nil
-}
-
-// RegisterEventHandler registers an event handler.
-func (c *Cluster) RegisterEventHandler(h cluster.EventHandler) error {
-	return c.clusterEventHandlers.RegisterEventHandler(h)
-}
-
-// UnregisterEventHandler unregisters a previously registered event handler.
-func (c *Cluster) UnregisterEventHandler(h cluster.EventHandler) {
-	c.clusterEventHandlers.UnregisterEventHandler(h)
-}
-
 // NewAPIEventHandler creates a new API events handler
 func (c *Cluster) NewAPIEventHandler() *cluster.APIEventHandler {
 	return cluster.NewAPIEventHandler()
-}
-
-// CloseWatchQueues unregisters all API event handlers (the ones with
-// watch queues) and closes the respective queues. This should be
-// called when the manager shuts down
-func (c *Cluster) CloseWatchQueues() {
-	c.clusterEventHandlers.CloseWatchQueues()
 }
 
 // StartContainer starts a container
