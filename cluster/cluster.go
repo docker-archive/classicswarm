@@ -5,7 +5,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/volume"
-	"github.com/docker/swarmkit/watch"
 )
 
 // Cluster is exported
@@ -77,13 +76,18 @@ type Cluster interface {
 	TotalCpus() int64
 
 	// RegisterEventHandler registers an event handler for cluster-wide events.
-	RegisterEventHandler(h EventHandler, q *watch.Queue) error
+	RegisterEventHandler(h EventHandler) error
 
 	// UnregisterEventHandler unregisters an event handler.
 	UnregisterEventHandler(h EventHandler)
 
-	// CloseWatchQueue closes the watchQueue when the manager shuts down.
-	CloseWatchQueue()
+	// NewAPIEventHandler creates a new API events handler
+	NewAPIEventHandler() *APIEventHandler
+
+	// CloseWatchQueues unregisters all API event handlers (the ones with
+	// watch queues) and closes the respective queues. This should be
+	// called when the manager shuts down
+	CloseWatchQueues()
 
 	// FIXME: remove this method
 	// RANDOMENGINE returns a random engine.

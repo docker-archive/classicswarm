@@ -926,8 +926,7 @@ func (e *Engine) refreshLoop() {
 // as well. This needs to be considered while designing networking related functionality.
 // Ideally, this function should only be used in the refresh loop, and called AFTER
 // RefreshNetworks() because RefreshNetworks() will not populate network information
-// correctly if container refresh hasn't taken place
-
+// correctly if container refresh hasn't taken place.
 // The containerID argument can be provided along with a full argument can be used to
 // limit the update as it concerns only one container instead of doing it for all
 // containers. The idea is that sometimes only things about one container may have

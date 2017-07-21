@@ -13,7 +13,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -43,7 +42,7 @@ var (
 func getInfo(c *context, w http.ResponseWriter, r *http.Request) {
 	info := apitypes.Info{
 		Images:            len(c.cluster.Images().Filter(cluster.ImageFilterOptions{})),
-		NEventsListener:   int(atomic.LoadUint64(c.listenerCount)),
+		NEventsListener:   c.eventsHandler.Size(),
 		Debug:             c.debug,
 		MemoryLimit:       true,
 		SwapLimit:         true,
@@ -853,7 +852,6 @@ func postImagesLoad(c *context, w http.ResponseWriter, r *http.Request) {
 	if errorFound {
 		sendErrorJSONMessage(wf, 1, errorMessage)
 	}
-
 }
 
 // GET /events
@@ -878,11 +876,8 @@ func getEvents(c *context, w http.ResponseWriter, r *http.Request) {
 		f.Flush()
 	}
 
-	eventsChan, cancelFunc := c.watchQueue.Watch()
+	eventsChan, cancelFunc := c.eventsHandler.Watch()
 	defer cancelFunc()
-
-	atomic.AddUint64(c.listenerCount, 1)
-	defer atomic.AddUint64(c.listenerCount, ^uint64(0))
 
 	// create timer for --until
 	var (
