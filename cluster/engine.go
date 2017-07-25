@@ -1588,7 +1588,8 @@ func IsConnectionError(err error) bool {
 	return engineapi.IsErrConnectionFailed(err) ||
 		strings.Contains(err.Error(), "onnection refused") ||
 		strings.Contains(err.Error(), "annot connect to the docker engine endpoint") ||
-		strings.Contains(err.Error(), "annot connect to the Docker daemon")
+		strings.Contains(err.Error(), "annot connect to the Docker daemon") ||
+		strings.Contains(err.Error(), "no route to host")
 }
 
 // RefreshEngine refreshes container records from an engine
