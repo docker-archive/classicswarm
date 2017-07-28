@@ -1,6 +1,7 @@
 package swarm
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -32,4 +33,14 @@ func convertMapToKVStrings(values map[string]*string) []string {
 		i++
 	}
 	return result
+}
+
+var imageEngineOSErrorPattern = regexp.MustCompile(`cannot load (.+) image on (.+)`)
+
+func isErrorLoadImageOsMismatch(err string) (match bool, imageOs, engineOs string) {
+	matches := imageEngineOSErrorPattern.FindStringSubmatch(err)
+	if len(matches) != 3 {
+		return false, "", ""
+	}
+	return true, matches[1], matches[2]
 }
