@@ -83,7 +83,7 @@ func TestMatchImageOSError(t *testing.T) {
 	}
 
 	for c, e := range cases {
-		a := matchImageOSError(c)
+		a := MatchImageOSError(c)
 		if a != e {
 			t.Fatalf("Value: %s, expected: %v, actual: %v", c, e, a)
 		}
