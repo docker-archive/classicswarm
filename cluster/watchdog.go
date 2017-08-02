@@ -116,6 +116,14 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 					if err != nil {
 						// do not abort here as this endpoint might have been removed before
 						log.Warnf("Failed to remove network endpoint from old container %s: %v", name, err)
+
+						// When connecting to this network later, avoid
+						// requesting the same IP address.
+						globalNetworks[networkName].IPAddress = ""
+						if globalNetworks[networkName].IPAMConfig != nil {
+							globalNetworks[networkName].IPAMConfig.IPv4Address = ""
+							globalNetworks[networkName].IPAMConfig.IPv6Address = ""
+						}
 					}
 				}
 			}
@@ -146,23 +154,6 @@ func (w *Watchdog) rescheduleContainers(e *Engine) {
 		// see https://github.com/docker/docker/issues/17750
 		// Add the global networks one by one
 		for networkName, endpoint := range globalNetworks {
-			hasSubnet := false
-			network := w.cluster.Networks().Uniq().Get(networkName)
-			if network != nil {
-				for _, config := range network.IPAM.Config {
-					if config.Subnet != "" {
-						hasSubnet = true
-						break
-					}
-				}
-			}
-			// If this network did not have a defined subnet, we
-			// cannot connect to it with an explicit IP address.
-			if !hasSubnet && endpoint.IPAMConfig != nil {
-				endpoint.IPAMConfig.IPv4Address = ""
-				endpoint.IPAMConfig.IPv6Address = ""
-			}
-
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			err = newContainer.Engine.apiClient.NetworkConnect(ctx, networkName, name, endpoint)
