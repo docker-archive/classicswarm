@@ -86,6 +86,11 @@ var (
 		Value: 3,
 		Usage: "set engine failure retry count",
 	}
+	flDiscoveryEnginePort = cli.IntFlag{
+		Name:  "discovery-engine-port",
+		Value: 2375,
+		Usage: "engine port that exposes the API for swarmkit discovery",
+	}
 	flEnableCors = cli.BoolFlag{
 		Name:  "api-enable-cors, cors",
 		Usage: "enable CORS headers in the remote API",

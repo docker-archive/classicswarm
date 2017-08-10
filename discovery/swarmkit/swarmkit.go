@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"golang.org/x/net/context"
@@ -25,6 +26,7 @@ type Discovery struct {
 	apiClient  *client.Client
 	uri        string
 	token      string
+	agentPort  int
 }
 
 func init() {
@@ -34,6 +36,10 @@ func init() {
 // Init is exported.
 func Init() {
 	discovery.Register("swarmkit", &Discovery{})
+}
+
+func (s *Discovery) SetAgentPort(discoveryEnginePort int) {
+	s.agentPort = discoveryEnginePort
 }
 
 // Initialize initializes the discovery with the SwarmKit manager's address
@@ -76,7 +82,7 @@ func (s *Discovery) fetch() (discovery.Entries, error) {
 		// report all nodes that are not in drain mode
 		if n.Spec.Availability != swarm.NodeAvailability("drain") {
 			// Each agent needs to expose the same port
-			addrs = append(addrs, n.Status.Addr+":"+defaultAgentPort)
+			addrs = append(addrs, n.Status.Addr+":"+strconv.Itoa(s.agentPort))
 		}
 	}
 

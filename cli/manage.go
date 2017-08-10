@@ -104,7 +104,7 @@ func setupSwarmKitDiscovery(uri string, heartbeat time.Duration, ttl time.Durati
 }
 
 // Initialize the discovery service.
-func createDiscovery(uri string, c *cli.Context) discovery.Backend {
+func createDiscovery(uri string, c *cli.Context, discoveryEnginePort int) discovery.Backend {
 	// this initializes and sets up a SwarmKit discovery backend in case it
 	// is used. The discovery package handles updating the parameters
 	// when discovery.New() is called, but it requires "swarmkit" to be
@@ -123,6 +123,11 @@ func createDiscovery(uri string, c *cli.Context) discovery.Backend {
 	discovery, err := discovery.New(uri, hb, 0, getDiscoveryOpt(c))
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// if swarmkit based discovery is being used, set the uniform agent port
+	if swarmkitDiscovery, ok := discovery.(*swarmkit.Discovery); ok {
+		swarmkitDiscovery.SetAgentPort(discoveryEnginePort)
 	}
 
 	return discovery
@@ -281,11 +286,16 @@ func manage(c *cli.Context) {
 		FailureRetry:       failureRetry,
 	}
 
+	discoveryEnginePort := c.Int("discovery-engine-port")
+	if discoveryEnginePort <= 0 {
+		log.Fatal("invalid swarmkit discovery port")
+	}
+
 	uri := getDiscovery(c)
 	if uri == "" {
 		log.Fatalf("discovery required to manage a cluster. See '%s manage --help'.", c.App.Name)
 	}
-	discovery := createDiscovery(uri, c)
+	discovery := createDiscovery(uri, c, discoveryEnginePort)
 	s, err := strategy.New(c.String("strategy"))
 	if err != nil {
 		log.Fatal(err)
