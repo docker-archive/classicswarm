@@ -468,6 +468,18 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		if !filters.Match("node", container.Engine.Name) {
 			continue
 		}
+		if !filters.ExactMatch("health", cluster.HealthString(container.Info.State)) {
+			continue
+		}
+		if filters.Include("is-task") {
+			_, isTask := container.Config.Labels["com.docker.swarm.task"]
+			if filters.ExactMatch("is-task", "true") && !isTask {
+				continue
+			}
+			if filters.ExactMatch("is-task", "false") && isTask {
+				continue
+			}
+		}
 		if filters.Include("volume") {
 			volumeExist := fmt.Errorf("volume mounted in container")
 			err := filters.WalkValues("volume", func(value string) error {

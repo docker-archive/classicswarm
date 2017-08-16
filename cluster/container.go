@@ -7,7 +7,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/go-units"
+	units "github.com/docker/go-units"
 )
 
 // Container is exported
@@ -41,6 +41,14 @@ func StateString(state *types.ContainerState) string {
 	}
 
 	return "exited"
+}
+
+// HealthString returns a single string to describe health status.
+func HealthString(state *types.ContainerState) string {
+	if state.Health == nil {
+		return types.NoHealthcheck
+	}
+	return state.Health.Status
 }
 
 // FullStateString returns human-readable description of the state
