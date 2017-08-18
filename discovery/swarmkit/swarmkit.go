@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/discovery"
@@ -52,7 +53,7 @@ func (s *Discovery) Initialize(uri string, heartbeat time.Duration, ttl time.Dur
 	s.heartbeat = heartbeat
 	s.ttl = ttl
 
-	// create a client to connect with the Swarm Mode API
+	// create a client to connect with the Docker API
 	httpClient, _, err := cluster.NewHTTPClientTimeout("tcp://"+uri, nil, time.Duration(30*time.Second), nil)
 	if err != nil {
 		return err
@@ -95,9 +96,19 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 	ticker := time.NewTicker(s.heartbeat)
 	errCh := make(chan error)
 
+	// eventsOptions sets a filter to only retrieve cluster level events
+	eventFilter := filters.NewArgs()
+	eventFilter.Add("type", "node")
+	eventsOptions := types.EventsOptions{
+		Filters: eventFilter,
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	eventsChan, eventsErrChan := s.apiClient.Events(ctx, eventsOptions)
+
 	go func() {
 		defer close(ch)
 		defer close(errCh)
+		defer cancel()
 
 		// Send the initial entries if available.
 		currentEntries, err := s.fetch()
@@ -107,7 +118,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 			ch <- currentEntries
 		}
 
-		// Periodically send updates.
+		// Periodically send updates, unless an event is received
 		for {
 			select {
 			case <-ticker.C:
@@ -122,6 +133,21 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 					ch <- newEntries
 				}
 				currentEntries = newEntries
+			case <-eventsChan:
+				newEntries, err := s.fetch()
+				if err != nil {
+					errCh <- err
+					continue
+				}
+
+				// Check if the list of nodes has really changed.
+				if !newEntries.Equals(currentEntries) {
+					ch <- newEntries
+				}
+				currentEntries = newEntries
+			case err := <-eventsErrChan:
+				errCh <- err
+				continue
 			case <-stopCh:
 				ticker.Stop()
 				return
