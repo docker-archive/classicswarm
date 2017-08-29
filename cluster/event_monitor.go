@@ -17,14 +17,14 @@ type EventsMonitor struct {
 // NewEventsMonitor returns an EventsMonitor
 func NewEventsMonitor(cli swarmclient.SwarmAPIClient, handler func(msg events.Message) error) *EventsMonitor {
 	return &EventsMonitor{
-		cli:     cli,
-		handler: handler,
+		cli:      cli,
+		handler:  handler,
+		stopChan: make(chan struct{}),
 	}
 }
 
 // Start starts the EventsMonitor
 func (em *EventsMonitor) Start(ec chan error) {
-	em.stopChan = make(chan struct{})
 	ctx, cancel := context.WithCancel(context.Background())
 	responseStream, errStream := em.cli.Events(ctx, types.EventsOptions{})
 
