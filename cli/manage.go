@@ -90,7 +90,7 @@ func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 		config.ClientAuth = tls.RequireAndVerifyClientCert
 		config.ClientCAs = certPool
 	} else {
-		// If --tlsverify is not supplied, disable CA validation.
+		// If --tlsverify is not supplied, disable CA validation
 		config.InsecureSkipVerify = true
 	}
 
