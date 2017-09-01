@@ -11,7 +11,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/discovery"
 	"github.com/docker/swarm/cluster"
@@ -80,11 +79,8 @@ func (s *Discovery) fetch() (discovery.Entries, error) {
 	var addrs []string
 
 	for _, n := range nodeList {
-		// report all nodes that are not in drain mode
-		if n.Spec.Availability != swarm.NodeAvailability("drain") {
-			// Each agent needs to expose the same port
-			addrs = append(addrs, n.Status.Addr+":"+strconv.Itoa(s.agentPort))
-		}
+		// Each agent needs to expose the same port
+		addrs = append(addrs, n.Status.Addr+":"+strconv.Itoa(s.agentPort))
 	}
 
 	return discovery.CreateEntries(addrs)
