@@ -38,40 +38,40 @@ func Init() {
 	discovery.Register("swarmkit", &Discovery{})
 }
 
-func (s *Discovery) SetAgentPort(discoveryEnginePort int) {
-	s.agentPort = discoveryEnginePort
+func (d *Discovery) SetAgentPort(discoveryEnginePort int) {
+	d.agentPort = discoveryEnginePort
 }
 
 // Initialize initializes the discovery with the SwarmKit manager's address
-func (s *Discovery) Initialize(uri string, heartbeat time.Duration, ttl time.Duration, _ map[string]string) error {
+func (d *Discovery) Initialize(uri string, heartbeat time.Duration, ttl time.Duration, _ map[string]string) error {
 	// the uri may be a manager address or a docker socket
 	if uri == "" {
 		return errors.New("Swarm Mode manager address not provided")
 	}
-	s.uri = uri
-	s.heartbeat = heartbeat
-	s.ttl = ttl
+	d.uri = uri
+	d.heartbeat = heartbeat
+	d.ttl = ttl
 
 	// create a client to connect with the Docker API
 	httpClient, _, err := cluster.NewHTTPClientTimeout("tcp://"+uri, nil, time.Duration(30*time.Second), nil)
 	if err != nil {
 		return err
 	}
-	s.httpClient = httpClient
+	d.httpClient = httpClient
 
-	apiClient, err := client.NewClient("tcp://"+uri, "", s.httpClient, nil)
+	apiClient, err := client.NewClient("tcp://"+uri, "", d.httpClient, nil)
 	if err != nil {
 		return err
 	}
-	s.apiClient = apiClient
+	d.apiClient = apiClient
 
 	return nil
 }
 
 // fetch returns the list of entries for the discovery service at the specified endpoint.
-func (s *Discovery) fetch() (discovery.Entries, error) {
+func (d *Discovery) fetch() (discovery.Entries, error) {
 	ctx := context.Background()
-	nodeList, err := s.apiClient.NodeList(ctx, types.NodeListOptions{})
+	nodeList, err := d.apiClient.NodeList(ctx, types.NodeListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to fetch entries, Discovery service returned %s", err.Error())
 	}
@@ -80,16 +80,16 @@ func (s *Discovery) fetch() (discovery.Entries, error) {
 
 	for _, n := range nodeList {
 		// Each agent needs to expose the same port
-		addrs = append(addrs, n.Status.Addr+":"+strconv.Itoa(s.agentPort))
+		addrs = append(addrs, n.Status.Addr+":"+strconv.Itoa(d.agentPort))
 	}
 
 	return discovery.CreateEntries(addrs)
 }
 
 // Watch is exported.
-func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
+func (d *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-chan error) {
 	ch := make(chan discovery.Entries)
-	ticker := time.NewTicker(s.heartbeat)
+	ticker := time.NewTicker(d.heartbeat)
 	errCh := make(chan error)
 
 	// eventsOptions sets a filter to only retrieve cluster level events
@@ -99,7 +99,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 		Filters: eventFilter,
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	eventsChan, eventsErrChan := s.apiClient.Events(ctx, eventsOptions)
+	eventsChan, eventsErrChan := d.apiClient.Events(ctx, eventsOptions)
 
 	go func() {
 		defer close(ch)
@@ -107,7 +107,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 		defer cancel()
 
 		// Send the initial entries if available.
-		currentEntries, err := s.fetch()
+		currentEntries, err := d.fetch()
 		if err != nil {
 			errCh <- err
 		} else {
@@ -118,7 +118,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 		for {
 			select {
 			case <-ticker.C:
-				newEntries, err := s.fetch()
+				newEntries, err := d.fetch()
 				if err != nil {
 					errCh <- err
 					continue
@@ -130,7 +130,7 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 				}
 				currentEntries = newEntries
 			case <-eventsChan:
-				newEntries, err := s.fetch()
+				newEntries, err := d.fetch()
 				if err != nil {
 					errCh <- err
 					continue
@@ -155,6 +155,6 @@ func (s *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 }
 
 // Register does nothing because Swarm Mode manages the node inventory
-func (s *Discovery) Register(addr string) error {
+func (d *Discovery) Register(addr string) error {
 	return nil
 }
