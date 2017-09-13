@@ -9,14 +9,13 @@ import (
 
 	"golang.org/x/net/context"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/discovery"
 	"github.com/docker/swarm/cluster"
 )
-
-const defaultAgentPort = "2375"
 
 // Discovery is exported.
 type Discovery struct {
@@ -64,6 +63,7 @@ func (d *Discovery) Initialize(uri string, heartbeat time.Duration, ttl time.Dur
 		return err
 	}
 	d.apiClient = apiClient
+	d.apiClient.NegotiateAPIVersion(context.Background())
 
 	return nil
 }
@@ -106,6 +106,10 @@ func (d *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 		defer close(errCh)
 		defer cancel()
 
+		// eventConnRetries keeps track of how many retries have been made to
+		// connect to the event stream
+		eventConnRetries := 0
+
 		// Send the initial entries if available.
 		currentEntries, err := d.fetch()
 		if err != nil {
@@ -142,7 +146,24 @@ func (d *Discovery) Watch(stopCh <-chan struct{}) (<-chan discovery.Entries, <-c
 				}
 				currentEntries = newEntries
 			case err := <-eventsErrChan:
-				errCh <- err
+				log.Warnf("SwarmKit discovery: events stream failed with error: %s", err.Error())
+				// if the event stream has failed over 5 times, then don't try to reconnect
+				if eventConnRetries > 5 {
+					errCh <- err
+					return
+				}
+				// cancel context for the current event stream and create a new context
+				// for a new connection
+				cancel()
+				ctx, cancel = context.WithCancel(context.Background())
+				// if the events stream returns an error, try reconnecting. Discovery should not
+				// fail if the events stream throws an error for any reason.
+				// TODO(swarmkitdiscovery): We may want to have a maximum number of retries for
+				// reconnecting to the events stream, possibly with a backoff mechanism.
+				log.Debugf("SwarmKit discovery: creating a new events stream")
+				eventsChan, eventsErrChan = d.apiClient.Events(ctx, eventsOptions)
+
+				eventConnRetries++
 				continue
 			case <-stopCh:
 				ticker.Stop()
