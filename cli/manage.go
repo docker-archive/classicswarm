@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/discovery"
 	kvdiscovery "github.com/docker/docker/pkg/discovery/kv"
 	"github.com/docker/leadership"
@@ -21,6 +20,7 @@ import (
 	"github.com/docker/swarm/scheduler/filter"
 	"github.com/docker/swarm/scheduler/strategy"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 

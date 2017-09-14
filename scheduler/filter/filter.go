@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
+	log "github.com/sirupsen/logrus"
 )
 
 // Filter is exported
