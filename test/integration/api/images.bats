@@ -12,41 +12,86 @@ function teardown() {
 	# right ones.
 	start_docker 1
 	start_docker_with_busybox 2
+	create_new_image 3
 	swarm_manage
 
 	# With grouping, we should get 1 busybox, plus the header.
 	run docker_swarm images
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 2 ]
+	[ "${#lines[@]}" -eq 8 ]
 	# Every line should contain "busybox" except for the header
 	for((i=1; i<${#lines[@]}; i++)); do
 		[[ "${lines[i]}" == *"busybox"* ]]
 	done
 
-	# Try with --filter.
+	# Try with --filter by before
+	run docker_swarm images --filter before=busybox
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 1 ]
+	run docker_swarm images --filter before=busybox_1_0
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"busybox"* ]]
+	run docker_swarm images --filter before=busybox_1_1
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 3 ]
+	[[ "${lines[1]}" == *"busybox_1_0"* ]]
+	[[ "${lines[2]}" == *"busybox"* ]]
+	run docker_swarm images --filter before=fake_image
+	[ "$status" -eq 1 ]
+
+	# Try with --filter by since
+	run docker_swarm images --filter since=busybox_2_2
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 1 ]
+	run docker_swarm images --filter since=busybox_2_1
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 2 ]
+	[[ "${lines[1]}" == *"busybox_2_2"* ]]
+	run docker_swarm images --filter since=busybox_2_0
+	[ "$status" -eq 0 ]
+	[ "${#lines[@]}" -eq 3 ]
+	[[ "${lines[1]}" == *"busybox_2_2"* ]]
+	[[ "${lines[2]}" == *"busybox_2_1"* ]]
+	run docker_swarm images --filter since=fake_image
+	[ "$status" -eq 1 ]
+
+	# Try with --filter by node
 	run docker_swarm images --filter node=node-0
 	[ "$status" -eq 0 ]
 	[ "${#lines[@]}" -eq 1 ]
 
 	run docker_swarm images --filter node=node-1
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[1]}" == *"busybox"* ]]
+	[ "${#lines[@]}" -eq 5 ]
+	[[ "${lines[1]}" == *"busybox_1_2"* ]]
+	[[ "${lines[2]}" == *"busybox_1_1"* ]]
+	[[ "${lines[3]}" == *"busybox_1_0"* ]]
+	[[ "${lines[4]}" == *"busybox"* ]]
 
 	run docker_swarm images --filter node=node-2
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[1]}" == *"busybox"* ]]
+	[ "${#lines[@]}" -eq 5 ]
+	[[ "${lines[1]}" == *"busybox_2_2"* ]]
+	[[ "${lines[2]}" == *"busybox_2_1"* ]]
+	[[ "${lines[3]}" == *"busybox_2_0"* ]]
+	[[ "${lines[4]}" == *"busybox"* ]]
 
 	# Try images -a
-	# lines are: header, busybox, <none>
+	# lines are: header, busybox (7 lines), <none>
 	run docker_swarm images -a
-	[ "${#lines[@]}" -ge 3 ]
+	[ "${#lines[@]}" -ge 9 ]
 
 	run docker_swarm images --filter reference='busy*'
 	[ "$status" -eq 0 ]
-	[ "${#lines[@]}" -eq 2 ]
-	[[ "${lines[1]}" == *"busybox"* ]]
+	[ "${#lines[@]}" -eq 8 ]
+	[[ "${lines[1]}" == *"busybox_2_2"* ]]
+	[[ "${lines[2]}" == *"busybox_2_1"* ]]
+	[[ "${lines[3]}" == *"busybox_2_0"* ]]
+	[[ "${lines[4]}" == *"busybox_1_2"* ]]
+	[[ "${lines[5]}" == *"busybox_1_1"* ]]
+	[[ "${lines[6]}" == *"busybox_1_0"* ]]
+	[[ "${lines[7]}" == *"busybox"* ]]
 }
 
 @test "docker images -f label" {

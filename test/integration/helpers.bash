@@ -171,6 +171,27 @@ function swarm_join_cleanup() {
 	done
 }
 
+# This function only creates extra images on containers with busyboxes
+function create_new_image() {
+	local N=$1
+	if [ -z N ]; then
+		return
+	fi
+	local i
+	local c
+	
+	for ((c=0; c < ${#DOCKER_CONTAINERS[@]}; c++)); do
+		if ! [ "$(docker -H ${HOSTS[$c]} images -q busybox)" ]; then
+			continue # skip this container if no busybox
+		fi
+		for ((i=0; i < $N; i++)); do
+			sleep 1 # sleep in order to have different timestamp for each new image
+			commit_id=`docker -H ${HOSTS[$c]} create busybox:latest`
+			docker -H ${HOSTS[$c]} commit $commit_id busybox\_$c\_$i:latest 
+		done
+	done
+}
+
 function start_docker_with_busybox() {
 	# Preload busybox if not available.
 	[ "$(docker_host images -q busybox)" ] || docker_host pull busybox:latest

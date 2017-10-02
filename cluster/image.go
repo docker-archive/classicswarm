@@ -136,6 +136,26 @@ func (images Images) Filter(opts ImageFilterOptions) Images {
 		return false
 	}
 
+	beforeFilter := func(image *Image, beforeFilterImage *Image) bool {
+		if beforeFilterImage == nil {
+			// If filter image is nil, then filter is pass-through
+			return true
+		}
+		return image.Created < beforeFilterImage.Created
+	}
+
+	beforeFilterImage := images.GetImageFromField("before", opts)
+
+	sinceFilter := func(image *Image, beforeFilterImage *Image) bool {
+		if beforeFilterImage == nil {
+			// If filter image is nil, then filter is pass-through
+			return true
+		}
+		return image.Created > beforeFilterImage.Created
+	}
+
+	sinceFilterImage := images.GetImageFromField("since", opts)
+
 	danglingFilter := func(image *Image) bool {
 		if opts.Filters.Include("dangling") {
 			if len(image.RepoTags) == 0 {
@@ -157,9 +177,34 @@ func (images Images) Filter(opts ImageFilterOptions) Images {
 
 	filtered := make([]*Image, 0, len(images))
 	for _, image := range images {
-		if includeAll(image) && includeFilter(image) && referenceFilter(image, "reference") && danglingFilter(image) {
+		if includeAll(image) && includeFilter(image) && referenceFilter(image, "reference") && danglingFilter(image) &&
+			beforeFilter(image, beforeFilterImage) && sinceFilter(image, sinceFilterImage) {
 			filtered = append(filtered, image)
 		}
 	}
 	return filtered
+}
+
+// helper func for filtering
+func (opts ImageFilterOptions) GetIDOrName(field string) string {
+	if !opts.Filters.Include(field) {
+		return ""
+	}
+	if len(opts.Filters.Get(field)) == 1 {
+		return opts.Filters.Get(field)[0]
+	}
+	return ""
+}
+
+func (images Images) GetImageFromField(field string, opts ImageFilterOptions) *Image {
+	IDOrName := opts.GetIDOrName(field)
+	if IDOrName == "" {
+		return nil
+	}
+	for _, image := range images {
+		if image.Match(IDOrName, false) {
+			return image
+		}
+	}
+	return nil
 }

@@ -198,7 +198,21 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, image := range c.cluster.Images().Filter(opts) {
+	imagesToFilter := c.cluster.Images()
+
+	// This piece of code validates that the before and since fields for the filtering
+	for _, filterType := range [2]string{"before", "since"} {
+		if opts.Filters.Include(filterType) && imagesToFilter.GetImageFromField(filterType, opts) == nil {
+			httpError(
+				w,
+				fmt.Sprintf("Invalid filter: 'type'='%s': no such image found: '%s'", filterType, opts.GetIDOrName(filterType)),
+				http.StatusBadRequest,
+			)
+			return
+		}
+	}
+
+	for _, image := range imagesToFilter.Filter(opts) {
 		if len(accepteds) != 0 {
 			found := false
 			for _, accepted := range accepteds {
