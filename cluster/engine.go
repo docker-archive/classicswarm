@@ -26,7 +26,6 @@ import (
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	networktypes "github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/versions"
 	"github.com/docker/docker/api/types/volume"
 	engineapi "github.com/docker/docker/client"
 	engineapinop "github.com/docker/swarm/api/nopclient"
@@ -39,9 +38,6 @@ const (
 
 	// Threshold of delta duration between swarm manager and engine's systime
 	thresholdTime = 2 * time.Second
-
-	// Minimum docker engine version supported by swarm.
-	minSupportedVersion = "1.8.0"
 )
 
 type engineState int
@@ -477,12 +473,6 @@ func (e *Engine) updateSpecs() error {
 		return err
 	}
 
-	// Older versions of Docker don't expose the ID field, Labels and are not supported
-	// by Swarm.  Catch the error ASAP and refuse to connect.
-	if versions.LessThan(v.Version, minSupportedVersion) {
-		err = fmt.Errorf("engine %s is running an unsupported version of Docker Engine. Please upgrade to at least %s", e.Addr, minSupportedVersion)
-		return err
-	}
 	// update server version
 	e.Version = v.Version
 	// update client version. docker/api handles backward compatibility where needed
