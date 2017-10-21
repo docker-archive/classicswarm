@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"testing"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	dockerfilters "github.com/docker/docker/api/types/filters"
@@ -120,6 +121,62 @@ func TestImagesFilterWithMatchNameWithTag(t *testing.T) {
 	imageFilters.Add("reference", "example")
 	result := images.Filter(ImageFilterOptions{types.ImageListOptions{All: true, Filters: imageFilters}})
 	assert.Equal(t, len(result), 2)
+}
+
+func TestImageFilterWithBeforeAndSince(t *testing.T) {
+	now := time.Now().Unix()
+	// These filters are well-defined
+	beforeFilters := dockerfilters.NewArgs()
+	beforeFilters.Add("before", "ab")
+	sinceFilters := dockerfilters.NewArgs()
+	sinceFilters.Add("since", "ac")
+
+	// These filters are ambiguous
+	nonUniqueBeforePrefixFilter := dockerfilters.NewArgs()
+	nonUniqueBeforePrefixFilter.Add("before", "a")
+	nonUniqueSincePrefixFilter := dockerfilters.NewArgs()
+	nonUniqueSincePrefixFilter.Add("since", "a")
+
+	engine := NewEngine("test", 0, engOpts)
+	images := Images{
+		{
+			types.ImageSummary{ID: "aa", Created: now},
+			engine,
+		},
+		{
+			types.ImageSummary{ID: "ab", Created: now - 10},
+			engine,
+		},
+		{
+			types.ImageSummary{ID: "ac", Created: now - 20},
+			engine,
+		},
+		{
+			types.ImageSummary{ID: "ad", Created: now - 30},
+			engine,
+		},
+	}
+
+	options := ImageFilterOptions{types.ImageListOptions{All: true, Filters: beforeFilters}}
+	assert.Equal(t, images.GetImageFromField("before", options).ID, "ab")
+	result := images.Filter(options)
+	assert.Equal(t, 2, len(result))
+	assert.Equal(t, "ac", result[0].ID)
+	assert.Equal(t, "ad", result[1].ID)
+
+	options = ImageFilterOptions{types.ImageListOptions{All: true, Filters: sinceFilters}}
+	assert.Equal(t, images.GetImageFromField("since", options).ID, "ac")
+	result = images.Filter(options)
+	assert.Equal(t, 2, len(result))
+	assert.Equal(t, "aa", result[0].ID)
+	assert.Equal(t, "ab", result[1].ID)
+
+	// If filters are ambiguous, GetImageField should return nil
+	options = ImageFilterOptions{types.ImageListOptions{All: true, Filters: nonUniqueBeforePrefixFilter}}
+	assert.Nil(t, images.GetImageFromField("before", options))
+
+	options = ImageFilterOptions{types.ImageListOptions{All: true, Filters: nonUniqueSincePrefixFilter}}
+	assert.Nil(t, images.GetImageFromField("since", options))
 }
 
 func TestImageFilterWithDangling(t *testing.T) {
