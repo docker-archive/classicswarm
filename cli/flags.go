@@ -110,6 +110,10 @@ var (
 		Name:  "tlsverify",
 		Usage: "use TLS and verify the remote",
 	}
+	flTLSMinVersion = cli.StringFlag{
+		Name:  "tlsminversion",
+		Usage: "set the minimum TLS version to serve",
+	}
 	flStrategy = cli.StringFlag{
 		Name:  "strategy",
 		Usage: "placement strategy to use [" + strings.Join(strategy.List(), ", ") + "]",
