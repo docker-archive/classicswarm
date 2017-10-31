@@ -25,7 +25,7 @@ var (
 				flStrategy, flFilter,
 				flHosts,
 				flLeaderElection, flLeaderTTL, flManageAdvertise,
-				flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify,
+				flTLS, flTLSCaCert, flTLSCert, flTLSKey, flTLSVerify, flTLSMinVersion,
 				flRefreshIntervalMin, flRefreshIntervalMax, flFailureRetry, flRefreshRetry,
 				flHeartBeat,
 				flEnableCors,

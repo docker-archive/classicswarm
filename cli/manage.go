@@ -67,7 +67,7 @@ func (h *statusHandler) Status() [][2]string {
 }
 
 // Load the TLS certificates/keys and, if verify is true, the CA.
-func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
+func loadTLSConfig(ca, cert, key string, verify bool, minVersion string) (*tls.Config, error) {
 	c, err := tls.LoadX509KeyPair(cert, key)
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't load X509 key pair (%s, %s): %s. Key encrypted?",
@@ -76,7 +76,16 @@ func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 
 	config := &tls.Config{
 		Certificates: []tls.Certificate{c},
-		MinVersion:   tls.VersionTLS10,
+	}
+	switch minVersion {
+	case "", "tlsv1", "tlsv1.0":
+		config.MinVersion = tls.VersionTLS10
+	case "tlsv1.1":
+		config.MinVersion = tls.VersionTLS11
+	case "tlsv1.2":
+		config.MinVersion = tls.VersionTLS12
+	default:
+		return nil, fmt.Errorf("Invalid TLS version %q", minVersion)
 	}
 
 	if verify {
@@ -231,7 +240,9 @@ func manage(c *cli.Context) {
 			c.String("tlscacert"),
 			c.String("tlscert"),
 			c.String("tlskey"),
-			c.Bool("tlsverify"))
+			c.Bool("tlsverify"),
+			c.String("mintlsversion"),
+		)
 		if err != nil {
 			log.Fatal(err)
 		}
