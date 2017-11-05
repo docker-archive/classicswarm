@@ -1159,8 +1159,11 @@ func proxyNetworkConnect(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, fmt.Sprintf("No such network: %s", networkid), http.StatusNotFound)
 		return
 	}
+
 	// Set the network ID in the proxied URL path.
-	r.URL.Path = strings.Replace(r.URL.Path, networkid, network.ID, 1)
+	originUrl := fmt.Sprintf("/networks/%s/connect", networkid)
+	replacedUrl := fmt.Sprintf("/networks/%s/connect", network.ID)
+	r.URL.Path = strings.Replace(r.URL.Path, originUrl, replacedUrl, 1)
 
 	// make a copy of r.Body
 	buf, _ := ioutil.ReadAll(r.Body)
