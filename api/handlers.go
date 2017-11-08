@@ -139,6 +139,9 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 
 	// Look for an engine that has all the images we need.
 	for engine, images := range engineImages {
+		if !engine.IsHealthy() {
+			continue
+		}
 		matchedImages := 0
 
 		// Count how many images we need it has.
@@ -159,7 +162,7 @@ func getImages(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	httpError(w, fmt.Sprintf("Unable to find an engine containing all images: %s", names), http.StatusNotFound)
+	httpError(w, fmt.Sprintf("Unable to find a healthy engine containing all images: %s", names), http.StatusNotFound)
 }
 
 // GET /images/json

@@ -15,7 +15,7 @@ function teardown() {
 	swarm_manage
 
 	# make sure busybox image exists
-	run docker_swarm images 
+	run docker_swarm images
 	[ "$status" -eq 0 ]
 	[[ "${output}" == *"busybox"* ]]
 
@@ -26,8 +26,8 @@ function teardown() {
 	docker_swarm save busybox > $temp_file_name
 	# save -o, image->tar
 	docker_swarm save -o $temp_file_name_o busybox
-	
-	# saved image file exists, not empty and is tar file 
+
+	# saved image file exists, not empty and is tar file
 	[ -s $temp_file_name ]
 	run file $temp_file_name
 	[ "$status" -eq 0 ]
@@ -50,7 +50,7 @@ function teardown() {
 	docker -H ${HOSTS[1]} tag busybox test2
 
 	# start manage
-	swarm_manage		
+	swarm_manage
 
 	# make sure image exists
 	run docker_swarm images
@@ -64,7 +64,7 @@ function teardown() {
 	# do not support save images which are on multi machine
 	run docker_swarm save -o "$temp_file_name" busybox test1 test2
 	[ "$status" -ne 0 ]
-	[[ "${output}" == *"Unable to find an engine containing all images"* ]]
+	[[ "${output}" == *"Unable to find a healthy engine containing all images"* ]]
 
 	# save images which are on same machine
 	docker_swarm save -o "$temp_file_name" busybox test1
