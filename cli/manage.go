@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/pkg/discovery"
 	kvdiscovery "github.com/docker/docker/pkg/discovery/kv"
 	"github.com/docker/leadership"
+	"github.com/docker/libkv/store"
 	"github.com/docker/swarm/api"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/cluster/mesos"
@@ -26,7 +27,8 @@ import (
 
 const (
 	leaderElectionPath = "docker/swarm/leader"
-	defaultRecoverTime = 10 * time.Second
+	initialRecoverTime = 500 * time.Millisecond
+	maxRecoverTime     = 10 * time.Second
 )
 
 type logHandler struct {
@@ -43,18 +45,26 @@ func (h *logHandler) Handle(e *cluster.Event) error {
 }
 
 type statusHandler struct {
-	cluster   cluster.Cluster
-	candidate *leadership.Candidate
-	follower  *leadership.Follower
+	cluster     cluster.Cluster
+	candidate   *leadership.Candidate
+	follower    *leadership.Follower
+	addr        string
+	recoverTime time.Duration
 }
 
 func (h *statusHandler) Status() [][2]string {
 	var status [][2]string
 
-	if h.candidate != nil && !h.candidate.IsLeader() {
-		status = [][2]string{
-			{"Role", "replica"},
-			{"Primary", h.follower.Leader()},
+	if h.candidate != nil && !h.candidate.IsLeader() && h.follower != nil {
+		if h.follower.Leader() == h.addr {
+			status = [][2]string{
+				{"Role", "primary"},
+			}
+		} else {
+			status = [][2]string{
+				{"Role", "replica"},
+				{"Primary", h.follower.Leader()},
+			}
 		}
 	} else {
 		status = [][2]string{
@@ -132,83 +142,84 @@ func getDiscoveryOpt(c *cli.Context) map[string]string {
 	return options
 }
 
-func getCandidateAndFollower(discovery discovery.Backend, addr string, leaderTTL time.Duration) (*leadership.Candidate, *leadership.Follower) {
-	kvDiscovery, ok := discovery.(*kvdiscovery.Discovery)
-	if !ok {
-		log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
-	}
-	client := kvDiscovery.Store()
-	p := path.Join(kvDiscovery.Prefix(), leaderElectionPath)
-
-	candidate := leadership.NewCandidate(client, p, addr, leaderTTL)
-	follower := leadership.NewFollower(client, p)
-	return candidate, follower
-}
-
-func setupReplication(c *cli.Context, cluster cluster.Cluster, server *api.Server, candidate *leadership.Candidate, follower *leadership.Follower, addr string, tlsConfig *tls.Config) {
-	primary := api.NewPrimary(cluster, tlsConfig, &statusHandler{cluster, candidate, follower}, c.GlobalBool("debug"), c.Bool("cors"))
+func setupReplication(c *cli.Context, cluster cluster.Cluster, handler *statusHandler, client store.Store, keyPath string, server *api.Server, addr string, tlsConfig *tls.Config, leaderTTL time.Duration) {
+	primary := api.NewPrimary(cluster, tlsConfig, handler, c.GlobalBool("debug"), c.Bool("cors"))
 	replica := api.NewReplica(primary, tlsConfig)
 
 	go func() {
 		for {
-			run(cluster, candidate, server, primary, replica)
-			time.Sleep(defaultRecoverTime)
-		}
-	}()
-
-	go func() {
-		for {
-			follow(follower, replica, addr)
-			time.Sleep(defaultRecoverTime)
+			err := run(cluster, client, keyPath, handler, server, primary, replica, addr, leaderTTL)
+			if err == nil {
+				handler.recoverTime = initialRecoverTime
+			} else {
+				// If we lost connection to the KV store, sleep
+				// before reconnecting with an exponential
+				// backoff.
+				time.Sleep(handler.recoverTime)
+				handler.recoverTime = 2 * handler.recoverTime
+				if handler.recoverTime > maxRecoverTime {
+					handler.recoverTime = maxRecoverTime
+				}
+			}
 		}
 	}()
 
 	server.SetHandler(primary)
 }
 
-func run(cl cluster.Cluster, candidate *leadership.Candidate, server *api.Server, primary *mux.Router, replica *api.Replica) {
-	electedCh, errCh := candidate.RunForElection()
+func run(cl cluster.Cluster, client store.Store, keyPath string, handler *statusHandler, server *api.Server, primary *mux.Router, replica *api.Replica, addr string, leaderTTL time.Duration) error {
+	candidate := leadership.NewCandidate(client, keyPath, addr, leaderTTL)
+	follower := leadership.NewFollower(client, keyPath)
+
+	handler.candidate = candidate
+	handler.follower = follower
+
+	electedCh, candidateErrCh := candidate.RunForElection()
+	leaderCh, followerErrCh := follower.FollowElection()
+	defer follower.Stop()
+
 	var watchdog *cluster.Watchdog
+	wasLeader := false
 	for {
 		select {
 		case isElected := <-electedCh:
 			if isElected {
 				log.Info("Leader Election: Cluster leadership acquired")
+				wasLeader = true
 				watchdog = cluster.NewWatchdog(cl)
 				server.SetHandler(primary)
 			} else {
-				log.Info("Leader Election: Cluster leadership lost")
 				cl.UnregisterEventHandler(watchdog)
 				// TODO(nishanttotla): perhaps EventHandler for subscription events should
 				// also be unregistered here
 				server.SetHandler(replica)
+				if wasLeader {
+					log.Info("Leader Election: Cluster leadership lost")
+					candidate.Stop()
+					return nil
+				}
 			}
 
-		case err := <-errCh:
-			log.Error(err)
-			return
-		}
-	}
-}
-
-func follow(follower *leadership.Follower, replica *api.Replica, addr string) {
-	leaderCh, errCh := follower.FollowElection()
-	for {
-		select {
 		case leader := <-leaderCh:
 			if leader == "" {
 				continue
 			}
 			if leader == addr {
 				replica.SetPrimary("")
+				server.SetHandler(primary)
 			} else {
 				log.Infof("New leader elected: %s", leader)
 				replica.SetPrimary(leader)
+				server.SetHandler(replica)
 			}
 
-		case err := <-errCh:
-			log.Error(err)
-			return
+		case err := <-candidateErrCh:
+			log.Errorf("Error from leadership election candidate: %s", err)
+			return err
+
+		case err := <-followerErrCh:
+			log.Errorf("Error from leadership election follower: %s", err)
+			return err
 		}
 	}
 }
@@ -327,14 +338,34 @@ func manage(c *cli.Context) {
 			log.Fatalf("--replication-ttl should be a positive number")
 		}
 
-		candidate, follower := getCandidateAndFollower(discovery, addr, leaderTTL)
-		// Make sure we resign the leadership position when we exit
-		// if necessary.
-		defer candidate.Resign()
+		kvDiscovery, ok := discovery.(*kvdiscovery.Discovery)
+		if !ok {
+			log.Fatal("Leader election is only supported with consul, etcd and zookeeper discovery.")
+		}
+		client := kvDiscovery.Store()
+		keyPath := path.Join(kvDiscovery.Prefix(), leaderElectionPath)
 
-		setupReplication(c, cl, server, candidate, follower, addr, tlsConfig)
+		handler := &statusHandler{
+			cluster:     cl,
+			addr:        addr,
+			recoverTime: initialRecoverTime,
+		}
+		defer func(h *statusHandler) {
+			// Make sure we resign the leadership position when we
+			// exit if necessary.
+			if h.candidate != nil {
+				h.candidate.Resign()
+			}
+		}(handler)
+
+		setupReplication(c, cl, handler, client, keyPath, server, addr, tlsConfig, leaderTTL)
 	} else {
-		server.SetHandler(api.NewPrimary(cl, tlsConfig, &statusHandler{cl, nil, nil}, c.GlobalBool("debug"), c.Bool("cors")))
+		handler := &statusHandler{
+			cluster:     cl,
+			addr:        "",
+			recoverTime: initialRecoverTime,
+		}
+		server.SetHandler(api.NewPrimary(cl, tlsConfig, handler, c.GlobalBool("debug"), c.Bool("cors")))
 		cluster.NewWatchdog(cl)
 	}
 	defer cl.CloseWatchQueues()
