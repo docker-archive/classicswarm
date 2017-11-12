@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var localRoutes = []string{"/_ping", "/info", "/debug"}
+var localRoutes = []string{"/info", "/debug"}
 
 // Replica is an API replica that reserves proxy to the primary.
 type Replica struct {
@@ -43,6 +43,13 @@ func (p *Replica) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Otherwise, forward.
 	if p.primary == "" {
 		httpError(w, "No elected primary cluster manager", http.StatusInternalServerError)
+		return
+	}
+
+	// We also handle /_ping locally, but we do so after the primary
+	// check above.
+	if strings.HasSuffix(r.URL.Path, "/_ping") {
+		w.Write([]byte("OK"))
 		return
 	}
 
