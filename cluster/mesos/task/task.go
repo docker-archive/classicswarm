@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/swarm/cluster"
 	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
 	"github.com/mesos/mesos-go/mesosutil"
+	log "github.com/sirupsen/logrus"
 )
 
 // Task struct inherits from TaskInfo and represents a mesos task

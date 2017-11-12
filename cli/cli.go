@@ -5,9 +5,9 @@ import (
 	"path"
 	"runtime/debug"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/experimental"
 	"github.com/docker/swarm/version"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 

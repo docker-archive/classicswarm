@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
+	log "github.com/sirupsen/logrus"
 )
 
 var imageOSErrorPattern = regexp.MustCompile(`image operating system "(.+)" cannot be used on this platform`)

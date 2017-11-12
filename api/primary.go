@@ -6,9 +6,9 @@ import (
 
 	"net/http/pprof"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 // Primary router context, used by handlers.

@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	networktypes "github.com/docker/docker/api/types/network"
@@ -25,6 +24,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/mesos/mesos-go/mesosproto"
 	mesosscheduler "github.com/mesos/mesos-go/scheduler"
+	log "github.com/sirupsen/logrus"
 )
 
 // Cluster struct for mesos

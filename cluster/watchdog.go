@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types/network"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler/node"
+	log "github.com/sirupsen/logrus"
 )
 
 // WhitelistFilter selects only nodes that are defined in a whitelist by the user

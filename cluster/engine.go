@@ -20,7 +20,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
@@ -30,6 +29,7 @@ import (
 	engineapi "github.com/docker/docker/client"
 	engineapinop "github.com/docker/swarm/api/nopclient"
 	"github.com/docker/swarm/swarmclient"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
