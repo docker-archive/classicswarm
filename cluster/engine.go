@@ -728,7 +728,9 @@ func (e *Engine) RefreshContainers(full bool) error {
 		All:  true,
 		Size: false,
 	}
-	containers, err := e.apiClient.ContainerList(context.Background(), opts)
+	ctx, cancel := context.WithTimeout(context.TODO(), requestTimeout)
+	defer cancel()
+	containers, err := e.apiClient.ContainerList(ctx, opts)
 	e.CheckConnectionErr(err)
 	if err != nil {
 		return err
