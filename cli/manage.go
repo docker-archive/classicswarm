@@ -76,7 +76,7 @@ func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 
 	config := &tls.Config{
 		Certificates: []tls.Certificate{c},
-		MinVersion:   tls.VersionTLS10,
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	if verify {
