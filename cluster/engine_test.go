@@ -58,9 +58,9 @@ func (nopCloser) Close() error {
 func TestSetEngineState(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	assert.True(t, engine.state == statePending)
-	engine.setState(stateUnhealthy)
+	engine.setState(stateUnhealthy, false)
 	assert.True(t, engine.state == stateUnhealthy)
-	engine.setState(stateHealthy)
+	engine.setState(stateHealthy, false)
 	assert.True(t, engine.state == stateHealthy)
 }
 
@@ -68,13 +68,13 @@ func TestErrMsg(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	assert.True(t, len(engine.ErrMsg()) == 0)
 	message := "cannot connect"
-	engine.setErrMsg(message)
+	engine.setErrMsg(message, false)
 	assert.True(t, engine.ErrMsg() == message)
 }
 
 func TestCheckConnectionErr(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
-	engine.setState(stateHealthy)
+	engine.setState(stateHealthy, false)
 	assert.True(t, engine.failureCount == 0)
 	err := engineapi.ErrorConnectionFailed("")
 	engine.CheckConnectionErr(err)
@@ -97,14 +97,14 @@ func TestCheckConnectionErr(t *testing.T) {
 
 func TestEngineFailureCount(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
-	engine.setState(stateHealthy)
+	engine.setState(stateHealthy, false)
 	for i := 0; i < engine.opts.FailureRetry; i++ {
 		assert.True(t, engine.IsHealthy())
-		engine.incFailureCount()
+		engine.incFailureCount(false)
 	}
 	assert.False(t, engine.IsHealthy())
 	assert.True(t, engine.failureCount == engine.opts.FailureRetry)
-	engine.resetFailureCount()
+	engine.resetFailureCount(false)
 	assert.True(t, engine.failureCount == 0)
 }
 
@@ -112,11 +112,11 @@ func TestHealthIndicator(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
 	assert.True(t, engine.state == statePending)
 	assert.True(t, engine.HealthIndicator() == 0)
-	engine.setState(stateUnhealthy)
+	engine.setState(stateUnhealthy, false)
 	assert.True(t, engine.HealthIndicator() == 0)
-	engine.setState(stateHealthy)
+	engine.setState(stateHealthy, false)
 	assert.True(t, engine.HealthIndicator() == 100)
-	engine.incFailureCount()
+	engine.incFailureCount(false)
 	assert.True(t, engine.HealthIndicator() == (int64)(100-100/engine.opts.FailureRetry))
 }
 
@@ -155,7 +155,7 @@ func TestOutdatedEngine(t *testing.T) {
 
 func TestEngineCpusMemory(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
-	engine.setState(stateUnhealthy)
+	engine.setState(stateUnhealthy, false)
 	assert.False(t, engine.isConnected())
 
 	apiClient := engineapimock.NewMockClient()
@@ -184,7 +184,7 @@ func TestEngineCpusMemory(t *testing.T) {
 
 func TestEngineSpecs(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
-	engine.setState(stateUnhealthy)
+	engine.setState(stateUnhealthy, false)
 	assert.False(t, engine.isConnected())
 
 	apiClient := engineapimock.NewMockClient()
@@ -224,7 +224,7 @@ func TestEngineSpecs(t *testing.T) {
 
 func TestEngineState(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
-	engine.setState(stateUnhealthy)
+	engine.setState(stateUnhealthy, false)
 	assert.False(t, engine.isConnected())
 
 	apiClient := engineapimock.NewMockClient()
@@ -360,7 +360,7 @@ func TestCreateContainer(t *testing.T) {
 		readCloser = nopCloser{bytes.NewBufferString("")}
 	)
 
-	engine.setState(stateUnhealthy)
+	engine.setState(stateUnhealthy, false)
 	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
 	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
 	apiClient.On("NetworkList", mock.Anything,
@@ -526,7 +526,7 @@ func TestCreateContainer(t *testing.T) {
 
 func TestImages(t *testing.T) {
 	engine := NewEngine("test", 0, engOpts)
-	engine.setState(stateHealthy)
+	engine.setState(stateHealthy, false)
 	engine.images = []*Image{
 		{types.ImageSummary{ID: "a"}, engine},
 		{types.ImageSummary{ID: "b"}, engine},
@@ -564,7 +564,7 @@ func TestUsedCpus(t *testing.T) {
 	)
 
 	engine := NewEngine("test", 0, engOpts)
-	engine.setState(stateHealthy)
+	engine.setState(stateHealthy, false)
 	apiClient := engineapimock.NewMockClient()
 
 	for _, hn := range hostNcpu {
@@ -651,7 +651,7 @@ func TestContainerRemovedDuringRefresh(t *testing.T) {
 	)
 
 	engine := NewEngine("test", 0, engOpts)
-	engine.setState(stateUnhealthy)
+	engine.setState(stateUnhealthy, false)
 	assert.False(t, engine.isConnected())
 
 	// A container is removed before it can be inspected.

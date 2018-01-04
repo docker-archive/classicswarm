@@ -315,9 +315,11 @@ func (e *Engine) HealthIndicator() int64 {
 }
 
 // setState sets engine state
-func (e *Engine) setState(state engineState) {
-	e.Lock()
-	defer e.Unlock()
+func (e *Engine) setState(state engineState, lockSet bool) {
+	if !lockSet {
+		e.Lock()
+		defer e.Unlock()
+	}
 	e.state = state
 }
 
@@ -354,9 +356,11 @@ func (e *Engine) ValidationComplete() {
 }
 
 // setErrMsg sets error message for the engine
-func (e *Engine) setErrMsg(errMsg string) {
-	e.Lock()
-	defer e.Unlock()
+func (e *Engine) setErrMsg(errMsg string, lockSet bool) {
+	if !lockSet {
+		e.Lock()
+		defer e.Unlock()
+	}
 	e.lastError = strings.TrimSpace(errMsg)
 	e.updatedAt = time.Now()
 }
@@ -370,7 +374,7 @@ func (e *Engine) ErrMsg() string {
 
 // HandleIDConflict handles ID duplicate with existing engine
 func (e *Engine) HandleIDConflict(otherAddr string) {
-	e.setErrMsg(fmt.Sprintf("ID duplicated. %s shared by this node %s and another node %s", e.ID, e.Addr, otherAddr))
+	e.setErrMsg(fmt.Sprintf("ID duplicated. %s shared by this node %s and another node %s", e.ID, e.Addr, otherAddr), false)
 }
 
 // Status returns the health status of the Engine: Healthy or Unhealthy
@@ -381,9 +385,11 @@ func (e *Engine) Status() string {
 }
 
 // incFailureCount increases engine's failure count, and sets engine as unhealthy if threshold is crossed
-func (e *Engine) incFailureCount() {
-	e.Lock()
-	defer e.Unlock()
+func (e *Engine) incFailureCount(lockSet bool) {
+	if !lockSet {
+		e.Lock()
+		defer e.Unlock()
+	}
 	e.failureCount++
 	if e.state == stateHealthy && e.failureCount >= e.opts.FailureRetry {
 		e.state = stateUnhealthy
@@ -406,23 +412,29 @@ func (e *Engine) UpdatedAt() time.Time {
 	return e.updatedAt
 }
 
-func (e *Engine) resetFailureCount() {
-	e.Lock()
-	defer e.Unlock()
+func (e *Engine) resetFailureCount(lockSet bool) {
+	if !lockSet {
+		e.Lock()
+		defer e.Unlock()
+	}
 	e.failureCount = 0
 }
 
-// CheckConnectionErr checks error from client response and adjusts engine healthy indicators
 func (e *Engine) CheckConnectionErr(err error) {
+	e.checkConnectionErr(err, false)
+}
+
+// CheckConnectionErr checks error from client response and adjusts engine healthy indicators
+func (e *Engine) checkConnectionErr(err error, lockSet bool) {
 	if err == nil {
-		e.setErrMsg("")
+		e.setErrMsg("", lockSet)
 		// If current state is unhealthy, change it to healthy
 		if e.state == stateUnhealthy {
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.getFailureCount())
 			e.emitEvent("engine_reconnect")
-			e.setState(stateHealthy)
+			e.setState(stateHealthy, lockSet)
 		}
-		e.resetFailureCount()
+		e.resetFailureCount(lockSet)
 		return
 	}
 
@@ -432,9 +444,9 @@ func (e *Engine) CheckConnectionErr(err error) {
 		// in engine marked as unhealthy. If this causes unnecessary failure, engine
 		// can track last error time. Only increase failure count if last error is
 		// not too recent, e.g., last error is at least 1 seconds ago.
-		e.incFailureCount()
+		e.incFailureCount(lockSet)
 		// update engine error message
-		e.setErrMsg(err.Error())
+		e.setErrMsg(err.Error(), lockSet)
 		return
 	}
 	// other errors may be ambiguous.
@@ -724,6 +736,8 @@ func (e *Engine) refreshVolume(IDOrName string) error {
 // true, each container will be inspected.
 // FIXME: unexport this method after mesos scheduler stops using it directly
 func (e *Engine) RefreshContainers(full bool) error {
+	e.Lock()
+	defer e.Unlock()
 	opts := types.ContainerListOptions{
 		All:  true,
 		Size: false,
@@ -731,14 +745,14 @@ func (e *Engine) RefreshContainers(full bool) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), requestTimeout)
 	defer cancel()
 	containers, err := e.apiClient.ContainerList(ctx, opts)
-	e.CheckConnectionErr(err)
+	e.checkConnectionErr(err, true)
 	if err != nil {
 		return err
 	}
 
 	merged := make(map[string]*Container)
 	for _, c := range containers {
-		mergedUpdate, err := e.updateContainer(c, merged, full)
+		mergedUpdate, err := e.updateContainer(c, merged, full, true)
 		if err != nil {
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q: %v", c.ID, err)
 		} else {
@@ -746,8 +760,6 @@ func (e *Engine) RefreshContainers(full bool) error {
 		}
 	}
 
-	e.Lock()
-	defer e.Unlock()
 	e.containers = merged
 
 	return nil
@@ -784,17 +796,19 @@ func (e *Engine) refreshContainer(ID string, full bool) (*Container, error) {
 		return nil, nil
 	}
 
-	_, err = e.updateContainer(containers[0], e.containers, full)
+	_, err = e.updateContainer(containers[0], e.containers, full, false)
 	e.RLock()
 	container := e.containers[containers[0].ID]
 	e.RUnlock()
 	return container, err
 }
 
-func (e *Engine) updateContainer(c types.Container, containers map[string]*Container, full bool) (map[string]*Container, error) {
+func (e *Engine) updateContainer(c types.Container, containers map[string]*Container, full bool, lockSet bool) (map[string]*Container, error) {
 	var container *Container
 
-	e.RLock()
+	if !lockSet {
+		e.RLock()
+	}
 	if current, exists := e.containers[c.ID]; exists {
 		// The container is already known.
 		container = current
@@ -814,14 +828,16 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 	// Trade-off: If updateContainer() is called concurrently for the same
 	// container, we will end up doing a full refresh twice and the original
 	// container (containers[container.Id]) will get replaced.
-	e.RUnlock()
+	if !lockSet {
+		e.RUnlock()
+	}
 
 	c.Created = time.Unix(c.Created, 0).Add(e.DeltaDuration).Unix()
 
 	// Update ContainerInfo.
 	if full {
 		info, err := e.apiClient.ContainerInspect(context.Background(), c.ID)
-		e.CheckConnectionErr(err)
+		e.checkConnectionErr(err, lockSet)
 		if err != nil {
 			return nil, err
 		}
@@ -848,10 +864,14 @@ func (e *Engine) updateContainer(c types.Container, containers map[string]*Conta
 	}
 
 	// Update its internal state.
-	e.Lock()
+	if !lockSet {
+		e.Lock()
+	}
 	container.Container = c
 	containers[container.ID] = container
-	e.Unlock()
+	if !lockSet {
+		e.Unlock()
+	}
 
 	return containers, nil
 }
