@@ -972,6 +972,9 @@ func (e *Engine) UpdateNetworkContainers(containerID string, full bool) error {
 			continue
 		}
 		for _, n := range c.NetworkSettings.Networks {
+			if n.NetworkID == "" {
+				continue
+			}
 			engineNetwork, ok := e.networks[n.NetworkID]
 			if !ok {
 				// it shouldn't be the case that a network which a container is connected to wasn't
