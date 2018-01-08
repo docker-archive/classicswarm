@@ -330,6 +330,46 @@ func getVolume(c *context, w http.ResponseWriter, r *http.Request) {
 	httpError(w, fmt.Sprintf("No such volume: %s", name), http.StatusNotFound)
 }
 
+func getUsedVolumes(containers []*cluster.Container) map[string]bool {
+	usedVolumes := make(map[string]bool)
+	for _, container := range containers {
+		for _, mount := range container.Mounts {
+			if mount.Type == "volume" {
+				usedVolumes[container.Engine.Name+"/"+mount.Name] = true
+			}
+		}
+	}
+	return usedVolumes
+}
+
+func getFilteredVolumes(containers []*cluster.Container, volumes []*apitypes.Volume, dangling bool) []*apitypes.Volume {
+	usedVolumes := getUsedVolumes(containers)
+	var filteredVolumes []*apitypes.Volume
+	// local volume name only allows char [a-zA-Z0-9][a-zA-Z0-9_.-]
+	// plugin volume name allows slash, SplitN n=2 will cover all cases
+	// splitting on / to keep the original output intact
+	stripEngine := func(vol *apitypes.Volume) *apitypes.Volume {
+		//engine name is only appended to driver "local" volumes (see: getVolumes)
+		//this naming format is temporarily extended to all volumes to provide uniqueness
+		// while identifying dangling volumes. Restoring the original naming convention back.
+		if vol.Driver != "local" {
+			parts := strings.SplitN(vol.Name, "/", 2)
+			if len(parts) > 1 {
+				vol.Name = parts[1]
+			}
+		}
+		return vol
+	}
+	for _, volume := range volumes {
+		if dangling && !usedVolumes[volume.Name] {
+			filteredVolumes = append(filteredVolumes, stripEngine(volume))
+		} else if !dangling && usedVolumes[volume.Name] {
+			filteredVolumes = append(filteredVolumes, stripEngine(volume))
+		}
+	}
+	return filteredVolumes
+}
+
 // GET /volumes
 func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 	volumesListResponse := volumetypes.VolumesListOKBody{}
@@ -340,7 +380,10 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	danglingFilter := false
+	if filters.Include("dangling") {
+		danglingFilter = true
+	}
 	names := filters.Get("name")
 	nodes := filters.Get("node")
 	for _, volume := range c.cluster.Volumes() {
@@ -359,6 +402,12 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		if filters.Include("driver") {
+			if !filters.ExactMatch("driver", volume.Driver) {
+				continue
+			}
+		}
+
 		if filters.Include("label") {
 			if !filters.MatchKVList("label", volume.Labels) {
 				continue
@@ -366,7 +415,7 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 
 		tmp := (*volume).Volume
-		if tmp.Driver == "local" {
+		if tmp.Driver == "local" || danglingFilter {
 			// Check if the volume matches any node filters
 			found = false
 			for _, node := range nodes {
@@ -381,6 +430,17 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 			tmp.Name = volume.Engine.Name + "/" + volume.Name
 		}
 		volumesListResponse.Volumes = append(volumesListResponse.Volumes, &tmp)
+	}
+
+	danglingOnly := false
+	if danglingFilter {
+		if filters.ExactMatch("dangling", "true") {
+			danglingOnly = true
+		} else if !filters.ExactMatch("dangling", "false") {
+			httpError(w, "Invalid filter: 'type'='dangling'", http.StatusBadRequest)
+			return
+		}
+		volumesListResponse.Volumes = getFilteredVolumes(c.cluster.Containers(), volumesListResponse.Volumes, danglingOnly)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
