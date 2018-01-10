@@ -366,20 +366,18 @@ func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 
 		tmp := (*volume).Volume
-		if tmp.Driver == "local" {
-			// Check if the volume matches any node filters
-			found = false
-			for _, node := range nodes {
-				if volume.Engine.Name == node {
-					found = true
-					break
-				}
+		// Check if the volume matches any node filters
+		found = false
+		for _, node := range nodes {
+			if volume.Engine.Name == node {
+				found = true
+				break
 			}
-			if len(nodes) > 0 && !found {
-				continue
-			}
-			tmp.Name = volume.Engine.Name + "/" + volume.Name
 		}
+		if len(nodes) > 0 && !found {
+			continue
+		}
+		tmp.Name = volume.Engine.Name + "/" + volume.Name
 		volumesListResponse.Volumes = append(volumesListResponse.Volumes, &tmp)
 	}
 
