@@ -1004,13 +1004,22 @@ func (e *Engine) UpdateNetworkContainers(containerID string, full bool) error {
 			if engineNetwork.Containers == nil {
 				engineNetwork.Containers = make(map[string]types.EndpointResource)
 			}
-			engineNetwork.Containers[c.ID] = types.EndpointResource{
+			// to avoid concurrent map r/w panic, make a copy of engineNetwork.Containers,
+			// update it, and assign it back.
+			// We might need to refactor this method, on full refresh,
+			// we're processing the same engineNetwork multiple times
+			tmpContainers := make(map[string]types.EndpointResource)
+			for key, value := range engineNetwork.Containers {
+				tmpContainers[key] = value
+			}
+			tmpContainers[c.ID] = types.EndpointResource{
 				Name:        ctrName,
 				EndpointID:  n.EndpointID,
 				MacAddress:  n.MacAddress,
 				IPv4Address: ipv4address,
 				IPv6Address: ipv6address,
 			}
+			engineNetwork.Containers = tmpContainers
 		}
 	}
 	return nil
