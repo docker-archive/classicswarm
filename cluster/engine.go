@@ -475,6 +475,20 @@ func (e *Engine) updateSpecs() error {
 		return err
 	}
 
+	// Get the current system time and compute the delta IMMEDIATELY after
+	// doing the info call. We won't use it for a little while, but it avoids
+	// issues if the subsequent operations take too long
+	// delta is an estimation of time difference between manager and engine
+	// with adjustment of delays (Engine response delay + network delay + manager process delay).
+	var delta time.Duration
+	if info.SystemTime != "" {
+		engineTime, _ := time.Parse(time.RFC3339Nano, info.SystemTime)
+		delta = time.Now().UTC().Sub(engineTime)
+	} else {
+		// if no SystemTime in info response, we treat delta as 0.
+		delta = time.Duration(0)
+	}
+
 	if info.NCPU == 0 || info.MemTotal == 0 {
 		return fmt.Errorf("cannot get resources for this engine, make sure %s is a Docker Engine, not a Swarm manager", e.Addr)
 	}
@@ -507,17 +521,6 @@ func (e *Engine) updateSpecs() error {
 		message := fmt.Sprintf("Engine (ID: %s, Addr: %s) shows up with another ID:%s. Please remove it from cluster, it can be added back.", e.ID, e.Addr, infoID)
 		e.lastError = message
 		return errors.New(message)
-	}
-
-	// delta is an estimation of time difference between manager and engine
-	// with adjustment of delays (Engine response delay + network delay + manager process delay).
-	var delta time.Duration
-	if info.SystemTime != "" {
-		engineTime, _ := time.Parse(time.RFC3339Nano, info.SystemTime)
-		delta = time.Now().UTC().Sub(engineTime)
-	} else {
-		// if no SystemTime in info response, we treat delta as 0.
-		delta = time.Duration(0)
 	}
 
 	// If the servers are sync up on time, this delta might be the source of error
