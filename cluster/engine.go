@@ -209,7 +209,7 @@ func (e *Engine) StartMonitorEvents() {
 		if err := <-ec; err != nil {
 			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).WithError(err).Error("error monitoring events, will restart")
 			// failing node reconnect should use back-off strategy to avoid frequent reconnect
-			retryInterval := e.getFailureCount() + 1
+			retryInterval := e.getFailureCount(false) + 1
 			// maximum retry interval of 10 seconds
 			if retryInterval > 10 {
 				retryInterval = 10
@@ -399,9 +399,11 @@ func (e *Engine) incFailureCount(lockSet bool) {
 }
 
 // getFailureCount returns a copy on the getFailureCount, thread-safe
-func (e *Engine) getFailureCount() int {
-	e.RLock()
-	defer e.RUnlock()
+func (e *Engine) getFailureCount(lockSet bool) int {
+	if !lockSet {
+		e.RLock()
+		defer e.RUnlock()
+	}
 	return e.failureCount
 }
 
@@ -430,7 +432,7 @@ func (e *Engine) checkConnectionErr(err error, lockSet bool) {
 		e.setErrMsg("", lockSet)
 		// If current state is unhealthy, change it to healthy
 		if e.state == stateUnhealthy {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.getFailureCount())
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.getFailureCount(lockSet))
 			e.emitEvent("engine_reconnect")
 			e.setState(stateHealthy, lockSet)
 		}
@@ -893,7 +895,7 @@ func (e *Engine) refreshLoop() {
 
 		// Engines keep failing should backoff
 		// e.failureCount and e.opts.FailureRetry are type of int
-		backoffFactor := e.getFailureCount() - e.opts.FailureRetry
+		backoffFactor := e.getFailureCount(false) - e.opts.FailureRetry
 		if backoffFactor < 0 {
 			backoffFactor = 0
 		} else if backoffFactor > maxBackoffFactor {
