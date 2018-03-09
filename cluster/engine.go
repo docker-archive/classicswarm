@@ -731,6 +731,14 @@ func (e *Engine) RefreshContainers(full bool) error {
 		All:  true,
 		Size: false,
 	}
+	// Get the current list of containers and cache it
+	e.RLock()
+	currentContainerIDs := make([]string, 0, len(e.containers))
+	for k := range e.containers {
+		currentContainerIDs = append(currentContainerIDs, k)
+	}
+	e.RUnlock()
+
 	ctx, cancel := context.WithTimeout(context.TODO(), requestTimeout)
 	defer cancel()
 	containers, err := e.apiClient.ContainerList(ctx, opts)
@@ -738,12 +746,35 @@ func (e *Engine) RefreshContainers(full bool) error {
 	if err != nil {
 		return err
 	}
+	// The delta of currentContainerIDs and ContainerList is the accurate list of deleted containers
+	// that is not affected by race condition; this list is used to update the engine cache.
+	var missingContainerIDs []string
+	containersMap := make(map[string]struct{}, len(containers))
+	for _, container := range containers {
+		containersMap[container.ID] = struct{}{}
+	}
+	for _, currentContainerID := range currentContainerIDs {
+		if _, ok := containersMap[currentContainerID]; !ok {
+			missingContainerIDs = append(missingContainerIDs, currentContainerID)
+		}
+	}
 
 	merged := make(map[string]*Container)
 	for _, c := range containers {
 		mergedUpdate, err := e.updateContainer(c, merged, full)
 		if err != nil {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q: %v", c.ID, err)
+			if strings.Contains(err.Error(), "No such container") {
+				// The container might have been deleted after ContainerList was returned and before reaching this point.
+				// If this is the case and to avoid polluting the logs with a non-fatal error,
+				// we verify that the error is benign by making sure that the container ID does not exist in e.containers
+				e.RLock()
+				if _, ok := e.containers[c.ID]; ok {
+					log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Container ID: %q exists in cache but Engine returned %v", c.ID, err)
+				}
+				e.RUnlock()
+			} else {
+				log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Errorf("Unable to update state of container %q: %v", c.ID, err)
+			}
 		} else {
 			merged = mergedUpdate
 		}
@@ -751,7 +782,13 @@ func (e *Engine) RefreshContainers(full bool) error {
 
 	e.Lock()
 	defer e.Unlock()
-	e.containers = merged
+	for _, containerID := range missingContainerIDs {
+		delete(e.containers, containerID)
+	}
+	// Update e.containers with the freshly obtained list
+	for containerID, container := range merged {
+		e.containers[containerID] = container
+	}
 
 	return nil
 }
