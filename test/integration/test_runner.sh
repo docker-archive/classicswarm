@@ -12,7 +12,7 @@ function execute() {
 }
 
 # Tests to run. Defaults to all.
-TESTS=${@:-. compose discovery api nodemanagement mesos/api mesos/compose mesos/zk}
+TESTS=${@:-. compose discovery api nodemanagement}
 
 # Generate a temporary binary for the tests.
 export SWARM_BINARY=`mktemp`
