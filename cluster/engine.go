@@ -71,19 +71,22 @@ var (
 	testErrImageNotFound = errors.New("TEST_ERR_IMAGE_NOT_FOUND_SWARM")
 )
 
-// delayer offers a simple API to random delay within a given time range.
+// delayer offers a simple API to random delay within a given time range,
+// and to force resume delays
 type delayer struct {
 	rangeMin time.Duration
 	rangeMax time.Duration
 
-	r *rand.Rand
-	l sync.Mutex
+	resumeCh chan bool
+	r        *rand.Rand
+	l        sync.Mutex
 }
 
 func newDelayer(rangeMin, rangeMax time.Duration) *delayer {
 	return &delayer{
 		rangeMin: rangeMin,
 		rangeMax: rangeMax,
+		resumeCh: make(chan bool, 1),
 		r:        rand.New(rand.NewSource(time.Now().UTC().UnixNano())),
 	}
 }
@@ -417,10 +420,21 @@ func (e *Engine) CheckConnectionErr(err error) {
 	if err == nil {
 		e.setErrMsg("")
 		// If current state is unhealthy, change it to healthy
+		// A lock is needed to avoid race condition, which can lead to block on resumeCh
+		// We should not block on slow operations, ex: emitEvent that ends up calling the engine
+		// instead, we'll check the changed flag which is set to true in the lock block
+		changed := false
+		e.Lock()
 		if e.state == stateUnhealthy {
-			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.getFailureCount())
+			changed = true
+			e.state = stateHealthy
+			log.WithFields(log.Fields{"name": e.Name, "id": e.ID}).Infof("Engine came back to life after %d retries. Hooray!", e.failureCount)
+		}
+		e.Unlock()
+		if changed {
+			// signal the refresh loop so we don't wait too long, especially if the failure count was high
+			e.refreshDelayer.resumeCh <- true
 			e.emitEvent("engine_reconnect")
-			e.setState(stateHealthy)
 		}
 		e.resetFailureCount()
 		return
@@ -918,6 +932,7 @@ func (e *Engine) refreshLoop() {
 		}
 		// Wait for the delayer or quit if we get stopped.
 		select {
+		case <-e.refreshDelayer.resumeCh:
 		case <-e.refreshDelayer.Wait(backoffFactor):
 		case <-e.stopCh:
 			return
