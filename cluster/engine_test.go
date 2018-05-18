@@ -821,3 +821,88 @@ func TestRemoveImage(t *testing.T) {
 	}
 	apiClient.Mock.AssertExpectations(t)
 }
+
+func TestRefreshLoop(t *testing.T) {
+
+	var (
+		config = &ContainerConfig{containertypes.Config{
+			Image: "busybox",
+			Cmd:   []string{"date"},
+			Tty:   false,
+		}, containertypes.HostConfig{
+			Resources: containertypes.Resources{
+				CPUShares: 1,
+			},
+		}, networktypes.NetworkingConfig{}}
+		state = types.ContainerState{
+			StartedAt:  "2018-05-07T08:33:22.070211457Z",
+			FinishedAt: "0001-01-01T00:00:00Z",
+		}
+		engine    = NewEngine("test", 0, engOpts)
+		apiClient = engineapimock.NewMockClient()
+	)
+
+	engine.apiClient = apiClient
+	engine.setState(stateUnhealthy)
+
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
+	apiClient.On("NetworkList", mock.Anything,
+		mock.AnythingOfType("NetworkListOptions"),
+	).Return([]types.NetworkResource{}, nil)
+	apiClient.On("VolumeList", mock.Anything,
+		mock.AnythingOfType("Args"),
+	).Return(volume.VolumesListOKBody{}, nil)
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
+	// we need to call ContainerList twice, onece for ConnectWithClient and once for the first iteration when we kick in the refreshLoop
+	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Twice()
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
+
+	assert.NoError(t, engine.ConnectWithClient(apiClient))
+	// Make sure engine is happy
+	assert.True(t, engine.isConnected())
+	assert.True(t, engine.state == stateHealthy)
+	// Stimulate engine failure by increasing the failure count and making it unhealthy
+	engine.failureCount = 900
+	engine.state = stateUnhealthy
+	go engine.refreshLoop()
+	// At this point, the loop should be waiting very long due to high failure count
+	assert.Len(t, engine.Containers(), 0)
+
+	// The below mock methods are used to verify that refresh loop resumed on the next
+	// CheckConnectionErr and added a new container
+	apiClient.On(
+		"ContainerList",
+		mock.Anything,
+		types.ContainerListOptions{
+			All:  true,
+			Size: false,
+		},
+	).Return(
+		[]types.Container{{ID: "100"}},
+		nil,
+	).Once()
+
+	apiClient.On(
+		"ContainerInspect",
+		mock.Anything,
+		"100",
+	).Return(
+		types.ContainerJSON{
+			Config: &config.Config,
+			ContainerJSONBase: &types.ContainerJSONBase{
+				HostConfig: &config.HostConfig,
+				State:      &state,
+			},
+			NetworkSettings: &types.NetworkSettings{
+				Networks: nil,
+			},
+		},
+		nil,
+	).Once()
+	// This forces the refrehLoop to resume and not wait very long
+	engine.CheckConnectionErr(nil)
+	time.Sleep(1 * time.Second)
+	assert.Len(t, engine.Containers(), 1)
+}
