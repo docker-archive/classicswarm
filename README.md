@@ -71,7 +71,7 @@ Finally, if you want to see what we have for the future and learn more about our
 
 ## Copyright and license
 
-Copyright © 2014-2016 Docker, Inc. All rights reserved, except as follows. Code
+Copyright © 2014-2018 Docker, Inc. All rights reserved, except as follows. Code
 is released under the Apache 2.0 license. The README.md file, and files in the
 "docs" folder are licensed under the Creative Commons Attribution 4.0
 International License under the terms and conditions set forth in the file
