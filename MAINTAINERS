@@ -14,6 +14,7 @@
 			"allencloud",
 			"aluzzardi",
 			"chanwit",
+			"dani-docker",
 			"dongluochen",
 			"jimmyxian",
 			"mhbauer",
@@ -72,6 +73,11 @@
 	Name = "Chanwit Kaewkasi"
 	Email = "chanwit@gmail.com"
 	GitHub = "chanwit"
+
+	[people.dani-docker]
+	Name = "Dani Louca"
+	Email = "dani.louca@docker.com"
+	GitHub = "dani-docker"
 
 	[people.dongluochen]
 	Name = "Dongluo Chen"
