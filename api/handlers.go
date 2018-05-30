@@ -254,7 +254,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		image.RepoTags = result
 
 		// de-duplicate RepoDigests
-		result = []string{}
+		result = nil
 		seen = map[string]bool{}
 		for _, val := range image.RepoDigests {
 			if _, ok := seen[val]; !ok {
@@ -262,6 +262,7 @@ func getImagesJSON(c *context, w http.ResponseWriter, r *http.Request) {
 				seen[val] = true
 			}
 		}
+
 		image.RepoDigests = result
 
 		images = append(images, image)
