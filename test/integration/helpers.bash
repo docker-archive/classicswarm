@@ -236,7 +236,7 @@ function start_docker() {
 				$DOCKER_START_COMMAND -H 127.0.0.1:$port \
 					-H=unix:///var/run/docker.sock \
 					--storage-driver=$STORAGE_DRIVER \
-					`join ' ' $@` \
+					`join ' ' ${@/_port/$port}` \
 		")
 	done
 

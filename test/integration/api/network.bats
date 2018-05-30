@@ -125,6 +125,32 @@ function teardown() {
 	[ "$status" -ne 0 ]
 }
 
+@test "docker network create - overlay" {
+	PORT=$((RANDOM % 1000 + 9000))
+	STORE_HOST=127.0.0.1:$PORT
+
+	docker_host run -d \
+		--net=host \
+		--name=swarm_etcd \
+		quay.io/coreos/etcd:v2.2.0 \
+		--listen-client-urls="http://0.0.0.0:${PORT}" \
+		--advertise-client-urls="http://${STORE_HOST}"
+
+
+	start_docker 2 --cluster-advertise=127.0.0.1:_port --cluster-store=etcd://$STORE_HOST
+	swarm_manage
+
+	run docker_swarm network ls
+	[ "${#lines[@]}" -eq 7 ]
+
+	docker_swarm network create test
+	run docker_swarm network ls
+	[[ "${output}" == *"overlay"* ]]
+	[ "${#lines[@]}" -eq 8 ]
+
+	docker_host rm -f -v swarm_etcd
+}
+
 @test "docker network rm" {
 	start_docker_with_busybox 2
 	swarm_manage
