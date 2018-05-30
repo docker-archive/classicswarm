@@ -212,8 +212,17 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 		c.scheduler.Unlock()
 		return nil, err
 	}
-	n := nodes[0]
-	engine, ok := c.engines[n.ID]
+
+	var engine *cluster.Engine
+	var ok bool
+	var n *node.Node
+	for _, n = range nodes {
+		engine, ok = c.engines[n.ID]
+		if ok {
+			break
+		}
+	}
+
 	if !ok {
 		c.scheduler.Unlock()
 		return nil, fmt.Errorf("error creating container")
