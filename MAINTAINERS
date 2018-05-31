@@ -44,6 +44,8 @@
 
 		people = [
 			"amitshukla"
+			"anshulpundir"
+			"chungers"
 		]
 
 [people]
@@ -69,10 +71,20 @@
 	Email = "amit.shukla@docker.com"
 	GitHub = "amitshukla"
 
+	[people.anshulpundir]
+	Name = "Anshul Pundir"
+	Email = "anshul.x.pundir@gmail.com"
+	GitHub = "anshulpundir"
+
 	[people.chanwit]
 	Name = "Chanwit Kaewkasi"
 	Email = "chanwit@gmail.com"
 	GitHub = "chanwit"
+
+	[people.chungers]
+	Name = "David Chung"
+	Email = "david.chung@docker.com"
+	GitHub = "chungers"
 
 	[people.dani-docker]
 	Name = "Dani Louca"
