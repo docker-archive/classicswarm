@@ -22,14 +22,6 @@
 			"vieux",
 		]
 
-	[Org."Docs maintainers"]
-		people = [
-			"sfsmithcha",
-			"sven",
-			"thajeztah",
-		]
-
-
 	[Org.Curators]
 
 	# The curators help ensure that incoming issues and pull requests are properly triaged and
@@ -43,9 +35,10 @@
 	# - close an issue or pull request when it's inappropriate or off-topic
 
 		people = [
-			"amitshukla"
-			"anshulpundir"
-			"chungers"
+			"amitshukla",
+			"anshulpundir",
+			"chungers",
+			"thajeztah",
 		]
 
 [people]
@@ -105,16 +98,6 @@
 	Name = "Nishant Totla"
 	Email = "nishanttotla@gmail.com"
 	GitHub = "nishanttotla"
-
-	[people.sfsmithcha]
-	Name = "Charles Smith"
-	Email = "charles.smith@docker.com"
-	GitHub = "sfsmithcha"
-
-	[people.sven]
-	Name = "Sven Dowideit"
-	Email = "SvenDowideit@home.org.au"
-	GitHub = "SvenDowideit"
 
 	[people.thajeztah]
 	Name = "Sebastiaan van Stijn"
