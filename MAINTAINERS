@@ -43,9 +43,9 @@
 	# - close an issue or pull request when it's inappropriate or off-topic
 
 		people = [
-			"amitshukla"
-			"anshulpundir"
-			"chungers"
+			"amitshukla",
+			"anshulpundir",
+			"chungers",
 		]
 
 [people]
