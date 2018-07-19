@@ -933,6 +933,7 @@ func (e *Engine) refreshLoop() {
 		// Wait for the delayer or quit if we get stopped.
 		select {
 		case <-e.refreshDelayer.resumeCh:
+			break
 		case <-e.refreshDelayer.Wait(backoffFactor):
 		case <-e.stopCh:
 			return
