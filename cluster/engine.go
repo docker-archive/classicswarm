@@ -960,7 +960,7 @@ func (e *Engine) refreshLoop() {
 				log.WithFields(log.Fields{"id": e.ID, "name": e.Name}).Debugf("Engine update succeeded")
 			}
 		} else {
-			log.WithFields(log.Fields{"id": e.ID, "name": e.Name}).Debugf("Engine refresh failed")
+			log.WithFields(log.Fields{"id": e.ID, "name": e.Name}).Errorf("Engine refresh failed: %v", err)
 		}
 	}
 }
