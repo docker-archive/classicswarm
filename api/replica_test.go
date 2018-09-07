@@ -75,7 +75,7 @@ func TestReplicaBlockedPrimary(t *testing.T) {
 	// entered the wait on ServeHTTP
 	for ctx.Checked() == 0 {
 		time.Sleep(100 * time.Millisecond)
-		// yeild the proc so that ServeHTTP has a chance to run
+		// yield the proc so that ServeHTTP has a chance to run
 	}
 	// make sure hijack hasn't been called
 	select {
