@@ -690,6 +690,8 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "Conflict") {
 			httpError(w, err.Error(), http.StatusConflict)
+		} else if strings.Contains(err.Error(), "does not exist") {
+			httpError(w, err.Error(), http.StatusNotFound)
 		} else {
 			httpError(w, err.Error(), http.StatusInternalServerError)
 		}
