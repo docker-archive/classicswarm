@@ -1,11 +1,10 @@
 package nopclient
 
 import (
+	"context"
 	"errors"
 	"io"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"

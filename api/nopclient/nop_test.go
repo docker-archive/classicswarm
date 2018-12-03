@@ -1,11 +1,11 @@
 package nopclient
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
 	"github.com/docker/swarm/swarmclient"
-	"golang.org/x/net/context"
 )
 
 func TestNop(t *testing.T) {

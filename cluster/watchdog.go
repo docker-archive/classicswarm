@@ -1,12 +1,12 @@
 package cluster
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types/network"
-	"golang.org/x/net/context"
 )
 
 // Watchdog listens to cluster events and handles container rescheduling
