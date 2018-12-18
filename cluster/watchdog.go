@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/docker/docker/api/types/network"
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Watchdog listens to cluster events and handles container rescheduling

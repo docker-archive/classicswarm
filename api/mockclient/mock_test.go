@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/swarm/swarmclient"

@@ -141,7 +141,7 @@ func TestImportImage(t *testing.T) {
 	apiClient.On("NetworkList", mock.Anything,
 		mock.AnythingOfType("NetworkListOptions"),
 	).Return([]types.NetworkResource{}, nil)
-	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(volume.VolumesListOKBody{}, nil)
+	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(volume.VolumeListOKBody{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
@@ -194,7 +194,7 @@ func TestLoadImage(t *testing.T) {
 	apiClient.On("NetworkList", mock.Anything,
 		mock.AnythingOfType("NetworkListOptions"),
 	).Return([]types.NetworkResource{}, nil)
-	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(volume.VolumesListOKBody{}, nil)
+	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(volume.VolumeListOKBody{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
@@ -251,7 +251,7 @@ func TestTagImage(t *testing.T) {
 	apiClient.On("NetworkList", mock.Anything,
 		mock.AnythingOfType("NetworkListOptions"),
 	).Return([]types.NetworkResource{}, nil)
-	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(volume.VolumesListOKBody{}, nil)
+	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(volume.VolumeListOKBody{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return(images, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()

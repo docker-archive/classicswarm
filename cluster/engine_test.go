@@ -166,7 +166,7 @@ func TestEngineCpusMemory(t *testing.T) {
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
-	).Return(volume.VolumesListOKBody{}, nil)
+	).Return(volume.VolumeListOKBody{}, nil)
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
@@ -195,7 +195,7 @@ func TestEngineSpecs(t *testing.T) {
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
-	).Return(volume.VolumesListOKBody{}, nil)
+	).Return(volume.VolumeListOKBody{}, nil)
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
@@ -235,7 +235,7 @@ func TestEngineState(t *testing.T) {
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
-	).Return(volume.VolumesListOKBody{}, nil)
+	).Return(volume.VolumeListOKBody{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
@@ -368,7 +368,7 @@ func TestCreateContainer(t *testing.T) {
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
-	).Return(volume.VolumesListOKBody{}, nil)
+	).Return(volume.VolumeListOKBody{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil).Once()
 	// filterArgs1 := filters.NewArgs()
@@ -580,7 +580,7 @@ func TestUsedCpus(t *testing.T) {
 				).Return([]types.NetworkResource{}, nil)
 				apiClient.On("VolumeList", mock.Anything,
 					mock.AnythingOfType("Args"),
-				).Return(volume.VolumesListOKBody{}, nil)
+				).Return(volume.VolumeListOKBody{}, nil)
 				apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 				apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil).Once()
 				apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
@@ -664,7 +664,7 @@ func TestContainerRemovedDuringRefresh(t *testing.T) {
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
-	).Return(volume.VolumesListOKBody{}, nil)
+	).Return(volume.VolumeListOKBody{}, nil)
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
@@ -707,7 +707,7 @@ func TestDisconnect(t *testing.T) {
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
-	).Return(volume.VolumesListOKBody{}, nil)
+	).Return(volume.VolumeListOKBody{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
 
@@ -852,7 +852,7 @@ func TestRefreshLoop(t *testing.T) {
 	).Return([]types.NetworkResource{}, nil)
 	apiClient.On("VolumeList", mock.Anything,
 		mock.AnythingOfType("Args"),
-	).Return(volume.VolumesListOKBody{}, nil)
+	).Return(volume.VolumeListOKBody{}, nil)
 	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
 	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
 	// we need to call ContainerList twice, onece for ConnectWithClient and once for the first iteration when we kick in the refreshLoop

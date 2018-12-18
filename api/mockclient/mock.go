@@ -4,6 +4,7 @@ import (
 	"io"
 	"time"
 
+	"context"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
@@ -13,7 +14,6 @@ import (
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/stretchr/testify/mock"
-	"golang.org/x/net/context"
 )
 
 // MockClient is a mock API Client based on docker/api
@@ -27,9 +27,14 @@ func NewMockClient() *MockClient {
 }
 
 // BuildCachePrune requests the daemon to delete unused cache data
-func (client *MockClient) BuildCachePrune(ctx context.Context) (*types.BuildCachePruneReport, error) {
-	args := client.Mock.Called(ctx)
+func (client *MockClient) BuildCachePrune(ctx context.Context, opts types.BuildCachePruneOptions) (*types.BuildCachePruneReport, error) {
+	args := client.Mock.Called(ctx, opts)
 	return args.Get(0).(*types.BuildCachePruneReport), args.Error(1)
+}
+
+func (client *MockClient) BuildCancel(ctx context.Context, id string) error {
+	args := client.Mock.Called(ctx, id)
+	return args.Error(0)
 }
 
 // ClientVersion returns the version string associated with this instance of the Client
@@ -81,7 +86,7 @@ func (client *MockClient) ContainerDiff(ctx context.Context, ctr string) ([]cont
 }
 
 // ContainerExecAttach attaches a connection to an exec process in the server
-func (client *MockClient) ContainerExecAttach(ctx context.Context, execID string, config types.ExecConfig) (types.HijackedResponse, error) {
+func (client *MockClient) ContainerExecAttach(ctx context.Context, execID string, config types.ExecStartCheck) (types.HijackedResponse, error) {
 	args := client.Mock.Called(ctx, execID, config)
 	return args.Get(0).(types.HijackedResponse), args.Error(1)
 }
@@ -417,7 +422,7 @@ func (client *MockClient) ServerVersion(ctx context.Context) (types.Version, err
 }
 
 // VolumeCreate creates a volume in the docker host
-func (client *MockClient) VolumeCreate(ctx context.Context, options volume.VolumesCreateBody) (types.Volume, error) {
+func (client *MockClient) VolumeCreate(ctx context.Context, options volume.VolumeCreateBody) (types.Volume, error) {
 	args := client.Mock.Called(ctx, options)
 	return args.Get(0).(types.Volume), args.Error(1)
 }
@@ -435,9 +440,9 @@ func (client *MockClient) VolumeInspectWithRaw(ctx context.Context, volumeID str
 }
 
 // VolumeList returns the volumes configured in the docker host
-func (client *MockClient) VolumeList(ctx context.Context, filter filters.Args) (volume.VolumesListOKBody, error) {
+func (client *MockClient) VolumeList(ctx context.Context, filter filters.Args) (volume.VolumeListOKBody, error) {
 	args := client.Mock.Called(ctx, filter)
-	return args.Get(0).(volume.VolumesListOKBody), args.Error(1)
+	return args.Get(0).(volume.VolumeListOKBody), args.Error(1)
 }
 
 // VolumeRemove removes a volume from the docker host
