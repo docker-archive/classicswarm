@@ -45,7 +45,7 @@ type Cluster interface {
 	RemoveNetwork(network *Network) error
 
 	// CreateVolume creates a volume.
-	CreateVolume(request *volume.VolumesCreateBody) (*types.Volume, error)
+	CreateVolume(request *volume.VolumeCreateBody) (*types.Volume, error)
 
 	// Volumes returns all volumes.
 	Volumes() Volumes

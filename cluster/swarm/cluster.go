@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	networktypes "github.com/docker/docker/api/types/network"
@@ -25,6 +24,7 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
+	log "github.com/sirupsen/logrus"
 )
 
 type pendingContainer struct {
@@ -158,7 +158,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		bImageNotFoundError113, _ := regexp.MatchString(`repository \S* not found`, err.Error())
 		bRepositoryNotFoundError1706, _ := regexp.MatchString(`repository does not exist`, err.Error())
 
-		if (bImageNotFoundError || bImageNotFoundError113 || bRepositoryNotFoundError1706 || client.IsErrImageNotFound(err)) && !config.HaveNodeConstraint() {
+		if (bImageNotFoundError || bImageNotFoundError113 || bRepositoryNotFoundError1706 || client.IsErrNotFound(err)) && !config.HaveNodeConstraint() {
 			// Check if the image exists in the cluster
 			// If exists, retry with an image affinity
 			if c.Image(config.Image) != nil {
@@ -540,7 +540,7 @@ func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (resp
 }
 
 // CreateVolume creates a volume in the cluster.
-func (c *Cluster) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume, error) {
+func (c *Cluster) CreateVolume(request *volume.VolumeCreateBody) (*types.Volume, error) {
 	var (
 		wg         sync.WaitGroup
 		volume     *types.Volume

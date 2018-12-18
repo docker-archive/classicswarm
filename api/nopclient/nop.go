@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -31,8 +31,13 @@ func NewNopClient() *NopClient {
 }
 
 // BuildCachePrune requests the daemon to delete unused cache data
-func (client *NopClient) BuildCachePrune(ctx context.Context) (*types.BuildCachePruneReport, error) {
+func (client *NopClient) BuildCachePrune(ctx context.Context, _ types.BuildCachePruneOptions) (*types.BuildCachePruneReport, error) {
 	return nil, errNoEngine
+}
+
+// BuildCancel requests the daemon to cancel ongoing build request
+func (client *NopClient) BuildCancel(_ context.Context, _ string) error {
+	return errNoEngine
 }
 
 // ClientVersion returns the version string associated with this instance of the Client
@@ -76,7 +81,7 @@ func (client *NopClient) ContainerDiff(ctx context.Context, container string) ([
 }
 
 // ContainerExecAttach attaches a connection to an exec process in the server
-func (client *NopClient) ContainerExecAttach(ctx context.Context, execID string, config types.ExecConfig) (types.HijackedResponse, error) {
+func (client *NopClient) ContainerExecAttach(ctx context.Context, execID string, config types.ExecStartCheck) (types.HijackedResponse, error) {
 	return types.HijackedResponse{}, errNoEngine
 }
 
@@ -362,7 +367,7 @@ func (client *NopClient) ServerVersion(ctx context.Context) (types.Version, erro
 }
 
 // VolumeCreate creates a volume in the docker host
-func (client *NopClient) VolumeCreate(ctx context.Context, options volume.VolumesCreateBody) (types.Volume, error) {
+func (client *NopClient) VolumeCreate(ctx context.Context, options volume.VolumeCreateBody) (types.Volume, error) {
 	return types.Volume{}, errNoEngine
 }
 
@@ -377,8 +382,8 @@ func (client *NopClient) VolumeInspectWithRaw(ctx context.Context, volumeID stri
 }
 
 // VolumeList returns the volumes configured in the docker host
-func (client *NopClient) VolumeList(ctx context.Context, filter filters.Args) (volume.VolumesListOKBody, error) {
-	return volume.VolumesListOKBody{}, errNoEngine
+func (client *NopClient) VolumeList(ctx context.Context, filter filters.Args) (volume.VolumeListOKBody, error) {
+	return volume.VolumeListOKBody{}, errNoEngine
 }
 
 // VolumeRemove removes a volume from the docker host
