@@ -1616,6 +1616,10 @@ func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuild
 	return nil
 }
 
+func (e *Engine) BuildCancel(buildID string) error {
+	return e.apiClient.BuildCancel(context.Background(), buildID)
+}
+
 // TagImage tags an image
 func (e *Engine) TagImage(IDOrName string, ref string, force bool) error {
 	// send tag request to docker engine

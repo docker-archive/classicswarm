@@ -1472,6 +1472,24 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// POST /build/cancel
+func postBuildCancel(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	buildID := r.FormValue("id")
+	if buildID == "" {
+		httpError(w, "build ID not provided", http.StatusBadRequest)
+		return
+	}
+
+	if err := c.cluster.BuildCancel(buildID); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 // POST /containers/{name:.*}/rename
 func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	_, container, err := getContainerFromVars(c, mux.Vars(r))
@@ -1499,6 +1517,33 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 
+}
+
+// POST /session
+func postSession(c *context, w http.ResponseWriter, r *http.Request) {
+	// calls to /session have the SessionID in the
+	// "X-Docker-Expose-Session-Uuid" header, so get that
+	sessionID := r.Header.Get("X-Docker-Expose-Session-Uuid")
+	// the sessionID cannot be empty -- if it is, return an error to the user.
+	// we could return such an error from the c.cluster.Session call, but then
+	// we would have to parse that error back out in order to correctly return
+	// a 400 response, so it's easier to just do it here
+	if sessionID == "" {
+		httpError(w, "no session ID provided", http.StatusBadRequest)
+		return
+	}
+
+	engine, err := c.cluster.Session(sessionID)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// now, hijack the connection and forward to this engine.
+	err = hijack(c.tlsConfig, engine.Addr, w, r)
+	engine.CheckConnectionErr(err)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // Proxy a hijack request to the right node
