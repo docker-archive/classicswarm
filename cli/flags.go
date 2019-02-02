@@ -111,9 +111,10 @@ var (
 		Usage: "use TLS and verify the remote",
 	}
 	flStrategy = cli.StringFlag{
-		Name:  "strategy",
-		Usage: "placement strategy to use [" + strings.Join(strategy.List(), ", ") + "]",
-		Value: strategy.List()[0],
+		Name:   "strategy",
+		Usage:  "placement strategy to use [" + strings.Join(strategy.List(), ", ") + "]",
+		EnvVar: "SWARM_STRATEGY",
+		Value:  strategy.List()[0],
 	}
 
 	// hack for go vet
