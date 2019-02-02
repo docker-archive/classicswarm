@@ -71,3 +71,32 @@ func weighNodes(config *cluster.ContainerConfig, nodes []*node.Node, healthiness
 
 	return weightedNodes, nil
 }
+
+func weighNodesByResources(config *cluster.ContainerConfig, nodes []*node.Node, cpuFactor int64, memoryFactor int64) (weightedNodeList, error) {
+	weightedNodes := weightedNodeList{}
+
+	for _, node := range nodes {
+		nodeMemory := node.TotalMemory
+		nodeCpus := node.TotalCpus
+
+		// Skip nodes that are smaller than the requested resources.
+		if nodeMemory < int64(config.HostConfig.Memory) || nodeCpus < config.HostConfig.CPUShares {
+			continue
+		}
+
+		var (
+			cpuScore    int64 = 100
+			memoryScore int64 = 100
+		)
+
+		cpuScore = nodeCpus - node.UsedCpus
+		memoryScore = nodeMemory - node.UsedMemory
+		weightedNodes = append(weightedNodes, &weightedNode{Node: node, Weight: cpuFactor*cpuScore + memoryFactor*memoryScore})
+	}
+
+	if len(weightedNodes) == 0 {
+		return nil, ErrNoResourcesAvailable
+	}
+
+	return weightedNodes, nil
+}

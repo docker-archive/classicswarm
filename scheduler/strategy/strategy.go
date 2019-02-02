@@ -38,6 +38,8 @@ func init() {
 	strategies = []PlacementStrategy{
 		&SpreadPlacementStrategy{},
 		&BinpackPlacementStrategy{},
+		&MemoryPlacementStrategy{},
+		&CpuPlacementStrategy{},
 		&RandomPlacementStrategy{},
 	}
 }
