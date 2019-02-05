@@ -62,10 +62,10 @@ func (s *Discovery) fetch() (discovery.Entries, error) {
 	var addrs []string
 	if resp.StatusCode == http.StatusOK {
 		if err := json.NewDecoder(resp.Body).Decode(&addrs); err != nil {
-			return nil, fmt.Errorf("Failed to decode response: %v", err)
+			return nil, fmt.Errorf("failed to decode response: %v", err)
 		}
 	} else {
-		return nil, fmt.Errorf("Failed to fetch entries, Discovery service returned %d HTTP status code", resp.StatusCode)
+		return nil, fmt.Errorf("failed to fetch entries, Discovery service returned %d HTTP status code", resp.StatusCode)
 	}
 
 	return discovery.CreateEntries(addrs)

@@ -50,7 +50,7 @@ func (f *DependencyFilter) Filter(config *cluster.ContainerConfig, nodes []*node
 	}
 
 	if len(candidates) == 0 {
-		return nil, fmt.Errorf("Unable to find a node fulfilling all dependencies: %s", f.String(config))
+		return nil, fmt.Errorf("unable to find a node fulfilling all dependencies: %s", f.String(config))
 	}
 
 	return candidates, nil

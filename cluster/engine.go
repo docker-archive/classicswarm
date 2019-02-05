@@ -169,7 +169,7 @@ func (e *Engine) HTTPClientAndScheme() (*http.Client, string, error) {
 	if _, ok := e.apiClient.(*engineapi.Client); ok {
 		return e.httpClient, e.url.Scheme, nil
 	}
-	return nil, "", fmt.Errorf("Possibly lost connection to Engine (name: %s, ID: %s) ", e.Name, e.ID)
+	return nil, "", fmt.Errorf("possibly lost connection to Engine (name: %s, ID: %s)", e.Name, e.ID)
 }
 
 // Connect will initialize a connection to the Docker daemon running on the
@@ -1253,7 +1253,7 @@ func (e *Engine) Pull(image string, authConfig *types.AuthConfig, callback func(
 		}
 
 		if msg.Error != nil {
-			return fmt.Errorf("Failed to load %s: %s", image, msg.Error.Message)
+			return fmt.Errorf("failed to load %s: %s", image, msg.Error.Message)
 		}
 
 		if callback != nil {
@@ -1286,7 +1286,7 @@ func (e *Engine) Load(reader io.Reader, callback func(msg JSONMessage)) error {
 		}
 
 		if msg.Error != nil {
-			return fmt.Errorf("Failed to load image: %s", msg.Error.Message)
+			return fmt.Errorf("failed to load image: %s", msg.Error.Message)
 		}
 
 		if callback != nil {
@@ -1328,7 +1328,7 @@ func (e *Engine) Import(source string, ref string, tag string, imageReader io.Re
 		}
 
 		if msg.Error != nil {
-			return fmt.Errorf("Failed to import %s: %s", ref, msg.Error.Message)
+			return fmt.Errorf("failed to import %s: %s", ref, msg.Error.Message)
 		}
 
 		if callback != nil {
@@ -1606,7 +1606,7 @@ func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuild
 		}
 
 		if msg.Error != nil {
-			return fmt.Errorf("Failed to build image: %s", msg.Error.Message)
+			return fmt.Errorf("failed to build image: %s", msg.Error.Message)
 		}
 
 		if callback != nil {

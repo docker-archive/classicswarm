@@ -165,7 +165,7 @@ func TestImportImage(t *testing.T) {
 
 	// import error
 	readCloser = nopCloser{bytes.NewBufferString("")}
-	err := fmt.Errorf("Import error")
+	err := fmt.Errorf("import error")
 	apiClient.On("ImageImport", mock.Anything, mock.AnythingOfType("types.ImageImportSource"), mock.Anything, mock.AnythingOfType("types.ImageImportOptions")).Return(readCloser, err).Once()
 
 	callback = func(msg cluster.JSONMessageWrapper) {
@@ -216,7 +216,7 @@ func TestLoadImage(t *testing.T) {
 	c.Load(bytes.NewReader(nil), callback)
 
 	// load error
-	err := fmt.Errorf("Load error")
+	err := fmt.Errorf("load error")
 	apiClient.On("ImageLoad", mock.Anything, mock.AnythingOfType("*io.PipeReader"), false).Return(types.ImageLoadResponse{}, err).Once()
 	callback = func(msg cluster.JSONMessageWrapper) {
 		// load error, err is not nil

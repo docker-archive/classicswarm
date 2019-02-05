@@ -41,7 +41,7 @@ func parseExprs(env []string) ([]expr, error) {
 					return nil, err
 				}
 				if matched == false {
-					return nil, fmt.Errorf("Key '%s' is invalid", parts[0])
+					return nil, fmt.Errorf("key '%s' is invalid", parts[0])
 				}
 
 				if len(parts) == 2 {
@@ -55,7 +55,7 @@ func parseExprs(env []string) ([]expr, error) {
 						return nil, err
 					}
 					if matched == false {
-						return nil, fmt.Errorf("Value '%s' is invalid", parts[1])
+						return nil, fmt.Errorf("value '%s' is invalid", parts[1])
 					}
 					exprs = append(exprs, expr{key: parts[0], operator: i, value: strings.TrimLeft(parts[1], "~"), isSoft: isSoft(parts[1])})
 				} else {
@@ -67,7 +67,7 @@ func parseExprs(env []string) ([]expr, error) {
 			}
 		}
 		if !found {
-			return nil, fmt.Errorf("One of operator ==, != is expected")
+			return nil, fmt.Errorf("one of operator ==, != is expected")
 		}
 	}
 	return exprs, nil

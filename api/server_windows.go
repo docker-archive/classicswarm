@@ -9,5 +9,5 @@ import (
 )
 
 func newUnixListener(addr string, tlsConfig *tls.Config) (net.Listener, error) {
-	return nil, fmt.Errorf("Windows platform does not support a unix socket")
+	return nil, fmt.Errorf("windows platform does not support a unix socket")
 }

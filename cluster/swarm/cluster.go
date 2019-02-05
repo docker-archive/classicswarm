@@ -181,7 +181,7 @@ func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, 
 	// Ensure the name is available
 	if !c.checkNameUniqueness(name) {
 		c.scheduler.Unlock()
-		return nil, fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", name, name)
+		return nil, fmt.Errorf("conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again", name, name)
 	}
 
 	swarmID := config.SwarmID()
@@ -1032,7 +1032,7 @@ func (c *Cluster) RANDOMENGINE() (*cluster.Engine, error) {
 func (c *Cluster) RenameContainer(container *cluster.Container, newName string) error {
 	// check new name whether available
 	if !c.checkNameUniqueness(newName) {
-		return fmt.Errorf("Conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again.", newName, newName)
+		return fmt.Errorf("conflict: The name %s is already assigned. You have to delete (or rename) that container to be able to assign %s to a container again", newName, newName)
 	}
 
 	// call engine rename
@@ -1128,7 +1128,7 @@ func (c *Cluster) TagImage(IDOrName string, ref string, force bool) error {
 		}
 	}
 	if !found {
-		return fmt.Errorf("No such image: %s", IDOrName)
+		return fmt.Errorf("no such image: %s", IDOrName)
 	}
 	if len(errs) > 0 {
 		err = errors.New(strings.Join(errs, "\n"))

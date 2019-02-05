@@ -69,7 +69,7 @@ func (h *statusHandler) Status() [][2]string {
 func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 	c, err := tls.LoadX509KeyPair(cert, key)
 	if err != nil {
-		return nil, fmt.Errorf("Couldn't load X509 key pair (%s, %s): %s. Key encrypted?",
+		return nil, fmt.Errorf("couldn't load X509 key pair (%s, %s): %s. Key encrypted",
 			cert, key, err)
 	}
 
@@ -82,7 +82,7 @@ func loadTLSConfig(ca, cert, key string, verify bool) (*tls.Config, error) {
 		certPool := x509.NewCertPool()
 		file, err := ioutil.ReadFile(ca)
 		if err != nil {
-			return nil, fmt.Errorf("Couldn't read CA certificate: %s", err)
+			return nil, fmt.Errorf("couldn't read CA certificate: %s", err)
 		}
 		certPool.AppendCertsFromPEM(file)
 		config.RootCAs = certPool

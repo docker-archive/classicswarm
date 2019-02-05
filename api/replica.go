@@ -104,7 +104,7 @@ func (p *Replica) getPrimary(ctx gocontext.Context) (string, error) {
 		// give up waiting if the context is canceled, to avoid blocking forever
 		select {
 		case <-ctx.Done():
-			return "", fmt.Errorf("No elected primary cluster manager: %v", ctx.Err())
+			return "", fmt.Errorf("no elected primary cluster manager: %v", ctx.Err())
 		default:
 		}
 		// wait for the primary to become available

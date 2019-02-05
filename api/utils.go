@@ -49,11 +49,11 @@ func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.
 	if name, ok := vars["name"]; ok {
 		if container := c.cluster.Container(name); container != nil {
 			if !container.Engine.IsHealthy() {
-				return name, container, fmt.Errorf("Container %s running on unhealthy node %s", name, container.Engine.Name)
+				return name, container, fmt.Errorf("container %s running on unhealthy node %s", name, container.Engine.Name)
 			}
 			return name, container, nil
 		}
-		return name, nil, fmt.Errorf("No such container: %s", name)
+		return name, nil, fmt.Errorf("no such container: %s", name)
 	}
 
 	if ID, ok := vars["execid"]; ok {
@@ -64,7 +64,7 @@ func getContainerFromVars(c *context, vars map[string]string) (string, *cluster.
 				}
 			}
 		}
-		return "", nil, fmt.Errorf("Exec %s not found", ID)
+		return "", nil, fmt.Errorf("exec %s not found", ID)
 	}
 
 	return "", nil, errors.New("Not found")

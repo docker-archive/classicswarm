@@ -73,7 +73,7 @@ func ApplyFilters(filters []Filter, config *cluster.ContainerConfig, nodes []*no
 			if filter.Name() == "health" {
 				return nil, err
 			}
-			return nil, fmt.Errorf("Unable to find a node that satisfies the following conditions %s", listAllFilters(filters, config, filter.Name()))
+			return nil, fmt.Errorf("unable to find a node that satisfies the following conditions %s", listAllFilters(filters, config, filter.Name()))
 		}
 	}
 	return candidates, nil
