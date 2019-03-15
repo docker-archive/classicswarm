@@ -30,7 +30,14 @@ import (
 
 const (
 	// APIVERSION is the default API version supported by swarm manager
-	APIVERSION = "1.30"
+	APIVERSION = "1.39"
+	// PLATFORM defines the value of Version.Platform.Name returned by swarm.
+	// Basically, swarm is only shipped as a community product. Further, it's
+	// assumed that if anything is programmatically looking at this field,
+	// they're more than likely either string matching the full value (which we
+	// ought not return here -- we are not exactly the same platform as the
+	// engines we're managing) or they're string-matching on "Community".
+	PLATFORM = "Docker Swarm - Community"
 )
 
 var (
@@ -118,6 +125,8 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 		kernelVersion = kv.String()
 	}
 	version.KernelVersion = kernelVersion
+
+	version.Platform.Name = PLATFORM
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(version)
