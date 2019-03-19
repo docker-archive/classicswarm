@@ -1077,7 +1077,7 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 	sessionID := buildImage.SessionID
 
 	if strings.HasPrefix(buildID, "upload-request:") {
-		buildID = strings.Trim(buildID, "upload-request:")
+		buildID = strings.TrimPrefix(buildID, "upload-request:")
 		var err error
 		n, err = c.builds.waitBuildNode(buildID, 5*time.Second)
 		if err != nil {
@@ -1102,16 +1102,16 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 		c.scheduler.Lock()
 		nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
 		c.scheduler.Unlock()
-
 		if err != nil {
 			return err
 		}
 
-		n := nodes[0]
-		clean, err := c.builds.startBuild(sessionID, buildID, n)
+		n = nodes[0]
+		nn, clean, err := c.builds.startBuild(sessionID, buildID, n)
 		if err != nil {
 			return err
 		}
+		n = nn
 		defer clean()
 	}
 

@@ -4,9 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/docker/swarm/scheduler/node"
+	"github.com/pkg/errors"
 )
 
 // waitRefCounter allows multiple waiting routines to exit however they'd like
@@ -121,16 +120,23 @@ func (b *buildSyncer) waitBuildNode(buildID string, timeout time.Duration) (*nod
 	}
 }
 
-func (b *buildSyncer) startBuild(sessionID, buildID string, node *node.Node) (func(), error) {
+func (b *buildSyncer) startBuild(sessionID, buildID string, node *node.Node) (*node.Node, func(), error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	_, ok := b.nodeByBuildID[buildID]
 	if ok {
-		return nil, errors.Errorf("build already started")
+		return nil, nil, errors.Errorf("build already started")
 	}
+
+	n, ok := b.nodeBySessionID[buildID]
+	if ok {
+		node = n
+	} else {
+		b.nodeBySessionID[sessionID] = node
+	}
+
 	b.nodeByBuildID[buildID] = node
-	b.nodeBySessionID[sessionID] = node
 
 	// if there are routines waiting on a node, close the channel to signal to
 	// them that a node has been selected.
@@ -141,10 +147,13 @@ func (b *buildSyncer) startBuild(sessionID, buildID string, node *node.Node) (fu
 		close(ch)
 	}
 
-	return func() {
-		b.mu.Lock()
-		delete(b.nodeBySessionID, sessionID)
-		delete(b.nodeByBuildID, buildID)
-		b.mu.Unlock()
+	return node, func() {
+		// delay cleanup to support shared long running sessions
+		time.AfterFunc(time.Hour, func() {
+			b.mu.Lock()
+			delete(b.nodeBySessionID, sessionID)
+			delete(b.nodeByBuildID, buildID)
+			b.mu.Unlock()
+		})
 	}, nil
 }
