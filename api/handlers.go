@@ -1454,6 +1454,23 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	builderVersion, err := parseVersion(r.Form.Get("version"))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	buildImage.Version = builderVersion
+
+	outputsJSON := r.FormValue("outputs")
+	if outputsJSON != "" {
+		var outputs []apitypes.ImageBuildOutput
+		if err := json.Unmarshal([]byte(outputsJSON), &outputs); err != nil {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		buildImage.Outputs = outputs
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	wf := NewWriteFlusher(w)
 
