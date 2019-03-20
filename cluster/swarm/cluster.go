@@ -1107,12 +1107,14 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 		}
 
 		n = nodes[0]
-		nn, clean, err := c.builds.startBuild(sessionID, buildID, n)
-		if err != nil {
-			return err
+		if buildID != "" {
+			nn, clean, err := c.builds.startBuild(sessionID, buildID, n)
+			if err != nil {
+				return err
+			}
+			n = nn
+			defer clean()
 		}
-		n = nn
-		defer clean()
 	}
 
 	engine := c.engines[n.ID]
