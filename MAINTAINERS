@@ -18,7 +18,6 @@
 			"dongluochen",
 			"jimmyxian",
 			"mhbauer",
-			"nishanttotla",
 			"vieux",
 		]
 
@@ -93,11 +92,6 @@
 	Name = "Morgan Bauer"
 	Email = "mbauer@us.ibm.com"
 	GitHub = "mhbauer"
-
-	[people.nishanttotla]
-	Name = "Nishant Totla"
-	Email = "nishanttotla@gmail.com"
-	GitHub = "nishanttotla"
 
 	[people.thajeztah]
 	Name = "Sebastiaan van Stijn"
