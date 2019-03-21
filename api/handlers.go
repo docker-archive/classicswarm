@@ -30,7 +30,7 @@ import (
 
 const (
 	// APIVERSION is the default API version supported by swarm manager
-	APIVERSION = "1.39"
+	APIVERSION = "1.40"
 	// PLATFORM defines the value of Version.Platform.Name returned by swarm.
 	// Basically, swarm is only shipped as a community product. Further, it's
 	// assumed that if anything is programmatically looking at this field,
