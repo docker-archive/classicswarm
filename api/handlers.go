@@ -15,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	apitypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	dockerfilters "github.com/docker/docker/api/types/filters"
@@ -26,11 +25,19 @@ import (
 	"github.com/docker/swarm/experimental"
 	"github.com/docker/swarm/version"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	// APIVERSION is the default API version supported by swarm manager
-	APIVERSION = "1.30"
+	APIVERSION = "1.40"
+	// PLATFORM defines the value of Version.Platform.Name returned by swarm.
+	// Basically, swarm is only shipped as a community product. Further, it's
+	// assumed that if anything is programmatically looking at this field,
+	// they're more than likely either string matching the full value (which we
+	// ought not return here -- we are not exactly the same platform as the
+	// engines we're managing) or they're string-matching on "Community".
+	PLATFORM = "Docker Swarm - Community"
 )
 
 var (
@@ -118,6 +125,8 @@ func getVersion(c *context, w http.ResponseWriter, r *http.Request) {
 		kernelVersion = kv.String()
 	}
 	version.KernelVersion = kernelVersion
+
+	version.Platform.Name = PLATFORM
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(version)
@@ -332,7 +341,7 @@ func getVolume(c *context, w http.ResponseWriter, r *http.Request) {
 
 // GET /volumes
 func getVolumes(c *context, w http.ResponseWriter, r *http.Request) {
-	volumesListResponse := volumetypes.VolumesListOKBody{}
+	volumesListResponse := volumetypes.VolumeListOKBody{}
 
 	// Parse filters
 	filters, err := dockerfilters.FromParam(r.URL.Query().Get("filters"))
@@ -750,7 +759,7 @@ func postNetworksCreate(c *context, w http.ResponseWriter, r *http.Request) {
 
 // POST /volumes/create
 func postVolumesCreate(c *context, w http.ResponseWriter, r *http.Request) {
-	var request volumetypes.VolumesCreateBody
+	var request volumetypes.VolumeCreateBody
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		httpError(w, err.Error(), http.StatusBadRequest)
@@ -1415,6 +1424,10 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		CgroupParent:   r.Form.Get("cgroupparent"),
 		ShmSize:        int64ValueOrZero(r, "shmsize"),
 		Squash:         boolValue(r, "squash"),
+		SessionID:      r.Form.Get("session"),
+		BuildID:        r.Form.Get("buildid"),
+		Target:         r.Form.Get("target"),
+		Platform:       r.Form.Get("platform"),
 	}
 
 	buildArgsJSON := r.Form.Get("buildargs")
@@ -1445,13 +1458,32 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	builderVersion, err := parseVersion(r.Form.Get("version"))
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	buildImage.Version = builderVersion
+
+	outputsJSON := r.FormValue("outputs")
+	if outputsJSON != "" {
+		var outputs []apitypes.ImageBuildOutput
+		if err := json.Unmarshal([]byte(outputsJSON), &outputs); err != nil {
+			httpError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		buildImage.Outputs = outputs
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	wf := NewWriteFlusher(w)
 
 	var errorMessage string
 	errorFound := false
 	callback := func(msg cluster.JSONMessageWrapper) {
-		msg.Msg.ID = msg.EngineName
+		if builderVersion != apitypes.BuilderBuildKit {
+			msg.Msg.ID = msg.EngineName
+		}
 		if msg.Err != nil {
 			errorFound = true
 			errorMessage = msg.Err.Error()
@@ -1462,13 +1494,41 @@ func postBuild(c *context, w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(wf).Encode(msg.Msg)
 	}
-	err := c.cluster.BuildImage(r.Body, buildImage, callback)
+	err = c.cluster.BuildImage(r.Body, buildImage, callback)
 	if err != nil {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if errorFound {
 		sendErrorJSONMessage(wf, 1, errorMessage)
+	}
+}
+
+func parseVersion(s string) (apitypes.BuilderVersion, error) {
+	if s == "" || s == string(apitypes.BuilderV1) {
+		return apitypes.BuilderV1, nil
+	}
+	if s == string(apitypes.BuilderBuildKit) {
+		return apitypes.BuilderBuildKit, nil
+	}
+	return "", fmt.Errorf("invalid version %s", s)
+}
+
+// POST /build/cancel
+func postBuildCancel(c *context, w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	buildID := r.FormValue("id")
+	if buildID == "" {
+		httpError(w, "build ID not provided", http.StatusBadRequest)
+		return
+	}
+
+	if err := c.cluster.BuildCancel(buildID); err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -1499,6 +1559,33 @@ func postRenameContainer(c *context, w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 
+}
+
+// POST /session
+func postSession(c *context, w http.ResponseWriter, r *http.Request) {
+	// calls to /session have the SessionID in the
+	// "X-Docker-Expose-Session-Uuid" header, so get that
+	sessionID := r.Header.Get("X-Docker-Expose-Session-Uuid")
+	// the sessionID cannot be empty -- if it is, return an error to the user.
+	// we could return such an error from the c.cluster.Session call, but then
+	// we would have to parse that error back out in order to correctly return
+	// a 400 response, so it's easier to just do it here
+	if sessionID == "" {
+		httpError(w, "no session ID provided", http.StatusBadRequest)
+		return
+	}
+
+	engine, err := c.cluster.Session(sessionID)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// now, hijack the connection and forward to this engine.
+	err = hijack(c.tlsConfig, engine.Addr, w, r)
+	engine.CheckConnectionErr(err)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // Proxy a hijack request to the right node

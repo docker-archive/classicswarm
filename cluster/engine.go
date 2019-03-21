@@ -18,9 +18,8 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
@@ -30,6 +29,7 @@ import (
 	engineapi "github.com/docker/docker/client"
 	engineapinop "github.com/docker/swarm/api/nopclient"
 	"github.com/docker/swarm/swarmclient"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -1135,7 +1135,7 @@ func (e *Engine) CreateContainer(config *ContainerConfig, name string, pullImage
 	e.CheckConnectionErr(err)
 	if err != nil {
 		// If the error is other than not found, abort immediately.
-		if (err != testErrImageNotFound && !engineapi.IsErrImageNotFound(err)) || !pullImage {
+		if (err != testErrImageNotFound && !engineapi.IsErrNotFound(err)) || !pullImage {
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
@@ -1199,7 +1199,7 @@ func (e *Engine) CreateNetwork(name string, request *types.NetworkCreate) (*type
 }
 
 // CreateVolume creates a volume in the engine
-func (e *Engine) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume, error) {
+func (e *Engine) CreateVolume(request *volume.VolumeCreateBody) (*types.Volume, error) {
 	volume, err := e.apiClient.VolumeCreate(context.Background(), *request)
 	e.CheckConnectionErr(err)
 	if err != nil {
@@ -1542,7 +1542,7 @@ func (e *Engine) StartContainer(container *Container) error {
 	// the HostConfig.AutoRemove field is set to true. This could also occur
 	// during race conditions where a third-party client removes the container
 	// immediately after it's started.
-	if container.Info.HostConfig.AutoRemove && engineapi.IsErrContainerNotFound(err) {
+	if container.Info.HostConfig.AutoRemove && engineapi.IsErrNotFound(err) {
 		delete(e.containers, container.ID)
 		log.Debugf("container %s was not detected shortly after ContainerStart, indicating a daemon-side removal", container.ID)
 		return nil
@@ -1614,6 +1614,10 @@ func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuild
 		}
 	}
 	return nil
+}
+
+func (e *Engine) BuildCancel(buildID string) error {
+	return e.apiClient.BuildCancel(context.Background(), buildID)
 }
 
 // TagImage tags an image

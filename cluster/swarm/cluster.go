@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	networktypes "github.com/docker/docker/api/types/network"
@@ -25,6 +24,7 @@ import (
 	"github.com/docker/swarm/cluster"
 	"github.com/docker/swarm/scheduler"
 	"github.com/docker/swarm/scheduler/node"
+	log "github.com/sirupsen/logrus"
 )
 
 type pendingContainer struct {
@@ -65,6 +65,7 @@ type Cluster struct {
 	scheduler         *scheduler.Scheduler
 	discovery         discovery.Backend
 	pendingContainers map[string]*pendingContainer
+	builds            *buildSyncer
 
 	overcommitRatio float64
 	engineOpts      *cluster.EngineOpts
@@ -87,6 +88,7 @@ func NewCluster(scheduler *scheduler.Scheduler, TLSConfig *tls.Config, discovery
 		overcommitRatio:      0.05,
 		engineOpts:           engineOptions,
 		createRetry:          0,
+		builds:               newBuildSyncer(),
 	}
 
 	if val, ok := options.Float("swarm.overcommit", ""); ok {
@@ -158,7 +160,7 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		bImageNotFoundError113, _ := regexp.MatchString(`repository \S* not found`, err.Error())
 		bRepositoryNotFoundError1706, _ := regexp.MatchString(`repository does not exist`, err.Error())
 
-		if (bImageNotFoundError || bImageNotFoundError113 || bRepositoryNotFoundError1706 || client.IsErrImageNotFound(err)) && !config.HaveNodeConstraint() {
+		if (bImageNotFoundError || bImageNotFoundError113 || bRepositoryNotFoundError1706 || client.IsErrNotFound(err)) && !config.HaveNodeConstraint() {
 			// Check if the image exists in the cluster
 			// If exists, retry with an image affinity
 			if c.Image(config.Image) != nil {
@@ -540,7 +542,7 @@ func (c *Cluster) CreateNetwork(name string, request *types.NetworkCreate) (resp
 }
 
 // CreateVolume creates a volume in the cluster.
-func (c *Cluster) CreateVolume(request *volume.VolumesCreateBody) (*types.Volume, error) {
+func (c *Cluster) CreateVolume(request *volume.VolumeCreateBody) (*types.Volume, error) {
 	var (
 		wg         sync.WaitGroup
 		volume     *types.Volume
@@ -1040,21 +1042,81 @@ func (c *Cluster) RenameContainer(container *cluster.Container, newName string) 
 	return err
 }
 
+// Session forwards a session to the node selected for that SessionID. It
+// blocks until BuildImage with the SessionID picks a node
+func (c *Cluster) Session(sessionID string) (*cluster.Engine, error) {
+	// first, get the node for this sessionID
+	n, err := c.builds.waitSessionNode(sessionID, 5*time.Second)
+	if err != nil {
+		return nil, err
+	}
+
+	// now, resolve that to an engine and return
+	return c.engines[n.ID], nil
+}
+
 // BuildImage builds an image
 func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuildOptions, callback func(msg cluster.JSONMessageWrapper)) error {
-	c.scheduler.Lock()
+	// Extra build endpoints handling:
+	//
+	// ImageBuildOptions contains SessionID, BuildID
+	//
+	// POST /session should block until /build with SessionID picks a node and
+	// then forwards to the same node
+	// - /session has ID in "X-Docker-Expose-Session-Uuid" header
+	// - https://github.com/moby/moby/blob/master/vendor/github.com/moby/buildkit/session/manager.go#L52
+	//
+	// /build/cancel with teh same BuildID should go to the same node
+	// - https://github.com/moby/moby/blob/master/api/server/router/build/build_routes.go#L197
+	//
+	// /build with ID "upload-request:BuildID" should go to same node
 
-	// get an engine
-	config := cluster.BuildContainerConfig(containertypes.Config{Env: convertMapToKVStrings(buildImage.BuildArgs)},
-		containertypes.HostConfig{Resources: containertypes.Resources{CPUShares: buildImage.CPUShares, Memory: buildImage.Memory}},
-		networktypes.NetworkingConfig{})
-	buildImage.BuildArgs = convertKVStringsToMap(config.Env)
-	nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
-	c.scheduler.Unlock()
-	if err != nil {
-		return err
+	var n *node.Node
+
+	buildID := buildImage.BuildID
+	sessionID := buildImage.SessionID
+
+	if strings.HasPrefix(buildID, "upload-request:") {
+		buildID = strings.TrimPrefix(buildID, "upload-request:")
+		var err error
+		n, err = c.builds.waitBuildNode(buildID, 5*time.Second)
+		if err != nil {
+			return err
+		}
+	} else {
+		// get an engine
+		config := cluster.BuildContainerConfig(
+			containertypes.Config{
+				Env: convertMapToKVStrings(buildImage.BuildArgs),
+			},
+			containertypes.HostConfig{
+				Resources: containertypes.Resources{
+					CPUShares: buildImage.CPUShares,
+					Memory:    buildImage.Memory,
+				},
+			},
+			networktypes.NetworkingConfig{},
+		)
+
+		buildImage.BuildArgs = convertKVStringsToMap(config.Env)
+		c.scheduler.Lock()
+		nodes, err := c.scheduler.SelectNodesForContainer(c.listNodes(), config)
+		c.scheduler.Unlock()
+		if err != nil {
+			return err
+		}
+
+		n = nodes[0]
+		if buildID != "" {
+			nn, clean, err := c.builds.startBuild(sessionID, buildID, n)
+			if err != nil {
+				return err
+			}
+			n = nn
+			defer clean()
+		}
 	}
-	n := nodes[0]
+
 	engine := c.engines[n.ID]
 
 	var engineCallback func(msg cluster.JSONMessage)
@@ -1066,7 +1128,7 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 			})
 		}
 	}
-	err = engine.BuildImage(buildContext, buildImage, engineCallback)
+	err := engine.BuildImage(buildContext, buildImage, engineCallback)
 	if callback != nil {
 		if err != nil {
 			callback(cluster.JSONMessageWrapper{
@@ -1083,6 +1145,20 @@ func (c *Cluster) BuildImage(buildContext io.Reader, buildImage *types.ImageBuil
 
 	engine.RefreshImages()
 	return nil
+}
+
+// BuildCancel cancels the build specified by buildID
+func (c *Cluster) BuildCancel(buildID string) error {
+	n, err := c.builds.waitBuildNode(buildID, 5*time.Second)
+	if err != nil {
+		return err
+	}
+
+	// now, get the engine for the build
+	engine := c.engines[n.ID]
+
+	// and then cancel the build
+	return engine.BuildCancel(buildID)
 }
 
 // RefreshEngines refreshes all containers in the cluster.

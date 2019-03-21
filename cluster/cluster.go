@@ -45,7 +45,7 @@ type Cluster interface {
 	RemoveNetwork(network *Network) error
 
 	// CreateVolume creates a volume.
-	CreateVolume(request *volume.VolumesCreateBody) (*types.Volume, error)
+	CreateVolume(request *volume.VolumeCreateBody) (*types.Volume, error)
 
 	// Volumes returns all volumes.
 	Volumes() Volumes
@@ -96,8 +96,15 @@ type Cluster interface {
 	// RenameContainer renames a container.
 	RenameContainer(container *Container, newName string) error
 
+	// Session forwards a session to the node selected for that SessionID. It
+	// blocks until BuildImage with the SessionID picks a node.
+	Session(sessionID string) (*Engine, error)
+
 	// BuildImage builds an image.
 	BuildImage(io.Reader, *types.ImageBuildOptions, func(msg JSONMessageWrapper)) error
+
+	// BuildCancel cancels a build with a given ID
+	BuildCancel(buildID string) error
 
 	// TagImage tags an image.
 	TagImage(IDOrName string, ref string, force bool) error

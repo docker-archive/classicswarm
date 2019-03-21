@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/docker/docker/pkg/discovery"
 	kvdiscovery "github.com/docker/docker/pkg/discovery/kv"
 	"github.com/docker/leadership"

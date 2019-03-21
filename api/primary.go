@@ -6,9 +6,9 @@ import (
 
 	"net/http/pprof"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 // Primary router context, used by handlers.
@@ -59,6 +59,7 @@ var routes = map[string]map[string]handler{
 		"/auth":                               proxyRandom,
 		"/commit":                             postCommit,
 		"/build":                              postBuild,
+		"/build/cancel":                       postBuildCancel,
 		"/images/create":                      postImagesCreate,
 		"/images/load":                        postImagesLoad,
 		"/images/{name:.*}/push":              proxyImagePush,
@@ -83,6 +84,9 @@ var routes = map[string]map[string]handler{
 		"/networks/{networkid:.*}/connect":    proxyNetworkConnect,
 		"/networks/{networkid:.*}/disconnect": networkDisconnect,
 		"/volumes/create":                     postVolumesCreate,
+
+		// TODO(dperny): this route is WIP, remove this comment
+		"/session": postSession,
 	},
 	"PUT": {
 		"/containers/{name:.*}/archive": proxyContainer,

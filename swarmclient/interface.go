@@ -3,7 +3,7 @@ package swarmclient
 import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"golang.org/x/net/context"
+	"context"
 )
 
 // SwarmAPIClient contains the subset of the docker/api interface relevant to Docker Swarm
