@@ -580,9 +580,6 @@ func getContainersJSON(c *context, w http.ResponseWriter, r *http.Request) {
 		// make changes without messing with cluster.Container.
 		tmp := (*container).Container
 
-		// Update the Status. The one we have is stale from the last `docker ps` the engine sent.
-		// `Status()` will generate a new one
-		tmp.Status = cluster.FullStateString(container.Info.State)
 		if !container.Engine.IsHealthy() {
 			tmp.Status = "Host Down"
 		}
