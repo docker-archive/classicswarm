@@ -1,13 +1,11 @@
 package cluster
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/stringid"
-	units "github.com/docker/go-units"
 )
 
 // Container is exported
@@ -49,48 +47,6 @@ func HealthString(state *types.ContainerState) string {
 		return types.NoHealthcheck
 	}
 	return state.Health.Status
-}
-
-// FullStateString returns human-readable description of the state
-func FullStateString(state *types.ContainerState) string {
-	startedAt, _ := time.Parse(time.RFC3339Nano, state.StartedAt)
-	finishedAt, _ := time.Parse(time.RFC3339Nano, state.FinishedAt)
-	if state.Running {
-		if state.Paused {
-			return fmt.Sprintf("Up %s (Paused)", units.HumanDuration(time.Now().UTC().Sub(startedAt)))
-		}
-		if state.Restarting {
-			return fmt.Sprintf("Restarting (%d) %s ago", state.ExitCode, units.HumanDuration(time.Now().UTC().Sub(finishedAt)))
-		}
-		// Container is Up. Add Health check info when healthcheck is defined.
-		healthText := ""
-		if h := state.Health; h != nil {
-			switch h.Status {
-			case types.Starting:
-				healthText = "health: starting"
-			default: // Healthy and Unhealthy are clear on their own
-				healthText = h.Status
-			}
-		}
-		if len(healthText) > 0 {
-			return fmt.Sprintf("Up %s (%s)", units.HumanDuration(time.Now().UTC().Sub(startedAt)), healthText)
-		}
-		return fmt.Sprintf("Up %s", units.HumanDuration(time.Now().UTC().Sub(startedAt)))
-	}
-
-	if state.Dead {
-		return "Dead"
-	}
-
-	if startedAt.IsZero() {
-		return "Created"
-	}
-
-	if finishedAt.IsZero() {
-		return ""
-	}
-
-	return fmt.Sprintf("Exited (%d) %s ago", state.ExitCode, units.HumanDuration(time.Now().UTC().Sub(finishedAt)))
 }
 
 // Refresh container
