@@ -222,4 +222,6 @@ function teardown() {
 
 	run docker_swarm network inspect testn
 	[[ "${output}" != *"\"Containers\": {}"* ]]
+
+	docker_swarm run -d --net node-1/testn --network-alias=foobar --name test_container2 busybox sleep 100
 }

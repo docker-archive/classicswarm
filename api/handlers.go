@@ -18,6 +18,7 @@ import (
 	apitypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	dockerfilters "github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
 	typesversions "github.com/docker/docker/api/types/versions"
 	volumetypes "github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/pkg/parsers/kernel"
@@ -698,6 +699,7 @@ func postContainersCreate(c *context, w http.ResponseWriter, r *http.Request) {
 		httpError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	containerConfig.NetworkingConfig = stripNodeNamesFromNetworkingConfig(containerConfig.NetworkingConfig, c.cluster.EngineNames())
 
 	container, err := c.cluster.CreateContainer(containerConfig, name, authConfig)
 	if err != nil {
@@ -1644,4 +1646,27 @@ func (h headerFlusher) WriteHeader(status int) {
 // header immediately.
 func postContainersWait(c *context, w http.ResponseWriter, r *http.Request) {
 	proxyContainerAndForceRefresh(c, headerFlusher{w}, r)
+}
+
+// stripNodeNamesFromNetworkingConfig goes through a container's
+// NetworkingConfig and, if a user specified a Swarm classic-style network
+// name in the endpoints config (i.e. <node name>/<network name>), strips off
+// the node name so that the daemon will recognize the network.
+func stripNodeNamesFromNetworkingConfig(n network.NetworkingConfig, nodeNames []string) network.NetworkingConfig {
+	endpointsConfig := map[string]*network.EndpointSettings{}
+	nodeNamesMap := map[string]struct{}{}
+	for _, name := range nodeNames {
+		nodeNamesMap[name] = struct{}{}
+	}
+	for networkName, v := range n.EndpointsConfig {
+		parts := strings.SplitN(networkName, "/", 2)
+		if len(parts) > 1 {
+			if _, ok := nodeNamesMap[parts[0]]; ok {
+				networkName = parts[1]
+			}
+		}
+		endpointsConfig[networkName] = v
+	}
+	n.EndpointsConfig = endpointsConfig
+	return n
 }

@@ -965,6 +965,15 @@ func (c *Cluster) TotalCpus() int64 {
 	return totalCpus
 }
 
+// EngineNames returns the names of all the engines in the cluster.
+func (c *Cluster) EngineNames() []string {
+	ret := make([]string, len(c.engines))
+	for _, engine := range c.engines {
+		ret = append(ret, engine.Name)
+	}
+	return ret
+}
+
 // Info returns some info about the cluster, like nb or containers / images.
 func (c *Cluster) Info() [][2]string {
 	info := [][2]string{
