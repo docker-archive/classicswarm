@@ -56,7 +56,7 @@ go get github.com/LK4d4/vndr
 Install golint:
 
 ```sh
-go get github.com/golang/lint/golint
+go get golang.org/x/lint/golint
 ```
 
 #### Fork the Swarm repo
