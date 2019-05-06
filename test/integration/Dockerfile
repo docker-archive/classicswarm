@@ -1,9 +1,10 @@
 ARG GO_VERSION=1.12.4
+ARG DOCKER_VERSION=18.09.6
 
 # Dockerfile for swarm integration test environment.
 # Use with run_in_docker.sh
 
-FROM dockerswarm/dind:17.06.0-ce
+FROM dockerswarm/dind:${DOCKER_VERSION}
 
 # Install dependencies.
 RUN apt-get update && apt-get install -y --no-install-recommends git file parallel netcat \
