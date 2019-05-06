@@ -1,4 +1,6 @@
-FROM golang:1.7.1-alpine
+ARG GO_VERSION=1.12.4
+
+FROM golang:${GO_VERSION}-alpine
 
 ARG GOOS
 ARG GOARCH
