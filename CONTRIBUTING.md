@@ -23,9 +23,9 @@ If you don't already have `git` installed, you should install it.  For example, 
 sudo apt-get install git
 ```
 
-You also need Go 1.7 or higher.  Download Go from [https://golang.org/dl/](https://golang.org/dl/).  To install on Linux:
+Download Go from [https://golang.org/dl/](https://golang.org/dl/).  To install on Linux:
 ```sh
-tar xzvf go1.7.1.linux-amd64.tar.gz
+tar xzvf go1.12.4.linux-amd64.tar.gz
 sudo mv go /usr/local
 ```
 
@@ -56,7 +56,7 @@ go get github.com/LK4d4/vndr
 Install golint:
 
 ```sh
-go get github.com/golang/lint/golint
+go get golang.org/x/lint/golint
 ```
 
 #### Fork the Swarm repo

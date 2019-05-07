@@ -451,11 +451,11 @@ func TestCreateContainer(t *testing.T) {
 		name,
 	).Return(
 		containertypes.ContainerCreateCreatedBody{},
-		testErrImageNotFound,
+		errImageNotFound,
 	).Once()
 
 	container, err = engine.CreateContainer(config, name, false, auth)
-	assert.Equal(t, err, testErrImageNotFound)
+	assert.Equal(t, err, errImageNotFound)
 	assert.Nil(t, container)
 
 	// Image not found, pullImage == true, and the image can be pulled successfully
@@ -473,7 +473,7 @@ func TestCreateContainer(t *testing.T) {
 		name,
 	).Return(
 		containertypes.ContainerCreateCreatedBody{},
-		testErrImageNotFound,
+		errImageNotFound,
 	).Once()
 
 	// FIXMEENGINEAPI : below should return an docker/api error, or something custom

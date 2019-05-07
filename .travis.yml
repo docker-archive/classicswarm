@@ -1,7 +1,8 @@
 language: go
 
 go:
-  - 1.7.1
+  - "1.11.x"
+  - "1.12.x"
 
 # let us have speedy Docker-based Travis workers
 sudo: false
@@ -9,7 +10,7 @@ sudo: false
 install:
   # Symlink below is needed for Travis CI to work correctly on personal forks of swarm
   - ln -s $HOME/gopath/src/github.com/${TRAVIS_REPO_SLUG///swarm/} $HOME/gopath/src/github.com/docker
-  - go get github.com/golang/lint/golint
+  - go get golang.org/x/lint/golint
   - go get github.com/GeertJohan/fgt
 
 script:
