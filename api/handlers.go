@@ -41,7 +41,11 @@ const (
 )
 
 var (
-	ShouldRefreshOnNodeFilter  = false
+	// ShouldRefreshOnNodeFilter indicates that the cache should be refreshed
+	// when a ContainerList call is made with a node filter
+	ShouldRefreshOnNodeFilter = false
+	// ContainerNameRefreshFilter indicates that the cache should be refreshed
+	// when a ContainerList call is made with the given value
 	ContainerNameRefreshFilter = ""
 )
 

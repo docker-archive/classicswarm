@@ -185,7 +185,7 @@ func (images Images) Filter(opts ImageFilterOptions) Images {
 	return filtered
 }
 
-// helper func for filtering
+// GetIDOrName is a helper func for filtering
 func (opts ImageFilterOptions) GetIDOrName(field string) string {
 	if !opts.Filters.Include(field) {
 		return ""
@@ -196,6 +196,7 @@ func (opts ImageFilterOptions) GetIDOrName(field string) string {
 	return ""
 }
 
+// GetImageFromField returns the image fro the given field
 func (images Images) GetImageFromField(field string, opts ImageFilterOptions) *Image {
 	IDOrName := opts.GetIDOrName(field)
 	if IDOrName == "" {

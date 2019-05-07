@@ -32,6 +32,7 @@ func (client *MockClient) BuildCachePrune(ctx context.Context, opts types.BuildC
 	return args.Get(0).(*types.BuildCachePruneReport), args.Error(1)
 }
 
+// BuildCancel requests the daemon to cancel ongoing build request
 func (client *MockClient) BuildCancel(ctx context.Context, id string) error {
 	args := client.Mock.Called(ctx, id)
 	return args.Error(0)

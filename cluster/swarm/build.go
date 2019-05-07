@@ -93,13 +93,13 @@ func (b *buildSyncer) waitBuildNode(buildID string, timeout time.Duration) (*nod
 		b.queueBuild[buildID] = wait
 	}
 
-	wait.count += 1
+	wait.count++
 	ch := wait.done
 
 	// this defer handles cleaning up the queueBuild map. it will execute
 	// before the lock is released.
 	defer func() {
-		wait.count -= 1
+		wait.count--
 		// if there are no more waiters, then remove the map entry
 		if wait.count == 0 {
 			delete(b.queueBuild, buildID)

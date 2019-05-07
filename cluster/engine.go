@@ -67,8 +67,8 @@ var (
 		//stateMaintenance: "Maintenance",
 	}
 
-	// testErrImageNotFound is only used for testing
-	testErrImageNotFound = errors.New("TEST_ERR_IMAGE_NOT_FOUND_SWARM")
+	// errImageNotFound is only used for testing
+	errImageNotFound = errors.New("TEST_ERR_IMAGE_NOT_FOUND_SWARM")
 )
 
 // delayer offers a simple API to random delay within a given time range,
@@ -1135,7 +1135,7 @@ func (e *Engine) CreateContainer(config *ContainerConfig, name string, pullImage
 	e.CheckConnectionErr(err)
 	if err != nil {
 		// If the error is other than not found, abort immediately.
-		if (err != testErrImageNotFound && !engineapi.IsErrNotFound(err)) || !pullImage {
+		if (err != errImageNotFound && !engineapi.IsErrNotFound(err)) || !pullImage {
 			return nil, err
 		}
 		// Otherwise, try to pull the image...
@@ -1616,6 +1616,7 @@ func (e *Engine) BuildImage(buildContext io.Reader, buildImage *types.ImageBuild
 	return nil
 }
 
+// BuildCancel requests the daemon to cancel ongoing build request
 func (e *Engine) BuildCancel(buildID string) error {
 	return e.apiClient.BuildCancel(context.Background(), buildID)
 }

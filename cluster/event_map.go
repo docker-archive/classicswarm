@@ -20,7 +20,7 @@ func NewClusterEventHandlers() ClusterEventHandlers {
 	}
 }
 
-// HandleAll callbacks for the events
+// Handle handles callbacks for the events
 func (eh *ClusterEventHandlers) Handle(e *Event) error {
 	eh.RLock()
 	defer eh.RUnlock()
