@@ -120,6 +120,10 @@ func (b *buildSyncer) waitBuildNode(buildID string, timeout time.Duration) (*nod
 	}
 }
 
+// cleanupDelay specifies the timeout before sessions are cleaned up
+// this variable can be overridden for unit tests
+var cleanupDelay = time.Hour
+
 func (b *buildSyncer) startBuild(sessionID, buildID string, node *node.Node) (*node.Node, func(), error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -149,7 +153,7 @@ func (b *buildSyncer) startBuild(sessionID, buildID string, node *node.Node) (*n
 
 	return node, func() {
 		// delay cleanup to support shared long running sessions
-		time.AfterFunc(time.Hour, func() {
+		time.AfterFunc(cleanupDelay, func() {
 			b.mu.Lock()
 			delete(b.nodeBySessionID, sessionID)
 			delete(b.nodeByBuildID, buildID)

@@ -2,7 +2,6 @@ package swarm
 
 import (
 	"testing"
-
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -35,8 +34,10 @@ func TestBuildSyncerWaitSessionNode(t *testing.T) {
 		actualNode, waitErr = b.waitSessionNode(sessionID, 1*time.Second)
 	})
 
+	defer overrideCleanupDelay()()
+
 	// now, call startBuild to notify the waiting routine
-	cleanup, err := b.startBuild(sessionID, buildID, expectedNode)
+	retNode, cleanup, err := b.startBuild(sessionID, buildID, expectedNode)
 	assert.NoError(t, err)
 
 	// now, verify waitSessionNode has returned
@@ -44,7 +45,7 @@ func TestBuildSyncerWaitSessionNode(t *testing.T) {
 
 	assert.NoError(t, waitErr)
 	assert.NotNil(t, actualNode)
-	assert.Equal(t, actualNode, expectedNode)
+	assert.Equal(t, actualNode, retNode)
 
 	// now, we'll do a bit of whitebox testing... does everything successfully
 	// clean up?
@@ -59,8 +60,12 @@ func TestBuildSyncerWaitSessionNode(t *testing.T) {
 	// call the cleanup function and make sure the node by ID entries are
 	// removed
 	cleanup()
+	time.Sleep(2 * cleanupDelay)
+
+	b.mu.Lock()
 	assert.NotContains(t, b.nodeBySessionID, sessionID)
 	assert.NotContains(t, b.nodeByBuildID, buildID)
+	b.mu.Unlock()
 }
 
 // TestBuildSyncerWaitSessionNodeTimeout tests that waitSessionNode behaves
@@ -122,14 +127,16 @@ func TestBuildSyncerWaitBuildNode(t *testing.T) {
 		actualNode, waitErr = b.waitBuildNode(buildID, 1*time.Second)
 	})
 
-	cleanup, err := b.startBuild(sessionID, buildID, expectedNode)
+	defer overrideCleanupDelay()()
+
+	retNode, cleanup, err := b.startBuild(sessionID, buildID, expectedNode)
 	assert.NoError(t, err)
 
 	<-done
 
 	assert.NoError(t, waitErr)
 	assert.NotNil(t, actualNode)
-	assert.Equal(t, actualNode, expectedNode)
+	assert.Equal(t, actualNode, retNode)
 
 	assert.Contains(t, b.nodeBySessionID, sessionID)
 	assert.Contains(t, b.nodeByBuildID, buildID)
@@ -137,8 +144,12 @@ func TestBuildSyncerWaitBuildNode(t *testing.T) {
 	assert.Empty(t, b.queueBuild)
 
 	cleanup()
+	time.Sleep(2 * cleanupDelay)
+
+	b.mu.Lock()
 	assert.NotContains(t, b.nodeBySessionID, sessionID)
 	assert.NotContains(t, b.nodeByBuildID, buildID)
+	b.mu.Unlock()
 }
 
 // TestBuildSyncerWaitBuildNodeMulti tests the main, error-free path of
@@ -161,7 +172,9 @@ func TestBuildSyncerWaitBuildNodeMulti(t *testing.T) {
 		})
 	}
 
-	cleanup, err := b.startBuild(sessionID, buildID, expectedNode)
+	defer overrideCleanupDelay()()
+
+	retNode, cleanup, err := b.startBuild(sessionID, buildID, expectedNode)
 	assert.NoError(t, err)
 
 	defer cleanup()
@@ -170,7 +183,7 @@ func TestBuildSyncerWaitBuildNodeMulti(t *testing.T) {
 		<-doneResults[i]
 		assert.NoError(t, errorResults[i])
 		assert.NotNil(t, nodeResults[i])
-		assert.Equal(t, nodeResults[i], expectedNode)
+		assert.Equal(t, nodeResults[i], retNode)
 	}
 
 	assert.Empty(t, b.queueBuild)
@@ -203,18 +216,24 @@ func TestBuildSyncerWaitBuildNodeTimeout(t *testing.T) {
 		t.Error("waitBuildNode did not time out and return in time")
 	}
 
+	defer overrideCleanupDelay()()
+
 	// now call startBuild to cause the 2nd waiter to return
-	cleanup, err := b.startBuild(sessionID, buildID, expectedNode)
+	retNode, cleanup, err := b.startBuild(sessionID, buildID, expectedNode)
 	assert.NoError(t, err)
 
 	<-doneCompletes
 	assert.NoError(t, completesErr)
 	assert.NotNil(t, completesNode)
-	assert.Equal(t, completesNode, expectedNode)
+	assert.Equal(t, completesNode, retNode)
 
 	cleanup()
+	time.Sleep(2 * cleanupDelay)
+
+	b.mu.Lock()
 	assert.Empty(t, b.nodeByBuildID)
 	assert.Empty(t, b.nodeBySessionID)
+	b.mu.Unlock()
 }
 
 // ensureRunsAsync is a function that takes a closure, starts it in a goroutine,
@@ -242,4 +261,13 @@ func ensureRunsAsync(fn func()) <-chan struct{} {
 	// a chance to run
 	<-started
 	return done
+}
+
+// override cleanupDelay for testing
+func overrideCleanupDelay() func() {
+	restore := cleanupDelay
+	cleanupDelay = 100 * time.Millisecond
+	return func() {
+		cleanupDelay = restore
+	}
 }
