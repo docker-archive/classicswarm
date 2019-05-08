@@ -84,6 +84,7 @@ var routes = map[string]map[string]handler{
 		"/networks/{networkid:.*}/connect":    proxyNetworkConnect,
 		"/networks/{networkid:.*}/disconnect": networkDisconnect,
 		"/volumes/create":                     postVolumesCreate,
+		"/grpc":                               postGRPC,
 
 		// TODO(dperny): this route is WIP, remove this comment
 		"/session": postSession,

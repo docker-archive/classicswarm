@@ -1670,3 +1670,23 @@ func stripNodeNamesFromNetworkingConfig(n network.NetworkingConfig, nodeNames []
 	n.EndpointsConfig = endpointsConfig
 	return n
 }
+
+// postGRPC randomly chooses a node on the cluster and hijacks that connection.
+func postGRPC(c *context, w http.ResponseWriter, r *http.Request) {
+	engine, err := c.cluster.RANDOMENGINE()
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if engine == nil {
+		httpError(w, "no node available in the cluster", http.StatusInternalServerError)
+		return
+	}
+
+	err = hijack(c.tlsConfig, engine.Addr, w, r)
+	engine.CheckConnectionErr(err)
+	if err != nil {
+		httpError(w, err.Error(), http.StatusInternalServerError)
+	}
+}
