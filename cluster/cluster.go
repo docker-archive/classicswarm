@@ -75,6 +75,9 @@ type Cluster interface {
 	// TotalCpus returns the number of CPUs in the cluster.
 	TotalCpus() int64
 
+	// EngineNames returns the names of all the engines in the cluster.
+	EngineNames() []string
+
 	// RegisterEventHandler registers an event handler for cluster-wide events.
 	RegisterEventHandler(h EventHandler) error
 
