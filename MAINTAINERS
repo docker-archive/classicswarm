@@ -16,6 +16,7 @@
 			"chanwit",
 			"dani-docker",
 			"dongluochen",
+                        "dperny",
 			"jimmyxian",
 			"mhbauer",
 			"vieux",
@@ -87,6 +88,11 @@
 	Name = "Dongluo Chen"
 	Email = "dong@docker.com"
 	GitHub = "dongluochen"
+
+        [people.dperny]
+        Name = "Drew Erny"
+        Email = "drew.erny@docker.com"
+        GitHub = "dperny"
 
 	[people.mhbauer]
 	Name = "Morgan Bauer"
