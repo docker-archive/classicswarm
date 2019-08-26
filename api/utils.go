@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/docker/swarm/cluster"
+	log "github.com/sirupsen/logrus"
 )
 
 var imageOSErrorPattern = regexp.MustCompile(`image operating system "(.+)" cannot be used on this platform`)
@@ -387,6 +387,60 @@ func MatchImageOSError(errMsg string) string {
 		return ""
 	}
 	return results[1]
+}
+
+// MatchHostConfigError matches a daemon error message that states that a
+// particular host config option is invalid on the given operating system. This
+// function pulls the invalid OS from the error message. This function CANNOT
+// provide the correct OS, however.
+func MatchHostConfigError(errMsg string) string {
+	// We're trying to match a ton of errors here. This is totally awful and an
+	// utter, embarassing hack. I went through the docker engine code and found
+	// the patterns we might be looking for. These come from
+	// github.com/docker/docker/runconfig.
+	//
+	// For Windows options on Linux:
+	//
+	// * Invalid isolation: %q - %s only supports 'default'
+	// * Invalid QoS settings: %s does not support configuration of <whatever>
+	//
+	// For Linux options on Windows:
+	//
+	// * Windows does not support CPU real-time <whatever>
+	// * Windows does not support privileged mode
+	// * Windows does not support root filesystem in read-only mode
+	//
+	// There is additionally an error about invalid isolation, but it's not
+	// applicable.
+	//
+	// Further compounding this mess, I'm pretty sure that the error message
+	// can be located anywhere in the error string, because it might be
+	// wrapped, possibly multiple times over. So we'll have to use regex, to
+	// have a fighting chance of being somewhat less fragile.
+
+	invalidIsolationRegex := regexp.MustCompile(
+		`Invalid isolation: "[[:alpha:]]+" - ([[:alpha:]]+) only supports`,
+	)
+	results := invalidIsolationRegex.FindStringSubmatch(errMsg)
+	if results != nil && len(results) >= 2 {
+		return results[1]
+	}
+
+	invalidQoSRegex := regexp.MustCompile(
+		`Invalid QoS settings: ([[:alpha:]]+) does not support configuration`,
+	)
+	results = invalidQoSRegex.FindStringSubmatch(errMsg)
+	if results != nil && len(results) >= 2 {
+		return results[1]
+	}
+
+	// don't have to use regex for the Linux options on Windows, cause the
+	// message is hard-coded
+	if strings.Contains(errMsg, "Windows does not support ") {
+		return "windows"
+	}
+
+	return ""
 }
 
 // normalizeEvent takes a cluster Event and ensures backward compatibility

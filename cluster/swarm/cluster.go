@@ -152,6 +152,36 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 			}
 			retries++
 		}
+
+		// swarm approaches the problem of OS mismatch in a very hamfisted way.
+		// specifically, it looks for a certain error message which is
+		// generated when the engine attempts to pull the image. However, other
+		// error messages can be the result of attempted to schedule a
+		// container to the wrong OS. Specifically, certain HostConfig options
+		// are invalid on certain OSes.
+		//
+		// unlike osMismatch, the resulting error from a host config
+		// incompatibility does not specify which OS the config can be used on,
+		// only which OS it cannot. therefore, if we get an error resulting
+		// from a host config incompatibility, we add a negative constraint for
+		// the incompatible OS, in the hopes that the next attempt actually
+		// works.
+		//
+		// fortunately, at the present moment, swarm only supports Windows and
+		// Linux, which means by process of elimination, if it's not Linux, it
+		// must be windows, and visa versa. this means we don't have to retry
+		// a bunch of times until we get it right; once should do.
+
+		osMismatch = api.MatchHostConfigError(err.Error())
+		if osMismatch != "" {
+			config.AddConstraint("ostype!=" + osMismatch)
+			container, err = c.createContainer(config, name, false, authConfig)
+			if err == nil {
+				return container, nil
+			}
+			retries++
+		}
+
 		// fails with image not found, then try to reschedule with image affinity
 		// we need to check multiple cases to ensure backward compatibility, because
 		// the error message changed over time
