@@ -29,6 +29,7 @@ import (
 	engineapi "github.com/docker/docker/client"
 	engineapinop "github.com/docker/swarm/api/nopclient"
 	"github.com/docker/swarm/swarmclient"
+	"github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -1667,4 +1668,31 @@ func (e *Engine) RefreshEngine(hostname string) error {
 		return fmt.Errorf("invalid engine name during refresh: %s vs %s", hostname, e.Name)
 	}
 	return e.RefreshContainers(true)
+}
+
+// GetImagePlatforms calls the DistributionInspect method on the underlying
+// engine and returns the valid platforms for the image.
+func (e *Engine) GetImagePlatforms(config *ContainerConfig, authConfig *types.AuthConfig) ([]v1.Platform, error) {
+	if config == nil {
+		return nil, fmt.Errorf("nil container config")
+	}
+
+	img := config.Image
+	// now, encode registry auth. if the authConfig is nil, this will just
+	// return EmptyString, which is a valid value.
+	encodedAuth, err := encodeAuthToBase64(authConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// make the call to DistributionInspect for this image
+	result, err := e.apiClient.DistributionInspect(context.Background(), img, encodedAuth)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// result is a type called "DistributionInspect", but we just need one part
+	// of it, the Platforms.
+	return result.Platforms, nil
 }
