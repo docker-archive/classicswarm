@@ -138,6 +138,11 @@ func (c *Cluster) StartContainer(container *cluster.Container) error {
 
 // CreateContainer aka schedule a brand new container into the cluster.
 func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, authConfig *types.AuthConfig) (*cluster.Container, error) {
+	// engines newer than api version 1.30 have a /distribution/{name:.*}/json
+	// endpoint, which can be used to contact a registry and determine the
+	// image platforms. before starting a container, fill in the constraint.
+	c.setOSTypeConstraint(config, authConfig)
+
 	container, err := c.createContainer(config, name, false, authConfig)
 
 	if err != nil {
@@ -175,6 +180,74 @@ func (c *Cluster) CreateContainer(config *cluster.ContainerConfig, name string, 
 		}
 	}
 	return container, err
+}
+
+// setOSTypeConstraint chooses an engine and leverages its /distribution
+// endpoint to determine a list of compatible Platforms for the image. it then
+// adds an ostype constraint for the valid OS types. If an ostype constraint
+// already exists on container, then this will not overwrite it.
+func (c *Cluster) setOSTypeConstraint(config *cluster.ContainerConfig, authConfig *types.AuthConfig) error {
+	// first, check if there is an existing ostype constraint. if so, leave this
+	// alone and take no action.
+	constraints := config.Constraints()
+	for _, constraint := range constraints {
+		if strings.Contains(constraint, "ostype") {
+			return nil
+		}
+	}
+
+	// now that we know we have to set an os constraint, choose an engine at
+	// random. any engine should theoretically be able to contact the registry
+	engine, err := c.RANDOMENGINE()
+	if err != nil {
+		return err
+	}
+
+	// now call the corresponding method on this engine
+	platforms, err := engine.GetImagePlatforms(config, authConfig)
+	if err != nil {
+		return err
+	}
+
+	// now extract the OSes. use a map to deduplicate, in case the image is
+	// available on several architectures with the same platform.
+	ostypes := map[string]struct{}{}
+	for _, p := range platforms {
+		ostypes[p.OS] = struct{}{}
+	}
+
+	// if there is only one OS type, then we can just set a constraint. if the
+	// image is available on more OS types, then we need to build a regex for
+	// the constraint, which is more complicated. if for some reason there are
+	// 0 valid OS types, then just return without doing anything.
+	if len(ostypes) == 1 {
+		// iterate, which is how we get a map key that we don't already know
+		var ostype string
+		for os := range ostypes {
+			ostype = os
+		}
+		config.AddConstraint("ostype==" + ostype)
+	} else if len(ostypes) > 1 {
+		// first, turn the map into a slice of parenthesized strings. strictly
+		// speaking, we don't HAVE to put parentheses, but it's better to be
+		// explicity than to rely on regex order of operations
+		var osStrings []string
+		for os := range ostypes {
+			osStrings = append(osStrings, fmt.Sprintf("(%s)", os))
+		}
+
+		// then, string join the resulting slice with |
+		osStringsJoined := strings.Join(osStrings, "|")
+
+		// and finally, pack it in between / characters to denote that it's a
+		// regular expression
+		osRegex := fmt.Sprintf("/%s/", osStringsJoined)
+
+		// and add it as a constraint
+		config.AddConstraint("ostype==" + osRegex)
+	}
+
+	return nil
 }
 
 func (c *Cluster) createContainer(config *cluster.ContainerConfig, name string, withImageAffinity bool, authConfig *types.AuthConfig) (*cluster.Container, error) {

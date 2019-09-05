@@ -457,3 +457,8 @@ func (client *MockClient) VolumesPrune(ctx context.Context, pruneFilter filters.
 	args := client.Mock.Called(ctx, pruneFilter)
 	return args.Get(0).(types.VolumesPruneReport), args.Error(1)
 }
+
+func (client *MockClient) DistributionInspect(ctx context.Context, image, authConfig string) (registry.DistributionInspect, error) {
+	args := client.Mock.Called(ctx, image, authConfig)
+	return args.Get(0).(registry.DistributionInspect), args.Error(1)
+}

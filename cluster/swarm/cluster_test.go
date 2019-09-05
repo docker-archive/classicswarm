@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,9 +12,14 @@ import (
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
 	networktypes "github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/volume"
 	engineapimock "github.com/docker/swarm/api/mockclient"
 	"github.com/docker/swarm/cluster"
+	"github.com/docker/swarm/scheduler"
+	"github.com/docker/swarm/scheduler/filter"
+	"github.com/docker/swarm/scheduler/strategy"
+	"github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -267,4 +273,163 @@ func TestTagImage(t *testing.T) {
 	apiClient.On("ImageTag", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 	assert.Nil(t, c.TagImage("busybox", "test_busybox:latest", false))
 	assert.NotNil(t, c.TagImage("busybox_not_exists", "test_busybox:latest", false))
+}
+
+func TestSetOsTypeConstraint(t *testing.T) {
+	c := &Cluster{
+		engines: make(map[string]*cluster.Engine),
+	}
+
+	// because setOSTypeConstraint uses RANDOMENGINE, we need to initialize a
+	// scheduler. it doesn't actually DO anything, but it cannot be nil. and to
+	// initialize a scheduler, we first need to initialize a strategy and a
+	// filter.
+	strat, err := strategy.New("binpack")
+	assert.Nil(t, err)
+	filters, err := filter.New([]string{})
+	assert.Nil(t, err)
+
+	sched := scheduler.New(strat, filters)
+	c.scheduler = sched
+
+	e := createEngine(t, "test-engine")
+	c.engines[e.ID] = e
+
+	containerConfig := containertypes.Config{
+		Image: "fooImage",
+	}
+
+	t.Run("NoPlatforms", func(t *testing.T) {
+		// call cluster.BuildContainer for each subtest so we don't mutate the
+		// master object
+		config := cluster.BuildContainerConfig(containerConfig, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
+
+		// NoPlatforms tests that if no platforms are present, then no filter
+		// is set
+		apiClient := mockClientWithInit()
+		apiClient.On(
+			"DistributionInspect", mock.Anything, "fooImage", mock.Anything,
+		).Return(registry.DistributionInspect{Platforms: []v1.Platform{}}, nil)
+
+		// set the engine we created to use the mock client
+		e.ConnectWithClient(apiClient)
+
+		// and then try doing setOSTypeConstraint
+		err := c.setOSTypeConstraint(config, nil)
+		assert.Nil(t, err)
+
+		c, ok := getOSTypeConstraint(config)
+		assert.False(t, ok, "expected no ostype constraint but got one with value %q", c)
+	})
+
+	t.Run("OnePlatform", func(t *testing.T) {
+		config := cluster.BuildContainerConfig(containerConfig, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
+
+		apiClient := mockClientWithInit()
+		apiClient.On(
+			"DistributionInspect", mock.Anything, "fooImage", mock.Anything,
+		).Return(
+			registry.DistributionInspect{
+				Platforms: []v1.Platform{
+					{OS: "windows"},
+				},
+			}, nil,
+		)
+
+		e.ConnectWithClient(apiClient)
+
+		err := c.setOSTypeConstraint(config, nil)
+		assert.Nil(t, err)
+
+		c, ok := getOSTypeConstraint(config)
+		assert.True(t, ok, "expected ostype constraint, but none present")
+		assert.Equal(t, c, "windows")
+	})
+
+	t.Run("TwoPlatforms", func(t *testing.T) {
+		config := cluster.BuildContainerConfig(containerConfig, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
+
+		apiClient := mockClientWithInit()
+		apiClient.On(
+			"DistributionInspect", mock.Anything, "fooImage", mock.Anything,
+		).Return(
+			registry.DistributionInspect{
+				Platforms: []v1.Platform{
+					{OS: "linux"},
+					{OS: "windows"},
+				},
+			}, nil,
+		)
+
+		e.ConnectWithClient(apiClient)
+
+		err := c.setOSTypeConstraint(config, nil)
+		assert.Nil(t, err)
+
+		c, ok := getOSTypeConstraint(config)
+		assert.True(t, ok, "expected ostype constraint, but none present")
+		// the order will be random, but it should be one of these two
+		assert.True(t,
+			c == "/(linux)|(windows)/" || c == "/(windows)|(linux)/",
+			"expected linux and windows, but got %q", c,
+		)
+	})
+
+	t.Run("DuplicatePlatforms", func(t *testing.T) {
+		config := cluster.BuildContainerConfig(containerConfig, containertypes.HostConfig{}, networktypes.NetworkingConfig{})
+
+		apiClient := mockClientWithInit()
+		apiClient.On(
+			"DistributionInspect", mock.Anything, "fooImage", mock.Anything,
+		).Return(
+			registry.DistributionInspect{
+				Platforms: []v1.Platform{
+					{OS: "linux"},
+					{OS: "linux"},
+				},
+			}, nil,
+		)
+
+		e.ConnectWithClient(apiClient)
+
+		err := c.setOSTypeConstraint(config, nil)
+		assert.Nil(t, err)
+
+		c, ok := getOSTypeConstraint(config)
+		assert.True(t, ok, "expected ostype constraint, but none present")
+		// the order will be random, but it should be one of these two
+		assert.Equal(t, c, "linux")
+	})
+}
+
+// getOSTypeConstraint is a helper function that retrieves and returns the
+// value of the ostype constraint on the config. it additionally returns true
+// if any constraint existed, and false if none did.
+func getOSTypeConstraint(config *cluster.ContainerConfig) (string, bool) {
+	constraints := config.Constraints()
+	for _, constraint := range constraints {
+		if strings.Contains(constraint, "ostype==") {
+			return strings.TrimPrefix(constraint, "ostype=="), true
+		}
+	}
+
+	return "", false
+}
+
+// mockClientWithInit creates a mock engine API client with the necessary
+// methods for initializing the connection already filled in
+func mockClientWithInit() *engineapimock.MockClient {
+	apiClient := engineapimock.NewMockClient()
+	apiClient.On("Info", mock.Anything).Return(mockInfo, nil)
+	apiClient.On("ServerVersion", mock.Anything).Return(mockVersion, nil)
+	apiClient.On("NetworkList", mock.Anything,
+		mock.AnythingOfType("NetworkListOptions"),
+	).Return([]types.NetworkResource{}, nil)
+	apiClient.On("VolumeList", mock.Anything, mock.Anything).Return(volume.VolumeListOKBody{}, nil)
+	apiClient.On("Events", mock.Anything, mock.AnythingOfType("EventsOptions")).Return(make(chan events.Message), make(chan error))
+	apiClient.On("ImageList", mock.Anything, mock.AnythingOfType("ImageListOptions")).Return([]types.ImageSummary{}, nil)
+	apiClient.On("ContainerList", mock.Anything, types.ContainerListOptions{All: true, Size: false}).Return([]types.Container{}, nil).Once()
+	apiClient.On("NegotiateAPIVersion", mock.Anything).Return()
+
+	return apiClient
 }

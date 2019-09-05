@@ -395,3 +395,7 @@ func (client *NopClient) VolumeRemove(ctx context.Context, volumeID string, forc
 func (client *NopClient) VolumesPrune(ctx context.Context, pruneFilter filters.Args) (types.VolumesPruneReport, error) {
 	return types.VolumesPruneReport{}, errNoEngine
 }
+
+func (client *NopClient) DistributionInspect(_ context.Context, _, _ string) (registry.DistributionInspect, error) {
+	return registry.DistributionInspect{}, nil
+}
