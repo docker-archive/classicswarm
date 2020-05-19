@@ -1,8 +1,9 @@
 ---
 description: swarm command overview
 keywords: Swarm, cluster, commands
-title: 'Swarm: A Docker-native clustering system'
 ---
+
+# Classic Swarm: A Docker-native clustering system
 
 The `swarm` command runs a Swarm container on a Docker Engine host and performs the task specified by the required subcommand, `COMMAND`.
 

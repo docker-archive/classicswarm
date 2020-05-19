@@ -1,8 +1,9 @@
 ---
 description: Swarm and container networks
 keywords: docker, swarm, clustering,  networking
-title: Swarm and container networks
 ---
+
+# Classic Swarm and container networks
 
 Docker Swarm is fully compatible with Docker's networking features. This
 includes the multi-host networking feature which allows creation of custom
@@ -123,7 +124,7 @@ NETWORK ID          NAME                   DRIVER
 The `swarm_network` was removed from every node. The `bridge2` was removed only
 from `node-0`.
 
-## Docker Swarm documentation index
+## Docker Classic Swarm documentation index
 
 - [Docker Swarm overview](index.md)
 - [Scheduler strategies](scheduler/strategy.md)

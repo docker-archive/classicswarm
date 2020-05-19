@@ -1,8 +1,9 @@
 ---
 description: Swarm strategies
 keywords: docker, swarm, clustering, strategies
-title: Docker Swarm strategies
 ---
+
+# Docker Classic Swarm strategies
 
 The Docker Swarm scheduler features multiple strategies for ranking nodes. The
 strategy you choose determines how Swarm computes ranking. When you run a new
@@ -113,7 +114,7 @@ of RAM on `node-2`.
 If two nodes have the same amount of available RAM and CPUs, the `binpack`
 strategy prefers the node with most containers.
 
-## Docker Swarm documentation index
+## Docker Classic Swarm documentation index
 
 - [Docker Swarm overview](../index.md)
 - [Discovery options](../discovery.md)

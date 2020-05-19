@@ -1,8 +1,9 @@
 ---
 description: Provision with Machine
 keywords: docker, Swarm, clustering, provision, Machine
-title: Provision a Swarm cluster with Docker Machine
 ---
+
+# Provision a Classic Swarm cluster with Docker Machine
 
 You can use Docker Machine to provision a Docker Swarm cluster. Machine is the
 Docker provisioning tool. Machine provisions the hosts, installs Docker Engine

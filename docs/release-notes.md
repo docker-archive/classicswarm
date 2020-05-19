@@ -1,8 +1,9 @@
 ---
-title: Docker Swarm (standalone) release notes
 description: Release notes for Docker Swarm (standalone)
 keywords: release notes, swarm
 ---
+
+# Docker Classic Swarm (standalone) release notes
 
 ## 1.2.6 (2017-01-17)
 

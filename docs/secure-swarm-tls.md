@@ -1,8 +1,9 @@
 ---
 description: Swarm and transport layer security
 keywords: docker, swarm, TLS, discovery, security, certificates
-title: Use Docker Swarm with TLS
 ---
+
+# Use Docker Classic Swarm with TLS
 
 All nodes in a Swarm cluster must bind their Docker daemons to a network port.
 This has obvious security implications. These implications are compounded when

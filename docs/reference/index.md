@@ -1,8 +1,9 @@
 ---
 description: Docker Swarm Commands Overview
 keywords: Swarm, cluster, commands
-title: Swarm command-line reference
 ---
+
+# Swarm command-line reference
 
 -   [swarm](swarm.md) — Run a Swarm container on Docker Engine
 -   [create](create.md) — Create a discovery token

@@ -1,8 +1,9 @@
 ---
 description: Plan for Swarm in production
 keywords: docker, swarm, scale, voting, application, plan
-title: Plan for Swarm in production
 ---
+
+# Plan for Swarm in production
 
 This article provides guidance to help you plan, deploy, and manage Docker
 swarm clusters in business critical production environments. The following high

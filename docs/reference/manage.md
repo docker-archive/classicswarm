@@ -1,8 +1,9 @@
 ---
 description: Create a Swarm manager.
 keywords: swarm, create, manage
-title: manage  — Create a Swarm manager
 ---
+
+# manage  — Create a Swarm manager
 
 Prerequisite: Before using `manage` to create a Swarm manager, establish a discovery backend as described in [this discovery topic](../discovery.md).
 

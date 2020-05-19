@@ -1,8 +1,9 @@
 ---
 description: Running a Swarm container on Docker Engine. Run a Swarm binary on the host OS without Docker Engine.
 keywords: docker, Swarm, container, binary, clustering, install, installation
-title: Get Docker Swarm
 ---
+
+# Get Docker Classic Swarm
 
 You can create a Docker Swarm cluster using the `swarm` executable image from a
 container or using an executable `swarm` binary you install on your system. This

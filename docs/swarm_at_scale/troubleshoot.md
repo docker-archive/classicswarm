@@ -1,8 +1,9 @@
 ---
 description: Try Swarm at scale
 keywords: docker, swarm, scale, voting, application, certificates
-title: Troubleshoot the application
 ---
+
+# Troubleshoot the application
 
 It's a fact of life that things fail. With this in mind, it's important to
 understand what happens when failures occur and how to mitigate them. The
@@ -201,11 +202,6 @@ network latency and reliability is key to a smooth and workable solution.
 ![Swarm cluster deployed across AWS and Azure](../images/deployed-across.jpg)
 
 ## Related information
-
-The application in this example could be deployed on Docker Universal Control
-Plane (UCP) which is part of Docker Data Center. To try the application on UCP in
-your environment, [request a free trial](https://www.docker.com/products/docker-datacenter). Other
-useful documentation:
 
 * [Plan for Swarm in production](../plan-for-production.md)
 * [Swarm and container networks](../networking.md)

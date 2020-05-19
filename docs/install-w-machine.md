@@ -4,8 +4,9 @@ keywords: docker, swarm, clustering, discovery, release, notes
 menu:
   main:
     parent: workw_swarm
-title: Install and create a Docker Swarm
 ---
+
+# Install and create a Docker Classic Swarm
 
 You use Docker Swarm to host and schedule a cluster of Docker containers. This section introduces you to Docker Swarm by teaching you how to create a swarm
 on your local machine using Docker Machine and VirtualBox.
@@ -19,7 +20,7 @@ installed.
 Using the instructions appropriate to your system architecture, [install Docker
 Machine](/machine/install-machine).
 
-## Create a Docker Swarm
+## Create a Docker Classic Swarm
 
 Docker Machine gets hosts ready to run Docker containers. Each node in your
 Docker Swarm must have access to Docker to pull images and run them in

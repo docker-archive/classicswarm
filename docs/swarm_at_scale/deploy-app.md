@@ -1,8 +1,9 @@
 ---
 description: Try swarm at scale
 keywords: docker, swarm, scale, voting, application, certificates
-title: Deploy the application
 ---
+
+# Deploy the application
 
 You've
 [deployed the load balancer, the discovery backend, and a swarm cluster](deploy-infra.md)
@@ -12,7 +13,7 @@ starting a number of "Dockerized applications" running in containers.
 The diagram below shows the final application configuration including the overlay
 container network, `voteapp`.
 
-![Voteapp deployment overview](/swarm/images/final-result.png)
+![Voteapp deployment overview](../images/final-result.png)
 
 In this procedure you connect containers to this network. The `voteapp`
 network is available to all Docker hosts using the Consul discovery backend.
@@ -235,7 +236,7 @@ Now, you can test your application.
 
     You should see something similar to the following:
 
-    ![Voting page](/swarm/images/vote-app-test.png)
+    ![Voting page](../images/vote-app-test.png)
 
 2. Click on one of the two voting options.
 3. Navigate to the `http://results.myenterprise.example.com` site to see the results.
@@ -243,7 +244,7 @@ Now, you can test your application.
 
     Both sides change as you switch your vote.
 
-    ![Voting and results page](/swarm/images/votes.gif)
+    ![Voting and results page](../images/votes.gif)
 
 ## Extra Credit: Deployment with Docker Compose
 
@@ -268,7 +269,7 @@ the containers at once. This extra credit
 
 2. Try to create Compose file on your own by reviewing the tasks in this tutorial.
 
-    [The version 2 Compose file format](../../compose/compose-file/compose-file-v2.md)
+    [The version 2 Compose file format](https://docs.docker.com/compose/compose-file/compose-file-v2/)
     is the best to use. Translate each `docker run` command into a service
     in the `docker-compose.yml` file. For example,
     this command:
@@ -298,7 +299,7 @@ the containers at once. This extra credit
     declare those at the bottom of the file.
 
 3. Check your work against
-   [this file](/swarm/swarm_at_scale/docker-compose.yml){: target="_blank" class="_"}.
+   [this file](../swarm_at_scale/docker-compose.yml){: target="_blank" class="_"}.
 
 4. When you are satisfied, save the `docker-compose.yml` file to your system.
 

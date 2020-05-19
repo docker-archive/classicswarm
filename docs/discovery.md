@@ -1,8 +1,9 @@
 ---
 description: Swarm discovery
 keywords: docker, swarm, clustering, discovery
-title: Docker Swarm discovery
 ---
+
+# Docker Classic Swarm discovery
 
 Docker Swarm comes with multiple discovery backends. You use a hosted discovery service with Docker Swarm. The service maintains a list of IPs in your cluster.
 This page describes the different types of hosted discovery. These are:
@@ -170,7 +171,7 @@ Or with node discovery:
 > Please switch to one of the other discovery mechanisms.
 {:.warning}
 
-## Docker Swarm documentation index
+## Docker Classic Swarm documentation index
 
 - [Docker Swarm overview](index.md)
 - [Scheduler strategies](scheduler/strategy.md)

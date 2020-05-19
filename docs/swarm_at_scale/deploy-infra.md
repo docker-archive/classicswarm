@@ -1,8 +1,9 @@
 ---
 description: Try Swarm at scale
 keywords: docker, swarm, scale, voting, application, certificates
-title: Deploy application infrastructure
 ---
+
+# Deploy application infrastructure
 
 In this step, you create several Docker hosts to run your application stack on.
 Before you continue, make sure you have taken the time to
@@ -185,7 +186,7 @@ configuration for Nginx.
 5. Use your favorite editor to create a `config.toml` file and add this content
 to the file:
 
-   ```json
+   ```toml
    ListenAddr = ":8080"
    DockerURL = "tcp://SWARM_MANAGER_IP:3376"
    TLSCACert = "/var/lib/boot2docker/ca.pem"

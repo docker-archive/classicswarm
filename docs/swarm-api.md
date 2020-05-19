@@ -5,7 +5,7 @@ title: Docker Swarm API
 ---
 
 The Docker Swarm API is mostly compatible with the
-[Docker Remote API](../engine/api/index.md). This
+[Docker Remote API](https://docs.docker.com/engine/api/). This
 document is an overview of the differences between the Swarm API and the Docker
 Engine API.
 
@@ -170,7 +170,7 @@ $ docker run --rm -it yourprivateimage:latest
 
 
 
-## Docker Swarm documentation index
+## Docker Classic Swarm documentation index
 
 - [Docker Swarm overview](/swarm/)
 - [Discovery options](/swarm/discovery/)

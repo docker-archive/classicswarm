@@ -20,7 +20,7 @@ This procedure includes the following steps:
 - [Step 4: Install the keys](configure-tls.md#step-4-install-the-keys)
 - [Step 5: Configure the Engine daemon for TLS](configure-tls.md#step-5-configure-the-engine-daemon-for-tls)
 - [Step 6: Create a swarm cluster](configure-tls.md#step-6-create-a-swarm-cluster)
-- [Step 7: Create the swarm manager using TLS](configure-tls.md#step-7-create-the-swarm-manager-using-tls)
+- [Step 7: Create the swarm manager using TLS](configure-tls.md#step-7-start-the-swarm-manager-using-tls)
 - [Step 8: Test the swarm manager configuration](configure-tls.md#step-8-test-the-swarm-manager-configuration)
 - [Step 9: Configure the Engine CLI to use TLS](configure-tls.md#step-9-configure-the-engine-cli-to-use-tls)
 

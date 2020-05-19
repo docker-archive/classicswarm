@@ -1,8 +1,9 @@
 ---
 description: Use overlay for multi-host networking
 keywords: Examples, Usage, network, docker, documentation, user guide, multihost, cluster
-title: Multi-host networking with standalone swarms
 ---
+
+# Multi-host networking with standalone swarms
 
 ## Standalone swarm only!
 
@@ -11,7 +12,7 @@ Docker, as opposed to swarm mode. Standalone swarms (sometimes known as Swarm
 Classic) rely on an external key-value store to store networking information.
 Docker swarm mode stores networking information in the Raft logs on the swarm
 managers. If you use swarm mode, see
-[swarm mode networking](../engine/swarm/networking.md) instead of this article.
+[swarm mode networking](https://docs.docker.com/engine/swarm/networking/) instead of this article.
 
 If you are using standalone swarms, this article may be useful
 to you. This article uses an example to explain the basics of creating a
@@ -400,13 +401,6 @@ to have external connectivity outside of their cluster.
    the `my-net` overlay network. While the `eth1` interface represents the
    container interface that is connected to the `docker_gwbridge` network.
 
-## Use Docker Compose with swarm classic
-
-Refer to the Networking feature introduced in
-[Compose V2 format](../compose/networking.md)
-and execute the multi-host networking scenario in the swarm cluster used above.
-
 ## Next steps
 
-- [Networking overview](../network/index.md)
-- [Overlay networks](../network/overlay.md)
+- [Networking overview](networking.md)

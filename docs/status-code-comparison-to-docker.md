@@ -1,8 +1,9 @@
 ---
 description: Swarm API response codes
 keywords: docker, swarm, response, code, api
-title: Swarm vs. Engine response codes
 ---
+
+# Classic Swarm vs. Engine response codes
 
 Docker Engine provides a REST API for making calls to the Engine daemon. Docker Swarm allows a caller to make the same calls to a cluster of Engine daemons. While the API calls are the same, the API response status codes do differ. This document explains the differences.
 
