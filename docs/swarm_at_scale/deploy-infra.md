@@ -1,11 +1,6 @@
 ---
-advisory: swarm-standalone
-hide_from_sitemap: true
 description: Try Swarm at scale
 keywords: docker, swarm, scale, voting, application, certificates
-redirect_from:
-- /swarm/swarm_at_scale/03-create-cluster/
-- /swarm/swarm_at_scale/02-deploy-infra/
 title: Deploy application infrastructure
 ---
 

@@ -1,6 +1,4 @@
 ---
-advisory: swarm-standalone
-hide_from_sitemap: true
 description: Running a Swarm container on Docker Engine. Run a Swarm binary on the host OS without Docker Engine.
 keywords: docker, Swarm, container, binary, clustering, install, installation
 title: Get Docker Swarm

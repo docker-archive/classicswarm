@@ -1,6 +1,4 @@
 ---
-advisory: swarm-standalone
-hide_from_sitemap: true
 description: Swarm strategies
 keywords: docker, swarm, clustering, strategies
 title: Docker Swarm strategies

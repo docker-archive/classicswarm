@@ -1,6 +1,4 @@
 ---
-advisory: swarm-standalone
-hide_from_sitemap: true
 description: Swarm rescheduling
 keywords: docker, swarm, clustering, rescheduling
 title: Swarm rescheduling

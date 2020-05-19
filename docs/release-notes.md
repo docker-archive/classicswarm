@@ -2,9 +2,6 @@
 title: Docker Swarm (standalone) release notes
 description: Release notes for Docker Swarm (standalone)
 keywords: release notes, swarm
-toc_max: 2
-redirect_from:
-  - /release-notes/docker-swarm/
 ---
 
 ## 1.2.6 (2017-01-17)

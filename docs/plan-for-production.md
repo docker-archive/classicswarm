@@ -1,6 +1,4 @@
 ---
-advisory: swarm-standalone
-hide_from_sitemap: true
 description: Plan for Swarm in production
 keywords: docker, swarm, scale, voting, application, plan
 title: Plan for Swarm in production

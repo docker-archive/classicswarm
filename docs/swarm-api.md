@@ -1,11 +1,6 @@
 ---
-advisory: swarm-standalone
-hide_from_sitemap: true
 description: Swarm API
 keywords: docker, swarm, clustering, api
-redirect_from:
-- /api/swarm-api/
-- /swarm/api/
 title: Docker Swarm API
 ---
 

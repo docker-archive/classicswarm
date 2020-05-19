@@ -1,6 +1,4 @@
 ---
-advisory: swarm-standalone
-hide_from_sitemap: true
 description: Try Swarm at scale
 keywords: docker, swarm, scale, voting, application,  certificates
 title: Try Swarm at scale
