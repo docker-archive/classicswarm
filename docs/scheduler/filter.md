@@ -1,15 +1,10 @@
-<!--[metadata]>
-+++
-title = "Filters"
-description = "Swarm filters"
-keywords = ["docker, swarm, clustering,  filters"]
-[menu.main]
-parent="swarm_sched"
-weight=4
-+++
-<![end-metadata]-->
-
-# Swarm filters
+---
+advisory: swarm-standalone
+hide_from_sitemap: true
+description: Swarm filters
+keywords: docker, swarm, clustering, filters
+title: Swarm filters
+---
 
 Filters tell Docker Swarm scheduler which nodes to use when creating and running
 a container.
@@ -50,7 +45,7 @@ $ swarm manage --filter=health --filter=dependency
 When creating a container or building an image, you use a `constraint` or
 `health` filter to select a subset of nodes to consider for scheduling.
 If a node in Swarm cluster has a label with key `containerslots`
-and a number-value, Swarm will not launch more containers than the given number.
+and a number-value, Swarm does not launch more containers than the given number.
 
 ### Use a constraint filter
 
@@ -75,14 +70,14 @@ these default tags or custom labels. The Swarm scheduler looks for matching node
 on the cluster and starts the container there. This approach has several
 practical applications:
 
-* Schedule based on specific host properties, for example,`storage=ssd` schedules
+* Schedule based on specific host properties, for example, `storage=ssd` schedules
   containers on specific hardware.
-* Force containers to run in a given location, for example region=us-east`.
+* Force containers to run in a given location, for example `region=us-east`.
 * Create logical cluster partitions by splitting a cluster into
   sub-clusters with different properties, for example `environment=production`.
 
 
-#### Example node constraints  
+#### Example node constraints
 
 To specify custom label for a node, pass a list of `--label`
 options at `docker` startup time. For instance, to start `node-1` with the
@@ -101,11 +96,11 @@ $ swarm join --advertise=192.168.0.43:2375 token://XXXXXXXXXXXXXXXXXX
 ```
 
 Once the nodes are joined to a cluster, the Swarm manager pulls their respective
-tags.  Moving forward, the manager takes the tags into account when scheduling
+tags. Moving forward, the manager takes the tags into account when scheduling
 new containers.
 
 Continuing the previous example, assuming your cluster with `node-1` and
-`node-2`, you can run a MySQL server container on the cluster.  When you run the
+`node-2`, you can run a MySQL server container on the cluster. When you run the
 container, you can use a `constraint` to ensure the database gets good I/O
 performance. You do this by filtering for nodes with flash drives:
 
@@ -119,7 +114,7 @@ f8b693db9cd6        mysql:latest        "mysqld"            Less than a second a
 ```
 
 In this example, the manager selected all nodes that met the `storage=ssd`
-constraint and applied resource management on top of them.   Only `node-1` was
+constraint and applied resource management on top of them. Only `node-1` was
 selected because it's the only host running flash.
 
 Suppose you want to run an Nginx frontend in a cluster. In this case, you wouldn't want flash drives because the frontend mostly writes logs to disk.
@@ -137,34 +132,29 @@ f8b693db9cd6        mysql:latest        "mysqld"            Up About a minute   
 The scheduler selected `node-2` since it was started with the `storage=disk` label.
 
 Finally, build args can be used to apply node constraints to a `docker build`.
-Again, you'll avoid flash drives.
+This example shows how to avoid flash drives.
 
 ```bash
 $ mkdir sinatra
 $ cd sinatra
 $ echo "FROM ubuntu:14.04" > Dockerfile
-$ echo "MAINTAINER Kate Smith <ksmith@example.com>" >> Dockerfile
 $ echo "RUN apt-get update && apt-get install -y ruby ruby-dev" >> Dockerfile
 $ echo "RUN gem install sinatra" >> Dockerfile
 $ docker build --build-arg=constraint:storage==disk -t ouruser/sinatra:v2 .
 Sending build context to Docker daemon 2.048 kB
 Step 1 : FROM ubuntu:14.04
  ---> a5a467fddcb8
-Step 2 : MAINTAINER Kate Smith <ksmith@example.com>
- ---> Running in 49e97019dcb8
- ---> de8670dcf80e
-Removing intermediate container 49e97019dcb8
-Step 3 : RUN apt-get update && apt-get install -y ruby ruby-dev
+Step 2 : RUN apt-get update && apt-get install -y ruby ruby-dev
  ---> Running in 26c9fbc55aeb
  ---> 30681ef95fff
 Removing intermediate container 26c9fbc55aeb
-Step 4 : RUN gem install sinatra
+Step 3 : RUN gem install sinatra
  ---> Running in 68671d4a17b0
  ---> cd70495a1514
 Removing intermediate container 68671d4a17b0
 Successfully built cd70495a1514
 
-$ docker images
+$ docker image ls
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 dockerswarm/swarm   manager             8c2c56438951        2 days ago          795.7 MB
 ouruser/sinatra     v2                  cd70495a1514        35 seconds ago      318.7 MB
@@ -173,7 +163,7 @@ ubuntu              14.04               a5a467fddcb8        11 days ago         
 
 ### Use the health filter
 
-The node `health` filter prevents the scheduler form running containers
+The node `health` filter prevents the scheduler from running containers
 on unhealthy nodes. A node is considered unhealthy if the node is down or it
 can't communicate with the cluster store.
 
@@ -185,18 +175,18 @@ You may give your Docker nodes the containerslots label
 $ docker daemon --label containerslots=3
 ```
 
-Swarm will run up to 3 containers at this node, if all nodes are "full",
+Swarm runs up to 3 containers at this node, if all nodes are "full",
 an error is thrown indicating no suitable node can be found.
-If the value is not castable to an integer number or is not present,
-there will be no limit on container number.
+If the value cannot be cast to an integer number or is not present,
+there is no limit on container number.
 
 ## Container filters
 
 When creating a container, you can use three types of container filters:
 
-* [`affinity`](#use-an-affinity-filter)
-* [`dependency`](#use-a-dependency-filter)
-* [`port`](#use-a-port-filter)
+* [`affinity`](filter.md#use-an-affinity-filter)
+* [`dependency`](filter.md#use-a-dependency-filter)
+* [`port`](filter.md#use-a-port-filter)
 
 ### Use an affinity filter
 
@@ -204,7 +194,7 @@ Use an `affinity` filter to create "attractions" between containers. For
 example, you can run a container and instruct Swarm to schedule it next to
 another container based on these affinities:
 
-* container name or id
+* container name or ID
 * an image on the host
 * a custom label applied to the container
 
@@ -240,7 +230,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 963841b138d8        logger:latest       "logger"            Less than a second ago   running                                             node-1/logger
 ```
 
-Because of `name` affinity, the  `logger` container ends up on `node-1` along
+Because of `name` affinity, the `logger` container ends up on `node-1` along
 with the `frontend` container. Instead of the `frontend` name you could have
 supplied its ID as follows:
 
@@ -290,7 +280,7 @@ As you can see here, the containers were only scheduled on nodes that had the
 `redis` image. Instead of the image name, you could have specified the image ID.
 
 ```bash
-$ docker images
+$ docker image ls
 REPOSITORY                         TAG                       IMAGE ID            CREATED             VIRTUAL SIZE
 redis                              latest                    06a1f75304ba        2 days ago          111.1 MB
 
@@ -339,10 +329,10 @@ Currently, dependencies are declared as follows:
 
 Swarm attempts to co-locate the dependent container on the same node. If it
 cannot be done (because the dependent container doesn't exist, or because the
-node doesn't have enough resources), it will prevent the container creation.
+node doesn't have enough resources), it prevents the container creation.
 
 The combination of multiple dependencies are honored if possible. For
-instance, if you specify `--volumes-from=A --net=container:B`,  the scheduler
+instance, if you specify `--volumes-from=A --net=container:B`, the scheduler
 attempts to co-locate the container on the same node as `A` and `B`. If those
 containers are running on different nodes, Swarm does not schedule the container.
 
@@ -383,7 +373,7 @@ CONTAINER ID        IMAGE          COMMAND        PORTS                         
 87c4376856a8        nginx:latest   "nginx"        192.168.0.42:80->80/tcp         node-1/prickly_engelbart
 ```
 
-Again, repeating the same command will result in the selection of `node-3`,
+Again, repeating the same command results in the selection of `node-3`,
 since port `80` is neither available on `node-1` nor `node-2`:
 
 ```bash
@@ -397,7 +387,7 @@ f8b693db9cd6   nginx:latest        "nginx"        192.168.0.44:80->80/tcp       
 87c4376856a8   nginx:latest        "nginx"        192.168.0.42:80->80/tcp         node-1/prickly_engelbart
 ```
 
-Finally, Docker Swarm will refuse to run another container that requires port
+Finally, Docker Swarm refuses to run another container that requires port
 `80`, because it is not available on any node in the cluster:
 
 ```bash
@@ -417,7 +407,7 @@ after deleting `prickly_englbart`.
 
 A container running with `--net=host` differs from the default
 `bridge` mode as the `host` mode does not perform any port binding. Instead,
-host mode requires that you  explicitly expose one or more port numbers.  You
+host mode requires that you explicitly expose one or more port numbers. You
 expose a port using `EXPOSE` in the `Dockerfile` or `--expose` on the command
 line. Swarm makes use of this information in conjunction with the `host` mode to
 choose an available node for a new container.
@@ -451,7 +441,7 @@ $  docker tcp://<manager_ip:manager_port> run -d --expose=80 --net=host nginx
 FATA[0000] Error response from daemon: unable to find a node with port 80/tcp available in the Host mode
 ```
 
-However, port binding to the different value, for example  `81`, is still allowed.
+However, port binding to the different value, for example `81`, is still allowed.
 
 ```bash
 $  docker tcp://<manager_ip:manager_port> run -d -p 81:80 nginx:latest
@@ -515,10 +505,10 @@ The following examples illustrate some possible expressions:
 * `constraint:node!=/node-[01]/` matches all nodes, except `node-0` and `node-1`.
 * `constraint:node!=/foo\[bar\]/` matches all nodes, except `foo[bar]`. You can see the use of escape characters here.
 * `constraint:node==/(?i)node1/` matches node `node1` case-insensitive. So `NoDe1` or `NODE1` also match.
-* `affinity:image==~redis` tries to match for nodes running container with a `redis` image
-* `constraint:region==~us*` searches for nodes in the cluster belonging to the `us` region
-* `affinity:container!=~redis*` schedule a new `redis5` container to a node
-without a container that satisfies `redis*`
+* `affinity:image==~redis` tries to match for nodes running container with a `redis` image.
+* `constraint:region==~us*` searches for nodes in the cluster belonging to the `us` region.
+* `affinity:container!=~redis*` schedules a new `redis5` container to a node
+without a container that satisfies `redis*`.
 
 ## Related information
 

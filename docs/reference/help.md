@@ -1,15 +1,8 @@
-<!--[metadata]>
-+++
-title = "help"
-description = "Get help for Swarm commands."
-keywords = ["swarm, help"]
-[menu.main]
-identifier="swarm.help"
-parent="smn_swarm_subcmds"
-+++
-<![end-metadata]-->
-
-# help - Display information about a command
+---
+description: Get help for Swarm commands.
+keywords: swarm, help
+title: help - Display information about a command
+---
 
 The `help` command displays information about how to use a command.
 

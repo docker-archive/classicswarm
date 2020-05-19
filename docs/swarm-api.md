@@ -1,25 +1,22 @@
-<!--[metadata]>
-+++
-aliases = ["/api/swarm-api/", "/swarm/api/"]
-title = "Docker Swarm API"
-description = "Swarm API"
-keywords = ["docker, swarm, clustering,  api"]
-[menu.main]
-parent="workw_swarm"
-weight=99
-+++
-<![end-metadata]-->
+---
+advisory: swarm-standalone
+hide_from_sitemap: true
+description: Swarm API
+keywords: docker, swarm, clustering, api
+redirect_from:
+- /api/swarm-api/
+- /swarm/api/
+title: Docker Swarm API
+---
 
-# Docker Swarm API
-
-The Docker Swarm API is mostly compatible with the [Docker Remote
-API](https://docs.docker.com/engine/reference/api/docker_remote_api/). This
+The Docker Swarm API is mostly compatible with the
+[Docker Remote API](../engine/api/index.md). This
 document is an overview of the differences between the Swarm API and the Docker
-Remote API.
+Engine API.
 
 ## Missing endpoints
 
-Some endpoints have not yet been implemented and will return a 404 error.
+Some endpoints have not yet been implemented and return a 404 error.
 
 ```
 POST "/images/create" : "docker import" flow not implement
@@ -40,8 +37,8 @@ POST "/images/create" : "docker import" flow not implement
             New field <code>Node</code> added:<br />
 <pre>
 "Node": {
-    "ID": "ODAI:IC6Q:MSBL:TPB5:HIEE:6IKC:VCAM:QRNH:PRGX:ERZT:OK46:PMFX",
-    "IP": "0.0.0.0",
+    "Id": "ODAI:IC6Q:MSBL:TPB5:HIEE:6IKC:VCAM:QRNH:PRGX:ERZT:OK46:PMFX",
+    "Ip": "0.0.0.0",
     "Addr": "http://0.0.0.0:4243",
     "Name": "vagrant-ubuntu-saucy-64"
 }
@@ -53,7 +50,7 @@ POST "/images/create" : "docker import" flow not implement
             <code>GET "/containers/{name:.*}/json"</code>
         </td>
         <td>
-            <code>HostIP</code> replaced by the the actual Node's IP if <code>HostIP</code> is <code>0.0.0.0</code>
+            <code>HostIP</code> replaced by the actual Node's IP if <code>HostIP</code> is <code>0.0.0.0</code>
         </td>
     </tr>
     <tr>
@@ -69,7 +66,7 @@ POST "/images/create" : "docker import" flow not implement
             <code>GET "/containers/json"</code>
         </td>
         <td>
-            <code>HostIP</code> replaced by the the actual Node's IP if <code>HostIP</code> is <code>0.0.0.0</code>
+            <code>HostIP</code> replaced by the actual Node's IP if <code>HostIP</code> is <code>0.0.0.0</code>
         </td>
     </tr>
     <tr>
@@ -98,19 +95,19 @@ POST "/images/create" : "docker import" flow not implement
     </tr>
 </table>
 
-## Registry Authentication
+## Registry authentication
 
-During container create calls, the Swarm API will optionally accept an `X-Registry-Auth` header.
+During container create calls, the Swarm API optionally accepts an `X-Registry-Auth` header.
 If provided, this header is passed down to the engine if the image must be pulled
 to complete the create operation.
 
-The following two examples demonstrate how to utilize this using the existing Docker CLI
+The following two examples demonstrate how to utilize this using the existing Docker CLI.
 
 ### Authenticate using registry tokens
 
-> **Note:** This example requires Docker Engine 1.10 with auth token support.
-> For older Engine versions, refer to [authenticate using username and
-> password](#authenticate-using-username-and-password)
+> **Note**: This example requires Docker Engine 1.10 with auth token support.
+> For older Engine versions, refer to
+> [authenticate using username and password](swarm-api.md#authenticate-using-username-and-password).
 
 This example uses the [`jq` command-line utility](https://stedolan.github.io/jq/).
 To run this example, install `jq` using your package manager (`apt-get install jq` or `yum install jq`).
@@ -142,13 +139,13 @@ $ docker run --rm -it yourprivateimage:latest
 ```
 
 
-Be aware that tokens are short-lived and will expire quickly.
+Be aware that tokens are short-lived and expire quickly.
 
 
 ### Authenticate using username and password
 
-> **Note:** this authentication method stores your credentials unencrypted
-> on the filesystem. Refer to [Authenticate using registry tokens](#authenticate-using-registry-tokens)
+> **Note**: This authentication method stores your credentials unencrypted
+> on the filesystem. Refer to [Authenticate using registry tokens](swarm-api.md#authenticate-using-registry-tokens)
 > for a more secure approach.
 
 
@@ -180,7 +177,7 @@ $ docker run --rm -it yourprivateimage:latest
 
 ## Docker Swarm documentation index
 
-- [Docker Swarm overview](https://docs.docker.com/swarm/)
-- [Discovery options](https://docs.docker.com/swarm/discovery/)
-- [Scheduler strategies](https://docs.docker.com/swarm/scheduler/strategy/)
-- [Scheduler filters](https://docs.docker.com/swarm/scheduler/filter/)
+- [Docker Swarm overview](/swarm/)
+- [Discovery options](/swarm/discovery/)
+- [Scheduler strategies](/swarm/scheduler/strategy/)
+- [Scheduler filters](/swarm/scheduler/filter/)

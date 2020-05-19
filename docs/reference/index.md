@@ -1,16 +1,8 @@
-<!--[metadata]>
-+++
-title = "Command line reference"
-description = "Docker Swarm Commands Overview"
-keywords = ["Swarm, cluster, commands"]
-[menu.main]
-identifier="smn_swarm_subcmds"
-parent="workw_swarm"
-weight=80
-+++
-<![end-metadata]-->
-
-# Docker Swarm command line reference
+---
+description: Docker Swarm Commands Overview
+keywords: Swarm, cluster, commands
+title: Swarm command-line reference
+---
 
 -   [swarm](swarm.md) — Run a Swarm container on Docker Engine
 -   [create](create.md) — Create a discovery token

@@ -9,7 +9,7 @@ services:
       - voteapp
     labels:
      interlock.hostname: "vote"
-     interlock.domain:   "myenterprise.com"
+     interlock.domain:   "myenterprise.example.com"
   result-app:
     image: docker/example-voting-app-result-app
     ports:
@@ -18,7 +18,7 @@ services:
       - voteapp
     labels:
      interlock.hostname: "results"
-     interlock.domain:   "myenterprise.com"
+     interlock.domain:   "myenterprise.example.com"
   worker:
     image: docker/example-voting-app-worker
     networks:

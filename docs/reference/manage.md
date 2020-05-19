@@ -1,15 +1,8 @@
-<!--[metadata]>
-+++
-title = "manage"
-description = "Create a Swarm manager."
-keywords = ["swarm, create, manage"]
-[menu.main]
-identifier="swarm.manage"
-parent="smn_swarm_subcmds"
-+++
-<![end-metadata]-->
-
-# manage  — Create a Swarm manager
+---
+description: Create a Swarm manager.
+keywords: swarm, create, manage
+title: manage  — Create a Swarm manager
+---
 
 Prerequisite: Before using `manage` to create a Swarm manager, establish a discovery backend as described in [this discovery topic](../discovery.md).
 
@@ -89,7 +82,7 @@ Use `--filter <value>` or `-f <value>` to tell the Docker Swarm scheduler which 
 Where `<value>` is:
 
   * `health` — Use nodes that are running and communicating with the discovery backend.
-  * `port` — For containers that have a static port mapping, use nodes whose corresponding port number is available (i.e., not occupied by another container or process).
+  * `port` — For containers that have a static port mapping, use nodes whose corresponding port number is available and not occupied by another container or process.
   * `dependency` — For containers that have a declared dependency, use nodes that already have a container with the same dependency.
   * `affinity` — For containers that have a declared affinity, use nodes that already have a container with the same affinity.
   * `constraint` — For containers that have a declared constraint, use nodes that already have a container with the same constraint.
@@ -110,7 +103,7 @@ The environment variable for `--host` is `$SWARM_HOST`.
 
 ### `--replication` — Enable Swarm manager replication
 
-Enable Swarm manager replication between the *primary* and *secondary* managers in a high-availability cluster. Replication mirrors cluster information from the primary to the secondary managers so that, if the primary manager fails, a secondary can become the primary manager.  
+Enable Swarm manager replication between the *primary* and *secondary* managers in a high-availability cluster. Replication mirrors cluster information from the primary to the secondary managers so that, if the primary manager fails, a secondary can become the primary manager.
 
 ### `--replication-ttl` — Leader lock release time on failure
 
@@ -164,9 +157,9 @@ Deprecated; Use `--engine-failure-retry` instead of `--engine-refresh-retry "<nu
 
 Use `--heartbeat "<interval>s"` to specify the interval, in seconds, between heartbeats the manager sends to the primary manager. These heartbeats indicate that the manager is healthy and reachable. By default, the interval is 60 seconds.
 
-### `--api-enable-cors`, `--cors` — Enable CORS headers in the remote API
+### `--api-enable-cors`, `--cors` — Enable CORS headers in the Engine API
 
-Use `--api-enable-cors` or `--cors` to enable cross-origin resource sharing (CORS) headers in the remote API.
+Use `--api-enable-cors` or `--cors` to enable cross-origin resource sharing (CORS) headers in the Engine API.
 
 ### `--cluster-driver`, `-c` — Cluster driver to use
 

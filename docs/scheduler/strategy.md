@@ -1,15 +1,10 @@
-<!--[metadata]>
-+++
-title = "Strategies"
-description = "Swarm strategies"
-keywords = ["docker, swarm, clustering,  strategies"]
-[menu.main]
-parent="swarm_sched"
-weight=6
-+++
-<![end-metadata]-->
-
-# Docker Swarm strategies
+---
+advisory: swarm-standalone
+hide_from_sitemap: true
+description: Swarm strategies
+keywords: docker, swarm, clustering, strategies
+title: Docker Swarm strategies
+---
 
 The Docker Swarm scheduler features multiple strategies for ranking nodes. The
 strategy you choose determines how Swarm computes ranking. When you run a new
@@ -33,7 +28,7 @@ your company's needs.
 
 Under the `spread` strategy, Swarm optimizes for the node with the least number
 of containers. The `binpack` strategy causes Swarm to optimize for the
-node which is most packed. Note that a container occupies resource during its life
+node which is most packed. A container occupies resource during its life
 cycle, including `exited` state. Users should be aware of this condition to schedule
 containers. For example, `spread` strategy only checks number of containers
 disregarding their states. A node with no active containers but high number of
@@ -88,7 +83,7 @@ CPUs, the `spread` strategy prefers the node with least containers.
 
 ## BinPack strategy example
 
-In this example, let's says that both `node-1` and `node-2` have 2G of RAM and
+In this example, let's say that both `node-1` and `node-2` have 2G of RAM and
 neither is running a container. Again, the nodes are equal. When you run a new
 container, the system chooses `node-1` at random from the cluster:
 

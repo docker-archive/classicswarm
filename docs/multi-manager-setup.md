@@ -1,21 +1,16 @@
-<!--[metadata]>
-+++
-title = "High availability in Swarm"
-description = "High availability in Swarm"
-keywords = ["docker, swarm,  clustering"]
-[menu.main]
-parent="workw_swarm"
-weight=3
-+++
-<![end-metadata]-->
+---
+advisory: swarm-standalone
+hide_from_sitemap: true
+description: High availability in Swarm
+keywords: docker, swarm,  clustering
+title: High availability in Docker Swarm
+---
 
-# High availability in Docker Swarm
+In Docker Swarm, the **swarm manager** is responsible for the entire cluster and manages the resources of multiple *Docker hosts* at scale. If the swarm manager dies, you must create a new one and deal with an interruption of service.
 
-In Docker Swarm, the **Swarm manager** is responsible for the entire cluster and manages the resources of multiple *Docker hosts* at scale. If the Swarm manager dies, you must create a new one and deal with an interruption of service.
+The *High Availability* feature allows a swarm to gracefully handle the failover of a manager instance. Using this feature, you can create a single **primary manager** instance and multiple **replica** instances.
 
-The *High Availability* feature allows a Docker Swarm to gracefully handle the failover of a manager instance. Using this feature, you can create a single **primary manager** instance and multiple **replica** instances.
-
-A primary manager is the main point of contact with the Docker Swarm cluster. You can also create and talk to replica instances that will act as backups. Requests issued on a replica are automatically proxied to the primary manager. If the primary manager fails, a replica takes away the lead. In this way, you always keep a point of contact with the cluster.
+A primary manager is the main point of contact with the swarm cluster. You can also create and talk to replica instances that act as backups. Requests issued on a replica are automatically proxied to the primary manager. If the primary manager fails, a replica takes away the lead. In this way, you always keep a point of contact with the cluster.
 
 ## Setup primary and replicas
 
@@ -23,7 +18,7 @@ This section explains how to set up Docker Swarm using multiple **managers**.
 
 ### Assumptions
 
-You need either a `Consul`, `etcd`, or `Zookeeper` cluster. This procedure is written assuming a `Consul` server running on address `192.168.42.10:8500`. All hosts will have a Docker Engine configured to listen on port 2375.  We will be configuring the Managers to operate on port 4000. The sample Swarm configuration has three machines:
+You need either a `Consul`, `etcd`, or `Zookeeper` cluster. This procedure is written assuming a `Consul` server running on address `192.168.42.10:8500`. All hosts have a Docker Engine configured to listen on port 2375.  The Managers operate on port 4000. The sample swarm configuration has three machines:
 
 - `manager-1` on `192.168.42.200`
 - `manager-2` on `192.168.42.201`
@@ -65,7 +60,7 @@ Create an additional, third *manager* instance:
     INFO[0000] New leader elected: 192.168.42.200:4000
     [...]
 
-Once you have established your primary manager and the replicas, create **Swarm agents** as you normally would.
+Once you have established your primary manager and the replicas, create **swarm agents** as you normally would.
 
 
 ### List machines in the cluster
@@ -160,6 +155,6 @@ To switch the `DOCKER_HOST` to use `manager-2` as the primary, you do the follow
     Filters: affinity, health, constraint, port, dependency
     Nodes: 3
 
-You can use the `docker` command on any Docker Swarm primary manager or any replica.
+You can use the `docker` command on any swarm manager or any replica.
 
-If you like, you can use custom mechanisms to always point `DOCKER_HOST` to the current primary manager. Then, you never lose contact with your Docker Swarm in the event of a failover.
+If you like, you can use custom mechanisms to always point `DOCKER_HOST` to the current primary manager. Then, you never lose contact with your swarm in the event of a failover.

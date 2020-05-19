@@ -1,16 +1,10 @@
-<!--[metadata]>
-+++
-title = "How to get Swarm"
-description = "Running a Swarm container on Docker Engine. Run a Swarm binary on the host OS without Docker Engine."
-keywords = ["docker, Swarm, container, binary, clustering, install, installation"]
-[menu.main]
-identifier="how-to-get-and-run-Swarm"
-parent="workw_swarm"
-weight=-90
-+++
-<![end-metadata]-->
-
-# How to get Docker Swarm
+---
+advisory: swarm-standalone
+hide_from_sitemap: true
+description: Running a Swarm container on Docker Engine. Run a Swarm binary on the host OS without Docker Engine.
+keywords: docker, Swarm, container, binary, clustering, install, installation
+title: Get Docker Swarm
+---
 
 You can create a Docker Swarm cluster using the `swarm` executable image from a
 container or using an executable `swarm` binary you install on your system. This
@@ -33,7 +27,7 @@ The first time you use any image, Docker Engine checks to see if you already hav
 
         $ docker-machine ls
         NAME      ACTIVE   URL          STATE     URL                         SWARM   DOCKER    ERRORS
-        default   *       virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1    
+        default   *       virtualbox   Running   tcp://192.168.99.100:2376           v1.9.1
 
     This shows an environment running an Engine host on the `default` instance.
 
@@ -92,7 +86,7 @@ The first time you use any image, Docker Engine checks to see if you already hav
 Using a Swarm container has three key benefits over other methods:
 
 * You don't need to install a binary on the system to use the image.
-* The single command `docker run` command gets and run the most recent version of the image every time.
+* The single command `docker run` gets and runs the most recent version of the image every time.
 * The container isolates Swarm from your host environment. You don't need to perform or maintain shell paths and environments.
 
 Running the Swarm image is the recommended way to create and manage your Swarm cluster. All of Docker's documentation and tutorials use this method.

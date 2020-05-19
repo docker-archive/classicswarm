@@ -1,15 +1,10 @@
-<!--[metadata]>
-+++
-title = "Overview Docker Swarm with TLS"
-description = "Swarm and transport layer security"
-keywords = ["docker, swarm, TLS, discovery, security,  certificates"]
-[menu.main]
-parent="workw_swarm"
-weight=50
-+++
-<![end-metadata]-->
-
-# Overview Swarm with TLS
+---
+advisory: swarm-standalone
+hide_from_sitemap: true
+description: Swarm and transport layer security
+keywords: docker, swarm, TLS, discovery, security, certificates
+title: Use Docker Swarm with TLS
+---
 
 All nodes in a Swarm cluster must bind their Docker daemons to a network port.
 This has obvious security implications. These implications are compounded when
@@ -58,7 +53,7 @@ customs, digital certificates authenticate computers on a network.
 
 Public key infrastructure (PKI) is the combination of technologies, policies,
 and procedures that work behind the scenes to enable digital certificates. Some
-of the technologies, policies and procedures provided by PKI include:
+of the technologies, policies, and procedures provided by PKI include:
 
 - Services to securely request certificates
 - Procedures to authenticate the entity requesting the certificate
@@ -68,7 +63,7 @@ of the technologies, policies and procedures provided by PKI include:
 
 ## How does Docker Engine authenticate using TLS
 
-In this section, you'll learn how Docker Engine and Swarm use PKI and
+This section shows how Docker Engine and Swarm use PKI and
 certificates to increase security.
 
 <!--[metadata]>Need to know about encryption too<![end-metadata]-->
@@ -77,16 +72,16 @@ You can configure both the Docker Engine CLI and the Docker Engine daemon to req
 TLS for authentication. Configuring TLS means that all communications between
 the Docker Engine CLI and the Docker Engine daemon must be accompanied with, and signed by a
 trusted digital certificate. The Docker Engine CLI must provide its digital certificate
-before the Docker Engine daemon will accept incoming commands from it.
+before the Docker Engine daemon accepts incoming commands from it.
 
 The Docker Engine daemon must also trust the certificate that the Docker Engine CLI uses.
 This trust is usually established by way of a trusted third party. The Docker Engine
 CLI and Docker Engine daemon in the diagram below are configured to require TLS
 authentication.
 
-![](images/trust-diagram.jpg)
+![TLS authentication diagram](images/trust-diagram.jpg)
 
-The trusted third party in this diagram is the the Certificate Authority (CA)
+The trusted third party in this diagram is the Certificate Authority (CA)
 server. Like the country in the passport example, a CA creates, signs, issues,
 revokes certificates. Trust is established by installing the CA's root
 certificate on the host running the Docker Engine daemon. The Docker Engine CLI then requests
@@ -99,11 +94,11 @@ the Docker Engine daemon automatically trusts any certificates signed by the CA.
 certificate is in order (the certificate has not expired or been revoked etc.)
 the Docker Engine daemon accepts commands from this trusted Docker Engine CLI.
 
-The Docker Engine CLI is simply a client that uses the Docker Engine Remote API to
-communicate with the Docker Engine daemon. Any client that uses this Docker Engine Remote API can use
+The Docker Engine CLI is simply a client that uses the Docker Engine API to
+communicate with the Docker Engine daemon. Any client that uses this Docker Engine API can use
 TLS. For example, Docker Engine clients such as 'Docker Universal Control Plane'
 (UCP) have TLS support built-in. Other, third party products, that use Docker Engine
-Remote API, can also be configured this way.
+API, can also be configured this way.
 
 ## TLS modes with Docker and Swarm
 
@@ -121,8 +116,8 @@ These configurations are differentiated by the type of entity acting as the Cert
 
 An external CA is a trusted 3rd party company that provides a means of creating,
 issuing, revoking, and otherwise managing certificates. They are *trusted* in
-the sense that they have to fulfill specific conditions and maintain high levels
-of security and business practices to win your business. You also have to
+the sense that they need to fulfill specific conditions and maintain high levels
+of security and business practices to win your business. You also need to
 install the external CA's root certificates for you computers and services to
 *trust* them.
 
@@ -145,7 +140,7 @@ and overheads. However, for a large corporation, it still may reduce costs in
 comparison to using an external 3rd party service.
 
 Assuming you operate and manage your own internal CAs and PKI properly, an
-internal, corporate CA  can be a highly scalable and highly secure option.
+internal, corporate CA can be a highly scalable and highly secure option.
 
 ### Self-signed certificates
 
@@ -164,4 +159,4 @@ facing production workloads exposed to untrusted networks.
 ## Related information
 
 * [Configure Docker Swarm for TLS](configure-tls.md)
-* [Docker security](https://docs.docker.com/engine/security/security/)
+* [Docker security](../engine/security/security.md)

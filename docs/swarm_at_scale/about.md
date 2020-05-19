@@ -1,18 +1,12 @@
-<!--[metadata]>
-+++
-aliases = ["/swarm/swarm_at_scale/about/"]
-title = "Learn the application architecture"
-description = "Try Swarm at scale"
-keywords = ["docker, swarm, scale, voting, application, archiecture"]
-[menu.main]
-parent="scale_swarm"
-weight=-99
-+++
-<![end-metadata]-->
+---
+advisory: swarm-standalone
+hide_from_sitemap: true
+description: Try Swarm at scale
+keywords: docker, swarm, scale, voting, application, architecture
+title: Learn the application architecture
+---
 
-# Learn the application architecture
-
-On this page, you learn about the Swarm at scale example.  Make sure you have
+On this page, you learn about the Swarm at scale example. Make sure you have
 read through [the introduction](index.md) to get an idea of the skills and time
 required first.
 
@@ -32,9 +26,9 @@ vote is counted.
 The voting application is composed of several microservices. It uses a parallel
 web frontend that sends jobs to asynchronous background workers. The
 application's design can accommodate arbitrarily large scale. The diagram below
-shows the appliation's high level architecture:
+shows the application's high level architecture:
 
-![](../images/app-architecture.png)
+![Voting application's high level architecture](../images/app-architecture.png)
 
 All the servers are running Docker Engine. The entire application is fully
 "Dockerized" in that all services are running inside of containers.
@@ -60,12 +54,12 @@ The application's Dockerized microservices are deployed to a container network.
 Container networks are a feature of Docker Engine that allows communication
 between multiple containers across multiple Docker hosts.
 
-## Swarm Cluster Architecture
+## Swarm cluster architecture
 
 To support the application, the design calls for a Swarm cluster with a single
 Swarm manager and four nodes as shown below.
 
-![](../images/swarm-cluster-arch.png)
+![Swarm cluster architecture](../images/swarm-cluster-arch.png)
 
 All four nodes in the cluster are running the Docker daemon, as is the Swarm
 manager and the load balancer. The Swarm manager is part of the cluster and is
@@ -77,12 +71,12 @@ demonstration it is not.
 After completing the example and deploying your application, this
 is what your environment should look like.
 
-![](../images/final-result.png)
+![Overview of deployment](../images/final-result.png)
 
 As the previous diagram shows, each node in the cluster runs the following containers:
 
 - `frontend01`:
-  - Container: voting-app 
+  - Container: voting-app
   - Container: Swarm agent
 - `frontend02`:
   - Container: voting-app
@@ -97,7 +91,7 @@ As the previous diagram shows, each node in the cluster runs the following conta
   - Container: Swarm agent
 
 
-After deploying the application, you'll configure your local system so that you
+After deploying the application, configure your local system so that you
 can test the application from your local browser. In production, of course, this
 step wouldn't be needed.
 

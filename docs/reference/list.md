@@ -1,15 +1,8 @@
-<!--[metadata]>
-+++
-title = "list"
-description = "List the nodes in a cluster."
-keywords = ["swarm, list"]
-[menu.main]
-identifier="swarm.list"
-parent="smn_swarm_subcmds"
-+++
-<![end-metadata]-->
-
-# list — List the nodes in a cluster
+---
+description: List the nodes in a cluster.
+keywords: swarm, list
+title: list — List the nodes in a cluster
+---
 
 Use `list` to display a list of the nodes in a cluster.
 
@@ -43,7 +36,7 @@ When you use the `list` command, use the `<discovery>` argument to specify one o
 
 * `token://<token>`
 * `consul://<ip1>/<path>`
-* `etcd://<ip1>,<ip2>,<ip2>/<path>`
+* `etcd://<ip1>,<ip2>,<ip3>/<path>`
 * `file://<path/to/file>`
 * `zk://<ip1>,<ip2>/<path>`
 * `[nodes://]<iprange>,<iprange>`
@@ -55,7 +48,7 @@ Where:
 
 * `ip1`, `ip2`, `ip3` are each the IP address and port numbers of a discovery backend node.
 * `path` (optional) is a path to a key-value store on the discovery backend. When you use a single backend to service multiple clusters, you use paths to maintain separate key-value stores for each cluster.
-* `path/to/file` is the path to a file that contains a static list of the Swarm managers and nodes that are members the cluster. <!--tbd - can the file contain ipranges?-->
+* `path/to/file` is the path to a file that contains a static list of the Swarm managers and nodes that are members of the cluster. <!--tbd - can the file contain ipranges?-->
 * `iprange` is an IP address or a range of IP addresses followed by a port number.
 
 For example:
@@ -83,4 +76,4 @@ Use `--discovery-opt <value>` to discovery options, such as paths to the TLS fil
     --discovery-opt kv.certfile=/path/to/mycert.pem \
     --discovery-opt kv.keyfile=/path/to/mykey.pem \
 
-For more information, see [Use TLS with distributed key/value discovery](../discovery.md)
+For more information, see [Use TLS with distributed key/value discovery](../discovery.md).

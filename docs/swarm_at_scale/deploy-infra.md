@@ -1,44 +1,39 @@
-<!--[metadata]>
-+++
-aliases = ["/swarm/swarm_at_scale/03-create-cluster/",
-"/swarm/swarm_at_scale/02-deploy-infra/"
-]
-title = "Deploy application infrastructure"
-description = "Try Swarm at scale"
-keywords = ["docker, swarm, scale, voting, application,  certificates"]
-[menu.main]
-parent="scale_swarm"
-weight=-90
-+++
-<![end-metadata]-->
-
-# Deploy your infrastructure
+---
+advisory: swarm-standalone
+hide_from_sitemap: true
+description: Try Swarm at scale
+keywords: docker, swarm, scale, voting, application, certificates
+redirect_from:
+- /swarm/swarm_at_scale/03-create-cluster/
+- /swarm/swarm_at_scale/02-deploy-infra/
+title: Deploy application infrastructure
+---
 
 In this step, you create several Docker hosts to run your application stack on.
-Before you continue, make sure you have taken the time to [learn the application
-architecture](about.md).
+Before you continue, make sure you have taken the time to
+[learn the application architecture](about.md).
 
 ## About these instructions
 
 This example assumes you are running on a Mac or Windows system and enabling
 Docker Engine `docker` commands by provisioning local VirtualBox virtual
-machines thru Docker Machine. For this evaluation installation, you'll need 6 (six)
+machines using Docker Machine. For this evaluation installation, you need 6 (six)
 VirtualBox VMs.
 
 While this example uses Docker Machine, this is only one example of an
 infrastructure you can use. You can create the environment design on whatever
 infrastructure you wish. For example, you could place the application on another
 public cloud platform such as Azure or DigitalOcean, on premises in your data
-center, or even in in a test environment on your laptop.
+center, or even in a test environment on your laptop.
 
-Finally, these instructions use some common `bash` command substituion techniques to
+Finally, these instructions use some common `bash` command substitution techniques to
 resolve some values, for example:
 
 ```bash
 $ eval $(docker-machine env keystore)
 ```
 
-In a Windows environment, these substituation fail. If you are running in
+In a Windows environment, these substitution fail. If you are running in
 Windows, replace the substitution `$(docker-machine env keystore)` with the
 actual value.
 
@@ -46,7 +41,7 @@ actual value.
 ## Task 1. Create the keystore server
 
 To enable a Docker container network and Swarm discovery, you must
-supply deploy a key-value store.  As a discovery backend, the keystore
+deploy (or supply) a key-value store. As a discovery backend, the key-value store
 maintains an up-to-date list of cluster members and shares that list with the
 Swarm manager. The Swarm manager uses this list to assign tasks to the nodes.
 
@@ -54,47 +49,47 @@ An overlay network requires a key-value store. The key-value store holds
 information about the network state which includes discovery, networks,
 endpoints, IP addresses, and more.
 
-Several different backends are supported. This example uses <a
+[Several different backends are supported](../discovery.md). This example uses <a
 href="https://www.consul.io/" target="blank">Consul</a> container.
 
 1. Create a "machine" named `keystore`.
 
-    ```bash
-    $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
-    --engine-opt="label=com.function=consul"  keystore
-    ```
+   ```bash
+   $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
+   --engine-opt="label=com.function=consul"  keystore
+   ```
 
-    You can set options for the Engine daemon with the `--engine-opt` flag. You'll
-    use it to label this Engine instance.
+   You can set options for the Engine daemon with the `--engine-opt` flag. In
+   this command, you use it to label this Engine instance.
 
 2. Set your local shell to the `keystore` Docker host.
 
-    ```bash
-    $ eval $(docker-machine env keystore)
-    ```
-3. Run <a href="https://hub.docker.com/r/progrium/consul/" target="_blank">the
-`consul` container</a>.
+   ```bash
+   $ eval $(docker-machine env keystore)
+   ```
 
-    ```bash
-    $ docker run --restart=unless-stopped -d -p 8500:8500 -h consul progrium/consul -server -bootstrap
-    ```
+3. Run [the consul container](https://hub.docker.com/r/progrium/consul/){:target="_blank" class="_"}.
 
-    The `-p` flag publishes port 8500 on the container which is where the Consul
-    server listens. The server also has several other ports exposed which you can
-    see by running `docker ps`.
+   ```bash
+   $ docker run --restart=unless-stopped -d -p 8500:8500 -h consul progrium/consul -server -bootstrap
+   ```
 
-    ```bash
-    $ docker ps
-    CONTAINER ID        IMAGE               ...       PORTS                                                                            NAMES
-    372ffcbc96ed        progrium/consul     ...       53/tcp, 53/udp, 8300-8302/tcp, 8400/tcp, 8301-8302/udp, 0.0.0.0:8500->8500/tcp   dreamy_ptolemy
-    ```
+   The `-p` flag publishes port 8500 on the container which is where the Consul
+   server listens. The server also has several other ports exposed which you can
+   see by running `docker ps`.
 
-4. Use a `curl` command test the server by listing the nodes.
+   ```bash
+   $ docker ps
+   CONTAINER ID        IMAGE               ...       PORTS                                                                            NAMES
+   372ffcbc96ed        progrium/consul     ...       53/tcp, 53/udp, 8300-8302/tcp, 8400/tcp, 8301-8302/udp, 0.0.0.0:8500->8500/tcp   dreamy_ptolemy
+   ```
 
-    ```bash
-    $ curl $(docker-machine ip keystore):8500/v1/catalog/nodes
-    [{"Node":"consul","Address":"172.17.0.2"}]
-    ```
+4. Use a `curl` command to test the server by listing the nodes.
+
+   ```bash
+   $ curl $(docker-machine ip keystore):8500/v1/catalog/nodes
+   [{"Node":"consul","Address":"172.17.0.2"}]
+   ```
 
 
 ## Task 2. Create the Swarm manager
@@ -106,129 +101,130 @@ scheduling resources against the cluster. In a real-world production deployment,
 you should configure additional replica Swarm managers as secondaries for high
 availability (HA).
 
-You'll use the `--eng-opt` flag to set the `cluster-store` and
+Use the `--eng-opt` flag to set the `cluster-store` and
 `cluster-advertise` options to refer to the `keystore` server. These options
-support the container network you'll create later.
+support the container network you create later.
 
 1. Create the `manager` host.
 
-    ```bash
-    $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
-    --engine-opt="label=com.function=manager" \
-    --engine-opt="cluster-store=consul://$(docker-machine ip keystore):8500" \
-    --engine-opt="cluster-advertise=eth1:2376" manager
-    ```
+   ```bash
+   $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
+   --engine-opt="label=com.function=manager" \
+   --engine-opt="cluster-store=consul://$(docker-machine ip keystore):8500" \
+   --engine-opt="cluster-advertise=eth1:2376" manager
+   ```
 
-    You also give the daemon a `manager` label.
+   You also give the daemon a `manager` label.
 
 2. Set your local shell to the `manager` Docker host.
 
-    ```bash
-    $ eval $(docker-machine env manager)
-    ```
+   ```bash
+   $ eval $(docker-machine env manager)
+   ```
 
 3. Start the Swarm manager process.
 
-    ```bash
-    $ docker run --restart=unless-stopped -d -p 3376:2375 \
-    -v /var/lib/boot2docker:/certs:ro \
-    swarm manage --tlsverify \
-    --tlscacert=/certs/ca.pem \
-    --tlscert=/certs/server.pem \
-    --tlskey=/certs/server-key.pem \
-    consul://$(docker-machine ip keystore):8500
-    ```
+   ```bash
+   $ docker run --restart=unless-stopped -d -p 3376:2375 \
+   -v /var/lib/boot2docker:/certs:ro \
+   swarm manage --tlsverify \
+   --tlscacert=/certs/ca.pem \
+   --tlscert=/certs/server.pem \
+   --tlskey=/certs/server-key.pem \
+   consul://$(docker-machine ip keystore):8500
+   ```
 
-    This command uses the TLS certificates created for the `boot2docker.iso` or
-    the manager. This is key for the manager when it connects to other machines
-    in the cluster.
+   This command uses the TLS certificates created for the `boot2docker.iso` or
+   the manager. This is key for the manager when it connects to other machines
+   in the cluster.
 
-4. Test your work by using displaying the Docker daemon logs from the host.
+4. Test your work by displaying the Docker daemon logs from the host.
 
-    ```bash
-    $ docker-machine ssh manager
-    <-- output snipped -->
-    docker@manager:~$ tail /var/lib/boot2docker/docker.log
-    time="2016-04-06T23:11:56.481947896Z" level=debug msg="Calling GET /v1.15/version"
-    time="2016-04-06T23:11:56.481984742Z" level=debug msg="GET /v1.15/version"
-    time="2016-04-06T23:12:13.070231761Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
-    time="2016-04-06T23:12:33.069387215Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
-    time="2016-04-06T23:12:53.069471308Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
-    time="2016-04-06T23:13:13.069512320Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
-    time="2016-04-06T23:13:33.070021418Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
-    time="2016-04-06T23:13:53.069395005Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
-    time="2016-04-06T23:14:13.071417551Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
-    time="2016-04-06T23:14:33.069843647Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
-    ```
+   ```bash
+   $ docker-machine ssh manager
+   <-- output snipped -->
+   docker@manager:~$ tail /var/lib/boot2docker/docker.log
+   time="2016-04-06T23:11:56.481947896Z" level=debug msg="Calling GET /v1.15/version"
+   time="2016-04-06T23:11:56.481984742Z" level=debug msg="GET /v1.15/version"
+   time="2016-04-06T23:12:13.070231761Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
+   time="2016-04-06T23:12:33.069387215Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
+   time="2016-04-06T23:12:53.069471308Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
+   time="2016-04-06T23:13:13.069512320Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
+   time="2016-04-06T23:13:33.070021418Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
+   time="2016-04-06T23:13:53.069395005Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
+   time="2016-04-06T23:14:13.071417551Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
+   time="2016-04-06T23:14:33.069843647Z" level=debug msg="Watch triggered with 1 nodes" discovery=consul
+   ```
 
-    The output indicates that the `consul` and the `manager` are communicating correctly.
+   The output indicates that the `consul` and the `manager` are communicating correctly.
 
 5. Exit the Docker host.
 
-    ```bash
-    docker@manager:~$ exit
-    ```
+   ```bash
+   docker@manager:~$ exit
+   ```
 
 ## Task 3. Add the load balancer
 
-The application uses <a
-href="https://github.com/ehazlett/interlock">Interlock</a> and Nginx as a
-loadbalancer. Before you build the load balancer host, you'll create the
-configuration you'll use for Nginx.
+The application uses [Interlock](https://github.com/ehazlett/interlock) and Nginx as a
+loadbalancer. Before you build the load balancer host, create the
+configuration for Nginx.
 
 1. On your local host, create a `config` directory.
+
 2. Change directories to the `config` directory.
 
-    ```bash
-    $ cd config
-    ```
+   ```bash
+   $ cd config
+   ```
+
 3. Get the IP address of the Swarm manager host.
 
-    For example:
+   For example:
 
-    ```bash
-    $ docker-machine ip manager
-    192.168.99.101
-    ```
+   ```bash
+   $ docker-machine ip manager
+   192.168.99.101
+   ```
 
 5. Use your favorite editor to create a `config.toml` file and add this content
 to the file:
 
-    ```json
-    ListenAddr = ":8080"
-    DockerURL = "tcp://SWARM_MANAGER_IP:3376"
-    TLSCACert = "/var/lib/boot2docker/ca.pem"
-    TLSCert = "/var/lib/boot2docker/server.pem"
-    TLSKey = "/var/lib/boot2docker/server-key.pem"
+   ```json
+   ListenAddr = ":8080"
+   DockerURL = "tcp://SWARM_MANAGER_IP:3376"
+   TLSCACert = "/var/lib/boot2docker/ca.pem"
+   TLSCert = "/var/lib/boot2docker/server.pem"
+   TLSKey = "/var/lib/boot2docker/server-key.pem"
 
-    [[Extensions]]
-    Name = "nginx"
-    ConfigPath = "/etc/conf/nginx.conf"
-    PidPath = "/etc/conf/nginx.pid"
-    MaxConn = 1024
-    Port = 80
-    ```
+   [[Extensions]]
+   Name = "nginx"
+   ConfigPath = "/etc/nginx/nginx.conf"
+   PidPath = "/var/run/nginx.pid"
+   MaxConn = 1024
+   Port = 80
+   ```
 
 6. In the configuration, replace the `SWARM_MANAGER_IP` with the `manager` IP you got
 in Step 4.
 
-    You use this value because the load balancer listens on the manager's event
-    stream.
+   You use this value because the load balancer listens on the manager's event
+   stream.
 
 7. Save and close the `config.toml` file.
 
 8. Create a machine for the load balancer.
 
-    ```bash
-    $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
-    --engine-opt="label=com.function=interlock" loadbalancer
-    ```
+   ```bash
+   $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
+   --engine-opt="label=com.function=interlock" loadbalancer
+   ```
 
 9. Switch the environment to the `loadbalancer`.
 
-    ```bash
-    $ eval $(docker-machine env loadbalancer)
-    ```
+   ```bash
+   $ eval $(docker-machine env loadbalancer)
+   ```
 
 10. Start an `interlock` container running.
 
@@ -246,7 +242,7 @@ in Step 4.
         -D run -c /etc/config.toml
     ```
 
-    This command relies on the `config.toml` file being in the current directory.  After running the command, confirm the image is runing:
+    This command relies on the `config.toml` file being in the current directory.  After running the command, confirm the image is running:
 
     ```bash
     $ docker ps
@@ -254,7 +250,7 @@ in Step 4.
     d846b801a978        ehazlett/interlock:1.0.1   "/bin/interlock -D ru"   2 minutes ago       Up 2 minutes        0.0.0.0:32770->8080/tcp   interlock
     ```
 
-    If you don't see the image runing, use `docker ps -a` to list all images to make sure the system attempted to start the image. Then, get the logs to see why the container failed to start.
+    If you don't see the image running, use `docker ps -a` to list all images to make sure the system attempted to start the image. Then, get the logs to see why the container failed to start.
 
     ```bash
     $ docker logs interlock
@@ -268,10 +264,10 @@ in Step 4.
     and get a Conflict error such as:
 
     ```bash
-    docker: Error response from daemon: Conflict. The name "/interlock" is already in use by container d846b801a978c76979d46a839bb05c26d2ab949ff9f4f740b06b5e2564bae958. You have to remove (or rename) that container to be able to reuse that name.
+    docker: Error response from daemon: Conflict. The name "/interlock" is already in use by container d846b801a978c76979d46a839bb05c26d2ab949ff9f4f740b06b5e2564bae958. You have to remove (or rename) that container to reuse that name.
     ```
 
-     Remove the interlock container with the `docker rm interlock` and try again.
+     Remove the interlock container with the `docker container rm interlock` and try again.
 
 
 11. Start an `nginx` container on the load balancer.
@@ -306,44 +302,44 @@ for example:
 --engine-opt="label=com.function=frontend01"
 ```
 
-You'll use these labels later when starting application containers. In the
+These labels are used later when starting application containers. In the
 commands below, notice the label you are applying to each node.
 
 
 1. Create the `frontend01` host and add it to the Swarm cluster.
 
-    ```bash
-    $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
-    --engine-opt="label=com.function=frontend01" \
-    --engine-opt="cluster-store=consul://$(docker-machine ip keystore):8500" \
-    --engine-opt="cluster-advertise=eth1:2376" frontend01
-    $ eval $(docker-machine env frontend01)
-    $ docker run -d swarm join --addr=$(docker-machine ip frontend01):2376 consul://$(docker-machine ip keystore):8500
-    ```
+   ```bash
+   $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
+   --engine-opt="label=com.function=frontend01" \
+   --engine-opt="cluster-store=consul://$(docker-machine ip keystore):8500" \
+   --engine-opt="cluster-advertise=eth1:2376" frontend01
+   $ eval $(docker-machine env frontend01)
+   $ docker run -d swarm join --addr=$(docker-machine ip frontend01):2376 consul://$(docker-machine ip keystore):8500
+   ```
 
 2. Create the `frontend02` VM.
 
-    ```bash
-    $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
-    --engine-opt="label=com.function=frontend02" \
-    --engine-opt="cluster-store=consul://$(docker-machine ip keystore):8500" \
-    --engine-opt="cluster-advertise=eth1:2376" frontend02
-    $ eval $(docker-machine env frontend02)
-    $ docker run -d swarm join --addr=$(docker-machine ip frontend02):2376 consul://$(docker-machine ip keystore):8500
-    ```
+   ```bash
+   $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
+   --engine-opt="label=com.function=frontend02" \
+   --engine-opt="cluster-store=consul://$(docker-machine ip keystore):8500" \
+   --engine-opt="cluster-advertise=eth1:2376" frontend02
+   $ eval $(docker-machine env frontend02)
+   $ docker run -d swarm join --addr=$(docker-machine ip frontend02):2376 consul://$(docker-machine ip keystore):8500
+   ```
 
 3. Create the `worker01` VM.
 
-    ```bash
-    $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
-    --engine-opt="label=com.function=worker01" \
-    --engine-opt="cluster-store=consul://$(docker-machine ip keystore):8500" \
-    --engine-opt="cluster-advertise=eth1:2376" worker01
-    $ eval $(docker-machine env worker01)
-    $ docker run -d swarm join --addr=$(docker-machine ip worker01):2376 consul://$(docker-machine ip keystore):8500
-    ```
+   ```bash
+   $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
+   --engine-opt="label=com.function=worker01" \
+   --engine-opt="cluster-store=consul://$(docker-machine ip keystore):8500" \
+   --engine-opt="cluster-advertise=eth1:2376" worker01
+   $ eval $(docker-machine env worker01)
+   $ docker run -d swarm join --addr=$(docker-machine ip worker01):2376 consul://$(docker-machine ip keystore):8500
+   ```
 
-4. Create the `dbstore` VM.
+4.  Create the `dbstore` VM.
 
     ```bash
     $ docker-machine create -d virtualbox --virtualbox-memory "2000" \
@@ -354,7 +350,7 @@ commands below, notice the label you are applying to each node.
     $ docker run -d swarm join --addr=$(docker-machine ip dbstore):2376 consul://$(docker-machine ip keystore):8500
     ```
 
-5. Check your work.
+5.  Check your work.
 
     At this point, you have deployed on the infrastructure you need to run the
     application. Test this now by listing the running machines:
@@ -371,7 +367,7 @@ commands below, notice the label you are applying to each node.
     worker01       *        virtualbox   Running   tcp://192.168.99.110:2376           v1.10.3
     ```
 
-6. Make sure the Swarm manager sees all your nodes.
+6.  Make sure the Swarm manager sees all your nodes.
 
     ```
     $ docker -H $(docker-machine ip manager):3376 info
@@ -431,7 +427,7 @@ commands below, notice the label you are applying to each node.
     The command is acting on the Swarm port, so it returns information about the
     entire cluster. You have a manager and no nodes.
 
-## Next Step
+## Next step
 
-Your key-store, load balancer, and Swarm cluster infrastructure is up. You are
+Your key-value store, load balancer, and Swarm cluster infrastructure are up. You are
 ready to [build and run the voting application](deploy-app.md) on it.
