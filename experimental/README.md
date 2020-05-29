@@ -1,4 +1,4 @@
-# Docker Swarm Experimental Features
+# Docker Classic Swarm Experimental Features
 
 This page contains a list of features in the Docker Swarm which are
 experimental. Experimental features are **not** ready for production. They are

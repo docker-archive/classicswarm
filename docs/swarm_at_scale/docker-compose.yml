@@ -1,0 +1,46 @@
+version: "2"
+
+services:
+  voting-app:
+    image: docker/example-voting-app-voting-app
+    ports:
+      - "80"
+    networks:
+      - voteapp
+    labels:
+     interlock.hostname: "vote"
+     interlock.domain:   "myenterprise.example.com"
+  result-app:
+    image: docker/example-voting-app-result-app
+    ports:
+      - "80"
+    networks:
+      - voteapp
+    labels:
+     interlock.hostname: "results"
+     interlock.domain:   "myenterprise.example.com"
+  worker:
+    image: docker/example-voting-app-worker
+    networks:
+      voteapp:
+        aliases:
+        - workers
+  redis:
+    image: redis
+    ports:
+      - "6379"
+    networks:
+      - voteapp
+    container_name: redis
+  db:
+    image: postgres:9.4
+    volumes:
+      - "db-data:/var/lib/postgresql/data"
+    networks:
+      - voteapp
+    container_name: db
+volumes:
+  db-data:
+
+networks:
+    voteapp:

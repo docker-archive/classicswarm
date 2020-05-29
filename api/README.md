@@ -1,4 +1,4 @@
-# Docker Swarm API README
+# Docker Classic Swarm API README
 
 The Docker Swarm API is mostly compatible with the [Docker Remote
 API](https://docs.docker.com/engine/reference/api/docker_remote_api/). To read
