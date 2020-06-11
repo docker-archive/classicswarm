@@ -1,5 +1,8 @@
 # Classic Swarm: a Docker-native clustering system
 
+**Classic Swarm has been archived and is no longer actively developed. You may want to
+use the Swarm mode built into the Docker Engine instead, or another orchestration system.**
+
 [![GoDoc](https://godoc.org/github.com/docker/swarm?status.png)](https://godoc.org/github.com/docker/swarm)
 [![Build Status](https://travis-ci.org/docker/swarm.svg?branch=master)](https://travis-ci.org/docker/swarm)
 [![Go Report Card](https://goreportcard.com/badge/github.com/docker/swarm)](https://goreportcard.com/report/github.com/docker/swarm)
